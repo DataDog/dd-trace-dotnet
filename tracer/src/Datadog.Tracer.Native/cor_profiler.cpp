@@ -3141,6 +3141,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Create method member ref for AppDomain tokens
     mdMemberRef appdomain_get_currentdomain_member_ref = mdMemberRefNil;
     mdMemberRef appdomain_get_isfullytrusted_member_ref = mdMemberRefNil;
+    mdMemberRef appdomain_get_ishomogenous_member_ref = mdMemberRefNil;
     if (system_appdomain_type_ref != mdTypeRefNil)
     {
         // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
@@ -3170,7 +3171,20 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                             &appdomain_get_isfullytrusted_member_ref);
         if (FAILED(hr))
         {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsFullyTrusted");
+            return hr;
+        }
+
+        // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
+        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                                  ELEMENT_TYPE_BOOLEAN};
+        hr = metadata_emit->DefineMemberRef(
+            system_appdomain_type_ref, WStr("get_IsHomogenous"), appdomain_get_ishomogenous_signature,
+            sizeof(appdomain_get_ishomogenous_signature), &appdomain_get_ishomogenous_member_ref);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsHomogenous");
             return hr;
         }
     }
@@ -3370,12 +3384,28 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterWrapper_void.Return();
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
-    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil)
+    ILInstr* pIsHomogenousBranch = nullptr;
+
+    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil
+        && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil
+        && appdomain_get_ishomogenous_member_ref != mdMemberRefNil)
     {
         // Step 1) Check if the assembly is loaded in a fully trusted domain.
 
         // call System.AppDomain.get_CurrentDomain() and set the false branch target for IsAlreadyLoaded()
         pIsNotAlreadyLoadedBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
+        // callvirt System.AppDomain.get_Homogenous()
+        rewriterWrapper_void.CallMember(appdomain_get_ishomogenous_member_ref, true);
+
+        // check if the return of the method call is true or false
+        pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
+        // return if IsHomogenous is false
+        rewriterWrapper_void.Return();
+
+        // call System.AppDomain.get_CurrentDomain()
+        pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
         // callvirt System.AppDomain.get_IsFullyTrusted()
         rewriterWrapper_void.CallMember(appdomain_get_isfullytrusted_member_ref, true);
         // check if the return of the method call is true or false

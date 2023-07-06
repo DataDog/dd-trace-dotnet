@@ -20,7 +20,11 @@ variables:
     value: "false"
     description: "Set to true to deploy to debugger backend demo application"
   DOTNET_PACKAGE_VERSION:
-    description: "Version to build for .deb and .rpm. Must be already published in NPM"
+    description: "Used by the package stage when triggered manually"
+  CI_COMMIT_SHA:
+    description: "Used to override the commit sha in the deploy stage when triggered manually"
+  CI_COMMIT_TAG:
+    description: "Used to override the commit tag in the deploy stage when triggered manually"
 
 build:
   only:
@@ -99,13 +103,14 @@ deploy_to_reliability_env:
     UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
     FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
 
+# The 4 jobs below, do not depend on the packaging stage. So they are ran always, even if package stage can fail.
 deploy_to_docker_registries:
   stage: deploy
   rules:
     - if: '$POPULATE_CACHE'
       when: never
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: on_success
+      when: always
     - when: manual
       allow_failure: true
   trigger:
@@ -123,7 +128,7 @@ deploy_musl_tag_to_docker_registries:
     - if: '$POPULATE_CACHE'
       when: never
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: on_success
+      when: always
     - when: manual
       allow_failure: true
   trigger:
@@ -141,7 +146,7 @@ deploy_latest_tag_to_docker_registries:
     - if: '$POPULATE_CACHE'
       when: never
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: on_success
+      when: always
     - when: manual
       allow_failure: true
   trigger:
@@ -159,7 +164,7 @@ deploy_latest_musl_tag_to_docker_registries:
     - if: '$POPULATE_CACHE'
       when: never
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: on_success
+      when: always
     - when: manual
       allow_failure: true
   trigger:

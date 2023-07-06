@@ -3,7 +3,7 @@
 source common_build_functions.sh
 
 if [ -n "$CI_COMMIT_TAG" ] && [ -z "$DOTNET_PACKAGE_VERSION" ]; then
-  $DOTNET_PACKAGE_VERSION=${CI_COMMIT_TAG##v}
+  DOTNET_PACKAGE_VERSION=${CI_COMMIT_TAG##v}
 fi
 
 curl --location --fail \
