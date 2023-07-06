@@ -16,6 +16,7 @@ using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
+#nullable enable
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
     internal static class ProcessStartCommon
@@ -27,9 +28,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
 
-        internal static Scope CreateScope(ProcessStartInfo info)
+        internal static Scope? CreateScope(ProcessStartInfo? info)
         {
-            if (info != null)
+            if (info is not null)
             {
 #if NETCOREAPP3_1_OR_GREATER
                 return CreateScope(info.FileName, info.UseShellExecute ? null : info.Environment, info.UseShellExecute, info.Arguments, info.ArgumentList);
@@ -41,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return null;
         }
 
-        private static Scope CreateScope(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList = null)
+        private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
         {
             var tracer = Tracer.Instance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -50,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -74,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         /// <summary>
         /// Arguments > ArgumentList : If Arguments is used, ArgumentList is ignored. ArgumentsList is only used if Arguments is an empty string.
         /// </summary>
-        private static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string> environmentVariables, bool useShellExecute, string arguments, Collection<string> argumentList)
+        private static ProcessCommandStartTags PopulateTags(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList)
         {
             // Environment variables
             var variablesTruncated = EnvironmentVariablesScrubber.ScrubEnvironmentVariables(environmentVariables);
