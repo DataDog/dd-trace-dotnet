@@ -44,34 +44,24 @@ internal class TelemetryDataAggregator
             sendAppStarted: !_appStartedSent);
     }
 
-    public void SaveDataIfRequired(
-        TelemetryTransportResult retryResult,
-        in TelemetryInput input)
+    public void SaveDataIfRequired(bool success, in TelemetryInput input)
     {
-        switch (retryResult)
+        if (success)
         {
-            case TelemetryTransportResult.Success:
-                // This assumes that if we have sent the data, we sent _all_ the data
-                // This is true when we're ONLY ever sending single messages
-                // (as we are currently, using message-batch), but needs to be
-                // updated to be more granular if this changes
-                _previous = null;
-                if (input.SendAppStarted)
-                {
-                    _appStartedSent = true;
-                }
-
-                break;
-
-            case TelemetryTransportResult.FatalError:
-                // Fatal, just don't hold any reference, we're giving up
-                _previous = null;
-                break;
-
-            case TelemetryTransportResult.TransientError:
-                // We should retry using this data next time (if we have sent something)
-                _previous = input;
-                break;
+            // This assumes that if we have sent the data, we sent _all_ the data
+            // This is true when we're ONLY ever sending single messages
+            // (as we are currently, using message-batch), but needs to be
+            // updated to be more granular if this changes
+            _previous = null;
+            if (input.SendAppStarted)
+            {
+                _appStartedSent = true;
+            }
+        }
+        else
+        {
+            // We should retry using this data next time (if we have something to send)
+            _previous = input;
         }
     }
 
@@ -137,88 +127,6 @@ internal class TelemetryDataAggregator
             }
 
             updatedValues.Add(previousValue);
-        }
-
-        return updatedValues;
-    }
-
-    private ICollection<MetricData>? CombineWith(ICollection<MetricData>? newValues)
-    {
-        var previous = _previous?.Metrics;
-        if (previous is null)
-        {
-            return newValues;
-        }
-
-        if (newValues is null)
-        {
-            return previous;
-        }
-
-        var updatedValues = new List<MetricData>();
-        updatedValues.AddRange(newValues);
-
-        // Yeah, this kinda sucks, but it's happening in a separate thread once a minute
-        // so shouldn't be a big issue
-        foreach (var previousValue in previous)
-        {
-            var found = false;
-            foreach (var newValue in newValues)
-            {
-                if (newValue.Metric == previousValue.Metric)
-                {
-                    // update the point that's already in the list
-                    newValue.Points.AddRange(previousValue.Points);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                updatedValues.Add(previousValue);
-            }
-        }
-
-        return updatedValues;
-    }
-
-    private ICollection<DistributionMetricData>? CombineWith(ICollection<DistributionMetricData>? newValues)
-    {
-        var previous = _previous?.Distributions;
-        if (previous is null)
-        {
-            return newValues;
-        }
-
-        if (newValues is null)
-        {
-            return previous;
-        }
-
-        var updatedValues = new List<DistributionMetricData>();
-        updatedValues.AddRange(newValues);
-
-        // Yeah, this kinda sucks, but it's happening in a separate thread once a minute
-        // so shouldn't be a big issue
-        foreach (var previousValue in previous)
-        {
-            var found = false;
-            foreach (var newValue in newValues)
-            {
-                if (newValue.Metric == previousValue.Metric)
-                {
-                    // update the point that's already in the list
-                    newValue.Points.AddRange(previousValue.Points);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found)
-            {
-                updatedValues.Add(previousValue);
-            }
         }
 
         return updatedValues;

@@ -189,28 +189,24 @@ public class TelemetryDataAggregatorTests
     }
 
     [Fact]
-    public void SaveDataIfRequired_TransientError_SavesData()
+    public void SaveDataIfRequired_OnError_SavesData()
     {
         var aggregator = new TelemetryDataAggregator(previous: null);
-        var result = TelemetryTransportResult.TransientError;
         var next = GetPopulatedTelemetryInput();
 
-        aggregator.SaveDataIfRequired(result, in next);
+        aggregator.SaveDataIfRequired(success: false, in next);
 
         AssertStoredValues(aggregator, next);
     }
 
-    [Theory]
-    [InlineData((int)TelemetryTransportResult.Success)]
-    [InlineData((int)TelemetryTransportResult.FatalError)]
-    public void SaveDataIfRequired_SuccessOrFatal_DoesNotSaveData(int resultInt)
+    [Fact]
+    public void SaveDataIfRequired_Success_DoesNotSaveData()
     {
         var aggregator = new TelemetryDataAggregator(previous: null);
-        var result = (TelemetryTransportResult)resultInt;
         var next = GetPopulatedTelemetryInput();
         var expected = new TelemetryInput();
 
-        aggregator.SaveDataIfRequired(result, next);
+        aggregator.SaveDataIfRequired(success: true, next);
 
         AssertStoredValues(aggregator, expected);
     }
@@ -219,25 +215,21 @@ public class TelemetryDataAggregatorTests
     public void SaveDataIfRequired_OnSubsequentTransientError_ReplacesSavedData()
     {
         var aggregator = new TelemetryDataAggregator(previous: null);
-        var result = TelemetryTransportResult.TransientError;
         var expected = GetPopulatedTelemetryInput();
 
-        aggregator.SaveDataIfRequired(result, GetPopulatedTelemetryInput());
-        aggregator.SaveDataIfRequired(result, expected);
+        aggregator.SaveDataIfRequired(success: false, GetPopulatedTelemetryInput());
+        aggregator.SaveDataIfRequired(success: false, expected);
 
         AssertStoredValues(aggregator, expected);
     }
 
-    [Theory]
-    [InlineData((int)TelemetryTransportResult.Success)]
-    [InlineData((int)TelemetryTransportResult.FatalError)]
-    public void SaveDataIfRequired_OnSubsequentSuccessOrFatal_ClearsSavedData(int resultInt)
+    [Fact]
+    public void SaveDataIfRequired_OnSubsequentSuccess_ClearsSavedData()
     {
         var aggregator = new TelemetryDataAggregator(previous: null);
-        var result = (TelemetryTransportResult)resultInt;
 
-        aggregator.SaveDataIfRequired(TelemetryTransportResult.TransientError, GetPopulatedTelemetryInput());
-        aggregator.SaveDataIfRequired(result, GetPopulatedTelemetryInput());
+        aggregator.SaveDataIfRequired(success: false, GetPopulatedTelemetryInput());
+        aggregator.SaveDataIfRequired(success: true, GetPopulatedTelemetryInput());
 
         AssertStoredValues(aggregator, new TelemetryInput());
     }

@@ -134,7 +134,7 @@ namespace Datadog.Trace
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
-            telemetry ??= TelemetryFactory.Instance.CreateTelemetryController(settings);
+            telemetry ??= TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             var security = Security.Instance;
