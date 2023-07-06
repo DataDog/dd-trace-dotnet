@@ -521,11 +521,15 @@ partial class Build
                         }
                         else
                         {
+                            if (IsOsx)
+                            {
+                                // waf compat tests arent ran on osx
+                                continue;
+                            }
+
                             var (arch, _) = GetUnixArchitectureAndExtension();
                             var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                            var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
-                            var patchedArchWaf = (IsOsx ? archWaf + "-x64" : archWaf);
-                            var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
+                            var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                             foreach (var fmk in frameworks)
                             {
                                 // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
@@ -538,7 +542,7 @@ partial class Build
                                 var dest = testBinFolder / fmk;
 
                                 // use the files from the monitoring native folder
-                                CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                                CopyDirectoryRecursively(MonitoringHomeDirectory / arch, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
 
                                 CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
                             }
