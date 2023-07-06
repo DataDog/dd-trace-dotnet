@@ -114,7 +114,7 @@ deploy_to_docker_registries:
     strategy: depend
   variables:
     IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:a24504f6005f9c914cfebf5d0019bd31662f3039
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG
+    IMG_DESTINATIONS: dd-lib-dotnet-init:v2.33.0
     IMG_SIGNING: "false"
 
 deploy_musl_tag_to_docker_registries:
@@ -132,7 +132,7 @@ deploy_musl_tag_to_docker_registries:
     strategy: depend
   variables:
     IMG_SOURCES: ghcr.io/datadog/dd-trace-dotnet/dd-lib-dotnet-init:a24504f6005f9c914cfebf5d0019bd31662f3039-musl
-    IMG_DESTINATIONS: dd-lib-dotnet-init:$CI_COMMIT_TAG-musl
+    IMG_DESTINATIONS: dd-lib-dotnet-init:v2.33.0-musl
     IMG_SIGNING: "false"
 
 deploy_latest_tag_to_docker_registries:
