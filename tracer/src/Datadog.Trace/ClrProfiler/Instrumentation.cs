@@ -354,7 +354,6 @@ namespace Datadog.Trace.ClrProfiler
             if (sw != null)
             {
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, sw.ElapsedMilliseconds);
-                Console.WriteLine("No Native Parts: {0}", sw.Elapsed.TotalMilliseconds);
                 sw.Restart();
             }
         }
