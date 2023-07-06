@@ -16,8 +16,9 @@ internal readonly struct TelemetryInput
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
         MetricResults? metrics,
-        ProductsData? products)
-    : this(configuration, dependencies, integrations, metrics?.Metrics, metrics?.Distributions, products)
+        ProductsData? products,
+        bool sendAppStarted)
+    : this(configuration, dependencies, integrations, metrics?.Metrics, metrics?.Distributions, products, sendAppStarted)
     {
     }
 
@@ -27,7 +28,8 @@ internal readonly struct TelemetryInput
         ICollection<IntegrationTelemetryData>? integrations,
         ICollection<MetricData>? metrics,
         ICollection<DistributionMetricData>? distributions,
-        ProductsData? products)
+        ProductsData? products,
+        bool sendAppStarted)
     {
         Configuration = configuration;
         Dependencies = dependencies;
@@ -35,7 +37,10 @@ internal readonly struct TelemetryInput
         Metrics = metrics;
         Distributions = distributions;
         Products = products;
+        SendAppStarted = sendAppStarted;
     }
+
+    public bool SendAppStarted { get; }
 
     public ICollection<ConfigurationKeyValue>? Configuration { get; }
 
