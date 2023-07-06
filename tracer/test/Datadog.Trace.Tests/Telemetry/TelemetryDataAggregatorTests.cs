@@ -25,8 +25,8 @@ public class TelemetryDataAggregatorTests
         result.Configuration.Should().BeSameAs(previous.Configuration);
         result.Dependencies.Should().BeSameAs(previous.Dependencies);
         result.Integrations.Should().BeSameAs(previous.Integrations);
-        result.Metrics.Should().BeSameAs(previous.Metrics);
-        result.Distributions.Should().BeSameAs(previous.Distributions);
+        result.Metrics.Should().BeNull(); // we don't store metrics
+        result.Distributions.Should().BeNull(); // we don't store distributions
         result.Products.Should().BeSameAs(previous.Products);
     }
 
@@ -69,17 +69,15 @@ public class TelemetryDataAggregatorTests
         var currentProducts = new ProductsData { Appsec = new(true, null) };
         var previousProducts = new ProductsData { Profiler = new(true, null) };
 
-        var previousMetrics = new List<MetricData> { new("tracer.start", new MetricSeries { new(1234, 5) }, true, "common") };
         var currentMetrics = new List<MetricData> { new("tracer.stop", new MetricSeries { new(123, 5) }, false, "common") };
 
-        var previousDistributions = new List<DistributionMetricData> { new("span.serialize.ms", new() { 12.5, 354 }, false) };
         var currentDistributions = new List<DistributionMetricData> { new("span.send.ms", new() { 12.5, 354 }, false) };
 
         var previous = new TelemetryInput(
             previousConfig,
             previousDeps,
             previousIntegrations,
-            new MetricResults(previousMetrics, previousDistributions),
+            null, // we don't save previous metrics and distributions
             previousProducts,
             sendAppStarted: false);
 
@@ -106,86 +104,15 @@ public class TelemetryDataAggregatorTests
                .And.Contain(previousIntegrations);
         results.Metrics
                .Should()
-               .Contain(currentMetrics)
-               .And.Contain(previousMetrics);
+               .Contain(currentMetrics);
         results.Distributions
                .Should()
-               .Contain(currentDistributions)
-               .And.Contain(previousDistributions);
+               .Contain(currentDistributions);
 
         var products = results.Products;
         products.Should().NotBeNull();
         products.Appsec.Should().Be(currentProducts.Appsec);
         products.Profiler.Should().Be(previousProducts.Profiler);
-    }
-
-    [Fact]
-    public void GetCombinedConfiguration_WhenHaveCurrent_AndPrevious_CombinesMetricPointsIntoSingleMetric()
-    {
-        const string metric = "tracer.start";
-        const string distribution = "span.serialize.ms";
-        var previousMetrics = new List<MetricData>
-        {
-            new(metric, new MetricSeries { new(1234, 5) }, true, "count"),
-            new("previous.metric", new MetricSeries { new(1234, 5) }, true, "count"),
-        };
-        var currentMetrics = new List<MetricData>
-        {
-            new(metric, new MetricSeries { new(1245, 23) }, false, "count"),
-            new("current.metric", new MetricSeries { new(1234, 5) }, true, "count"),
-        };
-
-        var previousDistributions = new List<DistributionMetricData>
-        {
-            new(distribution, new() { 1, 2.3 }, false),
-            new("previous.dist", new() { 1, 2.3 }, false),
-        };
-        var currentDistributions = new List<DistributionMetricData>
-        {
-            new(distribution, new() { 3, 4 }, false),
-            new("current.dist", new() { 3, 4 }, false),
-        };
-
-        var previous = new TelemetryInput(
-            null,
-            null,
-            null,
-            new MetricResults(previousMetrics, previousDistributions),
-            null,
-            sendAppStarted: false);
-
-        var aggregator = new TelemetryDataAggregator(previous);
-
-        var results = aggregator.Combine(
-            null,
-            null,
-            null,
-            new MetricResults(currentMetrics, currentDistributions),
-            null);
-
-        results.Configuration.Should().BeNull();
-        results.Dependencies.Should().BeNull();
-        results.Integrations.Should().BeNull();
-        results.Products.Should().BeNull();
-
-        var expectedMetrics = new[] { new { Metric = metric }, new { Metric = "previous.metric" }, new { Metric = "current.metric" }, };
-        var metricValue = results.Metrics
-                                 .Should()
-                                 .BeEquivalentTo(expectedMetrics)
-                                 .And.ContainSingle(x => x.Metric == metric)
-                                 .Subject;
-
-        metricValue.Points.Should().Contain(previousMetrics[0].Points);
-        metricValue.Points.Should().Contain(currentMetrics[0].Points);
-
-        var expectedDistributions = new[] { new { Metric = distribution }, new { Metric = "previous.dist" }, new { Metric = "current.dist" }, };
-        var distributionValue = results.Distributions.Should()
-                                       .BeEquivalentTo(expectedDistributions)
-                                       .And.ContainSingle(x => x.Metric == distribution)
-                                       .Subject;
-
-        distributionValue.Points.Should().Contain(previousDistributions[0].Points);
-        distributionValue.Points.Should().Contain(currentDistributions[0].Points);
     }
 
     [Fact]
@@ -285,22 +212,8 @@ public class TelemetryDataAggregatorTests
             result.Products.Should().BeNull();
         }
 
-        if (expected.Metrics is { } expectedMetrics)
-        {
-            result.Metrics.Should().BeSameAs(expectedMetrics);
-        }
-        else
-        {
-            result.Metrics.Should().BeNull();
-        }
-
-        if (expected.Distributions is { } expectedDistributions)
-        {
-            result.Distributions.Should().BeSameAs(expectedDistributions);
-        }
-        else
-        {
-            result.Distributions.Should().BeNull();
-        }
+        // We don't store metrics or distributions
+        result.Metrics.Should().BeNull();
+        result.Distributions.Should().BeNull();
     }
 }

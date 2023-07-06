@@ -38,8 +38,7 @@ internal class TelemetryDataAggregator
             CombineWith(configuration),
             CombineWith(dependencies),
             CombineWith(integrations),
-            CombineWith(metrics?.Metrics),
-            CombineWith(metrics?.Distributions),
+            metrics,
             CombineWith(products),
             sendAppStarted: !_appStartedSent);
     }
@@ -61,7 +60,14 @@ internal class TelemetryDataAggregator
         else
         {
             // We should retry using this data next time (if we have something to send)
-            _previous = input;
+            // but we discard the metrics data as this could quickly accumulate otherwise
+            _previous = new TelemetryInput(
+                input.Configuration,
+                input.Dependencies,
+                input.Integrations,
+                metrics: null,
+                products: input.Products,
+                input.SendAppStarted);
         }
     }
 
