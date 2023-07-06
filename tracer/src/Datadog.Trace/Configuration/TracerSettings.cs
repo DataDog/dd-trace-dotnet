@@ -81,7 +81,7 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Metrics.Record(PublicApiUsage.TracerSettings_Ctor_Source);
         }
 
-        internal TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        internal unsafe TracerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
             var commaSeparator = new[] { ',' };
             source ??= NullConfigurationSource.Instance;
@@ -141,12 +141,22 @@ namespace Datadog.Trace.Configuration
             GlobalTagsInternal = config
                          // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
-                        .AsDictionary()
-                       // Filter out tags with empty keys or empty values, and trim whitespace
-                       ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-                        .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim())
+                        .AsDictionary(&GlobalTagsSelector)
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
+
+            // Filter out tags with empty keys or empty values, and trim whitespace
+            static bool GlobalTagsSelector(ref string key, ref string value)
+            {
+                if (string.IsNullOrWhiteSpace(key) || string.IsNullOrWhiteSpace(value))
+                {
+                    return false;
+                }
+
+                key = key.Trim();
+                value = value.Trim();
+                return true;
+            }
 
             var headerTagsNormalizationFixEnabled = config
                                                    .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)

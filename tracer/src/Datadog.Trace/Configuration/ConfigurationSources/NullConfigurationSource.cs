@@ -24,4 +24,8 @@ internal class NullConfigurationSource : IConfigurationSource
     public IDictionary<string, string>? GetDictionary(string key) => null;
 
     public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) => null;
+
+    public unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector) => null;
+
+    public unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector) => null;
 }

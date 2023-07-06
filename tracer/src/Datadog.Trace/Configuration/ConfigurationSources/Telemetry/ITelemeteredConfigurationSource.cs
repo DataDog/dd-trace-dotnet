@@ -95,6 +95,31 @@ internal interface ITelemeteredConfigurationSource
     /// </summary>
     /// <param name="key">The key that identifies the setting.</param>
     /// <param name="telemetry">The context for recording telemetry.</param>
+    /// <param name="validator">An optional validation function that must be applied to
+    /// a successfully extracted value to determine if it should be accepted</param>
+    /// <param name="selector">Selector for dictionary</param>
+    /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+    unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector);
+
+    /// <summary>
+    /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+    /// the setting with the specified key.
+    /// </summary>
+    /// <param name="key">The key that identifies the setting.</param>
+    /// <param name="telemetry">The context for recording telemetry.</param>
+    /// <param name="validator">An optional validation function that must be applied to
+    /// a successfully extracted value to determine if it should be accepted</param>
+    /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
+    /// <param name="selector">Selector for dictionary</param>
+    /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+    unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector);
+
+    /// <summary>
+    /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+    /// the setting with the specified key.
+    /// </summary>
+    /// <param name="key">The key that identifies the setting.</param>
+    /// <param name="telemetry">The context for recording telemetry.</param>
     /// <param name="converter">A converter that parses the "raw" string configuration value into the expected value.</param>
     /// <param name="validator">An optional validation function that must be applied to
     /// a successfully extracted value to determine if it should be accepted</param>

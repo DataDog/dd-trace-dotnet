@@ -69,5 +69,26 @@ namespace Datadog.Trace.Configuration
         /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
         [PublicApi]
         IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings);
+
+        /// <summary>
+        /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+        /// the setting with the specified key.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="selector">Selector for dictionary</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
+        unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector);
+
+        /// <summary>
+        /// Gets the <see cref="IDictionary{TKey, TValue}"/> value of
+        /// the setting with the specified key.
+        /// </summary>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
+        /// <param name="selector">Selector for dictionary</param>
+        /// <returns>The value of the setting, or <c>null</c> if not found.</returns>
+        [PublicApi]
+        unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector);
     }
 }

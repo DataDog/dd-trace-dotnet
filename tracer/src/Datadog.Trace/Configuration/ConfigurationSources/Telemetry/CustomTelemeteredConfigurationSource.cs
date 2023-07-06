@@ -109,10 +109,19 @@ internal class CustomTelemeteredConfigurationSource : ITelemeteredConfigurationS
     public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
         => GetDictionary(key, telemetry, validator, allowOptionalMappings: false);
 
-    public ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+    public unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+    {
+        return GetDictionary(key, telemetry, validator, allowOptionalMappings, &Selector);
+        static bool Selector(ref string key, ref string value) => true;
+    }
+
+    public unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector)
+        => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, selector: selector);
+
+    public unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
     {
 #pragma warning disable DD0002 // This class is intentionally a wrapper around IConfigurationSource
-        var result = Source.GetDictionary(key, allowOptionalMappings);
+        var result = Source.GetDictionary(key, allowOptionalMappings, selector);
 #pragma warning restore DD0002
         if (result is null)
         {

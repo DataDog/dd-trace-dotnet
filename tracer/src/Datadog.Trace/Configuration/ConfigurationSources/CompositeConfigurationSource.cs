@@ -76,8 +76,15 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public string? GetString(string key)
         {
-            return _sources.Select(source => source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true))
-                           .FirstOrDefault(value => value != null)?.Result;
+            foreach (var source in _sources)
+            {
+                if (source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -104,8 +111,15 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public double? GetDouble(string key)
         {
-            return _sources.Select(source => source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            foreach (var source in _sources)
+            {
+                if (source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -118,8 +132,15 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public bool? GetBool(string key)
         {
-            return _sources.Select(source => source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            foreach (var source in _sources)
+            {
+                if (source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         internal void AddInternal(IConfigurationSource source)
@@ -154,44 +175,186 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key)
         {
-            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         /// <inheritdoc />
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
-            return _sources.Select(source => source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings))
-                           .FirstOrDefault(value => value != null)?.Result;
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
+        }
+
+        /// <inheritdoc />
+        [PublicApi]
+        public unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector)
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, selector: selector) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
+        }
+
+        /// <inheritdoc />
+        [PublicApi]
+        public unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, selector: selector) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
-            => _sources.Select(source => source.GetString(key, telemetry, validator, recordValue)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetString(key, telemetry, validator, recordValue) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
-            => _sources.Select(source => source.GetInt32(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetInt32(key, telemetry, validator) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
-            => _sources.Select(source => source.GetDouble(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDouble(key, telemetry, validator) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
-            => _sources.Select(source => source.GetBool(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetBool(key, telemetry, validator) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
-            => _sources.Select(source => source.GetDictionary(key, telemetry, validator)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, telemetry, validator) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
-            => _sources.Select(source => source.GetDictionary(key, telemetry, validator, allowOptionalMappings)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, telemetry, validator, allowOptionalMappings) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
+
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector)
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, telemetry, validator, selector) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
+
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetDictionary(key, telemetry, validator, allowOptionalMappings, selector) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
 
         /// <inheritdoc />
         ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
-            => _sources.Select(source => source.GetAs<T>(key, telemetry, converter, validator, recordValue)).FirstOrDefault(value => value != null);
+        {
+            foreach (var source in _sources)
+            {
+                if (source.GetAs(key, telemetry, converter, validator, recordValue) is { } result)
+                {
+                    return result;
+                }
+            }
+
+            return default;
+        }
     }
 }
