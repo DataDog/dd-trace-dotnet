@@ -34,6 +34,16 @@ namespace Datadog.Trace.Security.Unit.Tests.Iast
             return null;
         }
 
+        public unsafe IDictionary<string, string> GetDictionary(string key, delegate*<ref string, ref string, bool> selector)
+        {
+            return null;
+        }
+
+        public unsafe IDictionary<string, string> GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+        {
+            return null;
+        }
+
         public double? GetDouble(string key)
         {
             CustomSettings.TryGetValue(key, out object result);

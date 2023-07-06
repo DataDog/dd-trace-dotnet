@@ -23,6 +23,7 @@ internal sealed class DatadogDeferredSink : ILogEventSink, IFlushableFileSink, I
 #if !NETCOREAPP
     private readonly WaitCallback _waitCallback;
 #endif
+    private long _active;
 
     public DatadogDeferredSink(ILogEventSink sink)
     {
@@ -31,16 +32,20 @@ internal sealed class DatadogDeferredSink : ILogEventSink, IFlushableFileSink, I
 #if !NETCOREAPP
         _waitCallback = InternalWaitCallBackDelegate;
 #endif
+        _active = 0;
     }
 
     public void Emit(LogEvent logEvent)
     {
         _queue.Enqueue(logEvent);
+        if (Interlocked.CompareExchange(ref _active, 1, 0) == 0)
+        {
 #if !NETCOREAPP
-        ThreadPool.UnsafeQueueUserWorkItem(_waitCallback, null);
+            ThreadPool.UnsafeQueueUserWorkItem(_waitCallback, null);
 #else
-        ThreadPool.UnsafeQueueUserWorkItem(this, true);
+            ThreadPool.UnsafeQueueUserWorkItem(this, true);
 #endif
+        }
     }
 
     public void FlushToDisk()
@@ -75,9 +80,16 @@ internal sealed class DatadogDeferredSink : ILogEventSink, IFlushableFileSink, I
     void IThreadPoolWorkItem.Execute()
 #endif
     {
-        while (_queue.TryDequeue(out var logItem))
+        try
         {
-            _sink.Emit(logItem);
+            while (_queue.TryDequeue(out var logItem))
+            {
+                _sink.Emit(logItem);
+            }
+        }
+        finally
+        {
+            Interlocked.Exchange(ref _active, 0);
         }
     }
 }
