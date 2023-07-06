@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
@@ -243,5 +244,33 @@ public class TelemetryControllerV2Tests
         }
 
         public string GetTransportInfo() => nameof(TestTelemetryTransport);
+    }
+
+    internal class SlowTelemetryTransport : ITelemetryTransport
+    {
+        private readonly TimeSpan _delay;
+        private int _requests = 0;
+
+        public SlowTelemetryTransport(TimeSpan delay)
+        {
+            _delay = delay;
+        }
+
+        public int Requests => Volatile.Read(ref _requests);
+
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
+        {
+            await Task.Yield();
+            throw new InvalidOperationException("Shouldn't be using v1 API");
+        }
+
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+        {
+            Interlocked.Increment(ref _requests);
+            await Task.Delay(_delay);
+            return TelemetryPushResult.Success;
+        }
+
+        public string GetTransportInfo() => nameof(SlowTelemetryTransport);
     }
 }
