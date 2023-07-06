@@ -14,13 +14,12 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 {
     internal class RemoteConfigurationSettings
     {
-        internal const int DefaultPollIntervalMilliseconds = 5000;
+        internal const double DefaultPollIntervalSeconds = 5;
 
         public RemoteConfigurationSettings(IConfigurationSource? configurationSource, IConfigurationTelemetry telemetry)
         {
             configurationSource ??= NullConfigurationSource.Instance;
 
-            Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
             TracerVersion = TracerConstants.ThreePartVersion;
 
@@ -28,12 +27,10 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 #pragma warning disable CS0618
                               .WithKeys(ConfigurationKeys.Rcm.PollInterval, ConfigurationKeys.Rcm.PollIntervalInternal)
 #pragma warning restore CS0618
-                              .AsInt32(DefaultPollIntervalMilliseconds, pollInterval => pollInterval is > 0 and <= 5000);
+                              .AsDouble(DefaultPollIntervalSeconds, pollInterval => pollInterval is > 0 and <= 5);
 
-            PollInterval = TimeSpan.FromMilliseconds(pollInterval.Value);
+            PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
         }
-
-        public string Id { get; }
 
         public string RuntimeId { get; }
 

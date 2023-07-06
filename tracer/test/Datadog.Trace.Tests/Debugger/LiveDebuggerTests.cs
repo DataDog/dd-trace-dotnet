@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 
@@ -144,6 +145,16 @@ public class LiveDebuggerTests
         {
             throw new NotImplementedException();
         }
+
+        public GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string lastPollError)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ProcessResponse(GetRcmResponse response)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     private class LineProbeResolverMock : ILineProbeResolver
@@ -190,14 +201,25 @@ public class LiveDebuggerTests
             Called = true;
         }
 
-        public void AddProbes(string[] newProbes)
+        public void AddProbes(FetchProbeStatus[] newProbes)
         {
             Called = true;
         }
 
-        public void RemoveProbes(string[] newProbes)
+        public void RemoveProbes(string[] removeProbes)
         {
             Called = true;
+        }
+
+        public void UpdateProbes(string[] probeIds, FetchProbeStatus[] newProbeStatuses)
+        {
+            Called = true;
+        }
+
+        public string[] GetFetchedProbes(string[] candidateProbeIds)
+        {
+            Called = true;
+            return candidateProbeIds;
         }
 
         public void Dispose()

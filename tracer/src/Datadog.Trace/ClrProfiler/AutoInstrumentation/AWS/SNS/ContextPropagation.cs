@@ -6,6 +6,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
@@ -26,7 +27,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(resultString);
+            byte[] bytes = Encoding.UTF8.GetBytes(resultString);
+            MemoryStream stream = new MemoryStream(bytes);
+            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)

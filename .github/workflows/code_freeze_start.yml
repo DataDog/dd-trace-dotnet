@@ -9,65 +9,40 @@ jobs:
   start_code_freeze:
     if: | 
       github.event_name == 'workflow_dispatch' || 
-      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open') 
+      (github.event.milestone.title == 'Code Freeze' && github.event.milestone.state == 'open')
     runs-on: ubuntu-latest
     env:
       GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
-    - uses: octokit/request-action@v2.x
-      name: 'Open Code Freeze Milestone'
-      id: milestones
-      if: github.event_name == 'workflow_dispatch'
-      with:
-        route: PATCH /repos/{owner}/{repo}/milestones/115
-        owner: DataDog
-        repo: dd-trace-dotnet
-        state: open
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - name: Clone dd-trace-dotnet repository
+        uses: actions/checkout@v3
 
-    - uses: octokit/request-action@v2.x
-      name: 'Get open PRs'
-      id: prs
-      with:
-        route: GET /repos/{owner}/{repo}/pulls
-        owner: DataDog
-        repo: dd-trace-dotnet
-        state: open
-        base: master
-        per_page: 100 # max value, for simplicity. If we have more than 100 pull requests open, then we need to revisit!
-      env:
-        GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 1
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - run: |
-        set -o pipefail
-        json=$(cat << 'ENDOFMESSAGE'
-          ${{ steps.prs.outputs.data }}
-        ENDOFMESSAGE
-        )
-        arrayLength=$(echo $json | jq -r 'length')
-        echo "Updating code freeze  status for $arrayLength PRs" 
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 2
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-        arrayLength=$((arrayLength-1))
-        for i in $(seq 0 $arrayLength); do
-          title=$(echo $json | jq -r ".[$i].title")
-          echo "Setting code freeze for '$title'" 
-          sha=$(echo $json | jq -r ".[$i].head.sha")
-          targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/code_freeze_start.yml"
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 3
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-          curl -X POST \
-            -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
-              -d '{"state":"failure","context":"code_freeze","description":"A code freeze is in place","target_url":"'"$targetUrl"'"}'
-        done
-      name: 'Update all PRs with Code Freeze status'
+      - uses: ./.github/actions/code-freeze
+        name: 'Freeze 25 PRs'
+        with:
+          page_number: 4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Trigger AAS deploy
-      run: |
-        curl -X POST \
-        -H "Accept: application/vnd.github.v3+json" \
-        -H "Authorization: Bearer ${{ secrets.GH_TOKEN_PIERO }}" \
-        https://api.github.com/repos/DataDog/datadog-aas-extension/dispatches \
-        -d '{"event_type": "dd-trace-code-freeze", "client_payload": {"sha":"'"$GITHUB_SHA"'" } }'
+      - uses: ./.github/actions/deploy-aas-dev-apps
+        name: 'Trigger AAS deploy'
+        with:
+          aas_github_token: ${{ secrets.GH_TOKEN_PIERO }}

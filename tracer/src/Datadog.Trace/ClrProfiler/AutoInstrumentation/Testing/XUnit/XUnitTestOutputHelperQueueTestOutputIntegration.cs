@@ -9,6 +9,8 @@ using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Logging.DirectSubmission;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging.DirectSubmission;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -50,6 +52,7 @@ public static class XUnitTestOutputHelperQueueTestOutputIntegration
 
         if (Test.Current?.GetInternalSpan() is { } span)
         {
+            TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.XUnit);
             tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new CIVisibilityLogEvent("xunit", "info", output, span));
         }
 

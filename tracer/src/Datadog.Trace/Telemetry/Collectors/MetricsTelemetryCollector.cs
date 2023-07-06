@@ -16,8 +16,10 @@ namespace Datadog.Trace.Telemetry;
 
 internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 {
+    private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private MetricBuffer _buffer;
     private MetricBuffer _reserveBuffer;
+    private string[]? _wafVersionTags;
 
     public MetricsTelemetryCollector()
     {
@@ -50,6 +52,12 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return new(metricData, distributionData);
     }
 
+    public void SetWafVersion(string wafVersion)
+    {
+        // Setting this an array so we can reuse it for multiple metrics
+        _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
+    }
+
     public void Clear()
     {
         _reserveBuffer.Clear();
@@ -57,7 +65,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         buffer.Clear();
     }
 
-    private static List<MetricData>? GetMetricData(int[] publicApis, MetricKey[] counts, MetricKey[] gauges)
+    private List<MetricData>? GetMetricData(int[] publicApis, MetricKey[] counts, MetricKey[] gauges)
     {
         var apiLength = publicApis.Count(x => x > 0);
         var countsLength = counts.Count(x => x.Value > 0);
@@ -83,14 +91,17 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     value = int.MaxValue;
                 }
 
-                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } metricName)
+                if (value > 0 && ((PublicApiUsage)i).ToStringFast() is { } tagName)
                 {
                     data.Add(
                         new MetricData(
-                            metricName,
+                            "public_api",
                             points: new MetricSeries { new(timestamp, value) },
                             common: false,
-                            type: TelemetryMetricType.Count));
+                            type: TelemetryMetricType.Count)
+                        {
+                            Tags = new[] { tagName }, // Annoying, should try to optimise this
+                        });
                 }
             }
         }
@@ -98,7 +109,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         if (countsLength > 0)
         {
             var index = counts.Length - 1;
-            for (var i = CountExtensions.Length - 1; i >= 0; i--)
+            for (var i = CountEntryCounts.Length - 1; i >= 0; i--)
             {
                 var metric = (Count)i;
                 var entries = CountEntryCounts[i];
@@ -114,12 +125,17 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
                     if (value > 0 && metric.GetName() is { } metricName)
                     {
+                        var ns = metric.GetNamespace();
                         data.Add(
                             new MetricData(
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Count) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Count)
+                            {
+                                Namespace = ns,
+                                Tags = GetTags(ns, metricKey.Tags),
+                            });
                     }
 
                     index--;
@@ -130,7 +146,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         if (gaugesLength > 0)
         {
             var index = gauges.Length - 1;
-            for (var i = GaugeExtensions.Length - 1; i >= 0; i--)
+            for (var i = GaugeEntryCounts.Length - 1; i >= 0; i--)
             {
                 var metric = (Gauge)i;
                 var entries = GaugeEntryCounts[i];
@@ -140,12 +156,17 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     var value = metricKey.Value;
                     if (value > 0 && metric.GetName() is { } metricName)
                     {
+                        var ns = metric.GetNamespace();
                         data.Add(
                             new MetricData(
                                 metricName,
                                 points: new MetricSeries { new(timestamp, value) },
                                 common: metric.IsCommon(),
-                                type: TelemetryMetricType.Gauge) { Tags = metricKey.Tags });
+                                type: TelemetryMetricType.Gauge)
+                            {
+                                Namespace = ns,
+                                Tags = GetTags(ns, metricKey.Tags)
+                            });
                     }
 
                     index--;
@@ -156,7 +177,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return data;
     }
 
-    private static List<DistributionMetricData>? GetDistributionData(DistributionKey[] distributions)
+    private List<DistributionMetricData>? GetDistributionData(DistributionKey[] distributions)
     {
         var distributionsLength = distributions.Count(x => x.Values.Count > 0);
 
@@ -168,7 +189,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         var data = new List<DistributionMetricData>(distributionsLength);
 
         var index = distributions.Length - 1;
-        for (var i = DistributionExtensions.Length - 1; i >= 0; i--)
+        for (var i = DistributionEntryCounts.Length - 1; i >= 0; i--)
         {
             var metric = (Distribution)i;
             var entries = DistributionEntryCounts[i];
@@ -184,11 +205,16 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                         points.Add(point);
                     }
 
+                    var ns = metric.GetNamespace();
                     data.Add(
                         new DistributionMetricData(
                             metricName,
                             points: points,
-                            common: metric.IsCommon()) { Tags = metricKey.Tags, });
+                            common: metric.IsCommon())
+                        {
+                            Namespace = ns,
+                            Tags = GetTags(ns, metricKey.Tags),
+                        });
                 }
 
                 index--;
@@ -196,6 +222,24 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
 
         return data;
+    }
+
+    private string[]? GetTags(string? ns, string[]? metricKeyTags)
+    {
+        if (ns != MetricNamespaceConstants.ASM)
+        {
+            return metricKeyTags;
+        }
+
+        if (metricKeyTags is null)
+        {
+            return _wafVersionTags ?? _unknownWafVersionTags;
+        }
+
+        var wafVersionTag = (_wafVersionTags ?? _unknownWafVersionTags)[0];
+
+        metricKeyTags[0] = wafVersionTag;
+        return metricKeyTags;
     }
 
     private record struct MetricKey
@@ -269,22 +313,22 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
         public void Clear()
         {
-            for (var i = 0; i < PublicApiUsageExtensions.Length; i++)
+            for (var i = 0; i < PublicApiCounts.Length; i++)
             {
                 PublicApiCounts[i] = 0;
             }
 
-            for (var i = 0; i < CountExtensions.Length; i++)
+            for (var i = 0; i < Counts.Length; i++)
             {
                 Counts[i].Value = 0;
             }
 
-            for (var i = 0; i < GaugeExtensions.Length; i++)
+            for (var i = 0; i < Gauges.Length; i++)
             {
                 Gauges[i].Value = 0;
             }
 
-            for (var i = 0; i < DistributionExtensions.Length; i++)
+            for (var i = 0; i < Distributions.Length; i++)
             {
                 while (Distributions[i].Values.TryDequeue(out _)) { }
             }

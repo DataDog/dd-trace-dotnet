@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -27,7 +28,7 @@ namespace Datadog.Trace.Configuration
     public class JsonConfigurationSource : IConfigurationSource, ITelemeteredConfigurationSource
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(JsonConfigurationSource));
-        private readonly JObject? _configuration;
+        private readonly JToken? _configuration;
         private readonly ConfigurationOrigins _origin;
 
         /// <summary>
@@ -39,13 +40,21 @@ namespace Datadog.Trace.Configuration
         public JsonConfigurationSource(string json)
             : this(json, ConfigurationOrigins.Code)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_Ctor_Json);
         }
 
         internal JsonConfigurationSource(string json, ConfigurationOrigins origin)
+            : this(json, origin, j => (JToken?)JsonConvert.DeserializeObject(j))
+        {
+        }
+
+        private protected JsonConfigurationSource(string json, ConfigurationOrigins origin, Func<string, JToken?> deserialize)
         {
             if (json is null) { ThrowHelper.ThrowArgumentNullException(nameof(json)); }
 
-            _configuration = (JObject?)JsonConvert.DeserializeObject(json);
+            if (deserialize is null) { ThrowHelper.ThrowArgumentNullException(nameof(deserialize)); }
+
+            _configuration = deserialize(json);
             _origin = origin;
         }
 
@@ -57,7 +66,10 @@ namespace Datadog.Trace.Configuration
         /// <returns>The newly created configuration source.</returns>
         [PublicApi]
         public static JsonConfigurationSource FromFile(string filename)
-            => FromFile(filename, ConfigurationOrigins.Code);
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.JsonConfigurationSource_FromFile);
+            return FromFile(filename, ConfigurationOrigins.Code);
+        }
 
         internal static JsonConfigurationSource FromFile(string filename, ConfigurationOrigins origin)
         {
@@ -126,7 +138,7 @@ namespace Datadog.Trace.Configuration
 
         internal T? GetValueInternal<T>(string key)
         {
-            JToken? token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            JToken? token = SelectToken(key);
 
             return token == null
                        ? default
@@ -176,7 +188,7 @@ namespace Datadog.Trace.Configuration
 
         private IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
             if (token == null)
             {
                 return null;
@@ -186,8 +198,7 @@ namespace Datadog.Trace.Configuration
             {
                 try
                 {
-                    var dictionary = token
-                        ?.ToObject<ConcurrentDictionary<string, string>>();
+                    var dictionary = ConvertToDictionary(key, token);
                     return dictionary;
                 }
                 catch (Exception e)
@@ -203,7 +214,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
 
             try
             {
@@ -232,7 +243,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
 
             try
             {
@@ -261,7 +272,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
 
             try
             {
@@ -290,7 +301,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
 
             try
             {
@@ -319,7 +330,7 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
 
             try
             {
@@ -359,9 +370,16 @@ namespace Datadog.Trace.Configuration
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings);
 
+        private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
+
+        private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
+        {
+            return token.ToObject<ConcurrentDictionary<string, string>>();
+        }
+
         private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
         {
-            var token = _configuration?.SelectToken(key, errorWhenNoMatch: false);
+            var token = SelectToken(key);
             if (token == null)
             {
                 return null;
@@ -371,11 +389,11 @@ namespace Datadog.Trace.Configuration
 
             try
             {
-                if (token.Type == JTokenType.Object)
+                if (token.Type == JTokenType.Object || token.Type == JTokenType.Array)
                 {
                     try
                     {
-                        var dictionary = token.ToObject<ConcurrentDictionary<string, string>>();
+                        var dictionary = ConvertToDictionary(key, token);
                         if (dictionary is null)
                         {
                             return null;

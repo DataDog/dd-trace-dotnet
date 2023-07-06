@@ -317,6 +317,11 @@ struct MethodReference
 
 struct IntegrationDefinition
 {
+private:
+    UINT32 categories = 1;
+    UINT32 enabled_categories = 0;
+
+public:
     const MethodReference target_method;
     const TypeReference integration_type;
     const bool is_derived = false;
@@ -332,17 +337,22 @@ struct IntegrationDefinition
         integration_type(other.integration_type),
         is_derived(other.is_derived),
         is_interface(other.is_interface),
-        is_exact_signature_match(other.is_exact_signature_match)
+        is_exact_signature_match(other.is_exact_signature_match),
+        categories(other.categories),
+        enabled_categories(other.enabled_categories)
     {
     }
 
     IntegrationDefinition(const MethodReference& target_method, const TypeReference& integration_type, bool isDerived,
-                          bool is_interface, bool is_exact_signature_match) :
+                          bool is_interface, bool is_exact_signature_match, UINT32 categories = 1,
+                          UINT32 enabledCategories = -1) :
         target_method(target_method),
         integration_type(integration_type),
         is_derived(isDerived),
         is_interface(is_interface),
-        is_exact_signature_match(is_exact_signature_match)
+        is_exact_signature_match(is_exact_signature_match),
+        categories(categories),
+        enabled_categories(categories & enabledCategories)
     {
     }
 
@@ -350,7 +360,25 @@ struct IntegrationDefinition
     {
         return target_method == other.target_method && integration_type == other.integration_type &&
                is_derived == other.is_derived && is_interface == other.is_interface &&
-               is_exact_signature_match == other.is_exact_signature_match;
+               is_exact_signature_match == other.is_exact_signature_match && categories == other.categories;
+    }
+
+    inline bool GetEnabled() const
+    {
+        return enabled_categories != 0;
+    }
+    inline bool SetEnabled(bool enabled, UINT32 categories_ = -1)
+    {
+        auto enabledCategories = categories & categories_;
+        if (enabled)
+        {
+            enabled_categories |= enabledCategories;
+        }
+        else
+        {
+            enabled_categories &= ~enabledCategories;
+        }
+        return GetEnabled();
     }
 };
 
@@ -370,6 +398,65 @@ typedef struct _CallTargetDefinition
     WCHAR* integrationAssembly;
     WCHAR* integrationType;
 } CallTargetDefinition;
+
+enum class CallTargetKind : UINT8
+{
+    Default = 0,
+    Derived = 1,
+    Interface = 2
+};
+
+typedef struct _CallTargetDefinition2
+{
+    WCHAR* targetAssembly;
+    WCHAR* targetType;
+    WCHAR* targetMethod;
+    WCHAR** signatureTypes;
+    USHORT signatureTypesLength;
+    USHORT targetMinimumMajor;
+    USHORT targetMinimumMinor;
+    USHORT targetMinimumPatch;
+    USHORT targetMaximumMajor;
+    USHORT targetMaximumMinor;
+    USHORT targetMaximumPatch;
+    WCHAR* integrationAssembly;
+    WCHAR* integrationType;
+
+    CallTargetKind kind;
+    UINT32 categories;
+
+    inline CallTargetDefinition ToCallTargetDefinition() const
+    {
+        CallTargetDefinition res;
+        res.targetAssembly = targetAssembly;
+        res.targetType = targetType;
+        res.targetMethod = targetMethod;
+        res.signatureTypes = signatureTypes;
+        res.signatureTypesLength = signatureTypesLength;
+        res.targetMinimumMajor = targetMinimumMajor;
+        res.targetMinimumMinor = targetMinimumMinor;
+        res.targetMinimumPatch = targetMinimumPatch;
+        res.targetMaximumMajor = targetMaximumMajor;
+        res.targetMaximumMinor = targetMaximumMinor;
+        res.targetMaximumPatch = targetMaximumPatch;
+        res.integrationAssembly = integrationAssembly;
+        res.integrationType = integrationType;
+        return res;
+    }
+
+    inline bool GetIsDefault() const
+    {
+        return kind == CallTargetKind::Default;
+    }
+    inline bool GetIsDerived() const
+    {
+        return kind == CallTargetKind::Derived;
+    }
+    inline bool GetIsInterface() const
+    {
+        return kind == CallTargetKind::Interface;
+    }
+} CallTargetDefinition2;
 
 struct MethodIdentifier
 {

@@ -664,3 +664,42 @@ TEST(ConfigurationTest, CheckDebugInfoIsDisabledIfEnvVarSetToFalse)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.IsDebugInfoEnabled(), false);
 }
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GcThreadsCpuTimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckGitMetadataIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetGitRepositoryUrl(), "");
+    ASSERT_THAT(configuration.GetGitCommitSha(), "");
+}
+
+TEST(ConfigurationTest, CheckGitMetadataIfSet)
+{
+    std::string expectedRepoUrl = "http://dotnet";
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::GitRepositoryUrl, shared::ToWSTRING(expectedRepoUrl));
+    std::string expectedCommitSha = "42";
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::GitCommitSha, shared::ToWSTRING(expectedCommitSha));
+
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetGitRepositoryUrl(), expectedRepoUrl);
+    ASSERT_THAT(configuration.GetGitCommitSha(), expectedCommitSha);
+}

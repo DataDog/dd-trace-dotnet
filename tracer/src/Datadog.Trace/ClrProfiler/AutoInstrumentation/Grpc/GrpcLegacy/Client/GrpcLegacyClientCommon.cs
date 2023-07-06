@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client.DuckTypes;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
@@ -13,12 +14,14 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 {
     internal static class GrpcLegacyClientCommon
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GrpcLegacyClientCommon));
+        private static readonly ConditionalWeakTable<object, string> ChannelToHostMap = new();
 
         public static Scope? CreateClientSpan(
             Tracer tracer,
@@ -54,14 +57,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     out var startTime,
                     out var parentContext);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
-                var tags = new GrpcClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                var tags = clientSchema.CreateGrpcClientTags();
                 var methodFullName = callInvocationDetails.Method;
 
+                tags.Host = GetNormalizedHost(callInvocationDetails.Channel.Instance!, callInvocationDetails.Channel.Target);
                 GrpcCommon.AddGrpcTags(tags, tracer, methodKind, name: methodName, path: methodFullName, serviceName: grpcService);
 
                 var span = tracer.StartSpan(
-                    GrpcCommon.OperationName,
+                    operationName,
                     parent: parentContext,
                     tags: tags,
                     spanId: existingSpanContext?.SpanId ?? 0,
@@ -72,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                 span.Type = SpanTypes.Grpc;
                 span.ResourceName = methodFullName;
 
-                span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTags, GrpcCommon.RequestMetadataTagPrefix);
+                span.SetHeaderTags(requestMetadataWrapper, tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 scope = tracer.ActivateSpan(span);
 
                 if (setSamplingPriority && existingSpanContext?.SamplingPriority is not null)
@@ -137,7 +143,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
                     methodName: method.Name,
                     serviceName: method.ServiceName,
                     startTime: span.StartTime,
-                    parentContext: span.Context.Parent);
+                    parentContext: span.Context.ParentInternal);
 
                 // Add the propagation headers
                 SpanContextPropagator.Instance.Inject(span.Context, collection);
@@ -146,6 +152,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             {
                 Log.Error(ex, "Error creating inactive client span for GRPC call");
             }
+        }
+
+        internal static string GetNormalizedHost(object channelInstance, string target)
+        {
+            if (ChannelToHostMap.TryGetValue(channelInstance, out var normalizedHost))
+            {
+                return normalizedHost;
+            }
+
+            var host = target.IndexOf(':') switch
+            {
+                -1 => target,
+                var index => target.Substring(startIndex: 0, length: index),
+            };
+
+            normalizedHost = HttpRequestUtils.GetNormalizedHost(host);
+
+#if NETCOREAPP3_1_OR_GREATER
+            ChannelToHostMap.AddOrUpdate(channelInstance, normalizedHost);
+#else
+            ChannelToHostMap.GetValue(channelInstance, x => normalizedHost);
+#endif
+
+            return normalizedHost;
         }
 
         private static void AddTemporaryHeaders(IMetadata metadata, int grpcType, string? methodName, string? serviceName, DateTimeOffset startTime, ISpanContext? parentContext)
@@ -157,7 +187,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
             if (parentContext is not null)
             {
                 metadata.Add(TemporaryHeaders.ParentId, parentContext.SpanId.ToString());
-                metadata.Add(TemporaryHeaders.ParentService, parentContext.ServiceName);
+                metadata.Add(TemporaryHeaders.ParentService, parentContext is SpanContext s ? s.ServiceNameInternal : parentContext.ServiceName);
             }
         }
 
@@ -201,9 +231,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
-            var tags = new GrpcClientTags();
-            var span = tracer.StartSpan(GrpcCommon.OperationName, tags, serviceName: serviceName, addToTraceContext: false);
+            string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
+            string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
+            GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
+            var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
 
             span.Type = SpanTypes.Grpc;

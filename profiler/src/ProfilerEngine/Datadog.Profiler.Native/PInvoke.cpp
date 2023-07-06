@@ -125,3 +125,31 @@ extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t tr
 
     profiler->GetExporter()->SetEndpoint(runtimeId, traceId, endpoint);
 }
+
+extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, const char* repositoryUrl, const char* commitSha)
+{
+    const auto profiler = CorProfilerCallback::GetInstance();
+
+    if (profiler == nullptr)
+    {
+        Log::Error("SetGitMetadataForApplication is called BEFORE CLR initialize");
+        return;
+    }
+
+    if (!profiler->GetClrLifetime()->IsRunning())
+    {
+        return;
+    }
+
+    if (runtimeId == nullptr)
+    {
+        Log::Error("SetGitMetadataForApplication was called with an empty runtime id");
+        return;
+    }
+
+    profiler->GetApplicationStore()->SetGitMetadata(
+        runtimeId,
+        repositoryUrl != nullptr ? repositoryUrl : std::string(),
+        commitSha != nullptr ? commitSha : std::string()
+    );
+}

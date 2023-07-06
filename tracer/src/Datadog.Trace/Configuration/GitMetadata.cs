@@ -19,4 +19,6 @@ internal class GitMetadata
     public string CommitSha { get; }
 
     public string RepositoryUrl { get; }
+
+    public bool IsEmpty => string.IsNullOrWhiteSpace(CommitSha) && string.IsNullOrWhiteSpace(RepositoryUrl);
 }

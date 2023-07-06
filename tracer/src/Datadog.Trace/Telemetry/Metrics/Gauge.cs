@@ -27,9 +27,4 @@ internal enum Gauge
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
     [TelemetryMetric("direct_log_queue", isCommon: false)] DirectLogQueue,
-
-    // /// <summary>
-    // /// Essentially all the stats values available from the native profiler. We may potentially want to include these in the "common" init_time metric - I'm not sure?
-    // /// </summary>
-    // [TelemetryMetric("native_init_time", isCommon: false)] NativeInitTime,
 }

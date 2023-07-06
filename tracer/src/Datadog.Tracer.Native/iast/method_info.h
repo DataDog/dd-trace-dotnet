@@ -1,4 +1,5 @@
 #pragma once
+#include <atomic>
 #include "../../../../shared/src/native-src/pal.h"
 #include <map>
 #include <set>
@@ -63,6 +64,9 @@ namespace iast
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();
+
+    private:
+        std::atomic<unsigned char> _fullNameCounterLock;
     };
 
     class MethodSpec : public MemberRefInfo

@@ -70,6 +70,7 @@ namespace Datadog.Trace.Configuration
         public ExporterSettings()
             : this(null, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor);
         }
 
         /// <summary>
@@ -80,12 +81,13 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
         /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure"/>
+        /// in <see cref="Tracer.Configure(TracerSettings)"/>
         /// </remarks>
         [PublicApi]
         public ExporterSettings(IConfigurationSource? source)
             : this(source, File.Exists, new ConfigurationTelemetry())
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ExporterSettings_Ctor_Source);
         }
 
         internal ExporterSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)

@@ -9,6 +9,7 @@ using System;
 using System.Collections;
 using System.Text;
 using Datadog.Trace.Activity.DuckTypes;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -16,6 +17,12 @@ namespace Datadog.Trace.Activity
 {
     internal static class OtlpHelpers
     {
+        // see https://github.com/open-telemetry/opentelemetry-dotnet/blob/2916b2de80522d4b1cafe353b3fda3fd629ddb00/src/OpenTelemetry.Api/Internal/SemanticConventions.cs#LL109C25-L109C25
+        internal const string OpenTelemetryException = "exception";
+        internal const string OpenTelemetryErrorType = "exception.type";
+        internal const string OpenTelemetryErrorMsg = "exception.message";
+        internal const string OpenTelemetryErrorStack = "exception.stacktrace";
+
         internal static void UpdateSpanFromActivity<TInner>(TInner activity, Span span)
             where TInner : IActivity
         {
@@ -62,7 +69,7 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            if (Tracer.Instance.Settings.ServiceVersion is null
+            if (Tracer.Instance.Settings.ServiceVersionInternal is null
                 && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
@@ -313,7 +320,10 @@ namespace Datadog.Trace.Activity
             if (activity is IActivity6 { Status: ActivityStatusCode.Error } activity6)
             {
                 span.Error = true;
+
                 // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                ExtractExceptionAttributes(activity, span);
+
                 if (span.GetTag(Tags.ErrorMsg) is null)
                 {
                     span.SetTag(Tags.ErrorMsg, activity6.StatusDescription);
@@ -322,7 +332,10 @@ namespace Datadog.Trace.Activity
             else if (span.GetTag("otel.status_code") == "STATUS_CODE_ERROR")
             {
                 span.Error = true;
+
                 // First iterate through Activity events first and set error.msg, error.type, and error.stack
+                ExtractExceptionAttributes(activity, span);
+
                 if (span.GetTag(Tags.ErrorMsg) is null)
                 {
                     if (span.GetTag("otel.status_description") is string statusDescription)
@@ -341,6 +354,61 @@ namespace Datadog.Trace.Activity
                         }
                     }
                 }
+            }
+        }
+
+        /// <summary>
+        /// Iterates through <c>Activity.Events</c> looking for a <see cref="OpenTelemetryException"/> to copy over
+        /// to the <see cref="Span.Tags"/> of <paramref name="span"/>.
+        /// </summary>
+        /// <param name="activity">The <see cref="IActivity"/> to check for the exception event data.</param>
+        /// <param name="span">The <see cref="Span"/> to copy the exception event data to.</param>
+        /// <typeparam name="TInner">
+        /// The type of <c>Activity</c> - note that only <see cref="IActivity5"/> and up have support for events.
+        /// </typeparam>
+        /// <remarks>OpenTelemetry creates these attributes via it's <c>Activity.RecordException</c> function.</remarks>
+        private static void ExtractExceptionAttributes<TInner>(TInner activity, Span span)
+            where TInner : IActivity
+        {
+            // OpenTelemetry stores the exception attributes in Activity.Events
+            // Activity.Events was only added in .NET 5+, which maps to our IActivity5 & IActivity6
+            if (activity is not IActivity5 activity5)
+            {
+                return;
+            }
+
+            foreach (var activityEvent in activity5.Events)
+            {
+                if (!activityEvent.TryDuckCast<ActivityEvent>(out var duckEvent))
+                {
+                    continue;
+                }
+
+                if (duckEvent.Name != OpenTelemetryException)
+                {
+                    continue;
+                }
+
+                foreach (var tag in duckEvent.Tags)
+                {
+                    switch (tag.Key)
+                    {
+                        case OpenTelemetryErrorType:
+                            SetTagObject(span, Tags.ErrorType, tag.Value);
+                            break;
+
+                        case OpenTelemetryErrorMsg:
+                            SetTagObject(span, Tags.ErrorMsg, tag.Value);
+                            break;
+
+                        case OpenTelemetryErrorStack:
+                            SetTagObject(span, Tags.ErrorStack, tag.Value);
+                            break;
+                    }
+                }
+
+                // we've found the exception attribute so we should be done here
+                return;
             }
         }
 

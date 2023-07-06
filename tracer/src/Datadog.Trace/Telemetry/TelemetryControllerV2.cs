@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerV2.cs" company="Datadog">
+// <copyright file="TelemetryControllerV2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,6 +16,7 @@ using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
@@ -37,8 +38,7 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private bool _fatalError;
-    private int? _namingVersion;
-    private bool _appStartedSent;
+    private string? _namingVersion;
 
     internal TelemetryControllerV2(
         IConfigurationTelemetry configuration,
@@ -79,6 +79,8 @@ internal class TelemetryControllerV2 : ITelemetryController
         _flushTask = Task.Run(PushTelemetryLoopAsync);
     }
 
+    public bool AppStartedSent { get; set; }
+
     public bool FatalError => Volatile.Read(ref _fatalError);
 
     public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
@@ -89,7 +91,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         // need to keep it around
         settings.Telemetry.CopyTo(_configuration);
         _application.RecordTracerSettings(settings, defaultServiceName);
-        _namingVersion = (int)settings.MetadataSchemaVersion;
+        _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
     }
 
     public void Start()
@@ -112,14 +114,18 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void RecordProfilerSettings(Profiler profiler)
     {
-        // Nothing to record, remove this method when telemetry V1 is removed
+        _configuration.Record(ConfigTelemetryData.ProfilerLoaded, profiler.Status.IsProfilerReady, ConfigurationOrigins.Default);
+        _configuration.Record(ConfigTelemetryData.CodeHotspotsEnabled, profiler.ContextTracker.IsEnabled, ConfigurationOrigins.Default);
     }
 
     public void IntegrationRunning(IntegrationId integrationId)
         => _integrations.IntegrationRunning(integrationId);
 
     public void IntegrationGeneratedSpan(IntegrationId integrationId)
-        => _integrations.IntegrationGeneratedSpan(integrationId);
+    {
+        _metrics.RecordCountSpanCreated(integrationId.GetMetricTag());
+        _integrations.IntegrationGeneratedSpan(integrationId);
+    }
 
     public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
         => _integrations.IntegrationDisabledDueToError(integrationId, error);
@@ -181,10 +187,8 @@ internal class TelemetryControllerV2 : ITelemetryController
             {
                 Log.Debug("Process exit requested, ending telemetry loop");
                 var sendAppClosingTelemetry = _processExit.Task.Result;
-                if (sendAppClosingTelemetry)
-                {
-                    await PushTelemetry(isFinalPush: true).ConfigureAwait(false);
-                }
+
+                await PushTelemetry(isFinalPush: sendAppClosingTelemetry).ConfigureAwait(false);
 
                 return;
             }
@@ -253,7 +257,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             _metrics.GetMetrics(),
             _products.GetData());
 
-        var sendAppStarted = !_appStartedSent;
+        var sendAppStarted = !AppStartedSent;
         var data = _dataBuilder.BuildTelemetryData(application, host, in input, sendAppStarted, _namingVersion);
 
         Log.Debug("Pushing telemetry changes");
@@ -271,7 +275,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             case TelemetryTransportResult.Success:
                 if (sendAppStarted)
                 {
-                    _appStartedSent = true;
+                    AppStartedSent = true;
                 }
 
                 return true;

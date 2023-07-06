@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName,
-        CallTargetIntegrationType = IntegrationType.Interface)]
+        CallTargetIntegrationKind = CallTargetKind.Interface)]
     [InstrumentMethod(
         AssemblyName = "RabbitMQ.Client",
         TypeName = "RabbitMQ.Client.DefaultBasicConsumer",
@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         MinimumVersion = "3.6.9",
         MaximumVersion = "6.*.*",
         IntegrationName = RabbitMQConstants.IntegrationName,
-        CallTargetIntegrationType = IntegrationType.Derived)]
+        CallTargetIntegrationKind = CallTargetKind.Derived)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public class BasicDeliverIntegration

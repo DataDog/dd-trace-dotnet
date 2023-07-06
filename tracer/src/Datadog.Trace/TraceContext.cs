@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
 using Datadog.Trace.ClrProfiler;
@@ -14,6 +13,8 @@ using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace
@@ -22,8 +23,8 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly DateTimeOffset _utcStart = DateTimeOffset.UtcNow;
-        private readonly long _timestamp = Stopwatch.GetTimestamp();
+        private readonly TraceClock _clock;
+
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -43,12 +44,13 @@ namespace Datadog.Trace
             if (settings is not null)
             {
                 // these could be set from DD_ENV/DD_VERSION or from DD_TAGS
-                Environment = settings.Environment;
-                ServiceVersion = settings.ServiceVersion;
+                Environment = settings.EnvironmentInternal;
+                ServiceVersion = settings.ServiceVersionInternal;
             }
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
+            _clock = TraceClock.Instance;
         }
 
         public Span RootSpan
@@ -57,7 +59,7 @@ namespace Datadog.Trace
             private set => _rootSpan = value;
         }
 
-        public DateTimeOffset UtcNow => _utcStart.Add(Elapsed);
+        public TraceClock Clock => _clock;
 
         public IDatadogTracer Tracer { get; }
 
@@ -95,8 +97,6 @@ namespace Datadog.Trace
         /// </summary>
         internal IastRequestContext IastRequestContext => _iastRequestContext;
 
-        private TimeSpan Elapsed => StopwatchHelpers.GetElapsed(Stopwatch.GetTimestamp() - _timestamp);
-
         internal void EnableIastInRequest()
         {
             if (Volatile.Read(ref _iastRequestContext) is null)
@@ -125,7 +125,7 @@ namespace Datadog.Trace
 
         public void CloseSpan(Span span)
         {
-            bool ShouldTriggerPartialFlush() => Tracer.Settings.Exporter.PartialFlushEnabled && _spans.Count >= Tracer.Settings.Exporter.PartialFlushMinSpans;
+            bool ShouldTriggerPartialFlush() => Tracer.Settings.ExporterInternal.PartialFlushEnabledInternal && _spans.Count >= Tracer.Settings.ExporterInternal.PartialFlushMinSpansInternal;
 
             ArraySegment<Span> spansToWrite = default;
 
@@ -157,6 +157,7 @@ namespace Datadog.Trace
                 {
                     spansToWrite = _spans.GetArray();
                     _spans = default;
+                    TelemetryFactory.Metrics.RecordCountTraceSegmentsClosed();
                 }
                 else if (ShouldTriggerPartialFlush())
                 {
@@ -172,6 +173,7 @@ namespace Datadog.Trace
                     // the number of remaining spans is probably big as well.
                     // Therefore, we bypass the resize logic and immediately allocate the array to its maximum size
                     _spans = new ArrayBuilder<Span>(spansToWrite.Count);
+                    TelemetryFactory.Metrics.RecordCountTracePartialFlush(MetricTags.PartialFlushReason.LargeTrace);
                 }
             }
 
@@ -230,11 +232,6 @@ namespace Datadog.Trace
             {
                 DistributedTracer.Instance.SetSamplingPriority(priority);
             }
-        }
-
-        public TimeSpan ElapsedSince(DateTimeOffset date)
-        {
-            return Elapsed + (_utcStart - date);
         }
 
         private void RunSpanSampler(ArraySegment<Span> spans)

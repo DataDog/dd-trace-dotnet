@@ -55,5 +55,8 @@ public:
     virtual bool UseBacktrace2() const = 0;
     virtual bool IsAllocationRecorderEnabled() const = 0;
     virtual bool IsDebugInfoEnabled() const = 0;
+    virtual bool IsGcThreadsCpuTimeEnabled() const = 0;
+    virtual std::string const& GetGitRepositoryUrl() const = 0;
+    virtual std::string const& GetGitCommitSha() const = 0;
     virtual int32_t AllocationUpscaleMode() const = 0;
 };

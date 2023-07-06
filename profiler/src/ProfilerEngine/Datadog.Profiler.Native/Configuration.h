@@ -62,6 +62,9 @@ public:
     bool UseBacktrace2() const override;
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
+    bool IsGcThreadsCpuTimeEnabled() const override;
+    std::string const& GetGitRepositoryUrl() const override;
+    std::string const& GetGitCommitSha() const override;
     int32_t AllocationUpscaleMode() const override;
 
 private:
@@ -132,6 +135,9 @@ private:
     int32_t _codeHotspotsThreadsThreshold;
     bool _useBacktrace2;
     bool _isAllocationRecorderEnabled;
+    bool _isGcThreadsCpuTimeEnabled;
+    std::string _gitRepositoryUrl;
+    std::string _gitCommitSha;
 
     double _minimumCores;
     std::string _namedPipeName;

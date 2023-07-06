@@ -50,25 +50,25 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
 {
     if (contentionDurationNs < 10'000'000.0)
     {
-        return "0-9ms";
+        return "0 - 9 ms";
     }
 
     if (contentionDurationNs < 50'000'000.0)
     {
-        return "10-49ms";
+        return " 10 - 49 ms";
     }
 
     if (contentionDurationNs < 100'000'000.0)
     {
-        return "50-99ms";
+        return "50 - 99 ms";
     }
 
     if (contentionDurationNs < 500'000'000.0)
     {
-        return "100-499ms";
+        return "100 - 499 ms";
     }
 
-    return "+500ms";
+    return "+500 ms";
 }
 
 void ContentionProvider::OnContention(double contentionDurationNs)
@@ -81,7 +81,7 @@ void ContentionProvider::OnContention(double contentionDurationNs)
     {
         std::lock_guard lock(_contentionsLock);
 
-        if (!_sampler.Sample(bucket))
+        if (!_sampler.Sample(bucket, static_cast<uint64_t>(contentionDurationNs)))
         {
             return;
         }

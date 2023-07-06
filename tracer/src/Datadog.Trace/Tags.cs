@@ -8,7 +8,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Standard span tags used by integrations.
     /// </summary>
-    public static class Tags
+    public static partial class Tags
     {
         /// <summary>
         /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
@@ -563,6 +563,7 @@ namespace Datadog.Trace
 
         internal const string AerospikeUserKey = "aerospike.userkey";
 
+        internal const string CouchbaseSeedNodes = "db.couchbase.seed.nodes";
         internal const string CouchbaseOperationCode = "couchbase.operation.code";
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
@@ -582,23 +583,6 @@ namespace Datadog.Trace
         /// Marks a span as injected when DBM data was propagated
         /// </summary>
         internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
-
-        internal static class AppSec
-        {
-            internal const string Events = "appsec.events.";
-
-            internal static string Track(string eventName) => $"{Events}{eventName}.track";
-
-            internal static class EventsUsersLogin
-            {
-                internal const string Success = AppSec.Events + "users.login.success.";
-                internal const string Failure = AppSec.Events + "users.login.failure.";
-                internal const string SuccessTrack = Success + "track";
-                internal const string FailureTrack = Failure + "track";
-                internal const string FailureUserId = Failure + "usr.id";
-                internal const string FailureUserExists = Failure + "usr.exists";
-            }
-        }
 
         internal static class User
         {

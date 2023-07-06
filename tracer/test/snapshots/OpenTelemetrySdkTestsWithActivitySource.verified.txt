@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -27,6 +27,9 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -57,7 +60,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -77,7 +83,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -97,7 +106,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -117,7 +129,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -140,7 +155,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -151,16 +169,26 @@
     Service: MyServiceName,
     Type: custom,
     ParentId: Id_2,
+    Error: 1,
     Tags: {
       env: integration_tests,
+      error.msg: Example argument exception,
+      error.stack:
+System.ArgumentException: Example argument exception
+at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
+      error.type: ArgumentException,
       language: dotnet,
       otel.library.name: MyServiceName,
-      otel.status_code: STATUS_CODE_UNSET,
+      otel.status_code: STATUS_CODE_ERROR,
+      otel.status_description: Example argument exception,
       otel.trace_id: Guid_1,
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -181,7 +209,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -201,7 +232,10 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal
+      span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version
     }
   },
   {
@@ -222,6 +256,9 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -251,6 +288,9 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -280,6 +320,9 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
+      telemetry.sdk.language: dotnet,
+      telemetry.sdk.name: opentelemetry,
+      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },

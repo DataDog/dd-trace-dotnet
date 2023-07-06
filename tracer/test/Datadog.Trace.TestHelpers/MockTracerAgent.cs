@@ -138,7 +138,26 @@ namespace Datadog.Trace.TestHelpers
             {
                 relevantSpans =
                     Spans
-                       .Where(s => SpanFilters.All(shouldReturn => shouldReturn(s)) && s.Start > minimumOffset)
+                       .Where(s =>
+                        {
+                            if (!SpanFilters.All(shouldReturn => shouldReturn(s)))
+                            {
+                                return false;
+                            }
+
+                            if (s.Start < minimumOffset)
+                            {
+                                // if the Start of the span is before the expected
+                                // we check if is caused by the precision of the TraceClock optimization.
+                                // So, if the difference is greater than 16 milliseconds (max accuracy error) we discard the span
+                                if (minimumOffset - s.Start > 16000000)
+                                {
+                                    return false;
+                                }
+                            }
+
+                            return true;
+                        })
                        .ToImmutableList();
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
@@ -842,23 +861,22 @@ namespace Datadog.Trace.TestHelpers
         {
             if (request.ContentLength is null)
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
 
             var i = 0;
             var body = new byte[request.ContentLength.Value];
 
-            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            while (i < request.ContentLength)
             {
-                var nextByte = request.Body.Stream.ReadByte();
+                var read = request.Body.Stream.Read(body, i, body.Length - i);
 
-                if (nextByte == -1)
+                i += read;
+
+                if (read == 0 || read == body.Length)
                 {
                     break;
                 }
-
-                body[i] = (byte)nextByte;
-                i++;
             }
 
             if (i < request.ContentLength)
@@ -1130,7 +1148,6 @@ namespace Datadog.Trace.TestHelpers
         {
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
-            private readonly Task _statsdTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1155,7 +1172,7 @@ namespace Datadog.Trace.TestHelpers
                         ex => Exceptions.Add(ex),
                         x => Output?.WriteLine(x));
 
-                    _statsdTask = Task.Run(_statsPipeServer.Start);
+                    _statsPipeServer.Start();
                 }
 
                 if (File.Exists(config.Traces))
@@ -1189,21 +1206,13 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
-                // Will throw if we exceed that but YOLO
-                var bytesReceived = new byte[0x10_000];
-                var byteCount = 0;
-                int bytesRead;
-                do
-                {
-                    bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
-                    byteCount += bytesRead;
-                }
-                while (bytesRead > 0);
+                using var reader = new StreamReader(namedPipeServerStream);
 
-                var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                OnMetricsReceived(stats);
-                StatsdRequests.Enqueue(stats);
+                while (await reader.ReadLineAsync() is { } request)
+                {
+                    OnMetricsReceived(request);
+                    StatsdRequests.Enqueue(request);
+                }
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)

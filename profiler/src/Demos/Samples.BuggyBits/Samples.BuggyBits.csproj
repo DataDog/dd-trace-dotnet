@@ -6,6 +6,8 @@
 
     <!--This is required for smoke test assembly discovery-->
     <AssemblyName>Samples.BuggyBits</AssemblyName>
+    <!-- This is required to avoid compilation error (duplicated). This has been done for test. See Program.cs for more info.-->
+    <GenerateAssemblyInformationalVersionAttribute>false</GenerateAssemblyInformationalVersionAttribute>
   </PropertyGroup>
 
   <!-- Those platform options have been added to have a output build path per platform

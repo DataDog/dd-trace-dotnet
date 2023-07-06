@@ -3,8 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
@@ -620,7 +622,7 @@ public class StringAspects
     public static string Remove(string target, int startIndex)
     {
         string result = target.Remove(startIndex);
-        OnStringRemove(target, result, startIndex, target.Length);
+        PropagationModuleImpl.OnStringRemove(target, result, startIndex, target.Length);
         return result;
     }
 
@@ -635,7 +637,7 @@ public class StringAspects
     public static string Remove(string target, int startIndex, int count)
     {
         string result = target.Remove(startIndex, count);
-        OnStringRemove(target, result, startIndex, startIndex + count);
+        PropagationModuleImpl.OnStringRemove(target, result, startIndex, startIndex + count);
         return result;
     }
 
@@ -711,4 +713,377 @@ public class StringAspects
         PropagationModuleImpl.PropagateTaint(target, result);
         return result;
     }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object)", AspectFilter.StringLiterals)]
+    public static string Format(string format, object arg0)
+    {
+        var result = string.Format(format, arg0);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object)", AspectFilter.StringLiterals)]
+    public static string Format(string format, object arg0, object arg1)
+    {
+        var result = string.Format(format, arg0, arg1);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <param name="arg2"> third format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object,System.Object,System.Object)", AspectFilter.StringLiterals)]
+    public static string Format(string format, object arg0, object arg1, object arg2)
+    {
+        var result = string.Format(format, arg0, arg1, arg2);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.String,System.Object[])")]
+    public static string Format(string format, object[] args)
+    {
+        var result = string.Format(format, args);
+        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0)
+    {
+        var result = string.Format(provider, format, arg0);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0, object arg1)
+    {
+        var result = string.Format(provider, format, arg0, arg1);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="arg0"> first format argument </param>
+    /// <param name="arg1"> second format argument </param>
+    /// <param name="arg2"> third format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object,System.Object,System.Object)")]
+    public static string Format(IFormatProvider provider, string format, object arg0, object arg1, object arg2)
+    {
+        var result = string.Format(provider, format, arg0, arg1, arg2);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, format, arg0, arg1, arg2);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Format aspect
+    /// </summary>
+    /// <param name="provider"> format provider </param>
+    /// <param name="format"> format of the string </param>
+    /// <param name="args"> first format argument </param>
+    /// <returns> String.Format() </returns>
+    [AspectMethodReplace("System.String::Format(System.IFormatProvider,System.String,System.Object[])")]
+    public static string Format(IFormatProvider provider, string format, object[] args)
+    {
+        var result = string.Format(provider, format, args);
+        PropagationModuleImpl.PropagateResultWhenInputArrayTainted(result, format, args);
+        return result;
+    }
+
+#if NETCOREAPP3_1_OR_GREATER
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <param name="ignore"> true to ignore casing when comparing; false otherwise. </param>
+    /// <param name="culture"> cluture argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)")]
+    public static string Replace(string target, string oldValue, string newValue, bool ignore, CultureInfo culture)
+    {
+        var result = target.Replace(oldValue, newValue, ignore, culture);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <param name="comparison"> comparison argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String,System.StringComparison)")]
+    public static string Replace(string target, string oldValue, string newValue, StringComparison comparison)
+    {
+        var result = target.Replace(oldValue, newValue, comparison);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        return result;
+    }
+#endif
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldChar"> old value  argument</param>
+    /// <param name="newChar"> new value argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.Char,System.Char)", AspectFilter.StringLiteral_0)]
+    public static string Replace(string target, char oldChar, char newChar)
+    {
+        var result = target.Replace(oldChar, newChar);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Replace aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="oldValue"> old value  argument</param>
+    /// <param name="newValue"> new value argument </param>
+    /// <returns> String.Replace() </returns>
+    [AspectMethodReplace("System.String::Replace(System.String,System.String)", AspectFilter.StringLiterals)]
+    public static string Replace(string target, string oldValue, string newValue)
+    {
+        var result = target.Replace(oldValue, newValue);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target, oldValue, newValue);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[])", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator)
+    {
+        var result = target.Split(separator);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.Int32)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, int count)
+    {
+        var result = target.Split(separator, count);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, StringSplitOptions options)
+    {
+        var result = target.Split(separator, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char[],System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char[] separator, int count, StringSplitOptions options)
+    {
+        var result = target.Split(separator, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String[],System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string[] separator, StringSplitOptions options)
+    {
+        var result = target.Split(separator, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String[],System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string[] separator, int count, StringSplitOptions options)
+    {
+        var result = target.Split(separator, count, options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+#if !NETFRAMEWORK
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string separator, int count, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        var result = target.Split(new string[] { separator }, count, options);
+#else
+        var result = target.Split(separator, count, options);
+#endif
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.String,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, string separator, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        var result = target.Split(new string[] { separator }, options);
+#else
+        var result = target.Split(separator, options);
+#endif
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char separator, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        var result = target.Split(new char[] { separator }, options);
+#else
+        var result = target.Split(separator, options);
+#endif
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+
+    /// <summary>
+    /// String.Split aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <param name="separator"> separator argument </param>
+    /// <param name="count"> count argument </param>
+    /// <param name="options"> options argument </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Split(System.Char,System.Int32,System.StringSplitOptions)", AspectFilter.StringLiteral_0)]
+    public static string[] Split(string target, char separator, int count, StringSplitOptions options)
+    {
+#if NETSTANDARD
+        var result = target.Split(new char[] { separator }, count, options);
+#else
+        var result = target.Split(separator, count, options);
+#endif
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+#endif
+
+#pragma warning disable CS0618 // Obsolete
+    /// <summary>
+    /// String.Copy aspect
+    /// </summary>
+    /// <param name="target"> instance of the string </param>
+    /// <returns> String.Split() </returns>
+    [AspectMethodReplace("System.String::Copy(System.String)", AspectFilter.StringLiteral_0)]
+    public static string Copy(string target)
+    {
+        var result = string.Copy(target);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, target);
+        return result;
+    }
+#pragma warning restore CS0618 // Obsolete
 }

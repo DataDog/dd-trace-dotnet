@@ -77,11 +77,6 @@ jobs:
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
             ${{steps.assets.outputs.sha_path}}
 
-      - name: "Publish nuget packages to nuget.org"
-        working-directory: ${{steps.assets.outputs.artifacts_path}}
-        run: |
-          dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json
-      
       - name: "Trigger Docker Base Images Github Pipeline"
         run: |
           curl \
@@ -95,3 +90,8 @@ jobs:
           GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
           targetBranch: ${{ github.event.ref }}
           commitSha: "${{ github.event.inputs.forced_commit_id }}"
+
+      - name: "Publish nuget packages to nuget.org"
+        working-directory: ${{steps.assets.outputs.artifacts_path}}
+        run: |
+          dotnet nuget push "*.${{steps.versions.outputs.full_version}}*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json

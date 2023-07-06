@@ -10,6 +10,8 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Text;
+using Castle.Core.Internal;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -105,7 +107,7 @@ public class InstrumentationTestsBase
         return _getTaintedObjectsMethod.Invoke(_taintedObjects, new object[] { tainted });
     }
 
-    protected void AssertNotTainted(string value)
+    protected void AssertNotTainted(object value)
     {
         GetTainted(value).Should().BeNull(value + " is tainted.");
     }
@@ -180,6 +182,11 @@ public class InstrumentationTestsBase
         return true;
     }
 
+    protected StringBuilder GetTaintedStringBuilder(string init)
+    {
+        return AddTainted(new StringBuilder(init)) as StringBuilder;
+    }
+
     private List<object> GetGeneratedVulnerabilities()
     {
         var vulnerabilityBatchField = _vulnerabilityBatchField.GetValue(_iastRequestContext);
@@ -207,14 +214,6 @@ public class InstrumentationTestsBase
         return spans;
     }
 
-    protected void AssertNotTaintedWithOriginalCallCheck(string instrumented, Expression<Func<Object>> notInstrumented)
-    {
-        AssertNotTainted(instrumented);
-        var notInstrumentedCompiled = notInstrumented.Compile();
-        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
-        instrumented.Should().Be(notInstrumentedResult.ToString());
-    }
-
     protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
@@ -224,12 +223,45 @@ public class InstrumentationTestsBase
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
     }
 
+    protected void AssertUntaintedWithOriginalCallCheck(Action instrumented, Expression<Action> notInstrumented)
+    {
+        var instrumentedResult = ExecuteFunc(instrumented);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumentedResult.ToString().Should().Be(notInstrumentedResult.ToString());
+        AssertNotTainted(instrumentedResult);
+    }
+
+    protected void AssertUntaintedWithOriginalCallCheck(Func<object> instrumented, Expression<Func<object>> notInstrumented)
+    {
+        var instrumentedResult = ExecuteFunc(instrumented);
+        var notInstrumentedCompiled = notInstrumented.Compile();
+        var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
+        instrumentedResult.ToString().Should().Be(notInstrumentedResult.ToString());
+        AssertNotTainted(instrumentedResult);
+    }
+
     protected void AssertUntaintedWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         instrumented.ToString().Should().Be(expected.ToString());
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
+        AssertNotTainted(instrumented);
+    }
+
+    private static object ExecuteFunc(Action function)
+    {
+        try
+        {
+            function.Invoke();
+        }
+        catch (Exception ex)
+        {
+            return ex.GetType().FullName;
+        }
+
+        return null;
     }
 
     private static object ExecuteFunc(Func<Object> function)
@@ -241,7 +273,7 @@ public class InstrumentationTestsBase
         }
         catch (Exception ex)
         {
-            return ex.GetType();
+            return ex.GetType().FullName;
         }
     }
 
@@ -329,6 +361,35 @@ public class InstrumentationTestsBase
         }
         catch (Exception)
         {
+        }
+    }
+
+    public static void AssertEqual(string[] collection1, string[] collection2)
+    {
+        collection1.Length.Should().Be(collection2.Length);
+
+        for (int i = 0; i < collection1.Length; i++)
+        {
+            collection1[i].Should().Be(collection2[i]);
+        }
+    }
+
+    public void AssertAllTainted(string[] collection1)
+    {
+        foreach (var item in collection1)
+        {
+            if (!string.IsNullOrEmpty(item))
+            {
+                AssertTainted(item);
+            }
+        }
+    }
+
+    public void AssertNoneTainted(string[] collection1)
+    {
+        foreach (var item in collection1)
+        {
+            AssertNotTainted(item);
         }
     }
 }

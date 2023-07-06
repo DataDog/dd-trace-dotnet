@@ -34,12 +34,12 @@ namespace Datadog.Trace.Telemetry
             var reconfigureCount = Interlocked.Increment(ref _tracerInstanceCount);
             var appData = new ApplicationTelemetryData(
                 serviceName: defaultServiceName,
-                env: tracerSettings.Environment,
+                env: tracerSettings.EnvironmentInternal,
                 tracerVersion: TracerConstants.AssemblyVersion,
                 languageName: TracerConstants.Language,
                 languageVersion: FrameworkDescription.Instance.ProductVersion)
             {
-                ServiceVersion = tracerSettings.ServiceVersion,
+                ServiceVersion = tracerSettings.ServiceVersionInternal,
                 RuntimeName = FrameworkDescription.Instance.Name,
             };
 
@@ -125,22 +125,22 @@ namespace Datadog.Trace.Telemetry
             var data = new List<TelemetryValue>(27 + (settings.IsRunningInAzureAppService ? 5 : 0))
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
-                new(ConfigTelemetryData.Enabled, value: settings.TraceEnabled),
-                new(ConfigTelemetryData.AgentUrl, value: settings.Exporter.AgentUri.ToString()),
-                new(ConfigTelemetryData.AgentTraceTransport, value: settings.Exporter.TracesTransport.ToString()),
-                new(ConfigTelemetryData.Debug, value: GlobalSettings.Instance.DebugEnabled),
+                new(ConfigTelemetryData.Enabled, value: settings.TraceEnabledInternal),
+                new(ConfigTelemetryData.AgentUrl, value: settings.ExporterInternal.AgentUriInternal.ToString()),
+                new(ConfigTelemetryData.AgentTraceTransport, value: settings.ExporterInternal.TracesTransport.ToString()),
+                new(ConfigTelemetryData.Debug, value: GlobalSettings.Instance.DebugEnabledInternal),
                 new(ConfigTelemetryData.NativeTracerVersion, value: Instrumentation.GetNativeTracerVersion()),
 #pragma warning disable CS0618
-                new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabled),
+                new(ConfigTelemetryData.AnalyticsEnabled, value: settings.AnalyticsEnabledInternal),
 #pragma warning restore CS0618
-                new(ConfigTelemetryData.SampleRate, value: settings.GlobalSamplingRate),
-                new(ConfigTelemetryData.SamplingRules, value: settings.CustomSamplingRules),
-                new(ConfigTelemetryData.LogInjectionEnabled, value: settings.LogsInjectionEnabled),
+                new(ConfigTelemetryData.SampleRate, value: settings.GlobalSamplingRateInternal),
+                new(ConfigTelemetryData.SamplingRules, value: settings.CustomSamplingRulesInternal),
+                new(ConfigTelemetryData.LogInjectionEnabled, value: settings.LogsInjectionEnabledInternal),
                 new(ConfigTelemetryData.RuntimeMetricsEnabled, value: settings.RuntimeMetricsEnabled),
                 new(ConfigTelemetryData.RoutetemplateResourcenamesEnabled, value: settings.RouteTemplateResourceNamesEnabled),
                 new(ConfigTelemetryData.RoutetemplateExpansionEnabled, value: settings.ExpandRouteTemplatesEnabled),
-                new(ConfigTelemetryData.PartialflushEnabled, value: settings.Exporter.PartialFlushEnabled),
-                new(ConfigTelemetryData.PartialflushMinspans, value: settings.Exporter.PartialFlushMinSpans),
+                new(ConfigTelemetryData.PartialflushEnabled, value: settings.ExporterInternal.PartialFlushEnabledInternal),
+                new(ConfigTelemetryData.PartialflushMinspans, value: settings.ExporterInternal.PartialFlushMinSpansInternal),
                 new(ConfigTelemetryData.TracerInstanceCount, value: _tracerInstanceCount),
                 new(ConfigTelemetryData.SecurityEnabled, value: _securitySettings?.Enabled),
                 new(ConfigTelemetryData.IastEnabled, value: _iastSettings?.Enabled),
@@ -149,7 +149,7 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.OpenTelemetryEnabled, value: settings.IsActivityListenerEnabled),
                 new(ConfigTelemetryData.ProfilerLoaded, value: _profiler?.Status.IsProfilerReady),
                 new(ConfigTelemetryData.CodeHotspotsEnabled, value: _profiler?.ContextTracker.IsEnabled),
-                new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabled),
+                new(ConfigTelemetryData.StatsComputationEnabled, value: settings.StatsComputationEnabledInternal),
                 new(ConfigTelemetryData.WcfObfuscationEnabled, value: settings.WcfObfuscationEnabled),
                 new(ConfigTelemetryData.DataStreamsMonitoringEnabled, value: settings.IsDataStreamsMonitoringEnabled),
                 new(ConfigTelemetryData.SpanSamplingRules, value: settings.SpanSamplingRules),

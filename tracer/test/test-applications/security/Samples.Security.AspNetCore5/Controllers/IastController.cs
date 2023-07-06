@@ -6,6 +6,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Samples.Security.Data;
 
@@ -214,6 +215,30 @@ namespace Samples.Security.AspNetCore5.Controllers
             return ExecuteCommandInternal(Request.Cookies["file"], Request.Cookies["argumentLine"]);
         }
 
+        [HttpGet("GetDirectoryContent")]
+        [Route("GetDirectoryContent")]
+        public IActionResult GetDirectoryContent(string directory)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    var result = System.IO.Directory.GetFiles(directory);
+                    var resultfiles = string.Empty;
+                    Array.ForEach(result, x => resultfiles += x.ToString() + Environment.NewLine);
+                    return Content($"directory content: " + resultfiles);
+                }
+                else
+                {
+                    return BadRequest($"No directory was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided directory could not be opened");
+            }
+        }
+
         [HttpGet("GetFileContent")]
         [Route("GetFileContent")]
         public IActionResult GetFileContent(string file)
@@ -236,10 +261,86 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        [HttpGet("InsecureCookie")]
+        [Route("InsecureCookie")]
+        public IActionResult InsecureCookie()
+        {
+            var cookieOptions = GetDefaultCookieOptionsInstance();
+            cookieOptions.Secure = false;
+            Response.Cookies.Append("insecureKey", "insecureValue", cookieOptions);
+            return Content("Sending InsecureCookie");
+        }
+
+        [HttpGet("NoHttpOnlyCookie")]
+        [Route("NoHttpOnlyCookie")]
+        public IActionResult NoHttpOnlyCookie()
+        {
+            var cookieOptions = GetDefaultCookieOptionsInstance();
+            cookieOptions.HttpOnly = false;
+            Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
+            return Content("Sending NoHttpOnlyCookie");
+        }
+
+        [HttpGet("NoSameSiteCookie")]
+        [Route("NoSameSiteCookie")]
+        public IActionResult NoSameSiteCookie()
+        {
+            var cookieOptions = GetDefaultCookieOptionsInstance();
+            cookieOptions.SameSite = SameSiteMode.None;
+            Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
+            var cookieOptionsLax = GetDefaultCookieOptionsInstance();
+            cookieOptionsLax.SameSite = SameSiteMode.Lax;
+            Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
+            var cookieOptionsDefault = new CookieOptions();
+            cookieOptionsDefault.HttpOnly = true;
+            cookieOptionsDefault.Secure = true;
+            Response.Cookies.Append("NoSameSiteKeyDef", "NoSameSiteValueDef", cookieOptionsDefault);
+            return Content("Sending NoSameSiteCookie");
+        }
+
+        [HttpGet("SafeCookie")]
+        [Route("SafeCookie")]
+        public IActionResult SafeCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.Strict;
+            cookieOptions.HttpOnly = true;
+            cookieOptions.Secure = true;
+            Response.Cookies.Append("SafeCookieKey", "SafeCookieValue", cookieOptions);
+            var cookie2 = new CookieOptions();
+            cookie2.Secure = false;
+            cookie2.HttpOnly = false;
+            cookieOptions.SameSite = SameSiteMode.None;
+            Response.Cookies.Append("UnsafeEmptyCookie", string.Empty, cookieOptions);
+            return Content("Sending SafeCookie");
+        }
+
+        [HttpGet("AllVulnerabilitiesCookie")]
+        [Route("AllVulnerabilitiesCookie")]
+        public IActionResult AllVulnerabilitiesCookie()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.None;
+            cookieOptions.HttpOnly = false;
+            cookieOptions.Secure = false;
+            Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
+            return Content("Sending AllVulnerabilitiesCookie");
+        }
+
         private ActionResult ExecuteQuery(string query)
         {
             var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
             return Content($"Result: " + rname);
+        }
+
+        private CookieOptions GetDefaultCookieOptionsInstance()
+        {
+            var cookieOptions = new CookieOptions();
+            cookieOptions.SameSite = SameSiteMode.Strict;
+            cookieOptions.HttpOnly = true;
+            cookieOptions.Secure = true;
+
+            return cookieOptions;
         }
     }
 }

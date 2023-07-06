@@ -55,7 +55,7 @@ partial class Build : NukeBuild
     readonly bool IsAlpine = false;
 
     [Parameter("The current version of the source and build")]
-    readonly string Version = "2.32.0";
+    readonly string Version = "2.34.0";
 
     [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
     readonly bool IsPrerelease = false;
@@ -157,7 +157,8 @@ partial class Build : NukeBuild
         .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(BuildNativeLoader);
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CreateRootDescriptorsFile);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -415,7 +416,7 @@ partial class Build : NukeBuild
                 var (framework, runtimes) = IsOsx switch
                 {
                     true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
-                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1"),
+                    false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                 };
                 
                 DotNetRun(s => s

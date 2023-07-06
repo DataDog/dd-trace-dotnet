@@ -7,7 +7,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 28;
+    public const int Length = 31;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -17,21 +17,21 @@ internal static partial class CountExtensions
     public static string GetName(this Datadog.Trace.Telemetry.Metrics.Count metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "log_created",
-            Datadog.Trace.Telemetry.Metrics.Count.IntegrationsError => "integrations_error",
-            Datadog.Trace.Telemetry.Metrics.Count.SpanCreated => "span_created",
-            Datadog.Trace.Telemetry.Metrics.Count.SpanFinished => "span_finished",
-            Datadog.Trace.Telemetry.Metrics.Count.SpanSampled => "span_sampled",
-            Datadog.Trace.Telemetry.Metrics.Count.SpanDropped => "span_dropped",
-            Datadog.Trace.Telemetry.Metrics.Count.TraceCreated => "trace_created",
-            Datadog.Trace.Telemetry.Metrics.Count.TraceEnqueued => "trace_enqueued",
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSampled => "trace_sampled",
-            Datadog.Trace.Telemetry.Metrics.Count.TraceDropped => "trace_dropped",
-            Datadog.Trace.Telemetry.Metrics.Count.TraceSent => "trace_sent",
+            Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "logs_created",
+            Datadog.Trace.Telemetry.Metrics.Count.IntegrationsError => "integration_errors",
+            Datadog.Trace.Telemetry.Metrics.Count.SpanCreated => "spans_created",
+            Datadog.Trace.Telemetry.Metrics.Count.SpanFinished => "spans_finished",
+            Datadog.Trace.Telemetry.Metrics.Count.SpanEnqueuedForSerialization => "spans_enqueued_for_serialization",
+            Datadog.Trace.Telemetry.Metrics.Count.SpanDropped => "spans_dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.TraceSegmentCreated => "trace_segments_created",
+            Datadog.Trace.Telemetry.Metrics.Count.TraceChunkEnqueued => "trace_chunks_enqueued_for_serialization",
+            Datadog.Trace.Telemetry.Metrics.Count.TraceChunkDropped => "trace_chunks_dropped",
+            Datadog.Trace.Telemetry.Metrics.Count.TraceChunkSent => "trace_chunks_sent",
+            Datadog.Trace.Telemetry.Metrics.Count.TraceSegmentsClosed => "trace_segments_closed",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiRequests => "trace_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiResponses => "trace_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TraceApiErrors => "trace_api.errors",
-            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => "trace_partial_flush",
+            Datadog.Trace.Telemetry.Metrics.Count.TracePartialFlush => "trace_partial_flush.count",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleInjected => "context_header_style.injected",
             Datadog.Trace.Telemetry.Metrics.Count.ContextHeaderStyleExtracted => "context_header_style.extracted",
             Datadog.Trace.Telemetry.Metrics.Count.StatsApiRequests => "stats_api.requests",
@@ -40,11 +40,14 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry_api.errors",
-            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => "version_conflict_tracer_created",
+            Datadog.Trace.Telemetry.Metrics.Count.VersionConflictTracerCreated => "version_conflict_tracers_created",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => "direct_log_logs",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors.responses",
+            Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
+            Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
+            Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
             _ => null!,
         };
 
@@ -72,6 +75,13 @@ internal static partial class CountExtensions
     public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.Count metric)
         => metric switch
         {
+            Datadog.Trace.Telemetry.Metrics.Count.LogCreated => "general",
+            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiRequests => "telemetry",
+            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiResponses => "telemetry",
+            Datadog.Trace.Telemetry.Metrics.Count.TelemetryApiErrors => "telemetry",
+            Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
             _ => null,
         };
 }

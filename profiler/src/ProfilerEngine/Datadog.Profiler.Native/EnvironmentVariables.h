@@ -26,6 +26,8 @@ public:
     inline static const shared::WSTRING ApiKey                      = WStr("DD_API_KEY");
     inline static const shared::WSTRING Hostname                    = WStr("DD_HOSTNAME");
     inline static const shared::WSTRING Tags                        = WStr("DD_TAGS");
+    inline static const shared::WSTRING GitRepositoryUrl            = WStr("DD_GIT_REPOSITORY_URL");
+    inline static const shared::WSTRING GitCommitSha                = WStr("DD_GIT_COMMIT_SHA");
     inline static const shared::WSTRING NativeFramesEnabled         = WStr("DD_PROFILING_FRAMES_NATIVE_ENABLED");
     inline static const shared::WSTRING CpuProfilingEnabled         = WStr("DD_PROFILING_CPU_ENABLED");
     inline static const shared::WSTRING WallTimeProfilingEnabled    = WStr("DD_PROFILING_WALLTIME_ENABLED");
@@ -55,4 +57,5 @@ public:
     inline static const shared::WSTRING UseBacktrace2               = WStr("DD_INTERNAL_USE_BACKTRACE2");
     inline static const shared::WSTRING AllocationRecorderEnabled   = WStr("DD_INTERNAL_PROFILING_ALLOCATION_RECORDER_ENABLED");
     inline static const shared::WSTRING DebugInfoEnabled            = WStr("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
+    inline static const shared::WSTRING GcThreadsCpuTimeEnabled     = WStr("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
 };

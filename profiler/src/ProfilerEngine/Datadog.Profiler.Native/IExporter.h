@@ -8,6 +8,7 @@
 class IProfile;
 class IUpscaleProvider;
 class IUpscalePoissonProvider;
+class ISamplesProvider;
 class Sample;
 
 class IExporter
@@ -19,4 +20,5 @@ public:
     virtual bool Export() = 0;
     virtual void RegisterUpscaleProvider(IUpscaleProvider* provider) = 0;
     virtual void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) = 0;
+    virtual void RegisterProcessSamplesProvider(ISamplesProvider* provider) = 0;
 };

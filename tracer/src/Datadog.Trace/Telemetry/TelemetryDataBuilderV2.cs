@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataBuilderV2.cs" company="Datadog">
+// <copyright file="TelemetryDataBuilderV2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -22,12 +22,13 @@ internal class TelemetryDataBuilderV2
         HostTelemetryDataV2 host,
         in TelemetryInput input,
         bool sendAppStarted,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         List<MessageBatchData>? data = null;
 
         if (sendAppStarted)
         {
+            Log.Debug("App started, sending app-started");
             data = new()
             {
                 new(TelemetryRequestTypes.AppStarted, new AppStartedPayloadV2()
@@ -117,10 +118,10 @@ internal class TelemetryDataBuilderV2
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);
     }
 
-    public TelemetryDataV2 BuildAppClosingTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, int? namingSchemeVersion)
+    public TelemetryDataV2 BuildAppClosingTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null, namingSchemeVersion);
 
-    public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, int? namingSchemeVersion)
+    public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
 
     public TelemetryDataV2 BuildExtendedHeartbeatData(
@@ -129,7 +130,7 @@ internal class TelemetryDataBuilderV2
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
         => GetRequest(
             application,
             host,
@@ -147,7 +148,7 @@ internal class TelemetryDataBuilderV2
         HostTelemetryDataV2 host,
         string requestType,
         IPayload? payload,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 
@@ -168,7 +169,7 @@ internal class TelemetryDataBuilderV2
         ApplicationTelemetryDataV2 application,
         HostTelemetryDataV2 host,
         MessageBatchPayload? payload,
-        int? namingSchemeVersion)
+        string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 

@@ -13,6 +13,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
@@ -27,10 +28,12 @@ namespace Datadog.Trace.Telemetry.Transports
         private readonly IApiRequestFactory _requestFactory;
         private readonly Uri _endpoint;
         private readonly string? _containerId;
+        private readonly bool _enableDebug;
 
-        protected JsonTelemetryTransport(IApiRequestFactory requestFactory)
+        protected JsonTelemetryTransport(IApiRequestFactory requestFactory, bool enableDebug)
         {
             _requestFactory = requestFactory;
+            _enableDebug = enableDebug;
             _endpoint = _requestFactory.GetEndpoint(TelemetryConstants.TelemetryPath);
             _containerId = ContainerMetadata.GetContainerId();
         }
@@ -45,6 +48,8 @@ namespace Datadog.Trace.Telemetry.Transports
 
         private async Task<TelemetryPushResult> PushTelemetry<T>(T data)
         {
+            var endpointMetricTag = GetEndpointMetricTag();
+
             try
             {
                 // have to buffer in memory so we know the content length
@@ -64,18 +69,27 @@ namespace Datadog.Trace.Telemetry.Transports
                     request.AddHeader(TelemetryConstants.RequestTypeHeader, v2Data.RequestType);
                 }
 
+                if (_enableDebug)
+                {
+                    request.AddHeader(TelemetryConstants.DebugHeader, "true");
+                }
+
                 // Optional in V1, required in V2
                 if (_containerId is not null)
                 {
                     request.AddHeader(TelemetryConstants.ContainerIdHeader, _containerId);
                 }
 
+                TelemetryFactory.Metrics.RecordCountTelemetryApiRequests(endpointMetricTag);
                 using var response = await request.PostAsync(new ArraySegment<byte>(bytes), "application/json").ConfigureAwait(false);
+                TelemetryFactory.Metrics.RecordCountTelemetryApiResponses(endpointMetricTag, response.GetTelemetryStatusCodeMetricTag());
                 if (response.StatusCode is >= 200 and < 300)
                 {
                     Log.Debug("Telemetry sent successfully");
                     return TelemetryPushResult.Success;
                 }
+
+                TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, MetricTags.ApiError.StatusCode);
 
                 if (response.StatusCode == 404)
                 {
@@ -89,11 +103,15 @@ namespace Datadog.Trace.Telemetry.Transports
             catch (Exception ex) when (IsFatalException(ex))
             {
                 Log.Information(ex, "Error sending telemetry data, unable to communicate with '{Endpoint}'", GetEndpointInfo());
+                var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.FatalError;
             }
             catch (Exception ex)
             {
                 Log.Information(ex, "Error sending telemetry data to '{Endpoint}'", GetEndpointInfo());
+                var tag = ex is TimeoutException ? MetricTags.ApiError.Timeout : MetricTags.ApiError.NetworkError;
+                TelemetryFactory.Metrics.RecordCountTelemetryApiErrors(endpointMetricTag, tag);
                 return TelemetryPushResult.TransientFailure;
             }
         }
@@ -102,6 +120,8 @@ namespace Datadog.Trace.Telemetry.Transports
 
         // Internal for testing
         internal static string SerializeTelemetry<T>(T data) => JsonConvert.SerializeObject(data, Formatting.None, SerializerSettings);
+
+        protected abstract MetricTags.TelemetryEndpoint GetEndpointMetricTag();
 
         private static bool IsFatalException(Exception ex)
         {

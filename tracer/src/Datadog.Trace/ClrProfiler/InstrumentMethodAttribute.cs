@@ -133,7 +133,7 @@ namespace Datadog.Trace.ClrProfiler
         /// <summary>
         /// Gets or sets the CallTarget integration type
         /// </summary>
-        public IntegrationType CallTargetIntegrationType { get; set; } = IntegrationType.Default;
+        public CallTargetKind CallTargetIntegrationKind { get; set; } = CallTargetKind.Default;
 
         /// <summary>
         /// Gets or sets the InstrumentationFilter

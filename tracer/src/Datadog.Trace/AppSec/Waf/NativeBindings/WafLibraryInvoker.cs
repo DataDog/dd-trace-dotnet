@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
-using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.AppSec.Waf.NativeBindings
 {
@@ -20,7 +19,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private const string DllName = "ddwaf";
 #endif
 
-        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(WafLibraryInvoker));
         private readonly GetVersionDelegate _getVersionField;
         private readonly InitDelegate _initField;
         private readonly InitContextDelegate _initContextField;
@@ -40,6 +39,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeObjectDelegate _freeObjectield;
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
+        private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private string _version = null;
@@ -69,12 +69,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(libraryHandle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
-            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
+            _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
-            var level = GlobalSettings.Instance.DebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
-            setupLogging(_setupLogCallbackField, level);
+            SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
         }
 
         private delegate IntPtr GetVersionDelegate();
@@ -164,7 +163,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
             else
             {
-                Log.Error("Lib name or runtime ids is null, current platform {fd} is likely not supported", fd.ToString());
+                Log.Error("Lib name or runtime ids is null, current platform {Fd} is likely not supported", fd.ToString());
                 return LibraryInitializationResult.FromPlatformNotSupported();
             }
 
@@ -176,6 +175,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+        }
+
+        internal void SetupLogging(bool instanceDebugEnabled)
+        {
+            var level = instanceDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            _setupLogging(_setupLogCallbackField, level);
         }
 
         internal string GetVersion()
@@ -273,20 +278,20 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             {
                 case DDWAF_LOG_LEVEL.DDWAF_TRACE:
                 case DDWAF_LOG_LEVEL.DDWAF_DEBUG:
-                    _log.Debug("{Level}: {Location}: {Message}", level, location, message);
+                    Log.Debug("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_INFO:
-                    _log.Information("{Level}: {Location}: {Message}", level, location, message);
+                    Log.Information("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_WARN:
-                    _log.Warning("{Level}: {Location}: {Message}", level, location, message);
+                    Log.Warning("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 case DDWAF_LOG_LEVEL.DDWAF_ERROR:
                 case DDWAF_LOG_LEVEL.DDWAF_AFTER_LAST:
-                    _log.Error("{Level}: {Location}: {Message}", level, location, message);
+                    Log.Error("{Level}: {Location}: {Message}", level, location, message);
                     break;
                 default:
-                    _log.Error("[Unknown level] {Level}: {Location}: {Message}", level, location, message);
+                    Log.Error("[Unknown level] {Level}: {Location}: {Message}", level, location, message);
                     break;
             }
         }
@@ -297,12 +302,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             funcPtr = NativeLibrary.GetExport(handle, functionName);
             if (funcPtr == IntPtr.Zero)
             {
-                _log.Error("No function of name {FunctionName} exists on waf object", functionName);
+                Log.Error("No function of name {FunctionName} exists on waf object", functionName);
                 ExportErrorHappened = true;
                 return null;
             }
 
-            _log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
+            Log.Debug("GetDelegateForNativeFunction {FunctionName} -  {FuncPtr}: ", functionName, funcPtr);
             return (T)Marshal.GetDelegateForFunctionPointer(funcPtr, typeof(T));
         }
 

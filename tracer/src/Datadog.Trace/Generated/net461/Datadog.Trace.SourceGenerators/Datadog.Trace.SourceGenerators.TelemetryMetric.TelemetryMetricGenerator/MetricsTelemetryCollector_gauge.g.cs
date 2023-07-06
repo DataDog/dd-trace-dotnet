@@ -28,13 +28,16 @@ internal partial class MetricsTelemetryCollector
     private static MetricKey[] GetGaugeBuffer()
         => new MetricKey[]
         {
+            // stats_buckets, index = 0
             new(null),
+            // instrumentations, index = 1
             new(new[] { "component_name:calltarget" }),
             new(new[] { "component_name:calltarget_derived" }),
             new(new[] { "component_name:calltarget_interfaces" }),
             new(new[] { "component_name:iast" }),
             new(new[] { "component_name:iast_derived" }),
             new(new[] { "component_name:iast_aspects" }),
+            // direct_log_queue, index = 7
             new(null),
         };
 

@@ -45,10 +45,40 @@ internal static class MetricTags
         [Description("new_continued:continued")] Continued,
     }
 
+    internal enum SpanEnqueueReason
+    {
+        /// <summary>
+        /// The span was part of a p0 trace that was kept for sending to the agent
+        /// </summary>
+        [Description("reason:p0_keep")] P0Keep,
+
+        /// <summary>
+        /// The span was selected via single_span_sampling, and otherwise would have been dropped as a p0 span
+        /// </summary>
+        [Description("reason:single_span_sampling")] SingleSpanSampling,
+
+        /// <summary>
+        /// The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent
+        /// </summary>
+        [Description("reason:default")] Default,
+    }
+
+    internal enum TraceChunkEnqueueReason
+    {
+        /// <summary>
+        /// The span was part of a p0 trace that was kept for sending to the agent
+        /// </summary>
+        [Description("reason:p0_keep")] P0Keep,
+
+        /// <summary>
+        /// The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent
+        /// </summary>
+        [Description("reason:default")] Default,
+    }
+
     internal enum DropReason
     {
-        [Description("reason:sampling_decision")] SamplingDecision,
-        [Description("reason:single_span_sampling")] SingleSpanSampling,
+        [Description("reason:p0_drop")] P0Drop,
         [Description("reason:overfull_buffer")] OverfullBuffer,
         [Description("reason:serialization_error")] SerializationError,
         [Description("reason:api_error")] ApiError,
@@ -83,7 +113,7 @@ internal static class MetricTags
     internal enum ApiError
     {
         [Description("type:timeout")] Timeout,
-        [Description("type:network_error")] NetworkError,
+        [Description("type:network")] NetworkError,
         [Description("type:status_code")] StatusCode,
     }
 
@@ -119,53 +149,58 @@ internal static class MetricTags
 
     internal enum IntegrationName
     {
-        [Description("integrations_name:httpmessagehandler")]HttpMessageHandler,
-        [Description("integrations_name:httpsocketshandler")]HttpSocketsHandler,
-        [Description("integrations_name:winhttphandler")]WinHttpHandler,
-        [Description("integrations_name:curlhandler")]CurlHandler,
-        [Description("integrations_name:aspnetcore")]AspNetCore,
-        [Description("integrations_name:adonet")]AdoNet,
-        [Description("integrations_name:aspnet")]AspNet,
-        [Description("integrations_name:aspnetmvc")]AspNetMvc,
-        [Description("integrations_name:aspnetwebapi2")]AspNetWebApi2,
-        [Description("integrations_name:graphql")]GraphQL,
-        [Description("integrations_name:hotchocolate")]HotChocolate,
-        [Description("integrations_name:mongodb")]MongoDb,
-        [Description("integrations_name:xunit")]XUnit,
-        [Description("integrations_name:nunit")]NUnit,
-        [Description("integrations_name:mstestv2")]MsTestV2,
-        [Description("integrations_name:wcf")]Wcf,
-        [Description("integrations_name:webrequest")]WebRequest,
-        [Description("integrations_name:elasticsearchnet")]ElasticsearchNet,
-        [Description("integrations_name:servicestackredis")]ServiceStackRedis,
-        [Description("integrations_name:stackexchangeredis")]StackExchangeRedis,
-        [Description("integrations_name:serviceremoting")]ServiceRemoting,
-        [Description("integrations_name:rabbitmq")]RabbitMQ,
-        [Description("integrations_name:msmq")]Msmq,
-        [Description("integrations_name:kafka")]Kafka,
-        [Description("integrations_name:cosmosdb")]CosmosDb,
-        [Description("integrations_name:awssdk")]AwsSdk,
-        [Description("integrations_name:awssqs")]AwsSqs,
-        [Description("integrations_name:ilogger")]ILogger,
-        [Description("integrations_name:aerospike")]Aerospike,
-        [Description("integrations_name:azurefunctions")]AzureFunctions,
-        [Description("integrations_name:couchbase")]Couchbase,
-        [Description("integrations_name:mysql")]MySql,
-        [Description("integrations_name:npgsql")]Npgsql,
-        [Description("integrations_name:oracle")]Oracle,
-        [Description("integrations_name:sqlclient")]SqlClient,
-        [Description("integrations_name:sqlite")]Sqlite,
-        [Description("integrations_name:serilog")]Serilog,
-        [Description("integrations_name:log4net")]Log4Net,
-        [Description("integrations_name:nlog")]NLog,
-        [Description("integrations_name:traceannotations")]TraceAnnotations,
-        [Description("integrations_name:grpc")]Grpc,
-        [Description("integrations_name:process")]Process,
-        [Description("integrations_name:hashalgorithm")]HashAlgorithm,
-        [Description("integrations_name:symmetricalgorithm")]SymmetricAlgorithm,
-        [Description("integrations_name:opentelemetry")]OpenTelemetry,
-        [Description("integrations_name:pathtraversal")]PathTraversal,
-        [Description("integrations_name:aws_lambda")]AwsLambda,
+        // manual integration
+        [Description("integration_name:datadog")]Manual,
+        [Description("integration_name:opentracing")]OpenTracing,
+        // automatic integration
+        [Description("integration_name:httpmessagehandler")]HttpMessageHandler,
+        [Description("integration_name:httpsocketshandler")]HttpSocketsHandler,
+        [Description("integration_name:winhttphandler")]WinHttpHandler,
+        [Description("integration_name:curlhandler")]CurlHandler,
+        [Description("integration_name:aspnetcore")]AspNetCore,
+        [Description("integration_name:adonet")]AdoNet,
+        [Description("integration_name:aspnet")]AspNet,
+        [Description("integration_name:aspnetmvc")]AspNetMvc,
+        [Description("integration_name:aspnetwebapi2")]AspNetWebApi2,
+        [Description("integration_name:graphql")]GraphQL,
+        [Description("integration_name:hotchocolate")]HotChocolate,
+        [Description("integration_name:mongodb")]MongoDb,
+        [Description("integration_name:xunit")]XUnit,
+        [Description("integration_name:nunit")]NUnit,
+        [Description("integration_name:mstestv2")]MsTestV2,
+        [Description("integration_name:wcf")]Wcf,
+        [Description("integration_name:webrequest")]WebRequest,
+        [Description("integration_name:elasticsearchnet")]ElasticsearchNet,
+        [Description("integration_name:servicestackredis")]ServiceStackRedis,
+        [Description("integration_name:stackexchangeredis")]StackExchangeRedis,
+        [Description("integration_name:serviceremoting")]ServiceRemoting,
+        [Description("integration_name:rabbitmq")]RabbitMQ,
+        [Description("integration_name:msmq")]Msmq,
+        [Description("integration_name:kafka")]Kafka,
+        [Description("integration_name:cosmosdb")]CosmosDb,
+        [Description("integration_name:awssdk")]AwsSdk,
+        [Description("integration_name:awssqs")]AwsSqs,
+        [Description("integration_name:awssns")]AwsSns,
+        [Description("integration_name:ilogger")]ILogger,
+        [Description("integration_name:aerospike")]Aerospike,
+        [Description("integration_name:azurefunctions")]AzureFunctions,
+        [Description("integration_name:couchbase")]Couchbase,
+        [Description("integration_name:mysql")]MySql,
+        [Description("integration_name:npgsql")]Npgsql,
+        [Description("integration_name:oracle")]Oracle,
+        [Description("integration_name:sqlclient")]SqlClient,
+        [Description("integration_name:sqlite")]Sqlite,
+        [Description("integration_name:serilog")]Serilog,
+        [Description("integration_name:log4net")]Log4Net,
+        [Description("integration_name:nlog")]NLog,
+        [Description("integration_name:traceannotations")]TraceAnnotations,
+        [Description("integration_name:grpc")]Grpc,
+        [Description("integration_name:process")]Process,
+        [Description("integration_name:hashalgorithm")]HashAlgorithm,
+        [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
+        [Description("integration_name:opentelemetry")]OpenTelemetry,
+        [Description("integration_name:pathtraversal")]PathTraversal,
+        [Description("integration_name:aws_lambda")]AwsLambda,
     }
 
     public enum InstrumentationError
@@ -173,5 +208,18 @@ internal static class MetricTags
         [Description("error_type:duck_typing")]DuckTyping,
         [Description("error_type:invoker")]Invoker,
         [Description("error_type:execution")]Execution,
+    }
+
+    public enum WafAnalysis
+    {
+        // The generator splits on ; to add multiple tags
+        // Note the initial 'waf_version'. This is an optimisation to avoid multiple array allocations
+        // It is replaced with the "real" waf_version at runtime
+        // CAUTION: waf_version should aways be placed in first position
+        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:false")]Normal,
+        [Description("waf_version;rule_triggered:true;request_blocked:false;waf_timeout:false;request_excluded:false")]RuleTriggered,
+        [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
+        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
+        [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 }

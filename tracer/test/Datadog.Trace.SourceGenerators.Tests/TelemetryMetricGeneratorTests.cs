@@ -164,7 +164,7 @@ public class TelemetryMetricGeneratorTests
             public enum ErrorType
             {
                 [Description("random")] Random,
-                [Description("ducktyping")] DuckTyping,
+                [Description("ducktyping;othertag;somethingelse")] DuckTyping,
             }
             """;
 
@@ -258,16 +258,20 @@ public class TelemetryMetricGeneratorTests
                 private static MetricKey[] GetTestMetricBuffer()
                     => new MetricKey[]
                     {
+                        // metric.zero, index = 0
                         new(null),
+                        // metric.one, index = 1
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
+                        // metric.two, index = 4
                         new(new[] { "debug", "random" }),
-                        new(new[] { "debug", "ducktyping" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse" }),
                         new(new[] { "info", "random" }),
-                        new(new[] { "info", "ducktyping" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse" }),
                         new(new[] { "error", "random" }),
-                        new(new[] { "error", "ducktyping" }),
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse" }),
+                        // metric.zeroagain, index = 10
                         new(null),
                     };
 
@@ -459,16 +463,20 @@ public class TelemetryMetricGeneratorTests
                 private static MetricKey[] GetTestMetricBuffer()
                     => new MetricKey[]
                     {
+                        // metric.zero, index = 0
                         new(null),
+                        // metric.one, index = 1
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
+                        // metric.two, index = 4
                         new(new[] { "debug", "random" }),
                         new(new[] { "debug", "ducktyping" }),
                         new(new[] { "info", "random" }),
                         new(new[] { "info", "ducktyping" }),
                         new(new[] { "error", "random" }),
                         new(new[] { "error", "ducktyping" }),
+                        // metric.zeroagain, index = 10
                         new(null),
                     };
 
@@ -660,16 +668,20 @@ public class TelemetryMetricGeneratorTests
                 private static DistributionKey[] GetTestMetricBuffer()
                     => new DistributionKey[]
                     {
+                        // metric.zero, index = 0
                         new(null),
+                        // metric.one, index = 1
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
+                        // metric.two, index = 4
                         new(new[] { "debug", "random" }),
                         new(new[] { "debug", "ducktyping" }),
                         new(new[] { "info", "random" }),
                         new(new[] { "info", "ducktyping" }),
                         new(new[] { "error", "random" }),
                         new(new[] { "error", "ducktyping" }),
+                        // metric.zeroagain, index = 10
                         new(null),
                     };
 

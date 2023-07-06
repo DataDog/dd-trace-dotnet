@@ -16,13 +16,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)78);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)99);
             return EnvironmentInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)79);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)100);
             EnvironmentInternal = value;
         }
     }
@@ -37,13 +37,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)97);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)118);
             return ServiceNameInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)98);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)119);
             ServiceNameInternal = value;
         }
     }
@@ -58,13 +58,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)99);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)120);
             return ServiceVersionInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)100);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)121);
             ServiceVersionInternal = value;
         }
     }
@@ -81,13 +81,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)105);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)126);
             return TraceEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)106);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)127);
             TraceEnabledInternal = value;
         }
     }
@@ -102,13 +102,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)76);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)97);
             return DisabledIntegrationNamesInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)77);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)98);
             DisabledIntegrationNamesInternal = value;
         }
     }
@@ -122,13 +122,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)80);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)101);
             return ExporterInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)81);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)102);
             ExporterInternal = value;
         }
     }
@@ -147,13 +147,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)70);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)91);
             return AnalyticsEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)71);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)92);
             AnalyticsEnabledInternal = value;
         }
     }
@@ -169,13 +169,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)95);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)116);
             return MaxTracesSubmittedPerSecondInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)96);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)117);
             MaxTracesSubmittedPerSecondInternal = value;
         }
     }
@@ -190,13 +190,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)72);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)93);
             return CustomSamplingRulesInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)73);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)94);
             CustomSamplingRulesInternal = value;
         }
     }
@@ -211,13 +211,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)82);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)103);
             return GlobalSamplingRateInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)83);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)104);
             GlobalSamplingRateInternal = value;
         }
     }
@@ -231,7 +231,7 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)90);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)111);
             return IntegrationsInternal;
         }
     }
@@ -245,13 +245,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)84);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)105);
             return GlobalTagsInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)85);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)106);
             GlobalTagsInternal = value;
         }
     }
@@ -266,13 +266,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)88);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)109);
             return HeaderTagsInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)89);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)110);
             HeaderTagsInternal = value;
         }
     }
@@ -288,13 +288,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)86);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)107);
             return GrpcTagsInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)87);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)108);
             GrpcTagsInternal = value;
         }
     }
@@ -309,13 +309,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)107);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)128);
             return TracerMetricsEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)108);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)129);
             TracerMetricsEnabledInternal = value;
         }
     }
@@ -329,13 +329,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)103);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)124);
             return StatsComputationEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)104);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)125);
             StatsComputationEnabledInternal = value;
         }
     }
@@ -351,13 +351,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)91);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)112);
             return KafkaCreateConsumerScopeEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)92);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)113);
             KafkaCreateConsumerScopeEnabledInternal = value;
         }
     }
@@ -372,13 +372,13 @@ partial class TracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)101);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)122);
             return StartupDiagnosticLogEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)102);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)123);
             StartupDiagnosticLogEnabledInternal = value;
         }
     }

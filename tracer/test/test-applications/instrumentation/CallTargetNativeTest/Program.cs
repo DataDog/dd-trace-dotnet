@@ -18,6 +18,9 @@ namespace CallTargetNativeTest
         private static NativeCallTargetDefinition[] definitions;
         private static string definitionsId;
 
+        const string TargetAssembly = "CallTargetNativeTest";
+        static string integrationAssembly = typeof(NoOp.Noop0ArgumentsIntegration).Assembly.FullName;
+
         static void Main(string[] args)
         {
             InjectCallTargetDefinitions();
@@ -26,9 +29,6 @@ namespace CallTargetNativeTest
 
         static void InjectCallTargetDefinitions()
         {
-            const string TargetAssembly = "CallTargetNativeTest";
-            string integrationAssembly = typeof(NoOp.Noop0ArgumentsIntegration).Assembly.FullName;
-
             var definitionsList = new List<NativeCallTargetDefinition>();
             definitionsList.Add(new(TargetAssembly, typeof(With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
             definitionsList.Add(new(TargetAssembly, typeof(ArgumentsParentType.With0ArgumentsThrowOnAsyncEnd).FullName, "Wait2Seconds", new[] { "_" }, 0, 0, 0, 1, 1, 1, integrationAssembly, "CallTargetNativeTest.NoOp.Noop0ArgumentsIntegration"));
@@ -133,6 +133,7 @@ namespace CallTargetNativeTest
             NativeMethods.AddInterfaceInstrumentations(Guid.NewGuid().ToString("N"), new NativeCallTargetDefinition[]
             {
                 new(TargetAssembly, typeof(InterfaceType).FullName, "VoidMethod", new[] { "_", "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(Noop1ArgumentsVoidIntegration).FullName),
+                new(TargetAssembly, typeof(IExplicitOverNormal).FullName, "ReturnValueMethod", new[] { "_" }, 0,0,0,1,1,1, integrationAssembly, typeof(ExplicitOverNormalIntegration).FullName),
             });
         }
 
@@ -144,7 +145,6 @@ namespace CallTargetNativeTest
         {
             NativeMethods.RemoveCallTargetDefinitions(definitionsId, definitions);
         }
-
 
         static void RunTests(string[] args)
         {
@@ -272,6 +272,11 @@ namespace CallTargetNativeTest
                 case "extras":
                     {
                         Extras();
+                        break;
+                    }
+                case "categories":
+                    {
+                        CategoriesTest();
                         break;
                     }
                 case "callsite":

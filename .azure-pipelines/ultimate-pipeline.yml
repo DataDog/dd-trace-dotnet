@@ -117,6 +117,7 @@ variables:
   # Run code coverage on main branches only, on scheduled build only
   runCodeCoverage: $[or(eq(variables['run_code_coverage'], 'true'), and(eq(variables['Build.Reason'], 'Schedule'), or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))))]
   DD_INTERNAL_TELEMETRY_V2_ENABLED: $[eq(variables['enable_telemetry_v2'], 'true')]
+  DD_TELEMETRY_METRICS_ENABLED: $[eq(variables['enable_metrics'], 'true')]
   DD_DOTNET_TRACER_MSBUILD:
   NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
   relativeNugetPackageDirectory: packages

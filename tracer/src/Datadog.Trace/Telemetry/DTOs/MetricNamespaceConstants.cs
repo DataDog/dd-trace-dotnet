@@ -10,7 +10,8 @@ namespace Datadog.Trace.Telemetry;
 internal static class MetricNamespaceConstants
 {
     public const string Tracer = "tracers";
-    public const string Profiler = "profilers";
-    public const string RealUserMonitoring = "rum";
+    public const string General = "general";
+    public const string Telemetry = "telemetry";
     public const string ASM = "appsec";
+    public const string Iast = "iast";
 }

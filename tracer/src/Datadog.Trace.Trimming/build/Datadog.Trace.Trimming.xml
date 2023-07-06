@@ -13,6 +13,7 @@
    <assembly fullname="Grpc.Net.Client" />
    <assembly fullname="HotChocolate.Execution" />
    <assembly fullname="log4net" />
+   <assembly fullname="Microsoft.AspNetCore.Authentication.Abstractions" />
    <assembly fullname="Microsoft.AspNetCore.Http" />
    <assembly fullname="Microsoft.AspNetCore.Http.Abstractions">
       <type fullname="Microsoft.AspNetCore.Http.ConnectionInfo" />
@@ -36,6 +37,7 @@
       <type fullname="Microsoft.AspNetCore.Http.IRequestCookieCollection" />
       <type fullname="Microsoft.AspNetCore.Http.IResponseCookies" />
    </assembly>
+   <assembly fullname="Microsoft.AspNetCore.Identity" />
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor" />
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ParameterDescriptor" />
@@ -64,11 +66,17 @@
    <assembly fullname="Microsoft.Azure.WebJobs.Script.WebHost" />
    <assembly fullname="Microsoft.Data.SqlClient" />
    <assembly fullname="Microsoft.Data.Sqlite" />
+   <assembly fullname="Microsoft.Extensions.Identity.Core" />
    <assembly fullname="Microsoft.Extensions.Logging" />
    <assembly fullname="Microsoft.Extensions.Logging.Abstractions" />
    <assembly fullname="Microsoft.Extensions.Primitives">
+      <type fullname="Microsoft.Extensions.Primitives.StringSegment" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues/Enumerator" />
+   </assembly>
+   <assembly fullname="Microsoft.Net.Http.Headers">
+      <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
+      <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
@@ -667,6 +675,7 @@
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.InternalsVisibleToAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsByRefLikeAttribute" />
+      <type fullname="System.Runtime.CompilerServices.IsExternalInit" />
       <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsVolatile" />
       <type fullname="System.Runtime.CompilerServices.IteratorStateMachineAttribute" />
@@ -676,6 +685,7 @@
       <type fullname="System.Runtime.CompilerServices.SkipLocalsInitAttribute" />
       <type fullname="System.Runtime.CompilerServices.StateMachineAttribute" />
       <type fullname="System.Runtime.CompilerServices.StrongBox`1" />
+      <type fullname="System.Runtime.CompilerServices.SwitchExpressionException" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter" />
       <type fullname="System.Runtime.CompilerServices.TaskAwaiter`1" />
       <type fullname="System.Runtime.CompilerServices.TupleElementNamesAttribute" />
@@ -813,6 +823,7 @@
       <type fullname="System.PlatformID" />
       <type fullname="System.Random" />
       <type fullname="System.ResolveEventHandler" />
+      <type fullname="System.Runtime.CompilerServices.SwitchExpressionException" />
       <type fullname="System.Security.Permissions.SecurityAction" />
       <type fullname="System.Security.Permissions.SecurityPermissionAttribute" />
       <type fullname="System.StringComparer" />
@@ -859,6 +870,10 @@
       <type fullname="System.Runtime.Serialization.DataMemberAttribute" />
       <type fullname="System.Runtime.Serialization.IgnoreDataMemberAttribute" />
    </assembly>
+   <assembly fullname="System.Security.Claims">
+      <type fullname="System.Security.Claims.Claim" />
+      <type fullname="System.Security.Claims.ClaimsPrincipal" />
+   </assembly>
    <assembly fullname="System.Security.Cryptography" />
    <assembly fullname="System.Security.Cryptography.Algorithms">
       <type fullname="System.Security.Cryptography.AsymmetricSignatureFormatter" />
@@ -901,7 +916,6 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
-      <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />

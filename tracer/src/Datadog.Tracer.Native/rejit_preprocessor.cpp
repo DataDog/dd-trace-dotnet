@@ -85,18 +85,23 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
     auto enable_by_ref_instrumentation = m_rejit_handler->GetEnableByRefInstrumentation();
     auto enable_calltarget_state_by_ref = m_rejit_handler->GetEnableCallTargetStateByRef();
 
-    auto enumIterator = enumMethods.begin();
-    auto combinedEnd = iterate_explicit_interface_methods ? enumExplicitInterfaceMethods.end() : enumMethods.end();
-    for (; enumIterator != combinedEnd; enumIterator = ++enumIterator)
+    auto enumIterator =
+        iterate_explicit_interface_methods ?
+            enumExplicitInterfaceMethods.begin() : enumMethods.begin();
+    auto iteratorEnd = enumMethods.end();
+    auto explicitMode = iterate_explicit_interface_methods;
+
+    for (; enumIterator != iteratorEnd; enumIterator = ++enumIterator)
     {
-        // When interface methods are being iterated and we reach the end of the regular method search,
-        // switch over to the explicit interface method search
-        if (iterate_explicit_interface_methods && !(enumIterator != enumMethods.end()))
+        // When interface methods are being iterated first we go over the explicit interface method search and then
+        // switch to the regular method search, just like the runtime behaves.
+        if (iterate_explicit_interface_methods && !(enumIterator != enumExplicitInterfaceMethods.end()))
         {
-            enumIterator = enumExplicitInterfaceMethods.begin();
+            enumIterator = enumMethods.begin();
+            explicitMode = false;
 
             // Immediately exit if the second enumerator has 0 entries
-            if (!(enumIterator != combinedEnd))
+            if (!(enumIterator != iteratorEnd))
             {
                 break;
             }
@@ -197,6 +202,13 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
 
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
+
+        // If we are in the explicit enumerator and we found the method, we don't look into the normal methods enumerators.
+        if (explicitMode)
+        {
+            Logger::Debug("      Explicit interface implementation found, skipping normal methods search. [", caller.type.name, ".", caller.name, "]");
+            break;
+        }
     }
 }
 
@@ -229,7 +241,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRejitForLoadedModules(
                                                         bool enqueueInSameThread)
 {
     std::vector<MethodIdentifier> rejitRequests {};
-    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, false);
     RequestRejit(rejitRequests, enqueueInSameThread);
     return rejitCount;
 }
@@ -240,7 +252,7 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::RequestRevertForLoadedModules(
     bool enqueueInSameThread)
 {
     std::vector<MethodIdentifier> rejitRequests{};
-    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests);
+    const auto rejitCount = PreprocessRejitRequests(modules, definitions, rejitRequests, true);
     RequestRevert(rejitRequests, enqueueInSameThread);
     return rejitCount;
 }
@@ -454,7 +466,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueRequestRevertForLoadedMod
 template <class RejitRequestDefinition>
 ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
     const std::vector<ModuleID>& modules, const std::vector<RejitRequestDefinition>& definitions,
-    std::vector<MethodIdentifier>& rejitRequests)
+    std::vector<MethodIdentifier>& rejitRequests, bool isRevert)
 {
     if (m_rejit_handler->IsShutdownRequested())
     {
@@ -481,6 +493,19 @@ ULONG RejitPreprocessor<RejitRequestDefinition>::PreprocessRejitRequests(
             const auto target_method = GetTargetMethod(definition);
             const auto is_derived = GetIsDerived(definition);
             const auto is_interface = GetIsInterface(definition);
+            const auto is_enabled = GetIsEnabled(definition);
+
+            if (SupportsSelectiveEnablement())
+            {
+                if (!isRevert && !is_enabled)
+                {
+                    continue; // Disabled calltarget
+                }
+                else if (isRevert && is_enabled)
+                {
+                    continue; // Enabled calltarget
+                }
+            }
 
             if (is_derived || is_interface)
             {
@@ -775,7 +800,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueuePreprocessRejitRequests(c
                                     localPromise = promise]() mutable {
 
         // Process modules for rejit
-        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests);
+        const auto rejitCount = PreprocessRejitRequests(modules, definitions, localRejitRequests, true);
 
         // Resolve promise
         if (localPromise != nullptr)
@@ -815,6 +840,17 @@ const bool TracerRejitPreprocessor::GetIsExactSignatureMatch(const IntegrationDe
 {
     return integrationDefinition.is_exact_signature_match;
 }
+
+const bool TracerRejitPreprocessor::GetIsEnabled(const IntegrationDefinition& integrationDefinition)
+{
+    return integrationDefinition.GetEnabled();
+}
+
+const bool TracerRejitPreprocessor::SupportsSelectiveEnablement()
+{
+    return true;
+}
+
 
 const std::unique_ptr<RejitHandlerModuleMethod> TracerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                                 const FunctionInfo& functionInfo,

@@ -671,8 +671,13 @@ internal partial class Sources
             return;
         }
 
+        var i = 0;
         foreach (var (_, metric) in names)
         {
+            sb.AppendLine(
+                $$"""
+                            // {{metric.MetricName}}, index = {{i}}
+                """);
             const string prefix =
                 """
                             new(
@@ -685,28 +690,55 @@ internal partial class Sources
                     {
                         foreach (var tag2Value in tag2Values)
                         {
+                            i++;
                             sb.Append(prefix)
-                              .Append("new[] { \"")
-                              .Append(tag1Value)
-                              .Append("\", \"")
-                              .Append(tag2Value)
-                              .AppendLine("\" }),");
+                              .Append("new[] { ");
+
+                            WriteAllValues(sb, tag1Value);
+                            WriteAllValues(sb, tag2Value);
+
+                            sb.Remove(sb.Length - 2, 2); // remove the final ', '
+                            sb.AppendLine(" }),");
                         }
                     }
                     else
                     {
+                        i++;
                         sb.Append(prefix)
-                          .Append("new[] { \"")
-                          .Append(tag1Value)
-                          .AppendLine("\" }),");
+                          .Append("new[] { ");
+
+                        WriteAllValues(sb, tag1Value);
+
+                        sb.Remove(sb.Length - 2, 2); // remove the final ', '
+                        sb.AppendLine(" }),");
                     }
                 }
             }
             else
             {
+                i++;
                 sb
                    .Append(prefix)
                    .AppendLine("null),");
+            }
+        }
+
+        static void WriteAllValues(StringBuilder sb, string tagValue)
+        {
+            // split the description on `;`, to allow writing _multiple_ tags with a single enum
+            var previousSeparator = 0;
+            var isFinished = false;
+            while (!isFinished)
+            {
+                var nextSeparator = tagValue.IndexOf(';', previousSeparator);
+                (isFinished, var length) = nextSeparator == -1
+                                                       ? (true, tagValue.Length - previousSeparator)
+                                                       : (false, nextSeparator - previousSeparator);
+
+                sb.Append('"')
+                  .Append(tagValue, previousSeparator, length)
+                  .Append("\", ");
+                previousSeparator = nextSeparator + 1;
             }
         }
     }

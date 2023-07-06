@@ -32,9 +32,9 @@ namespace Datadog.Trace.Telemetry
 
         public void RecordTracerSettings(ImmutableTracerSettings settings)
         {
-            for (var i = 0; i < settings.Integrations.Settings.Length; i++)
+            for (var i = 0; i < settings.IntegrationsInternal.Settings.Length; i++)
             {
-                var integration = settings.Integrations.Settings[i];
+                var integration = settings.IntegrationsInternal.Settings[i];
                 if (integration.EnabledInternal == false)
                 {
                     _integrationsById[i].WasExplicitlyDisabled = 1;

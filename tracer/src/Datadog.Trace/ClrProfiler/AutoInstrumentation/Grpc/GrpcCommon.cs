@@ -13,8 +13,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc
 {
     internal static class GrpcCommon
     {
-        public const string OperationName = "grpc.request";
-        public const string ServiceName = "grpc-client";
         public const string RequestMetadataTagPrefix = "grpc.request.metadata";
         public const string ResponseMetadataTagPrefix = "grpc.response.metadata";
 

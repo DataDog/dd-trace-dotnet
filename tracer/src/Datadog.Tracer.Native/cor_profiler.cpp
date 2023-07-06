@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -1286,16 +1286,36 @@ void CorProfiler::DisableTracerCLRProfiler()
     Shutdown();
 }
 
-void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
-    if (_dataflow != nullptr)
+    const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
+    for (int i = 0; i < length; i++)
     {
-        Logger::Info("Registerubg IAST Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength);
-    }
-    else
-    {
-        Logger::Info("IAST is disabled.");
+        if (WSTRING(keys[i]) == debugVarName)
+        {
+            if (values[i] == nullptr || *values[i] == WStr('\0'))
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }
+        }
     }
 }
 
@@ -1460,6 +1480,34 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
     // Datadog.Trace.dll and its dependencies on disk.
     if (valid_startup_hook_callsite && !has_loader_injected_in_appdomain)
     {
+        // *********************************************************************
+        // Checking if the caller is inside of the <Module> type
+        // *********************************************************************
+
+        // The <Module> typeDef is always the first entry in the typeDef table.
+        // The CLR profiling api can return mdTypeDefNil for the <Module> type, so we skip that as well.
+        constexpr auto moduleTypeDef = mdTypeDefNil + (BYTE)1;
+
+        if (caller.type.id == mdTypeDefNil || caller.type.id == moduleTypeDef)
+        {
+            Logger::Debug("JITCompilationStarted: Startup hook skipped from <Module>.", caller.name, "()");
+            return S_OK;
+        }
+
+        // Look at the type parents in case we are in a nested type
+        auto pType = caller.type.parent_type;
+        while (pType != nullptr)
+        {
+            if (pType->id == mdTypeDefNil || pType->id == moduleTypeDef)
+            {
+                Logger::Debug("JITCompilationStarted: Startup hook skipped from a type with <Module> as a parent. ", caller.type.name, ".", caller.name, "()");
+                return S_OK;
+            }
+                
+            pType = pType->parent_type;
+        }
+        // *********************************************************************
+
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
                                        module_metadata->app_domain_id == corlib_app_domain_id;
         Logger::Info("JITCompilationStarted: Startup hook registered in function_id=", function_id,
@@ -1689,7 +1737,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 TypeReference(integrationAssembly, integrationType, {}, {}),
                 isDerived,
                 isInterface,
-                true);
+                true,
+                -1,
+                enable ? -1 : 0);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1738,7 +1788,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             // remove the call target definitions
             std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
             integration_definitions_.clear();
-            for (const auto& integration : integration_definitions)
+            for (auto& integration : integration_definitions)
             {
                 if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
                     integrationDefinitions.end())
@@ -1764,6 +1814,171 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
+
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    auto definitions = definitions_ids.Get();
+
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+    if (defsIdFound)
+    {
+        Logger::Info("RegisterCallTargetDefinitions: Id already processed.");
+        return 0;
+    }
+    definitions->emplace(definitionsId);
+
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationDefinition> integrationDefinitions;
+
+        for (int i = 0; i < size; i++)
+        {
+            const auto& current = items[i];
+
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
+
+            std::vector<shared::WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto& currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                }
+            }
+
+            const Version& minVersion = Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+            const Version& maxVersion = Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+            const auto& integration = IntegrationDefinition(
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
+                current.GetIsInterface(), true, current.categories, enabledCategories);
+
+            if (Logger::IsDebugEnabled())
+            {
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                              integrationAssembly, " | ", integrationType, "]");
+            }
+
+            integrationDefinitions.push_back(integration);
+        }
+
+        auto modules = module_ids.Get();
+
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
+        {
+            integration_definitions_.push_back(integration);
+        }
+
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        Logger::Info("RegisterCallTargetDefinitions: Total integrations in profiler: ", integration_definitions_.size());
+    }
+
+    return numReJITs;
+}
+long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                 promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+        }
+        Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
+    }
+    return numReJITs;
+}
+long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
+{
+    long numReverts = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                  promise);
+
+            // wait and get the value from the future<int>
+            numReverts = future.get();
+        }
+        Logger::Debug("  Total number of Reverts Requested: ", numReverts);
+    }
+    return numReverts;
+}
+
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    if (_dataflow != nullptr)
+    {
+        Logger::Info("Registerubg IAST Aspects.");
+        _dataflow->LoadAspects(aspects, aspectsLength);
+        return aspectsLength;
+    }
+    else
+    {
+        Logger::Info("IAST is disabled.");
+    }
+    return 0;
+}
+
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)

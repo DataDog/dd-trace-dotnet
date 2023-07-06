@@ -8,6 +8,8 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
@@ -175,6 +177,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 var haveMultipleBatchesToSend = false;
                 do
                 {
+                    TelemetryFactory.Metrics.RecordGaugeDirectLogQueue(_queue.Count);
+
                     while (_waitingBatch.Count < _batchSizeLimit &&
                            _queue.TryDequeue(out var next))
                     {
