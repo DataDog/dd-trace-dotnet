@@ -43,7 +43,7 @@ internal sealed class DatadogDeferredSink : ILogEventSink, IFlushableFileSink, I
 #if !NETCOREAPP
             ThreadPool.UnsafeQueueUserWorkItem(_waitCallback, null);
 #else
-            ThreadPool.UnsafeQueueUserWorkItem(this, true);
+            ThreadPool.UnsafeQueueUserWorkItem(this, false);
 #endif
         }
     }
