@@ -45,18 +45,40 @@ namespace Datadog.Trace.Configuration
             }
 
             var config = new ConfigurationBuilder(source, telemetry);
+
+#if NET6_0_OR_GREATER
             EnabledInternal = config
-                     .WithKeys(
-                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                          string.Format("DD_{0}_ENABLED", integrationName))
-                     .AsBool();
+                             .WithKeys(
+                                  string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ENABLED"),
+                                  string.Create(null, stackalloc char[128], $"DD_{integrationName}_ENABLED"))
+                             .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = config
-                              .WithKeys(
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
-                                   string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
-                              .AsBool();
+                                      .WithKeys(
+                                           string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_ENABLED"),
+                                           string.Create(null, stackalloc char[128], $"DD_{integrationName}_ANALYTICS_ENABLED"))
+                                      .AsBool();
+
+            AnalyticsSampleRateInternal = config
+                                         .WithKeys(
+                                              string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_SAMPLE_RATE"),
+                                              string.Create(null, stackalloc char[128], $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"))
+                                         .AsDouble(1.0);
+#pragma warning restore 618
+#else
+            EnabledInternal = config
+                             .WithKeys(
+                                  string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
+                                  string.Format("DD_{0}_ENABLED", integrationName))
+                             .AsBool();
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+            AnalyticsEnabledInternal = config
+                                      .WithKeys(
+                                           string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
+                                           string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
+                                      .AsBool();
 
             AnalyticsSampleRateInternal = config
                                  .WithKeys(
@@ -64,6 +86,7 @@ namespace Datadog.Trace.Configuration
                                       string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
                                  .AsDouble(1.0);
 #pragma warning restore 618
+#endif
         }
 
         /// <summary>

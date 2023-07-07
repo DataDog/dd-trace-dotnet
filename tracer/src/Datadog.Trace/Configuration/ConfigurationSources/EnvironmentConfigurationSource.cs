@@ -6,6 +6,8 @@
 #nullable enable
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
@@ -19,18 +21,41 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class EnvironmentConfigurationSource : StringConfigurationSource
     {
+        private readonly IDictionary _environmentVariables;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="EnvironmentConfigurationSource"/> class.
         /// </summary>
         [PublicApi]
         public EnvironmentConfigurationSource()
         {
+            try
+            {
+                _environmentVariables = Environment.GetEnvironmentVariables();
+            }
+            catch
+            {
+                // We should not add a dependency from the Configuration system to the Logger system,
+                // so do nothing
+                _environmentVariables = new Dictionary<string, string>();
+            }
+
             TelemetryFactory.Metrics.Record(PublicApiUsage.EnvironmentConfigurationSource_Ctor);
         }
 
         private protected EnvironmentConfigurationSource(bool unusedParamNotToUsePublicApi)
         {
             // unused parameter is to give us a non-public API we can use
+            try
+            {
+                _environmentVariables = Environment.GetEnvironmentVariables();
+            }
+            catch
+            {
+                // We should not add a dependency from the Configuration system to the Logger system,
+                // so do nothing
+                _environmentVariables = new Dictionary<string, string>();
+            }
         }
 
         /// <inheritdoc />
@@ -40,17 +65,7 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public override string? GetString(string key)
         {
-            try
-            {
-                return Environment.GetEnvironmentVariable(key);
-            }
-            catch
-            {
-                // We should not add a dependency from the Configuration system to the Logger system,
-                // so do nothing
-            }
-
-            return null;
+            return _environmentVariables[key]?.ToString();
         }
     }
 }
