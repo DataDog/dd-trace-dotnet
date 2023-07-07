@@ -62,7 +62,20 @@ namespace Datadog.Trace.Configuration
                 foreach (DictionaryEntry? entry in Environment.GetEnvironmentVariables())
                 {
                     if (entry is null) { continue; }
-                    envVar[entry.Value.Key?.ToString() ?? string.Empty] = entry.Value.Value?.ToString();
+
+                    if (entry.Value.Key is not string key)
+                    {
+                        key = entry.Value.Key?.ToString() ?? string.Empty;
+                    }
+
+                    if (entry.Value.Value is string value)
+                    {
+                        envVar[key] = value;
+                    }
+                    else
+                    {
+                        envVar[key] = entry.Value.Value?.ToString();
+                    }
                 }
             }
             catch
