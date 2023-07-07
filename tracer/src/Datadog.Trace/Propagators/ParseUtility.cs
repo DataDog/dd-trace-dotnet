@@ -19,6 +19,8 @@ namespace Datadog.Trace.Propagators
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<ParseUtility>();
 
+        private static bool _firstWarning = true;
+
         public static ulong? ParseUInt64<TCarrier, TCarrierGetter>(TCarrier carrier, TCarrierGetter getter, string headerName)
             where TCarrierGetter : struct, ICarrierGetter<TCarrier>
         {
@@ -45,10 +47,21 @@ namespace Datadog.Trace.Propagators
 
             if (hasValue)
             {
-                Log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
+                if (_firstWarning)
+                {
+                    Log.Warning(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                    _firstWarning = false;
+                }
+                else
+                {
+                    Log.Debug(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                }
             }
 
             return null;
@@ -100,10 +113,21 @@ namespace Datadog.Trace.Propagators
 
             if (hasValue)
             {
-                Log.Warning(
-                    "Could not parse {HeaderName} headers: {HeaderValues}",
-                    headerName,
-                    string.Join(",", headerValues));
+                if (_firstWarning)
+                {
+                    Log.Warning(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                    _firstWarning = false;
+                }
+                else
+                {
+                    Log.Debug(
+                        "Could not parse {HeaderName} headers: {HeaderValues}",
+                        headerName,
+                        string.Join(",", headerValues));
+                }
             }
 
             return null;
