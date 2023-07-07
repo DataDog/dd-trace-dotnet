@@ -229,7 +229,7 @@
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
+    <PackageReference Include="xunit.extensibility.execution" Version="2.5.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
     <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
