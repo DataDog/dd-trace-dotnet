@@ -32,8 +32,9 @@ partial class Build
                            .Select(project => project.Directory)
                            .SelectMany(projectDir => projectDir.GlobFiles("**/bin/**/Datadog*.dll"));
             var homeDlls = MonitoringHomeDirectory.GlobFiles("**/Datadog*.dll");
+            var waf = MonitoringHomeDirectory.GlobFiles("**/ddwaf.dll");
 
-            var dlls = homeDlls.Concat(dllsInBin);
+            var dlls = homeDlls.Concat(dllsInBin).Concat(waf);
             SignFiles(dlls.ToList());
         });
 
