@@ -194,4 +194,82 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.OpenTelemetry),
             nameof(Datadog.Trace.Configuration.IntegrationId.PathTraversal),
         };
+
+    /// <summary>
+    /// Returns an IntegrationSettingsKeys value with all the keys.
+    /// </summary>
+    /// <param name="value">The value to retrieve the string value for</param>
+    /// <returns>IntegrationSettingsKeys instance with all values</returns>
+    public static IntegrationSettingsKeys GetKeys(this Datadog.Trace.Configuration.IntegrationId value)
+        => value switch
+        {
+            Datadog.Trace.Configuration.IntegrationId.HttpMessageHandler => new IntegrationSettingsKeys("DD_TRACE_HttpMessageHandler_ENABLED", "DD_HttpMessageHandler_ENABLED", "DD_TRACE_HttpMessageHandler_ANALYTICS_ENABLED", "DD_HttpMessageHandler_ANALYTICS_ENABLED", "DD_TRACE_HttpMessageHandler_ANALYTICS_SAMPLE_RATE", "DD_HttpMessageHandler_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.HttpSocketsHandler => new IntegrationSettingsKeys("DD_TRACE_HttpSocketsHandler_ENABLED", "DD_HttpSocketsHandler_ENABLED", "DD_TRACE_HttpSocketsHandler_ANALYTICS_ENABLED", "DD_HttpSocketsHandler_ANALYTICS_ENABLED", "DD_TRACE_HttpSocketsHandler_ANALYTICS_SAMPLE_RATE", "DD_HttpSocketsHandler_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.WinHttpHandler => new IntegrationSettingsKeys("DD_TRACE_WinHttpHandler_ENABLED", "DD_WinHttpHandler_ENABLED", "DD_TRACE_WinHttpHandler_ANALYTICS_ENABLED", "DD_WinHttpHandler_ANALYTICS_ENABLED", "DD_TRACE_WinHttpHandler_ANALYTICS_SAMPLE_RATE", "DD_WinHttpHandler_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.CurlHandler => new IntegrationSettingsKeys("DD_TRACE_CurlHandler_ENABLED", "DD_CurlHandler_ENABLED", "DD_TRACE_CurlHandler_ANALYTICS_ENABLED", "DD_CurlHandler_ANALYTICS_ENABLED", "DD_TRACE_CurlHandler_ANALYTICS_SAMPLE_RATE", "DD_CurlHandler_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AspNetCore => new IntegrationSettingsKeys("DD_TRACE_AspNetCore_ENABLED", "DD_AspNetCore_ENABLED", "DD_TRACE_AspNetCore_ANALYTICS_ENABLED", "DD_AspNetCore_ANALYTICS_ENABLED", "DD_TRACE_AspNetCore_ANALYTICS_SAMPLE_RATE", "DD_AspNetCore_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AdoNet => new IntegrationSettingsKeys("DD_TRACE_AdoNet_ENABLED", "DD_AdoNet_ENABLED", "DD_TRACE_AdoNet_ANALYTICS_ENABLED", "DD_AdoNet_ANALYTICS_ENABLED", "DD_TRACE_AdoNet_ANALYTICS_SAMPLE_RATE", "DD_AdoNet_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AspNet => new IntegrationSettingsKeys("DD_TRACE_AspNet_ENABLED", "DD_AspNet_ENABLED", "DD_TRACE_AspNet_ANALYTICS_ENABLED", "DD_AspNet_ANALYTICS_ENABLED", "DD_TRACE_AspNet_ANALYTICS_SAMPLE_RATE", "DD_AspNet_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AspNetMvc => new IntegrationSettingsKeys("DD_TRACE_AspNetMvc_ENABLED", "DD_AspNetMvc_ENABLED", "DD_TRACE_AspNetMvc_ANALYTICS_ENABLED", "DD_AspNetMvc_ANALYTICS_ENABLED", "DD_TRACE_AspNetMvc_ANALYTICS_SAMPLE_RATE", "DD_AspNetMvc_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AspNetWebApi2 => new IntegrationSettingsKeys("DD_TRACE_AspNetWebApi2_ENABLED", "DD_AspNetWebApi2_ENABLED", "DD_TRACE_AspNetWebApi2_ANALYTICS_ENABLED", "DD_AspNetWebApi2_ANALYTICS_ENABLED", "DD_TRACE_AspNetWebApi2_ANALYTICS_SAMPLE_RATE", "DD_AspNetWebApi2_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.GraphQL => new IntegrationSettingsKeys("DD_TRACE_GraphQL_ENABLED", "DD_GraphQL_ENABLED", "DD_TRACE_GraphQL_ANALYTICS_ENABLED", "DD_GraphQL_ANALYTICS_ENABLED", "DD_TRACE_GraphQL_ANALYTICS_SAMPLE_RATE", "DD_GraphQL_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.HotChocolate => new IntegrationSettingsKeys("DD_TRACE_HotChocolate_ENABLED", "DD_HotChocolate_ENABLED", "DD_TRACE_HotChocolate_ANALYTICS_ENABLED", "DD_HotChocolate_ANALYTICS_ENABLED", "DD_TRACE_HotChocolate_ANALYTICS_SAMPLE_RATE", "DD_HotChocolate_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.MongoDb => new IntegrationSettingsKeys("DD_TRACE_MongoDb_ENABLED", "DD_MongoDb_ENABLED", "DD_TRACE_MongoDb_ANALYTICS_ENABLED", "DD_MongoDb_ANALYTICS_ENABLED", "DD_TRACE_MongoDb_ANALYTICS_SAMPLE_RATE", "DD_MongoDb_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.XUnit => new IntegrationSettingsKeys("DD_TRACE_XUnit_ENABLED", "DD_XUnit_ENABLED", "DD_TRACE_XUnit_ANALYTICS_ENABLED", "DD_XUnit_ANALYTICS_ENABLED", "DD_TRACE_XUnit_ANALYTICS_SAMPLE_RATE", "DD_XUnit_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.NUnit => new IntegrationSettingsKeys("DD_TRACE_NUnit_ENABLED", "DD_NUnit_ENABLED", "DD_TRACE_NUnit_ANALYTICS_ENABLED", "DD_NUnit_ANALYTICS_ENABLED", "DD_TRACE_NUnit_ANALYTICS_SAMPLE_RATE", "DD_NUnit_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.MsTestV2 => new IntegrationSettingsKeys("DD_TRACE_MsTestV2_ENABLED", "DD_MsTestV2_ENABLED", "DD_TRACE_MsTestV2_ANALYTICS_ENABLED", "DD_MsTestV2_ANALYTICS_ENABLED", "DD_TRACE_MsTestV2_ANALYTICS_SAMPLE_RATE", "DD_MsTestV2_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Wcf => new IntegrationSettingsKeys("DD_TRACE_Wcf_ENABLED", "DD_Wcf_ENABLED", "DD_TRACE_Wcf_ANALYTICS_ENABLED", "DD_Wcf_ANALYTICS_ENABLED", "DD_TRACE_Wcf_ANALYTICS_SAMPLE_RATE", "DD_Wcf_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.WebRequest => new IntegrationSettingsKeys("DD_TRACE_WebRequest_ENABLED", "DD_WebRequest_ENABLED", "DD_TRACE_WebRequest_ANALYTICS_ENABLED", "DD_WebRequest_ANALYTICS_ENABLED", "DD_TRACE_WebRequest_ANALYTICS_SAMPLE_RATE", "DD_WebRequest_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.ElasticsearchNet => new IntegrationSettingsKeys("DD_TRACE_ElasticsearchNet_ENABLED", "DD_ElasticsearchNet_ENABLED", "DD_TRACE_ElasticsearchNet_ANALYTICS_ENABLED", "DD_ElasticsearchNet_ANALYTICS_ENABLED", "DD_TRACE_ElasticsearchNet_ANALYTICS_SAMPLE_RATE", "DD_ElasticsearchNet_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.ServiceStackRedis => new IntegrationSettingsKeys("DD_TRACE_ServiceStackRedis_ENABLED", "DD_ServiceStackRedis_ENABLED", "DD_TRACE_ServiceStackRedis_ANALYTICS_ENABLED", "DD_ServiceStackRedis_ANALYTICS_ENABLED", "DD_TRACE_ServiceStackRedis_ANALYTICS_SAMPLE_RATE", "DD_ServiceStackRedis_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.StackExchangeRedis => new IntegrationSettingsKeys("DD_TRACE_StackExchangeRedis_ENABLED", "DD_StackExchangeRedis_ENABLED", "DD_TRACE_StackExchangeRedis_ANALYTICS_ENABLED", "DD_StackExchangeRedis_ANALYTICS_ENABLED", "DD_TRACE_StackExchangeRedis_ANALYTICS_SAMPLE_RATE", "DD_StackExchangeRedis_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.ServiceRemoting => new IntegrationSettingsKeys("DD_TRACE_ServiceRemoting_ENABLED", "DD_ServiceRemoting_ENABLED", "DD_TRACE_ServiceRemoting_ANALYTICS_ENABLED", "DD_ServiceRemoting_ANALYTICS_ENABLED", "DD_TRACE_ServiceRemoting_ANALYTICS_SAMPLE_RATE", "DD_ServiceRemoting_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.RabbitMQ => new IntegrationSettingsKeys("DD_TRACE_RabbitMQ_ENABLED", "DD_RabbitMQ_ENABLED", "DD_TRACE_RabbitMQ_ANALYTICS_ENABLED", "DD_RabbitMQ_ANALYTICS_ENABLED", "DD_TRACE_RabbitMQ_ANALYTICS_SAMPLE_RATE", "DD_RabbitMQ_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Msmq => new IntegrationSettingsKeys("DD_TRACE_Msmq_ENABLED", "DD_Msmq_ENABLED", "DD_TRACE_Msmq_ANALYTICS_ENABLED", "DD_Msmq_ANALYTICS_ENABLED", "DD_TRACE_Msmq_ANALYTICS_SAMPLE_RATE", "DD_Msmq_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Kafka => new IntegrationSettingsKeys("DD_TRACE_Kafka_ENABLED", "DD_Kafka_ENABLED", "DD_TRACE_Kafka_ANALYTICS_ENABLED", "DD_Kafka_ANALYTICS_ENABLED", "DD_TRACE_Kafka_ANALYTICS_SAMPLE_RATE", "DD_Kafka_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.CosmosDb => new IntegrationSettingsKeys("DD_TRACE_CosmosDb_ENABLED", "DD_CosmosDb_ENABLED", "DD_TRACE_CosmosDb_ANALYTICS_ENABLED", "DD_CosmosDb_ANALYTICS_ENABLED", "DD_TRACE_CosmosDb_ANALYTICS_SAMPLE_RATE", "DD_CosmosDb_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AwsSdk => new IntegrationSettingsKeys("DD_TRACE_AwsSdk_ENABLED", "DD_AwsSdk_ENABLED", "DD_TRACE_AwsSdk_ANALYTICS_ENABLED", "DD_AwsSdk_ANALYTICS_ENABLED", "DD_TRACE_AwsSdk_ANALYTICS_SAMPLE_RATE", "DD_AwsSdk_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AwsSqs => new IntegrationSettingsKeys("DD_TRACE_AwsSqs_ENABLED", "DD_AwsSqs_ENABLED", "DD_TRACE_AwsSqs_ANALYTICS_ENABLED", "DD_AwsSqs_ANALYTICS_ENABLED", "DD_TRACE_AwsSqs_ANALYTICS_SAMPLE_RATE", "DD_AwsSqs_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AwsSns => new IntegrationSettingsKeys("DD_TRACE_AwsSns_ENABLED", "DD_AwsSns_ENABLED", "DD_TRACE_AwsSns_ANALYTICS_ENABLED", "DD_AwsSns_ANALYTICS_ENABLED", "DD_TRACE_AwsSns_ANALYTICS_SAMPLE_RATE", "DD_AwsSns_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.ILogger => new IntegrationSettingsKeys("DD_TRACE_ILogger_ENABLED", "DD_ILogger_ENABLED", "DD_TRACE_ILogger_ANALYTICS_ENABLED", "DD_ILogger_ANALYTICS_ENABLED", "DD_TRACE_ILogger_ANALYTICS_SAMPLE_RATE", "DD_ILogger_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Aerospike => new IntegrationSettingsKeys("DD_TRACE_Aerospike_ENABLED", "DD_Aerospike_ENABLED", "DD_TRACE_Aerospike_ANALYTICS_ENABLED", "DD_Aerospike_ANALYTICS_ENABLED", "DD_TRACE_Aerospike_ANALYTICS_SAMPLE_RATE", "DD_Aerospike_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.AzureFunctions => new IntegrationSettingsKeys("DD_TRACE_AzureFunctions_ENABLED", "DD_AzureFunctions_ENABLED", "DD_TRACE_AzureFunctions_ANALYTICS_ENABLED", "DD_AzureFunctions_ANALYTICS_ENABLED", "DD_TRACE_AzureFunctions_ANALYTICS_SAMPLE_RATE", "DD_AzureFunctions_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Couchbase => new IntegrationSettingsKeys("DD_TRACE_Couchbase_ENABLED", "DD_Couchbase_ENABLED", "DD_TRACE_Couchbase_ANALYTICS_ENABLED", "DD_Couchbase_ANALYTICS_ENABLED", "DD_TRACE_Couchbase_ANALYTICS_SAMPLE_RATE", "DD_Couchbase_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.MySql => new IntegrationSettingsKeys("DD_TRACE_MySql_ENABLED", "DD_MySql_ENABLED", "DD_TRACE_MySql_ANALYTICS_ENABLED", "DD_MySql_ANALYTICS_ENABLED", "DD_TRACE_MySql_ANALYTICS_SAMPLE_RATE", "DD_MySql_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Npgsql => new IntegrationSettingsKeys("DD_TRACE_Npgsql_ENABLED", "DD_Npgsql_ENABLED", "DD_TRACE_Npgsql_ANALYTICS_ENABLED", "DD_Npgsql_ANALYTICS_ENABLED", "DD_TRACE_Npgsql_ANALYTICS_SAMPLE_RATE", "DD_Npgsql_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Oracle => new IntegrationSettingsKeys("DD_TRACE_Oracle_ENABLED", "DD_Oracle_ENABLED", "DD_TRACE_Oracle_ANALYTICS_ENABLED", "DD_Oracle_ANALYTICS_ENABLED", "DD_TRACE_Oracle_ANALYTICS_SAMPLE_RATE", "DD_Oracle_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.SqlClient => new IntegrationSettingsKeys("DD_TRACE_SqlClient_ENABLED", "DD_SqlClient_ENABLED", "DD_TRACE_SqlClient_ANALYTICS_ENABLED", "DD_SqlClient_ANALYTICS_ENABLED", "DD_TRACE_SqlClient_ANALYTICS_SAMPLE_RATE", "DD_SqlClient_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Sqlite => new IntegrationSettingsKeys("DD_TRACE_Sqlite_ENABLED", "DD_Sqlite_ENABLED", "DD_TRACE_Sqlite_ANALYTICS_ENABLED", "DD_Sqlite_ANALYTICS_ENABLED", "DD_TRACE_Sqlite_ANALYTICS_SAMPLE_RATE", "DD_Sqlite_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Serilog => new IntegrationSettingsKeys("DD_TRACE_Serilog_ENABLED", "DD_Serilog_ENABLED", "DD_TRACE_Serilog_ANALYTICS_ENABLED", "DD_Serilog_ANALYTICS_ENABLED", "DD_TRACE_Serilog_ANALYTICS_SAMPLE_RATE", "DD_Serilog_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Log4Net => new IntegrationSettingsKeys("DD_TRACE_Log4Net_ENABLED", "DD_Log4Net_ENABLED", "DD_TRACE_Log4Net_ANALYTICS_ENABLED", "DD_Log4Net_ANALYTICS_ENABLED", "DD_TRACE_Log4Net_ANALYTICS_SAMPLE_RATE", "DD_Log4Net_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.NLog => new IntegrationSettingsKeys("DD_TRACE_NLog_ENABLED", "DD_NLog_ENABLED", "DD_TRACE_NLog_ANALYTICS_ENABLED", "DD_NLog_ANALYTICS_ENABLED", "DD_TRACE_NLog_ANALYTICS_SAMPLE_RATE", "DD_NLog_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.TraceAnnotations => new IntegrationSettingsKeys("DD_TRACE_TraceAnnotations_ENABLED", "DD_TraceAnnotations_ENABLED", "DD_TRACE_TraceAnnotations_ANALYTICS_ENABLED", "DD_TraceAnnotations_ANALYTICS_ENABLED", "DD_TRACE_TraceAnnotations_ANALYTICS_SAMPLE_RATE", "DD_TraceAnnotations_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Grpc => new IntegrationSettingsKeys("DD_TRACE_Grpc_ENABLED", "DD_Grpc_ENABLED", "DD_TRACE_Grpc_ANALYTICS_ENABLED", "DD_Grpc_ANALYTICS_ENABLED", "DD_TRACE_Grpc_ANALYTICS_SAMPLE_RATE", "DD_Grpc_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.Process => new IntegrationSettingsKeys("DD_TRACE_Process_ENABLED", "DD_Process_ENABLED", "DD_TRACE_Process_ANALYTICS_ENABLED", "DD_Process_ANALYTICS_ENABLED", "DD_TRACE_Process_ANALYTICS_SAMPLE_RATE", "DD_Process_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.HashAlgorithm => new IntegrationSettingsKeys("DD_TRACE_HashAlgorithm_ENABLED", "DD_HashAlgorithm_ENABLED", "DD_TRACE_HashAlgorithm_ANALYTICS_ENABLED", "DD_HashAlgorithm_ANALYTICS_ENABLED", "DD_TRACE_HashAlgorithm_ANALYTICS_SAMPLE_RATE", "DD_HashAlgorithm_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm => new IntegrationSettingsKeys("DD_TRACE_SymmetricAlgorithm_ENABLED", "DD_SymmetricAlgorithm_ENABLED", "DD_TRACE_SymmetricAlgorithm_ANALYTICS_ENABLED", "DD_SymmetricAlgorithm_ANALYTICS_ENABLED", "DD_TRACE_SymmetricAlgorithm_ANALYTICS_SAMPLE_RATE", "DD_SymmetricAlgorithm_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.OpenTelemetry => new IntegrationSettingsKeys("DD_TRACE_OpenTelemetry_ENABLED", "DD_OpenTelemetry_ENABLED", "DD_TRACE_OpenTelemetry_ANALYTICS_ENABLED", "DD_OpenTelemetry_ANALYTICS_ENABLED", "DD_TRACE_OpenTelemetry_ANALYTICS_SAMPLE_RATE", "DD_OpenTelemetry_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.IntegrationId.PathTraversal => new IntegrationSettingsKeys("DD_TRACE_PathTraversal_ENABLED", "DD_PathTraversal_ENABLED", "DD_TRACE_PathTraversal_ANALYTICS_ENABLED", "DD_PathTraversal_ANALYTICS_ENABLED", "DD_TRACE_PathTraversal_ANALYTICS_SAMPLE_RATE", "DD_PathTraversal_ANALYTICS_SAMPLE_RATE"),
+            _ => default,
+        };
+}
+
+internal readonly ref struct IntegrationSettingsKeys
+{
+    public readonly string EnabledKey;
+    public readonly string EnabledFallbackKey;
+    public readonly string AnalyticsEnabledKey;
+    public readonly string AnalyticsEnabledFallbackKey;
+    public readonly string AnalyticsSampleRateKey;
+    public readonly string AnalyticsSampleRateFallbackKey;
+
+    public IntegrationSettingsKeys(string enabledKey, string enabledFallbackKey, string analyticsEnabledKey, string analyticsEnabledFallbackKey, string analyticsSampleRateKey, string analyticsSampleRateFallbackKey)
+    {
+        EnabledKey = enabledKey;
+        EnabledFallbackKey = enabledFallbackKey;
+        AnalyticsEnabledKey = analyticsEnabledKey;
+        AnalyticsEnabledFallbackKey = analyticsEnabledFallbackKey;
+        AnalyticsSampleRateKey = analyticsSampleRateKey;
+        AnalyticsSampleRateFallbackKey = analyticsSampleRateFallbackKey;
+    }
 }

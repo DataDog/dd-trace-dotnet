@@ -83,6 +83,37 @@ internal class Sources
                     => new []
                     {{{GetNames(sb, in enumToGenerate)}}
                     };{{GetDescriptions(sb, in enumToGenerate)}}
+
+                /// <summary>
+                /// Returns an IntegrationSettingsKeys value with all the keys.
+                /// </summary>
+                /// <param name="value">The value to retrieve the string value for</param>
+                /// <returns>IntegrationSettingsKeys instance with all values</returns>
+                public static IntegrationSettingsKeys GetKeys(this {{enumToGenerate.FullyQualifiedName}} value)
+                    => value switch
+                    {{{GetKeys(sb, in enumToGenerate)}}
+                        _ => default,
+                    };
+            }
+
+            internal readonly ref struct IntegrationSettingsKeys
+            {
+                public readonly string EnabledKey;
+                public readonly string EnabledFallbackKey;
+                public readonly string AnalyticsEnabledKey;
+                public readonly string AnalyticsEnabledFallbackKey;
+                public readonly string AnalyticsSampleRateKey;
+                public readonly string AnalyticsSampleRateFallbackKey;
+
+                public IntegrationSettingsKeys(string enabledKey, string enabledFallbackKey, string analyticsEnabledKey, string analyticsEnabledFallbackKey, string analyticsSampleRateKey, string analyticsSampleRateFallbackKey)
+                {
+                    EnabledKey = enabledKey;
+                    EnabledFallbackKey = enabledFallbackKey;
+                    AnalyticsEnabledKey = analyticsEnabledKey;
+                    AnalyticsEnabledFallbackKey = analyticsEnabledFallbackKey;
+                    AnalyticsSampleRateKey = analyticsSampleRateKey;
+                    AnalyticsSampleRateFallbackKey = analyticsSampleRateFallbackKey;
+                }
             }
             """;
     }
@@ -101,6 +132,46 @@ internal class Sources
 
             AppendDescription(sb, member, enumToGenerate.FullyQualifiedName);
             sb.Append(',');
+        }
+
+        return sb.ToString();
+    }
+
+    private static string GetKeys(StringBuilder sb, in EnumToGenerate enumToGenerate)
+    {
+        sb.Clear();
+        foreach (var member in enumToGenerate.Names)
+        {
+            sb.AppendLine()
+              .Append("            ")
+              .Append(enumToGenerate.FullyQualifiedName)
+              .Append('.')
+              .Append(member.Property)
+              .Append(" => new IntegrationSettingsKeys(")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ENABLED\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ENABLED\", ")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_ENABLED\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_ENABLED\", ")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_SAMPLE_RATE\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_SAMPLE_RATE\"),");
         }
 
         return sb.ToString();

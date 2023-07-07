@@ -130,4 +130,51 @@ internal static partial class TelemetryErrorCodeExtensions
             "Error configuring Dynamic Instrumentation",
             "Potentially invalid UDS path",
         };
+
+    /// <summary>
+    /// Returns an IntegrationSettingsKeys value with all the keys.
+    /// </summary>
+    /// <param name="value">The value to retrieve the string value for</param>
+    /// <returns>IntegrationSettingsKeys instance with all values</returns>
+    public static IntegrationSettingsKeys GetKeys(this Datadog.Trace.Telemetry.TelemetryErrorCode value)
+        => value switch
+        {
+            Datadog.Trace.Telemetry.TelemetryErrorCode.None => new IntegrationSettingsKeys("DD_TRACE_None_ENABLED", "DD_None_ENABLED", "DD_TRACE_None_ANALYTICS_ENABLED", "DD_None_ANALYTICS_ENABLED", "DD_TRACE_None_ANALYTICS_SAMPLE_RATE", "DD_None_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.ParsingBooleanError => new IntegrationSettingsKeys("DD_TRACE_ParsingBooleanError_ENABLED", "DD_ParsingBooleanError_ENABLED", "DD_TRACE_ParsingBooleanError_ANALYTICS_ENABLED", "DD_ParsingBooleanError_ANALYTICS_ENABLED", "DD_TRACE_ParsingBooleanError_ANALYTICS_SAMPLE_RATE", "DD_ParsingBooleanError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.ParsingInt32Error => new IntegrationSettingsKeys("DD_TRACE_ParsingInt32Error_ENABLED", "DD_ParsingInt32Error_ENABLED", "DD_TRACE_ParsingInt32Error_ANALYTICS_ENABLED", "DD_ParsingInt32Error_ANALYTICS_ENABLED", "DD_TRACE_ParsingInt32Error_ANALYTICS_SAMPLE_RATE", "DD_ParsingInt32Error_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.ParsingDoubleError => new IntegrationSettingsKeys("DD_TRACE_ParsingDoubleError_ENABLED", "DD_ParsingDoubleError_ENABLED", "DD_TRACE_ParsingDoubleError_ANALYTICS_ENABLED", "DD_ParsingDoubleError_ANALYTICS_ENABLED", "DD_TRACE_ParsingDoubleError_ANALYTICS_SAMPLE_RATE", "DD_ParsingDoubleError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.FailedValidation => new IntegrationSettingsKeys("DD_TRACE_FailedValidation_ENABLED", "DD_FailedValidation_ENABLED", "DD_TRACE_FailedValidation_ANALYTICS_ENABLED", "DD_FailedValidation_ANALYTICS_ENABLED", "DD_TRACE_FailedValidation_ANALYTICS_SAMPLE_RATE", "DD_FailedValidation_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.JsonStringError => new IntegrationSettingsKeys("DD_TRACE_JsonStringError_ENABLED", "DD_JsonStringError_ENABLED", "DD_TRACE_JsonStringError_ANALYTICS_ENABLED", "DD_JsonStringError_ANALYTICS_ENABLED", "DD_TRACE_JsonStringError_ANALYTICS_SAMPLE_RATE", "DD_JsonStringError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.JsonInt32Error => new IntegrationSettingsKeys("DD_TRACE_JsonInt32Error_ENABLED", "DD_JsonInt32Error_ENABLED", "DD_TRACE_JsonInt32Error_ANALYTICS_ENABLED", "DD_JsonInt32Error_ANALYTICS_ENABLED", "DD_TRACE_JsonInt32Error_ANALYTICS_SAMPLE_RATE", "DD_JsonInt32Error_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.JsonDoubleError => new IntegrationSettingsKeys("DD_TRACE_JsonDoubleError_ENABLED", "DD_JsonDoubleError_ENABLED", "DD_TRACE_JsonDoubleError_ANALYTICS_ENABLED", "DD_JsonDoubleError_ANALYTICS_ENABLED", "DD_TRACE_JsonDoubleError_ANALYTICS_SAMPLE_RATE", "DD_JsonDoubleError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.JsonBooleanError => new IntegrationSettingsKeys("DD_TRACE_JsonBooleanError_ENABLED", "DD_JsonBooleanError_ENABLED", "DD_TRACE_JsonBooleanError_ANALYTICS_ENABLED", "DD_JsonBooleanError_ANALYTICS_ENABLED", "DD_TRACE_JsonBooleanError_ANALYTICS_SAMPLE_RATE", "DD_JsonBooleanError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.JsonDictionaryError => new IntegrationSettingsKeys("DD_TRACE_JsonDictionaryError_ENABLED", "DD_JsonDictionaryError_ENABLED", "DD_TRACE_JsonDictionaryError_ANALYTICS_ENABLED", "DD_JsonDictionaryError_ANALYTICS_ENABLED", "DD_TRACE_JsonDictionaryError_ANALYTICS_SAMPLE_RATE", "DD_JsonDictionaryError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.ParsingCustomError => new IntegrationSettingsKeys("DD_TRACE_ParsingCustomError_ENABLED", "DD_ParsingCustomError_ENABLED", "DD_TRACE_ParsingCustomError_ANALYTICS_ENABLED", "DD_ParsingCustomError_ANALYTICS_ENABLED", "DD_TRACE_ParsingCustomError_ANALYTICS_SAMPLE_RATE", "DD_ParsingCustomError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.TracerConfigurationError => new IntegrationSettingsKeys("DD_TRACE_TracerConfigurationError_ENABLED", "DD_TracerConfigurationError_ENABLED", "DD_TRACE_TracerConfigurationError_ANALYTICS_ENABLED", "DD_TracerConfigurationError_ANALYTICS_ENABLED", "DD_TRACE_TracerConfigurationError_ANALYTICS_SAMPLE_RATE", "DD_TracerConfigurationError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.AppsecConfigurationError => new IntegrationSettingsKeys("DD_TRACE_AppsecConfigurationError_ENABLED", "DD_AppsecConfigurationError_ENABLED", "DD_TRACE_AppsecConfigurationError_ANALYTICS_ENABLED", "DD_AppsecConfigurationError_ANALYTICS_ENABLED", "DD_TRACE_AppsecConfigurationError_ANALYTICS_SAMPLE_RATE", "DD_AppsecConfigurationError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.ContinuousProfilerConfigurationError => new IntegrationSettingsKeys("DD_TRACE_ContinuousProfilerConfigurationError_ENABLED", "DD_ContinuousProfilerConfigurationError_ENABLED", "DD_TRACE_ContinuousProfilerConfigurationError_ANALYTICS_ENABLED", "DD_ContinuousProfilerConfigurationError_ANALYTICS_ENABLED", "DD_TRACE_ContinuousProfilerConfigurationError_ANALYTICS_SAMPLE_RATE", "DD_ContinuousProfilerConfigurationError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.DynamicInstrumentationConfigurationError => new IntegrationSettingsKeys("DD_TRACE_DynamicInstrumentationConfigurationError_ENABLED", "DD_DynamicInstrumentationConfigurationError_ENABLED", "DD_TRACE_DynamicInstrumentationConfigurationError_ANALYTICS_ENABLED", "DD_DynamicInstrumentationConfigurationError_ANALYTICS_ENABLED", "DD_TRACE_DynamicInstrumentationConfigurationError_ANALYTICS_SAMPLE_RATE", "DD_DynamicInstrumentationConfigurationError_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Telemetry.TelemetryErrorCode.PotentiallyInvalidUdsPath => new IntegrationSettingsKeys("DD_TRACE_PotentiallyInvalidUdsPath_ENABLED", "DD_PotentiallyInvalidUdsPath_ENABLED", "DD_TRACE_PotentiallyInvalidUdsPath_ANALYTICS_ENABLED", "DD_PotentiallyInvalidUdsPath_ANALYTICS_ENABLED", "DD_TRACE_PotentiallyInvalidUdsPath_ANALYTICS_SAMPLE_RATE", "DD_PotentiallyInvalidUdsPath_ANALYTICS_SAMPLE_RATE"),
+            _ => default,
+        };
+}
+
+internal readonly ref struct IntegrationSettingsKeys
+{
+    public readonly string EnabledKey;
+    public readonly string EnabledFallbackKey;
+    public readonly string AnalyticsEnabledKey;
+    public readonly string AnalyticsEnabledFallbackKey;
+    public readonly string AnalyticsSampleRateKey;
+    public readonly string AnalyticsSampleRateFallbackKey;
+
+    public IntegrationSettingsKeys(string enabledKey, string enabledFallbackKey, string analyticsEnabledKey, string analyticsEnabledFallbackKey, string analyticsSampleRateKey, string analyticsSampleRateFallbackKey)
+    {
+        EnabledKey = enabledKey;
+        EnabledFallbackKey = enabledFallbackKey;
+        AnalyticsEnabledKey = analyticsEnabledKey;
+        AnalyticsEnabledFallbackKey = analyticsEnabledFallbackKey;
+        AnalyticsSampleRateKey = analyticsSampleRateKey;
+        AnalyticsSampleRateFallbackKey = analyticsSampleRateFallbackKey;
+    }
 }

@@ -90,4 +90,41 @@ internal static partial class ConfigurationOriginsExtensions
             "app.config",
             "default",
         };
+
+    /// <summary>
+    /// Returns an IntegrationSettingsKeys value with all the keys.
+    /// </summary>
+    /// <param name="value">The value to retrieve the string value for</param>
+    /// <returns>IntegrationSettingsKeys instance with all values</returns>
+    public static IntegrationSettingsKeys GetKeys(this Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins value)
+        => value switch
+        {
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.EnvVars => new IntegrationSettingsKeys("DD_TRACE_EnvVars_ENABLED", "DD_EnvVars_ENABLED", "DD_TRACE_EnvVars_ANALYTICS_ENABLED", "DD_EnvVars_ANALYTICS_ENABLED", "DD_TRACE_EnvVars_ANALYTICS_SAMPLE_RATE", "DD_EnvVars_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Code => new IntegrationSettingsKeys("DD_TRACE_Code_ENABLED", "DD_Code_ENABLED", "DD_TRACE_Code_ANALYTICS_ENABLED", "DD_Code_ANALYTICS_ENABLED", "DD_TRACE_Code_ANALYTICS_SAMPLE_RATE", "DD_Code_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.DdConfig => new IntegrationSettingsKeys("DD_TRACE_DdConfig_ENABLED", "DD_DdConfig_ENABLED", "DD_TRACE_DdConfig_ANALYTICS_ENABLED", "DD_DdConfig_ANALYTICS_ENABLED", "DD_TRACE_DdConfig_ANALYTICS_SAMPLE_RATE", "DD_DdConfig_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig => new IntegrationSettingsKeys("DD_TRACE_RemoteConfig_ENABLED", "DD_RemoteConfig_ENABLED", "DD_TRACE_RemoteConfig_ANALYTICS_ENABLED", "DD_RemoteConfig_ANALYTICS_ENABLED", "DD_TRACE_RemoteConfig_ANALYTICS_SAMPLE_RATE", "DD_RemoteConfig_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig => new IntegrationSettingsKeys("DD_TRACE_AppConfig_ENABLED", "DD_AppConfig_ENABLED", "DD_TRACE_AppConfig_ANALYTICS_ENABLED", "DD_AppConfig_ANALYTICS_ENABLED", "DD_TRACE_AppConfig_ANALYTICS_SAMPLE_RATE", "DD_AppConfig_ANALYTICS_SAMPLE_RATE"),
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default => new IntegrationSettingsKeys("DD_TRACE_Default_ENABLED", "DD_Default_ENABLED", "DD_TRACE_Default_ANALYTICS_ENABLED", "DD_Default_ANALYTICS_ENABLED", "DD_TRACE_Default_ANALYTICS_SAMPLE_RATE", "DD_Default_ANALYTICS_SAMPLE_RATE"),
+            _ => default,
+        };
+}
+
+internal readonly ref struct IntegrationSettingsKeys
+{
+    public readonly string EnabledKey;
+    public readonly string EnabledFallbackKey;
+    public readonly string AnalyticsEnabledKey;
+    public readonly string AnalyticsEnabledFallbackKey;
+    public readonly string AnalyticsSampleRateKey;
+    public readonly string AnalyticsSampleRateFallbackKey;
+
+    public IntegrationSettingsKeys(string enabledKey, string enabledFallbackKey, string analyticsEnabledKey, string analyticsEnabledFallbackKey, string analyticsSampleRateKey, string analyticsSampleRateFallbackKey)
+    {
+        EnabledKey = enabledKey;
+        EnabledFallbackKey = enabledFallbackKey;
+        AnalyticsEnabledKey = analyticsEnabledKey;
+        AnalyticsEnabledFallbackKey = analyticsEnabledFallbackKey;
+        AnalyticsSampleRateKey = analyticsSampleRateKey;
+        AnalyticsSampleRateFallbackKey = analyticsSampleRateFallbackKey;
+    }
 }
