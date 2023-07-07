@@ -44,5 +44,5 @@ class IUpscalePoissonProvider
 public:
     virtual ~IUpscalePoissonProvider() = default;
 
-    virtual UpscalingPoissonInfo GetInfo() = 0;
+    virtual UpscalingPoissonInfo GetPoissonInfo() = 0;
 };

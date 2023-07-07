@@ -26,6 +26,7 @@ class AllocationsProvider
     :
     public CollectorBase<RawAllocationSample>,
       public IAllocationsListener,
+      public IUpscaleProvider,
       public IUpscalePoissonProvider
 {
 public:
@@ -51,7 +52,8 @@ public:
                       uint64_t objectSize,
                       uint64_t allocationAmount) override;
 
-    UpscalingPoissonInfo GetInfo() override;
+    UpscalingInfo GetInfo() override;
+    UpscalingPoissonInfo GetPoissonInfo() override;
 
 private:
     uint64_t AllocTickThreshold = 100 * 1024;
@@ -62,10 +64,12 @@ private:
     IFrameStore* _pFrameStore;
     ISampledAllocationsListener* _pListener = nullptr;
     GenericSampler _sampler;
+    GroupSampler<std::string> _groupSampler;
     int32_t _sampleLimit;
     IConfiguration const* const _pConfiguration;
     bool _shouldSubSample;
     UpscaleStringGroup _upscaleGroup;
+
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;

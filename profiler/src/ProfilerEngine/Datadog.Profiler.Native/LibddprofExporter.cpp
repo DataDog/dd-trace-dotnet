@@ -496,7 +496,7 @@ std::vector<UpscalingPoissonInfo> LibddprofExporter::GetUpscalingPoissonInfos()
 
     for (auto& provider : _upscaledPoissonProviders)
     {
-        samplingInfos.push_back(provider->GetInfo());
+        samplingInfos.push_back(provider->GetPoissonInfo());
     }
 
     return samplingInfos;

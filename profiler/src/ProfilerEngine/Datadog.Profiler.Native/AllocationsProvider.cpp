@@ -44,6 +44,7 @@ AllocationsProvider::AllocationsProvider(
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
+    _groupSampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _pListener(pListener),
     _pConfiguration(pConfiguration)
 {
@@ -123,7 +124,13 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
 }
 
-UpscalingPoissonInfo AllocationsProvider::GetInfo()
+UpscalingInfo AllocationsProvider::GetInfo()
+{
+    return {GetValueOffsets(), Sample::AllocationClassLabel, _groupSampler.GetGroups()};
+}
+
+
+UpscalingPoissonInfo AllocationsProvider::GetPoissonInfo()
 {
     auto const& offsets = GetValueOffsets(); //              sum(size)       count
     UpscalingPoissonInfo info {offsets, AllocTickThreshold, offsets[1], offsets[0]};
