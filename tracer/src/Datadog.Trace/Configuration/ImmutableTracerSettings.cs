@@ -167,17 +167,16 @@ namespace Datadog.Trace.Configuration
 
             static ReadOnlyDictionary<string, string> FilterGlobalTags(IDictionary<string, string> value)
             {
-                Dictionary<string, string>? result = null;
+                var result = new Dictionary<string, string>();
                 foreach (var kvp in value)
                 {
                     if (kvp.Key is not (Tags.Env or Tags.Version or CommonTags.GitCommit or CommonTags.GitRepository))
                     {
-                        result ??= new Dictionary<string, string>(value.Count);
                         result.Add(kvp.Key, kvp.Value);
                     }
                 }
 
-                return new ReadOnlyDictionary<string, string>(result ?? value);
+                return new ReadOnlyDictionary<string, string>(result);
             }
         }
 
