@@ -86,7 +86,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Add a the specified tag to this span.
+        /// Add the specified tag to this span.
         /// </summary>
         /// <param name="span">The span to be tagged</param>
         /// <param name="key">The tag's key.</param>
