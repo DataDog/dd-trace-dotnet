@@ -18,6 +18,8 @@ using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -156,6 +158,7 @@ public sealed class TestModule
             string.IsNullOrEmpty(framework) ? "test_module" : $"{framework!.ToLowerInvariant()}.test_module",
             tags: tags,
             startTime: startDate);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestModule;
         span.ResourceName = name;

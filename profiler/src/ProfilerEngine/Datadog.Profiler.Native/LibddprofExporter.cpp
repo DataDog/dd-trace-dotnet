@@ -851,7 +851,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, nullptr, RequestTimeOutMs);
     if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);

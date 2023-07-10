@@ -1,4 +1,4 @@
-// <copyright file="LoggerImplWriteIntegration.cs" company="Datadog">
+// <copyright file="LoggerImplWriteIntegrationV5.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,12 +18,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         MethodName = "Write",
         ReturnTypeName = ClrNames.Void,
         ParameterTypeNames = new[] { ClrNames.Type, "NLog.Internal.TargetWithFilterChain", "NLog.LogEventInfo", "NLog.LogFactory" },
-        MinimumVersion = "1.0.0.505",
+        MinimumVersion = "5.0.0",
         MaximumVersion = "5.*.*",
         IntegrationName = "NLog")]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class LoggerImplWriteIntegration
+    public class LoggerImplWriteIntegrationV5
     {
         /// <summary>
         /// OnMethodBegin callback
@@ -44,16 +44,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             if (tracer.Settings.LogsInjectionEnabledInternal)
             {
-                if (DiagnosticContextHelper.Cache<TTarget>.Mdlc is { } mdlc)
+                if (DiagnosticContextHelper.Cache<TTarget>.ScopeContext is { } scopeContext)
                 {
-                    var state = DiagnosticContextHelper.SetMdlcState(mdlc, tracer);
+                    var state = DiagnosticContextHelper.SetScopeContextState(scopeContext, tracer);
                     return new CallTargetState(scope: null, state);
-                }
-
-                if (DiagnosticContextHelper.Cache<TTarget>.Mdc is { } mdc)
-                {
-                    var removeSpanId = DiagnosticContextHelper.SetMdcState(mdc, tracer);
-                    return new CallTargetState(scope: null, removeSpanId);
                 }
             }
 
@@ -73,10 +67,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (state.State is IDisposable disposable)
             {
                 disposable.Dispose();
-            }
-            else if (state.State is bool removeTraceIds && DiagnosticContextHelper.Cache<TTarget>.Mdc is { } mdc)
-            {
-                DiagnosticContextHelper.RemoveMdcState(mdc, removeTraceIds);
             }
 
             return CallTargetReturn.GetDefault();

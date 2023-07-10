@@ -78,10 +78,11 @@ public class TelemetryDataBuilderV2Tests
     {
         var builder = new TelemetryDataBuilderV2();
 
-        var data = builder.BuildTelemetryData(_application, _host, new TelemetryInput(), sendAppStarted: true, _namingSchemaVersion);
+        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: true);
+        var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion);
         data.SeqId.Should().Be(1);
 
-        data = builder.BuildTelemetryData(_application, _host, new TelemetryInput(), sendAppStarted: true, _namingSchemaVersion);
+        data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion);
         data.SeqId.Should().Be(2);
 
         var closingData = builder.BuildAppClosingTelemetryData(_application, _host, _namingSchemaVersion);
@@ -111,10 +112,10 @@ public class TelemetryDataBuilderV2Tests
         var metrics = hasMetrics ? new List<MetricData>() : null;
         var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
         var products = hasProducts ? new ProductsData() : null;
-        var input = new TelemetryInput(config, dependencies, integrations, metrics, distributions, products);
+        var input = new TelemetryInput(config, dependencies, integrations, metrics, distributions, products, sendAppStarted: !hasSentAppStarted);
         var builder = new TelemetryDataBuilderV2();
 
-        var result = builder.BuildTelemetryData(_application, _host, in input, sendAppStarted: !hasSentAppStarted, _namingSchemaVersion);
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion);
 
         result.Should().NotBeNull();
         var actualRequestTypes = result.Payload is MessageBatchPayload batch
@@ -201,10 +202,10 @@ public class TelemetryDataBuilderV2Tests
             new DependencyTelemetryData("Something"),
             numOfDependencies)
                                      .ToList();
-        var input = new TelemetryInput(null, dependencies, null, null, null);
+        var input = new TelemetryInput(null, dependencies, null, null, null, sendAppStarted: false);
         var builder = new TelemetryDataBuilderV2();
 
-        var result = builder.BuildTelemetryData(_application, _host, in input, sendAppStarted: false, _namingSchemaVersion);
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion);
 
         result.Should().NotBeNull();
         var actualRequestTypes = result.Payload is MessageBatchPayload batch

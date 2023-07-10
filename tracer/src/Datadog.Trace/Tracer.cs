@@ -464,12 +464,24 @@ namespace Datadog.Trace
             return new SpanContext(parent, traceContext, finalServiceName, traceId: traceId, spanId: spanId, rawTraceId: rawTraceId, rawSpanId: rawSpanId);
         }
 
+        /// <remarks>
+        /// When calling this method from an integration, ensure you call
+        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// and the span count metric is incremented. Alternatively, if this is not being called from an
+        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directory instead.
+        /// </remarks>
         internal Scope StartActiveInternal(string operationName, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, bool finishOnClose = true, ITags tags = null)
         {
             var span = StartSpan(operationName, tags, parent, serviceName, startTime);
             return TracerManager.ScopeManager.Activate(span, finishOnClose);
         }
 
+        /// <remarks>
+        /// When calling this method from an integration, and _not_ discarding the span, ensure you call
+        /// <c>Tracer.Instance.TracerManager.Telemetry.IntegrationGenerateSpan</c> so that the integration is recorded,
+        /// and the span count metric is incremented. Alternatively, if this is not being called from an
+        /// automatic integration, call <c>TelemetryFactory.Metrics.RecordCountSpanCreated()</c> directly instead.
+        /// </remarks>
         internal Span StartSpan(string operationName, ITags tags = null, ISpanContext parent = null, string serviceName = null, DateTimeOffset? startTime = null, TraceId traceId = default, ulong spanId = 0, string rawTraceId = null, string rawSpanId = null, bool addToTraceContext = true)
         {
             var spanContext = CreateSpanContext(parent, serviceName, traceId, spanId, rawTraceId, rawSpanId);
