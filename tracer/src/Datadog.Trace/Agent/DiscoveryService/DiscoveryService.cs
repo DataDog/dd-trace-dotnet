@@ -20,6 +20,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
     internal class DiscoveryService : IDiscoveryService
     {
         private const string SupportedDebuggerEndpoint = "debugger/v1/input";
+        private const string SupportedSymbolDbEndpoint = "symdb/v1/input";
         private const string SupportedConfigurationEndpoint = "v0.7/config";
         private const string SupportedStatsEndpoint = "v0.6/stats";
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
@@ -62,6 +63,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             new[]
             {
                 SupportedDebuggerEndpoint,
+                SupportedSymbolDbEndpoint,
                 SupportedConfigurationEndpoint,
                 SupportedStatsEndpoint,
                 SupportedDataStreamsEndpoint,
@@ -213,6 +215,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var discoveredEndpoints = (jObject["endpoints"] as JArray)?.Values<string>().ToArray();
             string? configurationEndpoint = null;
             string? debuggerEndpoint = null;
+            string? symbolDbEndpoint = null;
             string? statsEndpoint = null;
             string? dataStreamsMonitoringEndpoint = null;
             string? eventPlatformProxyEndpoint = null;
@@ -232,6 +235,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     if (endpoint.Equals(SupportedDebuggerEndpoint, StringComparison.OrdinalIgnoreCase))
                     {
                         debuggerEndpoint = endpoint;
+                    }
+                    else if (endpoint.Equals(SupportedSymbolDbEndpoint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        symbolDbEndpoint = endpoint;
                     }
                     else if (endpoint.Equals(SupportedConfigurationEndpoint, StringComparison.OrdinalIgnoreCase))
                     {
@@ -261,6 +268,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             var newConfig = new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
+                symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
                 dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,

@@ -1,4 +1,4 @@
-﻿// <copyright file="AgentConfiguration.cs" company="Datadog">
+// <copyright file="AgentConfiguration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,6 +12,7 @@ internal record AgentConfiguration
     public AgentConfiguration(
         string? configurationEndpoint,
         string? debuggerEndpoint,
+        string? symbolDbEndpoint,
         string? agentVersion,
         string? statsEndpoint,
         string? dataStreamsMonitoringEndpoint,
@@ -21,6 +22,7 @@ internal record AgentConfiguration
     {
         ConfigurationEndpoint = configurationEndpoint;
         DebuggerEndpoint = debuggerEndpoint;
+        SymbolDbEndpoint = symbolDbEndpoint;
         AgentVersion = agentVersion;
         StatsEndpoint = statsEndpoint;
         DataStreamsMonitoringEndpoint = dataStreamsMonitoringEndpoint;
@@ -32,6 +34,8 @@ internal record AgentConfiguration
     public string? ConfigurationEndpoint { get; }
 
     public string? DebuggerEndpoint { get; }
+
+    public string? SymbolDbEndpoint { get; }
 
     public string? AgentVersion { get; }
 

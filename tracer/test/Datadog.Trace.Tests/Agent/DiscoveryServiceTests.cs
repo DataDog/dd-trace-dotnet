@@ -1,4 +1,4 @@
-﻿// <copyright file="DiscoveryServiceTests.cs" company="Datadog">
+// <copyright file="DiscoveryServiceTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -64,6 +64,7 @@ public class DiscoveryServiceTests
         config.AgentVersion.Should().Be(version);
         config.ConfigurationEndpoint.Should().NotBeNullOrEmpty();
         config.DebuggerEndpoint.Should().NotBeNullOrEmpty();
+        config.SymbolDbEndpoint.Should().NotBeNullOrEmpty();
         config.ClientDropP0s.Should().Be(clientDropP0s);
         config.StatsEndpoint.Should().NotBeNullOrEmpty();
         config.DataStreamsMonitoringEndpoint.Should().NotBeNullOrEmpty();

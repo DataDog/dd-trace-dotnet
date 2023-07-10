@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
@@ -24,20 +23,18 @@ namespace Datadog.Trace.Debugger.Symbols
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
 
         private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly BlockingCollection<Assembly> _assemblies;
         private readonly string _serviceName;
         private readonly SymbolUploader _symbolUploader;
-        private Task _processTask;
+        private readonly SemaphoreSlim _assemblySemaphore;
+        private readonly HashSet<string> _alreadyProcessed;
 
         private SymbolExtractor(string serviceName, SymbolUploader uploader)
         {
-            _assemblies = new BlockingCollection<Assembly>();
+            _alreadyProcessed = new HashSet<string>();
             _serviceName = serviceName;
             _symbolUploader = uploader;
+            _assemblySemaphore = new SemaphoreSlim(1);
             _cancellationTokenSource = new CancellationTokenSource();
-            Process();
-            RegisterToAssemblyLoadEvent();
-            EnqueueAlreadyLoadedAssemblies();
         }
 
         public static SymbolExtractor Create(string serviceName, SymbolUploader uploader)
@@ -47,38 +44,35 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private void RegisterToAssemblyLoadEvent()
         {
-            AppDomain.CurrentDomain.AssemblyLoad += (_, args) => AddModule(args.LoadedAssembly);
+            AppDomain.CurrentDomain.AssemblyLoad += async (_, args) =>
+            {
+                await ProcessItemAsync(args.LoadedAssembly).ConfigureAwait(false);
+            };
         }
 
-        private void EnqueueAlreadyLoadedAssemblies()
+        private async Task ProcessItemAsync(Assembly assembly)
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (var i = 0; i < assemblies.Length; i++)
+            await _assemblySemaphore.WaitAsync().ConfigureAwait(false);
+
+            try
             {
-                AddModule(assemblies[i]);
+                await ProcessItem(assembly).ConfigureAwait(false);
             }
-        }
-
-        private void AddModule(Assembly assembly)
-        {
-            _assemblies.Add(assembly);
-        }
-
-        private void Process()
-        {
-            _processTask = Task.Run(async () =>
+            finally
             {
-                foreach (var assemblyPath in _assemblies.GetConsumingEnumerable(_cancellationTokenSource.Token))
-                {
-                    await ProcessItem(assemblyPath).ConfigureAwait(false);
-                }
-            });
+                _assemblySemaphore.Release();
+            }
         }
 
         private async Task ProcessItem(Assembly assembly)
         {
             try
             {
+                if (_alreadyProcessed.Add(assembly.Location))
+                {
+                    return;
+                }
+
                 await ExtractModuleSymbols(assembly).ConfigureAwait(false);
             }
             catch (Exception e)
@@ -94,15 +88,24 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
+            using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
+            var module = pdbReader?.Module;
+            if (module == null)
+            {
+                return;
+            }
+
             var root = GetAssemblySymbol(assembly);
 
-            using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
-            var module = pdbReader.Module;
+            if (module.Types == null)
+            {
+                await _symbolUploader.SendSymbol(root).ConfigureAwait(false);
+                return;
+            }
 
-            // types
             for (var i = 0; i < module.Types.Count; i++)
             {
-                var type = module?.Types?[i];
+                var type = module.Types[i];
 
                 try
                 {
@@ -111,22 +114,11 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    // fields
                     var classSymbols = GetFieldSymbols(type.Fields);
 
                     var classScopes = GetMethodSymbols(type.Methods, pdbReader, out var classStartLine, out var classEndLine, out var typeSourceFile);
 
-                    var interfaceNames = GetClassInterfaceNames(type, i);
-
-                    var baseClassNames = GetClassBaseClassNames(type, module);
-
-                    var classLanguageSpecifics = new LanguageSpecifics
-                    {
-                        AccessModifiers = new[] { (type.Attributes & TypeAttributes.VisibilityMask).ToString() },
-                        Annotations = new[] { type.Attributes.ToString() },
-                        Interfaces = interfaceNames,
-                        SuperClasses = baseClassNames
-                    };
+                    var classLanguageSpecifics = GetClassLanguageSpecifics(type, i, module);
 
                     var classScope = new Scope
                     {
@@ -152,6 +144,22 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
+        private LanguageSpecifics GetClassLanguageSpecifics(TypeDef type, int i, ModuleDefMD module)
+        {
+            var interfaceNames = GetClassInterfaceNames(type, i);
+
+            var baseClassNames = GetClassBaseClassNames(type, module);
+
+            var classLanguageSpecifics = new LanguageSpecifics
+            {
+                AccessModifiers = new[] { (type.Attributes & TypeAttributes.VisibilityMask).ToString() },
+                Annotations = new[] { type.Attributes.ToString() },
+                Interfaces = interfaceNames,
+                SuperClasses = baseClassNames
+            };
+            return classLanguageSpecifics;
+        }
+
         private SymbolModel GetAssemblySymbol(Assembly assembly)
         {
             var assemblyScope = new Scope
@@ -159,6 +167,8 @@ namespace Datadog.Trace.Debugger.Symbols
                 Name = assembly.FullName,
                 SymbolType = SymbolType.Assembly,
                 SourceFile = assembly.Location,
+                StartLine = -1,
+                EndLine = int.MaxValue,
                 Scopes = new List<Scope>()
             };
 
@@ -374,18 +384,21 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
+        public async Task StartExtractingAsync()
+        {
+            RegisterToAssemblyLoadEvent();
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
+            for (var i = 0; i < assemblies.Length; i++)
+            {
+                await ProcessItemAsync(assemblies[i]).ConfigureAwait(false);
+            }
+        }
+
         public void Dispose()
         {
             _cancellationTokenSource.Cancel();
-            try
-            {
-                _processTask.Wait();
-            }
-            catch (Exception ex) when (ex is AggregateException or OperationCanceledException or ObjectDisposedException) { } // Suppress exception due to cancellation
-
             _cancellationTokenSource?.Dispose();
-            _assemblies?.Dispose();
-            _processTask?.Dispose();
+            _assemblySemaphore.Dispose();
         }
     }
 }
