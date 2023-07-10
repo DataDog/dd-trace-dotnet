@@ -5,13 +5,11 @@
 
 #nullable enable
 
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -21,22 +19,18 @@ namespace Datadog.Trace.Configuration
     /// </summary>
     public class EnvironmentConfigurationSource : StringConfigurationSource
     {
-        private readonly Dictionary<string, string?> _environmentVariables;
-
         /// <summary>
         /// Initializes a new instance of the <see cref="EnvironmentConfigurationSource"/> class.
         /// </summary>
         [PublicApi]
         public EnvironmentConfigurationSource()
         {
-            _environmentVariables = FillEnvironmentVariables();
             TelemetryFactory.Metrics.Record(PublicApiUsage.EnvironmentConfigurationSource_Ctor);
         }
 
         private protected EnvironmentConfigurationSource(bool unusedParamNotToUsePublicApi)
         {
             // unused parameter is to give us a non-public API we can use
-            _environmentVariables = FillEnvironmentVariables();
         }
 
         /// <inheritdoc />
@@ -46,45 +40,7 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public override string? GetString(string key)
         {
-            if (_environmentVariables.TryGetValue(key, out var value))
-            {
-                return value;
-            }
-
-            return default;
-        }
-
-        private Dictionary<string, string?> FillEnvironmentVariables()
-        {
-            var envVar = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase);
-            try
-            {
-                foreach (DictionaryEntry? entry in Environment.GetEnvironmentVariables())
-                {
-                    if (entry is null) { continue; }
-
-                    if (entry.Value.Key is not string key)
-                    {
-                        key = entry.Value.Key?.ToString() ?? string.Empty;
-                    }
-
-                    if (entry.Value.Value is string value)
-                    {
-                        envVar[key] = value;
-                    }
-                    else
-                    {
-                        envVar[key] = entry.Value.Value?.ToString();
-                    }
-                }
-            }
-            catch
-            {
-                // We should not add a dependency from the Configuration system to the Logger system,
-                // so do nothing
-            }
-
-            return envVar;
+            return EnvironmentHelpers.GetEnvironmentVariable(key);
         }
     }
 }
