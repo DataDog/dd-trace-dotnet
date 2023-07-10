@@ -15,6 +15,8 @@ using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {
@@ -45,6 +47,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             tags.SetTag("component", "trace");
             var scope = Tracer.Instance.StartActiveInternal(operationName, tags: tags);
             scope.Span.ResourceName = resourceName;
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.DebuggerSpanProbe);
             return new SpanDebuggerState(scope);
         }
 
