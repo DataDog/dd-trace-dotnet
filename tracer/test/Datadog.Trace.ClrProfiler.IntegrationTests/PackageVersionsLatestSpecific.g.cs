@@ -854,19 +854,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.0" },
-                new object[] { "2.5.0" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.0" },
-                new object[] { "2.5.0" },
+                new object[] { "2.4.2" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.0" },
-                new object[] { "2.5.0" },
+                new object[] { "2.4.2" },
 #endif
 #if NET5_0
                 new object[] { "2.2.0" },
-                new object[] { "2.5.0" },
+                new object[] { "2.4.2" },
 #endif
 #if NET6_0
                 new object[] { "2.2.0" },
