@@ -17,7 +17,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -27,13 +28,13 @@
     }
   },
   {
-    TraceId: Id_4,
-    SpanId: Id_5,
+    TraceId: Id_1,
+    SpanId: Id_4,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
     Service: Samples.Wcf,
     Type: web,
-    ParentId: Id_6,
+    ParentId: Id_5,
     Tags: {
       component: Wcf,
       env: integration_tests,
@@ -44,7 +45,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -54,7 +56,35 @@
     }
   },
   {
-    TraceId: Id_7,
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_7,
+    Tags: {
+      component: Wcf,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_8,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerSyncAdd,
@@ -71,7 +101,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -81,13 +112,13 @@
     }
   },
   {
-    TraceId: Id_10,
-    SpanId: Id_11,
+    TraceId: Id_1,
+    SpanId: Id_10,
     Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerSyncAdd,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
     Service: Samples.Wcf,
     Type: web,
-    ParentId: Id_12,
+    ParentId: Id_11,
     Tags: {
       component: Wcf,
       env: integration_tests,
@@ -98,7 +129,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -108,7 +140,35 @@
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_1,
+    SpanId: Id_12,
+    Name: http.server.request,
+    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    Service: Samples.Wcf,
+    Type: web,
+    ParentId: Id_13,
+    Tags: {
+      component: Wcf,
+      env: integration_tests,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      version: 1.0.0,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_14,
     Name: http.server.request,
     Resource: WcfSample/ICalculator/ServerTaskAdd,
@@ -125,7 +185,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -135,54 +196,27 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_17,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerTaskAdd,
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: Samples.Wcf.internal,
+    Resource: WebClient,
     Service: Samples.Wcf,
-    Type: web,
-    ParentId: Id_18,
+    Type: custom,
     Tags: {
-      component: Wcf,
       env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
       language: dotnet,
+      otel.library.name: Samples.Wcf,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_2,
       runtime-id: Guid_1,
-      span.kind: server,
+      span.kind: internal,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_20,
-    Name: http.server.request,
-    Resource: WcfSample/ICalculator/ServerTaskAdd,
-    Service: Samples.Wcf,
-    Type: web,
-    ParentId: Id_21,
-    Tags: {
-      component: Wcf,
-      env: integration_tests,
-      http.method: POST,
-      http.request.headers.host: localhost:00000,
-      http.url: http://localhost:00000/WcfSample/123,123/CalculatorService,
-      language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
