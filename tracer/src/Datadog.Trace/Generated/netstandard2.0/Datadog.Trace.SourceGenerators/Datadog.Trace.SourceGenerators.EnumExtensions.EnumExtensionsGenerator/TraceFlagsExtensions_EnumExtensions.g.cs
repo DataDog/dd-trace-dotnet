@@ -70,37 +70,4 @@ internal static partial class TraceFlagsExtensions
             nameof(Datadog.Trace.Propagators.W3CTraceContextPropagator.TraceFlags.None),
             nameof(Datadog.Trace.Propagators.W3CTraceContextPropagator.TraceFlags.Sampled),
         };
-
-    /// <summary>
-    /// Returns an IntegrationSettingsKeys value with all the keys.
-    /// </summary>
-    /// <param name="value">The value to retrieve the string value for</param>
-    /// <returns>IntegrationSettingsKeys instance with all values</returns>
-    public static IntegrationSettingsKeys GetKeys(this Datadog.Trace.Propagators.W3CTraceContextPropagator.TraceFlags value)
-        => value switch
-        {
-            Datadog.Trace.Propagators.W3CTraceContextPropagator.TraceFlags.None => new IntegrationSettingsKeys("DD_TRACE_None_ENABLED", "DD_None_ENABLED", "DD_TRACE_None_ANALYTICS_ENABLED", "DD_None_ANALYTICS_ENABLED", "DD_TRACE_None_ANALYTICS_SAMPLE_RATE", "DD_None_ANALYTICS_SAMPLE_RATE"),
-            Datadog.Trace.Propagators.W3CTraceContextPropagator.TraceFlags.Sampled => new IntegrationSettingsKeys("DD_TRACE_Sampled_ENABLED", "DD_Sampled_ENABLED", "DD_TRACE_Sampled_ANALYTICS_ENABLED", "DD_Sampled_ANALYTICS_ENABLED", "DD_TRACE_Sampled_ANALYTICS_SAMPLE_RATE", "DD_Sampled_ANALYTICS_SAMPLE_RATE"),
-            _ => default,
-        };
-}
-
-internal readonly ref struct IntegrationSettingsKeys
-{
-    public readonly string EnabledKey;
-    public readonly string EnabledFallbackKey;
-    public readonly string AnalyticsEnabledKey;
-    public readonly string AnalyticsEnabledFallbackKey;
-    public readonly string AnalyticsSampleRateKey;
-    public readonly string AnalyticsSampleRateFallbackKey;
-
-    public IntegrationSettingsKeys(string enabledKey, string enabledFallbackKey, string analyticsEnabledKey, string analyticsEnabledFallbackKey, string analyticsSampleRateKey, string analyticsSampleRateFallbackKey)
-    {
-        EnabledKey = enabledKey;
-        EnabledFallbackKey = enabledFallbackKey;
-        AnalyticsEnabledKey = analyticsEnabledKey;
-        AnalyticsEnabledFallbackKey = analyticsEnabledFallbackKey;
-        AnalyticsSampleRateKey = analyticsSampleRateKey;
-        AnalyticsSampleRateFallbackKey = analyticsSampleRateFallbackKey;
-    }
 }
