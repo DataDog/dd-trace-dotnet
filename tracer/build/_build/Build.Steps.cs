@@ -518,6 +518,8 @@ partial class Build
                     else
                     {
                         var (arch, _) = GetUnixArchitectureAndExtension();
+                        var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
+
                         foreach (var fmk in frameworks)
                         {
                             // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
@@ -530,13 +532,13 @@ partial class Build
                             var dest = testBinFolder / fmk;
 
                             // use the files from the monitoring native folder
-                            CopyDirectoryRecursively(MonitoringHomeDirectory / arch, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                            CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                             foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                             {
+                                var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
                                 var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                                var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
                                 await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
-                                var (archWaf, ext) = olderLibDdwafVersion == "1.3.0" && IsOsx ? ("osx-x64", "dylib") : GetLibDdWafUnixArchitectureAndExtension();
-                                var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                                 CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
                             }
                         }
