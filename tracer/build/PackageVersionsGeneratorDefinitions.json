@@ -371,11 +371,12 @@
     "SampleProjectName": "LogsInjection.Serilog",
     "NugetPackageSearchName": "Serilog",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "3.0.0",
+    "MaxVersionExclusive": "4.0.0",
     "SpecificVersions": [
       "1.*.*",
       "1.4.*",
-      "2.*.*"
+      "2.*.*",
+      "3.*.*"
     ],
     "VersionConditions": [{
       "MaxVersionExclusive": "2.0.0",
