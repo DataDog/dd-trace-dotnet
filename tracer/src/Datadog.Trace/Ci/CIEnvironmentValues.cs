@@ -20,8 +20,9 @@ namespace Datadog.Trace.Ci
     {
         internal const string RepositoryUrlPattern = @"((http|git|ssh|http(s)|file|\/?)|(git@[\w\.\-]+))(:(\/\/)?)([\w\.@\:/\-~]+)(\.git)(\/)?";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIEnvironmentValues));
-
         private static readonly Lazy<CIEnvironmentValues> _instance = new(() => new CIEnvironmentValues());
+
+        private string _gitSearchFolder = null;
 
         private CIEnvironmentValues()
         {
@@ -29,6 +30,16 @@ namespace Datadog.Trace.Ci
         }
 
         public static CIEnvironmentValues Instance => _instance.Value;
+
+        public string GitSearchFolder
+        {
+            get => _gitSearchFolder;
+            set
+            {
+                _gitSearchFolder = value;
+                ReloadEnvironmentData();
+            }
+        }
 
         public bool IsCI { get; private set; }
 
@@ -281,7 +292,7 @@ namespace Datadog.Trace.Ci
             Message = null;
             SourceRoot = null;
 
-            var gitInfo = GitInfo.GetCurrent();
+            var gitInfo = string.IsNullOrEmpty(_gitSearchFolder) ? GitInfo.GetCurrent() : GitInfo.GetFrom(_gitSearchFolder);
 
             if (EnvironmentHelpers.GetEnvironmentVariable(Constants.Travis) != null)
             {
