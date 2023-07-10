@@ -11,6 +11,7 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Models;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
@@ -39,10 +40,7 @@ namespace Datadog.Trace.Debugger
         {
             try
             {
-                if (loadedAssembly.IsDynamic ||
-                    loadedAssembly.ManifestModule.IsResource() ||
-                    string.IsNullOrWhiteSpace(loadedAssembly.Location) ||
-                    IsThirdPartyCode(loadedAssembly))
+                if (AssemblyFilter.ShouldSkipAssembly(loadedAssembly))
                 {
                     return null;
                 }
@@ -59,16 +57,6 @@ namespace Datadog.Trace.Debugger
             }
 
             return null;
-        }
-
-        private static bool IsThirdPartyCode(Assembly loadedAssembly)
-        {
-            // This implementation is just a stub - we will need to replace it
-            // with a proper implementation in the future.
-            string[] thirdPartyStartsWith = { "Microsoft", "System" };
-
-            var assemblyName = loadedAssembly.GetName().Name;
-            return thirdPartyStartsWith.Any(t => assemblyName.StartsWith(t));
         }
 
         private FilePathLookup GetSourceFilePathForAssembly(Assembly loadedAssembly)
