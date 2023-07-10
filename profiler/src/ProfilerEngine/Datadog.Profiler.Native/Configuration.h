@@ -13,9 +13,10 @@
 #include "shared/src/native-src/dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
-#define ALLOCATION_UPSCALE_NONE 0
-#define ALLOCATION_UPSCALE_POISSON 1
-#define ALLOCATION_UPSCALE_POISSON_PER_TYPE 2
+#define ALLOCATION_UPSCALE_NONE             0
+#define ALLOCATION_UPSCALE_PROPORTIONAL     1
+#define ALLOCATION_UPSCALE_POISSON          2
+#define ALLOCATION_UPSCALE_POISSON_PER_TYPE 3
 
 class Configuration final : public IConfiguration
 {

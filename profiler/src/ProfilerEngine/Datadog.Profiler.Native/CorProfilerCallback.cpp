@@ -362,14 +362,16 @@ bool CorProfilerCallback::InitializeServices()
     if (_pAllocationsProvider != nullptr)
     {
         auto allocationUpscaleMode = _pConfiguration->AllocationUpscaleMode();
-        if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON)
+        if (allocationUpscaleMode != ALLOCATION_UPSCALE_NONE)
         {
-            _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
-        }
-        else
-        if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON_PER_TYPE)
-        {
-            _pExporter->RegisterUpscaleProvider(_pAllocationsProvider);
+            if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON)
+            {
+                _pExporter->RegisterUpscalePoissonProvider(_pAllocationsProvider);
+            }
+            else
+            {
+                _pExporter->RegisterUpscaleProvider(_pAllocationsProvider);
+            }
         }
     }
 

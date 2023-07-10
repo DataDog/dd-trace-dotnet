@@ -18,6 +18,8 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
+#include <cmath>
+#include "Configuration.h"
 
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
@@ -126,7 +128,37 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
 UpscalingInfo AllocationsProvider::GetInfo()
 {
-    return {GetValueOffsets(), Sample::AllocationClassLabel, _groupSampler.GetGroups()};
+    auto allocationUpscaleMode = _pConfiguration->AllocationUpscaleMode();
+
+    auto allocatedTypes = _groupSampler.GetGroups();
+    if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON_PER_TYPE)
+    {
+        // Simulate a Poisson per type:
+        //      1_f64 / (1_f64 - (-avg / sampling_distance as f64).exp()
+        // And we know that the proportionality factor will be Real/Sampled
+        static const float distance = 100 * 1024;  // AllocationTick threshold
+        std::vector<UpscaleStringGroup> upscaledGroups(allocatedTypes.size());
+        for (UpscaleStringGroup& type: allocatedTypes)
+        {
+            float average = (float)type.RealValue / (float)type.RealCount;
+            float upscaledFactor = (float)1 - std::expf(-average / distance);
+
+            //UpscaleStringGroup upscaledType(type);
+            UpscaleStringGroup upscaledType;
+            upscaledType.Group = type.Group;
+            upscaledType.RealCount = 1;
+            upscaledType.RealValue = 1;
+            upscaledType.SampledCount = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.SampledValue = static_cast<uint64_t>(upscaledFactor);
+
+            upscaledGroups.push_back(upscaledType);
+        }
+
+        return {GetValueOffsets(), Sample::AllocationClassLabel, upscaledGroups};
+    }
+
+    // simple proportional upscaling
+    return {GetValueOffsets(), Sample::AllocationClassLabel, allocatedTypes};
 }
 
 
