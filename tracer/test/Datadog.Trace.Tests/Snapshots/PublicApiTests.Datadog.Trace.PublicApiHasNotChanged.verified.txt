@@ -179,6 +179,8 @@ namespace Datadog.Trace.Configuration
         public bool? GetBool(string key) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, method selector) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, method selector) { }
         public double? GetDouble(string key) { }
         public int? GetInt32(string key) { }
         public string? GetString(string key) { }
@@ -217,6 +219,8 @@ namespace Datadog.Trace.Configuration
         bool? GetBool(string key);
         System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key);
         System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings);
+        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, method selector);
+        System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, method selector);
         double? GetDouble(string key);
         int? GetInt32(string key);
         string? GetString(string key);
@@ -290,6 +294,8 @@ namespace Datadog.Trace.Configuration
         public JsonConfigurationSource(string json) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, method selector) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, method selector) { }
         public T? GetValue<T>(string key) { }
         public static Datadog.Trace.Configuration.JsonConfigurationSource FromFile(string filename) { }
     }
@@ -304,6 +310,8 @@ namespace Datadog.Trace.Configuration
         public virtual bool? GetBool(string key) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key) { }
         public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, method selector) { }
+        public System.Collections.Generic.IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, method selector) { }
         public double? GetDouble(string key) { }
         public virtual int? GetInt32(string key) { }
         public abstract string? GetString(string key);
