@@ -521,14 +521,8 @@ partial class Build
                         }
                         else
                         {
-                            if (IsOsx)
-                            {
-                                // waf compat tests arent ran on osx
-                                continue;
-                            }
-
                             var (arch, _) = GetUnixArchitectureAndExtension();
-                            var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
+                            var (archWaf, ext) = olderLibDdwafVersion == "1.3.0" && IsOsx ? ($"osx-x64", "dylib") : GetLibDdWafUnixArchitectureAndExtension();
                             var oldVersionPath = oldVersionTempPath / "runtimes" / archWaf / "native" / $"libddwaf.{ext}";
                             foreach (var fmk in frameworks)
                             {
