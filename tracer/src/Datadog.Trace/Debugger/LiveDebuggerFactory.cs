@@ -13,6 +13,7 @@ using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
+using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Logging;
@@ -35,7 +36,7 @@ internal class LiveDebuggerFactory
         {
             telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: false, error: null);
             Log.Information("Live Debugger is disabled. To enable it, please set DD_DYNAMIC_INSTRUMENTATION_ENABLED environment variable to 'true'.");
-            return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null, null);
+            return LiveDebugger.Create(settings, string.Empty, null, null, null, null, null, null, null, null);
         }
 
         var snapshotSlicer = SnapshotSlicer.Create(settings);
@@ -57,6 +58,9 @@ internal class LiveDebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
+        var symbolUploader = SymbolUploader.Create(batchApi, settings.MaxSymbolSizeToUpload);
+        var symbolExtractor = SymbolExtractor.Create(serviceName, symbolUploader);
+
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
         IDogStatsd statsd;
@@ -72,6 +76,6 @@ internal class LiveDebuggerFactory
         }
 
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, statsd);
+        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, configurationUpdater, statsd);
     }
 }

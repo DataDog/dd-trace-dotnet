@@ -19,6 +19,7 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.IO;
+using SymbolMethodImpl = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable.SymbolMethodImpl;
 using SymbolReaderFactory = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory;
 
 namespace Datadog.Trace.Pdb
@@ -31,16 +32,17 @@ namespace Datadog.Trace.Pdb
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogPdbReader>();
         private readonly SymbolReader _symbolReader;
-        private readonly ModuleDefMD _module;
 
         private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD module, string pdbFullPath)
         {
-            PdbFullPath = pdbFullPath;
             _symbolReader = symbolReader;
-            _module = module;
+            PdbFullPath = pdbFullPath;
+            Module = module;
         }
 
         internal string PdbFullPath { get; }
+
+        internal ModuleDefMD Module { get; }
 
         public static DatadogPdbReader CreatePdbReader(Assembly assembly)
         {
@@ -110,20 +112,18 @@ namespace Datadog.Trace.Pdb
 
         public string GetSourceLinkJsonDocument()
         {
-            var sourceLink = _module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
+            var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        public SymbolMethod ReadMethodSymbolInfo(int methodMetadataToken)
+        public SymbolMethod GetMethodSymbolInfo(int methodMetadataToken)
         {
             var rid = MDToken.ToRID(methodMetadataToken);
-            var mdMethod = _module.ResolveMethod(rid);
-            return TryGetSymbolMethodOfAsyncMethod(mdMethod, out var symbolMethod) ?
-                       symbolMethod :
-                       _symbolReader.GetMethod(mdMethod, version: 1);
+            var mdMethod = Module.ResolveMethod(rid);
+            return TryGetSymbolMethodOfAsyncMethod(mdMethod) ?? _symbolReader.GetMethod(mdMethod, version: 1);
         }
 
-        private bool TryGetSymbolMethodOfAsyncMethod(MethodDef mdMethod, out SymbolMethod symbolMethod)
+        private SymbolMethod TryGetSymbolMethodOfAsyncMethod(MethodDef mdMethod)
         {
             // Determine if the given mdMethod is a kickoff of a state machine (aka an async method)
             // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
@@ -137,12 +137,10 @@ namespace Datadog.Trace.Pdb
 
             if (breakpointMethod?.BreakpointMethod == null)
             {
-                symbolMethod = null;
-                return false;
+                return null;
             }
 
-            symbolMethod = _symbolReader.GetMethod(breakpointMethod?.BreakpointMethod, version: 1);
-            return true;
+            return _symbolReader.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
         public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int? column, out int? bytecodeOffset)
@@ -161,10 +159,41 @@ namespace Datadog.Trace.Pdb
             return _symbolReader.Documents;
         }
 
+        internal string[] GetLocalVariableNames(int methodToken, int localVariablesCount)
+        {
+            var symbolMethod = GetMethodSymbolInfo(methodToken);
+            if (symbolMethod == null)
+            {
+                return null; // Method was not found in PDB file
+            }
+
+            var localVariables = symbolMethod.GetLocalVariables();
+            string[] localNames = new string[localVariablesCount];
+            foreach (var local in localVariables)
+            {
+                if (local.Attributes.HasFlag(PdbLocalAttributes.DebuggerHidden))
+                {
+                    continue;
+                }
+
+                if (local.Index > localVariablesCount)
+                {
+                    // PDB information is inconsistent with the locals that are actually in the metadata.
+                    // This might be caused by code obfuscation tools that try to remove/modify locals, and neglect to update the PDB.
+                    // We'll simply ignore these additional locals in the hope that things will work out for the best.
+                    continue;
+                }
+
+                localNames[local.Index] = local.Name;
+            }
+
+            return localNames;
+        }
+
         public void Dispose()
         {
             _symbolReader.Dispose();
-            _module.Dispose();
+            Module.Dispose();
         }
     }
 }
