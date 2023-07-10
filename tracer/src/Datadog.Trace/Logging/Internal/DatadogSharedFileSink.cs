@@ -88,8 +88,8 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
     public void Dispose()
     {
-        _output.Dispose();
-        _mutexStream.Dispose();
+        _output?.Dispose();
+        _mutexStream?.Dispose();
     }
 
     public void FlushToDisk()
