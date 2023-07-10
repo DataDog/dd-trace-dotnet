@@ -59,7 +59,7 @@ internal class MetricSeries : List<MetricDataPoint>
                 }
 
                 var timestamp = pointArrayValues[0].Value<long>();
-                var value = pointArrayValues[1].Value<double>();
+                var value = pointArrayValues[1].Value<int>();
 
                 data.Add(new MetricDataPoint(timestamp, value));
             }
