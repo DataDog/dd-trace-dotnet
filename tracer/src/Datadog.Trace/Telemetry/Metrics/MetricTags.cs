@@ -152,7 +152,14 @@ internal static class MetricTags
         // manual integration
         [Description("integration_name:datadog")]Manual,
         [Description("integration_name:opentracing")]OpenTracing,
-        // automatic integration
+
+        // automatic "custom" integration
+        [Description("integration_name:ciapp")]CiAppManual,
+        [Description("integration_name:debugger_span_probe")]DebuggerSpanProbe,
+        [Description("integration_name:aws_lambda")]AwsLambda,
+        [Description("integration_name:msbuild")]Msbuild,
+
+        // automatic "standard" integration
         [Description("integration_name:httpmessagehandler")]HttpMessageHandler,
         [Description("integration_name:httpsocketshandler")]HttpSocketsHandler,
         [Description("integration_name:winhttphandler")]WinHttpHandler,
@@ -200,7 +207,6 @@ internal static class MetricTags
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
-        [Description("integration_name:aws_lambda")]AwsLambda,
     }
 
     public enum InstrumentationError
