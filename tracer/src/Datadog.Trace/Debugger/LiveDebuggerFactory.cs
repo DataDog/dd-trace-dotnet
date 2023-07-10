@@ -58,7 +58,8 @@ internal class LiveDebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
-        var symbolUploader = SymbolUploader.Create(batchApi, settings.MaxSymbolSizeToUpload);
+        var symbolBatchApi = SymbolBatchUploadApi.Create(apiFactory, discoveryService);
+        var symbolUploader = SymbolUploader.Create(symbolBatchApi, settings.MaxSymbolSizeToUpload);
         var symbolExtractor = SymbolExtractor.Create(serviceName, symbolUploader);
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);

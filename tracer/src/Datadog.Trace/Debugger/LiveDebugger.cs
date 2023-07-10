@@ -39,6 +39,7 @@ namespace Datadog.Trace.Debugger
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
         private readonly IDebuggerSink _debuggerSink;
+        private readonly ISymbolExtractor _symbolExtractor;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
@@ -55,6 +56,7 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
+            ISymbolExtractor symbolExtractor,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
@@ -63,6 +65,7 @@ namespace Datadog.Trace.Debugger
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
+            _symbolExtractor = symbolExtractor;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
@@ -98,7 +101,7 @@ namespace Datadog.Trace.Debugger
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, probeStatusPoller, configurationUpdater, dogStats);
+                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, configurationUpdater, dogStats);
             }
         }
 
@@ -157,6 +160,7 @@ namespace Datadog.Trace.Debugger
                 AddShutdownTask();
 
                 _probeStatusPoller.StartPolling();
+                _symbolExtractor.StartExtractingAsync();
                 return _debuggerSink.StartFlushingAsync();
             }
 
@@ -167,6 +171,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
+                LifetimeManager.Instance.AddShutdownTask(_symbolExtractor.Dispose);
             }
         }
 

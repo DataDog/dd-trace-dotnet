@@ -4,10 +4,12 @@
 // </copyright>
 
 using System;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
     internal interface ISymbolExtractor : IDisposable
     {
+        Task StartExtractingAsync();
     }
 }

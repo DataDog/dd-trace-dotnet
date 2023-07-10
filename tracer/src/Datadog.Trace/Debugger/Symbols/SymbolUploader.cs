@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly IBatchUploadApi _api;
         private readonly int _sizeLimit;
         private byte[] _payload;
-        private int _byteIndex = 0;
+        private int _byteIndex;
 
         private SymbolUploader(IBatchUploadApi api, int sizeLimit)
         {
@@ -38,11 +38,11 @@ namespace Datadog.Trace.Debugger.Symbols
             try
             {
                 var symbolAsString = JsonConvert.SerializeObject(symbolModel);
-                byte[] currentPayload = new byte[_sizeLimit];
-                int count = Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, currentPayload, 0);
+                var currentPayload = new byte[_sizeLimit];
+                var count = Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, currentPayload, 0);
                 if (_byteIndex + count >= _sizeLimit)
                 {
-                    byte[] newPayload = new byte[_byteIndex + count];
+                    var newPayload = new byte[_byteIndex + count];
                     Array.Copy(_payload, 0, newPayload, 0, _byteIndex);
                     _payload = newPayload;
                 }
@@ -50,17 +50,12 @@ namespace Datadog.Trace.Debugger.Symbols
                 Array.Copy(currentPayload, 0, _payload, _byteIndex, currentPayload.Length);
 
                 _byteIndex += Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, _payload, _byteIndex - 1);
-                if (_payload.Length < _sizeLimit)
+                if (_byteIndex < _sizeLimit)
                 {
                     return false;
                 }
 
-                var result = await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
-                if (!result)
-                {
-                    // todo: retry?
-                }
-
+                await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
                 Array.Clear(_payload, 0, _byteIndex - 1);
                 return true;
             }
