@@ -284,10 +284,10 @@ namespace Datadog.Trace.Tests.Configuration
             Func<GlobalSettings, object> settingGetter,
             object expectedValue)
         {
-            IConfigurationSource source = new EnvironmentConfigurationSource();
-
             // save original value so we can restore later
             Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+
+            IConfigurationSource source = new EnvironmentConfigurationSource();
             var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
 
             object actualValue = settingGetter(settings);
