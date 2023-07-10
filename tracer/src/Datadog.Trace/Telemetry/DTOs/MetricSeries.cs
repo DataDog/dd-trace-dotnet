@@ -14,6 +14,15 @@ namespace Datadog.Trace.Telemetry;
 [JsonConverter(typeof(MetricSeriesJsonConverter))]
 internal class MetricSeries : List<MetricDataPoint>
 {
+    public MetricSeries()
+    {
+    }
+
+    public MetricSeries(List<MetricDataPoint> collection)
+        : base(collection)
+    {
+    }
+
     public class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
     {
         /// <summary>
