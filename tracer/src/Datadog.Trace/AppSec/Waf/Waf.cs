@@ -53,6 +53,12 @@ namespace Datadog.Trace.AppSec.Waf
         internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
+            var isCompatible = wafConfigurator.CheckVersionCompatibility();
+            if (!isCompatible)
+            {
+                return InitResult.FromIncompatibleWaf();
+            }
+
             InitResult initResult;
             var argsToDispose = new List<Obj>();
 

@@ -17,7 +17,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(InitResult));
 
-        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, bool shouldEnableWaf = true)
+        private InitResult(ushort failedToLoadRules, ushort loadedRules, string ruleFileVersion, IReadOnlyDictionary<string, object> errors, JToken? embeddedRules = null, bool unusableRuleFile = false, IntPtr? wafHandle = null, WafLibraryInvoker? wafLibraryInvoker = null, bool shouldEnableWaf = true, bool incompatibleWaf = false)
         {
             HasErrors = errors.Count > 0;
             Errors = errors;
@@ -27,12 +27,13 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             RuleFileVersion = ruleFileVersion;
             UnusableRuleFile = unusableRuleFile;
             ErrorMessage = string.Empty;
+            IncompatibleWaf = incompatibleWaf;
             if (HasErrors)
             {
                 ErrorMessage = JsonConvert.SerializeObject(errors);
             }
 
-            shouldEnableWaf &= !unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero;
+            shouldEnableWaf &= !incompatibleWaf && !unusableRuleFile && wafHandle.HasValue && wafHandle.Value != IntPtr.Zero;
             if (shouldEnableWaf)
             {
                 Waf = new Waf(wafHandle!.Value, wafLibraryInvoker!);
@@ -61,11 +62,15 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal bool UnusableRuleFile { get; }
 
+        internal bool IncompatibleWaf { get; }
+
         internal string RuleFileVersion { get; }
 
         internal bool Reported { get; set; }
 
         internal static InitResult FromUnusableRuleFile() => new(0, 0, string.Empty, new Dictionary<string, object>(), unusableRuleFile: true);
+
+        internal static InitResult FromIncompatibleWaf() => new(0, 0, string.Empty, new Dictionary<string, object>(), incompatibleWaf: true);
 
         internal static InitResult From(IntPtr diagnostics, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker)
         {

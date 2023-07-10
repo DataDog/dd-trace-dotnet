@@ -23,17 +23,16 @@ namespace Datadog.Trace.Security.Unit.Tests
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
         }
 
-        // [SkippableFact]
-        // public void ShouldNotInitializeWithDiagnosticsMissing()
-        // {
-        //     SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
-        //     var libraryInitializationResult = WafLibraryInvoker.Initialize("1.10.0");
-        //     libraryInitializationResult.Success.Should().BeTrue();
-        //     libraryInitializationResult.WafLibraryInvoker.Should().NotBeNull();
-        //     var initResult = Waf.Create(libraryInitializationResult.WafLibraryInvoker, string.Empty, string.Empty);
-        //     initResult.Success.Should().BeFalse();
-        //     initResult.Errors.Should().ContainKey("diagnostics-error");
-        //     initResult.Errors.Should().ContainValue("Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0");
-        // }
+        [SkippableFact]
+        public void ShouldNotInitializeWithDiagnosticsMissing()
+        {
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
+            var libraryInitializationResult = WafLibraryInvoker.Initialize("1.10.0");
+            libraryInitializationResult.Success.Should().BeTrue();
+            libraryInitializationResult.WafLibraryInvoker.Should().NotBeNull();
+            var initResult = Waf.Create(libraryInitializationResult.WafLibraryInvoker, string.Empty, string.Empty);
+            initResult.Success.Should().BeFalse();
+            initResult.IncompatibleWaf.Should().BeTrue();
+        }
     }
 }
