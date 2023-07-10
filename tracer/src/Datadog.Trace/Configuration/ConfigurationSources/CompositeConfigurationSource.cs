@@ -76,9 +76,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public string? GetString(string key)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true) is { } result)
+                if (_sources[i].GetString(key, NullConfigurationTelemetry.Instance, validator: null, recordValue: true) is { } result)
                 {
                     return result.Result;
                 }
@@ -97,8 +97,15 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public int? GetInt32(string key)
         {
-            return _sources.Select(source => source.GetInt32(key, NullConfigurationTelemetry.Instance, validator: null))
-                           .FirstOrDefault(value => value != null)?.Result;
+            for (var i = 0; i < _sources.Count; i++)
+            {
+                if (_sources[i].GetInt32(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                {
+                    return result.Result;
+                }
+            }
+
+            return default;
         }
 
         /// <summary>
@@ -111,9 +118,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public double? GetDouble(string key)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDouble(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                if (_sources[i].GetDouble(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
                 {
                     return result.Result;
                 }
@@ -132,9 +139,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public bool? GetBool(string key)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetBool(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                if (_sources[i].GetBool(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
                 {
                     return result.Result;
                 }
@@ -175,9 +182,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
+                if (_sources[i].GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null) is { } result)
                 {
                     return result.Result;
                 }
@@ -190,9 +197,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings) is { } result)
+                if (_sources[i].GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings) is { } result)
                 {
                     return result.Result;
                 }
@@ -205,9 +212,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, selector: selector) is { } result)
+                if (_sources[i].GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, selector: selector) is { } result)
                 {
                     return result.Result;
                 }
@@ -220,9 +227,9 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, selector: selector) is { } result)
+                if (_sources[i].GetDictionary(key, NullConfigurationTelemetry.Instance, validator: null, allowOptionalMappings, selector: selector) is { } result)
                 {
                     return result.Result;
                 }
@@ -234,9 +241,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<string>? ITelemeteredConfigurationSource.GetString(string key, IConfigurationTelemetry telemetry, Func<string, bool>? validator, bool recordValue)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetString(key, telemetry, validator, recordValue) is { } result)
+                if (_sources[i].GetString(key, telemetry, validator, recordValue) is { } result)
                 {
                     return result;
                 }
@@ -248,9 +255,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<int>? ITelemeteredConfigurationSource.GetInt32(string key, IConfigurationTelemetry telemetry, Func<int, bool>? validator)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetInt32(key, telemetry, validator) is { } result)
+                if (_sources[i].GetInt32(key, telemetry, validator) is { } result)
                 {
                     return result;
                 }
@@ -262,9 +269,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<double>? ITelemeteredConfigurationSource.GetDouble(string key, IConfigurationTelemetry telemetry, Func<double, bool>? validator)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDouble(key, telemetry, validator) is { } result)
+                if (_sources[i].GetDouble(key, telemetry, validator) is { } result)
                 {
                     return result;
                 }
@@ -276,9 +283,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<bool>? ITelemeteredConfigurationSource.GetBool(string key, IConfigurationTelemetry telemetry, Func<bool, bool>? validator)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetBool(key, telemetry, validator) is { } result)
+                if (_sources[i].GetBool(key, telemetry, validator) is { } result)
                 {
                     return result;
                 }
@@ -290,9 +297,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, telemetry, validator) is { } result)
+                if (_sources[i].GetDictionary(key, telemetry, validator) is { } result)
                 {
                     return result;
                 }
@@ -304,9 +311,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, telemetry, validator, allowOptionalMappings) is { } result)
+                if (_sources[i].GetDictionary(key, telemetry, validator, allowOptionalMappings) is { } result)
                 {
                     return result;
                 }
@@ -318,9 +325,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, telemetry, validator, selector) is { } result)
+                if (_sources[i].GetDictionary(key, telemetry, validator, selector) is { } result)
                 {
                     return result;
                 }
@@ -332,9 +339,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetDictionary(key, telemetry, validator, allowOptionalMappings, selector) is { } result)
+                if (_sources[i].GetDictionary(key, telemetry, validator, allowOptionalMappings, selector) is { } result)
                 {
                     return result;
                 }
@@ -346,9 +353,9 @@ namespace Datadog.Trace.Configuration
         /// <inheritdoc />
         ConfigurationResult<T>? ITelemeteredConfigurationSource.GetAs<T>(string key, IConfigurationTelemetry telemetry, Func<string, ParsingResult<T>> converter, Func<T, bool>? validator, bool recordValue)
         {
-            foreach (var source in _sources)
+            for (var i = 0; i < _sources.Count; i++)
             {
-                if (source.GetAs(key, telemetry, converter, validator, recordValue) is { } result)
+                if (_sources[i].GetAs(key, telemetry, converter, validator, recordValue) is { } result)
                 {
                     return result;
                 }
