@@ -11,55 +11,56 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal static class BsonExtensions
     {
-        public static string ToJson(
-           this object obj,
-           Type nominalType,
-           object writerSettings = null,
-           object serializer = null,
-           object configurator = null,
-           object args = default(object))
+        public static string ToShortString(this object obj, object args = default)
         {
+            Type nominalType = obj.GetType();
+
             if (nominalType == null)
             {
                 throw new ArgumentNullException("nominalType");
             }
 
             PropertyInfo nominalTypeProperty = args?.GetType().GetProperty("NominalType");
+
             nominalTypeProperty?.SetValue(args, nominalType);
 
             Type bsonSerializerType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson");
-            var lookupSerializerMethod = bsonSerializerType?.GetMethod("LookupSerializer", BindingFlags.Public | BindingFlags.Static);
+            MethodInfo lookupSerializerMethod = bsonSerializerType?.GetMethod("LookupSerializer", new Type[] { typeof(Type) });
+
+            Type bsonDocumentType = Type.GetType("MongoDB.Bson.BsonDocument, MongoDB.Bson");
+
+            object serializer = null;
 
             if (serializer == null)
             {
-                serializer = lookupSerializerMethod?.Invoke(null, new object[] { nominalType });
-            }
-
-            if ((Type)bsonSerializerType.GetProperty("ValueType").GetValue(serializer) != nominalType)
-            {
-                var message = string.Format("Serializer type {0} value type does not match document types {1}.", serializer.GetType().FullName, nominalType.FullName);
-                throw new ArgumentException(message, "serializer");
+                serializer = lookupSerializerMethod.Invoke(null, new[] { bsonDocumentType });
             }
 
             using (var stringWriter = new StringWriter())
             {
+                object writerSettings = null;
+
                 Type typeJsonWriterSettings = Type.GetType("MongoDB.Bson.IO.JsonWriterSettings, MongoDB.Bson", throwOnError: false);
-                var defaultsValueJsonWriterSettings = new[] { typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(writerSettings) };
 
                 Type[] types = { typeof(StringWriter), typeJsonWriterSettings };
 
                 Type typeJsonWriter = Type.GetType("MongoDB.Bson.IO.JsonWriter, MongoDB.Bson", throwOnError: false);
                 ConstructorInfo constructorJsonWriter = typeJsonWriter?.GetConstructor(types);
 
-                var bsonWriter = constructorJsonWriter?.Invoke(stringWriter, defaultsValueJsonWriterSettings);
+                var defaultsValueJsonWriterSettings = new[] { (TextWriter)stringWriter, typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(writerSettings) };
+                var bsonWriter = constructorJsonWriter?.Invoke(defaultsValueJsonWriterSettings);
 
-                var contextType = Type.GetType("MongoDB.Bson.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
-                var createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);
+                Type contextType = Type.GetType("MongoDB.Bson.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
+                MethodInfo createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);
 
-                var context = createRootMethod?.Invoke(null, new object[] { bsonWriter, configurator });
-                var serializeMethod = bsonSerializerType?.GetMethod("Serialize", BindingFlags.Public | BindingFlags.Static);
+                object configurator = null;
+                var context = createRootMethod?.Invoke(null, new[] { bsonWriter, configurator });
 
-                serializeMethod?.Invoke(serializer, new[] { context, args, obj });
+                Type bsonSerializerInterfaceType = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializer, MongoDB.Bson", throwOnError: false);
+                MethodInfo serializeMethod = bsonSerializerInterfaceType?.GetMethod("Serialize");
+
+                object castedObj = Convert.ChangeType(obj, bsonDocumentType);
+                serializeMethod?.Invoke(serializer, new[] { context, args, castedObj });
 
                 return stringWriter.ToString();
             }
