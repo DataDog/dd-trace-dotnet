@@ -24,8 +24,8 @@ namespace Datadog.Trace.Debugger.Symbols
         private SymbolUploader(IBatchUploadApi api, int sizeLimit)
         {
             _api = api;
-            _payload = new byte[_sizeLimit * 2];
             _sizeLimit = sizeLimit;
+            _payload = new byte[sizeLimit * 2];
         }
 
         public static SymbolUploader Create(IBatchUploadApi api, int sizeLimit)
@@ -38,8 +38,7 @@ namespace Datadog.Trace.Debugger.Symbols
             try
             {
                 var symbolAsString = JsonConvert.SerializeObject(symbolModel);
-                var currentPayload = new byte[_sizeLimit];
-                var count = Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, currentPayload, 0);
+                var count = Encoding.UTF8.GetByteCount(symbolAsString);
                 if (_byteIndex + count >= _sizeLimit)
                 {
                     var newPayload = new byte[_byteIndex + count];
@@ -47,9 +46,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     _payload = newPayload;
                 }
 
-                Array.Copy(currentPayload, 0, _payload, _byteIndex, currentPayload.Length);
-
-                _byteIndex += Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, _payload, _byteIndex - 1);
+                _byteIndex += Encoding.UTF8.GetBytes(symbolAsString, 0, symbolAsString.Length, _payload, _byteIndex);
                 if (_byteIndex < _sizeLimit)
                 {
                     return false;

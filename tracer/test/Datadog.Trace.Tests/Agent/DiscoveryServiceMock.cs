@@ -1,4 +1,4 @@
-﻿// <copyright file="DiscoveryServiceMock.cs" company="Datadog">
+// <copyright file="DiscoveryServiceMock.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -17,6 +17,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
     public void TriggerChange(
         string configurationEndpoint = "configurationEndpoint",
         string debuggerEndpoint = "debuggerEndpoint",
+        string symbolDbEndpoint = "symbolDbEndpoint",
         string agentVersion = "agentVersion",
         string statsEndpoint = "traceStatsEndpoint",
         string dataStreamsMonitoringEndpoint = "dataStreamsMonitoringEndpoint",
@@ -27,6 +28,7 @@ internal class DiscoveryServiceMock : IDiscoveryService
             new AgentConfiguration(
                 configurationEndpoint: configurationEndpoint,
                 debuggerEndpoint: debuggerEndpoint,
+                symbolDbEndpoint: symbolDbEndpoint,
                 agentVersion: agentVersion,
                 statsEndpoint: statsEndpoint,
                 dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
