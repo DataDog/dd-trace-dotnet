@@ -55,23 +55,17 @@ partial class Build
 
     void SignFiles(IReadOnlyCollection<AbsolutePath> filesToSign)
     {
-        var jarSignJar = Environment.GetEnvironmentVariable("JARSIGN_JAR");
-        if (string.IsNullOrEmpty(jarSignJar))
-        {
-            throw new Exception("Environment variable 'JARSIGN_JAR' missing");
-        }
-
         Logger.Information("Signing {Count} binaries...", filesToSign.Count);
-        filesToSign.ForEach(file => SignBinary(file, jarSignJar));
+        filesToSign.ForEach(file => SignBinary(file));
         Logger.Information("Binary signing complete");
 
-        void SignBinary(AbsolutePath binaryPath, string jarSignJar)
+        void SignBinary(AbsolutePath binaryPath)
         {
             Logger.Information("Signing {BinaryPath}", binaryPath);
 
             var signProcess = ProcessTasks.StartProcess(
                     "dd-wcs",
-                    $"sign --jsign-jar {jarSignJar} {binaryPath}",
+                    $"sign {binaryPath}",
                     logOutput: false,
                     logInvocation: false);
             signProcess.WaitForExit();
