@@ -19,14 +19,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         {
             return default;
         }
-
-        /// <summary>
-        /// Returns a string representation of the document.
-        /// </summary>
-        /// <returns>String representation of the document.</returns>
-        public string ToString(object target)
-        {
-            return target.ToJson(target.GetType());
-        }
     }
 }
