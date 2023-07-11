@@ -15,7 +15,7 @@ using ActivitySource = System.Diagnostics.ActivitySource;
 namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
-[BenchmarkAgent6]
+[BenchmarkAgent5]
 public class OpenTelemetryManualBenchmark
 {
     internal static ActivitySource ActivitySource { get; set; }
