@@ -32,7 +32,7 @@ public class OpenTelemetryBenchmark
         var settings = new TracerSettings(new NameValueConfigurationSource(environmentVars)) { StartupDiagnosticLogEnabled = false };
 
         Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
+        Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
         var bench = new OpenTelemetryBenchmark();
         bench.CreateActivitySpan();
     }
@@ -40,9 +40,18 @@ public class OpenTelemetryBenchmark
     [Benchmark]
     public void CreateActivitySpan()
     {
-        using (var activity = _source.StartActivity())
+        using (var activity = _source.StartActivity("name"))
         {
             activity.SetTag("key", "true");
+        }
+    }
+
+    [Benchmark]
+    public void CreateDatadogSpan()
+    {
+        using (var scope = Tracer.Instance.StartActive("name"))
+        {
+            scope.Span.SetTag("key", "true");
         }
     }
 }
