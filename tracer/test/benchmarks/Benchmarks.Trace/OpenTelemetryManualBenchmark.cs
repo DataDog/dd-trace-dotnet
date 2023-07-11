@@ -60,15 +60,6 @@ public class OpenTelemetryManualBenchmark
     }
 
     [Benchmark]
-    public void CreateDatadogSpan()
-    {
-        using (var scope = DatadogTracer.StartActive("name"))
-        {
-            scope.Span.SetTag("key", "true");
-        }
-    }
-
-    [Benchmark]
     public void CreateOpenTelemetrySpan()
     {
         using (var span = OpenTelemetryTracer.StartActiveSpan("name"))
