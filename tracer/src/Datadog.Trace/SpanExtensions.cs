@@ -84,5 +84,60 @@ namespace Datadog.Trace
                 RunBlockingCheck(spanClass, userDetails.Id);
             }
         }
+
+        /// <summary>
+        /// Add the specified tag to this span.
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        [PublicApi]
+        public static ISpan SetTag(this ISpan span, string key, double? value)
+        {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (span is Span internalSpan)
+            {
+                return internalSpan.SetMetric(key, value);
+            }
+
+            // If is not an internal span, we add the numeric value as string as a fallback only
+            // so it can be converted automatically by the backend (only if a measurement facet is created for this tag)
+            return span.SetTag(key, value?.ToString());
+        }
+
+        /// <summary>
+        /// Gets the value of a specified tag from this span.
+        /// </summary>
+        /// <param name="span">The span to be used for get the tag.</param>
+        /// <param name="key">The tag's key.</param>
+        /// <returns>Value of the tag</returns>
+        [PublicApi]
+        public static object GetTagObject(this ISpan span, string key)
+        {
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (span is Span internalSpan)
+            {
+                if (internalSpan.GetMetric(key) is { } valueDouble)
+                {
+                    return valueDouble;
+                }
+
+                if (internalSpan.GetTag(key) is { } valueString)
+                {
+                    return valueString;
+                }
+            }
+
+            return span.GetTag(key);
+        }
     }
 }

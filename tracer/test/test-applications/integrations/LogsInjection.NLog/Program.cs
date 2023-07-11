@@ -10,6 +10,7 @@ using NLog.Config;
 using NLog.Targets;
 using PluginApplication;
 
+#pragma warning disable CS0618 // MappedDiagnosticContext is obsolete
 namespace LogsInjection.NLog
 {
     public class Program
