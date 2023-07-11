@@ -58,6 +58,12 @@ AllocationsProvider::AllocationsProvider(
 
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
+
+    // true if upscale proportionally after having applied a Poisson process per type
+    _isProportionalAndPoisson = (_pConfiguration->AllocationUpscaleMode() == ALLOCATION_UPSCALE_POISSON_PER_TYPE);
+
+    _realTotalAllocated = 0;
+    _sampledTotalAllocated = 0;
 }
 
 
@@ -72,13 +78,35 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _allocationsSizeMetric->Add((double_t)objectSize);
     _totalAllocationsSizeMetric->Add((double_t)allocationAmount);
 
+    {
+        std::unique_lock lock(_realTotalMutex);
+        _realTotalAllocated += allocationAmount;
+    }
+
+    std::string sTypeName = shared::ToString(typeName);
+
     // remove sampling when recording allocations
-    if (_shouldSubSample && (_sampleLimit > 0) && (!_sampler.Sample()))
+    // however, we need to call the Sample() method to make per type aggregation work
+    bool keepAllocation = false;
+    if (_isProportionalAndPoisson)
+    {
+        keepAllocation = _groupSampler.Sample(sTypeName, objectSize);
+    }
+    else
+    {
+        keepAllocation = _sampler.Sample();
+    }
+
+    if (/* _shouldSubSample && */ (_sampleLimit > 0) && (!keepAllocation))
     {
         return;
     }
 
     // create a sample from the allocation
+    {
+        std::unique_lock lock(_realTotalMutex);
+        _sampledTotalAllocated += objectSize;
+    }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
@@ -112,7 +140,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     // So rely on the frame store to get a C#-like representation like what is done for frames
     if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
-        rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
+        rawSample.AllocationClass = sTypeName;
     }
 
     // the listener is the live objects profiler: could be null if disabled
@@ -141,15 +169,14 @@ UpscalingInfo AllocationsProvider::GetInfo()
         for (UpscaleStringGroup& type: allocatedTypes)
         {
             float average = (float)type.RealValue / (float)type.RealCount;
-            float upscaledFactor = (float)1 - std::expf(-average / distance);
+            float upscaledFactor = (float)1 / ((float)1 - std::expf(-average / distance));
 
-            //UpscaleStringGroup upscaledType(type);
             UpscaleStringGroup upscaledType;
             upscaledType.Group = type.Group;
-            upscaledType.RealCount = 1;
-            upscaledType.RealValue = 1;
-            upscaledType.SampledCount = static_cast<uint64_t>(upscaledFactor);
-            upscaledType.SampledValue = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.RealCount = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.SampledCount = 1;
+            upscaledType.RealValue = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.SampledValue = 1;
 
             upscaledGroups.push_back(upscaledType);
         }
@@ -158,6 +185,28 @@ UpscalingInfo AllocationsProvider::GetInfo()
     }
 
     // simple proportional upscaling
+    //  the ratio is the real size / sampled size (sum of all sampled types)
+    uint64_t totalAllocatedSize = 0;
+    uint64_t sampledAllocatedSize = 0;
+    {
+        std::unique_lock lock(_realTotalMutex);
+
+        totalAllocatedSize = _realTotalAllocated;
+        _realTotalAllocated = 0;
+        sampledAllocatedSize = _sampledTotalAllocated;
+        _sampledTotalAllocated = 0;
+    }
+
+    for (UpscaleStringGroup& group: allocatedTypes)
+    {
+        // the same ratio is used for size and count because we don't have the real number of allocations
+        // --> upscaled count will probably be much larger than the real one
+        group.RealCount = totalAllocatedSize;
+        group.SampledCount = sampledAllocatedSize;
+        group.RealValue = totalAllocatedSize;
+        group.SampledValue = sampledAllocatedSize;
+    }
+
     return {GetValueOffsets(), Sample::AllocationClassLabel, allocatedTypes};
 }
 

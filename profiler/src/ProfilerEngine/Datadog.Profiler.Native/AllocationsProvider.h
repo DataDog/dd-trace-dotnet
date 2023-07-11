@@ -13,6 +13,8 @@
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
 
+#include <mutex>
+
 class IConfiguration;
 class IManagedThreadList;
 class IFrameStore;
@@ -66,9 +68,17 @@ private:
     GenericSampler _sampler;
     GroupSampler<std::string> _groupSampler;
     int32_t _sampleLimit;
+
+    // add up AllocationTick real total allocated size per profile
+    uint64_t _realTotalAllocated;
+
+    // add up AllocationTick last allocated object size per profile
+    uint64_t _sampledTotalAllocated;
+    std::mutex _realTotalMutex;
+
     IConfiguration const* const _pConfiguration;
     bool _shouldSubSample;
-    UpscaleStringGroup _upscaleGroup;
+    bool _isProportionalAndPoisson;
 
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
