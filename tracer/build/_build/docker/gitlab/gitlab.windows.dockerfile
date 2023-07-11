@@ -24,8 +24,8 @@ COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
 # Install .NET 7
-ENV DOTNET_VERSION="7.0.304" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/2ab1aa68-3e14-401a-b106-833d66fa992b/060457e640f4095acf4723c4593314b6/dotnet-sdk-7.0.304-win-x64.exe" \
+ENV DOTNET_VERSION="7.0.306" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/2ab1aa68-3e14-401a-b106-833d66fa992b/060457e640f4095acf4723c4593314b6/dotnet-sdk-7.0.306-win-x64.exe" \
     DOTNET_SHA512="648732c79f6276c37a92e211b4c5b6cf84a0a54637c0f85949ced96d31838b43a4dcae905ef70bafbc9edd3542400746fb1e00c4c84679713e97219493a45938"
 
 COPY install_dotnet.ps1 .
