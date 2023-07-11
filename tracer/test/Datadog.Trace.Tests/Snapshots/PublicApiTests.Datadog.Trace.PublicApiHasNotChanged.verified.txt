@@ -435,6 +435,8 @@ namespace Datadog.Trace
     }
     public static class SpanExtensions
     {
+        public static object GetTagObject(this Datadog.Trace.ISpan span, string key) { }
+        public static Datadog.Trace.ISpan SetTag(this Datadog.Trace.ISpan span, string key, double? value) { }
         public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
     }
     public static class SpanKinds
