@@ -85,6 +85,7 @@ public class LiveDebuggerTests
                 new AgentConfiguration(
                     configurationEndpoint: "configurationEndpoint",
                     debuggerEndpoint: "debuggerEndpoint",
+                    symbolDbEndpoint: "symbolDbEndpoint",
                     agentVersion: "agentVersion",
                     statsEndpoint: "traceStatsEndpoint",
                     dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
@@ -191,6 +192,11 @@ public class LiveDebuggerTests
     {
         public void Dispose()
         {
+        }
+
+        public Task StartExtractingAsync()
+        {
+            throw new NotImplementedException();
         }
     }
 

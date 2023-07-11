@@ -252,6 +252,7 @@ public class DiscoveryServiceTests
         var config1 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
@@ -264,6 +265,7 @@ public class DiscoveryServiceTests
         var config2 = new AgentConfiguration(
             configurationEndpoint: "ConfigurationEndpoint",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",
@@ -276,6 +278,7 @@ public class DiscoveryServiceTests
         var config3 = new AgentConfiguration(
             configurationEndpoint: "DIFFERENT",
             debuggerEndpoint: "DebuggerEndpoint",
+            symbolDbEndpoint: "symbolDbEndpoint",
             agentVersion: "AgentVersion",
             statsEndpoint: "StatsEndpoint",
             dataStreamsMonitoringEndpoint: "DataStreamsMonitoringEndpoint",

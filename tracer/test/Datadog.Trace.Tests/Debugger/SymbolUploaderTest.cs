@@ -1,4 +1,4 @@
-// <copyright file="BatchUploaderTests.cs" company="Datadog">
+// <copyright file="SymbolUploaderTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -16,7 +16,7 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class SymbolUploaderTest
 {
-    private const int SizeLimit = 1000;
+    private const int SizeLimit = 500;
     private readonly MockBatchUploadApi _api;
     private readonly SymbolUploader _upload;
 
@@ -27,10 +27,26 @@ public class SymbolUploaderTest
     }
 
     [Fact]
-    public async Task HugePayload_Skipped()
+    public async Task SizeLimitHasNotReached_DoNotSend()
     {
-        await _upload.SendSymbol(GenerateSymbolModel(1000));
+        await _upload.SendSymbol(GenerateSymbolModel(1));
         _api.Segments.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task SizeLimitHasReached_Send()
+    {
+        await _upload.SendSymbol(GenerateSymbolModel(5));
+        _api.Segments.Should().NotBeNullOrEmpty();
+    }
+
+    [Fact]
+    public async Task SizeLimitHasReachedAfterTwoUploads_Send()
+    {
+        await _upload.SendSymbol(GenerateSymbolModel(1));
+        _api.Segments.Should().BeEmpty();
+        await _upload.SendSymbol(GenerateSymbolModel(4));
+        _api.Segments.Should().NotBeNullOrEmpty();
     }
 
     private SymbolModel GenerateSymbolModel(int numberOfTypes)
@@ -54,9 +70,9 @@ public class SymbolUploaderTest
     {
         public List<byte[]> Segments { get; } = new List<byte[]>();
 
-        public Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
+        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
-            Segments.Add(snapshots.ToArray());
+            Segments.Add(symbols.ToArray());
             return Task.FromResult(true);
         }
     }
