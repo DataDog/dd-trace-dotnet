@@ -459,7 +459,7 @@ namespace Datadog.Trace.ClrProfiler
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal
                 // This is because user code is loaded within the functions host in a separate context
-                observers.Add(new AspNetCoreDiagnosticObserver());
+                observers.Add(new AspNetCoreDiagnosticObserver(Tracer.Instance, Security.Instance));
             }
 
             var diagnosticManager = new DiagnosticManager(observers);
