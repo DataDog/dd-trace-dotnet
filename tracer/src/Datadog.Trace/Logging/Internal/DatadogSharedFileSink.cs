@@ -21,7 +21,7 @@ namespace Datadog.Trace.Logging;
 /// </summary>
 internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 {
-    private const int BufferSize = 4192;
+    private const int BufferSize = 8192;
     private readonly TextWriter _output;
     private readonly MutexStream _mutexStream;
     private readonly ITextFormatter _textFormatter;
@@ -69,6 +69,11 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
             return false;
         }
 
+        if (logEvent.Level >= LogEventLevel.Error)
+        {
+            _output.Flush();
+        }
+
         _textFormatter.Format(logEvent, _output);
         return true;
     }
@@ -82,6 +87,11 @@ internal sealed class DatadogSharedFileSink : IFileSink, IDisposable
 
         if (_fileSizeLimitBytes == null || _mutexStream.Length < _fileSizeLimitBytes.Value)
         {
+            if (logEvent.Level >= LogEventLevel.Error)
+            {
+                _output.Flush();
+            }
+
             _textFormatter.Format(logEvent, _output);
         }
     }
