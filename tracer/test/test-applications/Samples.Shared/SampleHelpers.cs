@@ -193,27 +193,12 @@ namespace Samples
         {
             if (InjectMethod is null || SpanContextInjectorType is null  || carrier == null)
             {
-                Console.WriteLine("IT IS NUUUUULLLL");
                 return;
             }
 
-            try
-            {
-                var scopeInjector = Activator.CreateInstance(SpanContextInjectorType);
-                if (scopeInjector is null)
-                {
-                    Console.WriteLine("scopeInjector is NUUUUUUUUUUUUUUUUULLLLLLLLLL:");
-                }
-
-                var genericMethod = InjectMethod.MakeGenericMethod(carrier.GetType());
-                genericMethod.Invoke(scopeInjector, new object[] { carrier, setter, scope });
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine("EXCEPPPTTTIOOONNN:" + e);
-                return;
-            }
-
+            var scopeInjector = Activator.CreateInstance(SpanContextInjectorType);
+            var genericMethod = InjectMethod.MakeGenericMethod(carrier.GetType());
+            genericMethod.Invoke(scopeInjector, new object[] { carrier, setter, scope });
         }
 
         public static ulong GetTraceId(IDisposable scope)

@@ -31,7 +31,7 @@ namespace Samples.Wcf.Client
 
             if (exceptionsSeen != expectedExceptionCount)
             {
-                LoggingHelper.WriteLineWithDate($"The test encountered an unexpected number of exceptions: {expectedExceptionCount} expected, {exceptionsSeen} actual");
+                throw new Exception($"The test encountered an unexpected number of exceptions: {expectedExceptionCount} expected, {exceptionsSeen} actual");
             }
             else
             {
