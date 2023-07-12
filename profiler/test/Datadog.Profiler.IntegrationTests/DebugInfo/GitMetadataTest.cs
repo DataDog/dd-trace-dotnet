@@ -19,7 +19,7 @@ namespace Datadog.Profiler.IntegrationTests.DebugInfo
 {
     public class GitMetadataTest
     {
-        private const string Scenario = "--scenario 18";
+        private const string Scenario = "--scenario 2";
         private static readonly Regex GitRepositoryPattern = new("git.repository_url:(?<repository_url>[^,\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
         private static readonly Regex GitCommitShaPattern = new("git.commit.sha:(?<commit_sha>[^,\"]+)", RegexOptions.Compiled | RegexOptions.Multiline | RegexOptions.IgnoreCase);
 
