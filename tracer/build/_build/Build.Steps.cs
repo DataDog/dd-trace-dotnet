@@ -1523,6 +1523,7 @@ partial class Build
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
+                "Sandbox.LegacySecurityPolicy", // Doesn't run on Linux
                 "Samples.Trimming",
             };
 

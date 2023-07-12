@@ -6,12 +6,14 @@
 #nullable enable
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry;
 
 internal class TelemetryDataAggregator
 {
     private TelemetryInput? _previous;
+    private bool _appStartedSent;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="TelemetryDataAggregator"/> class. For testing only.
@@ -24,22 +26,22 @@ internal class TelemetryDataAggregator
     /// <summary>
     /// Gets the configuration values that should be sent to telemetry, including any previous, retained, values
     /// </summary>
-    /// <param name="newValues">Changes to configuration values since the last telemetry flush</param>
     /// <returns>The combined configuration values that should be sent, including data that previously failed to send</returns>
-    public TelemetryInput Combine(in TelemetryInput newValues)
+    public TelemetryInput Combine(
+        ICollection<ConfigurationKeyValue>? configuration,
+        ICollection<DependencyTelemetryData>? dependencies,
+        ICollection<IntegrationTelemetryData>? integrations,
+        in MetricResults? metrics,
+        ProductsData? products)
     {
-        if (_previous is null)
-        {
-            return newValues;
-        }
-
         return new TelemetryInput(
-            CombineWith(newValues.Configuration),
-            CombineWith(newValues.Dependencies),
-            CombineWith(newValues.Integrations),
-            CombineWith(newValues.Metrics),
-            CombineWith(newValues.Distributions),
-            CombineWith(newValues.Products));
+            CombineWith(configuration),
+            CombineWith(dependencies),
+            CombineWith(integrations),
+            CombineWith(metrics?.Metrics),
+            CombineWith(metrics?.Distributions),
+            CombineWith(products),
+            sendAppStarted: !_appStartedSent);
     }
 
     public void SaveDataIfRequired(
@@ -54,6 +56,11 @@ internal class TelemetryDataAggregator
                 // (as we are currently, using message-batch), but needs to be
                 // updated to be more granular if this changes
                 _previous = null;
+                if (input.SendAppStarted)
+                {
+                    _appStartedSent = true;
+                }
+
                 break;
 
             case TelemetryTransportResult.FatalError:

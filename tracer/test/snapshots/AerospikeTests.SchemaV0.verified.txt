@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -8,6 +8,7 @@
     Type: aerospike,
     Tags: {
       aerospike.key: test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3,
+      aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
@@ -31,6 +32,7 @@
     Type: aerospike,
     Tags: {
       aerospike.key: test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3,
+      aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
@@ -54,6 +56,7 @@
     Type: aerospike,
     Tags: {
       aerospike.key: test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3,
+      aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,
@@ -77,6 +80,7 @@
     Type: aerospike,
     Tags: {
       aerospike.key: test:myset1:mykey1;test:myset2:mykey2;test:myset3:mykey3,
+      aerospike.namespace: test,
       component: aerospike,
       env: integration_tests,
       runtime-id: Guid_1,

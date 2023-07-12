@@ -40,6 +40,9 @@ public class StringConcatTests : InstrumentationTestsBase
         var testString5 = AddTaintedString("+-*/{}");
 
         FormatTainted(String.Concat(testString1, testString2)).Should().Be(":+-01-+::+-abc-+:");
+        FormatTainted(String.Concat("01", testString2)).Should().Be("01:+-abc-+:");
+        FormatTainted(String.Concat(testString1, "abc")).Should().Be(":+-01-+:abc");
+
         FormatTainted(String.Concat(testString1, null, testString2)).Should().Be(":+-01-+::+-abc-+:");
         FormatTainted(String.Concat((object)testString1, (object)testString2)).Should().Be(":+-01-+::+-abc-+:");
         FormatTainted(String.Concat((object)testString1, null, (object)testString2)).Should().Be(":+-01-+::+-abc-+:");

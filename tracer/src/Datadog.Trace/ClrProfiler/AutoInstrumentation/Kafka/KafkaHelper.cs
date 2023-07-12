@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 // Producer spans should always be measured
-                span.SetTag(Tags.Measured, "1");
+                span.SetMetric(Trace.Tags.Measured, 1.0);
 
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
@@ -155,6 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
                 scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 

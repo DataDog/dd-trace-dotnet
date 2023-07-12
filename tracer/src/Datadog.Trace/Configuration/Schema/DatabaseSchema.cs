@@ -87,5 +87,12 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new CosmosDbTags(),
                 _ => new CosmosDbV1Tags(),
             };
+
+        public AerospikeTags CreateAerospikeTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AerospikeTags(),
+                _ => new AerospikeV1Tags(),
+            };
     }
 }

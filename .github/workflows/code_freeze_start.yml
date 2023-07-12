@@ -45,4 +45,4 @@ jobs:
       - uses: ./.github/actions/deploy-aas-dev-apps
         name: 'Trigger AAS deploy'
         with:
-          aas_github_token: ${{ secrets.GITHUB_TOKEN }}
+          aas_github_token: ${{ secrets.GH_TOKEN_PIERO }}
