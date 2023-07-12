@@ -115,7 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     }
                     catch (Exception ex)
                     {
-                        Log.Error(ex, "Error extracting propagated HTTP headers.");
+                        Log.Error(ex, "Error extracting propagated WCF headers.");
                     }
                 }
 

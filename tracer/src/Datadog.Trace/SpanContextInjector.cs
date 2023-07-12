@@ -20,8 +20,6 @@ namespace Datadog.Trace
     /// <inheritdoc />
     public class SpanContextInjector : ISpanContextInjector
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextInjector>();
-
         /// <inheritdoc />
         [PublicApi]
         public void Inject<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, ISpanContext context)
