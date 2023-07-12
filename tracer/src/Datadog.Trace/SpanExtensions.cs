@@ -95,6 +95,8 @@ namespace Datadog.Trace
         [PublicApi]
         public static ISpan SetTag(this ISpan span, string key, double? value)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
+
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));
@@ -119,6 +121,8 @@ namespace Datadog.Trace
         [PublicApi]
         public static object GetTagObject(this ISpan span, string key)
         {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_GetTagObject);
+
             if (span is null)
             {
                 ThrowHelper.ThrowArgumentNullException(nameof(span));

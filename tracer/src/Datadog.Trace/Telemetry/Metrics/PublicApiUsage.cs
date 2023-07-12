@@ -25,6 +25,8 @@ internal enum PublicApiUsage
     [Description("name:spancontextextractor_extract")] SpanContextExtractor_Extract,
 
     [Description("name:spanextensions_setuser")] SpanExtensions_SetUser,
+    [Description("name:spanextensions_settag")] SpanExtensions_SetTag,
+    [Description("name:spanextensions_gettagobject")] SpanExtensions_GetTagObject,
     [Description("name:spanextensions_settracesamplingpriority")] SpanExtensions_SetTraceSamplingPriority,
 
     [Description("name:tracer_ctor")] Tracer_Ctor,

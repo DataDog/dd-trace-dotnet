@@ -18,7 +18,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)54);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)56);
             return AgentUriInternal;
         }
     }
@@ -34,7 +34,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)60);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)62);
             return TracesPipeNameInternal;
         }
     }
@@ -50,7 +50,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)61);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)63);
             return TracesPipeTimeoutMsInternal;
         }
     }
@@ -66,7 +66,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)56);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)58);
             return MetricsPipeNameInternal;
         }
     }
@@ -82,7 +82,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)55);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)57);
             return DogStatsdPortInternal;
         }
     }
@@ -96,7 +96,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)58);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)60);
             return PartialFlushEnabledInternal;
         }
     }
@@ -110,7 +110,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)59);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)61);
             return PartialFlushMinSpansInternal;
         }
     }
@@ -125,7 +125,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)62);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)64);
             return TracesUnixDomainSocketPathInternal;
         }
     }
@@ -140,7 +140,7 @@ partial class ImmutableExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)57);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)59);
             return MetricsUnixDomainSocketPathInternal;
         }
     }
