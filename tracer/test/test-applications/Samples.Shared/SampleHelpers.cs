@@ -16,6 +16,7 @@ namespace Samples
         private static readonly Type ScopeType = Type.GetType("Datadog.Trace.Scope, Datadog.Trace");
         private static readonly Type SpanType = Type.GetType("Datadog.Trace.Span, Datadog.Trace");
         private static readonly Type SpanContextExtractorType = Type.GetType("Datadog.Trace.SpanContextExtractor, Datadog.Trace");
+        private static readonly Type SpanContextInjectorType = Type.GetType("Datadog.Trace.SpanContextInjector, Datadog.Trace");
         private static readonly Type CorrelationIdentifierType = Type.GetType("Datadog.Trace.CorrelationIdentifier, Datadog.Trace");
         private static readonly Type SpanCreationSettingsType = Type.GetType("Datadog.Trace.SpanCreationSettings, Datadog.Trace");
         private static readonly Type SpanContextType = Type.GetType("Datadog.Trace.SpanContext, Datadog.Trace");
@@ -27,6 +28,7 @@ namespace Samples
         private static readonly MethodInfo StartActiveMethod = TracerType?.GetMethod("StartActive", types: new[] { typeof(string) });
         private static readonly MethodInfo StartActiveWithContextMethod;
         private static readonly MethodInfo ExtractMethod = SpanContextExtractorType?.GetMethod("Extract");
+        private static readonly MethodInfo InjectMethod = SpanContextInjectorType?.GetMethod("Inject");
         private static readonly MethodInfo SetParent = SpanCreationSettingsType?.GetProperty("Parent")?.SetMethod;
         private static readonly MethodInfo ForceFlushAsyncMethod = TracerType?.GetMethod("ForceFlushAsync", BindingFlags.Public | BindingFlags.Instance);
         private static readonly MethodInfo ActiveScopeProperty = TracerType?.GetProperty("ActiveScope")?.GetMethod;
@@ -187,18 +189,41 @@ namespace Samples
             spanId = (ulong) SpanIdProperty.Invoke(parentScope, null);
         }
 
+        public static void InjectScope<TCarrier>(TCarrier carrier, Action<TCarrier, string, string> setter, object scope)
+        {
+            if (InjectMethod is null || SpanContextInjectorType is null  || carrier == null)
+            {
+                Console.WriteLine("IT IS NUUUUULLLL");
+                return;
+            }
+
+            try
+            {
+                var scopeInjector = Activator.CreateInstance(SpanContextInjectorType);
+                if (scopeInjector is null)
+                {
+                    Console.WriteLine("scopeInjector is NUUUUUUUUUUUUUUUUULLLLLLLLLL:");
+                }
+
+                var genericMethod = InjectMethod.MakeGenericMethod(carrier.GetType());
+                genericMethod.Invoke(scopeInjector, new object[] { carrier, setter, scope });
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine("EXCEPPPTTTIOOONNN:" + e);
+                return;
+            }
+
+        }
+
         public static ulong GetTraceId(IDisposable scope)
         {
-            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
-            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
-            return (ulong) TraceIdProperty.Invoke(context, Array.Empty<object>());
+            return (ulong) TraceIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static ulong GetSpanId(IDisposable scope)
         {
-            var span = SpanProperty.Invoke(scope, Array.Empty<object>());
-            var context = SpanContextProperty.Invoke(span, Array.Empty<object>());
-            return (ulong) SpanIdProperty.Invoke(context, Array.Empty<object>());
+            return (ulong) SpanIdProperty.Invoke(GetActiveSpanContext(), Array.Empty<object>());
         }
 
         public static Task ForceTracerFlushAsync()
@@ -221,6 +246,17 @@ namespace Samples
 
             var tracer = GetTracerInstance.Invoke(null, Array.Empty<object>());
             return (IDisposable) ActiveScopeProperty.Invoke(tracer, Array.Empty<object>());
+        }
+
+        public static object GetActiveSpanContext()
+        {
+            if (SpanContextProperty is null || SpanProperty is null)
+            {
+                return new NoOpDisposable();
+            }
+
+            var span = SpanProperty.Invoke(GetActiveScope(), Array.Empty<object>());
+            return SpanContextProperty.Invoke(span, Array.Empty<object>());
         }
 
         public static ulong GetCorrelationIdentifierTraceId()
