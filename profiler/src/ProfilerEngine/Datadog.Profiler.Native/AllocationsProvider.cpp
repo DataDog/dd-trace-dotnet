@@ -59,6 +59,9 @@ AllocationsProvider::AllocationsProvider(
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
 
+    // true if same proportional upscale for all types
+    _isProportional = (_pConfiguration->AllocationUpscaleMode() == ALLOCATION_UPSCALE_PROPORTIONAL);
+
     // true if upscale proportionally after having applied a Poisson process per type
     _isProportionalAndPoisson = (_pConfiguration->AllocationUpscaleMode() == ALLOCATION_UPSCALE_POISSON_PER_TYPE);
 
@@ -88,7 +91,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     // remove sampling when recording allocations
     // however, we need to call the Sample() method to make per type aggregation work
     bool keepAllocation = false;
-    if (_isProportionalAndPoisson)
+    if (_isProportional || _isProportionalAndPoisson)
     {
         keepAllocation = _groupSampler.Sample(sTypeName, objectSize);
     }
@@ -159,7 +162,7 @@ UpscalingInfo AllocationsProvider::GetInfo()
     auto allocationUpscaleMode = _pConfiguration->AllocationUpscaleMode();
 
     auto allocatedTypes = _groupSampler.GetGroups();
-    if (allocationUpscaleMode == ALLOCATION_UPSCALE_POISSON_PER_TYPE)
+    if (_isProportionalAndPoisson)
     {
         // Simulate a Poisson per type:
         //      1_f64 / (1_f64 - (-avg / sampling_distance as f64).exp()

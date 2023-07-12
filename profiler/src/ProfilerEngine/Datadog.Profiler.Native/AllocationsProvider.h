@@ -79,6 +79,7 @@ private:
     IConfiguration const* const _pConfiguration;
     bool _shouldSubSample;
     bool _isProportionalAndPoisson;
+    bool _isProportional;
 
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;

@@ -54,7 +54,7 @@ Configuration::Configuration()
     _serviceName = GetEnvironmentValue(EnvironmentVariables::ServiceName, OpSysTools::GetProcessName());
     _isAgentLess = GetEnvironmentValue(EnvironmentVariables::Agentless, false);
     _exceptionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ExceptionSampleLimit, 100);
-    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 2000);
+    _allocationSampleLimit = GetEnvironmentValue(EnvironmentVariables::AllocationSampleLimit, 10000);
     _allocationUpscaleMode = GetEnvironmentValue(EnvironmentVariables::AllocationUpscaleMode, ALLOCATION_UPSCALE_NONE); // TODO: change to the right upscale method is any
     _contentionSampleLimit = GetEnvironmentValue(EnvironmentVariables::ContentionSampleLimit, 1500);
     _contentionDurationThreshold = GetEnvironmentValue(EnvironmentVariables::ContentionDurationThreshold, 100);
