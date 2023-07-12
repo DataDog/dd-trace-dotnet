@@ -23,6 +23,7 @@ internal enum PublicApiUsage
     [Description("name:eventtrackingsdk_trackuserloginsuccessevent_metadata")]EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata,
 
     [Description("name:spancontextextractor_extract")] SpanContextExtractor_Extract,
+    [Description("name:spancontextinjector_inject")] SpanContextInjector_Inject,
 
     [Description("name:spanextensions_setuser")] SpanExtensions_SetUser,
     [Description("name:spanextensions_settag")] SpanExtensions_SetTag,
