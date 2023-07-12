@@ -48,7 +48,7 @@ namespace Datadog.Trace.Configuration.Schema
 
         public void RemapPeerService(ITags tags)
         {
-            if (!_peerServiceTagsEnabled || _peerServiceNameMappings is null || _peerServiceNameMappings.Count == 0)
+            if ((Version.Equals(SchemaVersion.V0) && !_peerServiceTagsEnabled) || _peerServiceNameMappings is null || _peerServiceNameMappings.Count == 0)
             {
                 return;
             }
