@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                     resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
-                    query = protocolWithCommand.Command.ToShortString();
+                    query = ((IDuckType)protocolWithCommand.Command).Instance.ToShortString();
                 }
                 catch (Exception ex)
                 {
