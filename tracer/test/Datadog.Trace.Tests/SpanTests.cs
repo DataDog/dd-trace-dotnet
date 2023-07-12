@@ -317,5 +317,29 @@ namespace Datadog.Trace.Tests
 
             span.GetTag(Tags.TraceId).Should().Be(expected);
         }
+
+        [Fact]
+        public void SetTag_Double()
+        {
+            var span = _tracer.StartSpan(nameof(SetTag_Double));
+            var stringKey = "StringTag";
+            var stringValue = "My Tag";
+            var numericKey = "NumericValue";
+            var numericValue = int.MaxValue;
+
+            // Write a normal string tag.
+            span.SetTag(stringKey, stringValue);
+
+            // Let's set the numeric value to the span (save it into the Metrics dictionary)
+            span.SetTag(numericKey, numericValue);
+
+            // The normal GetTag only look into the Meta dictionary.
+            span.GetTag(stringKey).Should().Be(stringValue);
+            span.GetTag(numericKey).Should().BeNull();
+
+            // The new GetTagObject extension look into both Meta and Metrics dictionary.
+            span.GetTagObject(stringKey).Should().Be(stringValue);
+            span.GetTagObject(numericKey).Should().Be(numericValue);
+        }
     }
 }
