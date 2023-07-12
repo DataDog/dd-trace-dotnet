@@ -55,7 +55,7 @@ namespace Datadog.Trace.DiagnosticListeners
                    ?.GetType("Microsoft.AspNetCore.Http.Features.IEndpointFeature", throwOnError: false);
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<AspNetCoreDiagnosticObserver>();
-        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new AspNetCoreHttpRequestHandler(Log, HttpRequestInOperationName, IntegrationId);
+        private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         private readonly Tracer _tracer;
         private readonly Security _security;
         private string _hostingHttpRequestInStartEventKey;
@@ -83,197 +83,46 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private Security CurrentSecurity => _security ?? Security.Instance;
 
-#if NETCOREAPP
         protected override void OnNext(string eventName, object arg)
         {
-            var lastChar = eventName[^1];
-
-            if (lastChar == 't')
+            if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
             {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
-                {
-                    OnHostingHttpRequestInStart(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
-                {
-                    _hostingHttpRequestInStartEventKey = eventName;
-                    OnHostingHttpRequestInStart(arg);
-                }
-
+                OnHostingHttpRequestInStart(arg);
                 return;
             }
 
-            if (lastChar == 'n')
+            if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
             {
-                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
-                {
-                    OnMvcBeforeAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
-                {
-                    OnMvcAfterAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
-                {
-                    OnHostingUnhandledException(arg);
-                    return;
-                }
-
-                var suffix = eventName.AsSpan().Slice(PrefixLength);
-
-                if (suffix.SequenceEqual("Mvc.BeforeAction"))
-                {
-                    _mvcBeforeActionEventKey = eventName;
-                    OnMvcBeforeAction(arg);
-                }
-                else if (suffix.SequenceEqual("Mvc.AfterAction"))
-                {
-                    _mvcAfterActionEventKey = eventName;
-                    OnMvcAfterAction(arg);
-                }
-                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
-                {
-                    _hostingUnhandledExceptionEventKey = eventName;
-                    OnHostingUnhandledException(arg);
-                }
-                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
-                {
-                    _diagnosticsUnhandledExceptionEventKey = eventName;
-                    OnHostingUnhandledException(arg);
-                }
-
+                OnMvcBeforeAction(arg);
                 return;
             }
 
-            if (lastChar == 'p')
+            if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
             {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
-                {
-                    OnHostingHttpRequestInStop(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
-                {
-                    _hostingHttpRequestInStopEventKey = eventName;
-                    OnHostingHttpRequestInStop(arg);
-                }
-
+                OnMvcAfterAction(arg);
                 return;
             }
 
-            if (lastChar == 'd')
+            if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) || ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
             {
-                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
-                {
-                    OnRoutingEndpointMatched(arg);
-                }
-                else if (eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
-                {
-                    _routingEndpointMatchedKey = eventName;
-                    OnRoutingEndpointMatched(arg);
-                }
-
+                OnHostingUnhandledException(arg);
                 return;
             }
+
+            if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
+            {
+                OnHostingHttpRequestInStop(arg);
+                return;
+            }
+
+            if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
+            {
+                OnRoutingEndpointMatched(arg);
+                return;
+            }
+
+            OnNextSlow(eventName, arg);
         }
-
-#else
-        protected override void OnNext(string eventName, object arg)
-        {
-            var lastChar = eventName[eventName.Length - 1];
-
-            if (lastChar == 't')
-            {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStartEventKey))
-                {
-                    OnHostingHttpRequestInStart(arg);
-                }
-                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
-                {
-                    _hostingHttpRequestInStartEventKey = eventName;
-                    OnHostingHttpRequestInStart(arg);
-                }
-
-                return;
-            }
-
-            if (lastChar == 'n')
-            {
-                if (ReferenceEquals(eventName, _mvcBeforeActionEventKey))
-                {
-                    OnMvcBeforeAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
-                {
-                    OnMvcAfterAction(arg);
-                    return;
-                }
-                else if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) ||
-                         ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
-                {
-                    OnHostingUnhandledException(arg);
-                    return;
-                }
-
-                switch (eventName)
-                {
-                    case "Microsoft.AspNetCore.Mvc.BeforeAction":
-                        _mvcBeforeActionEventKey = eventName;
-                        OnMvcBeforeAction(arg);
-                        break;
-
-                    case "Microsoft.AspNetCore.Mvc.AfterAction":
-                        _mvcAfterActionEventKey = eventName;
-                        OnMvcAfterAction(arg);
-                        break;
-
-                    case "Microsoft.AspNetCore.Hosting.UnhandledException":
-                        _hostingUnhandledExceptionEventKey = eventName;
-                        OnHostingUnhandledException(arg);
-                        break;
-                    case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
-                        _diagnosticsUnhandledExceptionEventKey = eventName;
-                        OnHostingUnhandledException(arg);
-                        break;
-                }
-
-                return;
-            }
-
-            if (lastChar == 'p')
-            {
-                if (ReferenceEquals(eventName, _hostingHttpRequestInStopEventKey))
-                {
-                    OnHostingHttpRequestInStop(arg);
-                }
-                else if (eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
-                {
-                    _hostingHttpRequestInStopEventKey = eventName;
-                    OnHostingHttpRequestInStop(arg);
-                }
-
-                return;
-            }
-
-            if (lastChar == 'd')
-            {
-                if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
-                {
-                    OnRoutingEndpointMatched(arg);
-                }
-                else if (eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
-                {
-                    _routingEndpointMatchedKey = eventName;
-                    OnRoutingEndpointMatched(arg);
-                }
-
-                return;
-            }
-        }
-#endif
 
         private static void SetLegacyResourceNames(BeforeActionStruct typedArg, Span span)
         {
@@ -406,6 +255,115 @@ namespace Datadog.Trace.DiagnosticListeners
 
             return span;
         }
+
+#if NETCOREAPP
+        private void OnNextSlow(string eventName, object arg)
+        {
+            var lastChar = eventName[^1];
+            if (lastChar == 't' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+            {
+                _hostingHttpRequestInStartEventKey = eventName;
+                OnHostingHttpRequestInStart(arg);
+                return;
+            }
+
+            if (lastChar == 'n')
+            {
+                var suffix = eventName.AsSpan().Slice(PrefixLength);
+
+                if (suffix.SequenceEqual("Mvc.BeforeAction"))
+                {
+                    _mvcBeforeActionEventKey = eventName;
+                    OnMvcBeforeAction(arg);
+                }
+                else if (suffix.SequenceEqual("Mvc.AfterAction"))
+                {
+                    _mvcAfterActionEventKey = eventName;
+                    OnMvcAfterAction(arg);
+                }
+                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
+                {
+                    _hostingUnhandledExceptionEventKey = eventName;
+                    OnHostingUnhandledException(arg);
+                }
+                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                {
+                    _diagnosticsUnhandledExceptionEventKey = eventName;
+                    OnHostingUnhandledException(arg);
+                }
+
+                return;
+            }
+
+            if (lastChar == 'p' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+            {
+                _hostingHttpRequestInStopEventKey = eventName;
+                OnHostingHttpRequestInStop(arg);
+                return;
+            }
+
+            if (lastChar == 'd' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+            {
+                _routingEndpointMatchedKey = eventName;
+                OnRoutingEndpointMatched(arg);
+                return;
+            }
+        }
+
+#else
+        private void OnNextSlow(string eventName, object arg)
+        {
+            var lastChar = eventName[eventName.Length - 1];
+
+            if (lastChar == 't' && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+            {
+                _hostingHttpRequestInStartEventKey = eventName;
+                OnHostingHttpRequestInStart(arg);
+                return;
+            }
+
+            if (lastChar == 'n')
+            {
+                switch (eventName)
+                {
+                    case "Microsoft.AspNetCore.Mvc.BeforeAction":
+                        _mvcBeforeActionEventKey = eventName;
+                        OnMvcBeforeAction(arg);
+                        break;
+
+                    case "Microsoft.AspNetCore.Mvc.AfterAction":
+                        _mvcAfterActionEventKey = eventName;
+                        OnMvcAfterAction(arg);
+                        break;
+
+                    case "Microsoft.AspNetCore.Hosting.UnhandledException":
+                        _hostingUnhandledExceptionEventKey = eventName;
+                        OnHostingUnhandledException(arg);
+                        break;
+                    case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
+                        _diagnosticsUnhandledExceptionEventKey = eventName;
+                        OnHostingUnhandledException(arg);
+                        break;
+                }
+
+                return;
+            }
+
+            if (lastChar == 'p' && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+            {
+                _hostingHttpRequestInStopEventKey = eventName;
+                OnHostingHttpRequestInStop(arg);
+                return;
+            }
+
+            if (lastChar == 'd' && eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+            {
+                _routingEndpointMatchedKey = eventName;
+                OnRoutingEndpointMatched(arg);
+                return;
+            }
+        }
+#endif
 
         private void OnHostingHttpRequestInStart(object arg)
         {
