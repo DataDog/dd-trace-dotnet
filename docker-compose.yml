@@ -116,7 +116,7 @@ services:
   aerospike:
     # pinning to a known good version because latest version (6.3.0.5 at time of issue)
     # causes 'Server memory error' and flake
-    image: aerospike/aerospike-server:6.3.0.1
+    image: aerospike/aerospike-server:6.2.0.6
     ports:
     - "127.0.0.1:3000:3000"
 
