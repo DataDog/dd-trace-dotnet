@@ -115,7 +115,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             }
             catch (Exception err)
             {
-                Log.Warning(err, "AppSec could not read Waf diagnostics. Disabling AppSec");
+                Log.Error(err, "AppSec could not read Waf diagnostics. Disabling AppSec");
                 errors ??= new Dictionary<string, object>();
                 errors.Add("diagnostics-error", err.Message);
             }
