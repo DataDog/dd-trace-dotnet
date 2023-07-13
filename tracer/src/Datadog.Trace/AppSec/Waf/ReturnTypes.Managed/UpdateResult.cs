@@ -16,12 +16,49 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         {
             if (diagnostics != IntPtr.Zero)
             {
-                var result = InitResult.From(diagnostics, null, null);
-                FailedToLoadRules = result.FailedToLoadRules;
-                LoadedRules = result.LoadedRules;
-                Errors = result.Errors;
-                RuleFileVersion = result.RuleFileVersion;
-                if (Errors.Count > 0)
+                Dictionary<string, object>? rules = null;
+                var diagObject = new Obj(diagnostics);
+                if (diagObject.ArgsType == ObjType.Invalid)
+                {
+                    Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
+                }
+                else
+                {
+                    var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(diagObject);
+                    if (diagnosticsData.Count > 0)
+                    {
+                        object? rulesObj = null;
+                        var valueExist = diagnosticsData.TryGetValue("rules", out rulesObj);
+                        if (!valueExist)
+                        {
+                            valueExist = diagnosticsData.TryGetValue("rules_override", out rulesObj);
+                            if (!valueExist)
+                            {
+                                Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or rule_overrides" } };
+                            }
+                        }
+
+                        if (rulesObj != null)
+                        {
+                            rules = rulesObj as Dictionary<string, object>;
+                            if (rules == null)
+                            {
+                                Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules as a dictionary key-value" } };
+                            }
+                        }
+
+                        if (diagnosticsData.TryGetValue("ruleset_version", out var ruleFileVersion))
+                        {
+                            RuleFileVersion = Convert.ToString(ruleFileVersion);
+                        }
+                    }
+                }
+
+                FailedToLoadRules = (ushort)(rules != null ? ((object[])rules["failed"]).Length : 0);
+                LoadedRules = (ushort)(rules != null ? ((object[])rules["loaded"]).Length : 0);
+                Errors = Errors ?? (Dictionary<string, object>)rules!["errors"];
+
+                if (Errors != null && Errors.Count > 0)
                 {
                     HasErrors = true;
                     ErrorMessage = JsonConvert.SerializeObject(Errors);
