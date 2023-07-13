@@ -46,6 +46,35 @@ namespace Datadog.Trace.Tests.Agent
         }
 
         [Fact]
+        public async Task SendTracesAsync_429_TreatRetryAsAllGood()
+        {
+            // This is due to a change on the Agent where instead of sending 200OK for when dropping payloads
+            // it will start returning 429 Too Many Requests
+            // https://github.com/DataDog/datadog-agent/pull/17917
+            // .NET Tracer Behavior before: dropped payloads by the agent would be ignored
+            // .NET Tracer Behavior after: dropped payloads would trigger retry logic [100ms, 200ms, 400ms, 800ms]
+            // This "after" behavior may cause performance issues on us as we don't really know how common this is
+            // So this test asserts that our "after" behavior is the same as the "before" behavior to give us time
+            // to determine better actions to take here.
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(429);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
+
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+
+            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
+
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
+        }
+
+        [Fact]
         public async Task SendTracesAsync_500_ErrorIsCaught()
         {
             var responseMock = new Mock<IApiResponse>();
