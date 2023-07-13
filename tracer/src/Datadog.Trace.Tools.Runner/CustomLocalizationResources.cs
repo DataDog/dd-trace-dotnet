@@ -14,53 +14,6 @@ namespace Datadog.Trace.Tools.Runner
 {
     internal class CustomLocalizationResources : LocalizationResources
     {
-        private readonly IReadOnlyDictionary<string, string> _resources;
-
-        public CustomLocalizationResources()
-        {
-            var resources = new Dictionary<string, string>
-            {
-                ["DirectoryDoesNotExist"] = "Directory does not exist: '{0}'.",
-                ["OptionExpectsOneArgument"] = "Option '{0}' expects a single argument but {1} were provided.",
-                ["FileDoesNotExist"] = "File does not exist: '{0}'.",
-                ["FileOrDirectoryDoesNotExist"] = "File or directory does not exist: '{0}'.",
-                ["InvalidCharactersInPath"] = "Character not allowed in a path: '{0}'.",
-                ["CommandRequiredArgumentMissing"] = "Required argument missing for command: '{0}'.",
-                ["OptionRequiredArgumentMissing"] = "Required argument missing for option: '{0}'.",
-                ["RequiredCommandWasNotProvided"] = "Required command was not provided.",
-                ["UnrecognizedArgument"] = "Argument '{0}' not recognized. Must be one of:{1}",
-                ["UnrecognizedCommandOrArgument"] = "Unrecognized command or argument '{0}'.",
-                ["ResponseFileNotFound"] = "Response file not found '{0}'.",
-                ["ErrorReadingResponseFile"] = "Error reading response file '{0}': {1}",
-                ["HelpOptionDescription"] = "Show help and usage information",
-                ["InvalidCharactersInFileName"] = "Character not allowed in a file name: '{0}'.",
-                ["HelpUsageAdditionalArguments"] = "[[--] <additional arguments>...]]",
-                ["HelpUsageCommand"] = "[command]",
-                ["HelpUsageOptions"] = "[options]",
-                ["HelpUsageTitle"] = "Usage:",
-                ["HelpDescriptionTitle"] = "Description:",
-                ["HelpArgumentDefaultValueLabel"] = "default",
-                ["HelpArgumentsTitle"] = "Arguments:",
-                ["HelpOptionsRequiredLabel"] = "(REQUIRED)",
-                ["HelpOptionsTitle"] = "Options:",
-                ["HelpAdditionalArgumentsDescription"] = "Arguments passed to the application that is being run.",
-                ["HelpAdditionalArgumentsTitle"] = "Additional Arguments:",
-                ["HelpCommandsTitle"] = "Commands:",
-                ["ExceptionHandlerHeader"] = "Unhandled exception: ",
-                ["SuggestionsTokenNotMatched"] = "'{0}' was not matched. Did you mean one of the following?",
-                ["VersionOptionCannotBeCombinedWithOtherArguments"] = "{0} option cannot be combined with other arguments.",
-                ["VersionOptionDescription"] = "Show version information",
-                ["ArgumentConversionCannotParse"] = "Cannot parse argument '{0}' as expected type '{1}'.",
-                ["ArgumentConversionCannotParseForCommand"] = "Cannot parse argument '{0}' for command '{1}' as expected type '{2}'.",
-                ["ArgumentConversionCannotParseForOption"] = "Cannot parse argument '{0}' for option '{1}' as expected type '{2}'.",
-                ["RequiredOptionWasNotProvided"] = "Option '{0}' is required.",
-                ["ArgumentConversionCannotParseForCommand_Completions"] = "Cannot parse argument '{0}' for command '{1}' as expected type '{2}'. Did you mean one of the following?{3}",
-                ["ArgumentConversionCannotParseForOption_Completions"] = "Cannot parse argument '{0}' for option '{1}' as expected type '{2}'. Did you mean one of the following?{3}"
-            };
-
-            _resources = resources;
-        }
-
         /// <summary>
         ///   Interpolates values into a localized string similar to Command &apos;{0}&apos; expects a single argument but {1} were provided.
         /// </summary>
