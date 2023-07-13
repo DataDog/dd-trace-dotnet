@@ -66,7 +66,8 @@ RUN curl -Ol https://raw.githubusercontent.com/llvm-mirror/clang-tools-extra/mas
     && ln -s /usr/bin/run-clang-tidy.py /usr/bin/run-clang-tidy
 
 # Install CppCheck
-RUN curl -sSL https://rpmfind.net/linux/epel/7/x86_64/Packages/c/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
+RUN curl -sSL https://apmdotnetbuildstorage.blob.core.windows.net/build-dependencies/cppcheck-2.7-1.el7.x86_64.rpm --output cppcheck-2.7-1.el7.x86_64.rpm \
+    && echo '7b1e2c6abf34cfbc9d542ea466f2fb752ec2cee2ef92297271c8c8325cf8d16e29d1c32784da0ccc6bc4e9bee8647b14daa8568f4e2d1fd1626a584dc4f2419a cppcheck-2.7-1.el7.x86_64.rpm' | sha512sum --check \
     && sudo yum localinstall -y cppcheck-2.7-1.el7.x86_64.rpm
 
 # Install the .NET SDK
