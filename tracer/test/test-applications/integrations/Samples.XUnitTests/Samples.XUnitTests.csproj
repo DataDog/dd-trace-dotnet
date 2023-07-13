@@ -3,7 +3,8 @@
   <PropertyGroup>
     <IsPackable>false</IsPackable>
     <OutputType>Library</OutputType>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.3.1</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.5.0</ApiVersion>
+    <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.5'))">16.7.1</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.4'))">16.7.1</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.3'))">16.2.0</MicrosoftTestSDKVersion>
     <MicrosoftTestSDKVersion Condition="$(ApiVersion.StartsWith('2.2'))">15.9.0</MicrosoftTestSDKVersion>
