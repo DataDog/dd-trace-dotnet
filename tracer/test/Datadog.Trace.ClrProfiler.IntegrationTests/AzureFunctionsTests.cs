@@ -118,7 +118,7 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (RunAzureFunctionAndWaitForExit(agent))
             {
                 const int expectedSpanCount = 21;
@@ -150,7 +150,7 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (RunAzureFunctionAndWaitForExit(agent, framework: "net6.0"))
             {
                 const int expectedSpanCount = 21;
@@ -182,7 +182,7 @@ public abstract class AzureFunctionsTests : TestHelper
         [Trait("RunOnWindows", "True")]
         public async Task SubmitsTraces()
         {
-            using (var agent = EnvironmentHelper.GetMockAgent())
+            using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             using (RunAzureFunctionAndWaitForExit(agent, expectedExitCode: -1))
             {
                 const int expectedSpanCount = 21;

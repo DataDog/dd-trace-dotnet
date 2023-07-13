@@ -65,6 +65,7 @@ namespace Datadog.Trace
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager,
             ITraceProcessor[] traceProcessors = null)
         {
             Settings = settings;
@@ -92,6 +93,7 @@ namespace Datadog.Trace
             TagProcessors = lstTagProcessors.ToArray();
 
             RemoteConfigurationManager = remoteConfigurationManager;
+            DynamicConfigurationManager = dynamicConfigurationManager;
 
             var schema = new NamingSchema(settings.MetadataSchemaVersion, settings.PeerServiceTagsEnabled, settings.RemoveClientServiceNamesEnabled, defaultServiceName, settings.ServiceNameMappings);
             PerTraceSettings = new(traceSampler, spanSampler, settings.ServiceNameMappings, schema);
@@ -150,7 +152,9 @@ namespace Datadog.Trace
 
         public IRemoteConfigurationManager RemoteConfigurationManager { get; }
 
-        private RuntimeMetricsWriter RuntimeMetrics { get; }
+        public IDynamicConfigurationManager DynamicConfigurationManager { get; }
+
+        public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public PerTraceSettings PerTraceSettings { get; set; }
 
@@ -202,6 +206,7 @@ namespace Datadog.Trace
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
+            DynamicConfigurationManager.Start();
             RemoteConfigurationManager.Start();
         }
 
@@ -265,10 +270,17 @@ namespace Datadog.Trace
                     oldManager.RemoteConfigurationManager.Dispose();
                 }
 
+                var dynamicConfigurationManagerReplaced = false;
+                if (oldManager.DynamicConfigurationManager != newManager.DynamicConfigurationManager && oldManager.DynamicConfigurationManager is not null)
+                {
+                    dynamicConfigurationManagerReplaced = true;
+                    oldManager.DynamicConfigurationManager.Dispose();
+                }
+
                 Log.Information(
                     exception: null,
-                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}",
-                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced });
+                    "Replaced global instances. AgentWriter: {AgentWriterReplaced}, StatsD: {StatsDReplaced}, RuntimeMetricsWriter: {RuntimeMetricsWriterReplaced}, Telemetry: {TelemetryReplaced}, Discovery: {DiscoveryReplaced}, DataStreamsManager: {DataStreamsManagerReplaced}, RemoteConfigurationManager: {ConfigurationManagerReplaced}, DynamicConfigurationManager: {DynamicConfigurationManagerReplaced}",
+                    new object[] { agentWriterReplaced, statsdReplaced, runtimeMetricsWriterReplaced, telemetryReplaced, discoveryReplaced, dataStreamsReplaced, configurationManagerReplaced, dynamicConfigurationManagerReplaced });
             }
             catch (Exception ex)
             {
@@ -312,6 +324,21 @@ namespace Datadog.Trace
 
                 using (var writer = new JsonTextWriter(stringWriter))
                 {
+                    void WriteDictionary(IReadOnlyDictionary<string, string> dictionary)
+                    {
+                        writer.WriteStartArray();
+
+                        if (dictionary is not null)
+                        {
+                            foreach (var kvp in dictionary)
+                            {
+                                writer.WriteValue($"{kvp.Key}:{kvp.Value}");
+                            }
+                        }
+
+                        writer.WriteEndArray();
+                    }
+
                     // ReSharper disable MethodHasAsyncOverload
                     writer.WriteStartObject();
 
@@ -372,15 +399,7 @@ namespace Datadog.Trace
                     writer.WriteValue(instanceSettings.CustomSamplingRulesInternal);
 
                     writer.WritePropertyName("tags");
-
-                    writer.WriteStartArray();
-
-                    foreach (var entry in instanceSettings.GlobalTagsInternal)
-                    {
-                        writer.WriteValue(string.Concat(entry.Key, ":", entry.Value));
-                    }
-
-                    writer.WriteEndArray();
+                    WriteDictionary(instanceSettings.GlobalTagsInternal);
 
                     writer.WritePropertyName("log_injection_enabled");
                     writer.WriteValue(instanceSettings.LogsInjectionEnabledInternal);
@@ -505,6 +524,12 @@ namespace Datadog.Trace
                     writer.WritePropertyName("stats_computation_enabled");
                     writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
 
+                    writer.WritePropertyName("header_tags");
+                    WriteDictionary(instanceSettings.HeaderTagsInternal);
+
+                    writer.WritePropertyName("service_mapping");
+                    WriteDictionary(instanceSettings.ServiceNameMappings);
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
@@ -590,12 +615,13 @@ namespace Datadog.Trace
 
                 if (instance is not null)
                 {
+                    Log.Debug("Disposing DynamicConfigurationManager");
+                    instance.DynamicConfigurationManager.Dispose();
+
                     Log.Debug("Disposing AgentWriter.");
                     var flushTracesTask = instance.AgentWriter?.FlushAndCloseAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DirectLogSubmission.");
                     var logSubmissionTask = instance.DirectLogSubmission?.DisposeAsync() ?? Task.CompletedTask;
-                    Log.Debug("Disposing Telemetry.");
-                    var telemetryTask = instance.Telemetry?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing DiscoveryService.");
                     var discoveryService = instance.DiscoveryService?.DisposeAsync() ?? Task.CompletedTask;
                     Log.Debug("Disposing Data streams.");
@@ -604,7 +630,13 @@ namespace Datadog.Trace
                     instance.RemoteConfigurationManager?.Dispose();
 
                     Log.Debug("Waiting for disposals.");
-                    await Task.WhenAll(flushTracesTask, logSubmissionTask, telemetryTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+                    await Task.WhenAll(flushTracesTask, logSubmissionTask, discoveryService, dataStreamsTask).ConfigureAwait(false);
+
+                    Log.Debug("Disposing Telemetry");
+                    if (instance.Telemetry is { })
+                    {
+                        await instance.Telemetry.DisposeAsync().ConfigureAwait(false);
+                    }
 
                     Log.Debug("Disposing Runtime Metrics");
                     instance.RuntimeMetrics?.Dispose();

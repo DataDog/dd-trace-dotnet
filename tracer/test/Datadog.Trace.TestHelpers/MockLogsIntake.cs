@@ -221,7 +221,7 @@ namespace Datadog.Trace.TestHelpers
             public string SpanId { get; set; }
 
             [JsonExtensionData]
-            internal Dictionary<string, JToken> OtherProperties { get; } = new();
+            public Dictionary<string, object> OtherProperties { get; } = new();
 
             [JsonProperty("service")]
             private string Service1

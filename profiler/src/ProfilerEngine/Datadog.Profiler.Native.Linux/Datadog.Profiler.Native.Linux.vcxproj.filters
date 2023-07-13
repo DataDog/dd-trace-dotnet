@@ -5,6 +5,8 @@
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
+    <ClCompile Include="ProfilerSignalManager.cpp" />
+    <ClCompile Include="LinuxThreadInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Scripts">
@@ -18,5 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LinuxStackFramesCollector.h" />
+    <ClInclude Include="ProfilerSignalManager.h" />
+    <ClInclude Include="LinuxThreadInfo.h" />
   </ItemGroup>
 </Project>

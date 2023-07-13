@@ -18,16 +18,16 @@ namespace Datadog.Trace.Telemetry
         // need to start collecting these immediately
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
         private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
+        private readonly object _sync = new();
 
         // V1 integration only
         private ConfigurationTelemetryCollector? _configuration;
+        private IntegrationTelemetryCollector? _integrations;
 
         // v2 integration only
-        private ProductsTelemetryCollector? _products;
-        private ApplicationTelemetryCollectorV2? _application;
+        private TelemetryControllerV2? _controllerV2;
 
         // shared
-        private IntegrationTelemetryCollector? _integrations;
         private IDependencyTelemetryCollector? _dependencies;
 
         private TelemetryFactory()
@@ -154,20 +154,30 @@ namespace Datadog.Trace.Telemetry
             TelemetrySettings settings)
         {
             var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
-            // Initialized once so if we create a new controller from this factory we get the same collector instances
-            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
-            var products = LazyInitializer.EnsureInitialized(ref _products)!;
-            var application = LazyInitializer.EnsureInitialized(ref _application)!;
+            // The telemetry controller must be a singleton, so we initialize once
+            // Note that any dependencies initialized inside the controller are also singletons (by design)
+            // Initialized once so if we create a new controller from this factory we get the same collector instances.
+            // (can't use LazyInitializer because that doesn't guarantee only a single instance is created,
+            // and we start the task immediately)
 
-            return new TelemetryControllerV2(
-                Config,
-                _dependencies!,
-                integrations,
-                Metrics,
-                products,
-                application,
-                transportManager,
-                settings.HeartbeatInterval);
+            if (_controllerV2 is null)
+            {
+                lock (_sync)
+                {
+                    _controllerV2 ??= new TelemetryControllerV2(
+                        Config,
+                        _dependencies!,
+                        Metrics,
+                        transportManager,
+                        settings.HeartbeatInterval);
+                }
+            }
+
+            _controllerV2.DisableSending(); // disable sending until fully configured
+            _controllerV2.SetTransportManager(transportManager);
+            _controllerV2.SetFlushInterval(settings.HeartbeatInterval);
+
+            return _controllerV2;
         }
     }
 }

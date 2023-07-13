@@ -72,7 +72,7 @@ namespace Datadog.Trace.Configuration
         /// <remarks>
         /// We deliberately don't use the static <see cref="TelemetryFactory.Config"/> collector here
         /// as we don't want to automatically record these values, only once they're "activated",
-        /// in <see cref="Tracer.Configure"/>
+        /// in <see cref="Tracer.Configure(TracerSettings)"/>
         /// </remarks>
         [PublicApi]
         public TracerSettings(IConfigurationSource? source)
@@ -148,24 +148,21 @@ namespace Datadog.Trace.Configuration
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            var inputHeaderTags = config
-                                     .WithKeys(ConfigurationKeys.HeaderTags)
-                                     .AsDictionary(allowOptionalMappings: true) ??
-                                  // default value (empty)
-                                  new Dictionary<string, string>();
-
             var headerTagsNormalizationFixEnabled = config
                                                    .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
                                                    .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTagsInternal = InitializeHeaderTags(inputHeaderTags, headerTagsNormalizationFixEnabled);
+            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
+                ?? new Dictionary<string, string>();
+
             PeerServiceTagsEnabled = config
-                                    .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
-                                    .AsBool(defaultValue: false);
+               .WithKeys(ConfigurationKeys.PeerServiceDefaultsEnabled)
+               .AsBool(defaultValue: false);
             RemoveClientServiceNamesEnabled = config
-                                             .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
-                                             .AsBool(defaultValue: false);
+               .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
+               .AsBool(defaultValue: false);
+
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -178,11 +175,7 @@ namespace Datadog.Trace.Configuration
                                         },
                                         validator: null);
 
-            ServiceNameMappings = config
-               .WithKeys(ConfigurationKeys.ServiceNameMappings)
-               .AsDictionary()
-              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
-               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
+            ServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.ServiceNameMappings);
 
             TracerMetricsEnabledInternal = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
@@ -302,14 +295,9 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.TraceMethods)
                           .AsString(string.Empty);
 
-            var grpcTags = config
-                              .WithKeys(ConfigurationKeys.GrpcTags)
-                              .AsDictionary(allowOptionalMappings: true)
-                              // default value (empty)
-                        ?? new Dictionary<string, string>();
-
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            GrpcTagsInternal = InitializeHeaderTags(grpcTags, headerTagsNormalizationFixEnabled: true);
+            GrpcTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.GrpcTags, headerTagsNormalizationFixEnabled: true)
+                ?? new Dictionary<string, string>();
 
             OutgoingTagPropagationHeaderMaxLength = config
                                                    .WithKeys(ConfigurationKeys.TagPropagation.HeaderMaxLength)
@@ -523,7 +511,7 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Get,
             PublicApiUsage.TracerSettings_MaxTracesSubmittedPerSecond_Set)]
 #pragma warning disable CS0618
-        [ConfigKey(ConfigurationKeys.MaxTracesSubmittedPerSecond)]
+        [ConfigKey(ConfigurationKeys.TraceRateLimit)]
 #pragma warning restore CS0618
         internal int MaxTracesSubmittedPerSecondInternal { get; private set; }
 
@@ -578,6 +566,8 @@ namespace Datadog.Trace.Configuration
         [ConfigKey(ConfigurationKeys.HeaderTags)]
         internal IDictionary<string, string> HeaderTagsInternal { get; set; }
 #pragma warning restore SA1624
+
+        internal bool HeaderTagsNormalizationFixEnabled { get; }
 
         /// <summary>
         /// Gets a custom request header configured to read the ip from. For backward compatibility, it fallbacks on DD_APPSEC_IPHEADER
@@ -945,25 +935,26 @@ namespace Datadog.Trace.Configuration
             return new ImmutableTracerSettings(this, true);
         }
 
-        internal void CollectTelemetry(IConfigurationTelemetry destination)
+        internal static IDictionary<string, string>? InitializeServiceNameMappings(ConfigurationBuilder config, string key)
         {
-            // copy the current settings into telemetry
-            _telemetry.CopyTo(destination);
-
-            // record changes made in code directly to destination
-            _initialSettings.RecordChanges(this, destination);
-
-            // If ExporterSettings has been replaced, it will have its own telemetry collector
-            // so we need to record those values too.
-            if (ExporterInternal.Telemetry is { } exporterTelemetry
-             && exporterTelemetry != _telemetry)
-            {
-                exporterTelemetry.CopyTo(destination);
-            }
+            return config
+               .WithKeys(key)
+               .AsDictionary()
+              ?.Where(kvp => !string.IsNullOrWhiteSpace(kvp.Key) && !string.IsNullOrWhiteSpace(kvp.Value))
+               .ToDictionary(kvp => kvp.Key.Trim(), kvp => kvp.Value.Trim());
         }
 
-        private static IDictionary<string, string> InitializeHeaderTags(IDictionary<string, string> configurationDictionary, bool headerTagsNormalizationFixEnabled)
+        internal static IDictionary<string, string>? InitializeHeaderTags(ConfigurationBuilder config, string key, bool headerTagsNormalizationFixEnabled)
         {
+            var configurationDictionary = config
+                   .WithKeys(key)
+                   .AsDictionary(allowOptionalMappings: true);
+
+            if (configurationDictionary == null)
+            {
+                return null;
+            }
+
             var headerTags = new Dictionary<string, string>();
 
             foreach (var kvp in configurationDictionary)
@@ -1091,5 +1082,22 @@ namespace Datadog.Trace.Configuration
 
         internal static TracerSettings Create(Dictionary<string, object?> settings)
             => new(new DictionaryConfigurationSource(settings.ToDictionary(x => x.Key, x => x.Value?.ToString()!)), new ConfigurationTelemetry());
+
+        internal void CollectTelemetry(IConfigurationTelemetry destination)
+        {
+            // copy the current settings into telemetry
+            _telemetry.CopyTo(destination);
+
+            // record changes made in code directly to destination
+            _initialSettings.RecordChanges(this, destination);
+
+            // If ExporterSettings has been replaced, it will have its own telemetry collector
+            // so we need to record those values too.
+            if (ExporterInternal.Telemetry is { } exporterTelemetry
+             && exporterTelemetry != _telemetry)
+            {
+                exporterTelemetry.CopyTo(destination);
+            }
+        }
     }
 }

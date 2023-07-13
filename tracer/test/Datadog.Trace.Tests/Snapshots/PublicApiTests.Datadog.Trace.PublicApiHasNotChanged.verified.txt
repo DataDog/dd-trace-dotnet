@@ -246,7 +246,7 @@ namespace Datadog.Trace.Configuration
     {
         public Datadog.Trace.Configuration.ImmutableIntegrationSettings this[string integrationName] { get; }
     }
-    public class ImmutableTracerSettings
+    public class ImmutableTracerSettings : System.IEquatable<Datadog.Trace.Configuration.ImmutableTracerSettings>
     {
         public ImmutableTracerSettings(Datadog.Trace.Configuration.IConfigurationSource source) { }
         public ImmutableTracerSettings(Datadog.Trace.Configuration.TracerSettings settings) { }
@@ -435,6 +435,8 @@ namespace Datadog.Trace
     }
     public static class SpanExtensions
     {
+        public static object GetTagObject(this Datadog.Trace.ISpan span, string key) { }
+        public static Datadog.Trace.ISpan SetTag(this Datadog.Trace.ISpan span, string key, double? value) { }
         public static void SetUser(this Datadog.Trace.ISpan span, Datadog.Trace.UserDetails userDetails) { }
     }
     public static class SpanKinds

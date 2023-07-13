@@ -108,7 +108,7 @@ public class TelemetryHelperTests
         telemetryData.Add(BuildTelemetryDataV2(collector.GetData()));
 
         // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, 1)));
+        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
@@ -195,7 +195,7 @@ public class TelemetryHelperTests
         telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false));
 
         // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, 1)));
+        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
 
         var checkTelemetryFunc = () => TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
 
@@ -257,7 +257,7 @@ public class TelemetryHelperTests
         telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData(), sendAppStarted: false));
 
         // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, 1)));
+        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled);
@@ -283,7 +283,6 @@ public class TelemetryHelperTests
             _dataBuilderV2.BuildTelemetryData(
                 _appV2,
                 _hostV2,
-                new TelemetryInput(configuration, null, integrations, null, null, null),
-                sendAppStarted,
-                namingSchemeVersion: 1));
+                new TelemetryInput(configuration, null, integrations, null, null, null, sendAppStarted),
+                namingSchemeVersion: "1"));
 }

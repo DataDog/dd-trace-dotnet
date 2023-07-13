@@ -27,7 +27,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-test: tainted-+:", 
+        AssertTaintedFormatWithOriginalCallCheck(":+-test: taintedcustomformat-+:", 
             String.Format(new FormatProviderForTest(), "test: {0}", new object[] { _taintedValue }), 
             () => String.Format(new FormatProviderForTest(), "test: {0}", new object[] { _taintedValue }));
     }
@@ -35,7 +35,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted2()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringTAINTED2-+:", 
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformatTAINTED2customformat-+:", 
             String.Format(new FormatProviderForTest(), _taintedFormat2Args, new object[] { _untaintedString, _taintedValue2 }), 
             () => String.Format(new FormatProviderForTest(), _taintedFormat2Args, new object[] { _untaintedString, _taintedValue2 }));
     }
@@ -43,7 +43,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted8()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringUntaintedString-+:", 
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformatUntaintedStringcustomformat-+:", 
             String.Format(new FormatProviderForTest(), _taintedFormat2Args, new object[] { _untaintedString, _untaintedString }), 
             () => String.Format(new FormatProviderForTest(), _taintedFormat2Args, new object[] { _untaintedString, _untaintedString }));
     }
@@ -52,7 +52,7 @@ public class StringFormatTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted3()
     {
         string str = "Literal with tainteds {0}{1} and untainted {2} and tainted {3} and another untainted {4}";
-        AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds taintedTAINTED2 and untainted UntaintedString and tainted TAINTED2 and another untainted OtherUntaintedString-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-Literal with tainteds taintedcustomformatTAINTED2customformat and untainted UntaintedStringcustomformat and tainted TAINTED2customformat and another untainted OtherUntaintedStringcustomformat-+:",
             String.Format(new FormatProviderForTest(), str, _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString),
             () => String.Format(new FormatProviderForTest(), str, _taintedValue, _taintedValue2, _untaintedString, _taintedValue2, _otherUntaintedString));
     }
@@ -60,7 +60,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted13()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatww-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwcustomformat-+:",
             String.Format(new FormatProviderForTest(), _taintedFormat1Arg, new object[] { "ww" }),
             () => String.Format(new FormatProviderForTest(), _taintedFormat1Arg, new object[] { "ww" }));
     }
@@ -70,7 +70,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted4()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedTAINTED2-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedcustomformatTAINTED2customformat-+:",
             String.Format(new FormatProviderForTest(), _taintedFormat2Args, _taintedValue, _taintedValue2),
             () => String.Format(new FormatProviderForTest(), _taintedFormat2Args, _taintedValue, _taintedValue2));
     }
@@ -87,7 +87,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted14()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwww-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwcustomformatwwcustomformat-+:",
             String.Format(new FormatProviderForTest(), _taintedFormat2Args, "ww", "ww"),
             () => String.Format(new FormatProviderForTest(), _taintedFormat2Args, "ww", "ww"));
     }
@@ -97,7 +97,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted6()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formattainted-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedcustomformat-+:",
             String.Format(new FormatProviderForTest(), "format{0}", _taintedValue),
             () => String.Format(new FormatProviderForTest(), "format{0}", _taintedValue));
     }
@@ -105,7 +105,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted15()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatww-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwcustomformat-+:",
             String.Format(new FormatProviderForTest(), _taintedFormat1Arg, "ww"),
             () => String.Format(new FormatProviderForTest(), _taintedFormat1Arg, "ww"));
     }
@@ -131,7 +131,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted9()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formattainted TAINTED2 TAINTED2-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedcustomformat TAINTED2customformat TAINTED2customformat-+:",
             String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _taintedValue, _taintedValue2, _taintedValue2),
             () => String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _taintedValue, _taintedValue2, _taintedValue2));
     }
@@ -139,7 +139,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted10()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedString tainted UntaintedString-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformat taintedcustomformat UntaintedStringcustomformat-+:",
             String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _untaintedString, _taintedValue, _untaintedString),
             () => String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _untaintedString, _taintedValue, _untaintedString));
     }
@@ -147,7 +147,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted11()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formattainted UntaintedString UntaintedString-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formattaintedcustomformat UntaintedStringcustomformat UntaintedStringcustomformat-+:",
             String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _taintedValue, _untaintedString, _untaintedString),
             () => String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _taintedValue, _untaintedString, _untaintedString));
     }
@@ -155,7 +155,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted12()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedString UntaintedString tainted-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatUntaintedStringcustomformat UntaintedStringcustomformat taintedcustomformat-+:",
             String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _untaintedString, _untaintedString, _taintedValue),
             () => String.Format(new FormatProviderForTest(), "format{0} {1} {2}", _untaintedString, _untaintedString, _taintedValue));
     }
@@ -163,7 +163,7 @@ public class StringFormatTests : InstrumentationTestsBase
     [Fact]
     public void GivenATaintedObject_WhenCallingFormatWithProvider_ResultIsTainted16()
     {
-        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwwwww-+:",
+        AssertTaintedFormatWithOriginalCallCheck(":+-formatwwcustomformatwwcustomformatwwcustomformat-+:",
             String.Format(new FormatProviderForTest(), _taintedFormat3Args, "ww", "ww", "ww"),
             () => String.Format(new FormatProviderForTest(), _taintedFormat3Args, "ww", "ww", "ww"));
     }

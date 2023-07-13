@@ -41,6 +41,7 @@ namespace Samples.Computer01
         private InnerMethods _innerMethods;
         private LineNumber _lineNumber;
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
+        private MethodsSignature _methodsSignature;
 
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
@@ -62,6 +63,7 @@ namespace Samples.Computer01
                     StartGenericsAllocation(nbThreads);
                     StartContentionGenerator(nbThreads, parameter);
                     StartLineNumber();
+                    StartMethodsSignature();
                     break;
 
                 case Scenario.Computer:
@@ -141,6 +143,9 @@ namespace Samples.Computer01
                     StartNullThreadNameBugCheck();
                     break;
 
+                case Scenario.MethodSignature:
+                    StartMethodsSignature();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -162,6 +167,7 @@ namespace Samples.Computer01
                     StopGenericsAllocation();
                     StopContentionGenerator();
                     StopLineNumber();
+                    StopMethodsSignature();
                     break;
 
                 case Scenario.Computer:
@@ -241,6 +247,10 @@ namespace Samples.Computer01
                 case Scenario.NullThreadNameBug:
                     StopNullThreadNameBugCheck();
                     break;
+
+                case Scenario.MethodSignature:
+                    StopMethodsSignature();
+                    break;
             }
         }
 
@@ -268,6 +278,7 @@ namespace Samples.Computer01
                         RunGenericsAllocation(nbThreads);
                         RunContentionGenerator(nbThreads, parameter);
                         RunLineNumber();
+                        RunMethodsSignature();
                         break;
 
                     case Scenario.Computer:
@@ -345,6 +356,10 @@ namespace Samples.Computer01
 
                     case Scenario.NullThreadNameBug:
                         RunNullThreadNameBugCheck();
+                        break;
+
+                    case Scenario.MethodSignature:
+                        RunMethodsSignature();
                         break;
 
                     default:
@@ -500,6 +515,12 @@ namespace Samples.Computer01
             _nullThreadNameBugCheck.Start();
         }
 
+        private void StartMethodsSignature()
+        {
+            _methodsSignature = new MethodsSignature();
+            _methodsSignature.Start();
+        }
+
         private void StopComputer()
         {
             using (_computer)
@@ -609,6 +630,11 @@ namespace Samples.Computer01
         private void StopNullThreadNameBugCheck()
         {
             _nullThreadNameBugCheck.Stop();
+        }
+
+        private void StopMethodsSignature()
+        {
+            _methodsSignature.Stop();
         }
 
         private void RunComputer()
@@ -745,6 +771,12 @@ namespace Samples.Computer01
         {
             var nullThreadNameBugCheck = new NullThreadNameBugCheck();
             nullThreadNameBugCheck.Run();
+        }
+
+        private void RunMethodsSignature()
+        {
+            var methodsSignature = new MethodsSignature();
+            methodsSignature.Run();
         }
 
         public class MySpecialClassA

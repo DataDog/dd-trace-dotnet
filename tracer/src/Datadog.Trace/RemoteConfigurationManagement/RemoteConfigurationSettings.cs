@@ -20,7 +20,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         {
             configurationSource ??= NullConfigurationSource.Instance;
 
-            Id = Guid.NewGuid().ToString();
             RuntimeId = Util.RuntimeId.Get();
             TracerVersion = TracerConstants.ThreePartVersion;
 
@@ -32,8 +31,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
 
             PollInterval = TimeSpan.FromSeconds(pollInterval.Value);
         }
-
-        public string Id { get; }
 
         public string RuntimeId { get; }
 

@@ -12,8 +12,10 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
     /// <summary>
     /// Holds data needed during Debugger instrumentation execution.
     /// </summary>
-    internal readonly record struct MethodMetadataInfo
+    internal record struct MethodMetadataInfo
     {
+        private readonly object _locker = new();
+
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, Type type, MethodBase method)
             : this(parameterNames, localVariableNames, null, null, type, method, null, null)
         {
@@ -22,9 +24,9 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         public MethodMetadataInfo(string[] parameterNames, string[] localVariableNames, AsyncHelper.FieldInfoNameSanitized[] asyncMethodHoistedLocals, FieldInfo[] asyncMethodHoistedArguments, Type type, MethodBase method, Type kickoffType, MethodBase kickoffMethod)
         {
             ParameterNames = parameterNames;
-            LocalVariableNames = localVariableNames;
-            AsyncMethodHoistedLocals = asyncMethodHoistedLocals;
-            AsyncMethodHoistedArguments = asyncMethodHoistedArguments;
+            LocalVariableNames = localVariableNames ?? Array.Empty<string>();
+            AsyncMethodHoistedLocals = asyncMethodHoistedLocals ?? Array.Empty<AsyncHelper.FieldInfoNameSanitized>();
+            AsyncMethodHoistedArguments = asyncMethodHoistedArguments ?? Array.Empty<FieldInfo>();
             DeclaringType = type;
             Method = method;
             KickoffInvocationTargetType = kickoffType;
@@ -69,5 +71,37 @@ namespace Datadog.Trace.Debugger.Instrumentation.Collections
         /// Gets the type that represents the kickoff method of the state machine MoveNext (i.e. original method)
         /// </summary>
         public MethodBase KickoffMethod { get; }
+
+        /// <summary>
+        /// Gets the probe ids actively instrumented
+        /// </summary>
+        public string[] ProbeIds { get; private set; }
+
+        /// <summary>
+        /// Gets the indices of the probes, used to lookup for <see cref="ProbeData"/> from <see cref="ProbeDataCollection"/>.
+        /// </summary>
+        public int[] ProbeMetadataIndices { get; private set; }
+
+        /// <summary>
+        /// Gets the unique version of the active instrumentation that is being applied. It basically identifies the probe ids combination that is currently applied.
+        /// If a probe is getting added and/or removed, then this number will be re-updated using new instrumentation, and have a new version number, "hard-coded" by the instrumentation.
+        /// </summary>
+        public int InstrumentationVersion { get; private set; } = -1;
+
+        /// <summary>
+        /// Updates, atomically using a locking object for syncing, <see cref="ProbeIds"/> and <see cref="ProbeMetadataIndices"/>.
+        /// </summary>
+        /// <param name="probeIds">Updated probe ids.</param>
+        /// <param name="probeMetadataIndices">Updated probe metadata indices.</param>
+        /// <param name="instrumentationVersion">The (new) unique identifier of the instrumentation that is currently applied.</param>
+        public void Update(string[] probeIds, int[] probeMetadataIndices, int instrumentationVersion)
+        {
+            lock (_locker)
+            {
+                ProbeIds = probeIds;
+                ProbeMetadataIndices = probeMetadataIndices;
+                InstrumentationVersion = instrumentationVersion;
+            }
+        }
     }
 }

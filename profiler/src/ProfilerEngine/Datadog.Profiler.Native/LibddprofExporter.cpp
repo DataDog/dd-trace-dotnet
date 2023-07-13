@@ -9,6 +9,7 @@
 #include "IEnabledProfilers.h"
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
+#include "ISamplesProvider.h"
 #include "IUpscaleProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -150,6 +151,12 @@ void LibddprofExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
 {
     assert(provider != nullptr);
     _upscaledProviders.push_back(provider);
+}
+
+void LibddprofExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
+{
+    assert(provider != nullptr);
+    _processSamplesProviders.push_back(provider);
 }
 
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
@@ -334,17 +341,8 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::stri
     return profileInfo;
 }
 
-void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+void LibddprofExporter::Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> const& sample)
 {
-    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
-
-    if (profileInfoScope.profileInfo.profile == nullptr)
-    {
-        profileInfoScope.profileInfo.profile = CreateProfile();
-    }
-
-    auto* profile = profileInfoScope.profileInfo.profile;
-
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
@@ -401,16 +399,32 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
     auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
-    // TODO: add timestamps when available
-
     auto add_res = ddog_prof_Profile_add(profile, ffiSample);
     if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR)
     {
         on_leave { ddog_Error_drop(&add_res.err); };
-        auto errorMessage = ddog_Error_message(&add_res.err);
-        Log::Warn("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
-        return;
+
+        static bool firstTimeError = true;
+        if (firstTimeError)
+        {
+            auto errorMessage = ddog_Error_message(&add_res.err);
+            Log::Error("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
+
+            firstTimeError = false;
+        }
     }
+}
+
+void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+{
+    auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
+
+    if (profileInfoScope.profileInfo.profile == nullptr)
+    {
+        profileInfoScope.profileInfo.profile = CreateProfile();
+    }
+    auto* profile = profileInfoScope.profileInfo.profile;
+    Add(profile, sample);
     profileInfoScope.profileInfo.samplesCount++;
 }
 
@@ -480,7 +494,20 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
             ddog_CharSlice labelName = FfiHelper::StringToCharSlice(upscalingInfo.LabelName);
             ddog_CharSlice groupName = FfiHelper::StringToCharSlice(group.Group);
 
-            auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(profile, offsets_slice, labelName, groupName, group.SampledCount, group.RealCount);
+            // upscaling could be based on count (exceptions) or value (lock contention)
+            uint64_t sampled = group.SampledCount;
+            if (group.SampledValue != 0)
+            {
+                sampled = group.SampledValue;
+            }
+
+            uint64_t real = group.RealCount;
+            if (group.RealValue != 0)
+            {
+                real = group.RealValue;
+            }
+
+            auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(profile, offsets_slice, labelName, groupName, sampled, real);
             if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
             {
                 auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
@@ -488,6 +515,24 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
                 ddog_Error_drop(&upscalingRuleAdd.err);
             }
         }
+    }
+}
+
+std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
+{
+    std::list<std::shared_ptr<Sample>> samples;
+    for (auto const& provider : _processSamplesProviders)
+    {
+        samples.splice(samples.end() , provider->GetSamples());
+    }
+    return samples;
+}
+
+void LibddprofExporter::AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+{
+    for (auto const& sample : samples)
+    {
+        Add(profile, sample);
     }
 }
 
@@ -530,6 +575,9 @@ bool LibddprofExporter::Export()
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
 
+    // Process-level samples
+    auto processSamples = GetProcessSamples();
+
     for (auto& runtimeId : keys)
     {
         ddog_prof_Profile* profile;
@@ -567,6 +615,8 @@ bool LibddprofExporter::Export()
             continue;
         }
 
+        AddProcessSamples(profile, processSamples);
+
         AddUpscalingRules(profile, upscalingInfos);
 
         auto serializedProfile = SerializedProfile{profile};
@@ -596,6 +646,14 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
         additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
+        if (!applicationInfo.RepositoryUrl.empty())
+        {
+            additionalTags.Add("git.repository_url", applicationInfo.RepositoryUrl);
+        }
+        if (!applicationInfo.CommitSha.empty())
+        {
+            additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
+        }
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         // use on_leave here, in case Send throws an exception.
@@ -744,7 +802,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, nullptr, RequestTimeOutMs);
     if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);

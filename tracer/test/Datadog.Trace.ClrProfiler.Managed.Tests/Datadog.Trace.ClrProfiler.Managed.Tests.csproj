@@ -4,7 +4,8 @@
     <DefineConstants Condition="'$(NLogVersion)'&lt;'4.0.0'">$(DefineConstants);NLOG_2</DefineConstants>
     <DefineConstants Condition="'$(NLogVersion)'&gt;='4.0.0' and '$(NLogVersion)'&lt;'4.3.0'">$(DefineConstants);NLOG_30</DefineConstants>
     <DefineConstants Condition="'$(NLogVersion)'&gt;='4.3.0' and '$(NLogVersion)'&lt;'4.5.0'">$(DefineConstants);NLOG_43</DefineConstants>
-    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.5.0'">$(DefineConstants);NLOG_45</DefineConstants>
+    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.5.0' and '$(NLogVersion)'&lt;'5.0.0'">$(DefineConstants);NLOG_45</DefineConstants>
+    <DefineConstants Condition="'$(NLogVersion)'&gt;='5.0.0'">$(DefineConstants);NLOG_50</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>

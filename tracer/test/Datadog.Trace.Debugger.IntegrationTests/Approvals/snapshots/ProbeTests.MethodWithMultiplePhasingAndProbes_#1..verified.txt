@@ -1,0 +1,356 @@
+[
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "entry": {
+            "arguments": {
+              "calleeName": {
+                "type": "String",
+                "value": "Acc"
+              },
+              "num": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "MethodWithMultiplePhasingAndProbes",
+                "value": "MethodWithMultiplePhasingAndProbes"
+              }
+            },
+            "staticFields": {
+              "ConditionEvaluatesToFalseJson": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+              },
+              "ConditionEvaluatesToTrueJson": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+              },
+              "Json": {
+                "type": "String",
+                "value": "{\"ref\": \"a\"}"
+              }
+            }
+          },
+          "return": {
+            "arguments": {
+              "calleeName": {
+                "type": "String",
+                "value": "Acc"
+              },
+              "num": {
+                "type": "Int32",
+                "value": "2"
+              },
+              "this": {
+                "type": "MethodWithMultiplePhasingAndProbes",
+                "value": "MethodWithMultiplePhasingAndProbes"
+              }
+            },
+            "locals": {
+              "@return": {
+                "type": "Int32",
+                "value": "11"
+              },
+              "a": {
+                "type": "Int32",
+                "value": "11"
+              },
+              "i": {
+                "type": "Int32",
+                "value": "8"
+              },
+              "sum": {
+                "type": "Int32",
+                "value": "1120"
+              }
+            },
+            "staticFields": {
+              "ConditionEvaluatesToFalseJson": {
+                "type": "String",
+                "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+              },
+              "ConditionEvaluatesToTrueJson": {
+                "type": "String",
+                "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+              },
+              "Json": {
+                "type": "String",
+                "value": "{\"ref\": \"a\"}"
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "method": "Acc",
+            "type": "Samples.Probes.TestRuns.SmokeTests.MethodWithMultiplePhasingAndProbes"
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Acc",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodWithMultiplePhasingAndProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "79": {
+              "arguments": {
+                "calleeName": {
+                  "type": "String",
+                  "value": "Acc"
+                },
+                "num": {
+                  "type": "Int32",
+                  "value": "2"
+                },
+                "this": {
+                  "type": "MethodWithMultiplePhasingAndProbes",
+                  "value": "MethodWithMultiplePhasingAndProbes"
+                }
+              },
+              "locals": {
+                "a": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "i": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "sum": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              },
+              "staticFields": {
+                "ConditionEvaluatesToFalseJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "ConditionEvaluatesToTrueJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\"ref\": \"a\"}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MethodWithMultiplePhasingAndProbes.cs",
+            "lines": [
+              79
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Acc",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodWithMultiplePhasingAndProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "81": {
+              "arguments": {
+                "calleeName": {
+                  "type": "String",
+                  "value": "Acc"
+                },
+                "num": {
+                  "type": "Int32",
+                  "value": "2"
+                },
+                "this": {
+                  "type": "MethodWithMultiplePhasingAndProbes",
+                  "value": "MethodWithMultiplePhasingAndProbes"
+                }
+              },
+              "locals": {
+                "a": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "i": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "sum": {
+                  "type": "Int32",
+                  "value": "0"
+                }
+              },
+              "staticFields": {
+                "ConditionEvaluatesToFalseJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "ConditionEvaluatesToTrueJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\"ref\": \"a\"}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MethodWithMultiplePhasingAndProbes.cs",
+            "lines": [
+              81
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Acc",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodWithMultiplePhasingAndProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  },
+  {
+    "dd.span_id": "ScrubbedValue",
+    "dd.trace_id": "ScrubbedValue",
+    "ddsource": "dd_debugger",
+    "ddtags": "Unknown",
+    "debugger": {
+      "snapshot": {
+        "captures": {
+          "lines": {
+            "82": {
+              "arguments": {
+                "calleeName": {
+                  "type": "String",
+                  "value": "Acc"
+                },
+                "num": {
+                  "type": "Int32",
+                  "value": "2"
+                },
+                "this": {
+                  "type": "MethodWithMultiplePhasingAndProbes",
+                  "value": "MethodWithMultiplePhasingAndProbes"
+                }
+              },
+              "locals": {
+                "a": {
+                  "type": "Int32",
+                  "value": "6"
+                },
+                "i": {
+                  "type": "Int32",
+                  "value": "0"
+                },
+                "sum": {
+                  "type": "Int32",
+                  "value": "6"
+                }
+              },
+              "staticFields": {
+                "ConditionEvaluatesToFalseJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"gt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "ConditionEvaluatesToTrueJson": {
+                  "type": "String",
+                  "value": "{\r\n    \"lt\": [\r\n      {\"ref\": \"num\"},\r\n      {\"ref\": \"a\"}\r\n    ]\r\n}"
+                },
+                "Json": {
+                  "type": "String",
+                  "value": "{\"ref\": \"a\"}"
+                }
+              }
+            }
+          }
+        },
+        "duration": "ScrubbedValue",
+        "id": "ScrubbedValue",
+        "language": "dotnet",
+        "probe": {
+          "id": "ScrubbedValue",
+          "location": {
+            "file": "MethodWithMultiplePhasingAndProbes.cs",
+            "lines": [
+              82
+            ]
+          }
+        },
+        "stack": "ScrubbedValue",
+        "timestamp": "ScrubbedValue"
+      }
+    },
+    "logger": {
+      "method": "Acc",
+      "name": "Samples.Probes.TestRuns.SmokeTests.MethodWithMultiplePhasingAndProbes",
+      "thread_id": "ScrubbedValue",
+      "thread_name": "ScrubbedValue",
+      "version": "2"
+    },
+    "message": "ScrubbedValue",
+    "service": "probes"
+  }
+]

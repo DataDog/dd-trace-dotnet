@@ -21,6 +21,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] InstrumentationNameBytes = new byte[] { 169, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
+        // SeedNodesBytes = MessagePack.Serialize("db.couchbase.seed.nodes");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SeedNodesBytes => new byte[] { 183, 100, 98, 46, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 115, 101, 101, 100, 46, 110, 111, 100, 101, 115 };
+#else
+        private static readonly byte[] SeedNodesBytes = new byte[] { 183, 100, 98, 46, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 115, 101, 101, 100, 46, 110, 111, 100, 101, 115 };
+#endif
         // OperationCodeBytes = MessagePack.Serialize("couchbase.operation.code");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> OperationCodeBytes => new byte[] { 184, 99, 111, 117, 99, 104, 98, 97, 115, 101, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110, 46, 99, 111, 100, 101 };
@@ -58,6 +64,7 @@ namespace Datadog.Trace.Tagging
             {
                 "span.kind" => SpanKind,
                 "component" => InstrumentationName,
+                "db.couchbase.seed.nodes" => SeedNodes,
                 "couchbase.operation.code" => OperationCode,
                 "couchbase.operation.bucket" => Bucket,
                 "couchbase.operation.key" => Key,
@@ -71,6 +78,9 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
+                case "db.couchbase.seed.nodes": 
+                    SeedNodes = value;
+                    break;
                 case "couchbase.operation.code": 
                     OperationCode = value;
                     break;
@@ -106,6 +116,11 @@ namespace Datadog.Trace.Tagging
             if (InstrumentationName is not null)
             {
                 processor.Process(new TagItem<string>("component", InstrumentationName, InstrumentationNameBytes));
+            }
+
+            if (SeedNodes is not null)
+            {
+                processor.Process(new TagItem<string>("db.couchbase.seed.nodes", SeedNodes, SeedNodesBytes));
             }
 
             if (OperationCode is not null)
@@ -149,6 +164,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("component (tag):")
                   .Append(InstrumentationName)
+                  .Append(',');
+            }
+
+            if (SeedNodes is not null)
+            {
+                sb.Append("db.couchbase.seed.nodes (tag):")
+                  .Append(SeedNodes)
                   .Append(',');
             }
 

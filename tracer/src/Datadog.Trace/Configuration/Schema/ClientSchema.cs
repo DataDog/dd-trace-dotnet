@@ -16,9 +16,9 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
-        private readonly IDictionary<string, string>? _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
 
-        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
             _peerServiceTagsEnabled = peerServiceTagsEnabled;
@@ -53,6 +53,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new HttpTags(),
                 _ => new HttpV1Tags(),
+            };
+
+        public GrpcClientTags CreateGrpcClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
+                _ => new GrpcClientV1Tags(),
             };
     }
 }

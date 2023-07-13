@@ -5,10 +5,10 @@
 
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Runtime.Loader;
 
 namespace PrepareRelease
@@ -51,7 +51,7 @@ namespace PrepareRelease
                   .Concat(derivedDefinitions.Cast<object>())
                   .Select(x => new InstrumentedAssembly
                   {
-                      TargetAssembly = (string)structDefinition.GetField("TargetAssembly").GetValue(x),
+                      TargetAssembly = Marshal.PtrToStringUni((IntPtr)structDefinition.GetField("TargetAssembly").GetValue(x)),
                       TargetMinimumMajor = (ushort)structDefinition.GetField("TargetMinimumMajor").GetValue(x),
                       TargetMinimumMinor = (ushort)structDefinition.GetField("TargetMinimumMinor").GetValue(x),
                       TargetMinimumPatch = (ushort)structDefinition.GetField("TargetMinimumPatch").GetValue(x),

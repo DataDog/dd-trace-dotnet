@@ -20,7 +20,7 @@ jobs:
 
     - uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: '7.0.101'
+        dotnet-version: '7.0.306'
 
     - name: "Get current version"
       id: versions
@@ -146,6 +146,7 @@ jobs:
       DOCKER_IMAGE_WEBLOG_TAG: ${{ github.sha }}-${{ matrix.runtime }}
       RUNTIME: ${{ matrix.runtime }}
       BUILDX_PLATFORMS: linux/amd64
+      MODE: manual
     steps:
       - name: lib-injection test runner
         id: lib-injection-test-runner

@@ -12,7 +12,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <summary>
     /// Microsoft.Azure.Cosmos.Container.QueryIteratorsIntegrations calltarget instrumentation
     /// </summary>
+    /// <remarks>
+    /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Container/ContainerCore.cs
+    /// </remarks>
     // Container level instrumentations
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Container/ContainerCore.Items.cs#L475
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.ContainerCore",
@@ -22,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Container/ContainerCore.Items.cs#L458
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.ContainerCore",
@@ -31,6 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Container/ContainerCore.Items.cs#L272
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.ContainerCore",
@@ -40,6 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Container/ContainerCore.Items.cs#L255
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.ContainerCore",

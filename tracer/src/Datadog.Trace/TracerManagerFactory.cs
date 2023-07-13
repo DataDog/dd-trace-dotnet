@@ -1,4 +1,4 @@
- // <copyright file="TracerManagerFactory.cs" company="Datadog">
+// <copyright file="TracerManagerFactory.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -59,7 +59,8 @@ namespace Datadog.Trace
                 telemetry: null,
                 discoveryService: null,
                 dataStreamsManager: null,
-                remoteConfigurationManager: null);
+                remoteConfigurationManager: null,
+                dynamicConfigurationManager: null);
 
             try
             {
@@ -94,7 +95,8 @@ namespace Datadog.Trace
             ITelemetryController telemetry,
             IDiscoveryService discoveryService,
             DataStreamsManager dataStreamsManager,
-            IRemoteConfigurationManager remoteConfigurationManager)
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager)
         {
             settings ??= new ImmutableTracerSettings(TracerSettings.FromDefaultSourcesInternal(), true);
 
@@ -117,6 +119,10 @@ namespace Datadog.Trace
             {
                 runtimeMetrics ??= new RuntimeMetricsWriter(statsd, TimeSpan.FromSeconds(10), settings.IsRunningInAzureAppService);
             }
+            else
+            {
+                runtimeMetrics = null;
+            }
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
             logSubmissionManager = DirectLogSubmissionManager.Create(
@@ -133,6 +139,7 @@ namespace Datadog.Trace
 
             var security = Security.Instance;
             telemetry.RecordSecuritySettings(security.Settings);
+            TelemetryFactory.Metrics.SetWafVersion(security.DdlibWafVersion);
             telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
             ErrorData? initError = !string.IsNullOrEmpty(security.InitializationError)
                                        ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, security.InitializationError)
@@ -162,6 +169,8 @@ namespace Datadog.Trace
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
             }
 
+            dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);
+
             return CreateTracerManagerFrom(
                 settings,
                 agentWriter,
@@ -176,7 +185,8 @@ namespace Datadog.Trace
                 gitMetadataTagsProvider,
                 sampler,
                 GetSpanSampler(settings),
-                remoteConfigurationManager);
+                remoteConfigurationManager,
+                dynamicConfigurationManager);
         }
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
@@ -201,8 +211,9 @@ namespace Datadog.Trace
             IGitMetadataTagsProvider gitMetadataTagsProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
-            IRemoteConfigurationManager remoteConfigurationManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager);
+            IRemoteConfigurationManager remoteConfigurationManager,
+            IDynamicConfigurationManager dynamicConfigurationManager)
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {

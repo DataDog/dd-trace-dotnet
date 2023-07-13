@@ -4,7 +4,9 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using Perftools.Profiles;
 using Xunit;
 
@@ -102,6 +104,51 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             return true;
+        }
+
+        internal static IEnumerable<(StackTrace StackTrace, Label[] Labels, long[] Values)> GetSamples(string directory)
+        {
+            foreach (var profile in GetProfiles(directory))
+            {
+                foreach (var sample in profile.Sample)
+                {
+                    yield return (sample.StackTrace(profile), sample.Label.ToArray(), sample.Value.ToArray());
+                }
+            }
+        }
+
+        internal static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace)> ExtractExceptionSamples(string directory)
+        {
+            static IEnumerable<(string Type, string Message, long Count, StackTrace Stacktrace, long Time)> SamplesWithTimestamp(string directory)
+            {
+                foreach (var file in Directory.EnumerateFiles(directory, "*.pprof", SearchOption.AllDirectories))
+                {
+                    using var stream = File.OpenRead(file);
+
+                    var profile = Profile.Parser.ParseFrom(stream);
+
+                    foreach (var sample in profile.Sample)
+                    {
+                        var count = sample.Value[0];
+
+                        if (count == 0)
+                        {
+                            continue;
+                        }
+
+                        var labels = sample.Labels(profile).ToArray();
+
+                        var type = labels.Single(l => l.Name == "exception type").Value;
+                        var message = labels.Single(l => l.Name == "exception message").Value;
+
+                        yield return (type, message, count, sample.StackTrace(profile), profile.TimeNanos);
+                    }
+                }
+            }
+
+            return SamplesWithTimestamp(directory)
+                .OrderBy(s => s.Time)
+                .Select(s => (s.Type, s.Message, s.Count, s.Stacktrace));
         }
 
         private static bool HaveSamplesValueCount(string directory, int valuesCount)

@@ -148,7 +148,7 @@ namespace Datadog.Trace.AspNet
                 string host = httpRequest.Headers.Get("Host");
                 var userAgent = httpRequest.Headers.Get(HttpHeaderNames.UserAgent);
                 string httpMethod = httpRequest.HttpMethod.ToUpperInvariant();
-                string url = httpContext.Request.GetUrl(tracer.TracerManager.QueryStringManager);
+                string url = httpContext.Request.GetUrlForSpan(tracer.TracerManager.QueryStringManager);
                 var tags = new WebTags();
                 scope = tracer.StartActiveInternal(_requestOperationName, propagatedContext, tags: tags);
                 // Leave resourceName blank for now - we'll update it in OnEndRequest
@@ -273,6 +273,11 @@ namespace Datadog.Trace.AspNet
 
                             securityCoordinator.AddResponseHeadersToSpanAndCleanup();
                             securityContextCleaned = true;
+                        }
+
+                        if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
+                        {
+                            CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 
                         // HttpServerUtility.TransferRequest presents an issue: The IIS request pipeline is run a second time

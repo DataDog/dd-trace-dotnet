@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
@@ -49,6 +50,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Server
                 {
                     span.SetHeaderTags(new MetadataHeadersCollection(metadata), tracer.Settings.GrpcTagsInternal, GrpcCommon.RequestMetadataTagPrefix);
                 }
+
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.Grpc);
             }
             catch (Exception ex)
             {

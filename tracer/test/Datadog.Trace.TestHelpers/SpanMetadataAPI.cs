@@ -102,11 +102,18 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsGraphQLV0(),
             };
 
-        public static Result IsGrpc(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
+        public static Result IsGrpcClient(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsGrpcV1(excludeTags),
-                _ => span.IsGrpcV0(excludeTags),
+                "v1" => span.IsGrpcClientV1(excludeTags),
+                _ => span.IsGrpcClientV0(excludeTags),
+            };
+
+        public static Result IsGrpcServer(this MockSpan span, string metadataSchemaVersion, ISet<string> excludeTags) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsGrpcServerV1(excludeTags),
+                _ => span.IsGrpcServerV0(excludeTags),
             };
 
         public static Result IsHotChocolate(this MockSpan span, string metadataSchemaVersion) =>
@@ -123,11 +130,18 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsHttpMessageHandlerV0(),
             };
 
-        public static Result IsKafka(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsKafkaInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsKafkaV1(),
-                _ => span.IsKafkaV0(),
+                "v1" => span.IsKafkaInboundV1(),
+                _ => span.IsKafkaInboundV0(),
+            };
+
+        public static Result IsKafkaOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsKafkaOutboundV1(),
+                _ => span.IsKafkaOutboundV0(),
             };
 
         public static Result IsMongoDb(this MockSpan span, string metadataSchemaVersion) =>

@@ -29,12 +29,14 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.HttpStatusCode)]
         public string HttpStatusCode { get; set; }
+
+        [Tag(Trace.Tags.OutHost)]
+        public string Host { get; set; }
     }
 
     internal partial class HttpV1Tags : HttpTags
     {
         private string _peerServiceOverride = null;
-        private string _host = null;
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the
@@ -44,7 +46,7 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? _host;
+            get => _peerServiceOverride ?? Host;
             private set => _peerServiceOverride = value;
         }
 
@@ -55,10 +57,8 @@ namespace Datadog.Trace.Tagging
             {
                 return _peerServiceOverride is not null
                         ? "peer.service"
-                        : "network.destination.name";
+                        : "out.host";
             }
         }
-
-        public void SetHost(string host) => _host = host;
     }
 }

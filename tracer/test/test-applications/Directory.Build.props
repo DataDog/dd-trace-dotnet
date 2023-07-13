@@ -23,6 +23,10 @@
     <NoWarn>SYSLIB0014</NoWarn>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+  </PropertyGroup>
+
   <!-- OS Detection Properties -->
   <PropertyGroup>
     <IsWindows Condition="'$(OS)' == 'Windows_NT'">true</IsWindows>

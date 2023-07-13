@@ -105,15 +105,20 @@ internal static class SecurityCoordinatorHelpers
                 for (var i = 0; i < actionPathParams.Count; i++)
                 {
                     var p = actionPathParams[i];
-                    if (routeValues.ContainsKey(p.Name))
+                    if (routeValues.TryGetValue(p.Name, out var value))
                     {
-                        pathParams.Add(p.Name, routeValues[p.Name]);
+                        pathParams.Add(p.Name, value);
                     }
-
-                    var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                    var result = securityCoordinator.RunWaf(args);
-                    securityCoordinator.CheckAndBlock(result);
                 }
+
+                if (pathParams.Count == 0)
+                {
+                    return;
+                }
+
+                var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
+                var result = securityCoordinator.RunWaf(args);
+                securityCoordinator.CheckAndBlock(result);
             }
         }
     }

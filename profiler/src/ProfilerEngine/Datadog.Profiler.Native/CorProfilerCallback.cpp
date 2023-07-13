@@ -32,6 +32,7 @@
 #include "EnvironmentVariables.h"
 #include "ExceptionsProvider.h"
 #include "FrameStore.h"
+#include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
 #include "LibddprofExporter.h"
@@ -340,6 +341,15 @@ bool CorProfilerCallback::InitializeServices()
         _metricsRegistry,
         _pAllocationsRecorder.get()
         );
+
+    if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
+        _pCpuTimeProvider != nullptr &&
+        _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
+    {
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
+
+        _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
+    }
 
     if (_pContentionProvider != nullptr)
     {
@@ -754,20 +764,25 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
     if (FAILED(hr))
     {
         Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", std::hex, hr, std::dec, ")");
+        CorProfilerCallback::_runtimeDescription = "Unknown version of the .NET runtime";
     }
     else
     {
-        Log::Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
-                  ", runtimeType:",
-                  ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
-                   : (runtimeType == COR_PRF_CORE_CLR)
-                       ? "CORE_CLR"
-                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
-                  ", majorVersion: ", major,
-                  ", minorVersion: ", minor,
-                  ", buildNumber: ", buildNumber,
-                  ", qfeVersion: ", qfeVersion,
-                  " }.");
+        std::stringstream buffer;
+        buffer << "{ "
+               << "clrInstanceId:" << clrInstanceId
+               << ", runtimeType:" <<
+                    ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
+                    (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
+                    (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
+                << ", majorVersion: " << major
+                << ", minorVersion: " << minor
+                << ", buildNumber: " << buildNumber
+                << ", qfeVersion: " << qfeVersion
+                << " }";
+
+        CorProfilerCallback::_runtimeDescription = buffer.str();
+        Log::Info("Initializing the Profiler: Reported runtime version :", CorProfilerCallback::_runtimeDescription);
     }
 }
 

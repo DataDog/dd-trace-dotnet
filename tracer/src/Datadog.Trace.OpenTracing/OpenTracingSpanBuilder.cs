@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Globalization;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using OpenTracing;
 using OpenTracing.Tag;
 
@@ -75,6 +77,7 @@ namespace Datadog.Trace.OpenTracing
             lock (_lock)
             {
                 ISpanContext parentContext = GetParentContext();
+                TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.OpenTracing);
                 ISpan ddSpan = _tracer.DatadogTracer.StartSpan(_operationName, parentContext, _serviceName, _start, _ignoreActiveSpan);
                 var otSpan = new OpenTracingSpan(ddSpan);
 

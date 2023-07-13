@@ -206,7 +206,7 @@ namespace Datadog.Trace.IntegrationTests
         private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri)
         {
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false, debugEnabled: false),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
             transport.Should().HaveCount(1);
             transport[0].Should().BeOfType<AgentTelemetryTransport>();
@@ -218,7 +218,7 @@ namespace Datadog.Trace.IntegrationTests
             var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey);
 
             var transport = TelemetryTransportFactory.Create(
-                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false),
+                new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false, debugEnabled: false),
                 new ImmutableExporterSettings(new ExporterSettings()));
 
             transport.Should().HaveCount(1);

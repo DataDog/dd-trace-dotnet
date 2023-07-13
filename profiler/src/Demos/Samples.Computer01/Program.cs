@@ -32,7 +32,8 @@ namespace Samples.Computer01
         MeasureAllocations,
         InnerMethods,
         LineNumber,
-        NullThreadNameBug
+        NullThreadNameBug,
+        MethodSignature
     }
 
     public class Program
@@ -62,6 +63,7 @@ namespace Samples.Computer01
             // 17: generate frames with named and anonymous methods
             // 18: call stack on functions to check line number(s)
             // 19: set thread names to null and empty (validate bug fix)
+            // 20: trigger exceptions with different method signatures in the callstack
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

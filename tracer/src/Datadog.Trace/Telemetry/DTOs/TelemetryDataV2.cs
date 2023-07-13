@@ -34,9 +34,9 @@ namespace Datadog.Trace.Telemetry
         public string ApiVersion => TelemetryConstants.ApiVersionV2;
 
         /// <summary>
-        /// Gets or sets integer denoting the naming schema version used by the tracer. 0 by default. Possible values are {0, 1}
+        /// Gets or sets integer denoting the naming schema version used by the tracer. Empty by default. Possible values are "0", "1"
         /// </summary>
-        public int? NamingSchemaVersion { get; set; }
+        public string? NamingSchemaVersion { get; set; }
 
         /// <summary>
         /// Gets or sets requested API function

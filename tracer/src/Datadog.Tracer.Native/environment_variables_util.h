@@ -5,12 +5,15 @@
 #include "../../../shared/src/native-src/string.h"
 #include "../../../shared/src/native-src/util.h"
 
+#define IsTrue(EXPR) EXPR == WStr("1") || EXPR == WStr("true")
+#define IsFalse(EXPR) EXPR == WStr("0") || EXPR == WStr("false")
+
 #define CheckIfTrue(EXPR)                                                                                              \
     static int sValue = -1;                                                                                            \
     if (sValue == -1)                                                                                                  \
     {                                                                                                                  \
         const auto envValue = EXPR;                                                                                    \
-        sValue = envValue == WStr("1") || envValue == WStr("true") ? 1 : 0;                                            \
+        sValue = IsTrue(envValue) ? 1 : 0;                                                                             \
     }                                                                                                                  \
     return sValue == 1;
 
@@ -19,7 +22,7 @@
     if (sValue == -1)                                                                                                  \
     {                                                                                                                  \
         const auto envValue = EXPR;                                                                                    \
-        sValue = envValue == WStr("0") || envValue == WStr("false") ? 1 : 0;                                           \
+        sValue = IsFalse(envValue) ? 1 : 0;                                                                            \
     }                                                                                                                  \
     return sValue == 1;
 
@@ -28,11 +31,11 @@
     if (sValue == -1)                                                                                                  \
     {                                                                                                                  \
         const auto envValue = EXPR;                                                                                    \
-        if (envValue == WStr("1") || envValue == WStr("true"))                                                         \
+        if (IsTrue(envValue))                                                                                          \
         {                                                                                                              \
             sValue = 1;                                                                                                \
         }                                                                                                              \
-        else if (envValue == WStr("0") || envValue == WStr("false"))                                                   \
+        else if (IsFalse(envValue))                                                                                    \
         {                                                                                                              \
             sValue = 0;                                                                                                \
         }                                                                                                              \

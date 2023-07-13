@@ -83,8 +83,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");
+            settings.AddSimpleScrubber("peer.service: localhost", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
 

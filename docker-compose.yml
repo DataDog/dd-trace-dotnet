@@ -114,7 +114,9 @@ services:
     - "127.0.0.1:9324:9324"
 
   aerospike:
-    image: aerospike/aerospike-server
+    # pinning to a known good version because latest version (6.3.0.5 at time of issue)
+    # causes 'Server memory error' and flake
+    image: aerospike/aerospike-server:6.2.0.6
     ports:
     - "127.0.0.1:3000:3000"
 
@@ -366,13 +368,14 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
@@ -413,6 +416,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   IntegrationTests:
@@ -420,7 +424,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -487,6 +491,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -514,7 +519,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
     volumes:
@@ -557,6 +562,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -564,7 +570,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -611,6 +617,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   ExplorationTests:
@@ -618,7 +625,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-centos7}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
@@ -661,6 +668,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -693,7 +701,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
     volumes:
@@ -752,6 +760,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -790,7 +799,7 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.101}
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
     volumes:
@@ -831,6 +840,7 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
+      - DD_TELEMETRY_METRICS_ENABLED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies
@@ -848,6 +858,7 @@ services:
     ports:
     - "8126:8126"
     environment:
+    - ENABLED_CHECKS=trace_count_header,meta_tracer_version_header,trace_content_length
     - SNAPSHOT_CI=1
     - SNAPSHOT_IGNORED_ATTRS=span_id,trace_id,parent_id,duration,start,metrics.system.pid,meta.runtime-id,metrics.process_id
 

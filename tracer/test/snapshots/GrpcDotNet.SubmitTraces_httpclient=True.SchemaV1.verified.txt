@@ -22,7 +22,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingBothWays,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -39,8 +39,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -58,9 +61,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingBothWays,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -142,7 +146,7 @@
   {
     TraceId: Id_7,
     SpanId: Id_9,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromClient,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -159,8 +163,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -178,9 +185,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromClient,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -262,7 +270,7 @@
   {
     TraceId: Id_13,
     SpanId: Id_15,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -281,8 +289,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -300,9 +311,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -386,7 +398,7 @@
   {
     TraceId: Id_19,
     SpanId: Id_21,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -405,8 +417,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -424,9 +439,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -510,7 +526,7 @@
   {
     TraceId: Id_25,
     SpanId: Id_27,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -529,8 +545,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -548,9 +567,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -634,7 +654,7 @@
   {
     TraceId: Id_31,
     SpanId: Id_33,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -653,8 +673,11 @@
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -672,9 +695,10 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -762,7 +786,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_37,
     SpanId: Id_39,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -781,8 +805,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 1,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -800,9 +827,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -886,7 +914,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_43,
     SpanId: Id_45,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -905,8 +933,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 15,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -924,9 +955,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1010,7 +1042,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_49,
     SpanId: Id_51,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1029,8 +1061,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 5,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1048,9 +1083,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1134,7 +1170,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_55,
     SpanId: Id_57,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/ErroringMethod,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1153,8 +1189,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 2,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1172,9 +1211,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/ErroringMethod,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1262,7 +1302,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_61,
     SpanId: Id_63,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/StreamingFromServer,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1279,8 +1319,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1298,9 +1341,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/StreamingFromServer,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1382,7 +1426,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_67,
     SpanId: Id_69,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1399,8 +1443,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1418,9 +1465,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1502,7 +1550,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_73,
     SpanId: Id_75,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/Unary,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1519,8 +1567,11 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.request.metadata.client-value1: some-client-value,
       grpc.response.metadata.server-value1: some-server-value,
       grpc.status.code: 0,
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
       servermeta: other-server-value,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1538,9 +1589,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/Unary,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1622,7 +1674,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_79,
     SpanId: Id_81,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1640,7 +1692,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
-      span.kind: client
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1658,9 +1713,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -1744,7 +1800,7 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
   {
     TraceId: Id_85,
     SpanId: Id_87,
-    Name: grpc.request,
+    Name: grpc.client.request,
     Resource: /greet.tester.Greeter/VerySlow,
     Service: Samples.GrpcDotNet,
     Type: grpc,
@@ -1762,7 +1818,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       grpc.method.service: Greeter,
       grpc.request.metadata.client-value1: some-client-value,
       grpc.status.code: 4,
-      span.kind: client
+      out.host: 127.0.0.1,
+      peer.service: Greeter,
+      span.kind: client,
+      _dd.peer.service.source: rpc.service
     }
   },
   {
@@ -1780,9 +1839,10 @@ at Samples.GrpcDotNet.Services.GreeterService.ErroringMethod(CreateErrorRequest 
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/greet.tester.Greeter/VerySlow,
+      out.host: 127.0.0.1,
       peer.service: 127.0.0.1,
       span.kind: client,
-      _dd.peer.service.source: network.destination.name
+      _dd.peer.service.source: out.host
     }
   },
   {

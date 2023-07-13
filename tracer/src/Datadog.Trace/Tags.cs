@@ -8,7 +8,7 @@ namespace Datadog.Trace
     /// <summary>
     /// Standard span tags used by integrations.
     /// </summary>
-    public static class Tags
+    public static partial class Tags
     {
         /// <summary>
         /// The environment of the instrumented service. Its value is usually constant for the lifetime of a process,
@@ -563,6 +563,7 @@ namespace Datadog.Trace
 
         internal const string AerospikeUserKey = "aerospike.userkey";
 
+        internal const string CouchbaseSeedNodes = "db.couchbase.seed.nodes";
         internal const string CouchbaseOperationCode = "couchbase.operation.code";
         internal const string CouchbaseOperationBucket = "couchbase.operation.bucket";
         internal const string CouchbaseOperationKey = "couchbase.operation.key";
@@ -582,48 +583,6 @@ namespace Datadog.Trace
         /// Marks a span as injected when DBM data was propagated
         /// </summary>
         internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
-
-        internal static class AppSec
-        {
-            internal const string Events = "appsec.events.";
-
-            internal static string Track(string eventName) => $"{Events}{eventName}.track";
-
-            internal static class EventsUsers
-            {
-                internal const string EventsUsersRoot = Events + "users";
-
-                internal static class LoginEvent
-                {
-                    private const string Root = EventsUsersRoot + ".login";
-                    internal const string Success = Root + ".success";
-                    internal const string SuccessSdkSource = $"_dd.{Success}.sdk";
-                    internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
-                    internal const string SuccessTrack = Success + ".track";
-
-                    internal const string Failure = Root + ".failure";
-                    internal const string FailureUserId = Failure + ".usr.id";
-                    internal const string FailureAutoMode = $"_dd.{Failure}.auto.mode";
-                    internal const string FailureSdkSource = $"_dd.{Failure}.sdk";
-                    internal const string FailureTrack = Failure + ".track";
-                    internal const string FailureUserExists = Failure + ".usr.exists";
-                }
-
-                internal static class SignUpEvent
-                {
-                    private const string Root = EventsUsersRoot + ".signup";
-                    private const string Success = Root + ".success";
-                    internal const string SuccessSdkSource = $"_dd.{Success}.sdk";
-                    internal const string SuccessAutoMode = $"_dd.{Success}.auto.mode";
-                    internal const string SuccessTrack = Success + ".track";
-
-                    private const string RootFailure = Root + ".failure";
-                    internal const string FailureSdkSource = $"_dd.{RootFailure}.sdk";
-                    internal const string FailureAutoMode = $"_dd.{RootFailure}.auto.mode";
-                    internal const string FailureTrack = RootFailure + ".track";
-                }
-            }
-        }
 
         internal static class User
         {

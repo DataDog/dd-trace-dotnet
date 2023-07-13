@@ -5,6 +5,7 @@
 
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -19,10 +20,10 @@ namespace Datadog.Trace.Tests.Tagging
             var host = "localhost";
             var tags = new HttpV1Tags();
 
-            tags.SetHost(host);
+            tags.Host = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Tests.Tagging
             var tags = new HttpV1Tags();
 
             tags.SetTag("peer.service", customService);
-            tags.SetHost(host);
+            tags.Host = host;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
@@ -90,6 +91,44 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void MsmqV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be(Trace.Tags.OutHost);
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var customService = "client-service";
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.SetTag("peer.service", customService);
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
         public void ElasticsearchV1Tags_PeerService_PopulatesFromDestinationHost()
         {
             var hostName = "host";
@@ -98,7 +137,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = hostName;
 
             tags.PeerService.Should().Be(hostName);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -128,6 +167,72 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromSeedNodes()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SeedNodes = nodes;
+
+            tags.PeerService.Should().Be(nodes);
+            tags.PeerServiceSource.Should().Be("db.couchbase.seed.nodes");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromDestinationHost()
+        {
+            var hostName = "host";
+            var tags = new CouchbaseV1Tags();
+
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(hostName);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.SeedNodes = nodes;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CouchbaseV1Tags_PeerService_SeedNodesTakesPrecedenceOverOutHost()
+        {
+            var nodes = "node1:port1,node2:port2";
+            var hostName = "host";
+            var tags = new CouchbaseV1Tags();
+
+            tags.SeedNodes = nodes;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(nodes);
+            tags.PeerServiceSource.Should().Be("db.couchbase.seed.nodes");
+        }
+
+        [Fact]
         public void MongoDbV1Tags_PeerService_PopulatesFromDbName()
         {
             var databaseName = "database";
@@ -136,7 +241,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.DbName = databaseName;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
         }
 
         [Fact]
@@ -148,7 +253,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.Host = hostName;
 
             tags.PeerService.Should().Be(hostName);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -188,7 +293,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.OutHost = host;
 
             tags.PeerService.Should().Be(host);
-            tags.PeerServiceSource.Should().Be("network.destination.name");
+            tags.PeerServiceSource.Should().Be("out.host");
         }
 
         [Fact]
@@ -200,7 +305,7 @@ namespace Datadog.Trace.Tests.Tagging
             tags.DbName = databaseName;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
         }
 
         [Fact]
@@ -242,7 +347,201 @@ namespace Datadog.Trace.Tests.Tagging
             tags.OutHost = host;
 
             tags.PeerService.Should().Be(databaseName);
-            tags.PeerServiceSource.Should().Be("db.instance");
+            tags.PeerServiceSource.Should().Be("db.name");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromRpcService()
+        {
+            var service = "grpc-app";
+            var tags = new GrpcClientV1Tags();
+
+            tags.MethodService = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("rpc.service");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromDestinationHost()
+        {
+            var hostName = "host";
+            var tags = new GrpcClientV1Tags();
+
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(hostName);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new GrpcClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void GrpcClientV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var service = "grpc-app";
+            var hostName = "host";
+            var customService = "client-service";
+            var tags = new GrpcClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.MethodService = service;
+            tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = "localhost";
+            var tags = new RedisV1Tags();
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new RedisV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void RedisV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var host = "localhost";
+            var tags = new RedisV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var host = "localhost";
+            var tags = new CosmosDbV1Tags();
+
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(host);
+            tags.PeerServiceSource.Should().Be("out.host");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromDbName()
+        {
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.DatabaseId = databaseName;
+
+            tags.PeerService.Should().Be(databaseName);
+            tags.PeerServiceSource.Should().Be("db.name");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new CosmosDbV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var host = "localhost";
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.DatabaseId = databaseName;
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void CosmosDbV1Tags_PeerService_DbNameTakesPrecedenceOverOutHost()
+        {
+            var host = "localhost";
+            var databaseName = "database";
+            var tags = new CosmosDbV1Tags();
+
+            tags.DatabaseId = databaseName;
+            tags.Host = host;
+
+            tags.PeerService.Should().Be(databaseName);
+            tags.PeerServiceSource.Should().Be("db.name");
+        }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_PopulatesFromOutHost()
+        {
+            var ns = "ns1";
+            var tags = new AerospikeV1Tags();
+
+            tags.Namespace = ns;
+
+            tags.PeerService.Should().Be(ns);
+            tags.PeerServiceSource.Should().Be("aerospike.namespace");
+        }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new AerospikeV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void AerospikeV1Tags_PeerService_CustomTakesPrecedenceOverRest()
+        {
+            var customService = "client-service";
+            var ns = "ns1";
+            var tags = new AerospikeV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.Namespace = ns;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
         }
     }
 }

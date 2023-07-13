@@ -35,6 +35,12 @@ namespace Datadog.Trace.ContinuousProfiler
             NativeMethods.SetEndpoint(runtimeId, traceId, endpoint);
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public static void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha)
+        {
+            NativeMethods.SetGitMetadata(runtimeId, repositoryUrl, commitSha);
+        }
+
         // These methods are rewritten by the native tracer to use the correct paths
         private static class NativeMethods
         {
@@ -49,6 +55,9 @@ namespace Datadog.Trace.ContinuousProfiler
 
             [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetEndpointForTrace")]
             public static extern void SetEndpoint(string runtimeId, ulong traceId, string endpoint);
+
+            [DllImport(dllName: "Datadog.Profiler.Native", EntryPoint = "SetGitMetadataForApplication")]
+            public static extern void SetGitMetadata(string runtimeId, string repositoryUrl, string commitSha);
         }
     }
 }

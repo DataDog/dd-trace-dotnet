@@ -1,4 +1,4 @@
-﻿// <copyright file="SignInManagerPasswordSignInIntegration.cs" company="Datadog">
+// <copyright file="SignInManagerPasswordSignInIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     MinimumVersion = "2",
     MaximumVersion = "7",
     IntegrationName = nameof(IntegrationId.AspNetCore),
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -63,7 +63,20 @@ public static class SignInManagerPasswordSignInIntegration
     {
         if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security)
         {
-            SignInHelper.FillSpanWithFailureLoginEvent(security, in state, returnValue);
+            var span = state.Scope.Span;
+            var setTag = TaggingUtils.GetSpanSetter(span, out _);
+            var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+            tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, "false");
+            setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
+            if (security.IsExtendedUserTrackingEnabled)
+            {
+                // if we get here and the tag doesn't exist, the user doesn't exist, we dont have an ID but a username that doesn't exist
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, state.State!.ToString());
+            }
+
+            security.SetTraceSamplingPriority(span);
         }
 
         return returnValue;

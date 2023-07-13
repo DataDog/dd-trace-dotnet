@@ -33,10 +33,7 @@ public class TelemetryControllerV2Tests
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
             transportManager,
             _flushInterval);
 
@@ -44,11 +41,11 @@ public class TelemetryControllerV2Tests
         controller.Start();
 
         var data = await WaitForRequestStarted(transport, _timeout);
-        await controller.DisposeAsync(false);
+        await controller.DisposeAsync();
     }
 
     [Fact]
-    public void TelemetryControllerRecordsConfigurationFromTracerSettings()
+    public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
         var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
@@ -57,10 +54,7 @@ public class TelemetryControllerV2Tests
         var controller = new TelemetryControllerV2(
             collector,
             new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
             transportManager,
             _flushInterval);
 
@@ -78,6 +72,7 @@ public class TelemetryControllerV2Tests
                                   .And.Subject;
 
         collector.GetQueueForTesting().Count.Should().Be(configCount);
+        await controller.DisposeAsync();
     }
 
     [Fact]
@@ -89,54 +84,12 @@ public class TelemetryControllerV2Tests
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
             transportManager,
             _flushInterval);
 
         await controller.DisposeAsync();
         await controller.DisposeAsync();
-    }
-
-    [Fact]
-    public async Task TelemetryControllerDisposesOnTwoFatalErrorsFromTelemetry()
-    {
-        var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.FatalError); // fail to push telemetry
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
-
-        var controller = new TelemetryControllerV2(
-            new ConfigurationTelemetry(),
-            new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
-            new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
-            transportManager,
-            _flushInterval);
-
-        controller.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings()), "DefaultServiceName");
-        controller.Start();
-
-        (await WaitForFatalError(controller)).Should().BeTrue("controller should be disposed on failed push");
-
-        var previousDataCount = transport.GetData();
-
-        previousDataCount
-           .Should()
-           .HaveCount(2)
-           .And
-           .OnlyContain(
-                x => ContainsMessage(x, TelemetryRequestTypes.AppStarted),
-                "Fatal error should mean we try to send app-started twice");
-
-        controller.IntegrationRunning(IntegrationId.Kafka);
-
-        // Shouldn't receive any more data,
-        await Task.Delay(3_000);
-        transport.GetData().Count.Should().Be(previousDataCount.Count, "Should not send more data after disposal");
-        await controller.DisposeAsync(false);
     }
 
     [Fact]
@@ -148,10 +101,7 @@ public class TelemetryControllerV2Tests
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
             transportManager,
             _flushInterval);
 
@@ -159,7 +109,7 @@ public class TelemetryControllerV2Tests
         controller.Start();
 
         var requiredHeartbeats = 10;
-        var deadline = DateTimeOffset.UtcNow.AddSeconds(_flushInterval.TotalSeconds * 100);
+        var deadline = DateTimeOffset.UtcNow.AddSeconds(_flushInterval.TotalSeconds * 1000);
         while (DateTimeOffset.UtcNow < deadline)
         {
             var heartBeatCount = transport.GetData().Count(x => ContainsMessage(x, TelemetryRequestTypes.AppHeartbeat));
@@ -176,7 +126,7 @@ public class TelemetryControllerV2Tests
                  .Should()
                  .HaveCountGreaterOrEqualTo(requiredHeartbeats);
 
-        await controller.DisposeAsync(false);
+        await controller.DisposeAsync();
     }
 
     [Fact]
@@ -195,10 +145,7 @@ public class TelemetryControllerV2Tests
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
-            new IntegrationTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
-            new ProductsTelemetryCollector(),
-            new ApplicationTelemetryCollectorV2(),
             transportManager,
             _flushInterval);
 
@@ -222,7 +169,7 @@ public class TelemetryControllerV2Tests
                    .ContainEquivalentOf(assemblyName);
         }
 
-        await controller.DisposeAsync(false);
+        await controller.DisposeAsync();
     }
 
     private async Task<List<TelemetryDataV2>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
@@ -245,23 +192,6 @@ public class TelemetryControllerV2Tests
         }
 
         throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
-    }
-
-    private async Task<bool> WaitForFatalError(TelemetryControllerV2 controller)
-    {
-        var deadline = DateTimeOffset.UtcNow.Add(_timeout);
-        while (DateTimeOffset.UtcNow < deadline)
-        {
-            if (controller.FatalError)
-            {
-                // was disposed
-                return true;
-            }
-
-            await Task.Delay(_flushInterval);
-        }
-
-        return false;
     }
 
     private bool ContainsMessage(TelemetryDataV2 data, string requestType)

@@ -1,4 +1,4 @@
-﻿// <copyright file="SignInManagerPasswordSignInUserIntegration.cs" company="Datadog">
+// <copyright file="SignInManagerPasswordSignInUserIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents;
     MinimumVersion = "2",
     MaximumVersion = "7",
     IntegrationName = nameof(IntegrationId.AspNetCore),
-    CallTargetIntegrationType = IntegrationType.Derived,
+    CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -49,7 +49,6 @@ public static class SignInManagerPasswordSignInUserIntegration
         where TUser : IIdentityUser
     {
         var security = Security.Instance;
-        // todo milestone 2 deal with extended mode of UserEventsAutomatedTracking
         if (security.TrackUserEvents)
         {
             var tracer = Tracer.Instance;
@@ -63,12 +62,44 @@ public static class SignInManagerPasswordSignInUserIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ISignInResult
     {
-        if (!returnValue.Succeeded && Security.Instance is { TrackUserEvents: true } security)
+        if (Security.Instance is { TrackUserEvents: true } security)
         {
             var userExists = (state.State as IDuckType)?.Instance is not null;
-            var newCallTargetState = new CallTargetState(state.Scope, (state.State as IIdentityUser)?.Id);
-            // if we come here, it's that the user has been found in database
-            SignInHelper.FillSpanWithFailureLoginEvent(security, in newCallTargetState, returnValue, userExists);
+            var user = state.State as IIdentityUser;
+
+            var span = state.Scope.Span;
+            var setTag = TaggingUtils.GetSpanSetter(span, out _);
+            var tryAddTag = TaggingUtils.GetSpanSetter(span, out _, replaceIfExists: false);
+            if (!returnValue.Succeeded)
+            {
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureTrack, "true");
+                setTag(Tags.AppSec.EventsUsers.LoginEvent.FailureAutoMode, security.Settings.UserEventsAutomatedTracking);
+                tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserExists, userExists ? "true" : "false");
+
+                if (userExists && security.IsExtendedUserTrackingEnabled)
+                {
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, user!.Id?.ToString());
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureEmail, user.Email);
+                    tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserName, user.UserName);
+                }
+                else
+                {
+                    if (user?.Id is Guid || Guid.TryParse(user?.Id?.ToString(), out _))
+                    {
+                        tryAddTag(Tags.AppSec.EventsUsers.LoginEvent.FailureUserId, user!.Id?.ToString());
+                    }
+                }
+            }
+            else if (userExists && security.IsExtendedUserTrackingEnabled)
+            {
+                // AuthenticatedHttpcontExtextensions should fill these, but on core <3.1 email doesnt appear in claims
+                // so let's try to fill these up here if we have the chance to come here
+                tryAddTag(Tags.User.Id, user!.Id?.ToString());
+                tryAddTag(Tags.User.Email, user.Email);
+                tryAddTag(Tags.User.Name, user.UserName);
+            }
+
+            security.SetTraceSamplingPriority(span);
         }
 
         return returnValue;

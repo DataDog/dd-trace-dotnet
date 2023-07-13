@@ -10,11 +10,14 @@
       component: Couchbase,
       couchbase.operation.code: Delete,
       couchbase.operation.key: my-document-key,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -36,12 +39,15 @@
       component: Couchbase,
       couchbase.operation.code: Delete,
       couchbase.operation.key: does-not-exist,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
       error.msg: KeyNotFound,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -62,11 +68,14 @@
       component: Couchbase,
       couchbase.operation.code: Get,
       couchbase.operation.key: my-document-key,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -87,11 +96,14 @@
       component: Couchbase,
       couchbase.operation.code: GetErrorMap,
       couchbase.operation.key: ,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -112,11 +124,14 @@
       component: Couchbase,
       couchbase.operation.code: GetErrorMap,
       couchbase.operation.key: ,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -137,11 +152,14 @@
       component: Couchbase,
       couchbase.operation.code: Hello,
       couchbase.operation.key: obfuscated,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -162,11 +180,14 @@
       component: Couchbase,
       couchbase.operation.code: Hello,
       couchbase.operation.key: obfuscated,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -187,11 +208,14 @@
       component: Couchbase,
       couchbase.operation.code: Hello,
       couchbase.operation.key: obfuscated,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -212,11 +236,14 @@
       component: Couchbase,
       couchbase.operation.code: Hello,
       couchbase.operation.key: obfuscated,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -237,11 +264,14 @@
       component: Couchbase,
       couchbase.operation.code: SelectBucket,
       couchbase.operation.key: default,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -262,11 +292,14 @@
       component: Couchbase,
       couchbase.operation.code: SelectBucket,
       couchbase.operation.key: default,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,
@@ -288,11 +321,14 @@
       couchbase.operation.bucket: default,
       couchbase.operation.code: Set,
       couchbase.operation.key: my-document-key,
+      db.couchbase.seed.nodes: couchbase,
       env: integration_tests,
+      peer.service: couchbase,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
       process_id: 0,

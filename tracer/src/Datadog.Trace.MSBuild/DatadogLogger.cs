@@ -16,6 +16,8 @@ using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Microsoft.Build.Framework;
 
@@ -125,6 +127,7 @@ namespace Datadog.Trace.MSBuild
                 _buildSpan.SetTag(CommonTags.RuntimeArchitecture, Environment.Is64BitProcess ? "x64" : "x86");
                 _buildSpan.SetTag(CommonTags.LibraryVersion, TracerConstants.AssemblyVersion);
                 CIEnvironmentValues.Instance.DecorateSpan(_buildSpan);
+                TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
 
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, _buildSpan));
             }
@@ -209,6 +212,7 @@ namespace Datadog.Trace.MSBuild
                 projectSpan.SetTag(BuildTags.ProjectToolsVersion, e.ToolsVersion);
                 projectSpan.SetTag(BuildTags.BuildName, projectName);
                 _projects.TryAdd(context, projectSpan);
+                TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Msbuild);
                 _tracer.TracerManager.DirectLogSubmission.Sink.EnqueueLog(new MsBuildLogEvent(DirectSubmissionLogLevelExtensions.Information, e.Message, projectSpan));
             }
             catch (Exception ex)
