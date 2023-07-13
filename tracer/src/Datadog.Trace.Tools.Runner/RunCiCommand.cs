@@ -4,43 +4,56 @@
 // </copyright>
 
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Xml;
-using System.Xml.XPath;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class RunCiCommand : AsyncCommand<RunCiSettings>
+    internal class RunCiCommand : CommandWithExamples
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RunCiCommand));
+
         private readonly ApplicationContext _applicationContext;
+        private readonly RunSettings _runSettings;
+        private readonly Option<string> _apiKeyOption = new("--api-key", "Enables agentless with the Api Key");
 
         public RunCiCommand(ApplicationContext applicationContext)
+            : base("run", "Run a command and instrument the tests")
         {
             _applicationContext = applicationContext;
+
+            _runSettings = new(this);
+            AddOption(_apiKeyOption);
+
+            AddExample("dd-trace ci configure azp");
+
+            this.SetHandler(ExecuteAsync);
         }
 
-        public override async Task<int> ExecuteAsync(CommandContext context, RunCiSettings settings)
+        private async Task ExecuteAsync(InvocationContext context)
         {
             // CI Visibility mode is enabled.
-            var args = RunHelper.GetArguments(context, settings);
+            var args = _runSettings.Command.GetValue(context);
             var program = args[0];
-            var arguments = args.Count > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
+            var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
             // Get profiler environment variables
-            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, settings, out var profilerEnvironmentVariables))
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             // We force CIVisibility mode on child process
@@ -51,13 +64,18 @@ namespace Datadog.Trace.Tools.Runner
             var agentless = ciVisibilitySettings.Agentless;
             var apiKey = ciVisibilitySettings.ApiKey;
             var applicationKey = ciVisibilitySettings.ApplicationKey;
-            if (!string.IsNullOrEmpty(settings?.ApiKey))
+
+            var customApiKey = _apiKeyOption.GetValue(context);
+
+            if (!string.IsNullOrEmpty(customApiKey))
             {
                 agentless = true;
-                apiKey = settings.ApiKey;
+                apiKey = customApiKey;
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.AgentlessEnabled] = "1";
-                profilerEnvironmentVariables[Configuration.ConfigurationKeys.ApiKey] = settings.ApiKey;
+                profilerEnvironmentVariables[Configuration.ConfigurationKeys.ApiKey] = customApiKey;
             }
+
+            var agentUrl = _runSettings.AgentUrl.GetValue(context);
 
             // If the agentless feature flag is enabled, we check for ApiKey
             // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
@@ -70,17 +88,19 @@ namespace Datadog.Trace.Tools.Runner
                 {
                     Utils.WriteError("An API key is required in Agentless mode.");
                     Log.Error("RunHelper: An API key is required in Agentless mode.");
-                    return 1;
+                    context.ExitCode = 1;
+                    return;
                 }
             }
             else
             {
                 Log.Debug("RunCiCommand: Agent-based mode has been enabled. Checking agent connection.");
-                (agentConfiguration, discoveryService) = await Utils.CheckAgentConnectionAsync(settings.AgentUrl).ConfigureAwait(false);
+                (agentConfiguration, discoveryService) = await Utils.CheckAgentConnectionAsync(agentUrl).ConfigureAwait(false);
                 if (agentConfiguration is null)
                 {
                     Log.Error("RunCiCommand: Agent configuration cannot be retrieved.");
-                    return 1;
+                    context.ExitCode = 1;
+                    return;
                 }
             }
 
@@ -88,9 +108,10 @@ namespace Datadog.Trace.Tools.Runner
 
             // Set Agentless configuration from the command line options
             ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
-            if (!string.IsNullOrEmpty(settings.AgentUrl))
+
+            if (!string.IsNullOrEmpty(agentUrl))
             {
-                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.AgentUri, settings.AgentUrl);
+                EnvironmentHelpers.SetEnvironmentVariable(Configuration.ConfigurationKeys.AgentUri, agentUrl);
             }
 
             // Initialize flags to enable code coverage and test skipping
@@ -168,7 +189,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
                     catch (Exception ex)
                     {
-                        CIVisibility.Log.Warning(ex,  "Error getting ITR settings from configuration api");
+                        CIVisibility.Log.Warning(ex, "Error getting ITR settings from configuration api");
                     }
                 }
             }
@@ -207,7 +228,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
 
                     // Add the Datadog coverage collector
-                    var baseDirectory = Path.GetDirectoryName(typeof(Coverage.Collector.CoverageCollector).Assembly.Location);
+                    var baseDirectory = AppContext.BaseDirectory;
                     if (isTestCommand)
                     {
                         arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
@@ -278,7 +299,7 @@ namespace Datadog.Trace.Tools.Runner
                 if (Program.CallbackForTests is { } callbackForTests)
                 {
                     callbackForTests(program, arguments, profilerEnvironmentVariables);
-                    return 0;
+                    return;
                 }
 
                 Log.Debug("RunCiCommand: Launching: {Value}", command);
@@ -299,7 +320,8 @@ namespace Datadog.Trace.Tools.Runner
                     await uploadRepositoryChangesTask.ConfigureAwait(false);
                 }
 
-                return exitCode;
+                context.ExitCode = exitCode;
+                return;
             }
             catch (Exception ex)
             {
@@ -374,12 +396,6 @@ namespace Datadog.Trace.Tools.Runner
                     await session.CloseAsync(exitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
                 }
             }
-        }
-
-        public override ValidationResult Validate(CommandContext context, RunCiSettings settings)
-        {
-            var runValidation = RunHelper.Validate(context, settings);
-            return !runValidation.Successful ? runValidation : base.Validate(context, settings);
         }
     }
 }

@@ -134,7 +134,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                     {
                         int handleCount = Marshal.ReadInt32(ptr);
                         int offset = sizeof(int);
-                        int size = Marshal.SizeOf(typeof(SYSTEM_HANDLE_ENTRY));
+                        int size = Marshal.SizeOf<SYSTEM_HANDLE_ENTRY>();
 
                         using var processHandle = NativeMethods.OpenProcess(ProcessAccessRights.PROCESS_DUP_HANDLE, true, processId);
 

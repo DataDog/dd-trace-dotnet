@@ -31,6 +31,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
 
             AnsiConsole.Console = AnsiConsole.Create(new AnsiConsoleSettings { Out = new RedirectedOutput(_output) });
             Console.SetOut(new StringWriter(_output));
+            Console.SetError(new StringWriter(_output));
         }
 
         public string Output => _output.ToString();

@@ -5,73 +5,90 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class ConfigureCiCommand : Command<ConfigureCiSettings>
+    internal class ConfigureCiCommand : CommandWithExamples
     {
         private static readonly IReadOnlyDictionary<string, CIName> CiNamesMapping
             = new Dictionary<string, CIName>(StringComparer.OrdinalIgnoreCase)
-        {
-            ["azp"] = CIName.AzurePipelines
-        };
+            {
+                ["azp"] = CIName.AzurePipelines
+            };
+
+        private readonly ApplicationContext _applicationContext;
+        private readonly Argument<string> _nameArgument = new("ci-name", () => null);
+        private readonly CommonTracerSettings _tracerSettings;
 
         public ConfigureCiCommand(ApplicationContext applicationContext)
+            : base("configure", "Set the environment variables for the CI")
         {
-            ApplicationContext = applicationContext;
+            _applicationContext = applicationContext;
+
+            _tracerSettings = new(this);
+            AddArgument(_nameArgument);
+
+            AddExample("dd-trace ci configure azp");
+
+            this.SetHandler(Execute);
         }
 
-        protected ApplicationContext ApplicationContext { get; }
+        private static bool TryExtractCiName(string name, out CIName? ciName)
+        {
+            ciName = null;
 
-        public override int Execute(CommandContext context, ConfigureCiSettings settings)
+            if (string.IsNullOrEmpty(name))
+            {
+                return true;
+            }
+
+            if (CiNamesMapping.TryGetValue(name, out var mappedCiName))
+            {
+                ciName = mappedCiName;
+                return true;
+            }
+
+            Utils.WriteError($"Unsupported CI name: {name}. The supported values are: {string.Join(", ", CiNamesMapping.Keys)}.");
+            return false;
+        }
+
+        private void Execute(InvocationContext context)
         {
             var profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
-                ApplicationContext.RunnerFolder,
-                ApplicationContext.Platform,
-                settings);
+                context,
+                _applicationContext.RunnerFolder,
+                _applicationContext.Platform,
+                _tracerSettings);
 
             if (profilerEnvironmentVariables == null)
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             // Enable CI Visibility mode
             profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
 
-            if (!TryExtractCiName(settings, out var ciName))
+            var name = _nameArgument.GetValue(context);
+
+            if (!TryExtractCiName(name, out var ciName))
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             AnsiConsole.WriteLine("Setting up the environment variables.");
 
             if (!CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, ciName))
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
-            return 0;
-        }
-
-        private static bool TryExtractCiName(ConfigureCiSettings settings, out CIName? ciName)
-        {
-            ciName = null;
-
-            if (string.IsNullOrEmpty(settings.CiName))
-            {
-                return true;
-            }
-
-            if (CiNamesMapping.TryGetValue(settings.CiName, out var mappedCiName))
-            {
-                ciName = mappedCiName;
-                return true;
-            }
-
-            Utils.WriteError($"Unsupported CI name: {settings.CiName}. The supported values are: {string.Join(", ", CiNamesMapping.Keys)}.");
-            return false;
+            context.ExitCode = 0;
         }
     }
 }
