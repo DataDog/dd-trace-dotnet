@@ -17,8 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
     {
         private const string SnsKey = "_datadog";
 
-        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes, Func<MemoryStream, object> createMessageAttributeValueFunc)
         {
+            // Check if messageAttributes is null, if it is, then create a new Dictionary
+            messageAttributes ??= new Dictionary<string, object>();
+
             // Consolidate headers into one JSON object with <header_name>:<value>
             var sb = Util.StringBuilderCache.Acquire(Util.StringBuilderCache.MaxBuilderSize);
             sb.Append('{');
@@ -29,10 +32,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
             byte[] bytes = Encoding.UTF8.GetBytes(resultString);
             MemoryStream stream = new MemoryStream(bytes);
-            messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
+            messageAttributes[SnsKey] = createMessageAttributeValueFunc(stream);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        private static void Inject<TMessageRequest>(SpanContext context, IDictionary messageAttributes)
+        {
+            Inject<TMessageRequest>(context, messageAttributes, CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue);
+        }
+
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext, Func<MemoryStream, object> createMessageAttributeValueFunc)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -73,7 +81,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             }
 
             // Inject the tracing headers
-            Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
+            Inject<TMessageRequest>(spanContext, carrier.MessageAttributes, createMessageAttributeValueFunc);
+        }
+
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        {
+            InjectHeadersIntoMessage<TMessageRequest>(carrier, spanContext, CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue);
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
