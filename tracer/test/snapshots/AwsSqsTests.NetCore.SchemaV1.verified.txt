@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -22,7 +22,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.CreateQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -39,13 +39,15 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.CreateQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -62,7 +64,9 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
@@ -173,7 +177,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -189,13 +193,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -211,13 +216,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_12,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -233,13 +239,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -255,13 +262,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -277,13 +285,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_15,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -299,13 +308,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -321,13 +331,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -343,13 +354,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -365,13 +377,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -387,13 +400,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -409,13 +423,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_21,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -431,13 +446,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -453,13 +469,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_23,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -475,13 +492,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_24,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -497,13 +515,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_25,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -519,13 +538,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_26,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -541,13 +561,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_27,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -563,13 +584,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_28,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -585,13 +607,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_29,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -607,13 +630,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_30,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -629,13 +653,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_31,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -651,13 +676,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_32,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -673,13 +699,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_33,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -695,13 +722,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_34,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -717,13 +745,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_35,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -739,7 +768,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      span.kind: client,
+      _dd.peer.service.source: aws.queue.name
     }
   }
 ]
