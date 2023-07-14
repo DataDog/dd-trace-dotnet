@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Samples.Probes;
@@ -60,7 +61,7 @@ public static class Program
                 {
                     run.Run();
                 }
-                catch
+                catch (Exception ex) when (ex.Source == "ASD")
                 {
                     // Ignored
                 }

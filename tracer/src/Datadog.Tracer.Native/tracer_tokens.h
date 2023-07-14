@@ -26,7 +26,8 @@ protected:
     const shared::WSTRING& GetCallTargetReturnType() override;
     const shared::WSTRING& GetCallTargetReturnGenericType() override;
     HRESULT EnsureBaseCalltargetTokens() override;
-    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
+    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                             ULONG& signatureSize, bool isAsyncMethod) override;
 
 public:
     TracerTokens(ModuleMetadata* module_metadata_ptr, bool enableByRefInstrumentation,

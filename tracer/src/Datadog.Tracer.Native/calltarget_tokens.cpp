@@ -438,7 +438,7 @@ HRESULT CallTargetTokens::ModifyLocalSig(ILRewriter* reWriter, TypeSignature* me
     }
 
     // New signature declaration
-    COR_SIGNATURE newSignatureBuffer[signatureBufferSize];
+    COR_SIGNATURE newSignatureBuffer[BUFFER_SIZE];
     newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
 
     // Set the locals count
@@ -761,7 +761,7 @@ int CallTargetTokens::GetAdditionalLocalsCount()
     return 0;
 }
 
-void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset,
+void CallTargetTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
                                            ULONG& signatureSize, bool isAsyncMethod)
 {
 }

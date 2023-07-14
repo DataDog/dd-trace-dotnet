@@ -17,6 +17,9 @@ namespace environment
     // Determines if the Debugger is enabled.
     const WSTRING debugger_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_ENABLED");
 
+    // Determines if the Fault-Tolerant Instrumentation is enabled.
+    const WSTRING fault_tolerant_instrumentation_enabled = WStr("DD_FAULT_TOLERANT_INSTRUMENTATION_ENABLED");
+
 } // namespace environment
 } // namespace debugger
 

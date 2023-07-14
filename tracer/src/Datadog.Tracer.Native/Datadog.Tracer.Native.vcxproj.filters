@@ -59,6 +59,7 @@
     <ClCompile Include="iast\dataflow.cpp" />
     <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
     <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
+    <ClCompile Include="fault_tolerant_tracker.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -146,6 +147,7 @@
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="Synchronized.hpp" />
+    <ClInclude Include="fault_tolerant_tracker.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

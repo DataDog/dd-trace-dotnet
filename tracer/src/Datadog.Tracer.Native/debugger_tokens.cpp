@@ -269,6 +269,18 @@ HRESULT DebuggerTokens::EnsureBaseCalltargetTokens()
         }
     }
 
+    // *** Ensure AsyncMethodDebuggerInvoker type ref
+    if (faultTolerantTypeRef == mdTypeRefNil)
+    {
+        hr = module_metadata->metadata_emit->DefineTypeRefByName(
+            profilerAssemblyRef, managed_profiler_fault_tolerant_invoker_type.data(), &faultTolerantTypeRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper faultTolerantTypeRef could not be defined.");
+            return hr;
+        }
+    }
+
     return S_OK;
 }
 
@@ -301,7 +313,8 @@ int DebuggerTokens::GetAdditionalLocalsCount()
     return 3;
 }
 
-void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                         ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size
     unsigned callTargetStateTypeRefBuffer;
@@ -1530,6 +1543,50 @@ HRESULT DebuggerTokens::WriteDispose(void* rewriterWrapperPtr, ILInstr** instruc
     }
 
     *instruction = rewriterWrapper->CallMember(disposeRef, false);
+    return S_OK;
+}
+
+HRESULT DebuggerTokens::WriteShouldHeal(void* rewriterWrapperPtr, ILInstr** instruction)
+{
+    auto hr = EnsureBaseCalltargetTokens();
+    if (FAILED(hr))
+    {
+        return hr;
+    }
+    ILRewriterWrapper* rewriterWrapper = (ILRewriterWrapper*) rewriterWrapperPtr;
+
+    if (shouldSelfHealRef == mdMemberRefNil)
+    {
+        ModuleMetadata* module_metadata = GetMetadata();
+
+        unsigned exTypeRefBuffer;
+        auto exTypeRefSize = CorSigCompressToken(exTypeRef, &exTypeRefBuffer);
+        
+        auto signatureLength = 5 + exTypeRefSize;
+
+        COR_SIGNATURE signature[signatureBufferSize];
+        unsigned offset = 0;
+
+        signature[offset++] = IMAGE_CEE_CS_CALLCONV_DEFAULT;
+        signature[offset++] = 0x02; // (Exception, String)
+
+        signature[offset++] = ELEMENT_TYPE_BOOLEAN;
+        signature[offset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&signature[offset], &exTypeRefBuffer, exTypeRefSize);
+        offset += exTypeRefSize;
+        signature[offset++] = ELEMENT_TYPE_STRING;
+
+        auto hr = module_metadata->metadata_emit->DefineMemberRef(faultTolerantTypeRef,
+                                                                  managed_profiler_should_heal_name.data(),
+                                                                  signature, signatureLength, &shouldSelfHealRef);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Wrapper shouldSelfHealRef could not be defined.");
+            return hr;
+        }
+    }
+
+    *instruction = rewriterWrapper->CallMember(shouldSelfHealRef, false);
     return S_OK;
 }
 

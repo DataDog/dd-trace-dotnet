@@ -197,17 +197,6 @@ namespace Datadog.Trace.Tools.Runner
                         }
                     }
 
-                    // Add the Datadog coverage collector
-                    var baseDirectory = Path.GetDirectoryName(typeof(Coverage.Collector.CoverageCollector).Assembly.Location);
-                    if (isTestCommand)
-                    {
-                        arguments += " --collect DatadogCoverage --test-adapter-path \"" + baseDirectory + "\"";
-                    }
-                    else if (isVsTestCommand)
-                    {
-                        arguments += " /Collect:DatadogCoverage /TestAdapterPath:\"" + baseDirectory + "\"";
-                    }
-
                     // Sets the code coverage path to store the json files for each module.
                     var outputFolders = new[] { Environment.CurrentDirectory, Path.GetTempPath(), };
                     foreach (var folder in outputFolders)

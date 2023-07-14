@@ -22,6 +22,12 @@ partial class Build
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
 
+    [Parameter("Indicates if the Fault-Tolerant Instrumentation should be turned on.")]
+    readonly bool EnableFaultTolerantInstrumentation;
+
+    [Parameter("Indicates if the Dynamic Instrumentation product should be disabled.")]
+    readonly bool DisableDynamicInstrumentationProduct;
+
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
@@ -198,19 +204,6 @@ partial class Build
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
-        }
-
-        if (testDescription.Name is global::ExplorationTestName.paket)
-        {
-            Logger.Information("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
-            return;
-        }
-
-        if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
-            testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
-        {
-            Logger.Information("The Exploration Tests: protobuf, cake, paket, polly are disabled for the Live Debugger.");
-            return;
         }
 
         if (Framework == null)
