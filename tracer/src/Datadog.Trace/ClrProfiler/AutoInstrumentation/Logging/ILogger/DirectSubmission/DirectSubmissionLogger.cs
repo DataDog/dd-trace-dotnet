@@ -22,14 +22,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
     {
         private readonly string _name;
         private readonly IExternalScopeProvider? _scopeProvider;
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly LogFormatter? _logFormatter;
         private readonly int _minimumLogLevel;
 
         internal DirectSubmissionLogger(
             string name,
             IExternalScopeProvider? scopeProvider,
-            IDatadogSink sink,
+            IDirectSubmissionLogSink sink,
             LogFormatter? logFormatter,
             DirectSubmissionLogLevel minimumLogLevel)
         {

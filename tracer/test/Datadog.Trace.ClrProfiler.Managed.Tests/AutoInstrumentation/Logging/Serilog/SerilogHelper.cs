@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Se
                     propagateExceptions: false));
         }
 
-        internal class TestSink : IDatadogSink
+        internal class TestSink : IDirectSubmissionLogSink
         {
             public ConcurrentQueue<DatadogLogEvent> Events { get; } = new();
 

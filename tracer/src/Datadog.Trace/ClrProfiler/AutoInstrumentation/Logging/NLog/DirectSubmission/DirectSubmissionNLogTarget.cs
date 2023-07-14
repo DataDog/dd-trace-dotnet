@@ -20,19 +20,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// </summary>
     internal class DirectSubmissionNLogTarget
     {
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;
         private readonly LogFormatter? _formatter;
         private ITargetWithContextBaseProxy? _baseProxy;
 
-        internal DirectSubmissionNLogTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionNLogTarget(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
             : this(sink, minimumLevel, formatter: null)
         {
         }
 
         // internal for testing
         internal DirectSubmissionNLogTarget(
-            IDatadogSink sink,
+            IDirectSubmissionLogSink sink,
             DirectSubmissionLogLevel minimumLevel,
             LogFormatter? formatter)
         {

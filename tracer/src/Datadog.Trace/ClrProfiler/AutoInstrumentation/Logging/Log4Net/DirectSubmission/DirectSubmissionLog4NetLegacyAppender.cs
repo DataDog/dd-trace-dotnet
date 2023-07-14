@@ -20,11 +20,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
     {
         private static DirectSubmissionLog4NetLegacyAppender _instance = null!;
 
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly DirectSubmissionLogLevel _minimumLevel;
 
         // internal for testing
-        internal DirectSubmissionLog4NetLegacyAppender(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionLog4NetLegacyAppender(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
             _minimumLevel = minimumLevel;

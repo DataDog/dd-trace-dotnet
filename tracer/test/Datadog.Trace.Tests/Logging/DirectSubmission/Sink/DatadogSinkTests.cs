@@ -38,7 +38,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
                 return true;
             });
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DatadogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
 
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
@@ -55,7 +55,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             var logsApi = new TestLogsApi();
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DatadogSink(
+            var sink = new DirectSubmissionLogSink(
                 logsApi,
                 LogSettingsHelper.GetFormatter(),
                 options,
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             var logsApi = new TestLogsApi(LogsSentCallback);
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DatadogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
 
             var firstMessage = "First message";
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             var logsApi = new TestLogsApi(LogsSentCallback);
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DatadogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
 
             sink.EnqueueLog(new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message"));
@@ -196,7 +196,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
 
             var logsApi = new TestLogsApi(LogsSentCallback);
             var options = new BatchingSinkOptions(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait);
-            var sink = new DatadogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
+            var sink = new DirectSubmissionLogSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
 
             for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
@@ -269,7 +269,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             public int NumberOfLogs { get; }
         }
 
-        internal class TestSink : DatadogSink
+        internal class TestSink : DirectSubmissionLogSink
         {
             public TestSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
                 : base(api, formatter, sinkOptions)

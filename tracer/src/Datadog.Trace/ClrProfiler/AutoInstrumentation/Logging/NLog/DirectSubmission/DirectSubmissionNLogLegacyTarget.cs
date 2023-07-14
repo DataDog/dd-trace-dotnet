@@ -22,19 +22,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     /// </summary>
     internal class DirectSubmissionNLogLegacyTarget
     {
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;
         private readonly LogFormatter? _formatter;
         private Func<IDictionary<string, object?>?>? _getProperties = null;
 
-        internal DirectSubmissionNLogLegacyTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionNLogLegacyTarget(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
             : this(sink, minimumLevel, formatter: null)
         {
         }
 
         // internal for testing
         internal DirectSubmissionNLogLegacyTarget(
-            IDatadogSink sink,
+            IDirectSubmissionLogSink sink,
             DirectSubmissionLogLevel minimumLevel,
             LogFormatter? formatter)
         {

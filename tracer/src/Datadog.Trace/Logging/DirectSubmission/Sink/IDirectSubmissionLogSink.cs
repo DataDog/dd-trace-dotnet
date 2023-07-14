@@ -1,4 +1,4 @@
-// <copyright file="IDatadogSink.cs" company="Datadog">
+// <copyright file="IDirectSubmissionLogSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal interface IDatadogSink
+    internal interface IDirectSubmissionLogSink
     {
         /// <summary>
         /// Emit the provided log event to the sink. If the sink is being disposed or
