@@ -13,7 +13,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 163;
+    public const int Length = 162;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -35,7 +35,6 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract => "name:spancontextextractor_extract",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser => "name:spanextensions_setuser",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag => "name:spanextensions_settag",
-            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_GetTagObject => "name:spanextensions_gettagobject",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority => "name:spanextensions_settracesamplingpriority",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor => "name:tracer_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor_Settings => "name:tracer_ctor_settings",
@@ -211,7 +210,6 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag,
-            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_GetTagObject,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor_Settings,
@@ -387,7 +385,6 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag),
-            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_GetTagObject),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.Tracer_Ctor_Settings),
@@ -563,7 +560,6 @@ internal static partial class PublicApiUsageExtensions
             "name:spancontextextractor_extract",
             "name:spanextensions_setuser",
             "name:spanextensions_settag",
-            "name:spanextensions_gettagobject",
             "name:spanextensions_settracesamplingpriority",
             "name:tracer_ctor",
             "name:tracer_ctor_settings",
