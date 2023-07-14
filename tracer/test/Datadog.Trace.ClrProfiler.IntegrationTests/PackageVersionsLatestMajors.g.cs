@@ -809,31 +809,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NET462
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NET5_0
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NET6_0
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #if NET7_0
                 new object[] { "2.2.10" },
-                new object[] { "3.0.4" },
+                new object[] { "3.1.1" },
 #endif
 #endif
             };
