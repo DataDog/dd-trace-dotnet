@@ -37,10 +37,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
                                                         entry => entry.Value as MessageAttributeValue);
             }
         }
-
-        public PublishRequest GetPublishRequest()
-        {
-            return _publishRequest;
-        }
     }
 }
