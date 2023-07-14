@@ -13,14 +13,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
     internal static class AwsSqsCommon
     {
         private const string DatadogAwsSqsServiceName = "aws-sqs";
-        private const string SqsOperationName = "sqs.request";
+        private const string SqsRequestOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
+        private const string SnsOperationName = "aws.sqs";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null)
+        public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null, string spanKind = SpanKinds.Client)
         {
             tags = null;
 
@@ -34,9 +35,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             try
             {
-                tags = new AwsSqsTags();
+                tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateAwsSqsTags(spanKind);
                 string serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, DatadogAwsSqsServiceName);
-                scope = tracer.StartActiveInternal(SqsOperationName, parent: parentContext, tags: tags, serviceName: serviceName);
+                string operationName = GetOperationName(tracer, spanKind);
+                scope = tracer.StartActiveInternal(operationName, parent: parentContext, tags: tags, serviceName: serviceName);
                 var span = scope.Span;
 
                 span.Type = SpanTypes.Http;
@@ -56,5 +58,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
         }
+
+        internal static string GetOperationName(Tracer tracer, string spanKind) => tracer.CurrentTraceSettings.Schema.Version switch
+        {
+            SchemaVersion.V0 => SqsRequestOperationName,
+            _ => GetOperationNameHelper(spanKind)
+        };
+
+        internal static string GetOperationNameHelper(string spanKind) => spanKind switch
+        {
+            SpanKinds.Consumer => $"{SnsOperationName}.process",
+            SpanKinds.Producer => $"{SnsOperationName}.send",
+            _ => SqsRequestOperationName
+        };
     }
 }
