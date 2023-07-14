@@ -4,8 +4,6 @@
 // </copyright>
 
 using System;
-using Datadog.Trace.Configuration;
-using Datadog.Trace.Util.Http.QueryStringObfuscation;
 
 namespace Datadog.Trace.Util.Http
 {
@@ -25,13 +23,28 @@ namespace Datadog.Trace.Util.Http
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
         {
-            if (!string.IsNullOrEmpty(queryString) && queryStringManager != null)
+            // $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}{queryString}";
+            var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
+            sb.Append(scheme)
+              .Append("://")
+              .Append(GetNormalizedHost(host));
+
+            if (port.HasValue)
             {
-                queryString = queryStringManager.TruncateAndObfuscate(queryString);
-                return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}{queryString}";
+                sb.Append(':')
+                  .Append(port);
             }
 
-            return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}";
+            sb.Append(pathBase)
+              .Append(path);
+
+            if (!string.IsNullOrEmpty(queryString) && queryStringManager != null)
+            {
+                sb.Append(queryStringManager.TruncateAndObfuscate(queryString));
+            }
+
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
 
         internal static string GetNormalizedHost(string host) => string.IsNullOrEmpty(host) ? NoHostSpecified : host;
