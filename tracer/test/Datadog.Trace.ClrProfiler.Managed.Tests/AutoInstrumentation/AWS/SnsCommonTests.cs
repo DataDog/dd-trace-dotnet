@@ -4,16 +4,12 @@
 // </copyright>
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
-using Datadog.Trace.HttpOverStreams;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
-using Moq;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
@@ -23,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
         private const string DatadogAttributeKey = "_datadog";
 
         private readonly SpanContext _spanContext;
-        private readonly TraceId _traceId;
         private readonly string _parentId;
 
         public SnsCommonTests()
@@ -31,10 +26,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             ulong upper = 1234567890123456789;
             ulong lower = 9876543210987654321;
 
-            var newTraceId = new TraceId(upper, lower);
+            var traceId = new TraceId(upper, lower);
             ulong spanId = 6766950223540265769;
-            _spanContext = new SpanContext(newTraceId, spanId, 0, "test-service", "origin");
-            _traceId = newTraceId;
+            _spanContext = new SpanContext(traceId, spanId, 0, "test-service", "origin");
             _parentId = spanId.ToString();
         }
 
@@ -55,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             if (attributes.TryGetValue(DatadogAttributeKey, out var attributeValue))
             {
                 var ddTraceContextMemoryStream = attributeValue.BinaryValue;
-                ddTraceContextMemoryStream.Position = 0; // Reset the position, in case it's at the end
+                ddTraceContextMemoryStream.Position = 0;
                 var reader = new StreamReader(ddTraceContextMemoryStream);
                 var jsonString = reader.ReadToEnd();
 
