@@ -25,7 +25,7 @@ namespace Datadog.Trace.Util.Http
 
         internal static string GetUrl(string scheme, string host, int? port, string pathBase, string path, string queryString, QueryStringManager queryStringManager = null)
         {
-            if (queryStringManager != null)
+            if (!string.IsNullOrEmpty(queryString) && queryStringManager != null)
             {
                 queryString = queryStringManager.TruncateAndObfuscate(queryString);
                 return $"{scheme}://{GetNormalizedHost(host)}{(port.HasValue ? $":{port}" : string.Empty)}{pathBase}{path}{queryString}";

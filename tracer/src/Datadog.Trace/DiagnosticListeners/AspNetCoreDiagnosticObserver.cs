@@ -93,7 +93,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
             {
-                OnMvcAfterAction();
+                OnMvcAfterAction(arg);
                 return;
             }
 
@@ -148,9 +148,6 @@ namespace Datadog.Trace.DiagnosticListeners
             var span = mvcScope.Span;
             span.Type = SpanTypes.Web;
 
-            // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
-            var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
-
             var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
             var isUsingEndpointRouting = trackingFeature.IsUsingEndpointRouting;
 
@@ -178,58 +175,62 @@ namespace Datadog.Trace.DiagnosticListeners
             if (routeValues is Dictionary<string, string> dctRouteValues)
             {
                 // We can also avoid calculating the key hash all the time and just enumerate and bailout when we have all the data.
-                int finishBits = 0;
+                var count = 0;
                 foreach (var routeValue in dctRouteValues)
                 {
-                    // 1 | 2 | 4 | 6 Flags
-                    if (finishBits == 13)
+                    if (count == 4)
                     {
                         break;
                     }
 
-                    if (routeValue.Key == "controller")
+                    if (string.Equals(routeValue.Key, "controller", StringComparison.OrdinalIgnoreCase))
                     {
-                        controllerName = routeValue.Value;
-                        finishBits |= 1;
+                        controllerName = routeValue.Value?.ToLowerInvariant();
+                        count++;
                         continue;
                     }
 
-                    if (routeValue.Key == "action")
+                    if (string.Equals(routeValue.Key, "action", StringComparison.OrdinalIgnoreCase))
                     {
-                        actionName = routeValue.Value;
-                        finishBits |= 2;
+                        actionName = routeValue.Value?.ToLowerInvariant();
+                        count++;
                         continue;
                     }
 
-                    if (routeValue.Key == "area")
+                    if (string.Equals(routeValue.Key, "area", StringComparison.OrdinalIgnoreCase))
                     {
-                        areaName = routeValue.Value;
-                        finishBits |= 4;
+                        areaName = routeValue.Value?.ToLowerInvariant();
+                        count++;
                         continue;
                     }
 
-                    if (routeValue.Key == "page")
+                    if (string.Equals(routeValue.Key, "page", StringComparison.OrdinalIgnoreCase))
                     {
-                        pagePath = routeValue.Value;
-                        finishBits |= 6;
+                        pagePath = routeValue.Value?.ToLowerInvariant();
+                        count++;
                         continue;
                     }
                 }
             }
             else
             {
-                controllerName = routeValues.TryGetValue("controller", out controllerName)
-                                     ? controllerName?.ToLowerInvariant()
+                GetControllerData(routeValues, out controllerName, out actionName, out areaName, out pagePath);
+
+                static void GetControllerData(IDictionary<string, string> dictionary, out string s, out string actionName, out string areaName, out string pagePath)
+                {
+                    s = dictionary.TryGetValue("controller", out s)
+                            ? s?.ToLowerInvariant()
+                            : null;
+                    actionName = dictionary.TryGetValue("action", out actionName)
+                                     ? actionName?.ToLowerInvariant()
                                      : null;
-                actionName = routeValues.TryGetValue("action", out actionName)
-                                 ? actionName?.ToLowerInvariant()
-                                 : null;
-                areaName = routeValues.TryGetValue("area", out areaName)
-                               ? areaName?.ToLowerInvariant()
-                               : null;
-                pagePath = routeValues.TryGetValue("page", out pagePath)
-                               ? pagePath?.ToLowerInvariant()
-                               : null;
+                    areaName = dictionary.TryGetValue("area", out areaName)
+                                    ? areaName?.ToLowerInvariant()
+                                    : null;
+                    pagePath = dictionary.TryGetValue("page", out pagePath)
+                                   ? pagePath?.ToLowerInvariant()
+                                   : null;
+                }
             }
 
             string aspNetRoute = trackingFeature.Route;
@@ -270,7 +271,7 @@ namespace Datadog.Trace.DiagnosticListeners
                         actionName: actionName,
                         expandRouteParameters: tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                    resourceName = $"{parentTags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                    resourceName = $"{((AspNetCoreEndpointTags)parentSpan.Tags).HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
 
                     aspNetRoute = routeTemplate?.TemplateText.ToLowerInvariant();
                 }
@@ -291,6 +292,9 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (!isUsingEndpointRouting && isFirstExecution)
             {
+                // This is only called with new route names, so parent tags are always AspNetCoreEndpointTags
+                var parentTags = (AspNetCoreEndpointTags)parentSpan.Tags;
+
                 // If we're using endpoint routing or this is a pipeline re-execution,
                 // these will already be set correctly
                 parentTags.AspNetCoreRoute = aspNetRoute;
@@ -331,7 +335,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _mvcAfterActionEventKey = eventName;
                     _eventNameCacheFlags |= 4;
-                    OnMvcAfterAction();
+                    OnMvcAfterAction(arg);
                 }
                 else if ((_eventNameCacheFlags & 8) == 0 && suffix is "Hosting.UnhandledException")
                 {
@@ -403,7 +407,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 {
                     _mvcAfterActionEventKey = eventName;
                     _eventNameCacheFlags |= 4;
-                    OnMvcAfterAction();
+                    OnMvcAfterAction(arg);
                 }
                 else if ((_eventNameCacheFlags & 8) == 0 && eventName == "Microsoft.AspNetCore.Hosting.UnhandledException")
                 {
@@ -574,21 +578,21 @@ namespace Datadog.Trace.DiagnosticListeners
                         break;
                     }
 
-                    if (routeValue.Key == "controller")
+                    if (string.Equals(routeValue.Key, "controller", StringComparison.OrdinalIgnoreCase))
                     {
                         controllerName = routeValue.Value as string;
                         finishBits |= 1;
                         continue;
                     }
 
-                    if (routeValue.Key == "action")
+                    if (string.Equals(routeValue.Key, "action", StringComparison.OrdinalIgnoreCase))
                     {
                         actionName = routeValue.Value as string;
                         finishBits |= 2;
                         continue;
                     }
 
-                    if (routeValue.Key == "area")
+                    if (string.Equals(routeValue.Key, "area", StringComparison.OrdinalIgnoreCase))
                     {
                         areaName = routeValue.Value as string;
                         finishBits |= 4;
@@ -619,7 +623,11 @@ namespace Datadog.Trace.DiagnosticListeners
                     tags.HttpRoute = normalizedRoute;
                 }
 
-                CurrentSecurity.CheckPathParams(httpContext, span, routeValues);
+                var security = CurrentSecurity;
+                if (security.Enabled)
+                {
+                    security.CheckPathParams(httpContext, span, routeValues);
+                }
 
                 if (Iast.Iast.Instance.Settings.Enabled)
                 {
@@ -631,28 +639,16 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnMvcBeforeAction(object arg)
         {
             var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
-            var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
-
-            if (!shouldTrace && !shouldSecure && !shouldUseIast)
-            {
-                return;
-            }
-
-            Span parentSpan = tracer.InternalActiveScope?.Span;
-
+            var parentSpan = tracer.InternalActiveScope?.Span;
             if (parentSpan != null && arg.TryDuckCast<BeforeActionStruct>(out var typedArg))
             {
-                HttpContext httpContext = typedArg.HttpContext;
-                HttpRequest request = httpContext.Request;
+                var httpContext = typedArg.HttpContext;
+                var request = httpContext.Request;
 
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 Span span = null;
-                if (shouldTrace)
+                if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
@@ -664,16 +660,20 @@ namespace Datadog.Trace.DiagnosticListeners
                     }
                 }
 
-                CurrentSecurity.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                var security = CurrentSecurity;
+                if (security.Enabled)
+                {
+                    security.CheckPathParamsFromAction(httpContext, span, typedArg.ActionDescriptor?.Parameters, typedArg.RouteData.Values);
+                }
 
-                if (shouldUseIast)
+                if (Iast.Iast.Instance.Settings.Enabled)
                 {
                     parentSpan.Context?.TraceContext?.IastRequestContext?.AddRequestData(request, typedArg.RouteData?.Values);
                 }
             }
         }
 
-        private void OnMvcAfterAction()
+        private void OnMvcAfterAction(object arg)
         {
             var tracer = CurrentTracer;
 
@@ -683,17 +683,17 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
-            if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
+            var activeScope = tracer.InternalActiveScope;
+            if (activeScope is not null && ReferenceEquals(activeScope.Span.OperationName, MvcOperationName))
             {
                 // Extract data from the Activity
                 if (Activity.ActivityListener.GetCurrentActivity() is { } activity)
                 {
                     // If the activity listener is enabled and we have an activity we copy the info to the span.
-                    SetActivityInfo(activity, scope);
+                    SetActivityInfo(activity, activeScope);
                 }
 
-                scope.Dispose();
+                activeScope.Dispose();
             }
         }
 
@@ -727,10 +727,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 return;
             }
 
-            var scope = tracer.InternalActiveScope;
-            var httpContext = scope is not null ? arg.DuckCast<HttpRequestInStopStruct>().HttpContext : null;
-
-            AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, httpContext);
+            if (tracer.InternalActiveScope is { } scope)
+            {
+                AspNetCoreRequestHandler.StopAspNetCorePipelineScope(tracer, CurrentSecurity, scope, arg.DuckCast<HttpRequestInStopStruct>().HttpContext);
+            }
         }
 
         private void OnHostingUnhandledException(object arg)
