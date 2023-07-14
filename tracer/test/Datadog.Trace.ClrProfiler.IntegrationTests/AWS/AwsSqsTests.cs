@@ -31,7 +31,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAwsSqs(metadataSchemaVersion);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
+        {
+            SpanKinds.Consumer => span.IsAwsSqsInbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsSqsOutbound(metadataSchemaVersion),
+            SpanKinds.Client => span.IsAwsSqsRequest(metadataSchemaVersion),
+            _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SQS integration: {span.Tags["span.kind"]}", nameof(span)),
+        };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -54,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                var sqsSpans = spans.Where(span => span.Name == "sqs.request");
+                var sqsSpans = spans.Where(span => span.Service == "SQS");
                 ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SQS_HOST");
@@ -72,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 settings.DisableRequireUniquePrefix();
 
-                // Note: http.request spans are expected for the following SQS API's that don't have explicit support
+                // Note: http.request spans are expected for the following SQS APIs that don't have explicit support
                 // - ListQueues
                 // - GetQueueUrl
                 // - PurgeQueue

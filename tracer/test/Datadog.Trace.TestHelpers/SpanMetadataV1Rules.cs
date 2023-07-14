@@ -130,9 +130,45 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAwsSqsV1(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSqsInboundV1(this MockSpan span) => Result.FromSpan(span)
+                                                                            .Properties(s => s
+                                                                                            .Matches(Name, "aws.sqs.process")
+                                                                                            .Matches(Type, "http"))
+                                                                            .Tags(s => s
+                                                                                      .Matches("aws.agent", "dotnet-aws-sdk")
+                                                                                      .IsPresent("aws.operation")
+                                                                                      .IsOptional("aws.region")
+                                                                                      .IsPresent("aws.requestId")
+                                                                                      .Matches("aws.service", "SQS")
+                                                                                      .IsPresent("aws.queue.name")
+                                                                                      .IsOptional("aws.queue.url")
+                                                                                      .IsPresent("http.method")
+                                                                                      .IsPresent("http.status_code")
+                                                                                      .IsPresent("http.url")
+                                                                                      .Matches("component", "aws-sdk")
+                                                                                      .Matches("span.kind", "client"));
+
+        public static Result IsAwsSqsOutboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "sqs.request")
+                .Matches(Name, "aws.sqs.send")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SQS")
+                .IsPresent("aws.queue.name")
+                .IsOptional("aws.queue.url")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
+        public static Result IsAwsSqsRequestV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.sqs.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("aws.agent", "dotnet-aws-sdk")

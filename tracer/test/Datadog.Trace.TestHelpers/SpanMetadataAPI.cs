@@ -60,11 +60,25 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreMvcV0(),
             };
 
-        public static Result IsAwsSqs(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsAwsSqsInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAwsSqsV1(),
-                _ => span.IsAwsSqsV0(),
+                "v1" => span.IsAwsSqsInboundV1(),
+                _ => span.IsAwsSqsRequestV0(),
+            };
+
+        public static Result IsAwsSqsOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSqsOutboundV1(),
+                _ => span.IsAwsSqsRequestV0(),
+            };
+
+        public static Result IsAwsSqsRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSqsRequestV1(),
+                _ => span.IsAwsSqsRequestV0(),
             };
 
         public static Result IsAwsSns(this MockSpan span, string metadataSchemaVersion) =>
