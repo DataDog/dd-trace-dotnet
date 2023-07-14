@@ -12,26 +12,26 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 internal class QueueHelper
 {
     // A map between RabbitMQ Consumer<TKey,TValue> and the corresponding queue
-    private static readonly ConditionalWeakTable<object, string> ConsumerToQueueMap = new();
+    private static readonly ConditionalWeakTable<string, string> ConsumerToQueueMap = new();
 
-    public static void SetQueue(object consumer, string queue)
+    public static void SetQueue(string consumerTag, string queue)
     {
 #if NETCOREAPP3_1_OR_GREATER
-        ConsumerToQueueMap.AddOrUpdate(consumer, queue);
+        ConsumerToQueueMap.AddOrUpdate(consumerTag, queue);
 #else
-        ConsumerToQueueMap.GetValue(consumer, x => queue);
+        ConsumerToQueueMap.GetValue(consumerTag, x => queue);
 #endif
     }
 
-    public static bool TryGetQueue(object consumer, out string? queue)
+    public static bool TryGetQueue(string consumerTag, out string? queue)
     {
         queue = null;
 
-        return ConsumerToQueueMap.TryGetValue(consumer, out queue);
+        return ConsumerToQueueMap.TryGetValue(consumerTag, out queue);
     }
 
-    public static void RemoveQueue(object consumer)
+    public static void RemoveQueue(string consumerTag)
     {
-        ConsumerToQueueMap.Remove(consumer);
+        ConsumerToQueueMap.Remove(consumerTag);
     }
 }
