@@ -452,7 +452,7 @@ struct TypeSignature
 
 struct FunctionMethodSignature
 {
-private:
+public:
     PCCOR_SIGNATURE pbBase;
     unsigned len;
     ULONG numberOfTypeArguments = 0;

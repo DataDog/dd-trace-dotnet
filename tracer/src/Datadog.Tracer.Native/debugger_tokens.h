@@ -47,6 +47,11 @@ static const WSTRING managed_profiler_debugger_methodstatetype = WStr("Datadog.T
 static const WSTRING managed_profiler_debugger_returntype = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn");
 static const WSTRING managed_profiler_debugger_returntype_generics = WStr("Datadog.Trace.Debugger.Instrumentation.DebuggerReturn`1");
 
+// Fault Tolerant
+static const WSTRING managed_profiler_should_heal_name = WStr("ShouldHeal");
+static const WSTRING managed_profiler_fault_tolerant_invoker_type =
+    WStr("Datadog.Trace.Debugger.Instrumentation.FaultTolerantInvoker");
+
 // Line Probe Methods & Types
 static const WSTRING managed_profiler_debugger_should_update_probe_info_name = WStr("ShouldUpdateProbeInfo");
 static const WSTRING managed_profiler_debugger_update_probe_info_name = WStr("UpdateProbeInfo");
@@ -86,6 +91,10 @@ static const WSTRING instrumentation_allocator_invoker_name = WStr("Datadog.Trac
 class DebuggerTokens : public CallTargetTokens
 {
 private:
+
+    // Fault Tolerant members:
+    mdMemberRef shouldSelfHealRef = mdMemberRefNil;
+    mdTypeRef faultTolerantTypeRef = mdTypeRefNil;
 
     // Method probe members:
     mdMemberRef nonAsyncShouldUpdateProbeInfoRef = mdMemberRefNil;
@@ -549,7 +558,8 @@ protected:
     const WSTRING& GetCallTargetReturnType() override;
     const WSTRING& GetCallTargetReturnGenericType() override;
 
-    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
+    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                             ULONG& signatureSize, bool isAsyncMethod) override;
     
 public:
     DebuggerTokens(ModuleMetadata* module_metadata_ptr);
@@ -586,6 +596,8 @@ public:
     HRESULT GetIsFirstEntryToMoveNextFieldToken(mdToken type, mdFieldDef& token);
 
     HRESULT WriteDispose(void* rewriterWrapperPtr, ILInstr** instruction, ProbeType probeType);
+
+    HRESULT WriteShouldHeal(void* rewriterWrapperPtr, ILInstr** instruction );
 };
 
 } // namespace debugger

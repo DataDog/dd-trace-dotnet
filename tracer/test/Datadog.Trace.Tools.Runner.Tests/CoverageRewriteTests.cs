@@ -5,7 +5,6 @@
 
 using System.IO;
 using System.Threading.Tasks;
-using Datadog.Trace.Coverage.Collector;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using VerifyTests;
@@ -42,10 +41,6 @@ namespace Datadog.Trace.Tools.Runner.Tests
             var originalVerifySettings = new VerifySettings();
             originalVerifySettings.UseFileName("CoverageRewriteTests.Original");
             await Verifier.Verify(originalCode, originalVerifySettings);
-
-            // Apply rewriter process
-            var asmProcessor = new AssemblyProcessor(temporalFileName, string.Empty);
-            asmProcessor.Process();
 
             // Decompile rewritten code
             var decompilerTransCode = new CSharpDecompiler(temporalFileName, settings);

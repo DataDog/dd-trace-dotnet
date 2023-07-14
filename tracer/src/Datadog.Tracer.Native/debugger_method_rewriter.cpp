@@ -2,12 +2,14 @@
 #include "debugger_rejit_handler_module_method.h"
 #include "cor_profiler.h"
 #include "debugger_constants.h"
+#include "debugger_environment_variables_util.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
+#include "fault_tolerant_tracker.h"
 
 namespace debugger
 {
@@ -191,6 +193,7 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
                                                       ILInstr** outLoadArgumentInstr,
                                                       CallTargetTokens* callTargetTokens)
 {
+
     // *** Load instance into the stack (if not static)
     if (isStatic)
     {
@@ -252,72 +255,465 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
 
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
 {
-    const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+    const auto moduleId = moduleHandler->GetModuleId();
+    const auto methodId = methodHandler->GetMethodDef();
 
-    if (debuggerMethodHandler->GetProbes().empty())
+    if (fault_tolerant::FaultTolerantTracker::Instance()->IsKickoffMethod(moduleId, methodId))
     {
-        Logger::Warn("NotifyReJITCompilationStarted: Probes are missing for "
-                     "MethodDef: ",
-                     methodHandler->GetMethodDef());
+        // Kickoff instrumentation
 
-        return S_FALSE;
-    }
+        LPCBYTE pMethodBytes;
+        ULONG methodSize;
+        auto hr = m_corProfiler->info_->GetILFunctionBody(moduleId, methodId, &pMethodBytes, &methodSize);
+        fault_tolerant::FaultTolerantTracker::Instance()->KeepILBodyAndSize(moduleId, methodId, pMethodBytes,
+                                                                            methodSize);
 
-    auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
+        if (FAILED(hr))
+        {
+            Logger::Warn("Failed to call GetILFunctionBody, ModuleID=", moduleId);
+            return S_OK;
+        }
 
-    MethodProbeDefinitions methodProbes;
-    LineProbeDefinitions lineProbes;
-    SpanProbeOnMethodDefinitions spanOnMethodProbes;
+        auto methodIdOfOriginalMethod = fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleId, methodId);
+        auto methodIdOfInstrumentedMethod = fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleId, methodId);
 
-    const auto& probes = debuggerMethodHandler->GetProbes();
+        FunctionInfo* caller = methodHandler->GetFunctionInfo();
+        int numArgs = caller->method_signature.NumberOfArguments();
+        bool isStatic = !(caller->method_signature.CallingConvention() & IMAGE_CEE_CS_CALLCONV_HASTHIS);
+        TypeSignature retFuncArg = caller->method_signature.GetReturnValue();
+        const auto [retFuncElementType, retTypeFlags] = retFuncArg.GetElementTypeAndFlags();
+        bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
+        auto methodReturnType = caller->method_signature.GetReturnValue();
+        DebuggerTokens* debuggerTokens = moduleHandler->GetModuleMetadata()->GetDebuggerTokens();
+        debuggerTokens->EnsureCorLibTokens();
 
-    if (probes.empty())
-    {
-        Logger::Info("There are no probes for methodDef: ", methodHandler->GetMethodDef());
+        auto instrumentedMethodName = caller->name + WStr("<Instrumented>");
+        instrumentedMethodName.erase(std::remove(instrumentedMethodName.begin(), instrumentedMethodName.end(), L'.'),
+                                     instrumentedMethodName.end());
+        instrumentedMethodName.erase(std::remove(instrumentedMethodName.begin(), instrumentedMethodName.end(), L'_'),
+                                     instrumentedMethodName.end());
+        auto originalMethodName = caller->name + WStr("<Original>");
+        originalMethodName.erase(std::remove(originalMethodName.begin(), originalMethodName.end(), L'.'),
+                                 originalMethodName.end());
+        originalMethodName.erase(std::remove(originalMethodName.begin(), originalMethodName.end(), L'_'),
+                                 originalMethodName.end());
+
+        // Is the type generic:
+        auto metadataImport = moduleHandler->GetModuleMetadata()->metadata_import;
+        auto isGenericOrNestedType = false;
+        auto argGenericCount = 0;
+
+         if (caller->type.isGeneric)
+        {
+            isGenericOrNestedType = true;
+            int number = std::stoi(caller->type.name.substr(caller->type.name.find(L'`') + 1));
+            argGenericCount += number;
+        }
+         
+         auto currentType = caller->type.parent_type;
+         while (currentType != nullptr)
+        {
+             if (currentType->isGeneric)
+             {
+                isGenericOrNestedType = true;
+                int number = std::stoi(currentType->name.substr(currentType->name.find(L'`') + 1));
+                argGenericCount += number;
+             }
+
+            currentType = currentType->parent_type;
+        }
+
+        if (isGenericOrNestedType)
+        {
+            unsigned typeBuffer;
+            auto typeSize = CorSigCompressToken(caller->type.id, &typeBuffer);
+            COR_SIGNATURE signature[500];
+            unsigned offset = 0;
+            unsigned argCountBuffer;
+            auto argCountSize = CorSigCompressData(argGenericCount, &argCountBuffer);
+            mdTypeSpec containingTypeSpec = mdTypeSpecNil;
+
+            signature[offset++] = ELEMENT_TYPE_GENERICINST;
+            signature[offset++] = caller->type.valueType ? ELEMENT_TYPE_VALUETYPE : ELEMENT_TYPE_CLASS;
+            memcpy(&signature[offset], &typeBuffer, typeSize);
+            offset += typeSize;
+            memcpy(&signature[offset], &argCountBuffer, argCountSize);
+            offset += argCountSize;
+
+            for (int genArgIndex = 0; genArgIndex < argGenericCount; genArgIndex++)
+            {
+                signature[offset++] = ELEMENT_TYPE_VAR;
+                signature[offset++] = genArgIndex;
+            }
+
+            hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromTypeSpec(signature, offset, &containingTypeSpec);
+
+            if (FAILED(hr))
+            {
+                Logger::Warn("Error creating TypeSpec token.");
+                return hr;
+            }
+
+            hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineMemberRef(
+                containingTypeSpec, instrumentedMethodName.c_str(), caller->method_signature.pbBase,
+                caller->method_signature.len, &methodIdOfInstrumentedMethod);
+            if (FAILED(hr))
+            {
+                Logger::Warn("Failed in DefineMemberRef of Instrumented Version.");
+                return hr;
+            }
+
+            hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineMemberRef(
+                containingTypeSpec, originalMethodName.c_str(), caller->method_signature.pbBase,
+                caller->method_signature.len, &methodIdOfOriginalMethod);
+            if (FAILED(hr))
+            {
+                Logger::Warn("Failed in DefineMemberRef of Original Version.");
+                return hr;
+            }
+        }
+
+        ILRewriter rewriter(m_corProfiler->info_, methodHandler->GetFunctionControl(), moduleId, methodId);
+        ILRewriterWrapper rewriterWrapper(&rewriter);
+
+        rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+
+        // LocalVarSig
+        PCCOR_SIGNATURE returnSignatureType = nullptr;
+
+        auto returnSignatureTypeSize = methodReturnType.GetSignature(returnSignatureType);
+
+        unsigned exTypeRefBuffer;
+        auto exTypeRefSize = CorSigCompressToken(debuggerTokens->GetExceptionTypeRef(), &exTypeRefBuffer);
+
+        ULONG newSignatureOffset = 0;
+        COR_SIGNATURE newSignatureBuffer[BUFFER_SIZE];
+        newSignatureBuffer[newSignatureOffset++] = IMAGE_CEE_CS_CALLCONV_LOCAL_SIG;
+        newSignatureBuffer[newSignatureOffset++] = isVoid ? 2 : 3;
+
+        // shouldSelfHeal, index = 0
+        newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_BOOLEAN;
+
+        auto shouldSelfHealLocalIndex = 0;
+
+        // Exception value, index = 1
+        newSignatureBuffer[newSignatureOffset++] = ELEMENT_TYPE_CLASS;
+        memcpy(&newSignatureBuffer[newSignatureOffset], &exTypeRefBuffer, exTypeRefSize);
+        newSignatureOffset += exTypeRefSize;
+
+        auto exceptionLocalIndex = 1;
+
+        if (!isVoid)
+        {
+            // return value, index = 2
+            memcpy(&newSignatureBuffer[newSignatureOffset], returnSignatureType, returnSignatureTypeSize);
+            newSignatureOffset += returnSignatureTypeSize;
+        }
+
+        auto returnValueLocalIndex = 2;
+
+        // Get new locals token
+        mdToken newLocalVarSig;
+        hr = moduleHandler->GetModuleMetadata()->metadata_emit->GetTokenFromSig(
+            newSignatureBuffer, newSignatureOffset, &newLocalVarSig);
+        if (FAILED(hr))
+        {
+            Logger::Warn("Error creating new locals var signature.");
+            return hr;
+        }
+
+        rewriter.SetTkLocalVarSig(newLocalVarSig);
+        
+        // Call instrumented
+        for (int argIndex = 0; argIndex < (numArgs + (isStatic ? 0 : 1)); argIndex++)
+        {
+            rewriterWrapper.LoadArgument(argIndex);
+        }
+
+        if ((*(caller->method_signature.pbBase) & IMAGE_CEE_CS_CALLCONV_GENERIC) > 0)
+        {
+            ULONG cGenericTypeParameters;
+            CorSigUncompressData(caller->method_signature.pbBase + 1, &cGenericTypeParameters);
+
+            unsigned argCountBuffer;
+            auto argCountSize = CorSigCompressData(cGenericTypeParameters, &argCountBuffer);
+
+            auto signatureLength = 2 + (cGenericTypeParameters * 2);
+
+            COR_SIGNATURE signature[500];
+            unsigned offset = 0;
+
+            signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+            memcpy(&signature[offset], &argCountBuffer, argCountSize);
+            offset += argCountSize;
+
+            for (int genArgIndex = 0; genArgIndex < static_cast<int>(cGenericTypeParameters); genArgIndex++)
+            {
+                signature[offset++] = ELEMENT_TYPE_MVAR;
+                signature[offset++] = genArgIndex;
+            }
+
+            mdMethodSpec beginMethodSpec = mdMethodSpecNil;
+            hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineMethodSpec(
+                methodIdOfInstrumentedMethod, signature, signatureLength, &beginMethodSpec);
+            rewriterWrapper.CallMember(beginMethodSpec, false);
+        }
+        else
+        {
+            rewriterWrapper.CallMember(methodIdOfInstrumentedMethod, false);    
+        }
+
+        if (!isVoid)
+        {
+            rewriterWrapper.StLocal(returnValueLocalIndex);
+        }
+
+        ILInstr* tryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+        
+        mdString methodNameIdToken;
+        hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineUserString(
+            instrumentedMethodName.c_str(), static_cast<ULONG>(instrumentedMethodName.length()), &methodNameIdToken);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("*** DebuggerMethodRewriter::Rewrite() DefineUserStringFailed.");
+            return E_FAIL;
+        }
+
+        ILInstr* catchBegin = rewriterWrapper.LoadStr(methodNameIdToken);
+
+        ILInstr* shouldHeal;
+        debuggerTokens->WriteShouldHeal(&rewriterWrapper, &shouldHeal);
+
+        ILInstr* brFalse = rewriterWrapper.CreateInstr(CEE_BRFALSE_S);
+
+        // Call original
+        for (int argIndex = 0; argIndex < (numArgs + (isStatic ? 0 : 1)); argIndex++)
+        {
+            rewriterWrapper.LoadArgument(argIndex);
+        }
+
+        if ((*(caller->method_signature.pbBase) & IMAGE_CEE_CS_CALLCONV_GENERIC) > 0)
+        {
+            ULONG cGenericTypeParameters;
+            CorSigUncompressData(caller->method_signature.pbBase + 1, &cGenericTypeParameters);
+
+            unsigned argCountBuffer;
+            auto argCountSize = CorSigCompressData(cGenericTypeParameters, &argCountBuffer);
+
+            auto signatureLength = 2 + (cGenericTypeParameters * 2);
+
+            COR_SIGNATURE signature[500];
+            unsigned offset = 0;
+
+            signature[offset++] = IMAGE_CEE_CS_CALLCONV_GENERICINST;
+            memcpy(&signature[offset], &argCountBuffer, argCountSize);
+            offset += argCountSize;
+
+            for (int genArgIndex = 0; genArgIndex < static_cast<int>(cGenericTypeParameters); genArgIndex++)
+            {
+                signature[offset++] = ELEMENT_TYPE_MVAR;
+                signature[offset++] = genArgIndex;
+            }
+
+            mdMethodSpec beginMethodSpec = mdMethodSpecNil;
+            hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineMethodSpec(
+                methodIdOfOriginalMethod, signature, signatureLength, &beginMethodSpec);
+            rewriterWrapper.CallMember(beginMethodSpec, false);
+        }
+        else
+        {
+            rewriterWrapper.CallMember(methodIdOfOriginalMethod, false);    
+        }
+
+        if (!isVoid)
+        {
+            rewriterWrapper.StLocal(returnValueLocalIndex);
+        }
+
+        ILInstr* catchLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
+
+        auto rethrow = rewriterWrapper.Rethrow();
+        brFalse->m_pTarget = rethrow;
+
+        // Return block
+        ILInstr* firstInstructionOfReturnBlock = nullptr;
+        if (!isVoid)
+        {
+            firstInstructionOfReturnBlock = rewriterWrapper.LoadLocal(returnValueLocalIndex);
+        }
+
+        auto ret = rewriterWrapper.Return();
+
+        if (firstInstructionOfReturnBlock == nullptr)
+        {
+            firstInstructionOfReturnBlock = ret;
+        }
+
+        catchLeaveInstr->m_pTarget = firstInstructionOfReturnBlock;
+        tryLeaveInstr->m_pTarget = firstInstructionOfReturnBlock;
+
+        auto tryBegin = rewriter.GetILList()->m_pNext;
+
+        //if (!isVoid)
+        //{
+        //    tryBegin = tryBegin->m_pNext->m_pNext; // Two instructions of ldnull & stloc.0
+        //}
+
+        EHClause beginMethodExClause = {};
+        beginMethodExClause.m_Flags = COR_ILEXCEPTION_CLAUSE_NONE;
+        beginMethodExClause.m_pTryBegin = tryBegin;
+        beginMethodExClause.m_pTryEnd = catchBegin;
+        beginMethodExClause.m_pHandlerBegin = catchBegin;
+        beginMethodExClause.m_pHandlerEnd = rethrow;
+        beginMethodExClause.m_ClassToken = debuggerTokens->GetExceptionTypeRef();
+
+        auto newEHClauses = new EHClause[1];
+        newEHClauses[0] = beginMethodExClause;
+
+        rewriter.SetEHClause(newEHClauses, 1);
+        const auto kickOffHr = rewriter.Export();
+
+        std::string original_code =
+            m_corProfiler->GetILCodes("*** DebuggerMethodRewriter::Rewrite() Original Code: ", &rewriter, *caller,
+                                      moduleHandler->GetModuleMetadata()->metadata_import);
+
+        Logger::Info(original_code);
+
+        if (FAILED(kickOffHr))
+        {
+            Logger::Warn("Failed to emit IL for kickoff, ModuleID=", moduleId);
+        }
+        else
+        {
+            Logger::Info("Successfully instrumented kickoff, moduleId = ", moduleId);
+        }
+
         return S_OK;
     }
-
-    Logger::Info("About to apply debugger instrumentation on ", probes.size(), " probes for methodDef: ", methodHandler->GetMethodDef());
-
-    for (const auto& probe : probes)
+    else if (fault_tolerant::FaultTolerantTracker::Instance()->IsOriginalMethod(moduleId, methodId))
     {
-        const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
-        if (spanProbe != nullptr)
+        // Set the method IL body
+
+        const auto methodIdOfKickoff =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetKickoffMethodFromOriginalMethod(moduleId, methodId);
+
+        if (methodIdOfKickoff == mdTokenNil)
         {
-            spanOnMethodProbes.emplace_back(spanProbe);
-            continue;
+            Logger::Error("Failed to get kickoff method of original method!");
+            return S_OK;
         }
 
-        const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
-        if (methodProbe != nullptr)
+        const auto [pMethodBytes, methodSize] = 
+            fault_tolerant::FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
+
+        auto hr = methodHandler->GetFunctionControl()->SetILFunctionBody(methodSize, pMethodBytes);
+
+        if (FAILED(hr))
         {
-            methodProbes.emplace_back(methodProbe);
-            continue;
+            Logger::Error("Failed to set il function body!");
         }
 
-        const auto lineProbe = std::dynamic_pointer_cast<LineProbeDefinition>(probe);
-        if (lineProbe != nullptr)
-        {
-            lineProbes.emplace_back(lineProbe);
-            continue;
-        }
-    }
-
-    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
-    {
-        // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation while the method got executed.
-        Logger::Info("There are no method probes, lines probes and span probes for methodDef", methodHandler->GetMethodDef());
         return S_OK;
+    }
+    else if (!IsFaultTolerantInstrumentationEnabled() || fault_tolerant::FaultTolerantTracker::Instance()
+                  ->IsInstrumentedMethod(moduleId, methodId))
+    {
+        // We're in the instrumentation version
+
+        const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+
+        if (debuggerMethodHandler->GetProbes().empty())
+        {
+            Logger::Warn("NotifyReJITCompilationStarted: Probes are missing for "
+                         "MethodDef: ",
+                         methodHandler->GetMethodDef());
+
+            return S_FALSE;
+        }
+
+        auto _ = trace::Stats::Instance()->CallTargetRewriterCallbackMeasure();
+
+        MethodProbeDefinitions methodProbes;
+        LineProbeDefinitions lineProbes;
+        SpanProbeOnMethodDefinitions spanOnMethodProbes;
+
+        const auto& probes = debuggerMethodHandler->GetProbes();
+
+        if (probes.empty())
+        {
+            Logger::Info("There are no probes for methodDef: ", methodHandler->GetMethodDef());
+            return S_OK;
+        }
+
+        Logger::Info("About to apply debugger instrumentation on ", probes.size(),
+                     " probes for methodDef: ", methodHandler->GetMethodDef());
+
+        for (const auto& probe : probes)
+        {
+            const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
+            if (spanProbe != nullptr)
+            {
+                spanOnMethodProbes.emplace_back(spanProbe);
+                continue;
+            }
+
+            const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
+            if (methodProbe != nullptr)
+            {
+                methodProbes.emplace_back(methodProbe);
+                continue;
+            }
+
+            const auto lineProbe = std::dynamic_pointer_cast<LineProbeDefinition>(probe);
+            if (lineProbe != nullptr)
+            {
+                lineProbes.emplace_back(lineProbe);
+                continue;
+            }
+        }
+
+        if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
+        {
+            // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation
+            // while the method got executed.
+            Logger::Info("There are no method probes, lines probes and span probes for methodDef",
+                         methodHandler->GetMethodDef());
+            return S_OK;
+        }
+        else
+        {
+            Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
+                         spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
+
+            const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanOnMethodProbes);
+            if (hr != S_OK)
+            {
+                // Set the method IL body
+
+                const auto methodIdOfKickoff =
+                    fault_tolerant::FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(moduleId,
+                                                                                                             methodId);
+
+                if (methodIdOfKickoff == mdTokenNil)
+                {
+                    return S_OK;
+                }
+
+                const auto [pMethodBytes, methodSize] =
+                    fault_tolerant::FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
+
+                methodHandler->GetFunctionControl()->SetILFunctionBody(methodSize, pMethodBytes);
+            }
+        }
+
+        return S_OK;   
     }
     else
     {
-        Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
-                     spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
-
-        const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanOnMethodProbes);
+        // No kickoff? no instrumentation.
+        return S_OK;
     }
-
-    return S_OK;
 }
 
 /// <summary>
@@ -843,37 +1239,32 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
         rewriterWrapper.LoadLocal(returnValueIndex);
     }
 
-    // Changes all returns to a LEAVE.S (including branches to `ret`)
+    // Changes all returns to a LEAVE.S
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
     {
         if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
         {
-            if (!isVoid)
+            if (isVoid)
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
+                pInstr->m_opcode = CEE_LEAVE_S;
+                pInstr->m_pTarget = endFinallyInstr->m_pNext;
             }
-            pInstr->m_opcode = CEE_LEAVE_S;
-            pInstr->m_pTarget = endFinallyInstr->m_pNext;
-        }
-        else if (ILRewriter::IsBranchTarget(pInstr) && pInstr->m_pTarget->m_opcode == CEE_RET)
-        {
-            if (!isVoid)
+            else
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
-
-                // Unconditional branching instructions (`br`) do not pop any value from the top of the stack.
-                // Other conditional branches, though, do mutate the evaluation stack (e.g `brtrue` pops
-                // the top of the stack and jumps to the target if it's non-zero/true).
-                // If we are dealing with conditional branches that changes the evaluation stack, we fix
-                // the evaluation stack accordingly by loading it back in case we are not branching.
-                if (pInstr->m_opcode != CEE_BR && pInstr->m_opcode != CEE_BR_S &&
-                    pInstr->m_pNext != endFinallyInstr->m_pNext)
+                pInstr->m_opcode = CEE_STLOC;
+                pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                if (pInstr->m_Arg16 < 0)
                 {
-                    rewriterWrapper.SetILPosition(pInstr->m_pNext);
-                    rewriterWrapper.LoadLocal(returnValueIndex);
+                    // We check if the conversion returned negative numbers.
+                    Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower "
+                                  "than zero.");
+                    return S_FALSE;
                 }
+
+                ILInstr* leaveInstr = rewriter.NewILInstr();
+                leaveInstr->m_opcode = CEE_LEAVE_S;
+                leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                rewriter.InsertAfter(pInstr, leaveInstr);
             }
         }
     }
@@ -1054,37 +1445,32 @@ HRESULT DebuggerMethodRewriter::ApplyMethodSpanProbe(
         rewriterWrapper.LoadLocal(returnValueIndex);
     }
 
-    // Changes all returns to a LEAVE.S (including branches to `ret`)
+    // Changes all returns to a LEAVE.S
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
     {
         if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
         {
-            if (!isVoid)
+            if (isVoid)
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
+                pInstr->m_opcode = CEE_LEAVE_S;
+                pInstr->m_pTarget = endFinallyInstr->m_pNext;
             }
-            pInstr->m_opcode = CEE_LEAVE_S;
-            pInstr->m_pTarget = endFinallyInstr->m_pNext;
-        }
-        else if (ILRewriter::IsBranchTarget(pInstr) && pInstr->m_pTarget->m_opcode == CEE_RET)
-        {
-            if (!isVoid)
+            else
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
-
-                // Unconditional branching instructions (`br`) do not pop any value from the top of the stack.
-                // Other conditional branches, though, do mutate the evaluation stack (e.g `brtrue` pops
-                // the top of the stack and jumps to the target if it's non-zero/true).
-                // If we are dealing with conditional branches that changes the evaluation stack, we fix
-                // the evaluation stack accordingly by loading it back in case we are not branching.
-                if (pInstr->m_opcode != CEE_BR && pInstr->m_opcode != CEE_BR_S &&
-                    pInstr->m_pNext != endFinallyInstr->m_pNext)
+                pInstr->m_opcode = CEE_STLOC;
+                pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                if (pInstr->m_Arg16 < 0)
                 {
-                    rewriterWrapper.SetILPosition(pInstr->m_pNext);
-                    rewriterWrapper.LoadLocal(returnValueIndex);
+                    // We check if the conversion returned negative numbers.
+                    Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower "
+                                  "than zero.");
+                    return S_FALSE;
                 }
+
+                ILInstr* leaveInstr = rewriter.NewILInstr();
+                leaveInstr->m_opcode = CEE_LEAVE_S;
+                leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                rewriter.InsertAfter(pInstr, leaveInstr);
             }
         }
     }
@@ -1837,6 +2223,18 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
     return S_OK;
 }
 
+bool DebuggerMethodRewriter::DoesILContainUnsupportedInstructions(ILRewriter& rewriter)
+{
+    for (auto pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (pInstr->m_opcode == CEE_JMP || pInstr->m_opcode == CEE_TAILCALL /* F# */ )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                   const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine)
 {
@@ -1997,6 +2395,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
 
+    if (caller->type.name.rfind(L'@') != std::wstring::npos)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Encountered a type with '@' in it's name - it's not supported since the realization of generic is non-deterministic (it does not contain the ` in it's name if it's a generic type)."
+                     "token=", function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, general_error_message);
+        return E_NOTIMPL;
+    }
+    
     if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
     {
         // Internal Jira ticket: DEBUG-1063, DEBUG-1065.
@@ -2030,6 +2436,18 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      function_token);
         MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_import_method_il);
         return E_FAIL;
+    }
+
+    if (caller->type.name.rfind(L'@') != std::wstring::npos)
+    {
+        return E_NOTIMPL;
+    }
+
+    if (DoesILContainUnsupportedInstructions(rewriter))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite(): IL contain unsupported instructions (i.e. jmp, tail)");
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, non_supported_compiled_bytecode);
+        return E_NOTIMPL;
     }
 
     // *** Store the original il code text if the dump_il option is enabled.
@@ -2125,7 +2543,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
         bool isTypeIsByRefLike = false;
         hr = IsTypeByRefLike(module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
-
         if (FAILED(hr))
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");
