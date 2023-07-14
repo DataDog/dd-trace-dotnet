@@ -69,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         {
             SpanKinds.Consumer => $"{SnsOperationName}.process",
             SpanKinds.Producer => $"{SnsOperationName}.send",
-            _ => SqsRequestOperationName
+            _ => $"{SnsOperationName}.request"
         };
     }
 }
