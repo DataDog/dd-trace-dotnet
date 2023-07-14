@@ -312,7 +312,15 @@
     "MaxVersionExclusive": "3.0.0",
     "SpecificVersions": [
       "2.2.*",
+      "2.4.3",
       "2.*.*"
+    ],
+    "VersionConditions": [
+      {
+        "MinVersion": "2.4.5",
+        "MaxVersionExclusive": "3.0.0",
+        "ExcludeTargetFrameworks": [ "netcoreapp2.1", "netcoreapp3.0", "netcoreapp3.1", "net5.0" ]
+      }
     ]
   },
   {

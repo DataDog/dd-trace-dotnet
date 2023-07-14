@@ -28,18 +28,18 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.107.10 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.107.10" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.108.1 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.108.1" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.84 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.84" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.88 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.88" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.103.6 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.103.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.103.10 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.103.10" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -73,8 +73,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.3.0 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.3.0" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.3.3 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.3.3" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -98,8 +98,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.1.1 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.2.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.2.0" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.1 -->
-    <PackageReference Include="NLog" Version="5.2.1" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.2 -->
+    <PackageReference Include="NLog" Version="5.2.2" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -174,7 +174,7 @@
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
     <!-- Latest package https://www.nuget.org/packages/Serilog/3.0.1 -->
-    <PackageReference Include="Serilog" Version="3.0.1" />
+    <PackageReference Include="Serilog" Version="2.12.0" />
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
@@ -193,8 +193,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.8 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.8" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.9 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.9" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
@@ -203,8 +203,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.116 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.6.116" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.122 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
@@ -223,13 +223,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.4.2 -->
-    <PackageReference Include="xunit" Version="2.4.2" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.5.0 -->
+    <PackageReference Include="xunit" Version="2.5.0" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.5.0 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.5.0" />
 
     <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
     <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
@@ -258,8 +258,8 @@
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!-- Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.8 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.8" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.9 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.9" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
@@ -268,13 +268,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.54.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.54.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.54.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
 
   </ItemGroup>
 
