@@ -126,9 +126,7 @@ namespace Datadog.Trace.PlatformHelpers
 
             if (tracer.Settings.IpHeaderEnabled || security.Enabled)
             {
-                var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
-                Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
-                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+                AddIpToTags(tracer, httpContext, request, tags);
             }
 
             if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
@@ -141,6 +139,14 @@ namespace Datadog.Trace.PlatformHelpers
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
 
             return scope;
+
+            // Declared as a local static method to avoid the closure and allocation when the security or the ipheader is disabled
+            static void AddIpToTags(Tracer tracer, HttpContext httpContext, HttpRequest request, AspNetCoreTags tags)
+            {
+                var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
+                Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
+                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+            }
         }
 
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope scope, HttpContext httpContext)

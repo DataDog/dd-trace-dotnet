@@ -7,24 +7,17 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
-using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
-using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.Headers;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
-using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Util;
-using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -58,6 +51,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         private Tracer _tracer;
         private Security _security;
+        private int _eventNameCacheFlags = 0; // 1 | 2 | 4 | 8 | 16 | 32 | 64 = (7 Flags) =  127 all enabled
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
         private string _mvcAfterActionEventKey;
@@ -99,13 +93,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
             if (ReferenceEquals(eventName, _mvcAfterActionEventKey))
             {
-                OnMvcAfterAction(arg);
-                return;
-            }
-
-            if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) || ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
-            {
-                OnHostingUnhandledException(arg);
+                OnMvcAfterAction();
                 return;
             }
 
@@ -118,6 +106,12 @@ namespace Datadog.Trace.DiagnosticListeners
             if (ReferenceEquals(eventName, _routingEndpointMatchedKey))
             {
                 OnRoutingEndpointMatched(arg);
+                return;
+            }
+
+            if (ReferenceEquals(eventName, _hostingUnhandledExceptionEventKey) || ReferenceEquals(eventName, _diagnosticsUnhandledExceptionEventKey))
+            {
+                OnHostingUnhandledException(arg);
                 return;
             }
 
@@ -175,18 +169,69 @@ namespace Datadog.Trace.DiagnosticListeners
             ActionDescriptor actionDescriptor = typedArg.ActionDescriptor;
             IDictionary<string, string> routeValues = actionDescriptor.RouteValues;
 
-            string controllerName = routeValues.TryGetValue("controller", out controllerName)
-                                        ? controllerName?.ToLowerInvariant()
-                                        : null;
-            string actionName = routeValues.TryGetValue("action", out actionName)
-                                    ? actionName?.ToLowerInvariant()
-                                    : null;
-            string areaName = routeValues.TryGetValue("area", out areaName)
-                                  ? areaName?.ToLowerInvariant()
-                                  : null;
-            string pagePath = routeValues.TryGetValue("page", out pagePath)
-                                  ? pagePath?.ToLowerInvariant()
-                                  : null;
+            string controllerName = null;
+            string actionName = null;
+            string areaName = null;
+            string pagePath = null;
+
+            // if RouteValues is a dictionary we can cast and use the internal Enumerator with no allocations.
+            if (routeValues is Dictionary<string, string> dctRouteValues)
+            {
+                // We can also avoid calculating the key hash all the time and just enumerate and bailout when we have all the data.
+                int finishBits = 0;
+                foreach (var routeValue in dctRouteValues)
+                {
+                    // 1 | 2 | 4 | 6 Flags
+                    if (finishBits == 13)
+                    {
+                        break;
+                    }
+
+                    if (routeValue.Key == "controller")
+                    {
+                        controllerName = routeValue.Value;
+                        finishBits |= 1;
+                        continue;
+                    }
+
+                    if (routeValue.Key == "action")
+                    {
+                        actionName = routeValue.Value;
+                        finishBits |= 2;
+                        continue;
+                    }
+
+                    if (routeValue.Key == "area")
+                    {
+                        areaName = routeValue.Value;
+                        finishBits |= 4;
+                        continue;
+                    }
+
+                    if (routeValue.Key == "page")
+                    {
+                        pagePath = routeValue.Value;
+                        finishBits |= 6;
+                        continue;
+                    }
+                }
+            }
+            else
+            {
+                controllerName = routeValues.TryGetValue("controller", out controllerName)
+                                     ? controllerName?.ToLowerInvariant()
+                                     : null;
+                actionName = routeValues.TryGetValue("action", out actionName)
+                                 ? actionName?.ToLowerInvariant()
+                                 : null;
+                areaName = routeValues.TryGetValue("area", out areaName)
+                               ? areaName?.ToLowerInvariant()
+                               : null;
+                pagePath = routeValues.TryGetValue("page", out pagePath)
+                               ? pagePath?.ToLowerInvariant()
+                               : null;
+            }
+
             string aspNetRoute = trackingFeature.Route;
             string resourceName = trackingFeature.ResourceName;
 
@@ -260,10 +305,15 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnNextSlow(string eventName, object arg)
         {
             var lastChar = eventName[^1];
-            if (lastChar == 't' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Start"))
+            if (lastChar == 't')
             {
-                _hostingHttpRequestInStartEventKey = eventName;
-                OnHostingHttpRequestInStart(arg);
+                if ((_eventNameCacheFlags & 1) == 0 && eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Start")
+                {
+                    _hostingHttpRequestInStartEventKey = eventName;
+                    _eventNameCacheFlags |= 1;
+                    OnHostingHttpRequestInStart(arg);
+                }
+
                 return;
             }
 
@@ -271,41 +321,55 @@ namespace Datadog.Trace.DiagnosticListeners
             {
                 var suffix = eventName.AsSpan().Slice(PrefixLength);
 
-                if (suffix.SequenceEqual("Mvc.BeforeAction"))
+                if ((_eventNameCacheFlags & 2) == 0 && suffix is "Mvc.BeforeAction")
                 {
                     _mvcBeforeActionEventKey = eventName;
+                    _eventNameCacheFlags |= 2;
                     OnMvcBeforeAction(arg);
                 }
-                else if (suffix.SequenceEqual("Mvc.AfterAction"))
+                else if ((_eventNameCacheFlags & 4) == 0 && suffix is "Mvc.AfterAction")
                 {
                     _mvcAfterActionEventKey = eventName;
-                    OnMvcAfterAction(arg);
+                    _eventNameCacheFlags |= 4;
+                    OnMvcAfterAction();
                 }
-                else if (suffix.SequenceEqual("Hosting.UnhandledException"))
+                else if ((_eventNameCacheFlags & 8) == 0 && suffix is "Hosting.UnhandledException")
                 {
                     _hostingUnhandledExceptionEventKey = eventName;
+                    _eventNameCacheFlags |= 8;
                     OnHostingUnhandledException(arg);
                 }
-                else if (suffix.SequenceEqual("Diagnostics.UnhandledException"))
+                else if ((_eventNameCacheFlags & 16) == 0 && suffix is "Diagnostics.UnhandledException")
                 {
                     _diagnosticsUnhandledExceptionEventKey = eventName;
+                    _eventNameCacheFlags |= 16;
                     OnHostingUnhandledException(arg);
                 }
 
                 return;
             }
 
-            if (lastChar == 'p' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Hosting.HttpRequestIn.Stop"))
+            if (lastChar == 'p')
             {
-                _hostingHttpRequestInStopEventKey = eventName;
-                OnHostingHttpRequestInStop(arg);
+                if ((_eventNameCacheFlags & 32) == 0 && eventName.AsSpan().Slice(PrefixLength) is "Hosting.HttpRequestIn.Stop")
+                {
+                    _hostingHttpRequestInStopEventKey = eventName;
+                    _eventNameCacheFlags |= 32;
+                    OnHostingHttpRequestInStop(arg);
+                }
+
                 return;
             }
 
-            if (lastChar == 'd' && eventName.AsSpan().Slice(PrefixLength).SequenceEqual("Routing.EndpointMatched"))
+            if (lastChar == 'd')
             {
-                _routingEndpointMatchedKey = eventName;
-                OnRoutingEndpointMatched(arg);
+                if ((_eventNameCacheFlags & 64) == 0 && eventName.AsSpan().Slice(PrefixLength) is "Routing.EndpointMatched")
+                {
+                    _routingEndpointMatchedKey = eventName;
+                    _eventNameCacheFlags |= 64;
+                    OnRoutingEndpointMatched(arg);
+                }
+
                 return;
             }
         }
@@ -315,51 +379,69 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var lastChar = eventName[eventName.Length - 1];
 
-            if (lastChar == 't' && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
+            if (lastChar == 't')
             {
-                _hostingHttpRequestInStartEventKey = eventName;
-                OnHostingHttpRequestInStart(arg);
-                return;
-            }
-
-            if (lastChar == 'n')
-            {
-                switch (eventName)
+                if ((_eventNameCacheFlags & 1) == 0 && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Start")
                 {
-                    case "Microsoft.AspNetCore.Mvc.BeforeAction":
-                        _mvcBeforeActionEventKey = eventName;
-                        OnMvcBeforeAction(arg);
-                        break;
-
-                    case "Microsoft.AspNetCore.Mvc.AfterAction":
-                        _mvcAfterActionEventKey = eventName;
-                        OnMvcAfterAction(arg);
-                        break;
-
-                    case "Microsoft.AspNetCore.Hosting.UnhandledException":
-                        _hostingUnhandledExceptionEventKey = eventName;
-                        OnHostingUnhandledException(arg);
-                        break;
-                    case "Microsoft.AspNetCore.Diagnostics.UnhandledException":
-                        _diagnosticsUnhandledExceptionEventKey = eventName;
-                        OnHostingUnhandledException(arg);
-                        break;
+                    _hostingHttpRequestInStartEventKey = eventName;
+                    _eventNameCacheFlags |= 1;
+                    OnHostingHttpRequestInStart(arg);
                 }
 
                 return;
             }
 
-            if (lastChar == 'p' && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+            if (lastChar == 'n')
             {
-                _hostingHttpRequestInStopEventKey = eventName;
-                OnHostingHttpRequestInStop(arg);
+                if ((_eventNameCacheFlags & 2) == 0 && eventName == "Microsoft.AspNetCore.Mvc.BeforeAction")
+                {
+                    _mvcBeforeActionEventKey = eventName;
+                    _eventNameCacheFlags |= 2;
+                    OnMvcBeforeAction(arg);
+                }
+                else if ((_eventNameCacheFlags & 4) == 0 && eventName == "Microsoft.AspNetCore.Mvc.AfterAction")
+                {
+                    _mvcAfterActionEventKey = eventName;
+                    _eventNameCacheFlags |= 4;
+                    OnMvcAfterAction();
+                }
+                else if ((_eventNameCacheFlags & 8) == 0 && eventName == "Microsoft.AspNetCore.Hosting.UnhandledException")
+                {
+                    _hostingUnhandledExceptionEventKey = eventName;
+                    _eventNameCacheFlags |= 8;
+                    OnHostingUnhandledException(arg);
+                }
+                else if ((_eventNameCacheFlags & 16) == 0 && eventName == "Microsoft.AspNetCore.Diagnostics.UnhandledException")
+                {
+                    _diagnosticsUnhandledExceptionEventKey = eventName;
+                    _eventNameCacheFlags |= 16;
+                    OnHostingUnhandledException(arg);
+                }
+
                 return;
             }
 
-            if (lastChar == 'd' && eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+            if (lastChar == 'p')
             {
-                _routingEndpointMatchedKey = eventName;
-                OnRoutingEndpointMatched(arg);
+                if ((_eventNameCacheFlags & 32) == 0 && eventName == "Microsoft.AspNetCore.Hosting.HttpRequestIn.Stop")
+                {
+                    _hostingHttpRequestInStopEventKey = eventName;
+                    _eventNameCacheFlags |= 32;
+                    OnHostingHttpRequestInStop(arg);
+                }
+
+                return;
+            }
+
+            if (lastChar == 'd')
+            {
+                if ((_eventNameCacheFlags & 64) == 0 && eventName == "Microsoft.AspNetCore.Routing.EndpointMatched")
+                {
+                    _routingEndpointMatchedKey = eventName;
+                    _eventNameCacheFlags |= 64;
+                    OnRoutingEndpointMatched(arg);
+                }
+
                 return;
             }
         }
@@ -368,29 +450,22 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
-            var security = CurrentSecurity;
-
-            var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
-            var shouldSecure = security.Enabled;
-
-            if (!shouldTrace && !shouldSecure)
+            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
 
             if (arg.TryDuckCast<HttpRequestInStartStruct>(out var requestStruct))
             {
-                HttpContext httpContext = requestStruct.HttpContext;
-                if (shouldTrace)
+                // Use an empty resource name here, as we will likely replace it as part of the request
+                // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
+                var httpContext = requestStruct.HttpContext;
+                var security = CurrentSecurity;
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext, resourceName: string.Empty);
+                if (security.Enabled)
                 {
-                    // Use an empty resource name here, as we will likely replace it as part of the request
-                    // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
-                    var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, CurrentSecurity, httpContext, resourceName: string.Empty);
-                    if (shouldSecure)
-                    {
-                        CoreHttpContextStore.Instance.Set(httpContext);
-                        SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
-                    }
+                    CoreHttpContextStore.Instance.Set(httpContext);
+                    SecurityCoordinator.ReportWafInitInfoOnce(security, scope.Span);
                 }
             }
         }
@@ -485,16 +560,41 @@ namespace Datadog.Trace.DiagnosticListeners
                 RouteValueDictionary routeValues = request.RouteValues;
                 // No need to ToLowerInvariant() these strings, as we lower case
                 // the whole route later
-                object raw;
-                string controllerName = routeValues.TryGetValue("controller", out raw)
-                                            ? raw as string
-                                            : null;
-                string actionName = routeValues.TryGetValue("action", out raw)
-                                        ? raw as string
-                                        : null;
-                string areaName = routeValues.TryGetValue("area", out raw)
-                                      ? raw as string
-                                      : null;
+                string controllerName = null;
+                string actionName = null;
+                string areaName = null;
+
+                // Let's avoid using TryGetValue multiple times and enumerate the Dictionary and bailout when we get all the data.
+                var finishBits = 0;
+                foreach (var routeValue in routeValues)
+                {
+                    // 1 | 2 | 4 Flags
+                    if (finishBits == 7)
+                    {
+                        break;
+                    }
+
+                    if (routeValue.Key == "controller")
+                    {
+                        controllerName = routeValue.Value as string;
+                        finishBits |= 1;
+                        continue;
+                    }
+
+                    if (routeValue.Key == "action")
+                    {
+                        actionName = routeValue.Value as string;
+                        finishBits |= 2;
+                        continue;
+                    }
+
+                    if (routeValue.Key == "area")
+                    {
+                        areaName = routeValue.Value as string;
+                        finishBits |= 4;
+                        continue;
+                    }
+                }
 
                 var resourcePathName = AspNetCoreResourceNameHelper.SimplifyRoutePattern(
                     routePattern,
@@ -573,7 +673,7 @@ namespace Datadog.Trace.DiagnosticListeners
             }
         }
 
-        private void OnMvcAfterAction(object arg)
+        private void OnMvcAfterAction()
         {
             var tracer = CurrentTracer;
 
@@ -584,32 +684,37 @@ namespace Datadog.Trace.DiagnosticListeners
             }
 
             var scope = tracer.InternalActiveScope;
-
             if (scope is not null && ReferenceEquals(scope.Span.OperationName, MvcOperationName))
             {
-                try
+                // Extract data from the Activity
+                if (Activity.ActivityListener.GetCurrentActivity() is { } activity)
                 {
-                    // Extract data from the Activity
-                    var activity = Activity.ActivityListener.GetCurrentActivity();
-                    if (activity is not null)
-                    {
-                        foreach (var activityTag in activity.Tags)
-                        {
-                            scope.Span.SetTag(activityTag.Key, activityTag.Value);
-                        }
-
-                        foreach (var activityBag in activity.Baggage)
-                        {
-                            scope.Span.SetTag(activityBag.Key, activityBag.Value);
-                        }
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error extracting activity data.");
+                    // If the activity listener is enabled and we have an activity we copy the info to the span.
+                    SetActivityInfo(activity, scope);
                 }
 
                 scope.Dispose();
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void SetActivityInfo(IActivity activity, Scope scope)
+        {
+            try
+            {
+                foreach (var activityTag in activity.Tags)
+                {
+                    scope.Span.SetTag(activityTag.Key, activityTag.Value);
+                }
+
+                foreach (var activityBag in activity.Baggage)
+                {
+                    scope.Span.SetTag(activityBag.Key, activityBag.Value);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error extracting activity data.");
             }
         }
 
