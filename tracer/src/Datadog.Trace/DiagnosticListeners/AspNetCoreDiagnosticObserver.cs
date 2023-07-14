@@ -569,11 +569,10 @@ namespace Datadog.Trace.DiagnosticListeners
                 string areaName = null;
 
                 // Let's avoid using TryGetValue multiple times and enumerate the Dictionary and bailout when we get all the data.
-                var finishBits = 0;
+                var count = 0;
                 foreach (var routeValue in routeValues)
                 {
-                    // 1 | 2 | 4 Flags
-                    if (finishBits == 7)
+                    if (count == 3)
                     {
                         break;
                     }
@@ -581,21 +580,21 @@ namespace Datadog.Trace.DiagnosticListeners
                     if (string.Equals(routeValue.Key, "controller", StringComparison.OrdinalIgnoreCase))
                     {
                         controllerName = routeValue.Value as string;
-                        finishBits |= 1;
+                        count++;
                         continue;
                     }
 
                     if (string.Equals(routeValue.Key, "action", StringComparison.OrdinalIgnoreCase))
                     {
                         actionName = routeValue.Value as string;
-                        finishBits |= 2;
+                        count++;
                         continue;
                     }
 
                     if (string.Equals(routeValue.Key, "area", StringComparison.OrdinalIgnoreCase))
                     {
                         areaName = routeValue.Value as string;
-                        finishBits |= 4;
+                        count++;
                         continue;
                     }
                 }
