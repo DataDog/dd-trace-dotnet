@@ -24,7 +24,8 @@ const WSTRING skip_assembly_prefixes[]{
     WStr("csc"),
     WStr("DuckTypeNotVisibleAssembly"),
     WStr("Datadog.Trace"),
-    WStr("Newtonsoft.Json")};
+    WStr("Newtonsoft.Json"),
+    WStr("xunit")};
 
 const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("netstandard"),
@@ -35,7 +36,8 @@ const WSTRING skip_assemblies[]{WStr("mscorlib"),
                                 WStr("Datadog.AutoInstrumentation.ManagedLoader"),
                                 WStr("ISymWrapper"),
                                 WStr("Datadog.Trace"),
-                                WStr("MSBuild")};
+                                WStr("MSBuild"),
+                                WStr("MySql.Data")};
 
 const WSTRING dynamic_span_operation_name = WStr("dd.dynamic.span");
 
@@ -60,6 +62,8 @@ const WSTRING invalid_probe_probe_byreflike_return_not_supported =
     WStr("Dynamic Instrumentation of methods that return a `ref struct` is not yet supported.");
 const WSTRING invalid_probe_type_is_by_ref_like =
     WStr("Dynamic Instrumentation of methods in a `ref-struct` is not yet supported.");
+const WSTRING non_supported_compiled_bytecode =
+    WStr("Compiled code with `tail` call is not yet supported (F#).");
 const WSTRING invalid_probe_failed_to_instrument_method_probe = 
     GetGenericErrorMessageWithErrorCode(1);
 const WSTRING invalid_probe_failed_to_instrument_line_probe = 

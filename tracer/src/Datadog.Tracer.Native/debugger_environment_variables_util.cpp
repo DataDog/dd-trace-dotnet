@@ -14,4 +14,9 @@ bool IsDebuggerInstrumentAllEnabled()
     CheckIfTrue(GetEnvironmentValue(environment::internal_instrument_all_enabled));
 }
 
+bool IsFaultTolerantInstrumentationEnabled()
+{
+    CheckIfTrue(GetEnvironmentValue(environment::fault_tolerant_instrumentation_enabled));
+}
+
 } // namespace debugger

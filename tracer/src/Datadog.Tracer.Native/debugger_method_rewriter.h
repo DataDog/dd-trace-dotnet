@@ -115,7 +115,7 @@ private:
                                   ULONG returnValueIndex, mdToken callTargetReturnToken, ILInstr* firstInstruction,
                                   int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
                                   std::vector<EHClause>& newClauses) const;
-
+    static bool DoesILContainUnsupportedInstructions(ILRewriter& rewriter);
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                     SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;

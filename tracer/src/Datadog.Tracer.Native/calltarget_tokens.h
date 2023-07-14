@@ -1,6 +1,8 @@
 #ifndef DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 #define DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 
+#define BUFFER_SIZE 2000
+
 #include <corhlpr.h>
 
 #include <mutex>
@@ -35,7 +37,6 @@ private:
     mdMemberRef callTargetReturnVoidTypeGetDefault = mdMemberRefNil;
     mdMemberRef getDefaultMemberRef = mdMemberRefNil;
 
-    HRESULT EnsureCorLibTokens();
     mdTypeRef GetTargetStateTypeRef();
     mdTypeRef GetTargetVoidReturnTypeRef();
     mdMemberRef GetCallTargetStateDefaultMemberRef();
@@ -70,12 +71,15 @@ protected:
     virtual const shared::WSTRING& GetCallTargetStateType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnType() = 0;
     virtual const shared::WSTRING& GetCallTargetReturnGenericType() = 0;
-    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod);
+    virtual void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                     ULONG& signatureSize, bool isAsyncMethod);
 
     CallTargetTokens(ModuleMetadata* moduleMetadataPtr, bool enableByRefInstrumentation,
                      bool enableCallTargetStateByRef);
 
 public:
+    HRESULT EnsureCorLibTokens();
+
     virtual int GetAdditionalLocalsCount();
     mdTypeRef GetObjectTypeRef();
     mdTypeRef GetExceptionTypeRef();

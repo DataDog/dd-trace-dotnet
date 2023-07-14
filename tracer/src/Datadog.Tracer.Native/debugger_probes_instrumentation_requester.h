@@ -19,8 +19,11 @@ private:
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
     bool is_debugger_enabled = false;
+    bool is_fault_tolerant_instrumentation_enabled = false;
+    bool flag = true;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
+    static std::wstring GenerateRandomProbeId();
 
     void RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength,
                       std::set<MethodIdentifier>& revertRequests);
@@ -32,6 +35,10 @@ private:
     void DetermineReInstrumentProbes(std::set<MethodIdentifier>& revertRequests, std::set<MethodIdentifier>& reInstrumentRequests) const;
 
     bool ProbeIdExists(const WCHAR* probeId);
+
+    void HandleFaultTolerantInstrumentationIfEnabled(ModuleID moduleId, const ModuleInfo& moduleInfo,
+                                            ComPtr<IMetaDataImport2> metadataImport,
+                                                     ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef) const;
 
 public:
     DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
@@ -46,7 +53,8 @@ public:
     const std::vector<std::shared_ptr<ProbeDefinition>>& GetProbes() const;
     DebuggerRejitPreprocessor* GetPreprocessor();
     void RequestRejitForLoadedModule(ModuleID moduleId);
-    void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId) const;
+
+    void ModuleLoadFinished_AddMetadataToModule(ModuleID moduleId);
     HRESULT STDMETHODCALLTYPE ModuleLoadFinished(ModuleID moduleId);
 
     static HRESULT NotifyReJITError(ModuleID moduleId, mdMethodDef methodId, FunctionID functionId, HRESULT hrStatus);
