@@ -357,7 +357,15 @@ namespace Datadog.Trace.Agent
                 response?.Dispose();
             }
 
-            _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+            if (response.StatusCode == 429)
+            {
+                var retryAfter = response.GetHeader("Retry-After");
+                _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
+            }
+            else
+            {
+                _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+            }
 
             return true;
         }
