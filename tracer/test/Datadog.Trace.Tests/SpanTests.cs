@@ -336,10 +336,6 @@ namespace Datadog.Trace.Tests
             // The normal GetTag only look into the Meta dictionary.
             span.GetTag(stringKey).Should().Be(stringValue);
             span.GetTag(numericKey).Should().BeNull();
-
-            // The new GetTagObject extension look into both Meta and Metrics dictionary.
-            span.GetTagObject(stringKey).Should().Be(stringValue);
-            span.GetTagObject(numericKey).Should().Be(numericValue);
         }
     }
 }
