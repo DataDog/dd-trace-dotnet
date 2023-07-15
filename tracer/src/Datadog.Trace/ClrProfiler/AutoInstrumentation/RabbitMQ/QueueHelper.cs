@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Runtime.CompilerServices;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
@@ -12,26 +13,40 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ;
 internal class QueueHelper
 {
     // A map between RabbitMQ Consumer<TKey,TValue> and the corresponding queue
-    private static readonly ConditionalWeakTable<string, string> ConsumerToQueueMap = new();
+    private static readonly ConditionalWeakTable<object, string> ConsumerToQueueMap = new();
 
-    public static void SetQueue(string consumerTag, string queue)
+    public static void SetQueue(object consumer, string queue)
     {
 #if NETCOREAPP3_1_OR_GREATER
-        ConsumerToQueueMap.AddOrUpdate(consumerTag, queue);
+        ConsumerToQueueMap.AddOrUpdate(consumer, queue);
 #else
-        ConsumerToQueueMap.GetValue(consumerTag, x => queue);
+        ConsumerToQueueMap.GetValue(consumer, x => queue);
 #endif
+        Console.WriteLine("Done setting queue: " + consumer + ", " + queue);
+
+        if (ConsumerToQueueMap.TryGetValue(consumer, out var readQueue))
+        {
+            Console.WriteLine("Able to immediately read queue: " + consumer + ", " + readQueue);
+            Console.WriteLine(ConsumerToQueueMap);
+        }
+        else
+        {
+            Console.WriteLine("UNABLE to immediately read queue: " + consumer);
+        }
     }
 
-    public static bool TryGetQueue(string consumerTag, out string? queue)
+    public static bool TryGetQueue(object consumer, out string? queue)
     {
+        Console.WriteLine("TryGetQueue: " + consumer);
+        Console.WriteLine(ConsumerToQueueMap);
         queue = null;
 
-        return ConsumerToQueueMap.TryGetValue(consumerTag, out queue);
+        return ConsumerToQueueMap.TryGetValue(consumer, out queue);
     }
 
-    public static void RemoveQueue(string consumerTag)
+    public static void RemoveQueue(object consumer)
     {
-        ConsumerToQueueMap.Remove(consumerTag);
+        Console.WriteLine("RemoveQueue: " + consumer);
+        ConsumerToQueueMap.Remove(consumer);
     }
 }
