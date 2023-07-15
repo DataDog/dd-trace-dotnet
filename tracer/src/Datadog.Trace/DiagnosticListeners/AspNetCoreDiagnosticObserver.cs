@@ -18,6 +18,8 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
@@ -51,6 +53,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private static readonly AspNetCoreHttpRequestHandler AspNetCoreRequestHandler = new(Log, HttpRequestInOperationName, IntegrationId);
         private Tracer _tracer;
         private Security _security;
+        private bool? _integrationEnabled;
         private int _eventNameCacheFlags = 0; // 1 | 2 | 4 | 8 | 16 | 32 | 64 = (7 Flags) =  127 all enabled
         private string _hostingHttpRequestInStartEventKey;
         private string _mvcBeforeActionEventKey;
@@ -76,6 +79,15 @@ namespace Datadog.Trace.DiagnosticListeners
         private Tracer CurrentTracer => _tracer ?? (_tracer = Tracer.Instance);
 
         private Security CurrentSecurity => _security ?? (_security = Security.Instance);
+
+        private bool IsIntegrationEnabled
+        {
+            get
+            {
+                _integrationEnabled ??= CurrentTracer.Settings.IsIntegrationEnabled(IntegrationId);
+                return _integrationEnabled.Value;
+            }
+        }
 
         protected override void OnNext(string eventName, object arg)
         {
@@ -453,8 +465,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         private void OnHostingHttpRequestInStart(object arg)
         {
-            var tracer = CurrentTracer;
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!IsIntegrationEnabled)
             {
                 return;
             }
@@ -465,7 +476,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // If we don't, update it in OnHostingHttpRequestInStop or OnHostingUnhandledException
                 var httpContext = requestStruct.HttpContext;
                 var security = CurrentSecurity;
-                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(tracer, security, httpContext, resourceName: string.Empty);
+                var scope = AspNetCoreRequestHandler.StartAspNetCorePipelineScope(CurrentTracer, security, httpContext, resourceName: string.Empty);
                 if (security.Enabled)
                 {
                     CoreHttpContextStore.Instance.Set(httpContext);
@@ -478,24 +489,16 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
-                !tracer.Settings.RouteTemplateResourceNamesEnabled)
+            if (!IsIntegrationEnabled ||
+                !tracer.Settings.RouteTemplateResourceNamesEnabled ||
+                !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
             {
                 return;
             }
 
-            Span span = tracer.InternalActiveScope?.Span;
-
-            if (span != null)
+            if (tracer.InternalActiveScope?.Span is { Tags: AspNetCoreEndpointTags tags } span)
             {
-                var tags = span.Tags as AspNetCoreEndpointTags;
-                if (tags is null || !arg.TryDuckCast<HttpRequestInEndpointMatchedStruct>(out var typedArg))
-                {
-                    // Shouldn't happen in normal execution
-                    return;
-                }
-
-                HttpContext httpContext = typedArg.HttpContext;
+                var httpContext = typedArg.HttpContext;
                 var trackingFeature = httpContext.Features.Get<AspNetCoreHttpRequestHandler.RequestTrackingFeature>();
                 var isFirstExecution = trackingFeature.IsFirstPipelineExecution;
                 if (isFirstExecution)
@@ -607,7 +610,13 @@ namespace Datadog.Trace.DiagnosticListeners
                     actionName: actionName,
                     tracer.Settings.ExpandRouteTemplatesEnabled);
 
-                var resourceName = $"{tags.HttpMethod} {request.PathBase.ToUriComponent()}{resourcePathName}";
+                var resourceNameBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                resourceNameBuilder
+                   .Append(tags.HttpMethod)
+                   .Append(' ');
+                request.PathBase.FillBufferWithUriComponent(resourceNameBuilder);
+                resourceNameBuilder.Append(resourcePathName);
+                var resourceName = StringBuilderCache.GetStringAndRelease(resourceNameBuilder);
 
                 // NOTE: We could set the controller/action/area tags on the parent span
                 // But instead we re-extract them in the MVC endpoint as these are MVC
@@ -647,7 +656,7 @@ namespace Datadog.Trace.DiagnosticListeners
                 // NOTE: This event is the start of the action pipeline. The action has been selected, the route
                 //       has been selected but no filters have run and model binding hasn't occurred.
                 Span span = null;
-                if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
+                if (IsIntegrationEnabled)
                 {
                     if (!tracer.Settings.RouteTemplateResourceNamesEnabled)
                     {
@@ -676,7 +685,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!IsIntegrationEnabled ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -721,7 +730,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!IsIntegrationEnabled)
             {
                 return;
             }
@@ -736,7 +745,7 @@ namespace Datadog.Trace.DiagnosticListeners
         {
             var tracer = CurrentTracer;
 
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!IsIntegrationEnabled)
             {
                 return;
             }

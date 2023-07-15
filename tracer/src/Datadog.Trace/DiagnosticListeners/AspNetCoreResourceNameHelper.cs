@@ -6,6 +6,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util;
 using Microsoft.AspNetCore.Routing;
@@ -23,57 +24,36 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.RawText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                    + 1; // '/' prefix
-
-        var sb = StringBuilderCache.Acquire(maxSize);
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var pathSegment in routePattern.PathSegments)
         {
             var parts = 0;
             foreach (var part in pathSegment.DuckCast<AspNetCoreDiagnosticObserver.RoutePatternPathSegmentStruct>().Parts)
             {
-                parts++;
+                if (++parts == 1)
+                {
+                    sb.Append('/');
+                }
+
                 if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternContentPartStruct contentPart))
                 {
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
                     sb.Append(contentPart.Content);
                 }
                 else if (part.TryDuckCast(out AspNetCoreDiagnosticObserver.RoutePatternParameterPartStruct parameter))
                 {
                     var parameterName = parameter.Name;
+
                     if (parameterName.Equals("area", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (parts == 1)
-                        {
-                            sb.Append('/');
-                        }
-
                         sb.Append(areaName);
                     }
                     else if (parameterName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (parts == 1)
-                        {
-                            sb.Append('/');
-                        }
-
                         sb.Append(controllerName);
                     }
                     else if (parameterName.Equals("action", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (parts == 1)
-                        {
-                            sb.Append('/');
-                        }
-
                         sb.Append(actionName);
                     }
                     else
@@ -81,11 +61,6 @@ internal class AspNetCoreResourceNameHelper
                         var haveParameter = routeValueDictionary.TryGetValue(parameterName, out var value);
                         if (!parameter.IsOptional || haveParameter)
                         {
-                            if (parts == 1)
-                            {
-                                sb.Append('/');
-                            }
-
                             if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                             {
                                 // write the expanded parameter value
@@ -97,11 +72,8 @@ internal class AspNetCoreResourceNameHelper
                                 sb.Append('{');
                                 if (parameter.IsCatchAll)
                                 {
+                                    sb.Append('*');
                                     if (parameter.EncodeSlashes)
-                                    {
-                                        sb.Append("**");
-                                    }
-                                    else
                                     {
                                         sb.Append('*');
                                     }
@@ -116,14 +88,22 @@ internal class AspNetCoreResourceNameHelper
                                 sb.Append('}');
                             }
                         }
+                        else
+                        {
+                            sb.Remove(sb.Length - 1, 1);
+                        }
                     }
                 }
             }
         }
 
-        var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+        if (sb.Length == 0)
+        {
+            StringBuilderCache.Release(sb);
+            return "/";
+        }
 
-        return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
     }
 
     internal static string SimplifyRouteTemplate(
@@ -134,56 +114,33 @@ internal class AspNetCoreResourceNameHelper
         string actionName,
         bool expandRouteParameters)
     {
-        var maxSize = routePattern.TemplateText.Length
-                    + (string.IsNullOrEmpty(areaName) ? 0 : Math.Max(areaName.Length - 4, 0)) // "area".Length
-                    + (string.IsNullOrEmpty(controllerName) ? 0 : Math.Max(controllerName.Length - 10, 0)) // "controller".Length
-                    + (string.IsNullOrEmpty(actionName) ? 0 : Math.Max(actionName.Length - 6, 0)) // "action".Length
-                    + 1; // '/' prefix
-
-        var sb = StringBuilderCache.Acquire(maxSize);
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
 
         foreach (var pathSegment in routePattern.Segments)
         {
             var parts = 0;
             foreach (var part in pathSegment.Parts)
             {
-                parts++;
-                var partName = part.Name;
+                if (++parts == 1)
+                {
+                    sb.Append('/');
+                }
 
+                var partName = part.Name;
                 if (!part.IsParameter)
                 {
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
                     sb.Append(part.Text);
                 }
                 else if (partName.Equals("area", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
                     sb.Append(areaName);
                 }
                 else if (partName.Equals("controller", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
                     sb.Append(controllerName);
                 }
                 else if (partName.Equals("action", StringComparison.OrdinalIgnoreCase))
                 {
-                    if (parts == 1)
-                    {
-                        sb.Append('/');
-                    }
-
                     sb.Append(actionName);
                 }
                 else
@@ -191,11 +148,6 @@ internal class AspNetCoreResourceNameHelper
                     var haveParameter = routeValueDictionary.TryGetValue(partName, out var value);
                     if (!part.IsOptional || haveParameter)
                     {
-                        if (parts == 1)
-                        {
-                            sb.Append('/');
-                        }
-
                         if (expandRouteParameters && haveParameter && !IsIdentifierSegment(value, out var valueAsString))
                         {
                             // write the expanded parameter value
@@ -219,13 +171,21 @@ internal class AspNetCoreResourceNameHelper
                             sb.Append('}');
                         }
                     }
+                    else
+                    {
+                        sb.Remove(sb.Length - 1, 1);
+                    }
                 }
             }
         }
 
-        var simplifiedRoute = StringBuilderCache.GetStringAndRelease(sb);
+        if (sb.Length == 0)
+        {
+            StringBuilderCache.Release(sb);
+            return "/";
+        }
 
-        return string.IsNullOrEmpty(simplifiedRoute) ? "/" : simplifiedRoute.ToLowerInvariant();
+        return StringBuilderCache.GetStringAndRelease(sb).ToLowerInvariant();
     }
 
     private static bool IsIdentifierSegment(object value, [NotNullWhen(false)] out string valueAsString)
