@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "DeleteQueueAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.DeleteQueueResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.DeleteQueueResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.DeleteQueueRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
