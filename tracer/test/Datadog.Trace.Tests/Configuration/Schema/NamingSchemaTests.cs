@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var tags = new CommonTags();
             tags.SetTag(Tags.PeerService, "localhost");
             namingSchema.RemapPeerService(tags);
-            if (peerServiceTagsEnabled)
+            if (schemaVersion == SchemaVersion.V1 || peerServiceTagsEnabled)
             {
                 tags.GetTag(Tags.PeerService).Should().Be("AFancyServer");
             }
