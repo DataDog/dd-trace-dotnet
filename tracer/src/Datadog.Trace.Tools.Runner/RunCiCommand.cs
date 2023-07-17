@@ -30,14 +30,14 @@ namespace Datadog.Trace.Tools.Runner
         private readonly Option<string> _apiKeyOption = new("--api-key", "Enables agentless with the Api Key");
 
         public RunCiCommand(ApplicationContext applicationContext)
-            : base("run", "Run a command and instrument the tests")
+            : base("run", "Run a command in the CI and instrument the tests")
         {
             _applicationContext = applicationContext;
 
             _runSettings = new(this);
             AddOption(_apiKeyOption);
 
-            AddExample("dd-trace ci configure azp");
+            AddExample("dd-trace ci run -- dotnet test");
 
             this.SetHandler(ExecuteAsync);
         }

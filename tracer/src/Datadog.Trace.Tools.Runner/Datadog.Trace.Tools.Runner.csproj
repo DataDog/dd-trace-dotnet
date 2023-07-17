@@ -11,8 +11,8 @@
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <!--<DebugSymbols>false</DebugSymbols>
-    <DebugType>None</DebugType>-->
+    <DebugSymbols>false</DebugSymbols>
+    <DebugType>None</DebugType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->

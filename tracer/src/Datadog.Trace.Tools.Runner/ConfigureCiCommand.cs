@@ -20,7 +20,7 @@ namespace Datadog.Trace.Tools.Runner
             };
 
         private readonly ApplicationContext _applicationContext;
-        private readonly Argument<string> _nameArgument = new("ci-name", () => null);
+        private readonly Argument<string> _nameArgument = new("ci-name") { Arity = ArgumentArity.ZeroOrOne };
         private readonly CommonTracerSettings _tracerSettings;
 
         public ConfigureCiCommand(ApplicationContext applicationContext)

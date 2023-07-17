@@ -23,6 +23,7 @@ namespace Datadog.Trace.Tools.Runner
             _runSettings = new RunSettings(this);
 
             AddExample("dd-trace run -- dotnet myApp.dll");
+            AddExample("dd-trace run -- MyApp.exe");
 
             this.SetHandler(Execute);
         }
