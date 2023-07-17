@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tests.Configuration
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "function_name");
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "project_1");
 
-            Assert.True(ImmutableGCPFunctionSettings.GetIsGCPFunction());
+            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeTrue();
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
@@ -33,7 +33,7 @@ namespace Datadog.Trace.Tests.Configuration
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "function_name");
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "function_target");
 
-            Assert.True(ImmutableGCPFunctionSettings.GetIsGCPFunction());
+            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeTrue();
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void GetIsGCPFunctionFalseWhenNoFunctionsEnvVars()
         {
-            Assert.False(ImmutableGCPFunctionSettings.GetIsGCPFunction());
+            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeFalse();
         }
     }
 }
