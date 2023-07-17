@@ -154,20 +154,9 @@ namespace Datadog.Trace.Activity
 
             if (span.OperationName is null)
             {
-                if (activity5 is not null)
-                {
-                    // Later: Support config 'span_name_as_resource_name'
-                    // Later: Support config 'span_name_remappings'
-                    span.OperationName = activity5.Source.Name switch
-                    {
-                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
-                        _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
-                    };
-                }
-                else
-                {
-                    span.OperationName = activity.OperationName;
-                }
+                // Later: Support config 'span_name_as_resource_name'
+                // Later: Support config 'span_name_remappings'
+                span.OperationName = activity.OperationName;
             }
 
             // Update Service with a reasonable default
