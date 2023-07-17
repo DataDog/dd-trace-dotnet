@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.OutHost = tagsFromConnectionString.OutHost;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;

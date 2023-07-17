@@ -44,6 +44,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {messageQueue.Path}";
+
+                // TODO: PBT: I think this span should be measured when span kind is consumer or producer
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)

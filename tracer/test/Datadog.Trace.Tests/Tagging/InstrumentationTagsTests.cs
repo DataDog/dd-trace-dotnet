@@ -50,6 +50,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -88,6 +89,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -126,6 +128,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -164,6 +167,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -216,6 +220,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -282,6 +287,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -334,6 +340,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -400,6 +407,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -438,6 +446,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
@@ -490,6 +499,7 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
         [Fact]
