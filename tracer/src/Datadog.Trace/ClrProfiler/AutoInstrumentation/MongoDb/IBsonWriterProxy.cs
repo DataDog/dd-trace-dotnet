@@ -31,10 +31,7 @@ public interface IBsonWriterProxy : IDuckType
     /// </summary>
     int SerializationDepth { get; }
 
-    /// <summary>
-    /// Gets the settings of the writer.
-    /// </summary>
-    object Settings { get; }
+    // object Settings { get; } <- Reminder
 
     /// <summary>
     /// Gets the current state of the writer.
@@ -222,4 +219,9 @@ public interface IBsonWriterProxy : IDuckType
     /// Writes a BSON undefined to the writer.
     /// </summary>
     void WriteUndefined();
+
+    /// <summary>
+    /// Disposes of any resources used by the writer.
+    /// </summary>
+    void Dispose();
 }

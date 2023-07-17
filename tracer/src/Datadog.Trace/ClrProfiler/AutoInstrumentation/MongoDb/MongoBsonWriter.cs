@@ -34,7 +34,7 @@ public class MongoBsonWriter
     public int SerializationDepth => _bsonWriterProxy.SerializationDepth;
 
     [DuckReverseMethod]
-    public object Settings => _bsonWriterProxy.Settings;
+    public object Settings => null;
 
     [DuckReverseMethod]
     public object State => _bsonWriterProxy.State;
@@ -229,5 +229,11 @@ public class MongoBsonWriter
     public void WriteUndefined()
     {
         _bsonWriterProxy.WriteUndefined();
+    }
+
+    [DuckReverseMethod]
+    public void Dispose()
+    {
+        _bsonWriterProxy.Dispose();
     }
 }
