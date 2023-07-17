@@ -42,11 +42,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 var bsonWriter = constructorJsonWriter?.Invoke(defaultsValueJsonWriterSettings);
 
                 IBsonWriterProxy proxyBsonWriter = bsonWriter.DuckCast<IBsonWriterProxy>();
+                var customBsonWriter = new MongoBsonWriter(proxyBsonWriter);
+
+                Type typeIBsonWriter = Type.GetType("MongoDB.Bson.IO.IBsonWriter, MongoDB.Bson", throwOnError: false);
+                var customWriterProxy = customBsonWriter.DuckImplement(typeIBsonWriter);
 
                 Type contextType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
                 MethodInfo createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);
 
-                var rootContext = createRootMethod?.Invoke(null, new[] { bsonWriter, null });
+                var rootContext = createRootMethod?.Invoke(null, new[] { customWriterProxy, null });
 
                 Type bsonSerializerInterfaceType = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializer, MongoDB.Bson", throwOnError: false);
                 MethodInfo serializeMethod = bsonSerializerInterfaceType?.GetMethod("Serialize");
