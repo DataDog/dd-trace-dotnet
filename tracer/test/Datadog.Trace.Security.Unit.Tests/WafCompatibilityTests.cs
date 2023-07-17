@@ -16,7 +16,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitializeWithExportsMissing()
         {
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.3.0");
             libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
@@ -26,7 +25,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitializeWithDiagnosticsMissing()
         {
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.10.0");
             libraryInitializationResult.Success.Should().BeTrue();
             libraryInitializationResult.WafLibraryInvoker.Should().NotBeNull();

@@ -70,8 +70,6 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
-            // set the log level and setup the logger
-            SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
         }
 
         private delegate IntPtr GetVersionDelegate();
