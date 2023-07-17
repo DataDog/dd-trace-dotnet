@@ -22,23 +22,10 @@ internal class QueueHelper
 #else
         ConsumerToQueueMap.GetValue(consumer, x => queue);
 #endif
-        Console.WriteLine("Done setting queue: " + consumer + ", " + queue);
-
-        if (ConsumerToQueueMap.TryGetValue(consumer, out var readQueue))
-        {
-            Console.WriteLine("Able to immediately read queue: " + consumer + ", " + readQueue);
-            Console.WriteLine(ConsumerToQueueMap);
-        }
-        else
-        {
-            Console.WriteLine("UNABLE to immediately read queue: " + consumer);
-        }
     }
 
     public static bool TryGetQueue(object consumer, out string? queue)
     {
-        Console.WriteLine("TryGetQueue: " + consumer);
-        Console.WriteLine(ConsumerToQueueMap);
         queue = null;
 
         return ConsumerToQueueMap.TryGetValue(consumer, out queue);
@@ -46,7 +33,6 @@ internal class QueueHelper
 
     public static void RemoveQueue(object consumer)
     {
-        Console.WriteLine("RemoveQueue: " + consumer);
         ConsumerToQueueMap.Remove(consumer);
     }
 }

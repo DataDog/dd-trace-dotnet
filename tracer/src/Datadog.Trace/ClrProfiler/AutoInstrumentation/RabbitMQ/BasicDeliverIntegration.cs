@@ -55,7 +55,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBasicProperties : IBasicProperties
             where TBody : IBody // ReadOnlyMemory<byte> body in 6.0.0
         {
-            Console.WriteLine("BasicDeliver start [it works!]");
             return RabbitMQIntegration.BasicDeliver_OnMethodBegin(instance, consumerTag, deliveryTag, redelivered, exchange, routingKey, basicProperties, body);
         }
 

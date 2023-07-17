@@ -130,15 +130,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
             if (QueueHelper.TryGetQueue(instance, out var queueInner))
             {
-                Console.WriteLine("TryGetQueue successful: " + instance + ", " + queueInner);
                 queue = queueInner;
             }
-            else
-            {
-                Console.WriteLine("TryGetQueue NOT successful: " + instance);
-            }
-
-            Console.WriteLine("[BasicDeliver] Consumer: " + instance + ", queue: " + queue);
 
             SpanContext propagatedContext = null;
 
