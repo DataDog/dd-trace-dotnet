@@ -6,6 +6,7 @@
 using System;
 using System.IO;
 using System.Reflection;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
@@ -39,6 +40,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 var defaultsValueJsonWriterSettings = new object[] { (TextWriter)stringWriter, typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(null) };
 
                 var bsonWriter = constructorJsonWriter?.Invoke(defaultsValueJsonWriterSettings);
+
+                IBsonWriterProxy proxyBsonWriter = bsonWriter.DuckCast<IBsonWriterProxy>();
 
                 Type contextType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
                 MethodInfo createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);

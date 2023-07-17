@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics.CodeAnalysis;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 
@@ -12,7 +13,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 /// Duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.x/src/MongoDB.Bson/IO/IBsonWriter.cs
 /// </summary>
 [SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1618:Generic type parameters should be documented", Justification = "Development")]
-public interface IBsonWriterProxy<TBsonWriterSettings, TBsonWriterState, TIElementNameValidator, TBsonBinaryData, TDecimal128, TObjectId, TIByteBuffer, TBsonRegularExpression>
+public interface IBsonWriterProxy : IDuckType
 {
     // properties
 
@@ -33,14 +34,14 @@ public interface IBsonWriterProxy<TBsonWriterSettings, TBsonWriterState, TIEleme
     /// <summary>
     /// Gets the settings of the writer.
     /// </summary>
-    TBsonWriterSettings Settings { get; }
-
-    // methods
+    object Settings { get; }
 
     /// <summary>
     /// Gets the current state of the writer.
     /// </summary>
-    TBsonWriterState State { get; }
+    object State { get; }
+
+    // methods
 
     /// <summary>
     /// Closes the writer.
@@ -66,19 +67,19 @@ public interface IBsonWriterProxy<TBsonWriterSettings, TBsonWriterState, TIEleme
     /// Pushes the element name validator.
     /// </summary>
     /// <param name="validator">The validator.</param>
-    void PushElementNameValidator(TIElementNameValidator validator);
+    void PushElementNameValidator(object validator);
 
     /// <summary>
     /// Pushes new settings for the writer.
     /// </summary>
     /// <param name="configurator">The settings configurator.</param>
-    void PushSettings(Action<TBsonWriterSettings> configurator);
+    void PushSettings(Action<object> configurator);
 
     /// <summary>
     /// Writes BSON binary data to the writer.
     /// </summary>
     /// <param name="binaryData">The binary data.</param>
-    void WriteBinaryData(TBsonBinaryData binaryData);
+    void WriteBinaryData(object binaryData);
 
     /// <summary>
     /// Writes a BSON Boolean to the writer.
@@ -101,8 +102,8 @@ public interface IBsonWriterProxy<TBsonWriterSettings, TBsonWriterState, TIEleme
     /// <summary>
     /// Writes a BSON Decimal128 to the writer.
     /// </summary>
-    /// <param name="value">The <see cref="TDecimal128"/> value.</param>
-    void WriteDecimal128(TDecimal128 value);
+    /// <param name="value">The <see cref="MongoDB.Bson.Decimal128"/> value.</param>
+    void WriteDecimal128(object value);
 
     /// <summary>
     /// Writes a BSON Double to the writer.
@@ -169,25 +170,25 @@ public interface IBsonWriterProxy<TBsonWriterSettings, TBsonWriterState, TIEleme
     /// Writes a BSON ObjectId to the writer.
     /// </summary>
     /// <param name="objectId">The ObjectId.</param>
-    void WriteObjectId(TObjectId objectId);
+    void WriteObjectId(object objectId);
 
     /// <summary>
     /// Writes a raw BSON array.
     /// </summary>
     /// <param name="slice">The byte buffer containing the raw BSON array.</param>
-    void WriteRawBsonArray(TIByteBuffer slice);
+    void WriteRawBsonArray(object slice);
 
     /// <summary>
     /// Writes a raw BSON document.
     /// </summary>
     /// <param name="slice">The byte buffer containing the raw BSON document.</param>
-    void WriteRawBsonDocument(TIByteBuffer slice);
+    void WriteRawBsonDocument(object slice);
 
     /// <summary>
     /// Writes a BSON regular expression to the writer.
     /// </summary>
     /// <param name="regex">A BsonRegularExpression.</param>
-    void WriteRegularExpression(TBsonRegularExpression regex);
+    void WriteRegularExpression(object regex);
 
     /// <summary>
     /// Writes the start of a BSON array to the writer.
