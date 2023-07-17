@@ -177,7 +177,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -193,14 +193,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -216,7 +216,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -246,7 +247,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -262,14 +263,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -285,7 +286,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -315,7 +317,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -331,14 +333,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -354,7 +356,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -384,7 +387,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -400,14 +403,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -423,7 +426,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -453,7 +457,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -469,14 +473,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_23,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -492,14 +496,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_24,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -515,7 +519,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -545,7 +550,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_26,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -561,7 +566,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -591,7 +597,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_28,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -607,14 +613,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_29,
-    Name: aws.sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -630,14 +636,14 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_30,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -653,7 +659,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
@@ -683,7 +690,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_32,
-    Name: aws.sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -699,7 +706,8 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client,
+      language: dotnet,
+      span.kind: consumer,
       _dd.peer.service.source: aws.queue.name
     }
   },
