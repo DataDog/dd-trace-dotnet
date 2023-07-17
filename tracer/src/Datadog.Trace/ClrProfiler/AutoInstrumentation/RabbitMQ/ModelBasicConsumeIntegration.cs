@@ -10,11 +10,6 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
-// Was working when we used RabbitMQ.Client.Impl.ModelBase and _Private_BasicConsume.
-// but we don't have the server-generated consumer tag at that point so we can't use the private method...
-// the public method doesn't seem to be working
-// This also mostly works now, but SetQueue in the method end doesn't seem to work. all the logs here are printed
-// properly, but when accessing QueueHelper in RabbitMQIntegration queue is null???
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
     /// <summary>
