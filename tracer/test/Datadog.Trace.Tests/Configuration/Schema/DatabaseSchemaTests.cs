@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(AerospikeV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateAerospikeTags().Should().BeOfType(expectedType);
         }
     }
