@@ -88,8 +88,8 @@ namespace Datadog.Trace.Tagging
             get
             {
                 return _peerServiceOverride is not null
-                        ? "peer.service"
-                        : Trace.Tags.KafkaBootstrapServers;
+                           ? "peer.service"
+                           : Trace.Tags.KafkaBootstrapServers;
             }
         }
     }

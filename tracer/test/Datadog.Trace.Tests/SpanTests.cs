@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
@@ -28,7 +30,15 @@ namespace Datadog.Trace.Tests
         {
             _output = output;
 
-            var settings = new TracerSettings();
+            var settings = new TracerSettings(
+                new NameValueConfigurationSource(
+                    new NameValueCollection
+                    {
+                        { ConfigurationKeys.PeerServiceDefaultsEnabled, "true" },
+                        { ConfigurationKeys.PeerServiceNameMappings, "a-peer-service:a-remmaped-peer-service" }
+                    }),
+                new ConfigurationTelemetry());
+
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
@@ -47,6 +57,19 @@ namespace Datadog.Trace.Tests
 
             _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
             span.GetTag(key).Should().Be(value);
+        }
+
+        [Fact]
+        public void SetPeerServiceTag_CallsRemapper()
+        {
+            var span = _tracer.StartSpan("Operation");
+            Assert.Null(span.GetTag(Tags.PeerService));
+
+            span.SetTag(Tags.PeerService, "a-peer-service");
+
+            _writerMock.Verify(x => x.WriteTrace(It.IsAny<ArraySegment<Span>>()), Times.Never);
+            span.GetTag(Tags.PeerService).Should().Be("a-remmaped-peer-service");
+            span.GetTag(Tags.PeerServiceRemappedFrom).Should().Be("a-peer-service");
         }
 
         [Fact]
@@ -336,10 +359,6 @@ namespace Datadog.Trace.Tests
             // The normal GetTag only look into the Meta dictionary.
             span.GetTag(stringKey).Should().Be(stringValue);
             span.GetTag(numericKey).Should().BeNull();
-
-            // The new GetTagObject extension look into both Meta and Metrics dictionary.
-            span.GetTagObject(stringKey).Should().Be(stringValue);
-            span.GetTagObject(numericKey).Should().Be(numericValue);
         }
     }
 }

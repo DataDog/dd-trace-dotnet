@@ -67,6 +67,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 tags.Method = method;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
             }
             catch (Exception ex)
