@@ -64,7 +64,14 @@ namespace Datadog.Trace.Agent
             _log.Debug("Using stats endpoint {StatsEndpoint}", _statsEndpoint.ToString());
         }
 
-        private delegate Task<bool> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
+        private delegate Task<SendResult> SendCallback<T>(IApiRequest request, bool isFinalTry, T state);
+
+        private enum SendResult
+        {
+            Success,
+            Failed_CanRetry,
+            Failed_DontRetry,
+        }
 
         public Task<bool> SendStatsAsync(StatsBuffer stats, long bucketDuration)
         {
@@ -127,7 +134,7 @@ namespace Datadog.Trace.Agent
                     return false;
                 }
 
-                bool success = false;
+                var success = SendResult.Failed_DontRetry;
                 Exception exception = null;
                 bool isFinalTry = retryCount >= retryLimit;
 
@@ -148,9 +155,9 @@ namespace Datadog.Trace.Agent
                 }
 
                 // Error handling block
-                if (!success)
+                if (success != SendResult.Success)
                 {
-                    if (isFinalTry)
+                    if (isFinalTry || success == SendResult.Failed_DontRetry)
                     {
                         // stop retrying
                         _log.Error(exception, "An error occurred while sending data to the agent at {AgentEndpoint}. If the error isn't transient, please check https://docs.datadoghq.com/tracing/troubleshooting/connection_errors/?code-lang=dotnet for guidance.", _apiRequestFactory.Info(endpoint));
@@ -179,7 +186,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task<bool> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
+        private async Task<SendResult> SendStatsAsyncImpl(IApiRequest request, bool isFinalTry, SendStatsState state)
         {
             bool success = false;
             IApiResponse response = null;
@@ -237,7 +244,8 @@ namespace Datadog.Trace.Agent
                     TelemetryFactory.Metrics.RecordCountStatsApiErrors(MetricTags.ApiError.StatusCode);
                 }
 
-                return success;
+                return success ? SendResult.Success :
+                       isFinalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
             }
             finally
             {
@@ -245,7 +253,7 @@ namespace Datadog.Trace.Agent
             }
         }
 
-        private async Task<bool> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
+        private async Task<SendResult> SendTracesAsyncImpl(IApiRequest request, bool finalTry, SendTracesState state)
         {
             IApiResponse response = null;
 
@@ -322,7 +330,7 @@ namespace Datadog.Trace.Agent
                     }
 
                     TelemetryFactory.Metrics.RecordCountTraceApiErrors(MetricTags.ApiError.StatusCode);
-                    return false;
+                    return finalTry ? SendResult.Failed_DontRetry : SendResult.Failed_CanRetry;
                 }
 
                 try
@@ -361,13 +369,14 @@ namespace Datadog.Trace.Agent
             {
                 var retryAfter = response.GetHeader("Retry-After");
                 _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
+                return SendResult.Failed_DontRetry;
             }
             else
             {
                 _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
             }
 
-            return true;
+            return SendResult.Success;
         }
 
         internal struct ApiResponse
