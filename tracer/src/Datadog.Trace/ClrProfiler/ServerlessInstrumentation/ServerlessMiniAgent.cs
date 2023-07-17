@@ -5,6 +5,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 
@@ -16,12 +17,10 @@ internal static class ServerlessMiniAgent
 
     internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettings settings)
     {
-        if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctions)
+        if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctionsConsumptionPlan)
         {
             return null;
         }
-
-        Log.Information("Trying to start the mini agent");
 
         string rustBinaryPath;
         if (Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
@@ -67,19 +66,25 @@ internal static class ServerlessMiniAgent
         return rustBinaryPath;
     }
 
-    internal static Process StartServerlessMiniAgent(string path)
+    internal static Process StartServerlessMiniAgent(ImmutableTracerSettings settings)
     {
-        if (string.IsNullOrEmpty(path))
+        var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform, settings);
+        if (string.IsNullOrEmpty(serverlessMiniAgentPath))
         {
-            Log.Error("Can't spawn Serverless Mini Agent with null or empty path.");
+            return null;
+        }
+
+        if (!File.Exists(serverlessMiniAgentPath))
+        {
+            Log.Error("Serverless Mini Agent does not exist: {Path}", serverlessMiniAgentPath);
             return null;
         }
 
         try
         {
-            Log.Debug("Trying to spawn the Serverless Mini Agent at path: {Path}", path);
+            Log.Debug("Trying to spawn the Serverless Mini Agent at path: {Path}", serverlessMiniAgentPath);
             Process process = new Process();
-            process.StartInfo.FileName = path;
+            process.StartInfo.FileName = serverlessMiniAgentPath;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
             process.OutputDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);

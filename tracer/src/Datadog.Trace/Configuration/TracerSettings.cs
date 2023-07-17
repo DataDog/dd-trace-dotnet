@@ -334,12 +334,12 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            IsRunningInAzureFunctions = ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction();
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction();
             IsRunningInGCPFunctions = ImmutableGCPFunctionSettings.GetIsGCPFunction();
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctions));
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -804,7 +804,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
-        internal bool IsRunningInAzureFunctions { get; }
+        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
