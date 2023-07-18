@@ -78,9 +78,22 @@ internal class MongoBsonWriter
     }
 
     [DuckReverseMethod]
-    public void WriteBinaryData(object binaryData)
+    public void WriteBinaryData(IBsonBinaryDataProxy binaryData)
     {
-        _bsonWriterProxy.WriteBinaryData(binaryData);
+        // instead of writing bytes, we write a string, "<binary>", to avoid writing very large data
+        // however, we need to make sure _not_ to intercept _other_ binary data like "Guids"
+        // _bsonWriterProxy.WriteBytes(bytes);
+        switch (binaryData.SubType)
+        {
+            case 0x03: // UuidLegacy
+            case 0x04: // UuidStandard
+                // keep outputting these
+                _bsonWriterProxy.WriteBinaryData(binaryData.Instance);
+                break;
+            default:
+                _bsonWriterProxy.WriteString("<binary>");
+                break;
+        }
     }
 
     [DuckReverseMethod]
