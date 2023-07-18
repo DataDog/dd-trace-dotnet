@@ -57,7 +57,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             return res;
         }
 
-        public List<T> DecodeArray<T>()
+        internal List<T> DecodeArray<T>()
         {
             var nbEntriesStart = (int)NbEntries;
             var res = new List<T>(nbEntriesStart);

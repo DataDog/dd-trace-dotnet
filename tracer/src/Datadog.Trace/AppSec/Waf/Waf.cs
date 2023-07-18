@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmData;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -58,6 +59,9 @@ namespace Datadog.Trace.AppSec.Waf
             {
                 return InitResult.FromIncompatibleWaf();
             }
+
+            // set the log level and setup the logger
+            wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
 
             InitResult initResult;
             var argsToDispose = new List<Obj>();
