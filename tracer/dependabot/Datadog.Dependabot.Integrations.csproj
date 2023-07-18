@@ -129,7 +129,7 @@
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
     <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.33 -->
-    <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
