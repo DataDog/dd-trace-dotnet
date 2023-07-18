@@ -35,7 +35,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => $"{protocol}.server.request",
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>());
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             namingSchema.Server.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
         }
 
@@ -51,7 +51,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => "http.server.request",
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>());
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
             namingSchema.Server.GetOperationNameForComponent(component).Should().Be(expectedValue);
         }
     }

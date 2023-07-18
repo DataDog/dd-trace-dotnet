@@ -25,4 +25,7 @@ fpm_wrapper "datadog-apm-library-dotnet" "$DOTNET_PACKAGE_VERSION" \
   --chdir=datadog-dotnet-apm.dir/opt/datadog \
   --prefix "$LIBRARIES_INSTALL_BASE/dotnet" \
   --after-install datadog-dotnet-apm.dir/opt/datadog/createLogPath.sh \
+  --url "https://github.com/DataDog/dd-trace-dotnet" \
+  --license "Apache License 2.0" \
+  --description "Datadog APM client library for .NET" \
   .=.
