@@ -3930,24 +3930,11 @@ stages:
         workingDirectory: system-tests
         displayName: Build images
 
-      - script: ./run.sh
+      - script: ./run.sh TRACER_RELEASE_SCENARIOS
         workingDirectory: system-tests
         displayName: Run tests
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-
-      - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
-        workingDirectory: system-tests
-        displayName: Run RCM tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-
-      - script: ./run.sh INTEGRATIONS
-        workingDirectory: system-tests
-        displayName: Run Integrations tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-
       - script: |
           ./run.sh PARAMETRIC
         workingDirectory: system-tests
