@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike
         TypeName = "Aerospike.Client.SyncCommand",
         MethodName = "ExecuteCommand",
         ReturnTypeName = ClrNames.Void,
-        ParameterTypeNames = new string[0],
         MinimumVersion = "4.0.0",
         MaximumVersion = "6.*.*",
         IntegrationName = AerospikeCommon.IntegrationName)]

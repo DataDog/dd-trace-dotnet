@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         AssemblyName = "AWSSDK.SimpleNotificationService",
         TypeName = "Amazon.SimpleNotificationService.AmazonSimpleNotificationServiceClient",
         MethodName = "PublishAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SimpleNotificationService.Model.PublishResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SimpleNotificationService.Model.PublishResponse]",
         ParameterTypeNames = new[] { "Amazon.SimpleNotificationService.Model.PublishRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
