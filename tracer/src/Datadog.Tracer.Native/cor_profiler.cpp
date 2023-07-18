@@ -1866,7 +1866,8 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
             {
                 Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
                               signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                              integrationAssembly, " | ", integrationType, "]");
+                              integrationAssembly, " | ", integrationType, " | cats: ", current.categories,
+                              integration.GetEnabled() ? " ENABLED " : " DISABLED ", "]");
             }
 
             integrationDefinitions.push_back(integration);
