@@ -95,9 +95,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 port = dnsEndPoint.Port.ToString();
             }
 
-            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-            MongoDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
+            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope scope = null;
 
@@ -114,6 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 tags.Port = port;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

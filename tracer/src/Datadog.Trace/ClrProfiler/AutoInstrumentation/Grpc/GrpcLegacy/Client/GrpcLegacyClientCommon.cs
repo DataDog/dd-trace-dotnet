@@ -231,11 +231,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
 
         private static Span CreateInactiveSpan(Tracer tracer, string? methodFullName)
         {
-            string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
-            string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
-            GrpcClientTags tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
+            var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("grpc");
+            var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "grpc-client");
+            var tags = tracer.CurrentTraceSettings.Schema.Client.CreateGrpcClientTags();
             var span = tracer.StartSpan(operationName, tags, serviceName: serviceName, addToTraceContext: false);
             tags.SetAnalyticsSampleRate(IntegrationId.Grpc, tracer.Settings, enabledWithGlobalSetting: false);
+            tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
             span.Type = SpanTypes.Grpc;
             span.ResourceName = methodFullName;

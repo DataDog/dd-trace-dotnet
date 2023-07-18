@@ -52,6 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             tags.Bucket = operation.BucketName;
             tags.Key = operation.Key;
             tags.SeedNodes = normalizedSeedNodes;
+            tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
             return CommonOnMethodBegin(tracer, tags);
         }
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
             var port = operation.CurrentHost?.Port.ToString();
             var code = operation.OperationCode.ToString();
 
-            CouchbaseTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
+            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCouchbaseTags();
             tags.OperationCode = code;
             tags.Key = operation.Key;
             tags.Host = host;
@@ -92,6 +93,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Couchbase
                 scope.Span.Type = SpanTypes.Db;
                 scope.Span.ResourceName = tags.OperationCode;
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 return new CallTargetState(scope);
             }
             catch (Exception ex)
