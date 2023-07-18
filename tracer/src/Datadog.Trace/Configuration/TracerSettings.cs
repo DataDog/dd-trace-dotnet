@@ -257,6 +257,10 @@ namespace Datadog.Trace.Configuration
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBool(false);
 
+            OpenTelemetryLegacyOperationNameEnabled = config
+                                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
+                                                     .AsBool(false);
+
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                         .AsString();
@@ -782,6 +786,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
+        /// </summary>
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get;  }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

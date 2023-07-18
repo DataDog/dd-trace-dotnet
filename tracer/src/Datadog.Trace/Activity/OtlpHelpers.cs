@@ -156,7 +156,18 @@ namespace Datadog.Trace.Activity
             {
                 // Later: Support config 'span_name_as_resource_name'
                 // Later: Support config 'span_name_remappings'
-                span.OperationName = activity.OperationName;
+                if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 != null)
+                {
+                    span.OperationName = activity5.Source.Name switch
+                    {
+                        string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
+                        _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
+                    };
+                }
+                else
+                {
+                    span.OperationName = activity.OperationName;
+                }
             }
 
             // Update Service with a reasonable default
