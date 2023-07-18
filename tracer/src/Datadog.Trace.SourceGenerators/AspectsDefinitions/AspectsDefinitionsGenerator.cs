@@ -130,7 +130,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
             }
         }
 
-        foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1))
+        foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1, StringComparer.InvariantCulture))
         {
             results.Add(classSymbol.Item1);
             foreach (var member in classSymbol.Item2.GetMembers())
