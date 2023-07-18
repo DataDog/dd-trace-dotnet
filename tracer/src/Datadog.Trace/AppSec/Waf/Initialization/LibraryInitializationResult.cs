@@ -17,9 +17,6 @@ internal class LibraryInitializationResult
         LibraryLoadError = libraryLoadError;
         PlatformNotSupported = platformNotSupported;
         WafLibraryInvoker = wafLibraryInvoker;
-
-        // set the log level and setup the logger
-        wafLibraryInvoker?.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
     }
 
     internal WafLibraryInvoker? WafLibraryInvoker { get; }

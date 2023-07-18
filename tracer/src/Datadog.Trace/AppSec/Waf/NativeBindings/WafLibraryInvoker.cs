@@ -168,7 +168,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 return LibraryInitializationResult.FromExportErrorHappened();
             }
 
-            return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+            var res = LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+
+            // set the log level and setup the logger
+            wafLibraryInvoker?.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
+
+            return res;
         }
 
         internal void SetupLogging(bool instanceDebugEnabled)
