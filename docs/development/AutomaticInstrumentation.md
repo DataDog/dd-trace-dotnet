@@ -272,7 +272,7 @@ There are some current limitations with what types/methods with our `CallTarget`
 1. Static methods in a ValueType (struct) cannot be instrumented.
 2. Generic ValueTypes (struct) cannot be instrumented.
 3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance willbe always null).
-4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instancewill be casted as an object type).
-5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or object type).
+4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an `object` type).
+5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
 
 Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
