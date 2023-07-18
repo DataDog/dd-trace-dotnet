@@ -1,4 +1,4 @@
-// <copyright file="BsonExtensions.cs" company="Datadog">
+﻿// <copyright file="BsonSerializationHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,18 +8,17 @@
 using System;
 using System.IO;
 using System.Reflection.Emit;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization
 {
-    internal static class BsonExtensions
+    internal static class BsonSerializationHelper
     {
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonExtensions));
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonSerializationHelper));
         private static readonly BsonHelper? Helper;
 
-        static BsonExtensions()
+        static BsonSerializationHelper()
         {
             try
             {
@@ -32,7 +31,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
             }
         }
 
-        public static string? ToShortString(this object obj)
+        /// <summary>
+        /// Serializes a bson document object, stripping out binary data, and truncating
+        /// at the maximum number of characters accepted in tags
+        /// </summary>
+        public static string? ToShortString(object obj)
         {
             if (Helper is not { } helper)
             {
