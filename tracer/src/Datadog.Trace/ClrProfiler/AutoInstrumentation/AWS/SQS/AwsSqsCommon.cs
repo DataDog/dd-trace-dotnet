@@ -73,13 +73,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal static string GetOperationName(Tracer tracer, string spanKind) => tracer.CurrentTraceSettings.Schema.Version switch
         {
             SchemaVersion.V0 => SqsRequestOperationName,
-            _ => GetOperationNameHelper(spanKind)
+            _ => GetOperationNameHelper(tracer, spanKind)
         };
 
-        internal static string GetOperationNameHelper(string spanKind) => spanKind switch
+        internal static string GetOperationNameHelper(Tracer tracer, string spanKind) => spanKind switch
         {
-            SpanKinds.Consumer => $"{SnsOperationName}.process",
-            SpanKinds.Producer => $"{SnsOperationName}.send",
+            SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
+            SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
             _ => $"{SnsOperationName}.request"
         };
     }
