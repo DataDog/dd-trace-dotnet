@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -19,14 +20,42 @@ namespace Datadog.Trace.Debugger.Symbols
     internal class SymbolBatchUploadApi : IBatchUploadApi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolBatchUploadApi>();
-
         private readonly IApiRequestFactory _apiRequestFactory;
+        private readonly ArraySegment<byte> _event;
         private string? _endpoint;
 
         private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
         {
             _apiRequestFactory = apiRequestFactory;
+            _event = GetEventAsArraySegment();
             discoveryService.SubscribeToChanges(c => _endpoint = c.SymbolDbEndpoint);
+        }
+
+        private ArraySegment<byte> GetEventAsArraySegment()
+        {
+            var @event = string.Empty;
+            try
+            {
+                @event = @$"""ddsource"": ""dd_debugger"",
+""service"": ""{Tracer.Instance.Settings.EnvironmentInternal}""
+""runtimeId"": ""{Tracer.RuntimeId}""";
+
+                var count = Encoding.UTF8.GetByteCount(@event);
+                var eventAsBytes = new byte[count];
+                count = Encoding.UTF8.GetBytes(@event, 0, @event.Length, eventAsBytes, 0);
+                if (count == 0)
+                {
+                    Log.Error("Failed to initialize event {Event}", @event);
+                    return default;
+                }
+
+                return new ArraySegment<byte>(eventAsBytes);
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Failed to initialize event {Event}", @event);
+                return default;
+            }
         }
 
         public static SymbolBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
@@ -34,7 +63,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SymbolBatchUploadApi(apiRequestFactory, discoveryService);
         }
 
-        public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
+        public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
             if (Volatile.Read(ref _endpoint) is not { } endpoint)
             {
@@ -42,15 +71,25 @@ namespace Datadog.Trace.Debugger.Symbols
                 return false;
             }
 
+            if (_event == default || _event.Count == 0)
+            {
+                Log.Error("Failed to initialize event");
+                return default;
+            }
+
             var uri = _apiRequestFactory.GetEndpoint(endpoint);
             var request = _apiRequestFactory.Create(uri);
+            var multipartRequest = (IMultipartApiRequest)request;
 
             const int maxRetries = 3;
             int retries = 0;
 
             while (retries < maxRetries)
             {
-                using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
+                using var response = await multipartRequest.PostAsync(
+                                         new MultipartFormItem("symbols", MimeTypes.Json, null, symbols),
+                                         new MultipartFormItem("event", MimeTypes.Json, "event", _event)).
+                                                            ConfigureAwait(false);
 
                 if (response.StatusCode is >= 200 and <= 299)
                 {

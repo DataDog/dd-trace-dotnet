@@ -1,0 +1,309 @@
+﻿{
+  "service": "test",
+  "env": "",
+  "version": "",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scopeType": "Assembly",
+      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "type": null,
+      "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\bin\\Debug\\net6.0\\Datadog.Trace.Tests.dll",
+      "startLine": -1,
+      "endLine": 2147483647,
+      "languageSpecifics": null,
+      "symbols": null,
+      "scopes": [
+        {
+          "scopeType": "Class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+          "type": null,
+          "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+          "startLine": 24,
+          "endLine": 90,
+          "languageSpecifics": {
+            "accessModifiers": [
+              "Public"
+            ],
+            "annotations": [
+              "AutoLayout, AnsiClass, Class, Public, BeforeFieldInit"
+            ],
+            "superClasses": [
+              "System.Object"
+            ],
+            "interfaces": null,
+            "returnType": null
+          },
+          "symbols": [
+            {
+              "name": "_extractor",
+              "type": "SymbolExtractor",
+              "symbolType": "Field",
+              "line": -1
+            }
+          ],
+          "scopes": [
+            {
+              "scopeType": "Method",
+              "name": ".ctor",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 24,
+              "endLine": 27,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Public"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Public, HideBySig, SpecialName, RTSpecialName",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "System.Void"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 24
+                }
+              ],
+              "scopes": null
+            },
+            {
+              "scopeType": "Method",
+              "name": "Test",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 32,
+              "endLine": 43,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Private"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Private, HideBySig",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "System.Threading.Tasks.Task"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 32
+                },
+                {
+                  "name": "type",
+                  "type": "System.Type",
+                  "symbolType": "Arg",
+                  "line": 32
+                },
+                {
+                  "name": "className",
+                  "type": "System.String",
+                  "symbolType": "Arg",
+                  "line": 32
+                }
+              ],
+              "scopes": null
+            },
+            {
+              "scopeType": "Method",
+              "name": "GetStringToVerify",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 46,
+              "endLine": 48,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Private"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Private, HideBySig",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "System.String"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 46
+                },
+                {
+                  "name": "root",
+                  "type": "Datadog.Trace.Debugger.Symbols.Model.Root",
+                  "symbolType": "Arg",
+                  "line": 46
+                }
+              ],
+              "scopes": null
+            },
+            {
+              "scopeType": "Method",
+              "name": "ConfigureVerifySettings",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 51,
+              "endLine": 57,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Private"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Private, HideBySig",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "VerifyTests.VerifySettings"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 51
+                },
+                {
+                  "name": "assemblyName",
+                  "type": "System.String",
+                  "symbolType": "Arg",
+                  "line": 51
+                },
+                {
+                  "name": "className",
+                  "type": "System.String",
+                  "symbolType": "Arg",
+                  "line": 51
+                },
+                {
+                  "name": "settings",
+                  "type": "VerifyTests.VerifySettings",
+                  "symbolType": "Local",
+                  "line": 57
+                }
+              ],
+              "scopes": null
+            },
+            {
+              "scopeType": "Method",
+              "name": "GetSymbols",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 60,
+              "endLine": 65,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Private"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Private, HideBySig",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "Datadog.Trace.Debugger.Symbols.Model.Root"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 60
+                },
+                {
+                  "name": "assembly",
+                  "type": "System.Reflection.Assembly",
+                  "symbolType": "Arg",
+                  "line": 60
+                },
+                {
+                  "name": "className",
+                  "type": "System.String",
+                  "symbolType": "Arg",
+                  "line": 60
+                },
+                {
+                  "name": "root",
+                  "type": "Datadog.Trace.Debugger.Symbols.Model.Root",
+                  "symbolType": "Local",
+                  "line": 65
+                },
+                {
+                  "name": "classSymbol",
+                  "type": "Datadog.Trace.Debugger.Symbols.Model.Scope",
+                  "symbolType": "Local",
+                  "line": 65
+                }
+              ],
+              "scopes": null
+            },
+            {
+              "scopeType": "Method",
+              "name": "GetAssemblySymbol",
+              "type": null,
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolExtractorTest.cs",
+              "startLine": 68,
+              "endLine": 89,
+              "languageSpecifics": {
+                "accessModifiers": [
+                  "Private"
+                ],
+                "annotations": [
+                  "PrivateScope, ReuseSlot, Private, HideBySig",
+                  "IL"
+                ],
+                "superClasses": null,
+                "interfaces": null,
+                "returnType": "Datadog.Trace.Debugger.Symbols.Model.Root"
+              },
+              "symbols": [
+                {
+                  "name": "this",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolExtractorTest",
+                  "symbolType": "Arg",
+                  "line": 68
+                },
+                {
+                  "name": "assembly",
+                  "type": "System.Reflection.Assembly",
+                  "symbolType": "Arg",
+                  "line": 68
+                },
+                {
+                  "name": "serviceName",
+                  "type": "System.String",
+                  "symbolType": "Arg",
+                  "line": 68
+                },
+                {
+                  "name": "assemblyScope",
+                  "type": "Datadog.Trace.Debugger.Symbols.Model.Scope",
+                  "symbolType": "Local",
+                  "line": 89
+                },
+                {
+                  "name": "root",
+                  "type": "Datadog.Trace.Debugger.Symbols.Model.Root",
+                  "symbolType": "Local",
+                  "line": 89
+                }
+              ],
+              "scopes": null
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

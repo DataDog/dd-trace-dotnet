@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Sink
             return new AgentBatchUploadApi(apiRequestFactory, discoveryService);
         }
 
-        public async Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
+        public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
             if (Volatile.Read(ref _endpoint) is not { } endpoint)
             {
@@ -43,7 +43,7 @@ namespace Datadog.Trace.Debugger.Sink
             var uri = _apiRequestFactory.GetEndpoint(endpoint);
             var request = _apiRequestFactory.Create(uri);
 
-            using var response = await request.PostAsync(snapshots, MimeTypes.Json).ConfigureAwait(false);
+            using var response = await request.PostAsync(symbols, MimeTypes.Json).ConfigureAwait(false);
             if (response.StatusCode is not (>= 200 and <= 299))
             {
                 var content = await response.ReadAsStringAsync().ConfigureAwait(false);

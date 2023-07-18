@@ -39,7 +39,7 @@ namespace Datadog.Trace.Debugger
         private readonly IRcmSubscriptionManager _subscriptionManager;
         private readonly ISubscription _subscription;
         private readonly IDebuggerSink _debuggerSink;
-        private readonly ISymbolExtractor _symbolExtractor;
+        private readonly ISymbolSink _symbolSink;
         private readonly ILineProbeResolver _lineProbeResolver;
         private readonly List<ProbeDefinition> _unboundProbes;
         private readonly IProbeStatusPoller _probeStatusPoller;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
-            ISymbolExtractor symbolExtractor,
+            ISymbolSink symbolSink,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Debugger
             _discoveryService = discoveryService;
             _lineProbeResolver = lineProbeResolver;
             _debuggerSink = debuggerSink;
-            _symbolExtractor = symbolExtractor;
+            _symbolSink = symbolSink;
             _probeStatusPoller = probeStatusPoller;
             _subscriptionManager = remoteConfigurationManager;
             _configurationUpdater = configurationUpdater;
@@ -94,14 +94,14 @@ namespace Datadog.Trace.Debugger
             IRcmSubscriptionManager remoteConfigurationManager,
             ILineProbeResolver lineProbeResolver,
             IDebuggerSink debuggerSink,
-            ISymbolExtractor symbolExtractor,
+            ISymbolSink symbolSink,
             IProbeStatusPoller probeStatusPoller,
             ConfigurationUpdater configurationUpdater,
             IDogStatsd dogStats)
         {
             lock (GlobalLock)
             {
-                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, configurationUpdater, dogStats);
+                return Instance ??= new LiveDebugger(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolSink, probeStatusPoller, configurationUpdater, dogStats);
             }
         }
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Debugger
                 AddShutdownTask();
 
                 _probeStatusPoller.StartPolling();
-                _symbolExtractor.StartExtractingAsync();
+                _symbolSink.StartExtractingAssemblySymbolsAsync();
                 return _debuggerSink.StartFlushingAsync();
             }
 
@@ -171,7 +171,7 @@ namespace Datadog.Trace.Debugger
                 LifetimeManager.Instance.AddShutdownTask(_probeStatusPoller.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(_dogStats.Dispose);
                 LifetimeManager.Instance.AddShutdownTask(() => _subscriptionManager.Unsubscribe(_subscription));
-                LifetimeManager.Instance.AddShutdownTask(_symbolExtractor.Dispose);
+                LifetimeManager.Instance.AddShutdownTask(_symbolSink.Dispose);
             }
         }
 
