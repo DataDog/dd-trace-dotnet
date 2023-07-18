@@ -119,14 +119,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
                     return new CallTargetState(null);
                 }
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-                CosmosDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
+                var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+                var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+                var tags = tracer.CurrentTraceSettings.Schema.Database.CreateCosmosDbTags();
                 tags.ContainerId = containerId;
                 tags.DatabaseId = databaseId;
                 tags.SetEndpoint(endpoint);
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 var scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
 

@@ -107,6 +107,11 @@ namespace Datadog.Trace
         public const string PeerService = "peer.service";
 
         /// <summary>
+        /// The orignal peer service name before remapping
+        /// </summary>
+        internal const string PeerServiceRemappedFrom = "peer.service.remapped_from";
+
+        /// <summary>
         /// The name of the attribute that determined the peer.service tag value. Expected values are:
         /// <ul>
         ///   <li>{source_attribute} when the tag was set to a default value, using a defined precursor attribute</li>
