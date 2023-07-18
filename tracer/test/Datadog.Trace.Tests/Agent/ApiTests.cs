@@ -45,19 +45,18 @@ namespace Datadog.Trace.Tests.Agent
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
-        [Fact]
-        public async Task SendTracesAsync_429_TreatRetryAsAllGood()
+        [Theory]
+        [InlineData(429)]
+        [InlineData(413)]
+        [InlineData(408)]
+        public async Task SendTracesAsync_ShouldNotRetry_ForSpecificResponses(int statusCode)
         {
-            // This is due to a change on the Agent where instead of sending 200OK for when dropping payloads
-            // it will start returning 429 Too Many Requests
-            // https://github.com/DataDog/datadog-agent/pull/17917
-            // .NET Tracer Behavior before: dropped payloads by the agent would be ignored
-            // .NET Tracer Behavior after: dropped payloads would trigger retry logic [100ms, 200ms, 400ms, 800ms]
-            // This "after" behavior may cause performance issues on us as we don't really know how common this is
-            // So this test asserts that our "after" behavior is the same as the "before" behavior to give us time
-            // to determine better actions to take here.
+            // these came from the following Agent PR: https://github.com/DataDog/datadog-agent/pull/17917
+            // 429 Too Many Requests used to be sent as a 200 OK, we don't want to retry this request when the agent is already overwhelmed
+            // 413 Content Too Large -> no sense in retrying something that will fail again
+            // 408 Request Timeout -> sent when agent times out and closes the connection - distinct from the connection timing out
             var responseMock = new Mock<IApiResponse>();
-            responseMock.Setup(x => x.StatusCode).Returns(429);
+            responseMock.Setup(x => x.StatusCode).Returns(statusCode);
 
             var requestMock = new Mock<IApiRequest>();
             requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);

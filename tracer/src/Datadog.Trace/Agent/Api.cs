@@ -307,14 +307,16 @@ namespace Datadog.Trace.Agent
 
                 TelemetryFactory.Metrics.RecordCountTraceApiResponses(response.GetTelemetryStatusCodeMetricTag());
 
-                // A change on the agent changed the default response when payloads are dropped from being 200 to 429
-                // This change would cause us to change behavior and start retrying those requests which were
-                // being rate limited due to performance issues on the agent.
-                // To maintain the same behavior for the Tracer we'll treat 429 as a "success" for the time being
-                // to allow us to determine a better course of action.
+                // A change on the agent changed the response when payloads are dropped from being 200 to 429
+                // This change would cause us to start retrying these failed requests unlike before.
+                // Since the agent is essentially rate limiting us, it's better to not retry for this scenario
+                // We may come back to this in the future and determine a different/better strategy
                 // https://github.com/DataDog/datadog-agent/pull/17917
-                // Attempt a retry if the status code is not SUCCESS and NOT 429
-                if ((response.StatusCode < 200 || response.StatusCode >= 300) && response.StatusCode != 429)
+                // StatusCode 429 -> Too Many Requests (agent getting too many traces and is overloaded)
+                // StatusCode 413 -> Content Too Large (too large trace payload)
+                // StatusCode 408 -> Request Timeout (agent timed out and closed connection - not the connection timing out and dropping)
+                // Attempt a retry if the status code is not SUCCESS and NOT a status code that we shouldn't retry
+                if ((response.StatusCode < 200 || response.StatusCode >= 300) && response.StatusCode != 429 && response.StatusCode != 413 && response.StatusCode != 408)
                 {
                     if (finalTry)
                     {
