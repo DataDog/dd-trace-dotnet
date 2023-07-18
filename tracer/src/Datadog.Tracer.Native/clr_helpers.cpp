@@ -242,7 +242,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
         auto token = tokens.front();
         tokens.pop();
 
-        if (std::find(processed.begin(), processed.end(), token) == processed.end())
+        if (std::find(processed.begin(), processed.end(), token) != processed.end())
         {
             return {}; //Break circular reference
         }
