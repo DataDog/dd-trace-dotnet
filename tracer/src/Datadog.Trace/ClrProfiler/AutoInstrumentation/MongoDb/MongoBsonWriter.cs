@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.DuckTyping;
 #pragma warning disable CS1591
 
@@ -13,8 +12,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 /// <summary>
 /// Duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.x/src/MongoDB.Bson/IO/IBsonWriter.cs
 /// </summary>
-[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1600:Elements should be documented", Justification = "Development")]
-public class MongoBsonWriter
+internal class MongoBsonWriter
 {
     private readonly IBsonWriterProxy _bsonWriterProxy;
 

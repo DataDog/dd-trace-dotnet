@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
@@ -12,8 +11,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 /// <summary>
 /// Duck Typing interface proxy for: https://github.com/mongodb/mongo-csharp-driver/blob/v2.8.x/src/MongoDB.Bson/IO/IBsonWriter.cs
 /// </summary>
-[SuppressMessage("StyleCop.CSharp.DocumentationRules", "SA1618:Generic type parameters should be documented", Justification = "Development")]
-public interface IBsonWriterProxy : IDuckType
+internal interface IBsonWriterProxy : IDuckType
 {
     // properties
 
