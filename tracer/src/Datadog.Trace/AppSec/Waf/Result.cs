@@ -16,9 +16,9 @@ namespace Datadog.Trace.AppSec.Waf
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
             this.returnCode = returnCode;
-            Actions = returnStruct.Actions.DecodeArray<string>();
+            Actions = returnStruct.Actions.DecodeStringArray();
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
-            var events = returnStruct.Events.DecodeArray<object>();
+            var events = returnStruct.Events.DecodeObjectArray();
             if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
             else
             {
