@@ -7,106 +7,41 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Threading;
-using System.Threading.Tasks;
+using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using TypeAttributes = Datadog.Trace.Vendors.dnlib.DotNet.TypeAttributes;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal class SymbolExtractor : ISymbolExtractor
+    internal class SymbolExtractor
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
 
-        private readonly CancellationTokenSource _cancellationTokenSource;
-        private readonly string _serviceName;
-        private readonly SymbolUploader _symbolUploader;
-        private readonly SemaphoreSlim _assemblySemaphore;
-        private readonly HashSet<string> _alreadyProcessed;
-
-        private SymbolExtractor(string serviceName, SymbolUploader uploader)
+        internal IEnumerable<Model.Scope> GetClassSymbols(Assembly assembly, string[] typeToExtract = null)
         {
-            _alreadyProcessed = new HashSet<string>();
-            _serviceName = serviceName;
-            _symbolUploader = uploader;
-            _assemblySemaphore = new SemaphoreSlim(1);
-            _cancellationTokenSource = new CancellationTokenSource();
-        }
-
-        public static SymbolExtractor Create(string serviceName, SymbolUploader uploader)
-        {
-            return new SymbolExtractor(serviceName, uploader);
-        }
-
-        private void RegisterToAssemblyLoadEvent()
-        {
-            AppDomain.CurrentDomain.AssemblyLoad += async (_, args) =>
-            {
-                await ProcessItemAsync(args.LoadedAssembly).ConfigureAwait(false);
-            };
-        }
-
-        private async Task ProcessItemAsync(Assembly assembly)
-        {
-            await _assemblySemaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                await ProcessItem(assembly).ConfigureAwait(false);
-            }
-            finally
-            {
-                _assemblySemaphore.Release();
-            }
-        }
-
-        private async Task ProcessItem(Assembly assembly)
-        {
-            try
-            {
-                if (_alreadyProcessed.Add(assembly.Location))
-                {
-                    return;
-                }
-
-                await ExtractModuleSymbols(assembly).ConfigureAwait(false);
-            }
-            catch (Exception e)
-            {
-                Log.Error(e, "Error while trying to extract assembly symbol {Assembly}", assembly);
-            }
-        }
-
-        private async Task ExtractModuleSymbols(Assembly assembly)
-        {
-            if (AssemblyFilter.ShouldSkipAssembly(assembly))
-            {
-                return;
-            }
-
             using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
             var module = pdbReader?.Module;
-            if (module == null)
-            {
-                return;
-            }
 
-            var root = GetAssemblySymbol(assembly);
-
-            if (module.Types == null)
+            if (module?.Types == null)
             {
-                await _symbolUploader.SendSymbol(root).ConfigureAwait(false);
-                return;
+                yield break;
             }
 
             for (var i = 0; i < module.Types.Count; i++)
             {
                 var type = module.Types[i];
 
+                if (typeToExtract != null && !typeToExtract.Any(t => t.Equals(type.FullName)))
+                {
+                    continue;
+                }
+
+                Model.Scope classScope = default;
                 try
                 {
                     if (type.Fields?.Count == 0 && type.Methods?.Count == 0)
@@ -120,27 +55,24 @@ namespace Datadog.Trace.Debugger.Symbols
 
                     var classLanguageSpecifics = GetClassLanguageSpecifics(type, i, module);
 
-                    var classScope = new Scope
+                    classScope = new Model.Scope
                     {
                         Name = type.FullName,
-                        SymbolType = SymbolType.Class,
-                        Type = type.FullName,
+                        ScopeType = SymbolType.Class,
                         StartLine = classStartLine,
                         EndLine = classEndLine,
                         Symbols = classSymbols,
-                        Scopes = ListCache<Scope>.FreeAndToArray(ref classScopes),
+                        Scopes = ListCache<Model.Scope>.FreeAndToArray(ref classScopes),
                         SourceFile = typeSourceFile ?? "UNKNOWN",
                         LanguageSpecifics = classLanguageSpecifics
                     };
-
-                    root.Scopes[0].Scopes.Add(classScope);
-                    await _symbolUploader.SendSymbol(root).ConfigureAwait(false);
-                    root.Scopes[0].Scopes.Clear();
                 }
                 catch (Exception e)
                 {
                     Log.Warning(e, "Error while trying to extract symbol info for type {Type}", type?.FullName ?? "UNKNOWN");
                 }
+
+                yield return classScope;
             }
         }
 
@@ -160,21 +92,22 @@ namespace Datadog.Trace.Debugger.Symbols
             return classLanguageSpecifics;
         }
 
-        private SymbolModel GetAssemblySymbol(Assembly assembly)
+        internal Root GetAssemblySymbol(Assembly assembly, string serviceName)
         {
-            var assemblyScope = new Scope
+            var assemblyScope = new Model.Scope
             {
                 Name = assembly.FullName,
-                SymbolType = SymbolType.Assembly,
+                ScopeType = SymbolType.Assembly,
                 SourceFile = assembly.Location,
                 StartLine = -1,
                 EndLine = int.MaxValue,
-                Scopes = new List<Scope>()
+                LanguageSpecifics = null,
+                Scopes = new List<Model.Scope>()
             };
 
-            var root = new SymbolModel
+            var root = new Root
             {
-                Service = _serviceName,
+                Service = serviceName,
                 Env = string.Empty,
                 Language = "dotnet",
                 Version = string.Empty,
@@ -197,16 +130,17 @@ namespace Datadog.Trace.Debugger.Symbols
                 var field = typeFields[j];
                 typeSymbols[j] = new Symbol
                 {
-                    Name = field.FullName,
-                    SymbolType = SymbolType.Field,
+                    Name = field.Name,
+                    SymbolType = field.IsStatic ? SymbolType.Static_Field : SymbolType.Field,
                     Type = field.FieldType.TypeName,
+                    Line = -1
                 };
             }
 
             return typeSymbols;
         }
 
-        private List<Scope> GetMethodSymbols(IList<MethodDef> typeMethods, DatadogPdbReader pdbReader, out int classStartLine, out int classEndLine, out string typeSourceFile)
+        private List<Model.Scope> GetMethodSymbols(IList<MethodDef> typeMethods, DatadogPdbReader pdbReader, out int classStartLine, out int classEndLine, out string typeSourceFile)
         {
             classStartLine = -1;
             classEndLine = -1;
@@ -217,62 +151,81 @@ namespace Datadog.Trace.Debugger.Symbols
                 return null;
             }
 
-            var classScopes = ListCache<Scope>.AllocList();
+            var classScopes = ListCache<Model.Scope>.AllocList();
 
-            // methods
-            for (int j = 0; j < typeMethods.Count; j++)
+            for (var j = 0; j < typeMethods.Count; j++)
             {
                 var method = typeMethods[j];
                 var symbolMethod = pdbReader.GetMethodSymbolInfo(method.MDToken.ToInt32());
-                var firstSq = symbolMethod.SequencePoints.FirstOrDefault();
-                typeSourceFile ??= firstSq.Document.URL;
+                if (symbolMethod == null)
+                {
+                    continue;
+                }
+
+                var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false);
+                typeSourceFile ??= firstSq.Document?.URL;
+                var startLine = firstSq.Line == 0 ? -1 : firstSq.Line;
                 if (j == 0)
                 {
                     // not really first line but good enough for inner scopes (fields doesn't has line number anyway)
-                    classStartLine = firstSq.Line;
+                    classStartLine = startLine;
                 }
 
-                Symbol[] methodSymbols = null;
+                Symbol[] argsSymbol;
+                Symbol[] localsSymbol;
+                Symbol[] methodSymbols;
 
                 // arguments
-                if (method.Parameters.Count > 0)
+                Symbol[] GetArgsSymbol()
                 {
-                    methodSymbols = new Symbol[method.Parameters.Count + method.Body.Variables.Count];
-                    for (int k = 0; k < method.Parameters.Count; k++)
+                    if (method.Parameters.Count <= 0)
+                    {
+                        return null;
+                    }
+
+                    argsSymbol = new Symbol[method.Parameters.Count];
+                    for (var k = 0; k < method.Parameters.Count; k++)
                     {
                         var parameter = method.Parameters[k];
-                        methodSymbols[k] = new Symbol
+                        argsSymbol[k] = new Symbol
                         {
-                            Name = parameter.Name,
+                            Name = parameter.IsHiddenThisParameter ? "this" : parameter.Name,
                             Type = parameter.Type.FullName,
                             SymbolType = SymbolType.Arg,
-                            Line = firstSq.Line
+                            Line = startLine
                         };
                     }
+
+                    return argsSymbol;
                 }
 
-                // locals
+                argsSymbol = GetArgsSymbol();
 
-                if (method.Body != null &&
-                    method.Body.Variables.Count > 0)
+                // locals
+                Symbol[] GetLocalsSymbol(out int localsCount1)
                 {
-                    methodSymbols ??= new Symbol[method.Body.Variables.Count];
+                    localsCount1 = 0;
+                    if (method.Body is not { Variables.Count: > 0 })
+                    {
+                        return null;
+                    }
+
                     var methodLocals = method.Body.Variables;
+                    localsSymbol = new Symbol[methodLocals.Count];
                     var allMethodScopes = GetAllScopes(symbolMethod);
-                    var methodParametersCount = method.Parameters.Count;
-                    for (int k = 0; k < allMethodScopes.Count; k++)
+                    for (var k = 0; k < allMethodScopes.Count; k++)
                     {
                         var currentScope = allMethodScopes[k];
-                        for (int l = 0; l < currentScope.Locals.Count; l++)
+                        for (var l = 0; l < currentScope.Locals.Count; l++)
                         {
                             var localSymbol = currentScope.Locals[l];
-                            if (localSymbol.Index > methodLocals.Count)
+                            if (localSymbol.Index > methodLocals.Count || string.IsNullOrEmpty(localSymbol.Name))
                             {
                                 continue;
                             }
 
-                            int line = -1;
-                            for (int m = 0; m < symbolMethod.SequencePoints.Count; m++)
+                            var line = -1;
+                            for (var m = 0; m < symbolMethod.SequencePoints.Count; m++)
                             {
                                 if (symbolMethod.SequencePoints[m].Offset >= currentScope.StartOffset)
                                 {
@@ -280,43 +233,88 @@ namespace Datadog.Trace.Debugger.Symbols
                                 }
                             }
 
-                            methodSymbols[methodParametersCount - 1 + l] = new Symbol
+                            Local local = null;
+                            for (var i = 0; i < methodLocals.Count; i++)
+                            {
+                                if (methodLocals[i].Index != localSymbol.Index)
+                                {
+                                    continue;
+                                }
+
+                                local = methodLocals[i];
+                                break;
+                            }
+
+                            localsSymbol[localsCount1] = new Symbol
                             {
                                 Name = localSymbol.Name,
-                                Type = methodLocals[l].Type.FullName,
+                                Type = local?.Type?.FullName,
                                 SymbolType = SymbolType.Local,
                                 Line = line
                             };
+
+                            localsCount1++;
                         }
                     }
+
+                    return localsSymbol;
+                }
+
+                localsSymbol = GetLocalsSymbol(out var localsCount);
+
+                Symbol[] ConcatMethodSymbols()
+                {
+                    var argsCount = argsSymbol?.Length ?? 0;
+                    var symbolsCount = argsCount + localsCount;
+                    if (symbolsCount <= 0)
+                    {
+                        return null;
+                    }
+
+                    methodSymbols = new Symbol[symbolsCount];
+
+                    if (argsCount > 0)
+                    {
+                        Array.Copy(argsSymbol!, 0, methodSymbols, 0, argsCount);
+                    }
+
+                    if (localsCount > 0)
+                    {
+                        Array.Copy(localsSymbol, 0, methodSymbols, argsCount, localsCount);
+                    }
+
+                    return methodSymbols;
+                }
+
+                methodSymbols = ConcatMethodSymbols();
+
+                var endLine = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false).EndLine;
+
+                if (endLine > classEndLine)
+                {
+                    classEndLine = endLine + 1;
                 }
 
                 var methodLanguageSpecifics = new LanguageSpecifics
                 {
-                    ReturnType = new[] { method.ReturnType.FullName },
+                    ReturnType = method.ReturnType.FullName,
                     AccessModifiers = new List<string> { method.Access.ToString() },
                     Annotations = new List<string>
                     {
                         method.Attributes.ToString(),
                         method.ImplAttributes.ToString(),
-                        // todo: do we need custom attributes?
+                        // todo: do we want also custom attributes?
                     }
                 };
 
-                var endLine = symbolMethod.SequencePoints.LastOrDefault().EndLine;
-                if (j == typeMethods.Count - 1)
-                {
-                    classEndLine = endLine;
-                }
-
                 classScopes.Add(
-                    new Scope
+                    new Model.Scope
                     {
-                        SymbolType = SymbolType.Method,
-                        Name = method.FullName,
+                        ScopeType = SymbolType.Method,
+                        Name = method.Name,
                         LanguageSpecifics = methodLanguageSpecifics,
                         Symbols = methodSymbols,
-                        StartLine = firstSq.Line,
+                        StartLine = startLine,
                         EndLine = endLine,
                         SourceFile = typeSourceFile
                     });
@@ -382,23 +380,6 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 RetrieveAllNestedScopes(innerScope, result);
             }
-        }
-
-        public async Task StartExtractingAsync()
-        {
-            RegisterToAssemblyLoadEvent();
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            for (var i = 0; i < assemblies.Length; i++)
-            {
-                await ProcessItemAsync(assemblies[i]).ConfigureAwait(false);
-            }
-        }
-
-        public void Dispose()
-        {
-            _cancellationTokenSource.Cancel();
-            _cancellationTokenSource?.Dispose();
-            _assemblySemaphore.Dispose();
         }
     }
 }

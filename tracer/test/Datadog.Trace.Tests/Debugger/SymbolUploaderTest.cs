@@ -9,6 +9,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.Debugger.Symbols.Model;
 using FluentAssertions;
 using Xunit;
 
@@ -49,16 +50,16 @@ public class SymbolUploaderTest
         _api.Segments.Should().NotBeNullOrEmpty();
     }
 
-    private SymbolModel GenerateSymbolModel(int numberOfTypes)
+    private Root GenerateSymbolModel(int numberOfTypes)
     {
-        var root = new SymbolModel();
-        var scopes = new Datadog.Trace.Debugger.Symbols.Scope[numberOfTypes];
+        var root = new Root();
+        var scopes = new Trace.Debugger.Symbols.Model.Scope[numberOfTypes];
         for (int i = 0; i < numberOfTypes; i++)
         {
-            scopes[i] = new Datadog.Trace.Debugger.Symbols.Scope()
+            scopes[i] = new Datadog.Trace.Debugger.Symbols.Model.Scope
             {
                 Type = $"type: {i}",
-                SymbolType = SymbolType.Class,
+                ScopeType = SymbolType.Class,
             };
         }
 
@@ -68,7 +69,7 @@ public class SymbolUploaderTest
 
     private class MockBatchUploadApi : IBatchUploadApi
     {
-        public List<byte[]> Segments { get; } = new List<byte[]>();
+        public List<byte[]> Segments { get; } = new();
 
         public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {

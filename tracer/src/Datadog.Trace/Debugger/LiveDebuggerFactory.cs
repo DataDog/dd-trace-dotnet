@@ -58,9 +58,17 @@ internal class LiveDebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
-        var symbolBatchApi = SymbolBatchUploadApi.Create(apiFactory, discoveryService);
+        var symbolsApiFactory = AgentTransportStrategy.Get(
+            tracerSettings.ExporterInternal,
+            productName: "debugger",
+            tcpTimeout: TimeSpan.FromSeconds(15),
+            AgentHttpHeaderNames.MinimalHeaders,
+            () => new SymbolsAgentHeaderHelper(),
+            uri => uri);
+
+        var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService);
         var symbolUploader = SymbolUploader.Create(symbolBatchApi, settings.MaxSymbolSizeToUpload);
-        var symbolExtractor = SymbolExtractor.Create(serviceName, symbolUploader);
+        var symbolSink = SymbolSink.Create(serviceName, symbolUploader, new SymbolExtractor());
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
@@ -77,6 +85,6 @@ internal class LiveDebuggerFactory
         }
 
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
-        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolExtractor, probeStatusPoller, configurationUpdater, statsd);
+        return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolSink, probeStatusPoller, configurationUpdater, statsd);
     }
 }

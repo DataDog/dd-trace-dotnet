@@ -8,6 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Debugger.Sink;
+using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -33,11 +34,11 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SymbolUploader(api, sizeLimit);
         }
 
-        public async Task<bool> SendSymbol(SymbolModel symbolModel)
+        public async Task<bool> SendSymbol(Root root)
         {
             try
             {
-                var symbolAsString = JsonConvert.SerializeObject(symbolModel);
+                var symbolAsString = JsonConvert.SerializeObject(root);
                 var count = Encoding.UTF8.GetByteCount(symbolAsString);
                 if (_byteIndex + count >= _sizeLimit)
                 {
@@ -58,7 +59,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
             catch (Exception e)
             {
-                Log.Error(e, "Error while trying to upload assembly symbol info {Assembly}", symbolModel.Scopes.FirstOrDefault().Name ?? "UNKNOWN");
+                Log.Error(e, "Error while trying to upload assembly symbol info {Assembly}", root.Scopes.FirstOrDefault().Name ?? "UNKNOWN");
                 return false;
             }
         }

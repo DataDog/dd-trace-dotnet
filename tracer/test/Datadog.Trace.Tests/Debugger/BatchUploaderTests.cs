@@ -160,9 +160,9 @@ public class BatchUploaderTests
     {
         public List<byte[]> Segments { get; } = new List<byte[]>();
 
-        public Task<bool> SendBatchAsync(ArraySegment<byte> snapshots)
+        public Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
-            Segments.Add(snapshots.ToArray());
+            Segments.Add(symbols.ToArray());
             return Task.FromResult(true);
         }
     }

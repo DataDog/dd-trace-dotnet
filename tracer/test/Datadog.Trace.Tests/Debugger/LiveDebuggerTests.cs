@@ -38,7 +38,7 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolExtractorMock();
+        var symbolExtractor = new SymbolSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
@@ -61,7 +61,7 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolExtractorMock();
+        var symbolExtractor = new SymbolSinkMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
@@ -197,13 +197,13 @@ public class LiveDebuggerTests
         }
     }
 
-    private class SymbolExtractorMock : ISymbolExtractor
+    private class SymbolSinkMock : ISymbolSink
     {
         public void Dispose()
         {
         }
 
-        public Task StartExtractingAsync()
+        public Task StartExtractingAssemblySymbolsAsync()
         {
             throw new NotImplementedException();
         }
