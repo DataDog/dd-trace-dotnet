@@ -3,62 +3,221 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
-using System.Reflection;
+using System.Reflection.Emit;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 {
     internal static class BsonExtensions
     {
-        public static string ToShortString(this object obj)
-        {
-            Type nominalType = obj.GetType();
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(BsonExtensions));
+        private static readonly BsonHelper? Helper;
 
-            if (nominalType == null)
+        static BsonExtensions()
+        {
+            try
             {
-                throw new ArgumentNullException("nominalType");
+                Helper = BsonHelper.Create();
+            }
+            catch (Exception ex)
+            {
+                Log.Information(ex, "Error creating BsonHelper");
+                Helper = null;
+            }
+        }
+
+        public static string? ToShortString(this object obj)
+        {
+            if (Helper is not { } helper)
+            {
+                // Fallback if there was an issue creating the proxies in the constructor
+                return obj.ToString();
             }
 
-            var bsonSerializationArgsType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", false);
-            object args = Activator.CreateInstance(bsonSerializationArgsType);
-            bsonSerializationArgsType.GetProperty("NominalType")?.SetValue(args, nominalType);
-
-            Type bsonSerializerType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializer, MongoDB.Bson");
-            MethodInfo lookupSerializerMethod = bsonSerializerType?.GetMethod("LookupSerializer", new Type[] { typeof(Type) });
-
-            object serializer = lookupSerializerMethod.Invoke(null, new[] { nominalType });
-
-            using (var stringWriter = new StringWriter())
+            try
             {
-                Type typeJsonWriterSettings = Type.GetType("MongoDB.Bson.IO.JsonWriterSettings, MongoDB.Bson", throwOnError: false);
-                Type[] types = { typeof(StringWriter), typeJsonWriterSettings };
+                // Create a "real" JsonWriter
+                using var stringWriter = new StringWriter();
+                var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
+                var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
 
-                Type typeJsonWriter = Type.GetType("MongoDB.Bson.IO.JsonWriter, MongoDB.Bson", throwOnError: false);
-                ConstructorInfo constructorJsonWriter = typeJsonWriter?.GetConstructor(types);
-                object settings = typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(null);
-                var defaultsValueJsonWriterSettings = new object[] { (TextWriter)stringWriter, settings };
+                // Wrap the real writer with our custom proxy that has extra behaviours
+                var customBsonWriter = new MongoBsonWriter(jsonWriter, jsonWriterSettings);
+                var customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
 
-                var bsonWriter = constructorJsonWriter?.Invoke(defaultsValueJsonWriterSettings);
-
-                IBsonWriterProxy proxyBsonWriter = bsonWriter.DuckCast<IBsonWriterProxy>();
-                var customBsonWriter = new MongoBsonWriter(proxyBsonWriter, settings);
-
-                Type typeIBsonWriter = Type.GetType("MongoDB.Bson.IO.IBsonWriter, MongoDB.Bson", throwOnError: false);
-                var customWriterProxy = customBsonWriter.DuckImplement(typeIBsonWriter);
-
-                Type contextType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationContext, MongoDB.Bson", throwOnError: false);
-                MethodInfo createRootMethod = contextType?.GetMethod("CreateRoot", BindingFlags.Static | BindingFlags.Public);
-
-                var rootContext = createRootMethod?.Invoke(null, new[] { customWriterProxy, null });
-
-                Type bsonSerializerInterfaceType = Type.GetType("MongoDB.Bson.Serialization.IBsonSerializer, MongoDB.Bson", throwOnError: false);
-                MethodInfo serializeMethod = bsonSerializerInterfaceType?.GetMethod("Serialize");
-
-                serializeMethod?.Invoke(serializer, new[] { rootContext, args, obj });
+                // Find the serializer and serializer
+                var nominalType = obj.GetType();
+                var serializer = helper.BsonSerializerLookupProxy.LookupSerializer(nominalType);
+                var rootContext = helper.BsonSerializationContextProxy.CreateRoot(customWriterProxy, null);
+                var bsonSerializationArgs = helper.CreateBsonSerializationArgsFunc(nominalType);
+                serializer.Serialize(rootContext, bsonSerializationArgs, obj);
 
                 return stringWriter.ToString();
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Error during custom BSON serialization");
+                // Fallback to default
+                return obj.ToString();
+            }
+        }
+
+        private class BsonHelper
+        {
+#pragma warning disable SA1401 // Field should be private - avoiding copying of struct proxies
+            internal readonly IBsonSerializationContextProxy BsonSerializationContextProxy;
+            internal readonly JsonWriterSettingsProxy JsonWriterSettingsProxy;
+            internal readonly IBsonSerializerLookupProxy BsonSerializerLookupProxy;
+            internal readonly Func<TextWriter, object, object> CreateJsonWriterFunc;
+            internal readonly Func<Type, object> CreateBsonSerializationArgsFunc;
+            internal readonly Type IBsonWriterType;
+
+            private BsonHelper(
+                IBsonSerializationContextProxy bsonSerializationContextProxy,
+                JsonWriterSettingsProxy jsonWriterSettingsProxy,
+                IBsonSerializerLookupProxy bsonSerializerLookupProxy,
+                Func<TextWriter, object, object> createJsonWriterFunc,
+                Func<Type, object> createBsonSerializationArgsFunc,
+                Type ibsonWriterType)
+            {
+                BsonSerializationContextProxy = bsonSerializationContextProxy;
+                JsonWriterSettingsProxy = jsonWriterSettingsProxy;
+                BsonSerializerLookupProxy = bsonSerializerLookupProxy;
+                CreateJsonWriterFunc = createJsonWriterFunc;
+                CreateBsonSerializationArgsFunc = createBsonSerializationArgsFunc;
+                IBsonWriterType = ibsonWriterType;
+            }
+
+            public static BsonHelper? Create()
+            {
+                // Resolving these types once on app startup.
+                // If any of them are null, we have a problem, and can't use the
+                // custom serializer. We would _like_ to do this work using a marker
+                // type, similar to the way we do in CachedMessageHeadersHelper, but
+                // we don't have generic access to the MongoDB.Bson assembly (the types
+                // we instrument and their args are in a different assembly) so this is
+                // the best we can do.
+                var bsonSerializationArgsType = Type.GetType("MongoDB.Bson.Serialization.BsonSerializationArgs, MongoDB.Bson", false);
+                if (bsonSerializationArgsType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.Serialization.BsonSerializationArgs type");
+                    return null;
+                }
+
+                var assembly = bsonSerializationArgsType.Assembly;
+
+                var bsonSerializerType = assembly.GetType("MongoDB.Bson.Serialization.BsonSerializer", throwOnError: false);
+                if (bsonSerializerType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.Serialization.BsonSerializer type");
+                    return null;
+                }
+
+                var bsonSerializationContextType = assembly.GetType("MongoDB.Bson.Serialization.BsonSerializationContext", throwOnError: false);
+                if (bsonSerializationContextType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.Serialization.BsonSerializationContext type");
+                    return null;
+                }
+
+                var jsonWriterSettingsType = assembly.GetType("MongoDB.Bson.IO.JsonWriterSettings", throwOnError: false);
+                if (jsonWriterSettingsType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.IO.JsonWriterSettings type");
+                    return null;
+                }
+
+                var jsonWriterType = assembly.GetType("MongoDB.Bson.IO.JsonWriter", throwOnError: false);
+                if (jsonWriterType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.IO.JsonWriter type");
+                    return null;
+                }
+
+                var ibsonWriterType = assembly.GetType("MongoDB.Bson.IO.IBsonWriter", throwOnError: false);
+                if (ibsonWriterType is null)
+                {
+                    Log.Information("Error creating BsonHelper, could not find MongoDB.Bson.IO.IBsonWriter type");
+                    return null;
+                }
+
+                // We found all the required types, now try to create the proxies/activators
+                var proxyResult = DuckType.GetOrCreateProxyType(typeof(IBsonSerializerLookupProxy), bsonSerializerType);
+                if (!proxyResult.Success)
+                {
+                    return null;
+                }
+
+                var bsonSerializerLookupProxy = (IBsonSerializerLookupProxy)proxyResult.CreateInstance(null!);
+
+                proxyResult = DuckType.GetOrCreateProxyType(typeof(IBsonSerializationContextProxy), bsonSerializationContextType);
+                if (!proxyResult.Success)
+                {
+                    return null;
+                }
+
+                var bsonSerializationContextProxy = (IBsonSerializationContextProxy)proxyResult.CreateInstance(null!);
+
+                proxyResult = DuckType.GetOrCreateProxyType(typeof(JsonWriterSettingsProxy), jsonWriterSettingsType);
+                if (!proxyResult.Success)
+                {
+                    return null;
+                }
+
+                var jsonWriterSettingsProxy = (JsonWriterSettingsProxy)proxyResult.CreateInstance(null!);
+
+                // Create JSonWriter
+                var jsonWriterCtor = jsonWriterType.GetConstructor(new[] { typeof(TextWriter), jsonWriterSettingsType })!;
+
+                DynamicMethod createJsonWriterMethod = new DynamicMethod(
+                    $"MongoJsonWriterSerializer",
+                    jsonWriterType,
+                    parameterTypes: new[] { typeof(TextWriter), typeof(object) },
+                    typeof(DuckType).Module,
+                    true);
+
+                ILGenerator createJsonWriterIl = createJsonWriterMethod.GetILGenerator();
+                createJsonWriterIl.Emit(OpCodes.Ldarg_0);
+                createJsonWriterIl.Emit(OpCodes.Ldarg_1);
+                // createJsonWriterIl.Emit(OpCodes.Castclass, jsonWriterSettingsType); // Not technically necessary
+                createJsonWriterIl.Emit(OpCodes.Newobj, jsonWriterCtor);
+                createJsonWriterIl.Emit(OpCodes.Ret);
+
+                var createJsonWriterFunc = (Func<TextWriter, object, object>)createJsonWriterMethod.CreateDelegate(typeof(Func<TextWriter, object, object>));
+
+                var bsonSerializationArgsCtor = bsonSerializationArgsType.GetConstructor(new[] { typeof(Type), typeof(bool), typeof(bool) })!;
+
+                // Create BsonSerializationArgs
+                DynamicMethod createBsonSerializationArgs = new DynamicMethod(
+                    $"MongoBsonSerializationArgsType",
+                    typeof(object), // boxed bsonSerializationArgsType
+                    parameterTypes: new[] { typeof(Type) },
+                    typeof(DuckType).Module,
+                    true);
+
+                ILGenerator bsonWriterIl = createBsonSerializationArgs.GetILGenerator();
+                bsonWriterIl.Emit(OpCodes.Ldarg_0);
+                bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
+                bsonWriterIl.Emit(OpCodes.Ldc_I4_0);
+                bsonWriterIl.Emit(OpCodes.Newobj, bsonSerializationArgsCtor);
+                bsonWriterIl.Emit(OpCodes.Box, bsonSerializationArgsType);
+                bsonWriterIl.Emit(OpCodes.Ret);
+
+                var createBsonSerializationArgsFunc = (Func<Type, object>)createBsonSerializationArgs.CreateDelegate(typeof(Func<Type, object>));
+
+                return new BsonHelper(
+                    bsonSerializationContextProxy: bsonSerializationContextProxy,
+                    jsonWriterSettingsProxy: jsonWriterSettingsProxy,
+                    bsonSerializerLookupProxy: bsonSerializerLookupProxy,
+                    createJsonWriterFunc: createJsonWriterFunc,
+                    createBsonSerializationArgsFunc: createBsonSerializationArgsFunc,
+                    ibsonWriterType: ibsonWriterType);
             }
         }
     }
