@@ -20,9 +20,12 @@ internal class MongoBsonWriter
     /// Initializes a new instance of the <see cref="MongoBsonWriter"/> class.
     /// </summary>
     /// <param name="bsonWriterProxy">Current instance of IBsonWriterProxy</param>
-    public MongoBsonWriter(IBsonWriterProxy bsonWriterProxy)
+    /// <param name="jsonWriterSettings">The settings object passed to <paramref name="bsonWriterProxy"/> - used to work around JsonWriter implementation
+    /// That uses method hiding of Settings property</param>
+    public MongoBsonWriter(IBsonWriterProxy bsonWriterProxy, object jsonWriterSettings)
     {
         _bsonWriterProxy = bsonWriterProxy;
+        Settings = jsonWriterSettings;
     }
 
     [DuckReverseMethod]
@@ -32,7 +35,7 @@ internal class MongoBsonWriter
     public int SerializationDepth => _bsonWriterProxy.SerializationDepth;
 
     [DuckReverseMethod]
-    public object Settings => null;
+    public object Settings { get; }
 
     [DuckReverseMethod]
     public object State => _bsonWriterProxy.State;

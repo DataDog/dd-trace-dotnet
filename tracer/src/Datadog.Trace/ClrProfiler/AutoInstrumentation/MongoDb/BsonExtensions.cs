@@ -37,12 +37,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                 Type typeJsonWriter = Type.GetType("MongoDB.Bson.IO.JsonWriter, MongoDB.Bson", throwOnError: false);
                 ConstructorInfo constructorJsonWriter = typeJsonWriter?.GetConstructor(types);
-                var defaultsValueJsonWriterSettings = new object[] { (TextWriter)stringWriter, typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(null) };
+                object settings = typeJsonWriterSettings?.GetProperty("Defaults")?.GetValue(null);
+                var defaultsValueJsonWriterSettings = new object[] { (TextWriter)stringWriter, settings };
 
                 var bsonWriter = constructorJsonWriter?.Invoke(defaultsValueJsonWriterSettings);
 
                 IBsonWriterProxy proxyBsonWriter = bsonWriter.DuckCast<IBsonWriterProxy>();
-                var customBsonWriter = new MongoBsonWriter(proxyBsonWriter);
+                var customBsonWriter = new MongoBsonWriter(proxyBsonWriter, settings);
 
                 Type typeIBsonWriter = Type.GetType("MongoDB.Bson.IO.IBsonWriter, MongoDB.Bson", throwOnError: false);
                 var customWriterProxy = customBsonWriter.DuckImplement(typeIBsonWriter);
