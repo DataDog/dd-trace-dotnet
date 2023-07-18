@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 
+#nullable enable 
 namespace Datadog.Trace.Iast;
 
 internal class HashBasedDeduplication
