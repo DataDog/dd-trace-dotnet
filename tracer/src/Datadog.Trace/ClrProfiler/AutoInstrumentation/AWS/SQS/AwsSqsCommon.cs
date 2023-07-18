@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -57,6 +58,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             // always returns the scope, even if it's null because we couldn't create it,
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
+        }
+
+        public static string GetQueueName(string queueUrl)
+        {
+            if (queueUrl is null)
+            {
+                return queueUrl;
+            }
+
+            return queueUrl.Split('/').Last();
         }
 
         internal static string GetOperationName(Tracer tracer, string spanKind) => tracer.CurrentTraceSettings.Schema.Version switch
