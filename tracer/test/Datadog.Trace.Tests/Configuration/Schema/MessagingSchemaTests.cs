@@ -137,7 +137,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(AwsSqsV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsSqsTags("spanKind").Should().BeOfType(expectedType);
         }
     }

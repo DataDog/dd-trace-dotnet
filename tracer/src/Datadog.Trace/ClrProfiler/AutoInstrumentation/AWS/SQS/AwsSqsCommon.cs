@@ -4,7 +4,6 @@
 // </copyright>
 
 using System;
-using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -67,7 +66,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return queueUrl;
             }
 
-            return queueUrl.Split('/').Last();
+            var lastSeparationIndex = queueUrl.LastIndexOf('/') + 1;
+            return queueUrl.Substring(lastSeparationIndex);
         }
 
         internal static string GetOperationName(Tracer tracer, string spanKind) => tracer.CurrentTraceSettings.Schema.Version switch
