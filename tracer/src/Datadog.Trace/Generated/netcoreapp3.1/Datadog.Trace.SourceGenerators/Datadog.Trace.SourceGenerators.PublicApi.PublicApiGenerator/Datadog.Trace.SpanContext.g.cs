@@ -14,7 +14,7 @@ partial class SpanContext
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)24);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)25);
             return ParentInternal;
         }
     }
@@ -28,7 +28,7 @@ partial class SpanContext
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)25);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)26);
             return ParentIdInternal;
         }
     }
@@ -42,13 +42,13 @@ partial class SpanContext
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)26);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)27);
             return ServiceNameInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)27);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)28);
             ServiceNameInternal = value;
         }
     }

@@ -390,6 +390,20 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
+        [InlineData("key1:value1,key2:value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("key1 :value1,invalid,key2: value2", new[] { "key1:value1", "key2:value2" })]
+        [InlineData("invalid", new string[0])]
+        [InlineData(null, null)]
+        [InlineData("", new string[0])]
+        public void PeerServiceNameMappings(string value, string[] expected)
+        {
+            var source = CreateConfigurationSource((ConfigurationKeys.PeerServiceNameMappings, value));
+            var settings = new TracerSettings(source);
+
+            settings.PeerServiceNameMappings.Should().BeEquivalentTo(expected?.ToDictionary(v => v.Split(':').First(), v => v.Split(':').Last()));
+        }
+
+        [Theory]
         [MemberData(nameof(BooleanTestCases), false)]
         public void TracerMetricsEnabled(string value, bool expected)
         {

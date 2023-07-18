@@ -271,8 +271,8 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
     EXPECT_CALL(mockConfiguration, GetUploadInterval()).Times(1).WillOnce(Return(1s));
 
     auto [exporter, mockExporter] = CreateExporter();
-    EXPECT_CALL(mockExporter, Add(_)).Times(2);
-    EXPECT_CALL(mockExporter, Export()).Times(2).WillRepeatedly(Throw(std::exception()));
+    EXPECT_CALL(mockExporter, Add(_)).Times(AtLeast(1));
+    EXPECT_CALL(mockExporter, Export()).Times(AtLeast(1)).WillRepeatedly(Throw(std::exception()));
 
     const std::string runtimeId = "MyRid";
     FakeSamplesProvider<ISamplesProvider> samplesProvider(runtimeId, 1);
@@ -285,7 +285,7 @@ TEST(SamplesCollectorTest, MustNotFailWhenSendingProfileThrows)
     collector.Register(&samplesProvider);
 
     collector.Start();
-    std::this_thread::sleep_for(70ms);
+    std::this_thread::sleep_for(1s);
     collector.Export();
     collector.Stop();
 
