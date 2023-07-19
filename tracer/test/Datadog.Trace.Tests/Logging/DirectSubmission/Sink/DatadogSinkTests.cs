@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             var sink = new TestSink(logsApi, LogSettingsHelper.GetFormatter(), options);
             sink.Start();
             var log = new TestLogEvent(DirectSubmissionLogLevel.Debug, "First message");
-            var queue = new Queue<DatadogLogEvent>();
+            var queue = new Queue<DirectSubmissionLogEvent>();
             queue.Enqueue(log);
 
             var result = await sink.CallEmitBatch(queue);
@@ -213,7 +213,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             logsReceived.Should().Be(FailuresBeforeCircuitBreak);
         }
 
-        internal class TestLogEvent : DatadogLogEvent
+        internal class TestLogEvent : DirectSubmissionLogEvent
         {
             public TestLogEvent(DirectSubmissionLogLevel level, string message)
             {
@@ -276,7 +276,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink
             {
             }
 
-            public Task<bool> CallEmitBatch(Queue<DatadogLogEvent> events)
+            public Task<bool> CallEmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
                 return EmitBatch(events);
             }

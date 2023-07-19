@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             }
 
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Serilog);
-            _sink.EnqueueLog(new SerilogDatadogLogEvent(logEvent));
+            _sink.EnqueueLog(new SerilogDirectSubmissionLogEvent(logEvent));
         }
 
         internal void Disable()

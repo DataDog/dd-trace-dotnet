@@ -15,7 +15,7 @@ using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal class DirectSubmissionLogSink : BatchingSink<DatadogLogEvent>, IDirectSubmissionLogSink
+    internal class DirectSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
     {
         // Maximum size for a single log is 1MB, we slightly err on the cautious side
         internal const int MaxMessageSizeBytes = 1000 * 1024;
@@ -41,7 +41,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<DirectSubmissionLogSink>();
         private readonly ILogsApi _api;
         private readonly LogFormatter _formatter;
-        private readonly Action<DatadogLogEvent>? _oversizeLogCallback;
+        private readonly Action<DirectSubmissionLogEvent>? _oversizeLogCallback;
         private readonly StringBuilder _logStringBuilder = new(InitialBuilderSizeBytes);
         private byte[] _serializedLogs = new byte[InitialAllLogsSizeBytes];
         private int _byteCount = 0;
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             ILogsApi api,
             LogFormatter formatter,
             BatchingSinkOptions sinkOptions,
-            Action<DatadogLogEvent>? oversizeLogCallback,
+            Action<DirectSubmissionLogEvent>? oversizeLogCallback,
             Action? sinkDisabledCallback)
             : base(sinkOptions, sinkDisabledCallback)
         {
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// Emit a batch of log events to Datadog logs-backend.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected override async Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
+        protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
         {
             var allSucceeded = true;
             try

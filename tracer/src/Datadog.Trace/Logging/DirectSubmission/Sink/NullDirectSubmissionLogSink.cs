@@ -11,7 +11,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
     internal class NullDirectSubmissionLogSink : IDirectSubmissionLogSink
     {
-        public void EnqueueLog(DatadogLogEvent logEvent)
+        public void EnqueueLog(DirectSubmissionLogEvent logEvent)
         {
         }
 

@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             var logFormatter = _logFormatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
             var serializedLog = LoggerLogFormatter.FormatLogEvent(logFormatter, logEntry);
 
-            var log = new LoggerDatadogLogEvent(serializedLog);
+            var log = new LoggerDirectSubmissionLogEvent(serializedLog);
 
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.ILogger);
             _sink.EnqueueLog(log);

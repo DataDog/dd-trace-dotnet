@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 return;
             }
 
-            var log = new Log4NetDatadogLogEvent(logEvent, logEvent.TimeStampUtc);
+            var log = new Log4NetDirectSubmissionLogEvent(logEvent, logEvent.TimeStampUtc);
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Log4Net);
             _sink.EnqueueLog(log);
         }

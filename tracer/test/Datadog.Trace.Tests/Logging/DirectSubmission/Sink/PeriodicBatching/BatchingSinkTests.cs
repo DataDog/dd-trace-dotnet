@@ -16,7 +16,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
-using BatchingSink = Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching.BatchingSink<Datadog.Trace.Logging.DirectSubmission.Sink.DatadogLogEvent>;
+using BatchingSink = Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching.BatchingSink<Datadog.Trace.Logging.DirectSubmission.Sink.DirectSubmissionLogEvent>;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 {
@@ -56,7 +56,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
-            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
+            batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
 
         [Fact]
@@ -71,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
-            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
+            batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
 
         [Fact]
@@ -214,7 +214,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.Batches.Should().BeEmpty();
         }
 
-        private static ConcurrentStack<IList<DatadogLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
+        private static ConcurrentStack<IList<DirectSubmissionLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
         {
             var deadline = DateTime.UtcNow.AddSeconds(30);
             var batches = pbs.Batches;
@@ -227,7 +227,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             return batches;
         }
 
-        internal class TestEvent : DatadogLogEvent
+        internal class TestEvent : DirectSubmissionLogEvent
         {
             private readonly string _evt;
 
@@ -256,9 +256,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 _emitResults = emitResults ?? Array.Empty<bool>();
             }
 
-            public ConcurrentStack<IList<DatadogLogEvent>> Batches { get; } = new();
+            public ConcurrentStack<IList<DirectSubmissionLogEvent>> Batches { get; } = new();
 
-            protected override Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
+            protected override Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
                 Batches.Push(events.ToList());
                 _emitCount++;

@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var logFormatter = _formatter ?? TracerManager.Instance.DirectLogSubmission.Formatter;
             var serializedLog = NLogLogFormatter.FormatLogEvent(logFormatter, logEvent);
 
-            _sink.EnqueueLog(new NLogDatadogLogEvent(serializedLog));
+            _sink.EnqueueLog(new NLogDirectSubmissionLogEvent(serializedLog));
         }
 
         internal void SetBaseProxy(ITargetWithContextV5BaseProxy baseProxy)

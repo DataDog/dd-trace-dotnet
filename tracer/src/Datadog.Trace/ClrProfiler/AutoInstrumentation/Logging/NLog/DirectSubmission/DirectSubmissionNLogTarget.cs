@@ -70,7 +70,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             var serializedLog = NLogLogFormatter.FormatLogEvent(logFormatter, logEvent);
 
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.NLog);
-            _sink.EnqueueLog(new NLogDatadogLogEvent(serializedLog));
+            _sink.EnqueueLog(new NLogDirectSubmissionLogEvent(serializedLog));
         }
 
         internal void SetBaseProxy(ITargetWithContextBaseProxy baseProxy)
