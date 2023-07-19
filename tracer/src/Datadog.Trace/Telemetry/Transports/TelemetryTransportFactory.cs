@@ -12,17 +12,17 @@ namespace Datadog.Trace.Telemetry.Transports
 {
     internal class TelemetryTransportFactory
     {
-        public static ITelemetryTransport[] Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
+        public static TelemetryTransports Create(TelemetrySettings telemetrySettings, ImmutableExporterSettings exporterSettings)
         {
-            return telemetrySettings switch
-            {
-                // order of transports here controls the order they will be used
-                // so we default to using the agent first, and then agentless
-                { AgentProxyEnabled: true, Agentless: { } a } => new[] { GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled), GetAgentlessFactory(a, telemetrySettings.DebugEnabled) },
-                { AgentProxyEnabled: true } => new[] { GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled) },
-                { Agentless: { } a } => new[] { GetAgentlessFactory(a, telemetrySettings.DebugEnabled) },
-                _ => Array.Empty<ITelemetryTransport>(),
-            };
+            var agentProxy = telemetrySettings is { AgentProxyEnabled: true }
+                                 ? GetAgentFactory(exporterSettings, telemetrySettings.DebugEnabled)
+                                 : null;
+
+            var agentless = telemetrySettings is { Agentless: { } a }
+                                ? GetAgentlessFactory(a, telemetrySettings.DebugEnabled)
+                                : null;
+
+            return new TelemetryTransports(agentProxy, agentless);
         }
 
         private static ITelemetryTransport GetAgentFactory(ImmutableExporterSettings exporterSettings, bool debugEnabled)

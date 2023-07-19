@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         AssemblyName = "StackExchange.Redis",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteAsyncImpl",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[!!0]",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint", "!!0" },
         MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",
@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
         AssemblyName = "StackExchange.Redis.StrongName",
         TypeName = "StackExchange.Redis.ConnectionMultiplexer",
         MethodName = "ExecuteAsyncImpl",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[!!0]",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", ClrNames.Object, "StackExchange.Redis.ServerEndPoint", "!!0" },
         MinimumVersion = "2.0.0", // 2.6.45, but dll uses 2.0.0
         MaximumVersion = "2.*.*",

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -112,7 +113,7 @@ public class TelemetryDataBuilderV2Tests
         var metrics = hasMetrics ? new List<MetricData>() : null;
         var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
         var products = hasProducts ? new ProductsData() : null;
-        var input = new TelemetryInput(config, dependencies, integrations, metrics, distributions, products, sendAppStarted: !hasSentAppStarted);
+        var input = new TelemetryInput(config, dependencies, integrations, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
         var builder = new TelemetryDataBuilderV2();
 
         var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion);

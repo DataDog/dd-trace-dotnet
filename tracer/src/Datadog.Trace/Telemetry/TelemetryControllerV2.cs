@@ -123,7 +123,6 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public Task DisposeAsync(bool sendAppClosingTelemetry)
     {
-        // Nothing to do, remove this method when telemetry V1 is removed
         return Task.CompletedTask;
     }
 
@@ -195,6 +194,7 @@ internal class TelemetryControllerV2 : ITelemetryController
                 switch (item.Type)
                 {
                     case WorkItem.ItemType.SetTransportManager:
+                        _transportManager.Dispose(); // dispose the old one
                         _transportManager = (TelemetryTransportManagerV2)item.State!;
                         break;
                     case WorkItem.ItemType.EnableSending:
@@ -273,25 +273,6 @@ internal class TelemetryControllerV2 : ITelemetryController
             Log.Debug("Pushing telemetry changes");
             var result = await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);
             _aggregator.SaveDataIfRequired(result, in input);
-
-            switch (result)
-            {
-                case TelemetryTransportResult.FatalError:
-                    Log.Debug("Fatal error sending telemetry");
-                    break;
-
-                case TelemetryTransportResult.TransientError:
-                    Log.Debug("Error sending telemetry");
-                    break;
-
-                case TelemetryTransportResult.Success:
-                    Log.Debug("Successfully sent telemetry");
-                    break;
-
-                default:
-                    // Should never happen
-                    throw new Exception($"Unexpected telemetry result type: {result} sending telemetry");
-            }
         }
         catch (Exception ex)
         {
@@ -314,26 +295,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host, _namingVersion);
 
             Log.Debug("Pushing app-closing telemetry");
-            var result = await _transportManager.TryPushTelemetry(closingTelemetryData).ConfigureAwait(false);
-
-            switch (result)
-            {
-                case TelemetryTransportResult.FatalError:
-                    Log.Debug("Fatal error sending app-closing telemetry");
-                    break;
-
-                case TelemetryTransportResult.TransientError:
-                    Log.Debug("Error sending app-closing telemetry");
-                    break;
-
-                case TelemetryTransportResult.Success: // woo-hoo!
-                    Log.Debug("Successfully sent app-closing telemetry");
-                    break;
-
-                default:
-                    // Should never happen
-                    throw new Exception($"Unexpected telemetry result type: {result} sending app-closing telemetry");
-            }
+            await _transportManager.TryPushTelemetry(closingTelemetryData).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

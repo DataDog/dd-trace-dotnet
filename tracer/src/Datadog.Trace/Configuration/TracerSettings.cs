@@ -163,6 +163,8 @@ namespace Datadog.Trace.Configuration
                .WithKeys(ConfigurationKeys.RemoveClientServiceNamesEnabled)
                .AsBool(defaultValue: false);
 
+            PeerServiceNameMappings = InitializeServiceNameMappings(config, ConfigurationKeys.PeerServiceNameMappings);
+
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
@@ -256,6 +258,10 @@ namespace Datadog.Trace.Configuration
             IsActivityListenerEnabled = config
                                        .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, "DD_TRACE_ACTIVITY_LISTENER_ENABLED")
                                        .AsBool(false);
+
+            OpenTelemetryLegacyOperationNameEnabled = config
+                                                     .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
+                                                     .AsBool(false);
 
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
@@ -747,6 +753,11 @@ namespace Datadog.Trace.Configuration
         internal IDictionary<string, string>? ServiceNameMappings { get; private set; }
 
         /// <summary>
+        /// Gets configuration values for changing peer service names based on configuration
+        /// </summary>
+        internal IDictionary<string, string>? PeerServiceNameMappings { get; }
+
+        /// <summary>
         /// Gets a value indicating the size in bytes of the trace buffer
         /// </summary>
         internal int TraceBufferSize { get; }
@@ -782,6 +793,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the activity listener is enabled or not.
         /// </summary>
         internal bool IsActivityListenerEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
+        /// </summary>
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get;  }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.

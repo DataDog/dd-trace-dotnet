@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var databaseType = "DbCommand";
             var expectedValue = $"{databaseType}.query";
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Database.GetOperationName(databaseType).Should().Be(expectedValue);
         }
 
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
 
             foreach (var kvp in _mappings)
             {
@@ -63,7 +63,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
 
             foreach (var key in _unmappedKeys)
             {
@@ -88,7 +88,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(CouchbaseV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateCouchbaseTags().Should().BeOfType(expectedType);
         }
 
@@ -103,7 +103,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(ElasticsearchV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateElasticsearchTags().Should().BeOfType(expectedType);
         }
 
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(MongoDbV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateMongoDbTags().Should().BeOfType(expectedType);
         }
 
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(SqlV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateSqlTags().Should().BeOfType(expectedType);
         }
 
@@ -148,7 +148,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(RedisV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateRedisTags().Should().BeOfType(expectedType);
         }
 
@@ -163,7 +163,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(CosmosDbV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateCosmosDbTags().Should().BeOfType(expectedType);
         }
 
@@ -178,7 +178,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(AerospikeV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, peerServiceNameMappings: new Dictionary<string, string>());
             namingSchema.Database.CreateAerospikeTags().Should().BeOfType(expectedType);
         }
     }

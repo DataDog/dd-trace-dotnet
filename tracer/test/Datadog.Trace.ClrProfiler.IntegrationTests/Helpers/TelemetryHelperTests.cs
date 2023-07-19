@@ -283,6 +283,6 @@ public class TelemetryHelperTests
             _dataBuilderV2.BuildTelemetryData(
                 _appV2,
                 _hostV2,
-                new TelemetryInput(configuration, null, integrations, null, null, null, sendAppStarted),
+                new TelemetryInput(configuration, null, integrations, null, null, sendAppStarted),
                 namingSchemeVersion: "1"));
 }

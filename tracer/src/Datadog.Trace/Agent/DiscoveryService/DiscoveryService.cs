@@ -24,6 +24,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
         private const string SupportedStatsEndpoint = "v0.6/stats";
         private const string SupportedDataStreamsEndpoint = "v0.1/pipeline_stats";
         private const string SupportedEventPlatformProxyEndpoint = "evp_proxy/v2";
+        private const string SupportedTelemetryProxyEndpoint = "telemetry/proxy";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DiscoveryService>();
         private readonly IApiRequestFactory _apiRequestFactory;
@@ -65,17 +66,13 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 SupportedStatsEndpoint,
                 SupportedDataStreamsEndpoint,
                 SupportedEventPlatformProxyEndpoint,
+                SupportedTelemetryProxyEndpoint
             };
 
         public static DiscoveryService Create(ImmutableExporterSettings exporterSettings)
-            => new(
-                AgentTransportStrategy.Get(
-                    exporterSettings,
-                    productName: "discovery",
-                    tcpTimeout: TimeSpan.FromSeconds(15),
-                    AgentHttpHeaderNames.MinimalHeaders,
-                    () => new MinimalAgentHeaderHelper(),
-                    uri => uri),
+            => Create(
+                exporterSettings,
+                tcpTimeout: TimeSpan.FromSeconds(15),
                 initialRetryDelayMs: 500,
                 maxRetryDelayMs: 5_000,
                 recheckIntervalMs: 30_00);
@@ -219,6 +216,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
             string? statsEndpoint = null;
             string? dataStreamsMonitoringEndpoint = null;
             string? eventPlatformProxyEndpoint = null;
+            string? telemetryProxyEndpoint = null;
 
             if (discoveredEndpoints is { Length: > 0 })
             {
@@ -251,6 +249,10 @@ namespace Datadog.Trace.Agent.DiscoveryService
                     {
                         eventPlatformProxyEndpoint = endpoint;
                     }
+                    else if (endpoint.Equals(SupportedTelemetryProxyEndpoint, StringComparison.OrdinalIgnoreCase))
+                    {
+                        telemetryProxyEndpoint = endpoint;
+                    }
                 }
             }
 
@@ -263,6 +265,7 @@ namespace Datadog.Trace.Agent.DiscoveryService
                 statsEndpoint: statsEndpoint,
                 dataStreamsMonitoringEndpoint: dataStreamsMonitoringEndpoint,
                 eventPlatformProxyEndpoint: eventPlatformProxyEndpoint,
+                telemetryProxyEndpoint: telemetryProxyEndpoint,
                 clientDropP0: clientDropP0);
 
             // AgentConfiguration is a record, so this compares by value
