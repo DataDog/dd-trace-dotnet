@@ -44,7 +44,8 @@ namespace Samples.DataStreams.RabbitMQ
 
             // produce/consume operation (fanout exchange)
             List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
-            foreach (var queue in fanoutQueues) {
+            foreach (var queue in fanoutQueues)
+            {
                 GetMessage(model, queue);
             }
 
