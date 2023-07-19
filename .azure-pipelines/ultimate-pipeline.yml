@@ -3931,18 +3931,27 @@ stages:
           sampleName: Computer01
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent1
+          framework: net6.0
         Exceptions:
           sampleName: ExceptionGenerator
           testName: exceptions
           poolName: ProfilerExecBenchAgent2
+          framework: net6.0
         Contention:
           sampleName: Computer01
           testName: contention
           poolName: ProfilerExecBenchAgent3
+          framework: net6.0
         Allocations:
           sampleName: Computer01
           testName: allocations
           poolName: ProfilerExecBenchAgent4
+          framework: net6.0
+        LiveHeap:
+          sampleName: Computer01
+          testName: liveheap
+          poolName: ProfilerExecBenchAgent5
+          framework: net7.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
@@ -3966,14 +3975,14 @@ stages:
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
-        arguments: '-c Release -p:Platform=x64'
+        arguments: '-c Release -f $(framework) -p:Platform=x64 -p:CheckEolTargetFramework=false'
         workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
       displayName: 'dotnet build Release x64 $(sampleName)'
 
     - task: DotNetCoreCLI@2
       inputs:
         command: 'build'
-        arguments: '-c Release -p:Platform=x86'
+        arguments: '-c Release -f $(framework) -p:Platform=x86 -p:CheckEolTargetFramework=false'
         workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
       displayName: 'dotnet build Release x86 $(sampleName)'
 
