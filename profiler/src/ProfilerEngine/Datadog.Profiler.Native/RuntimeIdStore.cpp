@@ -120,6 +120,10 @@ void* RuntimeIdStore::LoadDynamicLibrary(std::string filePath)
             Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR)msgBuffer);
             LocalFree(msgBuffer);
         }
+        else
+        {
+            Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "' (error = ", errorCode, ")");
+        }
     }
     return dynLibPtr;
 #else
@@ -157,6 +161,10 @@ void* RuntimeIdStore::GetExternalFunction(void* instance, const char* const func
         {
             Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR)msgBuffer);
             LocalFree(msgBuffer);
+        }
+        else
+        {
+            Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "' ( error = ", errorCode, ")");
         }
     }
     return dynFunc;

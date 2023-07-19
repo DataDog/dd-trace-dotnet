@@ -230,6 +230,10 @@ ScopedHandle OpSysTools::GetThreadHandle(DWORD threadId)
             Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer);
             LocalFree(msgBuffer);
         }
+        else
+        {
+            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' (error = ", errorCode, ")");
+        }
     }
     return handle;
 }

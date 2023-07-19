@@ -143,9 +143,12 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
     pStackFramesCollector->PrepareForNextCollection();
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
 
-    if (result->GetFramesCount() == 0)
+    static uint64_t failureCount = 0;
+    if ((result->GetFramesCount() == 0) && (failureCount % 100 == 0))
     {
-        Log::Warn("Failed to walk stack for thrown exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
+        // log every 100 failures
+        failureCount++;
+        Log::Warn("Failed to walk ", failureCount, " stacks for sampled exception: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return false;
     }
 
