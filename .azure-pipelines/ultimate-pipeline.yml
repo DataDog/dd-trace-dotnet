@@ -3897,10 +3897,18 @@ stages:
 
     strategy:
       matrix:
-        poc:
+        parametric_poc:
           WEBLOG_VARIANT: "poc"
-        uds:
+          SCENARIO: PARAMETRIC
+        parametric_uds:
           WEBLOG_VARIANT: "uds"
+          SCENARIO: PARAMETRIC
+        system_tests_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: TRACER_RELEASE_SCENARIOS
+        system_tests_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: TRACER_RELEASE_SCENARIOS
 
     steps:
       - checkout: none
@@ -3930,15 +3938,9 @@ stages:
         workingDirectory: system-tests
         displayName: Build images
 
-      - script: ./run.sh TRACER_RELEASE_SCENARIOS
+      - script: ./run.sh $(SCENARIO)
         workingDirectory: system-tests
         displayName: Run tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-      - script: |
-          ./run.sh PARAMETRIC
-        workingDirectory: system-tests
-        displayName: Run parametric tests
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
           TEST_LIBRARY: dotnet
