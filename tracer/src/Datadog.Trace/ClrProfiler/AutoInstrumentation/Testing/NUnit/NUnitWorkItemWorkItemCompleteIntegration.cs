@@ -17,7 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     TypeName = "NUnit.Framework.Internal.Execution.WorkItem",
     MethodName = "WorkItemComplete",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new string[0],
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
     IntegrationName = NUnitIntegration.IntegrationName)]

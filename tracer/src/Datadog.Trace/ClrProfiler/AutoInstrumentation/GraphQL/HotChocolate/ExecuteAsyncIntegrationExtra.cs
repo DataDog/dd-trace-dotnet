@@ -16,8 +16,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>",
-        ParameterTypeNames = new string[] { "HotChocolate.Execution.Processing.IOperationContext" },
+        ReturnTypeName = "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+        ParameterTypeNames = new[] { "HotChocolate.Execution.Processing.IOperationContext" },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.QueryExecutor",
         MinimumVersion = "11",
@@ -25,8 +25,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
     [InstrumentMethodAttribute(
         IntegrationName = HotChocolateCommon.IntegrationName,
         MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<HotChocolate.Execution.IExecutionResult>",
-        ParameterTypeNames = new string[] { "HotChocolate.Execution.Processing.IOperationContext" },
+        ReturnTypeName = "System.Threading.Tasks.Task`1[HotChocolate.Execution.IExecutionResult]",
+        ParameterTypeNames = new[] { "HotChocolate.Execution.Processing.IOperationContext" },
         AssemblyName = "HotChocolate.Execution",
         TypeName = "HotChocolate.Execution.Processing.MutationExecutor",
         MinimumVersion = "11",

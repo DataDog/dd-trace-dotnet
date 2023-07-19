@@ -39,13 +39,12 @@ public class TelemetryTransportFactoryTests
         using var s = new AssertionScope();
         if (agentProxyEnabled)
         {
-            transports.Should().ContainSingle(x => x is AgentTelemetryTransport);
-            transports[0]?.Should().BeOfType<AgentTelemetryTransport>();
+            transports.AgentTransport.Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
         }
 
         if (agentlessEnabled)
         {
-            transports.Should().ContainSingle(x => x is AgentlessTelemetryTransport);
+            transports.AgentlessTransport.Should().NotBeNull().And.BeOfType<AgentlessTelemetryTransport>();
         }
     }
 
