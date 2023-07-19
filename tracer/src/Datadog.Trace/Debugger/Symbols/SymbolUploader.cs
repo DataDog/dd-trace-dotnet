@@ -55,6 +55,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
                 Array.Clear(_payload, 0, _byteIndex - 1);
+                _byteIndex = 0;
                 return true;
             }
             catch (Exception e)

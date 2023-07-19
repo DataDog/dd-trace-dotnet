@@ -62,7 +62,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         StartLine = classStartLine,
                         EndLine = classEndLine,
                         Symbols = classSymbols,
-                        Scopes = ListCache<Model.Scope>.FreeAndToArray(ref classScopes),
+                        Scopes = classScopes == null ? null : ListCache<Model.Scope>.FreeAndToArray(ref classScopes),
                         SourceFile = typeSourceFile ?? "UNKNOWN",
                         LanguageSpecifics = classLanguageSpecifics
                     };
