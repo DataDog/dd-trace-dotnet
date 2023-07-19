@@ -77,7 +77,8 @@ namespace Datadog.Trace.Configuration
             public const string AasEnableCustomMetrics = "DD_AAS_ENABLE_CUSTOM_METRICS";
 
             /// <summary>
-            /// Used to identify consumption plan functions. A value of "dynamic" indicates consumption plan.
+            /// Used to identify consumption plan functions. Consumption plans will either not have this variable,
+            /// or will have a value of "Dynamic".
             /// </summary>
             public const string WebsiteSKU = "WEBSITE_SKU";
         }
