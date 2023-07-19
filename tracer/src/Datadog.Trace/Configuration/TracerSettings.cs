@@ -272,7 +272,7 @@ namespace Datadog.Trace.Configuration
             if (PropagationStyle.Length == 0)
             {
                 // default value
-                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
+                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog };
             }
 
             var propagationStyleInject = config
@@ -284,7 +284,7 @@ namespace Datadog.Trace.Configuration
             if (PropagationStyleInject.Length == 0)
             {
                 // default value
-                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
+                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog };
             }
 
             var propagationStyleExtract = config
@@ -296,7 +296,7 @@ namespace Datadog.Trace.Configuration
             if (PropagationStyleExtract.Length == 0)
             {
                 // default value
-                PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
+                PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.Datadog };
             }
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.

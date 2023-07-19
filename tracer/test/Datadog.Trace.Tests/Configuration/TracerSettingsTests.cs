@@ -630,10 +630,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog", "tracecontext" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "Datadog", "tracecontext" })]
+        [InlineData(null, null, null, new[] { "Datadog" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
@@ -654,10 +654,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog", "tracecontext" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "Datadog", "tracecontext" })]
+        [InlineData(null, null, null, new[] { "Datadog" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
@@ -678,7 +678,7 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", new[] { "test1", "test2" })]
-        [InlineData("", new[] { "Datadog", "tracecontext" })]
+        [InlineData("", new[] { "Datadog" })]
         public void PropagationStyle(string value, string[] expected)
         {
             foreach (var isActivityListenerEnabled in new[] { true, false })
