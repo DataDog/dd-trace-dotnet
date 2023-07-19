@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             return spanKind switch
             {
                 SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
                 _ => $"{SnsOperationName}.request"
             };
         }
