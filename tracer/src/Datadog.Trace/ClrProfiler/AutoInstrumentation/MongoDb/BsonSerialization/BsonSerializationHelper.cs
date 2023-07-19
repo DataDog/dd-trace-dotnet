@@ -46,7 +46,7 @@ internal static class BsonSerializationHelper
         try
         {
             // Create a "real" JsonWriter
-            using var stringWriter = new StringWriter(); // Create a custom one limited to 5000 chars
+            using var stringWriter = new TruncatedStringWriter();
             var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
             var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
 
