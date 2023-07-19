@@ -1818,6 +1818,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
 {
     long numReJITs = 0;
+    long enabledTargets = 0;
     shared::WSTRING definitionsId = shared::WSTRING(id);
     auto definitions = definitions_ids.Get();
 
@@ -1862,6 +1863,11 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
                 TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
                 current.GetIsInterface(), true, current.categories, enabledCategories);
 
+            if (integration.GetEnabled())
+            {
+                enabledTargets++;
+            }
+
             if (Logger::IsDebugEnabled())
             {
                 std::string kind = current.GetIsDerived() ? "DERIVED" : "DEFAULT";
@@ -1898,10 +1904,11 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
-        Logger::Info("RegisterCallTargetDefinitions: Total integrations in profiler: ", integration_definitions_.size());
+        Logger::Info("RegisterCallTargetDefinitions: Added ", size, " call targets (enabled: ", enabledTargets,
+                      ", enabled categories: ", enabledCategories ,") ");
     }
 
-    return numReJITs;
+    return enabledTargets;
 }
 long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 {
