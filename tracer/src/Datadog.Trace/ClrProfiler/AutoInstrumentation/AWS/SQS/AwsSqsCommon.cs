@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         private const string DatadogAwsSqsServiceName = "aws-sqs";
         private const string SqsRequestOperationName = "sqs.request";
         private const string SqsServiceName = "SQS";
-        private const string SnsOperationName = "aws.sqs";
+        private const string SqsOperationName = "aws.sqs";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSqsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
@@ -79,9 +79,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             return spanKind switch
             {
-                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
-                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
-                _ => $"{SnsOperationName}.request"
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SqsOperationName),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SqsOperationName),
+                _ => $"{SqsOperationName}.request"
             };
         }
     }
