@@ -301,6 +301,69 @@ public interface IMyProxy
 }
 ```
 
+## Duck typing static types
+
+If you want to duck-type a `static` type so that you can call a method on it, then there _is_ no object you can call `DuckCast<>` on! In that case, you need to use a slightly lower-level API. 
+
+For example, if you have defined a duck type interface `proxyTargetType`, and a reference to the target `Type` you want to duck-type `staticType`, you would call
+
+```csharp
+DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyTargetType, staticType);
+if (proxyResult.Success)
+{
+    // Pass in null, as there's no "instance" to duck type here
+    return proxyResult.CreateInstance(null);
+}
+else
+{
+    // duck typing failed, throw exception etc
+}
+```
+
+For example, consider this target type:
+
+```csharp
+public static class ObjectFactory
+{
+    public static object CreateObject() => new();
+}
+```
+
+And you want to call `CreateObject`, so you create an interface
+
+```csharp
+public interface IObjectFactoryProxy
+{
+    object CreateObject();
+}
+```
+
+You could create a duck type proxy using:
+
+```csharp
+// You need a reference to the target `Type`. Ideally, you can get this
+// from calling typeof(T) on an integration's generic parameter or something similar
+// but the below will also work
+Type staticType = Type.GetType("Namespace.ObjectFactory, SomeAssembly");
+Type proxyType = typeof(IObjectFactoryProxy); // The type of our proxy
+
+// Try to create the proxy result
+DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
+if (proxyResult.Success)
+{
+    // Pass in null, as there's no "instance" to duck type here, to create an instance of our proxy
+    var proxy = (IObjectFactoryProxy)proxyResult.CreateInstance(null);
+    
+    // invoke methods on the proxy
+    object obj = proxy.CreateObject();
+}
+else
+{
+    // duck typing failed, throw exception etc
+}
+```
+
+
 ## Duck chaining
 
 Duck chaining enables the possibility to interact with properties or methods returning or using non public type parameters to be wrapped with a new duck type proxy, so we can access the internals of those objects.
