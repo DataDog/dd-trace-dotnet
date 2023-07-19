@@ -18,6 +18,8 @@
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
+#include <cmath>
+#include "Configuration.h"
 
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
@@ -44,6 +46,7 @@ AllocationsProvider::AllocationsProvider(
     _pFrameStore(pFrameStore),
     _sampleLimit(pConfiguration->AllocationSampleLimit()),
     _sampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval()),
+    _groupSampler(pConfiguration->AllocationSampleLimit(), pConfiguration->GetUploadInterval(), false),
     _pListener(pListener),
     _pConfiguration(pConfiguration)
 {
@@ -55,6 +58,15 @@ AllocationsProvider::AllocationsProvider(
 
     // disable sub sampling when recording allocations
     _shouldSubSample = !_pConfiguration->IsAllocationRecorderEnabled();
+
+    // true if same proportional upscale for all types
+    _isProportional = (_pConfiguration->AllocationUpscaleMode() == ALLOCATION_UPSCALE_PROPORTIONAL);
+
+    // true if upscale proportionally after having applied a Poisson process per type
+    _isProportionalAndPoisson = (_pConfiguration->AllocationUpscaleMode() == ALLOCATION_UPSCALE_POISSON_PER_TYPE);
+
+    _realTotalAllocated = 0;
+    _sampledTotalAllocated = 0;
 }
 
 
@@ -69,13 +81,35 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     _allocationsSizeMetric->Add((double_t)objectSize);
     _totalAllocationsSizeMetric->Add((double_t)allocationAmount);
 
+    {
+        std::unique_lock lock(_realTotalMutex);
+        _realTotalAllocated += allocationAmount;
+    }
+
+    std::string sTypeName = shared::ToString(typeName);
+
     // remove sampling when recording allocations
-    if (_shouldSubSample && (_sampleLimit > 0) && (!_sampler.Sample()))
+    // however, we need to call the Sample() method to make per type aggregation work
+    bool keepAllocation = false;
+    if (_isProportional || _isProportionalAndPoisson)
+    {
+        keepAllocation = _groupSampler.Sample(sTypeName, objectSize);
+    }
+    else
+    {
+        keepAllocation = _sampler.Sample();
+    }
+
+    if (/* _shouldSubSample && */ (_sampleLimit > 0) && (!keepAllocation))
     {
         return;
     }
 
     // create a sample from the allocation
+    {
+        std::unique_lock lock(_realTotalMutex);
+        _sampledTotalAllocated += objectSize;
+    }
 
     std::shared_ptr<ManagedThreadInfo> threadInfo;
     CALL(_pManagedThreadList->TryGetCurrentThreadInfo(threadInfo))
@@ -109,7 +143,7 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     // So rely on the frame store to get a C#-like representation like what is done for frames
     if (!_pFrameStore->GetTypeName(classId, rawSample.AllocationClass))
     {
-        rawSample.AllocationClass = shared::ToString(shared::WSTRING(typeName));
+        rawSample.AllocationClass = sTypeName;
     }
 
     // the listener is the live objects profiler: could be null if disabled
@@ -121,4 +155,68 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
     Add(std::move(rawSample));
     _sampledAllocationsCountMetric->Incr();
     _sampledAllocationsSizeMetric->Add((double_t)objectSize);
+}
+
+UpscalingInfo AllocationsProvider::GetInfo()
+{
+    auto allocationUpscaleMode = _pConfiguration->AllocationUpscaleMode();
+
+    auto allocatedTypes = _groupSampler.GetGroups();
+    if (_isProportionalAndPoisson)
+    {
+        // Simulate a Poisson per type:
+        //      1_f64 / (1_f64 - (-avg / sampling_distance as f64).exp()
+        // And we know that the proportionality factor will be Real/Sampled
+        static const float distance = 100 * 1024;  // AllocationTick threshold
+        std::vector<UpscaleStringGroup> upscaledGroups(allocatedTypes.size());
+        for (UpscaleStringGroup& type: allocatedTypes)
+        {
+            float average = (float)type.RealValue / (float)type.RealCount;
+            float upscaledFactor = (float)1 / ((float)1 - std::expf(-average / distance));
+
+            UpscaleStringGroup upscaledType;
+            upscaledType.Group = type.Group;
+            upscaledType.RealCount = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.SampledCount = 1;
+            upscaledType.RealValue = static_cast<uint64_t>(upscaledFactor);
+            upscaledType.SampledValue = 1;
+
+            upscaledGroups.push_back(upscaledType);
+        }
+
+        return {GetValueOffsets(), Sample::AllocationClassLabel, upscaledGroups};
+    }
+
+    // simple proportional upscaling
+    //  the ratio is the real size / sampled size (sum of all sampled types)
+    uint64_t totalAllocatedSize = 0;
+    uint64_t sampledAllocatedSize = 0;
+    {
+        std::unique_lock lock(_realTotalMutex);
+
+        totalAllocatedSize = _realTotalAllocated;
+        _realTotalAllocated = 0;
+        sampledAllocatedSize = _sampledTotalAllocated;
+        _sampledTotalAllocated = 0;
+    }
+
+    for (UpscaleStringGroup& group: allocatedTypes)
+    {
+        // the same ratio is used for size and count because we don't have the real number of allocations
+        // --> upscaled count will probably be much larger than the real one
+        group.RealCount = totalAllocatedSize;
+        group.SampledCount = sampledAllocatedSize;
+        group.RealValue = totalAllocatedSize;
+        group.SampledValue = sampledAllocatedSize;
+    }
+
+    return {GetValueOffsets(), Sample::AllocationClassLabel, allocatedTypes};
+}
+
+
+UpscalingPoissonInfo AllocationsProvider::GetPoissonInfo()
+{
+    auto const& offsets = GetValueOffsets(); //              sum(size)       count
+    UpscalingPoissonInfo info {offsets, AllocTickThreshold, offsets[1], offsets[0]};
+    return info;
 }

@@ -159,6 +159,12 @@ void LibddprofExporter::RegisterProcessSamplesProvider(ISamplesProvider* provide
     _processSamplesProviders.push_back(provider);
 }
 
+void LibddprofExporter::RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider)
+{
+    assert(provider != nullptr);
+    _upscaledPoissonProviders.push_back(provider);
+}
+
 LibddprofExporter::Tags LibddprofExporter::CreateTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
@@ -483,6 +489,19 @@ std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfos()
     return samplingInfos;
 }
 
+std::vector<UpscalingPoissonInfo> LibddprofExporter::GetUpscalingPoissonInfos()
+{
+    std::vector<UpscalingPoissonInfo> samplingInfos;
+    samplingInfos.reserve(_upscaledPoissonProviders.size());
+
+    for (auto& provider : _upscaledPoissonProviders)
+    {
+        samplingInfos.push_back(provider->GetPoissonInfo());
+    }
+
+    return samplingInfos;
+}
+
 void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
@@ -514,6 +533,34 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
                 Log::Info("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
                 ddog_Error_drop(&upscalingRuleAdd.err);
             }
+        }
+    }
+}
+
+void LibddprofExporter::AddUpscalingPoissonRules(ddog_prof_Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos)
+{
+    for (auto const& upscalingInfo : upscalingInfos)
+    {
+        ddog_prof_Slice_Usize offsets_slice = {upscalingInfo.Offsets.data(), upscalingInfo.Offsets.size()};
+
+        ddog_CharSlice labelEmptyName = FfiHelper::StringToCharSlice(std::string());
+        ddog_CharSlice labelEmptyValue = FfiHelper::StringToCharSlice(std::string());
+
+        auto upscalingRuleAdd =
+            ddog_prof_Profile_add_upscaling_rule_poisson(
+                profile,
+                offsets_slice,
+                labelEmptyName,
+                labelEmptyValue,
+                upscalingInfo.SumOffset,
+                upscalingInfo.CountOffset,
+                upscalingInfo.SamplingDistance
+                );
+        if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
+        {
+            auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
+            Log::Info("Failed to add an upscaling Poisson rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
+            ddog_Error_drop(&upscalingRuleAdd.err);
         }
     }
 }
@@ -574,6 +621,7 @@ bool LibddprofExporter::Export()
     // As the profiler samples the events for the process, the upscaling rules are the same
     // for all applications.
     auto upscalingInfos = GetUpscalingInfos();
+    auto upscalingPoissonInfos = GetUpscalingPoissonInfos();
 
     // Process-level samples
     auto processSamples = GetProcessSamples();
@@ -618,6 +666,7 @@ bool LibddprofExporter::Export()
         AddProcessSamples(profile, processSamples);
 
         AddUpscalingRules(profile, upscalingInfos);
+        AddUpscalingPoissonRules(profile, upscalingPoissonInfos);
 
         auto serializedProfile = SerializedProfile{profile};
         if (!serializedProfile.IsValid())

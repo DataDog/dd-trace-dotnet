@@ -35,8 +35,7 @@ namespace AllocSimulator
                     out int meanPoisson,
                     out SamplingMode sampling1,
                     out SamplingMode sampling2,
-                    out UpscalingMode upscalingMode
-                    );
+                    out UpscalingMode upscalingMode);
 
                 if (string.IsNullOrEmpty(allocDirectory))
                 {
@@ -147,8 +146,9 @@ namespace AllocSimulator
                             upscaled.Size = (long)((sampled.Size * totalAllocatedBytes) / totalSampledBytes);
                             upscaled.Count = (int)((sampled.Count * totalAllocatedBytes) / totalSampledBytes);
                         }
-                        else // none
+                        else
                         {
+                            // none
                             // nothing to upscale
                             upscaled.Size = sampled.Size;
                             upscaled.Count = sampled.Count;
@@ -166,6 +166,11 @@ namespace AllocSimulator
 
                     Console.WriteLine();
                 }
+
+                float totalSizeRatio = -(float)(totalAllocatedBytes - totalSampledBytes) / (float)totalAllocatedBytes;
+                Console.WriteLine($"          | {totalAllocatedBytes,13} bytes allocated");
+                Console.WriteLine($"          | {totalSampledBytes,13} bytes sampled");
+                Console.WriteLine($"          | {totalSizeRatio,13:P1}");
             }
             catch (InvalidOperationException)
             {
@@ -362,7 +367,7 @@ namespace AllocSimulator
         {
             allocFile = string.Empty;
             allocDirectory = string.Empty;
-            meanPoisson = 512;  // 512 KB is the mean of the distribution for Java
+            meanPoisson = 100;  // 100 KB is the mean of the distribution for .NET
             sampling1 = SamplingMode.Fixed;
             sampling2 = SamplingMode.PoissonWithAllocationContext;
             upscalingMode = UpscalingMode.None;
@@ -377,9 +382,9 @@ namespace AllocSimulator
                     }
                     else
                     {
-                        if ((val > 3) || (val < 1))
+                        if ((val > 3) || (val < 0))
                         {
-                            throw new InvalidOperationException($"Invalid comparison = {args[i]} (must be 1, 2 or 3)");
+                            throw new InvalidOperationException($"Invalid comparison = {args[i]} (must be 0, 1, 2 or 3)");
                         }
                         else
                         {
@@ -403,9 +408,9 @@ namespace AllocSimulator
                     }
                     else
                     {
-                        if ((val > 2) || (val < 1))
+                        if ((val > 2) || (val < 0))
                         {
-                            throw new InvalidOperationException($"Invalid comparison = {args[i]} (must be 1 or 2)");
+                            throw new InvalidOperationException($"Invalid comparison = {args[i]} (must be 0, 1 or 2)");
                         }
                         else
                         {

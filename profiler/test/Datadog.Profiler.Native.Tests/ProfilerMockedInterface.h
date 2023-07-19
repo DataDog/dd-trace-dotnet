@@ -63,6 +63,7 @@ public:
     MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
     MOCK_METHOD(std::string const&, GetGitRepositoryUrl, (), (const override));
     MOCK_METHOD(std::string const&, GetGitCommitSha, (), (const override));
+    MOCK_METHOD(int32_t, AllocationUpscaleMode, (), (const override));
 };
 
 class MockExporter : public IExporter
@@ -72,6 +73,7 @@ public:
     MOCK_METHOD(bool, Export, (), (override));
     MOCK_METHOD(void, SetEndpoint, (const std::string& runtimeId, uint64_t traceId, const std::string& endpoint), (override));
     MOCK_METHOD(void, RegisterUpscaleProvider, (IUpscaleProvider * provider), (override));
+    MOCK_METHOD(void, RegisterUpscalePoissonProvider, (IUpscalePoissonProvider * provider), (override));
     MOCK_METHOD(void, RegisterProcessSamplesProvider, (ISamplesProvider * provider), (override));
 };
 

@@ -50,6 +50,7 @@ public:
     void SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint) override;
     void RegisterUpscaleProvider(IUpscaleProvider* provider) override;
     void RegisterProcessSamplesProvider(ISamplesProvider* provider) override;
+    void RegisterUpscalePoissonProvider(IUpscalePoissonProvider* provider) override;
 
 private:
     class SerializedProfile
@@ -143,11 +144,13 @@ private:
     // the Send function in rust takes the ownership, free the memory and set the pointer to null (avoid double free)
     static bool Send(ddog_prof_Exporter_Request*& request, ddog_prof_Exporter* exporter) ;
     static void AddUpscalingRules(ddog_prof_Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
+    static void AddUpscalingPoissonRules(ddog_prof_Profile* profile, std::vector<UpscalingPoissonInfo> const& upscalingInfos);
     static fs::path CreatePprofOutputPath(IConfiguration* configuration);
 
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
+    std::vector<UpscalingPoissonInfo> GetUpscalingPoissonInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
@@ -187,6 +190,7 @@ private:
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
     std::vector<ISamplesProvider*> _processSamplesProviders;
+    std::vector<IUpscalePoissonProvider*> _upscaledPoissonProviders;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

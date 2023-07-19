@@ -58,4 +58,5 @@ public:
     virtual bool IsGcThreadsCpuTimeEnabled() const = 0;
     virtual std::string const& GetGitRepositoryUrl() const = 0;
     virtual std::string const& GetGitCommitSha() const = 0;
+    virtual int32_t AllocationUpscaleMode() const = 0;
 };

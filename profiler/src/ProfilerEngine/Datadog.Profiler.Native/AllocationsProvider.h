@@ -7,10 +7,13 @@
 #include "CounterMetric.h"
 #include "GenericSampler.h"
 #include "IAllocationsListener.h"
+#include "IUpscaleProvider.h"
 #include "MeanMaxMetric.h"
 #include "MetricsRegistry.h"
 #include "RawAllocationSample.h"
 #include "SumMetric.h"
+
+#include <mutex>
 
 class IConfiguration;
 class IManagedThreadList;
@@ -24,7 +27,9 @@ class ISampledAllocationsListener;
 class AllocationsProvider
     :
     public CollectorBase<RawAllocationSample>,
-    public IAllocationsListener
+      public IAllocationsListener,
+      public IUpscaleProvider,
+      public IUpscalePoissonProvider
 {
 public:
     static std::vector<SampleValueType> SampleTypeDefinitions;
@@ -49,15 +54,33 @@ public:
                       uint64_t objectSize,
                       uint64_t allocationAmount) override;
 
+    UpscalingInfo GetInfo() override;
+    UpscalingPoissonInfo GetPoissonInfo() override;
+
+private:
+    uint64_t AllocTickThreshold = 100 * 1024;
+
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;
     ISampledAllocationsListener* _pListener = nullptr;
     GenericSampler _sampler;
+    GroupSampler<std::string> _groupSampler;
     int32_t _sampleLimit;
+
+    // add up AllocationTick real total allocated size per profile
+    uint64_t _realTotalAllocated;
+
+    // add up AllocationTick last allocated object size per profile
+    uint64_t _sampledTotalAllocated;
+    std::mutex _realTotalMutex;
+
     IConfiguration const* const _pConfiguration;
     bool _shouldSubSample;
+    bool _isProportionalAndPoisson;
+    bool _isProportional;
+
     std::shared_ptr<CounterMetric> _allocationsCountMetric;
     std::shared_ptr<MeanMaxMetric> _allocationsSizeMetric;
     std::shared_ptr<CounterMetric> _sampledAllocationsCountMetric;
