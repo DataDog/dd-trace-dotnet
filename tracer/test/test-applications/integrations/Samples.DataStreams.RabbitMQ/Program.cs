@@ -50,7 +50,8 @@ namespace Samples.DataStreams.RabbitMQ
 
             // produce/consume operation (topic exchange)
             List<string> topicQueues = PublishMessageToTopicExchange(model);
-            foreach (var queue in topicQueues) {
+            foreach (var queue in topicQueues)
+            {
                 GetMessage(model, queue);
             }
         }
