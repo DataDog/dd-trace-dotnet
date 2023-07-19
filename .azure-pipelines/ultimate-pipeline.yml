@@ -3931,6 +3931,10 @@ stages:
           sampleName: Computer01
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent1
+        Exceptions:
+          sampleName: ExceptionGenerator
+          testName: exceptions
+          poolName: ProfilerExecBenchAgent2
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value

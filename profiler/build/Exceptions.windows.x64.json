@@ -43,25 +43,26 @@
       }
     }
   ],
-  "processName": ".\\Samples.ExceptionGenerator.exe",
-  "processArguments": "--scenario 5 --iterations 200",
+  "processName": "Samples.ExceptionGenerator.exe",
+  "processArguments": "--scenario 5 --iterations 100",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Samples.ExceptionGenerator\\netcoreapp3.1",
+  "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-x64\\profiler\\src\\Demos\\Samples.ExceptionGenerator\\net6.0",
   "environmentVariables": {
     "COR_ENABLE_PROFILING": "1",
-    "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-    "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+    "COR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "COR_PROFILER_PATH_64": "$(CWD)\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Profiler.Native.dll",
     "CORECLR_ENABLE_PROFILING": "1",
-    "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-    "CORECLR_PROFILER_PATH_64": "$(CWD)\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
-    "DD_PROFILING_METRICS_FILEPATH": "metrics.json"
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)\\..\\..\\shared\\bin\\monitoring-home\\win-x64\\Datadog.Profiler.Native.dll",
+    "DD_PROFILING_METRICS_FILEPATH": "metrics.json",
+    "DD_PROFILING_GC_ENABLED": "0"
   },
   "tags": {
     "runtime.architecture": "x64",
     "runtime.name": ".NET Core",
-    "runtime.version": "3.1",
-    "benchmark.job.runtime.name": ".NET Core 3.1",
-    "benchmark.job.runtime.moniker": "netcoreapp3.1"
+    "runtime.version": "6.0",
+    "benchmark.job.runtime.name": ".NET 6.0",
+    "benchmark.job.runtime.moniker": "net6.0"
   },
   "metricsFilePath": "*metrics.json"
 }
