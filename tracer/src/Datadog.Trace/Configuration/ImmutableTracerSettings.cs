@@ -121,7 +121,6 @@ namespace Datadog.Trace.Configuration
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
             DelayWcfInstrumentationEnabled = settings.DelayWcfInstrumentationEnabled;
             WcfObfuscationEnabled = settings.WcfObfuscationEnabled;
-            PropagationStyle = settings.PropagationStyle;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
@@ -442,11 +441,6 @@ namespace Datadog.Trace.Configuration
         /// into the <c>resourceName</c> of a span.
         /// </summary>
         internal bool WcfObfuscationEnabled { get; }
-
-        /// <summary>
-        /// Gets a value indicating the injection and extraction propagation styles.
-        /// </summary>
-        internal string[] PropagationStyle { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.
