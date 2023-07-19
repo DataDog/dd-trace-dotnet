@@ -71,16 +71,24 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IntPtr RawPtr => ptr;
 
+        public static Obj Wrap(IntPtr ptr)
+        {
+            var res = new Obj(ptr);
+            res.disposed = true;
+            return res;
+        }
+
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        public void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (disposed)
             {
+                ptr = IntPtr.Zero;
                 return;
             }
 

@@ -82,7 +82,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
             {
                 if (diagnostics != IntPtr.Zero)
                 {
-                    var diagObject = new Obj(diagnostics);
+                    var diagObject = Obj.Wrap(diagnostics);  // Do not free the pointer on dispose
                     if (diagObject.ArgsType == ObjType.Invalid)
                     {
                         errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
