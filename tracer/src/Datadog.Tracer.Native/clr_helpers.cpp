@@ -231,24 +231,20 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
     bool type_isSealed = false;
 
     HRESULT hr = E_FAIL;
-    const auto token_type = TypeFromToken(token_);
+    const auto token_type_ = TypeFromToken(token_);
 
-    std::queue<mdToken> tokens;
-    tokens.push(token_);
+    auto token = token_;
     std::set<mdToken> processed;
 
-    while (true)
+    while (token != mdTokenNil)
     {
-        auto token = tokens.front();
-        tokens.pop();
-
         if (std::find(processed.begin(), processed.end(), token) != processed.end())
         {
             return {}; //Break circular reference
         }
         processed.insert(token);
 
-
+        const auto token_type = TypeFromToken(token);
         switch (token_type)
         {
             case mdtTypeDef:
@@ -291,7 +287,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
                 {
                     mdToken type_token;
                     CorSigUncompressToken(&signature[2], &type_token);
-                    tokens.push(type_token);
+                    token = type_token;
                     continue;
                 }
             }
@@ -320,7 +316,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
         }
 
-        return {token_,         type_name_string, mdTypeSpecNil, token_type,     extendsInfo, type_valueType,
+        return {token_,         type_name_string, mdTypeSpecNil, token_type_,     extendsInfo, type_valueType,
                 type_isGeneric, type_isAbstract,  type_isSealed, parentTypeInfo, parent_token};
     }
 }
