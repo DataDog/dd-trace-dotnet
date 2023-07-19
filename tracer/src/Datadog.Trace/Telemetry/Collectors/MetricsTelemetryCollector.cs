@@ -78,6 +78,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
                     value = int.MaxValue;
                 }
 
+                // Be careful here to avoid copying - AggregatedMetric is a stuct
+                // We may refactor this later to be less dangerous
                 aggregatedMetrics[i].AddValue(timestamp, value);
             }
         }
@@ -90,6 +92,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
             var distribution = distributions[i];
             while (distribution.TryDequeue(out var point))
             {
+                // Be careful here to avoid copying - AggregatedDistribution is a stuct
+                // We may refactor this later to be less dangerous
                 aggregatedDistributions[i].AddValue(point);
             }
         }
