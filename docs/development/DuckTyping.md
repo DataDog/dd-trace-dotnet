@@ -935,7 +935,7 @@ Intel Core i7-1068NG7 CPU 2.30GHz, 1 CPU, 2 logical and 2 physical cores
 
 Duck typing is useful when you need to access members of a third-party object that you can't reference directly at runtime (as is typicaly the case for integrations). However, the reverse operation is sometimes required, where we have a custom type that we want to pass to the third-party method, but that custom type needs to implement some third-party interface that we can't reference directly.
 
-In this situation you can use reverse-duck-typing (also call duck-implementing) to create a proxy object that wraps your custom object and implements the requiremd interface, delegating calls to the interface member to the underlying custom object
+In this situation you can use reverse-duck-typing (also call duck-implementing) to create a proxy object that wraps your custom object and implements the required interface, delegating calls to the interface member to the underlying custom object
 
 For example, given the following example (analgous the first duck-typing example in this document)
 
