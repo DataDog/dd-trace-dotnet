@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V6
         AssemblyName = ElasticsearchV6Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV6Constants.RequestPipelineTypeName,
         MethodName = "CallElasticsearch",
-        ReturnTypeName = "T",
+        ReturnTypeName = "!0",
         ParameterTypeNames = new[] { "Elasticsearch.Net.RequestData" },
         MinimumVersion = ElasticsearchV6Constants.Version6,
         MaximumVersion = ElasticsearchV6Constants.Version6,

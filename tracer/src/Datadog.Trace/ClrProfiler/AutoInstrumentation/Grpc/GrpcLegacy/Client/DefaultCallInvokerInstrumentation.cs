@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         AssemblyName = "Grpc.Core",
         TypeName = "Grpc.Core.DefaultCallInvoker",
         MethodName = "CreateCall",
-        ReturnTypeName = "Grpc.Core.CallInvocationDetails`2<!!0,!!1>",
+        ReturnTypeName = "Grpc.Core.CallInvocationDetails`2[!!0,!!1]",
         ParameterTypeNames = new[] { "Grpc.Core.Method`2[!!0,!!1]", ClrNames.String, "Grpc.Core.CallOptions" },
         MinimumVersion = "2.0.0",
         MaximumVersion = "2.*.*",

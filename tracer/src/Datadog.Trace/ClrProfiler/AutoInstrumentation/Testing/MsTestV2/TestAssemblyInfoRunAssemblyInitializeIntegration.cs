@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestAssemblyInfo",
     MethodName = "RunAssemblyInitialize",
     ReturnTypeName = ClrNames.Void,
-    ParameterTypeNames = new[] { "_" },
+    ParameterTypeNames = new[] { ClrNames.Ignore },
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]

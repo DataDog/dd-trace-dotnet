@@ -17,9 +17,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
 /// System.Security.Cryptography.HashAlgorithm instrumentation
 /// </summary>
 [InstrumentMethod(
-    AssemblyNames = new[] { "System.Security.Cryptography.Primitives" },
-    TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
-    ParameterTypeNames = new string[] { },
+    AssemblyName = "System.Security.Cryptography.Primitives",
+    TypeName = "System.Security.Cryptography.SymmetricAlgorithm",
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "1.0.0",
@@ -27,9 +26,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
 [InstrumentMethod(
-    AssemblyNames = new[] { "System.Security.Cryptography" },
-    TypeNames = new[] { "System.Security.Cryptography.SymmetricAlgorithm" },
-    ParameterTypeNames = new string[] { },
+    AssemblyName = "System.Security.Cryptography",
+    TypeName = "System.Security.Cryptography.SymmetricAlgorithm",
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "7.0.0",
