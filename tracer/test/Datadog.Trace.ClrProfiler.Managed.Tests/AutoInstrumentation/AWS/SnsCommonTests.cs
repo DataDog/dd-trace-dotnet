@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -42,27 +43,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             // Act
             ContextPropagation.InjectHeadersIntoMessage<PublishRequest>(proxy, _spanContext);
 
+            // Now, attempt to extract the SpanContext from the message
+            var getter = new MemoryStreamCarrierGetter();
+            var extracted = DatadogContextPropagator.Instance.TryExtract(proxy, getter, out var extractedSpanContext);
+
             // Assert
-            var attributes = (Dictionary<string, MessageAttributeValue>)proxy.MessageAttributes;
-
-            attributes.Should().ContainKey(DatadogAttributeKey);
-            if (attributes.TryGetValue(DatadogAttributeKey, out var attributeValue))
-            {
-                var ddTraceContextMemoryStream = attributeValue.BinaryValue;
-                ddTraceContextMemoryStream.Position = 0;
-                var reader = new StreamReader(ddTraceContextMemoryStream);
-                var jsonString = reader.ReadToEnd();
-
-                var traceContextJson = JObject.Parse(jsonString);
-                var traceId = traceContextJson["x-datadog-trace-id"].Value<string>();
-                var parentId = traceContextJson["x-datadog-parent-id"].Value<string>();
-                Assert.Equal(_parentId, parentId);
-                Assert.Equal("9876543210987654321", traceId);
-            }
-            else
-            {
-                throw new Exception("DatadogAttributeKey not found in MessageAttributes.");
-            }
+            extracted.Should().BeTrue();
+            extractedSpanContext.Should().NotBeNull();
+            extractedSpanContext.TraceId.Should().Be(_spanContext.TraceId);
+            extractedSpanContext.SpanId.Should().Be(_spanContext.SpanId);
         }
     }
 }
