@@ -91,7 +91,7 @@ internal class MongoBsonWriter
                 _bsonWriterProxy.WriteBinaryData(binaryData.Instance);
                 break;
             default:
-                _bsonWriterProxy.WriteString("<binary>");
+                _bsonWriterProxy.WriteString("<Binary Truncated>");
                 break;
         }
     }

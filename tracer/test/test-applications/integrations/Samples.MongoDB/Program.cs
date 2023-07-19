@@ -24,6 +24,9 @@ namespace Samples.MongoDB
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
 
+            // Create binary data (e.g., byte array)
+            byte[] binaryData = { 0x01, 0x02, 0x03, 0x04 };
+
             var newDocument = new BsonDocument
             {
                 { "name", "MongoDB" },
@@ -49,6 +52,13 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
+                // Running large BsonDocument queries
+                // Adding Binary data and a long string for the key and value
+                newDocument.Add("binaryField", new BsonBinaryData(binaryData, BsonBinarySubType.Binary));
+                newDocument.Add(GenerateRandomString(3000),  GenerateRandomString(3000));
+                Run(collection, newDocument);
+                collection.FindSync(newDocument).FirstOrDefault();
+                
 #if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif
@@ -148,5 +158,14 @@ namespace Samples.MongoDB
             }
         }
 #endif
+        
+        // Function to generate a random string with the specified length
+        private static string GenerateRandomString(int length)
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+            var random = new Random();
+            return new string(Enumerable.Repeat(chars, length)
+                                        .Select(s => s[random.Next(s.Length)]).ToArray());
+        }
     }
 }
