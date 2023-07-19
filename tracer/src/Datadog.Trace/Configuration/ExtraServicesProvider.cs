@@ -16,10 +16,13 @@ internal class ExtraServicesProvider : IExtraServicesProvider
     private const int MaxExtraServices = 64;
     private const string FakeValue = null;
 
+    // no concurrent hash set, so use a dictionary with empty values
     private readonly ConcurrentDictionary<string, string> _extraServices = new();
 
     public void AddService(string serviceName)
     {
+        // Several threads entering simultaneously can cause MaxExtraService to be exceeded.
+        // As long as the list doesn't grow much beyond MaxExtraService we don't care.
         if (_extraServices.Count < MaxExtraServices)
         {
             _extraServices.AddOrUpdate(serviceName, FakeValue, (string _, string _) => null!);
