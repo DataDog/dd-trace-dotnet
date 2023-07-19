@@ -11,7 +11,7 @@ IMAGE_NAME="dd-trace-dotnet/debian-base"
 docker build \
    --build-arg DOTNETSDK_VERSION=7.0.306 \
    --tag $IMAGE_NAME \
-   --file "$BUILD_DIR/docker/debian.dockerfile" \
+   --file "$BUILD_DIR/docker/centos7.dockerfile" \
    "$BUILD_DIR"
 
 docker run -it --rm \
