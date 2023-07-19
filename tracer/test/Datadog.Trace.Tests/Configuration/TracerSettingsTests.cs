@@ -630,10 +630,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog", "tracecontext" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
+        [InlineData(null, null, null, new[] { "Datadog", "tracecontext" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
@@ -654,10 +654,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog", "tracecontext" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
+        [InlineData(null, null, null, new[] { "Datadog", "tracecontext" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
@@ -668,6 +668,23 @@ namespace Datadog.Trace.Tests.Configuration
                     (ConfigurationKeys.PropagationStyleExtract, value),
                     (legacyKey, legacyValue),
                     (ConfigurationKeys.PropagationStyle, fallbackValue),
+                    (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
+
+                var settings = new TracerSettings(source);
+
+                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+            }
+        }
+
+        [Theory]
+        [InlineData("test1,, ,test2", new[] { "test1", "test2" })]
+        [InlineData("", new[] { "Datadog", "tracecontext" })]
+        public void PropagationStyle(string value, string[] expected)
+        {
+            foreach (var isActivityListenerEnabled in new[] { true, false })
+            {
+                var source = CreateConfigurationSource(
+                    (ConfigurationKeys.PropagationStyleExtract, value),
                     (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
 
                 var settings = new TracerSettings(source);

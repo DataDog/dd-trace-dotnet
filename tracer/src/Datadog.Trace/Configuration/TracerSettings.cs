@@ -263,6 +263,18 @@ namespace Datadog.Trace.Configuration
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
                                                      .AsBool(false);
 
+            var propagationStyle = config
+                                  .WithKeys(ConfigurationKeys.PropagationStyle)
+                                  .AsString();
+
+            PropagationStyle = TrimSplitString(propagationStyle, commaSeparator);
+
+            if (PropagationStyle.Length == 0)
+            {
+                // default value
+                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
+            }
+
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                         .AsString();
@@ -272,7 +284,7 @@ namespace Datadog.Trace.Configuration
             if (PropagationStyleInject.Length == 0)
             {
                 // default value
-                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog };
+                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
             }
 
             var propagationStyleExtract = config
@@ -284,7 +296,7 @@ namespace Datadog.Trace.Configuration
             if (PropagationStyleExtract.Length == 0)
             {
                 // default value
-                PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog };
+                PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.Datadog, ContextPropagationHeaderStyle.W3CTraceContext };
             }
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
@@ -709,6 +721,11 @@ namespace Datadog.Trace.Configuration
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
         internal int OutgoingTagPropagationHeaderMaxLength { get; }
+
+        /// <summary>
+        /// Gets a value indicating the injection and extraction propagation styles.
+        /// </summary>
+        internal string[] PropagationStyle { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.
