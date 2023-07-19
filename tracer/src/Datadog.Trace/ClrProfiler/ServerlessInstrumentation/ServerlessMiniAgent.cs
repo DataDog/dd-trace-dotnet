@@ -66,18 +66,18 @@ internal static class ServerlessMiniAgent
         return rustBinaryPath;
     }
 
-    internal static Process StartServerlessMiniAgent(ImmutableTracerSettings settings)
+    internal static void StartServerlessMiniAgent(ImmutableTracerSettings settings)
     {
         var serverlessMiniAgentPath = ServerlessMiniAgent.GetMiniAgentPath(Environment.OSVersion.Platform, settings);
         if (string.IsNullOrEmpty(serverlessMiniAgentPath))
         {
-            return null;
+            return;
         }
 
         if (!File.Exists(serverlessMiniAgentPath))
         {
             Log.Error("Serverless Mini Agent does not exist: {Path}", serverlessMiniAgentPath);
-            return null;
+            return;
         }
 
         try
@@ -91,12 +91,10 @@ internal static class ServerlessMiniAgent
 
             process.Start();
             process.BeginOutputReadLine();
-            return process;
         }
         catch (Exception ex)
         {
             Log.Error(ex, "Error spawning the Serverless Mini Agent.");
-            return null;
         }
     }
 
@@ -148,9 +146,17 @@ internal static class ServerlessMiniAgent
         }
 
         string level = rawLog.Substring(0, logPrefixCutoff).Split(' ')[1];
+
         if (!(level is "ERROR" or "WARN" or "INFO" or "DEBUG"))
         {
             return Tuple.Create("INFO", rawLog);
+        }
+
+        string processedLog = rawLog.Substring(logPrefixCutoff + 1).Trim();
+
+        if (level is "DEBUG")
+        {
+            return Tuple.Create("INFO", $"[DEBUG] {processedLog}");
         }
 
         return Tuple.Create(level, rawLog.Substring(logPrefixCutoff + 1).Trim());

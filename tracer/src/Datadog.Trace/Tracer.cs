@@ -152,9 +152,6 @@ namespace Datadog.Trace
 
                 instance.TracerManager.Start();
 
-                // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
-                Process miniAgentProcess = ServerlessMiniAgent.StartServerlessMiniAgent(instance.Settings);
-
                 return instance;
             }
 
