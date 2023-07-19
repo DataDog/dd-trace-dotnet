@@ -1,6 +1,6 @@
 @echo on
 
-dotnet tool update -g timeitsharp --version 0.0.9
+dotnet tool update -g timeitsharp --version 0.0.10
 
 :: remove DOTNET_ROOT environment variable to ensure we can run
 :: the benchmark in x64 and x86
