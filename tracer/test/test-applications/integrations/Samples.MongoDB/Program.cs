@@ -25,7 +25,12 @@ namespace Samples.MongoDB
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
 
             // Create binary data (e.g., byte array)
-            byte[] binaryData = { 0x01, 0x02, 0x03, 0x04 };
+            // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
+            var guidByteArray = Guid.Empty.ToByteArray();
+            var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
+            var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
+            var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
+            var largeTagValue = string.Join(" ", Enumerable.Repeat("Test", 1000));
 
             var newDocument = new BsonDocument
             {
@@ -52,10 +57,13 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
-                // Running large BsonDocument queries
-                // Adding Binary data and a long string for the key and value
-                newDocument.Add("binaryField", new BsonBinaryData(binaryData, BsonBinarySubType.Binary));
-                newDocument.Add(GenerateRandomString(3000),  GenerateRandomString(3000));
+                // Running large BsonDocument query
+                // Adding Binary data and long string value to BsonDocument
+                newDocument.Add("genericBinary", genericBinary);
+                newDocument.Add("uuidStandardBinary", uuidStandardBinary);
+                newDocument.Add("uuidLegacyBinary", uuidLegacyBinary);
+                newDocument.Add("largeKey",  largeTagValue);
+                
                 Run(collection, newDocument);
                 collection.FindSync(newDocument).FirstOrDefault();
                 

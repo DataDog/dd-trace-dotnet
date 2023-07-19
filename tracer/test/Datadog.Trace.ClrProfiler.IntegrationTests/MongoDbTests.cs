@@ -82,15 +82,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // In 2.19, The explain query includes { "$expr" : true }, whereas in earlier versions it doesn't
                 settings.AddSimpleScrubber("{ \"$expr\" : true }", "{ }");
 
-                // Taking the span with large query tag and binary data out of list
-                var largeQueryTagSpan = spans
-                   .FirstOrDefault(x => x.GetTag(Tags.MongoDbQuery)?.Contains("binaryField") == true);
-
-                if (largeQueryTagSpan != null)
-                {
-                    spans = spans.RemoveAt(spans.IndexOf(largeQueryTagSpan));
-                }
-
                 // The mongodb driver sends periodic monitors
                 var adminSpans = spans
                                 .Where(x => x.Resource is "buildInfo admin" or "getLastError admin")
@@ -131,10 +122,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         adminSpan.Tags.Should().Contain("mongodb.query", "{ \"getLastError\" : 1 }");
                     }
                 }
-
-                // Checking that span containing binaryField was truncated
-                largeQueryTagSpan?.GetTag(Tags.MongoDbQuery).Length.Should().Be(5000);
-                largeQueryTagSpan?.GetTag(Tags.MongoDbQuery).Should().Contain("<Binary Truncated>");
             }
         }
     }

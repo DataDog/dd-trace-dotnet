@@ -83,6 +83,29 @@
   {
     TraceId: Id_1,
     SpanId: Id_6,
+    Name: mongodb.query,
+    Resource: find test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_2,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "find" : "employees", "filter" : { "_id" : ObjectId("ABC123"), "name" : "MongoDB", "type" : "Database", "count" : 1, "info" : { "x" : 203, "y" : 102 }, "genericBinary" : "<Truncated>", "uuidStandardBinary" : CSUUID("Guid_Empty"), "uuidLegacyBinary" : CSUUID("Guid_Empty"), "largeKey" : "Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test Test T,
+      out.host: mongo,
+      out.port: 27017,
+      runtime-id: Guid_2,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_7,
     Name: async-calls-execute,
     Resource: sync-calls-execute,
     Service: Samples.MongoDB,
@@ -100,7 +123,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_7,
+    SpanId: Id_8,
     Name: Samples.MongoDB.internal,
     Resource: async-calls-execute,
     Service: Samples.MongoDB,
@@ -118,7 +141,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_8,
+    SpanId: Id_9,
     Name: mongodb.query,
     Resource: delete test-db,
     Service: Samples.MongoDB-mongodb,
@@ -130,29 +153,6 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
-      runtime-id: Guid_2,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_9,
-    Name: mongodb.query,
-    Resource: insert test-db,
-    Service: Samples.MongoDB-mongodb,
-    Type: mongodb,
-    ParentId: Id_3,
-    Tags: {
-      component: MongoDb,
-      db.name: test-db,
-      env: integration_tests,
-      mongodb.collection: employees,
-      mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
@@ -166,7 +166,7 @@
     TraceId: Id_1,
     SpanId: Id_10,
     Name: mongodb.query,
-    Resource: aggregate test-db,
+    Resource: insert test-db,
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
     ParentId: Id_3,
@@ -175,7 +175,7 @@
       db.name: test-db,
       env: integration_tests,
       mongodb.collection: employees,
-      mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
+      mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
@@ -189,7 +189,7 @@
     TraceId: Id_1,
     SpanId: Id_11,
     Name: mongodb.query,
-    Resource: find test-db,
+    Resource: aggregate test-db,
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
     ParentId: Id_3,
@@ -198,7 +198,7 @@
       db.name: test-db,
       env: integration_tests,
       mongodb.collection: employees,
-      mongodb.query: { "find" : "employees", "filter" : { } },
+      mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
@@ -212,6 +212,29 @@
     TraceId: Id_1,
     SpanId: Id_12,
     Name: mongodb.query,
+    Resource: find test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_3,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "find" : "employees", "filter" : { } },
+      out.host: mongo,
+      out.port: 27017,
+      runtime-id: Guid_2,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_13,
+    Name: mongodb.query,
     Resource: mongodb.query,
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
@@ -230,7 +253,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_13,
+    SpanId: Id_14,
     Name: mongodb.query,
     Resource: delete test-db,
     Service: Samples.MongoDB-mongodb,
@@ -242,29 +265,6 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "delete" : "employees", "ordered" : true },
-      out.host: mongo,
-      out.port: 27017,
-      runtime-id: Guid_2,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_14,
-    Name: mongodb.query,
-    Resource: insert test-db,
-    Service: Samples.MongoDB-mongodb,
-    Type: mongodb,
-    ParentId: Id_4,
-    Tags: {
-      component: MongoDb,
-      db.name: test-db,
-      env: integration_tests,
-      mongodb.collection: employees,
-      mongodb.query: { "insert" : "employees", "ordered" : true },
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
@@ -278,6 +278,29 @@
     TraceId: Id_1,
     SpanId: Id_15,
     Name: mongodb.query,
+    Resource: insert test-db,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_4,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "insert" : "employees", "ordered" : true },
+      out.host: mongo,
+      out.port: 27017,
+      runtime-id: Guid_2,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_16,
+    Name: mongodb.query,
     Resource: aggregate test-db,
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
@@ -299,7 +322,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_16,
+    SpanId: Id_17,
     Name: mongodb.query,
     Resource: find test-db,
     Service: Samples.MongoDB-mongodb,
@@ -322,7 +345,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_17,
+    SpanId: Id_18,
     Name: mongodb.query,
     Resource: delete test-db,
     Service: Samples.MongoDB-mongodb,
@@ -345,7 +368,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_18,
+    SpanId: Id_19,
     Name: mongodb.query,
     Resource: insert test-db,
     Service: Samples.MongoDB-mongodb,
@@ -368,7 +391,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_19,
+    SpanId: Id_20,
     Name: mongodb.query,
     Resource: aggregate test-db,
     Service: Samples.MongoDB-mongodb,
@@ -391,7 +414,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_20,
+    SpanId: Id_21,
     Name: mongodb.query,
     Resource: find test-db,
     Service: Samples.MongoDB-mongodb,
@@ -403,26 +426,6 @@
       env: integration_tests,
       mongodb.collection: employees,
       mongodb.query: { "find" : "employees", "filter" : { } },
-      out.host: mongo,
-      out.port: 27017,
-      runtime-id: Guid_2,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_21,
-    Name: mongodb.query,
-    Resource: mongodb.query,
-    Service: Samples.MongoDB-mongodb,
-    Type: mongodb,
-    ParentId: Id_5,
-    Tags: {
-      component: MongoDb,
-      env: integration_tests,
       out.host: mongo,
       out.port: 27017,
       runtime-id: Guid_2,
@@ -439,7 +442,7 @@
     Resource: mongodb.query,
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
-    ParentId: Id_6,
+    ParentId: Id_5,
     Tags: {
       component: MongoDb,
       env: integration_tests,
@@ -460,6 +463,26 @@
     Service: Samples.MongoDB-mongodb,
     Type: mongodb,
     ParentId: Id_7,
+    Tags: {
+      component: MongoDb,
+      env: integration_tests,
+      out.host: mongo,
+      out.port: 27017,
+      runtime-id: Guid_2,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_24,
+    Name: mongodb.query,
+    Resource: mongodb.query,
+    Service: Samples.MongoDB-mongodb,
+    Type: mongodb,
+    ParentId: Id_8,
     Tags: {
       component: MongoDb,
       env: integration_tests,
