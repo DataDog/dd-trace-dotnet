@@ -94,7 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                     {
                         propagatedContext = SpanContextPropagator.Instance.Extract(requestMessage.Headers, GetHeaderValues);
 
-                        IEnumerable<string> GetHeaderValues(IMessageHeaders headers, string name)
+                        static IEnumerable<string> GetHeaderValues(IMessageHeaders headers, string name)
                         {
                             try
                             {

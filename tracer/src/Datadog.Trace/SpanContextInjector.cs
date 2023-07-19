@@ -24,6 +24,15 @@ namespace Datadog.Trace
     public class SpanContextInjector
     {
         /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContextInjector"/> class
+        /// </summary>
+        [PublicApi]
+        public SpanContextInjector()
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextInjector_Ctor);
+        }
+
+        /// <summary>
         /// Given a SpanContext carrier and a function to set a value, this method will inject a SpanContext.
         /// You should only call <see cref="Inject{TCarrier}"/> once on the message <paramref name="carrier"/>. Calling
         /// multiple times may lead to incorrect behaviors.
