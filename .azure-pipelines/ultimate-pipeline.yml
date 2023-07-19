@@ -3935,6 +3935,10 @@ stages:
           sampleName: ExceptionGenerator
           testName: exceptions
           poolName: ProfilerExecBenchAgent2
+        Contention:
+          sampleName: Computer01
+          testName: contention
+          poolName: ProfilerExecBenchAgent3
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
