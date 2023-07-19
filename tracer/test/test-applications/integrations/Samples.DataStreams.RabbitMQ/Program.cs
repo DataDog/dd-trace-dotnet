@@ -25,33 +25,6 @@ namespace Samples.DataStreams.RabbitMQ
         
         public static async Task Main(string[] args)
         {
-#if RABBITMQ_6_5_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_5_0");
-#endif
-#if RABBITMQ_6_4_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_4_0");
-#endif
-#if RABBITMQ_6_3_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_3_0");
-#endif
-#if RABBITMQ_6_2_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_2_0");
-#endif
-#if RABBITMQ_6_1_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_1_0");
-#endif
-#if RABBITMQ_6_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_6_0");
-#endif
-#if RABBITMQ_5_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_5_0");
-#endif
-#if RABBITMQ_4_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_4_0");
-#endif
-#if RABBITMQ_3_0
-            Console.WriteLine("RABBIT_VERSION IS: RABBITMQ_3_0");
-#endif
             await SampleHelpers.WaitForDiscoveryService();
 
             var factory = new ConnectionFactory() { HostName = Host };
@@ -75,7 +48,7 @@ namespace Samples.DataStreams.RabbitMQ
             }
 
             // produce/consume operation (topic exchange)
-            List<string> topicQueues = PublishMessageToFanoutExchange(model);
+            List<string> topicQueues = PublishMessageToTopicExchange(model);
             foreach (var queue in topicQueues) {
                 GetMessage(model, queue);
             }
