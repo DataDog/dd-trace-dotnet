@@ -92,7 +92,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return classLanguageSpecifics;
         }
 
-        internal Root GetAssemblySymbol(Assembly assembly, string serviceName)
+        internal Model.Scope GetAssemblySymbol(Assembly assembly)
         {
             var assemblyScope = new Model.Scope
             {
@@ -105,16 +105,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 Scopes = new List<Model.Scope>()
             };
 
-            var root = new Root
-            {
-                Service = serviceName,
-                Env = string.Empty,
-                Language = "dotnet",
-                Version = string.Empty,
-                Scopes = new[] { assemblyScope }
-            };
-
-            return root;
+            return assemblyScope;
         }
 
         private Symbol[] GetFieldSymbols(IList<FieldDef> typeFields)
@@ -303,7 +294,6 @@ namespace Datadog.Trace.Debugger.Symbols
                     {
                         method.Attributes.ToString(),
                         method.ImplAttributes.ToString(),
-                        // todo: do we want also custom attributes?
                     }
                 };
 

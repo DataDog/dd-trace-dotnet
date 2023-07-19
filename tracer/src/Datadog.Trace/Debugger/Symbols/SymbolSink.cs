@@ -2,7 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Reflection;
@@ -18,14 +18,18 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly string _serviceName;
+        private readonly string? _serviceVersion;
+        private readonly string? _environment;
         private readonly SymbolExtractor _symbolExtractor;
         private readonly SymbolUploader _symbolUploader;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly HashSet<string> _alreadyProcessed;
 
-        private SymbolSink(string serviceName, SymbolUploader uploader, SymbolExtractor symbolExtractor)
+        private SymbolSink(string? environment, string? serviceVersion, string serviceName, SymbolUploader uploader, SymbolExtractor symbolExtractor)
         {
             _alreadyProcessed = new HashSet<string>();
+            _environment = environment;
+            _serviceVersion = serviceVersion;
             _serviceName = serviceName;
             _symbolUploader = uploader;
             _symbolExtractor = symbolExtractor;
@@ -33,9 +37,9 @@ namespace Datadog.Trace.Debugger.Symbols
             _cancellationTokenSource = new CancellationTokenSource();
         }
 
-        public static SymbolSink Create(string serviceName, SymbolUploader uploader, SymbolExtractor symbolExtractor)
+        public static SymbolSink Create(string? environment, string? serviceVersion, string serviceName, SymbolUploader uploader, SymbolExtractor symbolExtractor)
         {
-            return new SymbolSink(serviceName, uploader, symbolExtractor);
+            return new SymbolSink(environment, serviceVersion, serviceName, uploader, symbolExtractor);
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -84,7 +88,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 return;
             }
 
-            var root = _symbolExtractor.GetAssemblySymbol(assembly, _serviceName);
+            var assemblyScope = _symbolExtractor.GetAssemblySymbol(assembly);
+
+            var root = new Model.Root
+            {
+                Service = _serviceName,
+                Env = _environment,
+                Language = "dotnet",
+                Version = _serviceVersion,
+                Scopes = new[] { assemblyScope }
+            };
 
             foreach (var classSymbol in _symbolExtractor.GetClassSymbols(assembly))
             {

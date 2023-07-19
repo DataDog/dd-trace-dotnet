@@ -68,7 +68,7 @@ internal class LiveDebuggerFactory
 
         var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService);
         var symbolUploader = SymbolUploader.Create(symbolBatchApi, settings.MaxSymbolSizeToUpload);
-        var symbolSink = SymbolSink.Create(serviceName, symbolUploader, new SymbolExtractor());
+        var symbolSink = SymbolSink.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal, serviceName, symbolUploader, new SymbolExtractor());
 
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
 
