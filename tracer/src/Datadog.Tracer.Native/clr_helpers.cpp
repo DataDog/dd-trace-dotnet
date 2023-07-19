@@ -319,6 +319,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
         return {token_,         type_name_string, mdTypeSpecNil, token_type_,     extendsInfo, type_valueType,
                 type_isGeneric, type_isAbstract,  type_isSealed, parentTypeInfo, parent_token};
     }
+    return {};
 }
 
 // Searches for an AssemblyRef whose name and version match exactly.
