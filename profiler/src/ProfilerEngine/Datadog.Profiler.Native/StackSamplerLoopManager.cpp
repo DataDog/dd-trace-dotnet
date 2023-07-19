@@ -360,8 +360,7 @@ void StackSamplerLoopManager::LogDeadlockIntervention(const std::chrono::nanosec
 
     Log::Info("StackSamplerLoopManager::PerformDeadlockIntervention(): The ongoing StackSampleCollection duration crossed the threshold."
               " A deadlock intervention was performed."
-              " Deadlocked target thread=(OsThreadId=",
-              std::dec, _pTargetThread->GetOsThreadId(), ", ",
+              " Deadlocked target thread=(OsThreadId=", std::dec, _pTargetThread->GetOsThreadId(), ", ",
               " ClrThreadId=0x", std::hex, _pTargetThread->GetClrThreadId(), ");", std::dec,
               " ongoingStackSampleCollectionDurationNs=", ToMillis(ongoingStackSampleCollectionDurationNs), " millisecs;",
               " _isTargetThreadResumed=", std::boolalpha, isThreadResumed, ";",
@@ -377,8 +376,7 @@ void StackSamplerLoopManager::LogDeadlockIntervention(const std::chrono::nanosec
     if (wasThreadSafeForStackSampleCollection != isThreadSafeForStackSampleCollection)
     {
         Log::Info("ShouldCollectThread status changed in PerformDeadlockIntervention"
-                  " for thread (OsThreadId=",
-                  _pTargetThread->GetOsThreadId(),
+                  " for thread (OsThreadId=", _pTargetThread->GetOsThreadId(),
                   ", ClrThreadId=0x", std::hex, _pTargetThread->GetClrThreadId(), std::dec,
                   ", ThreadName=\"", _pTargetThread->GetThreadName(),
                   " wasThreadSafeForStackSampleCollection=", std::boolalpha, wasThreadSafeForStackSampleCollection, ";",
@@ -402,24 +400,14 @@ void StackSamplerLoopManager::StartNewStatsAggregationPeriod(std::int64_t curren
     {
         // Do not flood logs:
         // If we detected issues in this period, always log an info message,
-        // if we did not, then only log a debug message.
         if (_deadlocksInPeriod > 0)
         {
             Log::Info("StackSamplerLoopManager: Completing a StatsAggregationPeriod.",
                       " Period-Index=", _currentPeriod, ",",
-                      " Targeted-PediodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
-                      " Actual-PediodDuration=", ToMillis(periodDurationNs), " millisec,",
+                      " Targeted-PeriodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
+                      " Actual-PeriodDuration=", ToMillis(periodDurationNs), " millisec,",
                       " Period-DeadlockDetectionsCount=", _deadlocksInPeriod, ",",
                       " AppLifetime-DeadlockDetectionsCount=", _totalDeadlockDetectionsCount, ".");
-        }
-        else if (Log::IsDebugEnabled())
-        {
-            Log::Debug("StackSamplerLoopManager: Completing a StatsAggregationPeriod.",
-                       " Period-Index=", _currentPeriod, ",",
-                       " Targeted-PediodDuration=", StatsAggregationPeriodMs.count(), " millisec,",
-                       " Actual-PediodDuration=", ToMillis(periodDurationNs), " millisec,",
-                       " Period-DeadlockDetectionsCount=", _deadlocksInPeriod, ",",
-                       " AppLifetime-DeadlockDetectionsCount=", _totalDeadlockDetectionsCount, ".");
         }
     }
 
@@ -582,7 +570,7 @@ inline bool StackSamplerLoopManager::GetUpdateIsThreadSafeForStackSampleCollecti
 
 inline bool StackSamplerLoopManager::ShouldCollectThread(
     std::uint64_t threadAggPeriodDeadlockCount,
-    std::uint64_t globalAggPeriodDeadlockCount) 
+    std::uint64_t globalAggPeriodDeadlockCount)
 {
     return (threadAggPeriodDeadlockCount <= DeadlocksPerThreadThreshold) &&
            (globalAggPeriodDeadlockCount <= TotalDeadlocksThreshold);
