@@ -249,7 +249,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         // Setting entryNameLength to 0 will result in the entryName length being re-computed with strlen
         internal bool ObjectMapAdd(IntPtr map, string entryName, ulong entryNameLength, IntPtr entry) => Environment.Is64BitProcess ? _objectMapAddFieldX64!(map, entryName, entryNameLength, entry) : _objectMapAddFieldX86!(map, entryName, (uint)entryNameLength, entry);
 
-        internal void ObjectFreePtr(IntPtr input) => _freeObjectield(input);
+        internal void ObjectFreePtr(ref IntPtr input)
+        {
+            _freeObjectield(input);
+            input = IntPtr.Zero;
+        }
 
         internal void ResultFree(ref DdwafResultStruct output) => _freeResultField(ref output);
 

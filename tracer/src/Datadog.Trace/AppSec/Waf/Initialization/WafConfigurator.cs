@@ -201,8 +201,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                _wafLibraryInvoker.ObjectFreePtr(diagnostics);
-                _wafLibraryInvoker.ObjectFreePtr(rulesObj.RawPtr);
+                _wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
                 rulesObj.Dispose();
                 foreach (var arg in argsToDispose)
                 {

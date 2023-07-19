@@ -118,10 +118,9 @@ namespace Datadog.Trace.AppSec.Waf
         {
             if (diagnostics != IntPtr.Zero)
             {
-                _wafLibraryInvoker.ObjectFreePtr(diagnostics);
+                _wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
             }
 
-            _wafLibraryInvoker.ObjectFreePtr(updateData.RawPtr);
             updateData.Dispose();
 
             foreach (var arg in argsToDispose)
