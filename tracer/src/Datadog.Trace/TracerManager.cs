@@ -62,6 +62,7 @@ namespace Datadog.Trace
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IExtraServicesProvider extraServicesProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
@@ -75,6 +76,7 @@ namespace Datadog.Trace
             RuntimeMetrics = runtimeMetricsWriter;
             DefaultServiceName = defaultServiceName;
             GitMetadataTagsProvider = gitMetadataTagsProvider;
+            ExtraServicesProvider = extraServicesProvider;
             DataStreamsManager = dataStreamsManager;
             DirectLogSubmission = directLogSubmission;
             Telemetry = telemetry;
@@ -157,6 +159,8 @@ namespace Datadog.Trace
         public RuntimeMetricsWriter RuntimeMetrics { get; }
 
         public PerTraceSettings PerTraceSettings { get; set; }
+
+        public IExtraServicesProvider ExtraServicesProvider { get; set; }
 
         /// <summary>
         /// Replaces the global <see cref="TracerManager"/> settings. This affects all <see cref="Tracer"/> instances

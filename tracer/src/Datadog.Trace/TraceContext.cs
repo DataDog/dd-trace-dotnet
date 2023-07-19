@@ -148,6 +148,11 @@ namespace Datadog.Trace
                 }
             }
 
+            if (string.Compare(span.ServiceName, Tracer.DefaultServiceName, StringComparison.Ordinal) != 0)
+            {
+                Tracer.ExtraServicesProvider.AddService(span.ServiceName);
+            }
+
             lock (_rootSpan)
             {
                 _spans.Add(span);
