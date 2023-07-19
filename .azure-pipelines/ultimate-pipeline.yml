@@ -3939,6 +3939,10 @@ stages:
           sampleName: Computer01
           testName: contention
           poolName: ProfilerExecBenchAgent3
+        Allocations:
+          sampleName: Computer01
+          testName: allocations
+          poolName: ProfilerExecBenchAgent4
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
