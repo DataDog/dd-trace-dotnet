@@ -46,10 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TConsumer>(TTarget instance, string queue, bool autoAck, string consumerTag, bool noLocal, bool exclusive, IDictionary<string, object> arguments, TConsumer consumer)
         {
-            Console.WriteLine("BasicConsume start");
-            Console.WriteLine("Setting queue! consumer: " + consumer + ", queue: " + queue);
             QueueHelper.SetQueue(consumer, queue);
-            Console.WriteLine("Done setting queue! consumer: " + consumer + ", queue: " + queue);
             return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Client, queue: queue));
         }
 
@@ -65,15 +62,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <returns>A default CallTargetReturn to satisfy the CallTarget contract</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Console.WriteLine("BasicConsume ends");
-            // if (returnValue is string consumerTag && state.Scope.Span.Tags is RabbitMQTags tags)
-            // {
-            //    string queue = tags.Queue;
-            //    Console.WriteLine("Setting queue! consumerTag: " + consumerTag + ", queue: " + queue);
-            //    QueueHelper.SetQueue(consumerTag, queue);
-            //    Console.WriteLine("Done setting queue! consumerTag: " + consumerTag + ", queue: " + queue);
-            // }
-
             state.Scope.DisposeWithException(exception);
             return new CallTargetReturn<TReturn>(returnValue);
         }
