@@ -296,6 +296,10 @@ internal class TelemetryControllerV2 : ITelemetryController
     /// </summary>
     internal class Scheduler
     {
+        private const int DelayTaskIndex = 0;
+        private const int ProcessTaskIndex = 1;
+        private const int InitializationTaskIndex = 2;
+
         private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _processExitSource;
         private readonly Task[] _tasks;
@@ -326,8 +330,9 @@ internal class TelemetryControllerV2 : ITelemetryController
 
             // Using a task array instead of overloads to avoid allocating the array every loop
             _tasks = new Task[3];
-            _tasks[1] = processExitSource.Task;
-            _tasks[2] = _tracerInitialized.Task;
+            _tasks[DelayTaskIndex] = Task.CompletedTask; // Replaced on first iteration of WaitForNextInterval(), but ensures there's no nulls around
+            _tasks[ProcessTaskIndex] = processExitSource.Task;
+            _tasks[InitializationTaskIndex] = _tracerInitialized.Task;
         }
 
         public interface IDelayFactory
@@ -368,7 +373,7 @@ internal class TelemetryControllerV2 : ITelemetryController
             }
             else
             {
-                _tasks[0] = _delayFactory.Delay(waitPeriod);
+                _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod);
                 completedTask = await Task.WhenAny(_tasks).ConfigureAwait(false);
             }
 
@@ -395,7 +400,7 @@ internal class TelemetryControllerV2 : ITelemetryController
                 // We've just been started, so should always flush telemetry
                 ShouldFlushTelemetry = true;
                 // replace the tracerInitializedTask with a task that never completes
-                _tasks[2] = Task.Delay(Timeout.Infinite);
+                _tasks[InitializationTaskIndex] = Task.Delay(Timeout.Infinite);
             }
             else
             {
