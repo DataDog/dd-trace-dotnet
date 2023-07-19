@@ -1,38 +1,12 @@
 ﻿[
   {
     EdgeTags: [
-      direction:out,
-      exchange:Exchange,
-      has_routing_key:True,
-      type:rabbitmq
-    ],
-    Hash: 7218991745378541243,
-    ParentHash: 14997965376128510479,
-    PathwayLatency: /w==,
-    EdgeLatency: /w==,
-    TimestampType: current
-  },
-  {
-    EdgeTags: [
-      direction:out,
-      exchange:Exchange,
-      has_routing_key:True,
-      type:rabbitmq
-    ],
-    Hash: 7218991745378541243,
-    ParentHash: 14997965376128510479,
-    PathwayLatency: /w==,
-    EdgeLatency: /w==,
-    TimestampType: origin
-  },
-  {
-    EdgeTags: [
       direction:in,
-      topic:publish-Exchange,
+      topic:FanoutQueue2,
       type:rabbitmq
     ],
-    Hash: 13367043702322675723,
-    ParentHash: 7218991745378541243,
+    Hash: 1165217995935578856,
+    ParentHash: 3844962339543100314,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
     TimestampType: current
@@ -40,35 +14,11 @@
   {
     EdgeTags: [
       direction:in,
-      topic:publish-Exchange,
+      topic:FanoutQueue2,
       type:rabbitmq
     ],
-    Hash: 13367043702322675723,
-    ParentHash: 7218991745378541243,
-    PathwayLatency: /w==,
-    EdgeLatency: /w==,
-    TimestampType: origin
-  },
-  {
-    EdgeTags: [
-      direction:in,
-      topic:Queue,
-      type:rabbitmq
-    ],
-    Hash: 14997965376128510479,
-    ParentHash: 15684680177193068665,
-    PathwayLatency: /w==,
-    EdgeLatency: /w==,
-    TimestampType: current
-  },
-  {
-    EdgeTags: [
-      direction:in,
-      topic:Queue,
-      type:rabbitmq
-    ],
-    Hash: 14997965376128510479,
-    ParentHash: 15684680177193068665,
+    Hash: 1165217995935578856,
+    ParentHash: 3844962339543100314,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
     TimestampType: origin
@@ -76,10 +26,11 @@
   {
     EdgeTags: [
       direction:out,
-      topic:Queue,
+      exchange:FanoutExchange,
+      has_routing_key:False,
       type:rabbitmq
     ],
-    Hash: 15684680177193068665,
+    Hash: 3844962339543100314,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
     TimestampType: current
@@ -87,10 +38,59 @@
   {
     EdgeTags: [
       direction:out,
-      topic:Queue,
+      exchange:FanoutExchange,
+      has_routing_key:False,
       type:rabbitmq
     ],
-    Hash: 15684680177193068665,
+    Hash: 3844962339543100314,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:FanoutQueue3,
+      type:rabbitmq
+    ],
+    Hash: 5270783997300777633,
+    ParentHash: 3844962339543100314,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:FanoutQueue3,
+      type:rabbitmq
+    ],
+    Hash: 5270783997300777633,
+    ParentHash: 3844962339543100314,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:FanoutQueue1,
+      type:rabbitmq
+    ],
+    Hash: 7796288297426498879,
+    ParentHash: 3844962339543100314,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:FanoutQueue1,
+      type:rabbitmq
+    ],
+    Hash: 7796288297426498879,
+    ParentHash: 3844962339543100314,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
     TimestampType: origin
