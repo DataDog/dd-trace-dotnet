@@ -1864,9 +1864,14 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
 
             if (Logger::IsDebugEnabled())
             {
+                std::string kind = current.GetIsDerived() ? "DERIVED" : "DEFAULT";
+                if (current.GetIsInterface())
+                {
+                    kind += " INTERFACE";
+                }
                 Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
                               signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                              integrationAssembly, " | ", integrationType, " | cats: ", current.categories,
+                              integrationAssembly, " | ", integrationType, " | kind: ", kind, " | categories: ", current.categories,
                               integration.GetEnabled() ? " ENABLED " : " DISABLED ", "]");
             }
 
