@@ -37,7 +37,8 @@ namespace Samples.DataStreams.RabbitMQ
 
             // produce/consume operation (direct exchange)
             List<string> directQueues = PublishMessageToDirectExchange(model);
-            foreach (var queue in directQueues) {
+            foreach (var queue in directQueues) 
+            {
                 GetMessage(model, queue);
             }
 
