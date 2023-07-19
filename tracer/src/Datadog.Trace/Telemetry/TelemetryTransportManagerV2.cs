@@ -84,7 +84,7 @@ internal class TelemetryTransportManagerV2 : IDisposable
         {
             return _transports switch
             {
-                { AgentTransport: { } t } when _canSendToAgent != false => t,
+                { AgentTransport: { } t } when _canSendToAgent ?? true => t,
                 { AgentlessTransport: { } t } => t,
                 { AgentTransport: { } t } => t,
                 _ => throw new Exception("Must have at least one transport"),
