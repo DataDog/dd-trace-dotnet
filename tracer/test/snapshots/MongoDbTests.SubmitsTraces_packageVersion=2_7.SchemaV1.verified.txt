@@ -66,7 +66,7 @@
     TraceId: Id_1,
     SpanId: Id_5,
     Name: sync-calls-execute,
-    Resource: sync-calls-execute,
+    Resource: sync-calls,
     Service: Samples.MongoDB,
     Type: custom,
     ParentId: Id_2,
@@ -84,7 +84,7 @@
     TraceId: Id_1,
     SpanId: Id_6,
     Name: async-calls-execute,
-    Resource: async-calls-execute,
+    Resource: sync-calls-execute,
     Service: Samples.MongoDB,
     Type: custom,
     ParentId: Id_2,
@@ -101,6 +101,24 @@
   {
     TraceId: Id_1,
     SpanId: Id_7,
+    Name: Samples.MongoDB.internal,
+    Resource: async-calls-execute,
+    Service: Samples.MongoDB,
+    Type: custom,
+    ParentId: Id_2,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.MongoDB,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      span.kind: internal,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_8,
     Name: mongodb.query,
     Resource: delete test-db,
     Service: Samples.MongoDB,
@@ -122,7 +140,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_8,
+    SpanId: Id_9,
     Name: mongodb.query,
     Resource: insert test-db,
     Service: Samples.MongoDB,
@@ -144,7 +162,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_9,
+    SpanId: Id_10,
     Name: mongodb.query,
     Resource: aggregate test-db,
     Service: Samples.MongoDB,
@@ -166,7 +184,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_10,
+    SpanId: Id_11,
     Name: mongodb.query,
     Resource: find test-db,
     Service: Samples.MongoDB,
@@ -188,7 +206,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_11,
+    SpanId: Id_12,
     Name: mongodb.query,
     Resource: mongodb.query,
     Service: Samples.MongoDB,
@@ -207,7 +225,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_12,
+    SpanId: Id_13,
     Name: mongodb.query,
     Resource: delete test-db,
     Service: Samples.MongoDB,
@@ -229,7 +247,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_13,
+    SpanId: Id_14,
     Name: mongodb.query,
     Resource: insert test-db,
     Service: Samples.MongoDB,
@@ -251,7 +269,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_14,
+    SpanId: Id_15,
     Name: mongodb.query,
     Resource: aggregate test-db,
     Service: Samples.MongoDB,
@@ -273,7 +291,7 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_15,
+    SpanId: Id_16,
     Name: mongodb.query,
     Resource: find test-db,
     Service: Samples.MongoDB,
@@ -295,7 +313,95 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_16,
+    SpanId: Id_17,
+    Name: mongodb.query,
+    Resource: delete test-db,
+    Service: Samples.MongoDB,
+    Type: mongodb,
+    ParentId: Id_5,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "delete" : "employees", "ordered" : true },
+      out.host: mongo,
+      out.port: 27017,
+      peer.service: test-db,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_18,
+    Name: mongodb.query,
+    Resource: insert test-db,
+    Service: Samples.MongoDB,
+    Type: mongodb,
+    ParentId: Id_5,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "insert" : "employees", "ordered" : true },
+      out.host: mongo,
+      out.port: 27017,
+      peer.service: test-db,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_19,
+    Name: mongodb.query,
+    Resource: aggregate test-db,
+    Service: Samples.MongoDB,
+    Type: mongodb,
+    ParentId: Id_5,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "aggregate" : "employees", "pipeline" : [{ "$match" : { } }, { "$group" : { "_id" : 1, "n" : { "$sum" : 1 } } }], "cursor" : { } },
+      out.host: mongo,
+      out.port: 27017,
+      peer.service: test-db,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_20,
+    Name: mongodb.query,
+    Resource: find test-db,
+    Service: Samples.MongoDB,
+    Type: mongodb,
+    ParentId: Id_5,
+    Tags: {
+      component: MongoDb,
+      db.name: test-db,
+      env: integration_tests,
+      mongodb.collection: employees,
+      mongodb.query: { "find" : "employees", "filter" : { } },
+      out.host: mongo,
+      out.port: 27017,
+      peer.service: test-db,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: db.instance
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_21,
     Name: mongodb.query,
     Resource: mongodb.query,
     Service: Samples.MongoDB,
@@ -314,12 +420,31 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_17,
+    SpanId: Id_22,
     Name: mongodb.query,
     Resource: mongodb.query,
     Service: Samples.MongoDB,
     Type: mongodb,
     ParentId: Id_6,
+    Tags: {
+      component: MongoDb,
+      env: integration_tests,
+      out.host: mongo,
+      out.port: 27017,
+      peer.service: mongo,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_23,
+    Name: mongodb.query,
+    Resource: mongodb.query,
+    Service: Samples.MongoDB,
+    Type: mongodb,
+    ParentId: Id_7,
     Tags: {
       component: MongoDb,
       env: integration_tests,
