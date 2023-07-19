@@ -70,17 +70,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             return queueUrl.Substring(lastSeparationIndex);
         }
 
-        internal static string GetOperationName(Tracer tracer, string spanKind) => tracer.CurrentTraceSettings.Schema.Version switch
+        internal static string GetOperationName(Tracer tracer, string spanKind)
         {
-            SchemaVersion.V0 => SqsRequestOperationName,
-            _ => GetOperationNameHelper(tracer, spanKind)
-        };
+            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            {
+                return SqsRequestOperationName;
+            }
 
-        internal static string GetOperationNameHelper(Tracer tracer, string spanKind) => spanKind switch
-        {
-            SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
-            SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(SnsOperationName),
-            _ => $"{SnsOperationName}.request"
-        };
+            return spanKind switch
+            {
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(SnsOperationName),
+                _ => $"{SnsOperationName}.request"
+            };
+        }
     }
 }

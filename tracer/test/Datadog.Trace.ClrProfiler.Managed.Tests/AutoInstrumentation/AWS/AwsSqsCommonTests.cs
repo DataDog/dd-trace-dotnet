@@ -15,10 +15,11 @@ public class AwsSqsCommonTests
     public void GetCorrectQueueName()
     {
         // It is guaranteed that the last element is going to be the `QueueName`
-        const string queueUrl = "https://localhost:8080/00000000/my-queue-name";
+        var queueUrl = "https://localhost:8080/00000000/my-queue-name";
 
         AwsSqsCommon.GetQueueName(queueUrl).Should().Be("my-queue-name");
 
+        queueUrl = null;
         // When the request does not contain a `QueueUrl` it should return `null`
         AwsSqsCommon.GetQueueName(queueUrl).Should().Be(null);
     }
