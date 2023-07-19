@@ -262,10 +262,9 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         return metricKeyTags;
     }
 
-    private struct AggregatedMetric
+    private class AggregatedMetric
     {
         private List<MetricDataPoint>? _values;
-        public readonly string[]? Tags;
 
         public AggregatedMetric(string[]? tags)
         {
@@ -273,6 +272,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
 
         public bool HasValues => _values is { Count: > 0 };
+
+        public string[]? Tags { get; }
 
         public void AddValue(long timestamp, int value)
         {
@@ -295,10 +296,9 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
     }
 
-    private struct AggregatedDistribution
+    private class AggregatedDistribution
     {
         private List<double>? _values;
-        public readonly string[]? Tags;
 
         public AggregatedDistribution(string[]? tags)
         {
@@ -306,6 +306,8 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
 
         public bool HasValues => _values is { Count: > 0 };
+
+        public string[]? Tags { get; }
 
         public void AddValue(double value)
         {
