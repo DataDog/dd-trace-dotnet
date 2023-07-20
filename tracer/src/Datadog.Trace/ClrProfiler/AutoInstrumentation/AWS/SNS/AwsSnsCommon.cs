@@ -15,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         private const string DatadogAwsSnsServiceName = "aws-sns";
         private const string SnsRequestOperationName = "sns.request";
         private const string SnsServiceName = "SNS";
-        private const string SnsOperationName = "aws.sqs";
+        private const string SnsOperationName = "aws.sns";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(AwsSnsCommon));
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSns);
