@@ -10,6 +10,7 @@ using System.IO;
 using System.Reflection.Emit;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
@@ -43,10 +44,13 @@ internal static class BsonSerializationHelper
             return obj.ToString();
         }
 
+        var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+
         try
         {
+            using var stringWriter = new TruncatedStringWriter(sb);
+
             // Create a "real" JsonWriter
-            using var stringWriter = new TruncatedStringWriter();
             var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
             var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
 
@@ -61,10 +65,12 @@ internal static class BsonSerializationHelper
             var bsonSerializationArgs = helper.CreateBsonSerializationArgsFunc(nominalType);
             serializer.Serialize(rootContext, bsonSerializationArgs, obj);
 
-            return stringWriter.ToString();
+            stringWriter.Flush();
+            return StringBuilderCache.GetStringAndRelease(sb);
         }
         catch (Exception ex)
         {
+            StringBuilderCache.Release(sb);
             Log.Error(ex, "Error during custom BSON serialization");
             // Fallback to default
             return obj.ToString();

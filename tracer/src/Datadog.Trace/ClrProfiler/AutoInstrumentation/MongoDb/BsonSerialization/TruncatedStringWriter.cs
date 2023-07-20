@@ -5,6 +5,7 @@
 
 using System;
 using System.IO;
+using System.Text;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 
@@ -12,9 +13,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 /// Derived from StringWriter to stop writing at 5k characters since the UI/Backend would truncate anyways for tag key values:
 /// https://docs.datadoghq.com/tracing/troubleshooting/#data-volume-guidelines
 /// </summary>
-public class TruncatedStringWriter : StringWriter
+internal class TruncatedStringWriter : StringWriter
 {
     private const int MaxLength = 5000;
+
+    public TruncatedStringWriter(StringBuilder sb)
+        : base(sb)
+    {
+    }
 
     /// <summary>
     /// Writes a string to the current string.
