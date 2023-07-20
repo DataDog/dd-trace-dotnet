@@ -14,6 +14,15 @@ namespace Datadog.Trace.Telemetry;
 [JsonConverter(typeof(MetricSeriesJsonConverter))]
 internal class MetricSeries : List<MetricDataPoint>
 {
+    public MetricSeries()
+    {
+    }
+
+    public MetricSeries(List<MetricDataPoint> collection)
+        : base(collection)
+    {
+    }
+
     public class MetricSeriesJsonConverter : JsonConverter<MetricSeries>
     {
         /// <summary>
@@ -59,7 +68,7 @@ internal class MetricSeries : List<MetricDataPoint>
                 }
 
                 var timestamp = pointArrayValues[0].Value<long>();
-                var value = pointArrayValues[1].Value<double>();
+                var value = pointArrayValues[1].Value<int>();
 
                 data.Add(new MetricDataPoint(timestamp, value));
             }

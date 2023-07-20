@@ -427,6 +427,11 @@ namespace Datadog.Trace
         public SpanContextExtractor() { }
         public Datadog.Trace.ISpanContext? Extract<TCarrier>(TCarrier carrier, System.Func<TCarrier, string, System.Collections.Generic.IEnumerable<string?>> getter) { }
     }
+    public class SpanContextInjector
+    {
+        public SpanContextInjector() { }
+        public void Inject<TCarrier>(TCarrier carrier, System.Action<TCarrier, string, string> setter, Datadog.Trace.ISpanContext context) { }
+    }
     public struct SpanCreationSettings
     {
         public bool? FinishOnClose { get; set; }

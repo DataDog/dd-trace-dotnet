@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
         public static void AddTargetToConfig(LoggingConfiguration config, object targetProxy)
             => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLog50(config, targetProxy);
 #elif NLOG_45
-        public static DirectSubmissionNLogTarget CreateTarget(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        public static DirectSubmissionNLogTarget CreateTarget(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
             => new(sink, minimumLevel, LogSettingsHelper.GetFormatter());
 
         public static ILogEventInfoProxy GetLogEventProxy(LogEventInfo logEvent)
@@ -53,11 +53,11 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
             => NLogCommon<LoggingConfiguration>.AddDatadogTargetNLogPre43(config, targetProxy);
 #endif
 
-        public class TestSink : IDatadogSink
+        public class TestSink : IDirectSubmissionLogSink
         {
-            public ConcurrentQueue<DatadogLogEvent> Events { get; } = new();
+            public ConcurrentQueue<DirectSubmissionLogEvent> Events { get; } = new();
 
-            public void EnqueueLog(DatadogLogEvent logEvent)
+            public void EnqueueLog(DirectSubmissionLogEvent logEvent)
             {
                 Events.Enqueue(logEvent);
             }

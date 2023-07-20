@@ -13,7 +13,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 162;
+    public const int Length = 165;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -33,6 +33,9 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent => "name:eventtrackingsdk_trackuserloginsuccessevent",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata => "name:eventtrackingsdk_trackuserloginsuccessevent_metadata",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract => "name:spancontextextractor_extract",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Ctor => "name:spancontextextractor_ctor",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject => "name:spancontextinjector_inject",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor => "name:spancontextinjector_ctor",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser => "name:spanextensions_setuser",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag => "name:spanextensions_settag",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority => "name:spanextensions_settracesamplingpriority",
@@ -208,6 +211,9 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Ctor,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority,
@@ -383,6 +389,9 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.EventTrackingSdk_TrackUserLoginSuccessEvent_Metadata),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Extract),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextExtractor_Ctor),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Inject),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanContextInjector_Ctor),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetUser),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTag),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.SpanExtensions_SetTraceSamplingPriority),
@@ -558,6 +567,9 @@ internal static partial class PublicApiUsageExtensions
             "name:eventtrackingsdk_trackuserloginsuccessevent",
             "name:eventtrackingsdk_trackuserloginsuccessevent_metadata",
             "name:spancontextextractor_extract",
+            "name:spancontextextractor_ctor",
+            "name:spancontextinjector_inject",
+            "name:spancontextinjector_ctor",
             "name:spanextensions_setuser",
             "name:spanextensions_settag",
             "name:spanextensions_settracesamplingpriority",

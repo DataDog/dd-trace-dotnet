@@ -1,4 +1,4 @@
-﻿// <copyright file="Log4NetDatadogLogEvent.cs" company="Datadog">
+﻿// <copyright file="Log4NetDirectSubmissionLogEvent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,12 +11,12 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSubmission
 {
-    internal class Log4NetDatadogLogEvent : DatadogLogEvent
+    internal class Log4NetDirectSubmissionLogEvent : DirectSubmissionLogEvent
     {
         private readonly ILoggingEventDuckBase _logEvent;
         private readonly DateTime _timestamp;
 
-        public Log4NetDatadogLogEvent(ILoggingEventDuckBase logEvent, DateTime timestamp)
+        public Log4NetDirectSubmissionLogEvent(ILoggingEventDuckBase logEvent, DateTime timestamp)
         {
             _logEvent = logEvent;
             _timestamp = timestamp;
