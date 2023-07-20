@@ -26,10 +26,10 @@ namespace Samples.MongoDB
 
             // Create binary data (e.g., byte array)
             // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
-            var guidByteArray = Guid.Empty.ToByteArray();
+            var guidByteArray = Guid.Parse("6F88CE3F-BEBE-41F6-8E72-BB168A05E07A").ToByteArray();
             var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
             var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
-            var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
+            var uuidLegacyBinary = new BsonBinaryData(Guid.Empty.ToByteArray(), BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
             var largeTagValue = string.Join(" ", Enumerable.Repeat("Test", 1000));
 
             var newDocument = new BsonDocument
