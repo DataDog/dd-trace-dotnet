@@ -4,14 +4,18 @@
 // </copyright>
 
 using System.Collections;
+using System.IO;
 using System.Linq;
 using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
 {
+    [System.Diagnostics.CodeAnalysis.SuppressMessage("StyleCop.CSharp.OrderingRules", "SA1201:A field should not follow a property", Justification = "Reviewed.")]
     public class PublishRequestProxy : IContainsMessageAttributes
     {
+        public MemoryStream MemoryStream { get; set; }
+
         private readonly PublishRequest _publishRequest;
 
         public PublishRequestProxy(PublishRequest publishRequest)
@@ -36,6 +40,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
                                                         entry => entry.Key.ToString(),
                                                         entry => entry.Value as MessageAttributeValue);
             }
+        }
+
+        public void CloseMemoryStream()
+        {
+            MemoryStream?.Close();
+            MemoryStream = null;
         }
     }
 }

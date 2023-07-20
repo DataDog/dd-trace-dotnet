@@ -18,35 +18,34 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
     public struct MemoryStreamCarrierGetter : ICarrierGetter<PublishRequestProxy>
     {
         private const string DatadogKey = "_datadog";
-        private const string CacheKey = "TestCacheKey";  // constant key
-        private static readonly Dictionary<string, Dictionary<string, string>> Cache = new();
 
         public IEnumerable<string> Get(PublishRequestProxy carrier, string key)
         {
             object attributeValue;
 
-            if (!Cache.TryGetValue(CacheKey, out var cachedData) && carrier.MessageAttributes.TryGetValue(DatadogKey, out attributeValue))
+            if (carrier.MessageAttributes.TryGetValue(DatadogKey, out attributeValue))
             {
                 var messageAttributeValue = attributeValue as MessageAttributeValue;
 
                 if (messageAttributeValue != null && messageAttributeValue.BinaryValue is MemoryStream memoryStream)
                 {
                     memoryStream.Position = 0;
-                    using var reader = new StreamReader(memoryStream, Encoding.UTF8);
+                    using var reader = new StreamReader(memoryStream, Encoding.UTF8, true, 1024, true);
                     var jsonString = reader.ReadToEnd();
-                    cachedData = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
-                    Cache[CacheKey] = cachedData;
+                    var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+
+                    if (data.TryGetValue(key, out var value))
+                    {
+                        yield return value;
+                    }
                 }
                 else if (messageAttributeValue != null && messageAttributeValue.StringValue != null)
                 {
-                    cachedData = new Dictionary<string, string>() { { DatadogKey, messageAttributeValue.StringValue } };
-                    Cache[CacheKey] = cachedData;
+                    if (DatadogKey == key)
+                    {
+                        yield return messageAttributeValue.StringValue;
+                    }
                 }
-            }
-
-            if (cachedData != null && cachedData.TryGetValue(key, out var value))
-            {
-                yield return value;
             }
         }
     }

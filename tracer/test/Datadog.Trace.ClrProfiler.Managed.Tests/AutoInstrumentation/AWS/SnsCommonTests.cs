@@ -20,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
         private const string DatadogAttributeKey = "_datadog";
 
         private readonly SpanContext _spanContext;
-        private readonly string _parentId;
 
         public SnsCommonTests()
         {
@@ -30,7 +29,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             var traceId = new TraceId(upper, lower);
             ulong spanId = 6766950223540265769;
             _spanContext = new SpanContext(traceId, spanId, 0, "test-service", "origin");
-            _parentId = spanId.ToString();
         }
 
         [Fact]
@@ -52,6 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             extractedSpanContext.Should().NotBeNull();
             extractedSpanContext.TraceId.Should().Be(_spanContext.TraceId);
             extractedSpanContext.SpanId.Should().Be(_spanContext.SpanId);
+            proxy.CloseMemoryStream();
         }
     }
 }
