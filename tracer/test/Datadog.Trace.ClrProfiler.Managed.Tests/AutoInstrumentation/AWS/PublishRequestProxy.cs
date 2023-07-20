@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Amazon.SimpleNotificationService.Model;
@@ -35,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
             {
                 // Convert IDictionary back to Dictionary<string, MessageAttributeValue>
                 _publishRequest.MessageAttributes = value
-                                                   .Cast<DictionaryEntry>()
+                                                   .Cast<KeyValuePair<string, MessageAttributeValue>>()
                                                    .ToDictionary(
                                                         entry => entry.Key.ToString(),
                                                         entry => entry.Value as MessageAttributeValue);

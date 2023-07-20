@@ -17,8 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
 {
     public class SnsCommonTests
     {
-        private const string DatadogAttributeKey = "_datadog";
-
         private readonly SpanContext _spanContext;
 
         public SnsCommonTests()
