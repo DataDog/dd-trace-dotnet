@@ -8,10 +8,12 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
+using Datadog.Trace.Telemetry.Transports;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -28,7 +30,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerShouldSendTelemetry()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
@@ -48,7 +50,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var collector = new ConfigurationTelemetry();
         var controller = new TelemetryControllerV2(
@@ -79,7 +81,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerCanBeDisposedTwice()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
@@ -96,7 +98,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetrySendsHeartbeatAlongWithData()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var controller = new TelemetryControllerV2(
             new ConfigurationTelemetry(),
@@ -133,7 +135,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerAddsAllAssembliesToCollector()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport });
+        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var currentAssemblyNames = AppDomain.CurrentDomain
                                             .GetAssemblies()

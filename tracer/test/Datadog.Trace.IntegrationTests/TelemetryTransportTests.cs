@@ -208,9 +208,8 @@ namespace Datadog.Trace.IntegrationTests
             var transport = TelemetryTransportFactory.Create(
                 new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings: null, agentProxyEnabled: true, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false, debugEnabled: false),
                 new ImmutableExporterSettings(new ExporterSettings { AgentUri = telemetryUri }));
-            transport.Should().HaveCount(1);
-            transport[0].Should().BeOfType<AgentTelemetryTransport>();
-            return transport[0];
+            transport.AgentTransport.Should().NotBeNull().And.BeOfType<AgentTelemetryTransport>();
+            return transport.AgentTransport;
         }
 
         private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey)
@@ -221,9 +220,8 @@ namespace Datadog.Trace.IntegrationTests
                 new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false, debugEnabled: false),
                 new ImmutableExporterSettings(new ExporterSettings()));
 
-            transport.Should().HaveCount(1);
-            transport[0].Should().BeOfType<AgentlessTelemetryTransport>();
-            return transport[0];
+            transport.AgentlessTransport.Should().NotBeNull().And.BeOfType<AgentlessTelemetryTransport>();
+            return transport.AgentlessTransport;
         }
 
         internal class ErroringTelemetryAgent : MockTelemetryAgent

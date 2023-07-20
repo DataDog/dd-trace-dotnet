@@ -30,6 +30,7 @@ namespace Datadog.Trace.Configuration
         private readonly bool _logsInjectionEnabled;
         private readonly ReadOnlyDictionary<string, string> _headerTags;
         private readonly IReadOnlyDictionary<string, string> _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string> _peerServiceNameMappings;
         private readonly double? _globalSamplingRate;
         private readonly bool _runtimeMetricsEnabled;
         private readonly string? _spanSamplingRules;
@@ -114,6 +115,7 @@ namespace Datadog.Trace.Configuration
             RemoveClientServiceNamesEnabled = settings.RemoveClientServiceNamesEnabled;
             MetadataSchemaVersion = settings.MetadataSchemaVersion;
             _serviceNameMappings = settings.ServiceNameMappings == null ? new Dictionary<string, string>() : new ReadOnlyDictionary<string, string>(settings.ServiceNameMappings);
+            _peerServiceNameMappings = settings.PeerServiceNameMappings == null ? new Dictionary<string, string>() : new ReadOnlyDictionary<string, string>(settings.PeerServiceNameMappings);
             TraceBufferSize = settings.TraceBufferSize;
             TraceBatchInterval = settings.TraceBatchInterval;
             RouteTemplateResourceNamesEnabled = settings.RouteTemplateResourceNamesEnabled;
@@ -123,6 +125,8 @@ namespace Datadog.Trace.Configuration
             PropagationStyleExtract = settings.PropagationStyleExtract;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
+            OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
+
             _isDataStreamsMonitoringEnabled = settings.IsDataStreamsMonitoringEnabled;
             IsRareSamplerEnabled = settings.IsRareSamplerEnabled;
 
@@ -459,6 +463,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsActivityListenerEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
+        /// </summary>
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
+
+        /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
         /// </summary>
         internal bool IsDataStreamsMonitoringEnabled => DynamicSettings.DataStreamsMonitoringEnabled ?? _isDataStreamsMonitoringEnabled;
@@ -510,6 +519,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
         /// </summary>
         internal bool PeerServiceTagsEnabled { get; }
+
+        /// <summary>
+        /// Gets configuration values for changing service names based on configuration
+        /// </summary>
+        internal IReadOnlyDictionary<string, string> PeerServiceNameMappings => _peerServiceNameMappings;
 
         /// <summary>
         /// Gets a value indicating whether to remove the service names when using the v0 schema.

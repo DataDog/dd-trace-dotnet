@@ -421,6 +421,12 @@ namespace Datadog.Trace.Configuration
         public const string PeerServiceDefaultsEnabled = "DD_TRACE_PEER_SERVICE_DEFAULTS_ENABLED";
 
         /// <summary>
+        /// Configuration key for a map of services to rename.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PeerServiceNameMappings"/>
+        public const string PeerServiceNameMappings = "DD_TRACE_PEER_SERVICE_MAPPING";
+
+        /// <summary>
         /// Configuration key for unifying client service names when the span
         /// attribute schema is v0. This is ignored when the span attribute
         /// schema is v1 or later.
@@ -596,6 +602,16 @@ namespace Datadog.Trace.Configuration
             /// Enables beta support for instrumentation via the System.Diagnostics API and the OpenTelemetry SDK.
             /// </summary>
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
+
+            /// <summary>
+            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value.
+            /// This flag defaults to <see langword="false"/> and is intended to allow beta users of OpenTelemetry support
+            /// to toggle on to give them time to upgrade to the new format. This additionally requires that
+            /// the <c>ActivitySource</c> has a <c>Name</c> property which was introduced in .NET 5 and/or v5 of
+            /// <c>System.Diagnostics</c> library.
+            /// Note: This feature flag may be dropped when our OpenTelemetry support becomes generally available.
+            /// </summary>
+            public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
             /// <summary>
             /// Enables generating 128-bit trace ids instead of 64-bit trace ids.

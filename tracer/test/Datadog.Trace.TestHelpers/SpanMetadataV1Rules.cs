@@ -18,6 +18,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .IsPresent("db.type")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
@@ -177,6 +178,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
@@ -193,6 +195,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("out.port")
                 .IsOptional("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.couchbase.seed.nodes", "out.host", "peer.service")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
@@ -207,6 +210,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("elasticsearch.url")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
@@ -236,6 +240,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.status.code")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "rpc.service", "out.host", "peer.service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "client"));
@@ -277,6 +282,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
@@ -296,6 +302,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
@@ -315,6 +322,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "producer"));
@@ -330,6 +338,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
@@ -345,6 +354,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
@@ -359,6 +369,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MySql")
                 .Matches("span.kind", "client"));
@@ -372,6 +383,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Npgsql")
                 .Matches("span.kind", "client"));
@@ -398,6 +410,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "oracle")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
@@ -452,6 +465,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
@@ -467,6 +481,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .IsPresent("out.port")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
@@ -480,6 +495,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "sqlite")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -493,6 +509,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "SqlClient")
                 .Matches("span.kind", "client")
@@ -520,6 +537,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("out.host")
                 .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
