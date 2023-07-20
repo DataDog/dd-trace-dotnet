@@ -181,7 +181,7 @@ partial class Build
                 }
 
                 // Console.WriteLine(markdown.ToString());
-                await ReplaceCommentInPullRequest(prNumber, "## Snapshots difference", markdown);
+                await ReplaceCommentInPullRequest(PullRequestNumber.Value, "## Snapshots difference", markdown.ToString());
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
                 {
