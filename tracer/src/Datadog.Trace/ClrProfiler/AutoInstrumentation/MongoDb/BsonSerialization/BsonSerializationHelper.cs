@@ -48,7 +48,7 @@ internal static class BsonSerializationHelper
 
         try
         {
-            using var stringWriter = new TruncatedStringWriter(sb);
+            using var stringWriter = new TruncatedTextWriter(sb);
 
             // Create a "real" JsonWriter
             var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
