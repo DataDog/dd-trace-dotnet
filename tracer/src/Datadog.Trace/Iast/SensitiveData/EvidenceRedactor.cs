@@ -29,7 +29,7 @@ internal class EvidenceRedactor
         { VulnerabilityTypeName.SqlInjection, new SqlInjectionTokenizer() },
         { VulnerabilityTypeName.LdapInjection, new LdapTokenizer() },
         { VulnerabilityTypeName.CommandInjection, new CommandTokenizer() },
-        { VulnerabilityTypeName.Ssrf, new UrlTokenizer() },
+        { VulnerabilityTypeName.SSRF, new UrlTokenizer() },
         { VulnerabilityTypeName.UnvalidatedRedirect, new UrlTokenizer() },
     };
 

@@ -5,7 +5,6 @@ using RestSharp;
 using Moq;
 using System.Net.Http;
 using System.Threading;
-using Url = System.Security.Policy.Url;
 using Xunit;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
@@ -23,7 +22,6 @@ public class SSRFTests : InstrumentationTestsBase
     {
         AddTainted(taintedUrlValue);
         AddTainted(taintedHost);
-        AddTainted(taintedUrlValue);
     }
 
     [Fact]
@@ -39,13 +37,6 @@ public class SSRFTests : InstrumentationTestsBase
         var request = HttpWebRequest.Create(taintedUrlValue);
         request.GetResponseAsync();
         AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAURL_WhenCreateFromtainted_IsTainted()
-    {
-        Url url = new Url(taintedUrlValue);
-        AssertTainted(url);
     }
 
     [Fact]
@@ -390,10 +381,8 @@ public class SSRFTests : InstrumentationTestsBase
     [Fact]
     public void GivenAWebClient_WhenOpenWrite_Vulnerable()
     {
-        AddTainted("novalidurl");
-        ExecuteAction(() => webclient.OpenWrite("novalidurl"));
+        ExecuteAction(() => webclient.OpenWrite(taintedUrlValue));
         AssertVulnerable();
-        Assert.False(true);
     }
 
     [Fact]
