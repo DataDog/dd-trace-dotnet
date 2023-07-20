@@ -8,28 +8,37 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Threading;
 
 namespace Datadog.Trace.Configuration;
 
-internal class ExtraServicesProvider : IExtraServicesProvider
+internal class ExtraServicesProvider
 {
-    private const int MaxExtraServices = 64;
+    // internal for testing
+    internal const int MaxExtraServices = 64;
     private const string FakeValue = null;
 
-    // no concurrent hash set, so use a dictionary with empty values
-    private readonly ConcurrentDictionary<string, string> _extraServices = new();
+    public static readonly ExtraServicesProvider Instance = new();
 
-    public void AddService(string serviceName)
+    // no concurrent hash set, so use a dictionary with empty values
+    private readonly ConcurrentDictionary<string, string> _extraServices = new(StringComparer.OrdinalIgnoreCase);
+    private int _serviceCount = 0;
+
+    internal void AddService(string serviceName)
     {
         // Several threads entering simultaneously can cause MaxExtraService to be exceeded.
         // As long as the list doesn't grow much beyond MaxExtraService we don't care.
-        if (_extraServices.Count < MaxExtraServices)
+        if (_serviceCount >= MaxExtraServices ||
+            _extraServices.ContainsKey(serviceName))
         {
-            _extraServices.AddOrUpdate(serviceName, FakeValue, (string _, string _) => null!);
+            return;
         }
+
+        Interlocked.Increment(ref _serviceCount);
+        _extraServices.AddOrUpdate(serviceName, FakeValue, (string _, string _) => null!);
     }
 
-    public string[]? GetExtraServices()
+    internal string[]? GetExtraServices()
     {
         // once extracted the key collection is frozen, no need to worry about an add changing it
         var keysToCopy = _extraServices.Keys;

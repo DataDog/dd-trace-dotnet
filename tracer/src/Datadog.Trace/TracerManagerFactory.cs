@@ -125,7 +125,6 @@ namespace Datadog.Trace
             }
 
             var gitMetadataTagsProvider = GetGitMetadataTagsProvider(settings, scopeManager);
-            var extraServiceProvider = new ExtraServicesProvider();
             logSubmissionManager = DirectLogSubmissionManager.Create(
                 logSubmissionManager,
                 settings.LogSubmissionSettings,
@@ -173,7 +172,6 @@ namespace Datadog.Trace
                         serviceName,
                         settings,
                         gitMetadataTagsProvider,
-                        extraServiceProvider,
                         RcmSubscriptionManager.Instance);
 
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
@@ -193,7 +191,6 @@ namespace Datadog.Trace
                 dataStreamsManager,
                 defaultServiceName,
                 gitMetadataTagsProvider,
-                extraServiceProvider,
                 sampler,
                 GetSpanSampler(settings),
                 remoteConfigurationManager,
@@ -220,12 +217,11 @@ namespace Datadog.Trace
             DataStreamsManager dataStreamsManager,
             string defaultServiceName,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IExtraServicesProvider extraServicesProvider,
             ITraceSampler traceSampler,
             ISpanSampler spanSampler,
             IRemoteConfigurationManager remoteConfigurationManager,
             IDynamicConfigurationManager dynamicConfigurationManager)
-            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, extraServicesProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
+            => new TracerManager(settings, agentWriter, scopeManager, statsd, runtimeMetrics, logSubmissionManager, telemetry, discoveryService, dataStreamsManager, defaultServiceName, gitMetadataTagsProvider, traceSampler, spanSampler, remoteConfigurationManager, dynamicConfigurationManager);
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {

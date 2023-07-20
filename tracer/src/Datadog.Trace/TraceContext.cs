@@ -148,9 +148,9 @@ namespace Datadog.Trace
                 }
             }
 
-            if (string.Compare(span.ServiceName, Tracer.DefaultServiceName, StringComparison.Ordinal) != 0)
+            if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
             {
-                Tracer.ExtraServicesProvider.AddService(span.ServiceName);
+                ExtraServicesProvider.Instance.AddService(span.ServiceName);
             }
 
             lock (_rootSpan)

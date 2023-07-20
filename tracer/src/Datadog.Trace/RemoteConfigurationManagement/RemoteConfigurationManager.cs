@@ -28,7 +28,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
         private readonly IDiscoveryService _discoveryService;
         private readonly IRemoteConfigurationApi _remoteConfigurationApi;
         private readonly IGitMetadataTagsProvider _gitMetadataTagsProvider;
-        private readonly IExtraServicesProvider _extraServicesProvider;
         private readonly TimeSpan _pollInterval;
         private readonly IRcmSubscriptionManager _subscriptionManager;
 
@@ -45,7 +44,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             RcmClientTracer rcmTracer,
             TimeSpan pollInterval,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IExtraServicesProvider extraServicesProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
             _discoveryService = discoveryService;
@@ -53,7 +51,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             _rcmTracer = rcmTracer;
             _pollInterval = pollInterval;
             _gitMetadataTagsProvider = gitMetadataTagsProvider;
-            _extraServicesProvider = extraServicesProvider;
 
             _lastPollError = null;
             _subscriptionManager = subscriptionManager;
@@ -68,7 +65,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             string serviceName,
             ImmutableTracerSettings tracerSettings,
             IGitMetadataTagsProvider gitMetadataTagsProvider,
-            IExtraServicesProvider extraServicesProvider,
             IRcmSubscriptionManager subscriptionManager)
         {
             var tags = GetTags(settings, tracerSettings);
@@ -79,7 +75,6 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                     rcmTracer: new RcmClientTracer(settings.RuntimeId, settings.TracerVersion, serviceName, TraceUtil.NormalizeTag(tracerSettings.EnvironmentInternal), tracerSettings.ServiceVersionInternal, tags),
                     pollInterval: settings.PollInterval,
                     gitMetadataTagsProvider,
-                    extraServicesProvider,
                     subscriptionManager);
         }
 
@@ -162,7 +157,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 var request = _subscriptionManager.BuildRequest(_rcmTracer, _lastPollError);
 
                 EnrichTagsWithGitMetadata(request.Client.ClientTracer.Tags);
-                request.Client.ClientTracer.ExtraServices = _extraServicesProvider.GetExtraServices();
+                request.Client.ClientTracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
 
                 var response = await _remoteConfigurationApi.GetConfigs(request).ConfigureAwait(false);
 

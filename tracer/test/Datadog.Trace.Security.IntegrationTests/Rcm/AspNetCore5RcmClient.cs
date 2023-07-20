@@ -33,16 +33,23 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
         [Trait("RunOnWindows", "True")]
         public async Task TestExtraServiceField()
         {
-            var url = "/createextraservice/?serviceName=extraVegetables";
             await TryStartApp();
             var agent = Fixture.Agent;
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
+            var request0 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
+            request0.Should().NotBeNull();
+            request0.Client.ClientTracer.ExtraServices.Should().BeNull();
+
+            var spans1 = await SendRequestsAsync(agent, 2, "/createextraservice/?serviceName=extraVegetables");
+
             var request1 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request1.Should().NotBeNull();
-            request1.Client.ClientTracer.ExtraServices.Should().BeNull();
+            request1.Client.ClientTracer.ExtraServices.Should().NotBeNull();
+            request1.Client.ClientTracer.ExtraServices.Should().HaveCount(1);
+            request1.Client.ClientTracer.ExtraServices.Should().HaveElementAt(0, "extraVegetables");
 
-            var spans = await SendRequestsAsync(agent, 2, url);
+            var spans2 = await SendRequestsAsync(agent, 2, "/createextraservice/?serviceName=ExTrAvEgEtAbLeS");
 
             var request2 = await agent.SetupRcmAndWait(Output, Enumerable.Empty<(object Config, string ProductName, string Id)>(), timeoutInMilliseconds: RemoteConfigTestHelper.WaitForAcknowledgmentTimeout);
             request2.Should().NotBeNull();
@@ -50,7 +57,10 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             request2.Client.ClientTracer.ExtraServices.Should().HaveCount(1);
             request2.Client.ClientTracer.ExtraServices.Should().HaveElementAt(0, "extraVegetables");
 
-            await VerifySpans(spans, settings);
+            var allSpans = new List<MockSpan>();
+            allSpans.AddRange(spans1);
+            allSpans.AddRange(spans2);
+            await VerifySpans(allSpans.ToImmutableList(), settings);
         }
     }
 }

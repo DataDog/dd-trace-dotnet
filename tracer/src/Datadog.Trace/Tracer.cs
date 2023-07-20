@@ -218,11 +218,6 @@ namespace Datadog.Trace
         IGitMetadataTagsProvider IDatadogTracer.GitMetadataTagsProvider => TracerManager.GitMetadataTagsProvider;
 
         /// <summary>
-        /// Gets the extra services provider.
-        /// </summary>
-        IExtraServicesProvider IDatadogTracer.ExtraServicesProvider => TracerManager.ExtraServicesProvider;
-
-        /// <summary>
         /// Gets this tracer's settings.
         /// </summary>
         public ImmutableTracerSettings Settings => TracerManager.Settings;
