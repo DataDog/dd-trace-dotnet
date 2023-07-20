@@ -8,25 +8,25 @@ internal partial class MetricsTelemetryCollector
 {
     public void RecordGaugeStatsBuckets(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[0].Value, value);
+        Interlocked.Exchange(ref _buffer.Gauges[0], value);
     }
 
     public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
     {
         var index = 1 + (int)tag;
-        Interlocked.Exchange(ref _buffer.Gauges[index].Value, value);
+        Interlocked.Exchange(ref _buffer.Gauges[index], value);
     }
 
     public void RecordGaugeDirectLogQueue(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[7].Value, value);
+        Interlocked.Exchange(ref _buffer.Gauges[7], value);
     }
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> values.
     /// </summary>
-    private static MetricKey[] GetGaugeBuffer()
-        => new MetricKey[]
+    private static AggregatedMetric[] GetGaugeBuffer()
+        => new AggregatedMetric[]
         {
             // stats_buckets, index = 0
             new(null),
@@ -48,4 +48,6 @@ internal partial class MetricsTelemetryCollector
     /// </summary>
     private static int[] GaugeEntryCounts { get; }
         = new []{ 1, 6, 1, };
+
+    private const int _gaugesLength = 8;
 }

@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "SendMessageAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.SendMessageResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.SendMessageRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",

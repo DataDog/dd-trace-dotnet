@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         AssemblyName = GraphQLCommon.GraphQLAssembly,
         TypeName = "GraphQL.Validation.DocumentValidator",
         MethodName = "ValidateAsync",
-        ReturnTypeName = ClrNames.GenericParameterTask,
+        ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,
         ParameterTypeNames = new[] { ClrNames.String, "GraphQL.Types.ISchema", "GraphQL.Language.AST.Document", "System.Collections.Generic.IEnumerable`1[GraphQL.Validation.IValidationRule]", ClrNames.Ignore, "GraphQL.Inputs" },
         MinimumVersion = GraphQLCommon.Major3,
         MaximumVersion = GraphQLCommon.Major3,

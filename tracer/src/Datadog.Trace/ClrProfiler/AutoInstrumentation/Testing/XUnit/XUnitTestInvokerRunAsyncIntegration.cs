@@ -20,8 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
     AssemblyNames = new[] { "xunit.execution.dotnet", "xunit.execution.desktop" },
     TypeName = "Xunit.Sdk.TestInvoker`1",
     MethodName = "RunAsync",
-    ReturnTypeName = "System.Threading.Tasks.Task`1<System.Decimal>",
-    ParameterTypeNames = new string[0],
+    ReturnTypeName = "System.Threading.Tasks.Task`1[System.Decimal]",
     MinimumVersion = "2.2.0",
     MaximumVersion = "2.*.*",
     IntegrationName = IntegrationName)]

@@ -105,10 +105,7 @@ public class TelemetryHelperTests
         };
 
         collector.RecordTracerSettings(new(tracerSettings));
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData()));
-
-        // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
+        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppClosing: true));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
@@ -192,10 +189,7 @@ public class TelemetryHelperTests
         telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false));
 
         collector.IntegrationRunning(IntegrationId.Npgsql);
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false));
-
-        // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
+        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false, sendAppClosing: true));
 
         var checkTelemetryFunc = () => TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
 
@@ -254,10 +248,7 @@ public class TelemetryHelperTests
         telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData()));
 
         _ = new SecuritySettings(config, collector);
-        telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData(), sendAppStarted: false));
-
-        // we must have an app closing
-        telemetryData.Add(new TelemetryWrapper.V2(_dataBuilderV2.BuildAppClosingTelemetryData(_appV2, _hostV2, "1")));
+        telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData(), sendAppStarted: false, sendAppClosing: true));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled);
@@ -278,11 +269,13 @@ public class TelemetryHelperTests
     private TelemetryWrapper BuildTelemetryDataV2(
         ICollection<IntegrationTelemetryData> integrations,
         ICollection<ConfigurationKeyValue> configuration = null,
-        bool sendAppStarted = true)
+        bool sendAppStarted = true,
+        bool sendAppClosing = false)
         => new TelemetryWrapper.V2(
             _dataBuilderV2.BuildTelemetryData(
                 _appV2,
                 _hostV2,
-                new TelemetryInput(configuration, null, integrations, null, null, null, sendAppStarted),
-                namingSchemeVersion: "1"));
+                new TelemetryInput(configuration, null, integrations, null, null, sendAppStarted),
+                namingSchemeVersion: "1",
+                sendAppClosing));
 }

@@ -4,6 +4,7 @@
 // </copyright>
 
 using Datadog.Trace.Iast;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests.Iast;
@@ -182,5 +183,23 @@ public class HashBasedDeduplicationTests
         }
 
         Assert.True(instance.Add(vulnerability1));
+    }
+
+    [Theory]
+    [InlineData(10, false, 55, true)]
+    [InlineData(60, true, 55, false)]
+    [InlineData(6, false, 5, false)]
+    [InlineData(61, true, 65, true)]
+    public void GivenHashBasedDeduplication_WhenTestDeduplicationTimeout_ResultIsOk(int minutesAfter1, bool expectedResult1, int minutesAfter2, bool expectedResult2)
+    {
+        var date = new System.DateTime(2001, 1, 1, 1, 0, 0);
+        var instance = new HashBasedDeduplication(date);
+        Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.NoSameSiteCookie, null, new Evidence("value")), date));
+        date = date.AddMinutes(minutesAfter1);
+        var result = instance.Add(new Vulnerability(VulnerabilityTypeName.NoSameSiteCookie, null, new Evidence("value")), date);
+        result.Should().Be(expectedResult1);
+        date = date.AddMinutes(minutesAfter2);
+        result = instance.Add(new Vulnerability(VulnerabilityTypeName.NoSameSiteCookie, null, new Evidence("value")), date);
+        result.Should().Be(expectedResult2);
     }
 }

@@ -152,6 +152,8 @@ FrameInfoView FrameStore::GetManagedFrame(FunctionID functionId)
             // This should never happen but in case it happens, we cache the module/frame value.
             // It's safe to cache, because there is no reason that the next calls to
             // BuildTypeDesc will succeed.
+
+            std::lock_guard<std::mutex> lock(_methodsLock);
             auto& value = _methods[functionId];
             std::stringstream builder;
             builder << UnknownManagedType << " |fn:" << std::move(methodName) << "|fg:" << std::move(methodGenericParameters) << " |sg:" << std::move(signature);
@@ -224,16 +226,14 @@ bool FrameStore::GetTypeName(ClassID classId, std::string& name)
 // This is why it is needed to get a pointer to the TypeDesc held by the cache
 bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
 {
-    {
-        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
+    std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
 
-        auto typeEntry = _fullTypeNames.find(classId);
-        if (typeEntry != _fullTypeNames.end())
-        {
-            // ensure that the string_view is pointing to the string in the cache
-            name = {typeEntry->second.data(), typeEntry->second.size()};
-            return true;
-        }
+    auto typeEntry = _fullTypeNames.find(classId);
+    if (typeEntry != _fullTypeNames.end())
+    {
+        // ensure that the string_view is pointing to the string in the cache
+        name = {typeEntry->second.data(), typeEntry->second.size()};
+        return true;
     }
 
     TypeDesc* pTypeDesc = nullptr;
@@ -242,17 +242,10 @@ bool FrameStore::GetTypeName(ClassID classId, std::string_view& name)
         return false;
     }
 
-    if (!GetCachedTypeDesc(classId, pTypeDesc))
-    {
-        return false;
-    }
-
-    {
-        std::lock_guard<std::mutex> lock(_fullTypeNamesLock);
-
-        // ensure that the string_view is pointing to the string in the cache
-        name = _fullTypeNames[classId] = pTypeDesc->Type + pTypeDesc->Parameters;
-    }
+    // ensure that the string_view is pointing to the string in the cache
+    auto& entry = _fullTypeNames[classId];
+    entry = pTypeDesc->Type + pTypeDesc->Parameters;
+    name = {entry.data(), entry.size()};
 
     return true;
 }
@@ -266,7 +259,6 @@ bool FrameStore::GetCachedTypeDesc(ClassID classId, TypeDesc*& typeDesc)
         auto typeEntry = _types.find(classId);
         if (typeEntry != _types.end())
         {
-            //typeDesc = &(_types.at(classId));
             typeDesc = &typeEntry->second;
             return true;
         }
