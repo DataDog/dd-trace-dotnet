@@ -62,6 +62,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var spans = agent.WaitForSpans(expectedCount);
                 var sqsSpans = spans.Where(
                     span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
+
+                sqsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SQS_HOST");
