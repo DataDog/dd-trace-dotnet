@@ -40,7 +40,8 @@ public class TelemetryDataBuilderV2Tests
     {
         var builder = new TelemetryDataBuilderV2();
 
-        var result = builder.BuildAppClosingTelemetryData(_application, _host, _namingSchemaVersion);
+        var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: false);
+        var result = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: true);
 
         result.Should().NotBeNull();
         result.Application.Should().Be(_application);
@@ -80,19 +81,15 @@ public class TelemetryDataBuilderV2Tests
         var builder = new TelemetryDataBuilderV2();
 
         var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: true);
-        var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion);
+        var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
         data.SeqId.Should().Be(1);
 
-        data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion);
+        data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
         data.SeqId.Should().Be(2);
-
-        var closingData = builder.BuildAppClosingTelemetryData(_application, _host, _namingSchemaVersion);
-        closingData.Should().NotBeNull();
-        closingData.SeqId.Should().Be(3);
 
         var heartbeatData = builder.BuildHeartbeatData(_application, _host, _namingSchemaVersion);
         heartbeatData.Should().NotBeNull();
-        heartbeatData.SeqId.Should().Be(4);
+        heartbeatData.SeqId.Should().Be(3);
     }
 
     [Theory]
@@ -105,6 +102,7 @@ public class TelemetryDataBuilderV2Tests
         bool hasDistributions,
         bool hasProducts,
         bool hasSentAppStarted,
+        bool hasSendAppClosing,
         string[] expectedRequests)
     {
         var dependencies = hasDeps ? new List<DependencyTelemetryData> { new("name") } : null;
@@ -116,7 +114,7 @@ public class TelemetryDataBuilderV2Tests
         var input = new TelemetryInput(config, dependencies, integrations, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
         var builder = new TelemetryDataBuilderV2();
 
-        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion);
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: hasSendAppClosing);
 
         result.Should().NotBeNull();
         var actualRequestTypes = result.Payload is MessageBatchPayload batch
@@ -178,6 +176,10 @@ public class TelemetryDataBuilderV2Tests
                 {
                     payload.Should().BeNull();
                 }
+                else if (requestType == TelemetryRequestTypes.AppClosing)
+                {
+                    payload.Should().BeNull();
+                }
                 else
                 {
                     true.Should().BeFalse($"Unknown payload type {payload} and request type {requestType}");
@@ -186,7 +188,7 @@ public class TelemetryDataBuilderV2Tests
         }
         else
         {
-            result.RequestType.Should().Be(TelemetryRequestTypes.AppHeartbeat);
+            result.RequestType.Should().BeOneOf(TelemetryRequestTypes.AppHeartbeat, TelemetryRequestTypes.AppClosing);
             result.Payload.Should().BeNull();
         }
     }
@@ -206,7 +208,7 @@ public class TelemetryDataBuilderV2Tests
         var input = new TelemetryInput(null, dependencies, null, null, null, sendAppStarted: false);
         var builder = new TelemetryDataBuilderV2();
 
-        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion);
+        var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: false);
 
         result.Should().NotBeNull();
         var actualRequestTypes = result.Payload is MessageBatchPayload batch
@@ -232,6 +234,7 @@ public class TelemetryDataBuilderV2Tests
                    from hasDistributions in options
                    from hasProducts in options
                    from hasSentAppStarted in options
+                   from hasSendAppClosing in options
                    let potentialPayloads = new List<string>()
                    {
                        hasSentAppStarted ? null : TelemetryRequestTypes.AppStarted,
@@ -241,13 +244,15 @@ public class TelemetryDataBuilderV2Tests
                        (hasProducts && hasSentAppStarted) ? TelemetryRequestTypes.AppProductChanged : null,
                        hasMetrics ? TelemetryRequestTypes.GenerateMetrics : null,
                        hasDistributions ? TelemetryRequestTypes.Distributions : null,
+                       hasSendAppClosing ? TelemetryRequestTypes.AppClosing : null,
                    }
                    let heartbeat = new[] { TelemetryRequestTypes.AppHeartbeat }
                    let payloads = potentialPayloads
                                  .Where(x => !string.IsNullOrEmpty(x))
-                                 .Concat(heartbeat)
+                                  // we only send heartbeat _or_ app-closing
+                                 .Concat(hasSendAppClosing ? Array.Empty<string>() : heartbeat)
                                  .ToArray()
-                   select new object[] { hasConfig, hasDeps, hasIntegrations, hasMetrics, hasDistributions, hasProducts, hasSentAppStarted, payloads };
+                   select new object[] { hasConfig, hasDeps, hasIntegrations, hasMetrics, hasDistributions, hasProducts, hasSentAppStarted, hasSendAppClosing, payloads };
         }
     }
 }
