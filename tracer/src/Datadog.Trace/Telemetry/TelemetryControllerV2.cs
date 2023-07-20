@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Configuration;
@@ -16,6 +17,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
@@ -31,12 +33,12 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly IntegrationTelemetryCollector _integrations = new();
     private readonly ProductsTelemetryCollector _products = new();
     private readonly IMetricsTelemetryCollector _metrics;
-    private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
+    private readonly Scheduler _scheduler;
     private TelemetryTransportManagerV2 _transportManager;
-    private TimeSpan _flushInterval;
     private bool _sendTelemetry;
+    private bool _isStarted;
     private string? _namingVersion;
 
     internal TelemetryControllerV2(
@@ -50,7 +52,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
-        _flushInterval = flushInterval;
+        _scheduler = new(flushInterval, metricsAggregationInterval: TimeSpan.FromSeconds(10), _processExit);
 
         try
         {
@@ -86,7 +88,8 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void Start()
     {
-        _tracerInitialized.TrySetResult(true);
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTracerStarted, null));
+        _scheduler.SetTracerInitialized();
     }
 
     public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
@@ -143,7 +146,7 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     public void SetFlushInterval(TimeSpan flushInterval)
     {
-        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetFlushInterval, _flushInterval));
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetFlushInterval, flushInterval));
     }
 
     private void TerminateLoop()
@@ -173,18 +176,6 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     private async Task PushTelemetryLoopAsync()
     {
-#if !NET5_0_OR_GREATER
-        var tasks = new Task[2];
-        tasks[0] = _tracerInitialized.Task;
-        tasks[1] = _processExit.Task;
-
-        // wait for Tracer initialization before trying to send first telemetry to avoid circular reference issues
-        // .NET 5.0 has an explicit overload for this
-        await Task.WhenAny(tasks).ConfigureAwait(false);
-#else
-        await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
-#endif
-
         while (true)
         {
             // Process all the messages in the queue before sending next telemetry
@@ -196,6 +187,9 @@ internal class TelemetryControllerV2 : ITelemetryController
                         _transportManager.Dispose(); // dispose the old one
                         _transportManager = (TelemetryTransportManagerV2)item.State!;
                         break;
+                    case WorkItem.ItemType.SetTracerStarted:
+                        _isStarted = true;
+                        break;
                     case WorkItem.ItemType.EnableSending:
                         _sendTelemetry = true;
                         break;
@@ -203,13 +197,19 @@ internal class TelemetryControllerV2 : ITelemetryController
                         _sendTelemetry = false;
                         break;
                     case WorkItem.ItemType.SetFlushInterval:
-                        _flushInterval = (TimeSpan)item.State!;
+                        _scheduler.SetFlushInterval((TimeSpan)item.State!);
                         break;
                 }
             }
 
+            if (_scheduler.ShouldAggregateMetrics)
+            {
+                // aggregate metrics if the timer has expired or if we're about to exit
+                _metrics.AggregateMetrics();
+            }
+
             var isFinalPush = _processExit.Task.IsCompleted;
-            if (_sendTelemetry)
+            if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
             {
                 await PushTelemetry(sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
@@ -221,13 +221,7 @@ internal class TelemetryControllerV2 : ITelemetryController
                 return;
             }
 
-#if NET5_0_OR_GREATER
-            // .NET 5.0 has an explicit overload for this
-            await Task.WhenAny(Task.Delay(_flushInterval), _processExit.Task).ConfigureAwait(false);
-#else
-            tasks[0] = Task.Delay(_flushInterval);
-            await Task.WhenAny(tasks).ConfigureAwait(false);
-#endif
+            await _scheduler.WaitForNextInterval().ConfigureAwait(false);
         }
     }
 
@@ -289,10 +283,144 @@ internal class TelemetryControllerV2 : ITelemetryController
             SetFlushInterval,
             EnableSending,
             DisableSending,
+            SetTracerStarted
         }
 
         public ItemType Type { get; }
 
         public object? State { get; }
+    }
+
+    /// <summary>
+    /// Internal for testing
+    /// </summary>
+    internal class Scheduler
+    {
+        private const int DelayTaskIndex = 0;
+        private const int ProcessTaskIndex = 1;
+        private const int InitializationTaskIndex = 2;
+
+        private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _processExitSource;
+        private readonly Task[] _tasks;
+        private readonly TimeSpan _metricsAggregationInterval;
+        private readonly IClock _clock;
+        private readonly IDelayFactory _delayFactory;
+        private TimeSpan _flushInterval;
+        private DateTime _lastFlush;
+        private DateTime _lastAggregation;
+        private bool _initializationFlushExecuted = false;
+
+        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource)
+        : this(flushInterval, metricsAggregationInterval, processExitSource, new Clock(), new DelayFactory())
+        {
+        }
+
+        // For testing only
+        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        {
+            _clock = clock;
+            _delayFactory = delayFactory;
+            _processExitSource = processExitSource;
+            _flushInterval = flushInterval;
+            _metricsAggregationInterval = metricsAggregationInterval;
+            ShouldAggregateMetrics = false; // wait for first interval before aggregating metrics
+            ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
+            _lastFlush = _lastAggregation = _clock.UtcNow;
+
+            // Using a task array instead of overloads to avoid allocating the array every loop
+            _tasks = new Task[3];
+            _tasks[DelayTaskIndex] = Task.CompletedTask; // Replaced on first iteration of WaitForNextInterval(), but ensures there's no nulls around
+            _tasks[ProcessTaskIndex] = processExitSource.Task;
+            _tasks[InitializationTaskIndex] = _tracerInitialized.Task;
+        }
+
+        public interface IDelayFactory
+        {
+            Task Delay(TimeSpan delay);
+        }
+
+        public bool ShouldAggregateMetrics { get; private set; }
+
+        public bool ShouldFlushTelemetry { get; private set; }
+
+        public void SetFlushInterval(TimeSpan flushInterval)
+        {
+            _flushInterval = flushInterval;
+        }
+
+        public void SetTracerInitialized()
+        {
+            _tracerInitialized.TrySetResult(true);
+        }
+
+        public async Task WaitForNextInterval()
+        {
+            // Calculate how long before the next flush. Accounts for the fact that it might
+            // take a long time to push telemetry if the network is slow or faulty
+            var nextAggregation = _lastAggregation.Add(_metricsAggregationInterval);
+
+            // Note that we don't start flushing until initialized
+            var nextFlush = _lastFlush.Add(_flushInterval);
+            var nextAction = !_initializationFlushExecuted || nextAggregation < nextFlush ? nextAggregation : nextFlush;
+            var waitPeriod = nextAction - _clock.UtcNow;
+
+            Task? completedTask = null;
+            if (waitPeriod <= TimeSpan.Zero)
+            {
+                Log.Debug(
+                    "Time to push telemetry exceeded the flush interval, triggering the next iteration immediately");
+            }
+            else
+            {
+                _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod);
+                completedTask = await Task.WhenAny(_tasks).ConfigureAwait(false);
+            }
+
+            if (_processExitSource.Task.IsCompleted)
+            {
+                // end of the line, flush everything, don't bother recalculating;
+                ShouldAggregateMetrics = true;
+                ShouldFlushTelemetry = true;
+                return;
+            }
+
+            // Should we aggregate metrics?
+            var now = _clock.UtcNow;
+            ShouldAggregateMetrics = nextAggregation <= now;
+            if (ShouldAggregateMetrics)
+            {
+                _lastAggregation = now;
+            }
+
+            // Should we flush telemetry?
+            if (completedTask == _tracerInitialized.Task)
+            {
+                _initializationFlushExecuted = true;
+                // We've just been started, so should always flush telemetry
+                ShouldFlushTelemetry = true;
+                // replace the tracerInitializedTask with a task that never completes
+                _tasks[InitializationTaskIndex] = Task.Delay(Timeout.Infinite);
+            }
+            else
+            {
+                ShouldFlushTelemetry = _initializationFlushExecuted && (nextFlush <= now);
+            }
+
+            if (ShouldFlushTelemetry)
+            {
+                _lastFlush = now;
+            }
+        }
+
+        private class Clock : IClock
+        {
+            public DateTime UtcNow => DateTime.UtcNow;
+        }
+
+        private class DelayFactory : IDelayFactory
+        {
+            public Task Delay(TimeSpan delay) => Task.Delay(delay);
+        }
     }
 }

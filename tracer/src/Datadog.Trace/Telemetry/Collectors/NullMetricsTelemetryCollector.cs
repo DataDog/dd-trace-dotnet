@@ -16,6 +16,10 @@ internal partial class NullMetricsTelemetryCollector : IMetricsTelemetryCollecto
     {
     }
 
+    public void AggregateMetrics()
+    {
+    }
+
     public MetricResults GetMetrics() => new(null, null);
 
     public void SetWafVersion(string wafVersion)
