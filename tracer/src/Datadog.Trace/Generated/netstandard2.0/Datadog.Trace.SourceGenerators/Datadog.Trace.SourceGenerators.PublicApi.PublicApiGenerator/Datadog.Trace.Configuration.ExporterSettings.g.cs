@@ -17,13 +17,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)43);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)46);
             return TracesPipeNameInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)44);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)47);
             TracesPipeNameInternal = value;
         }
     }
@@ -39,13 +39,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)45);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)48);
             return TracesPipeTimeoutMsInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)46);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)49);
             TracesPipeTimeoutMsInternal = value;
         }
     }
@@ -61,13 +61,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)35);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)38);
             return MetricsPipeNameInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)36);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)39);
             MetricsPipeNameInternal = value;
         }
     }
@@ -82,13 +82,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)47);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)50);
             return TracesUnixDomainSocketPathInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)48);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)51);
             TracesUnixDomainSocketPathInternal = value;
         }
     }
@@ -103,13 +103,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)37);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)40);
             return MetricsUnixDomainSocketPathInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)38);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)41);
             MetricsUnixDomainSocketPathInternal = value;
         }
     }
@@ -125,13 +125,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)33);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)36);
             return DogStatsdPortInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)34);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)37);
             DogStatsdPortInternal = value;
         }
     }
@@ -145,13 +145,13 @@ partial class ExporterSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)39);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)42);
             return PartialFlushEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)40);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)43);
             PartialFlushEnabledInternal = value;
         }
     }

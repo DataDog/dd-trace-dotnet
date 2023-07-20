@@ -746,6 +746,11 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
             return null;
         }
 
+        if (maybeParamValues.Value.IsDefaultOrEmpty)
+        {
+            return null;
+        }
+
         var paramValues = maybeParamValues.Value;
         var values = new string[paramValues.Length];
         for (int i = 0; i < paramValues.Length; i++)
@@ -759,6 +764,11 @@ public class InstrumentationDefinitionsGenerator : IIncrementalGenerator
     private static string[]? GetTypeArray(ImmutableArray<TypedConstant>? maybeParamValues)
     {
         if (!maybeParamValues.HasValue)
+        {
+            return null;
+        }
+
+        if (maybeParamValues.Value.IsDefaultOrEmpty)
         {
             return null;
         }

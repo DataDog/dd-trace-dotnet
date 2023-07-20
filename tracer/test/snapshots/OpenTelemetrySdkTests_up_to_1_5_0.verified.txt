@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -43,7 +43,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: MyServiceName.internal,
+    Name: StartSpan,
     Resource: StartSpan,
     Service: MyServiceName,
     Type: custom,
@@ -63,7 +63,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: MyServiceName.internal,
+    Name: StartSpan2,
     Resource: StartSpan2,
     Service: MyServiceName,
     Type: custom,
@@ -83,7 +83,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: MyServiceName.internal,
+    Name: StartRootSpan,
     Resource: StartRootSpan,
     Service: MyServiceName,
     Type: custom,
@@ -103,7 +103,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: MyServiceName.internal,
+    Name: InnerSpanOk,
     Resource: InnerSpanOk,
     Service: MyServiceName,
     Type: custom,
@@ -123,7 +123,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: MyServiceName.internal,
+    Name: InnerSpanError,
     Resource: InnerSpanError,
     Service: MyServiceName,
     Type: custom,
@@ -146,7 +146,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: MyServiceName.internal,
+    Name: InnerSpan,
     Resource: InnerSpanUpdated,
     Service: MyServiceName,
     Type: custom,
@@ -173,7 +173,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_1,
     SpanId: Id_9,
-    Name: OtherLibrary.internal,
+    Name: Response,
     Resource: Response,
     Service: MyServiceName,
     Type: custom,
@@ -194,7 +194,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: MyServiceName.internal,
+    Name: StartActiveSpan.Child,
     Resource: StartActiveSpan.Child,
     Service: MyServiceName,
     Type: custom,
@@ -214,7 +214,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_11,
     SpanId: Id_12,
-    Name: MyServiceName.internal,
+    Name: SayHello2,
     Resource: SayHello2,
     Service: MyServiceName,
     Type: custom,
@@ -243,7 +243,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: MyServiceName.internal,
+    Name: SayHello3,
     Resource: SayHello3,
     Service: MyServiceName,
     Type: custom,
@@ -272,7 +272,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_15,
     SpanId: Id_16,
-    Name: AdditionalActivitySource.internal,
+    Name: Transform,
     Resource: Transform,
     Service: CustomServiceName,
     Type: custom,

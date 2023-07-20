@@ -160,8 +160,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             "tracer_init_time",
                             new MetricSeries()
                         {
-                            new(1575317847, 224.1),
-                            new(1575317947, 235.2),
+                            new(1575317847, 2241),
+                            new(1575317947, 2352),
                         },
                             common: true,
                             type: MetricTypeConstants.Count)
@@ -176,8 +176,8 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             "app_sec_initialization_time",
                             new MetricSeries()
                             {
-                                new(1575317447, 2.54),
-                                new(1575317547, 6.43),
+                                new(1575317447, 254),
+                                new(1575317547, 643),
                             },
                             common: false,
                             type: MetricTypeConstants.Gauge)

@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public void NamedPipesSubmitsMetrics()
+        public async Task NamedPipesSubmitsMetrics()
         {
             if (!EnvironmentTools.IsWindows())
             {
@@ -75,7 +75,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             EnvironmentHelper.EnableWindowsNamedPipes();
-            RunTest();
+            // The server implementation of named pipes is flaky so have 3 attempts
+            var attemptsRemaining = 3;
+            while (true)
+            {
+                try
+                {
+                    attemptsRemaining--;
+                    RunTest();
+                    return;
+                }
+                catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
+                {
+                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
+                }
+            }
         }
 
         private void RunTest()
