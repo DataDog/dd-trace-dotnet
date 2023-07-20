@@ -8,12 +8,14 @@ if (!Samples.SampleHelpers.IsProfilerAttached())
     return 1;
 }
 
+#if NETCOREAPP
 Console.WriteLine("Process details: ");
 Console.WriteLine($"Framework: {RuntimeInformation.FrameworkDescription}");
 Console.WriteLine($"Process arch: {RuntimeInformation.ProcessArchitecture}");
 Console.WriteLine($"OS arch: {RuntimeInformation.OSArchitecture}");
 Console.WriteLine($"OS description: {RuntimeInformation.OSDescription}");
 Console.WriteLine($"IsArchive: {RuntimeInformation.OSDescription}");
+#endif
 
 Console.WriteLine("Creating trace");
 
