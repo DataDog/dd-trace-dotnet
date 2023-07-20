@@ -13,9 +13,9 @@ internal readonly struct MetricDataPoint
     /// </summary>
     public readonly long Timestamp;
 
-    public readonly double Value;
+    public readonly int Value;
 
-    public MetricDataPoint(long timestampInSeconds, double value)
+    public MetricDataPoint(long timestampInSeconds, int value)
     {
         Timestamp = timestampInSeconds;
         Value = value;

@@ -1,4 +1,4 @@
-// <copyright file="NullDatadogSink.cs" company="Datadog">
+// <copyright file="NullDirectSubmissionLogSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,9 +9,9 @@ using System.Threading.Tasks;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal class NullDatadogSink : IDatadogSink
+    internal class NullDirectSubmissionLogSink : IDirectSubmissionLogSink
     {
-        public void EnqueueLog(DatadogLogEvent logEvent)
+        public void EnqueueLog(DirectSubmissionLogEvent logEvent)
         {
         }
 

@@ -118,7 +118,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.NL
         public void CanReverseDuckTypeTarget()
         {
             var targetType = typeof(Target);
-            var target = NLogHelper.CreateTarget(new NullDatadogSink(), DirectSubmissionLogLevel.Debug);
+            var target = NLogHelper.CreateTarget(new NullDirectSubmissionLogSink(), DirectSubmissionLogLevel.Debug);
             var proxy = NLogCommon<Target>.CreateNLogTargetProxy(target);
 
             proxy.Should().NotBeNull();

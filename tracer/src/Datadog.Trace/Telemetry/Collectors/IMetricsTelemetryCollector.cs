@@ -16,6 +16,8 @@ internal partial interface IMetricsTelemetryCollector
     /// <param name="api">The API that was accessed</param>
     public void Record(PublicApiUsage api);
 
+    void AggregateMetrics();
+
     MetricResults GetMetrics();
 
     /// <summary>
