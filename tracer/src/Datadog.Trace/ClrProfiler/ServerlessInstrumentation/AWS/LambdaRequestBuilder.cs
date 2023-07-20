@@ -31,6 +31,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var request = WebRequest.Create(Uri + StartInvocationPath);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
+            request.Headers.Set(AgentHttpHeaderNames.Language, "dotnet");
             request.ContentType = MimeTypes.Json;
             return request;
         }
@@ -40,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var request = WebRequest.Create(Uri + EndInvocationPath);
             request.Method = "POST";
             request.Headers.Set(HttpHeaderNames.TracingEnabled, "false");
-
+            request.Headers.Set(AgentHttpHeaderNames.Language, "dotnet");
             if (scope is { Span: var span })
             {
                 // TODO: add support for 128-bit trace ids in serverless

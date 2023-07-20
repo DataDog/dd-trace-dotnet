@@ -29,6 +29,7 @@ namespace Datadog.Trace.Tests
             var request = requestBuilder.GetEndInvocationRequest(scope, true);
             request.Headers.Get("x-datadog-invocation-error").Should().Be("true");
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("Datadog-Meta-Lang").Should().Be("dotnet");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
@@ -43,6 +44,7 @@ namespace Datadog.Trace.Tests
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("Datadog-Meta-Lang").Should().Be("dotnet");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
             request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
@@ -57,6 +59,7 @@ namespace Datadog.Trace.Tests
             var request = requestBuilder.GetEndInvocationRequest(scope, false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("Datadog-Meta-Lang").Should().Be("dotnet");
             request.Headers.Get("x-datadog-sampling-priority").Should().Be("-1");
             request.Headers.Get("x-datadog-trace-id").Should().Be("1234");
             request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
@@ -69,6 +72,7 @@ namespace Datadog.Trace.Tests
             var request = requestBuilder.GetEndInvocationRequest(null, false);
             request.Headers.Get("x-datadog-invocation-error").Should().BeNull();
             request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("Datadog-Meta-Lang").Should().Be("dotnet");
             request.Headers.Get("x-datadog-sampling-priority").Should().BeNull();
             request.Headers.Get("x-datadog-trace-id").Should().BeNull();
             request.Headers.Get("x-datadog-span-id").Should().BeNull();
