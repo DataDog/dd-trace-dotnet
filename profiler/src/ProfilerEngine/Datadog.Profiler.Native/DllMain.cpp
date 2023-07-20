@@ -42,7 +42,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     return TRUE;
 }
 
-bool CheckProfilingEnabledEnvironmentVariable()
+bool IsProfilingEnabled()
 {
     // If we are in this function, then the user has already configured profiling by setting CORECLR_ENABLE_PROFILING to 1
     // and by correctly pointing the CORECLR_PROFILER_XXX variables.
@@ -51,39 +51,31 @@ bool CheckProfilingEnabledEnvironmentVariable()
     //  - supporting scenarios where CORECLR_PROFILER_XXX point to the shared native loader, where some of the suit's products
     //    are enabled, but profiling is explicitly disabled;
     //  - supporting a scenario where CORECLR_PROFILER_XXX is set machine-wide and DD_PROFILING_ENABLED is set per service.
-    const bool IsProfilingEnabledDefault = false;
     shared::WSTRING isProfilingEnabledConfigStr = shared::GetEnvironmentValue(EnvironmentVariables::ProfilingEnabled);
+    bool isEnabled = false;  // disabled by default
 
-    // no environment variable set
     if (isProfilingEnabledConfigStr.empty())
     {
         Log::Info("No \"", EnvironmentVariables::ProfilingEnabled, "\" environment variable has been found.",
-                  " Using default (", IsProfilingEnabledDefault, ").");
-
-        return IsProfilingEnabledDefault;
+                  " Using default (", isEnabled, ").");
     }
     else
     {
-        bool isProfilingEnabled;
-        if (!shared::TryParseBooleanEnvironmentValue(isProfilingEnabledConfigStr, isProfilingEnabled))
+        if (!shared::TryParseBooleanEnvironmentValue(isProfilingEnabledConfigStr, isEnabled))
         {
-            // invalid value for environment variable
             Log::Info("Invalid value \"", isProfilingEnabledConfigStr, "\" for \"",
                       EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Using default (", IsProfilingEnabledDefault, ").");
-
-            return IsProfilingEnabledDefault;
+                      " Using default (", isEnabled, ").");
         }
         else
         {
-            // take environment variable into account
             Log::Info("Value \"", isProfilingEnabledConfigStr, "\" for \"",
                       EnvironmentVariables::ProfilingEnabled, "\" environment variable.",
-                      " Enable = ", isProfilingEnabled);
-
-            return isProfilingEnabled;
+                      " Enable = ", isEnabled);
         }
     }
+
+    return isEnabled;
 }
 
 class __declspec(uuid("BD1A650D-AC5D-4896-B64F-D6FA25D6B26A")) CorProfilerCallback;
@@ -98,21 +90,22 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 
     if (ppv == nullptr)
     {
-        Log::Info("DllGetClassObject(): Cannot return an instance of CorProfilerCallbackFactory because the specified out-param 'ppv' is null.");
+        Log::Error("DllGetClassObject(): the specified out-param 'ppv' is null.");
         return E_FAIL;
     }
 
     if (rclsid != CLSID_CorProfiler)
     {
-        Log::Info("DllGetClassObject(): Cannot return an instance of factory because the specified 'rclsid' is not known.");
+        Log::Error(
+            "DllGetClassObject(): the specified 'rclsid' ",
+            riid.Data1, "-", riid.Data2, "-", riid.Data3, "-", riid.Data4,
+            " is not CLSID_CorProfiler.");
         return CLASS_E_CLASSNOTAVAILABLE;
     }
 
-    bool isProfilingEnabled = CheckProfilingEnabledEnvironmentVariable();
-    if (!isProfilingEnabled)
+    if (!IsProfilingEnabled())
     {
-        Log::Info("DllGetClassObject(): Will not return an instance of CorProfilerCallbackFactory because Profiling has been"
-                  " disabled via an environment variable.");
+        Log::Error("DllGetClassObject(): Profiling is not enabled.");
 
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
@@ -125,19 +118,25 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
     CorProfilerCallbackFactory* factory = new CorProfilerCallbackFactory();
     if (factory == nullptr)
     {
-        Log::Info("DllGetClassObject(): Cannot return an instance of CorProfilerCallbackFactory because the instantiation failed.");
+        Log::Error("DllGetClassObject(): Fail to create CorProfilerCallbackFactory.");
         return E_FAIL;
     }
 
     HRESULT hr = factory->QueryInterface(riid, ppv);
-
-    Log::Info("DllGetClassObject(): Returning an instance of CorProfilerCallbackFactory (hr=0x", std::hex, hr, std::dec, ")");
+    if (FAILED(hr))
+    {
+        Log::Error("DllGetClassObject(): Fail to query interface from CorProfilerCallbackFactory (hr=0x", std::hex, hr, std::dec, ")");
+    }
+    else
+    {
+        Log::Info("DllGetClassObject(): Returning an instance of CorProfilerCallbackFactory (hr=0x", std::hex, hr, std::dec, ")");
+    }
     return hr;
 }
 
 extern "C" HRESULT STDMETHODCALLTYPE DllCanUnloadNow()
 {
-    Log::Debug("DllCanUnloadNow() invoked.");
+    Log::Info("DllCanUnloadNow() invoked.");
 
     return S_OK;
 }
