@@ -677,23 +677,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [InlineData("test1,, ,test2", new[] { "test1", "test2" })]
-        [InlineData("", new[] { "Datadog" })]
-        public void PropagationStyle(string value, string[] expected)
-        {
-            foreach (var isActivityListenerEnabled in new[] { true, false })
-            {
-                var source = CreateConfigurationSource(
-                    (ConfigurationKeys.PropagationStyleExtract, value),
-                    (ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, isActivityListenerEnabled ? "1" : "0"));
-
-                var settings = new TracerSettings(source);
-
-                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
-            }
-        }
-
-        [Theory]
         [MemberData(nameof(StringTestCases), "", Strings.AllowEmpty)]
         public void TraceMethods(string value, string expected)
         {

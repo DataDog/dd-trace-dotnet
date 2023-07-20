@@ -263,18 +263,6 @@ namespace Datadog.Trace.Configuration
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
                                                      .AsBool(false);
 
-            var propagationStyle = config
-                                  .WithKeys(ConfigurationKeys.PropagationStyle)
-                                  .AsString();
-
-            PropagationStyle = TrimSplitString(propagationStyle, commaSeparator);
-
-            if (PropagationStyle.Length == 0)
-            {
-                // default value
-                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.Datadog };
-            }
-
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
                                         .AsString();
@@ -721,11 +709,6 @@ namespace Datadog.Trace.Configuration
         /// This value is not used when extracting an incoming propagation header from an upstream service.
         /// </remarks>
         internal int OutgoingTagPropagationHeaderMaxLength { get; }
-
-        /// <summary>
-        /// Gets a value indicating the injection and extraction propagation styles.
-        /// </summary>
-        internal string[] PropagationStyle { get; }
 
         /// <summary>
         /// Gets a value indicating the injection propagation style.
