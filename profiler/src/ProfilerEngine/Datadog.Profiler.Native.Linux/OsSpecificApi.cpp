@@ -34,6 +34,17 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
+
+bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
+{
+    // TODO: is there any GetLastError()/FormatMessage() in Linux: dlerror() maybe?
+    errorCode = 0;
+    message = "(error code = ?)";
+
+    return false;
+}
+
+
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
     return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);

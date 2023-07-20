@@ -8,6 +8,7 @@
 #include "shared/src/native-src/util.h"
 
 #ifdef _WINDOWS
+#include "OsSpecificApi.h"
 #define LIBRARY_FILE_EXTENSION ".dll"
 #elif LINUX
 #define LIBRARY_FILE_EXTENSION ".so"
@@ -109,21 +110,10 @@ void* RuntimeIdStore::LoadDynamicLibrary(std::string filePath)
     HMODULE dynLibPtr = LoadLibrary(::shared::ToWSTRING(filePath).c_str());
     if (dynLibPtr == NULL)
     {
-        LPVOID msgBuffer;
-        DWORD errorCode = GetLastError();
-
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-        if (msgBuffer != NULL)
-        {
-            Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "': ", (LPTSTR)msgBuffer);
-            LocalFree(msgBuffer);
-        }
-        else
-        {
-            Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "' (error = ", errorCode, ")");
-        }
+        DWORD errorCode;
+        std::string message;
+        OsSpecificApi::GetLastErrorMessage(errorCode, message);
+        Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "' ", message);
     }
     return dynLibPtr;
 #else
@@ -151,21 +141,10 @@ void* RuntimeIdStore::GetExternalFunction(void* instance, const char* const func
     FARPROC dynFunc = GetProcAddress((HMODULE)instance, funcName);
     if (dynFunc == NULL)
     {
-        LPVOID msgBuffer;
-        DWORD errorCode = GetLastError();
-
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-        if (msgBuffer != NULL)
-        {
-            Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "': ", (LPTSTR)msgBuffer);
-            LocalFree(msgBuffer);
-        }
-        else
-        {
-            Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "' ( error = ", errorCode, ")");
-        }
+        DWORD errorCode;
+        std::string message;
+        OsSpecificApi::GetLastErrorMessage(errorCode, message);
+        Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "' ", message);
     }
     return dynFunc;
 #else
