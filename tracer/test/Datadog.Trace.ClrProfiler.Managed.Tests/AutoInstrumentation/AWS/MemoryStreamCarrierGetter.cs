@@ -30,7 +30,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests
                 if (messageAttributeValue != null && messageAttributeValue.BinaryValue is MemoryStream memoryStream)
                 {
                     memoryStream.Position = 0;
-                    using var reader = new StreamReader(memoryStream, encoding: Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: -1, leaveOpen: true);                    var jsonString = reader.ReadToEnd();
+                    using var reader = new StreamReader(memoryStream, encoding: Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: -1, leaveOpen: true);
+                    var jsonString = reader.ReadToEnd();
                     var data = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
 
                     if (data.TryGetValue(key, out var value))
