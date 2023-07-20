@@ -11,185 +11,185 @@ internal partial class MetricsTelemetryCollector
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
         var index = 0 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {
         var index = 4 + ((int)tag1 * 3) + (int)tag2;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountSpanCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
         var index = 163 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountSpanFinished(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[216].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[216], increment);
     }
 
     public void RecordCountSpanEnqueuedForSerialization(Datadog.Trace.Telemetry.Metrics.MetricTags.SpanEnqueueReason tag, int increment = 1)
     {
         var index = 217 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountSpanDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
         var index = 220 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTraceSegmentCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceContinuation tag, int increment = 1)
     {
         var index = 224 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTraceChunkEnqueued(Datadog.Trace.Telemetry.Metrics.MetricTags.TraceChunkEnqueueReason tag, int increment = 1)
     {
         var index = 226 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTraceChunkDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.DropReason tag, int increment = 1)
     {
         var index = 228 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTraceChunkSent(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[232].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[232], increment);
     }
 
     public void RecordCountTraceSegmentsClosed(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[233].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[233], increment);
     }
 
     public void RecordCountTraceApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[234].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[234], increment);
     }
 
     public void RecordCountTraceApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
         var index = 235 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTraceApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
         var index = 257 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTracePartialFlush(Datadog.Trace.Telemetry.Metrics.MetricTags.PartialFlushReason tag, int increment = 1)
     {
         var index = 260 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountContextHeaderStyleInjected(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
         var index = 262 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountContextHeaderStyleExtracted(Datadog.Trace.Telemetry.Metrics.MetricTags.ContextHeaderStyle tag, int increment = 1)
     {
         var index = 266 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountStatsApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[270].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[270], increment);
     }
 
     public void RecordCountStatsApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
         var index = 271 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountStatsApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
         var index = 293 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTelemetryApiRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag, int increment = 1)
     {
         var index = 296 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTelemetryApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag2, int increment = 1)
     {
         var index = 298 + ((int)tag1 * 22) + (int)tag2;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountTelemetryApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.TelemetryEndpoint tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag2, int increment = 1)
     {
         var index = 342 + ((int)tag1 * 3) + (int)tag2;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountVersionConflictTracerCreated(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[348].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[348], increment);
     }
 
     public void RecordCountDirectLogLogs(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag, int increment = 1)
     {
         var index = 349 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountDirectLogApiRequests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[402].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[402], increment);
     }
 
     public void RecordCountDirectLogApiResponses(Datadog.Trace.Telemetry.Metrics.MetricTags.StatusCode tag, int increment = 1)
     {
         var index = 403 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountDirectLogApiErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.ApiError tag, int increment = 1)
     {
         var index = 425 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountWafInit(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[428].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[428], increment);
     }
 
     public void RecordCountWafUpdates(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[429].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[429], increment);
     }
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
         var index = 430 + (int)tag;
-        Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
     /// </summary>
-    private static MetricKey[] GetCountBuffer()
-        => new MetricKey[]
+    private static AggregatedMetric[] GetCountBuffer()
+        => new AggregatedMetric[]
         {
             // logs_created, index = 0
             new(new[] { "level:debug" }),
@@ -666,4 +666,6 @@ internal partial class MetricsTelemetryCollector
     /// </summary>
     private static int[] CountEntryCounts { get; }
         = new []{ 4, 159, 53, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 53, 1, 22, 3, 1, 1, 5, };
+
+    private const int _countsLength = 435;
 }
