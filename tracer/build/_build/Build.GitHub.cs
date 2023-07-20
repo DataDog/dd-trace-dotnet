@@ -1092,7 +1092,7 @@ partial class Build
 
             var prComments = (await connection.Run(query)).ToList();
         
-            Console.WriteLine($"Found {prComments} comments for PR {prNumber}");
+            Console.WriteLine($"Found {prComments.Count} comments for PR {prNumber}");
 
             var updated = false;
             foreach (var prComment in prComments)
@@ -1112,7 +1112,8 @@ partial class Build
                     };
 
                     var mutation = new Mutation()
-                       .UpdateIssueComment(arg);
+                                  .UpdateIssueComment(arg)
+                                  .Select(x => new { x.IssueComment });
 
                     await connection.Run(mutation);
                     updated = true;
@@ -1127,7 +1128,7 @@ partial class Build
 
             if (!updated)
             {
-                Console.WriteLine($"No comment matching title was found in {prNumber}, posting it for the first time.");
+                Console.WriteLine($"No comment matching title '{title}' was found in {prNumber}, posting it for the first time.");
                 await PostCommentToPullRequest(prNumber, markdown);
             }
         }
