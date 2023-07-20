@@ -232,8 +232,8 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
     HRESULT hr = E_FAIL;
 
-    auto parentToken = token_;
     auto token = token_;
+    auto typeSpec = mdTypeSpecNil;
     std::set<mdToken> processed;
 
     while (token != mdTokenNil)
@@ -287,7 +287,7 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
 
                     mdToken type_token;
                     CorSigUncompressToken(&signature[2], &type_token);
-                    parentToken = token;
+                    typeSpec = token;
                     token = type_token;
                     continue;
                 }
@@ -317,8 +317,9 @@ TypeInfo GetTypeInfo(const ComPtr<IMetaDataImport2>& metadata_import, const mdTo
             type_isGeneric = idxFromRight == 1 || idxFromRight == 2;
         }
 
-        return {parentToken,         type_name_string, mdTypeSpecNil, TypeFromToken(parentToken),     extendsInfo, type_valueType,
-                type_isGeneric, type_isAbstract,  type_isSealed, parentTypeInfo, parent_token};
+        return {token,         type_name_string, typeSpec,       typeSpec != mdTypeSpecNil ? mdtTypeSpec : token_type,
+                extendsInfo,   type_valueType,   type_isGeneric, type_isAbstract,
+                type_isSealed, parentTypeInfo,   parent_token};
     }
     return {};
 }
