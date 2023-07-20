@@ -107,7 +107,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The absolute URI string represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetAbsoluteUri()")]
+    [AspectMethodReplace("System.Uri::get_AbsoluteUri()")]
     public static string GetAbsoluteUri(Uri instance)
     {
         var result = instance.AbsoluteUri;
@@ -120,7 +120,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The absolute path of the URI represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetAbsolutePath()")]
+    [AspectMethodReplace("System.Uri::get_AbsolutePath()")]
     public static string GetAbsolutePath(Uri instance)
     {
         var result = instance.AbsolutePath;
@@ -133,7 +133,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The local operating-system representation of the URI path represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetLocalPath()")]
+    [AspectMethodReplace("System.Uri::get_LocalPath()")]
     public static string GetLocalPath(Uri instance)
     {
         var result = instance.LocalPath;
@@ -146,7 +146,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The DNS host name or IP address specified in the URI represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetHost()")]
+    [AspectMethodReplace("System.Uri::get_Host()")]
     public static string GetHost(Uri instance)
     {
         var result = instance.Host;
@@ -159,7 +159,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The URI path and query represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetPathAndQuery()")]
+    [AspectMethodReplace("System.Uri::get_PathAndQuery()")]
     public static string GetPathAndQuery(Uri instance)
     {
         var result = instance.PathAndQuery;
@@ -172,7 +172,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The URI authority represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetAuthority()")]
+    [AspectMethodReplace("System.Uri::get_Authority()")]
     public static string GetAuthority(Uri instance)
     {
         var result = instance.Authority;
@@ -185,7 +185,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The URI query represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetQuery()")]
+    [AspectMethodReplace("System.Uri::get_Query()")]
     public static string GetQuery(Uri instance)
     {
         var result = instance.Query;
@@ -198,7 +198,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The scheme name of the URI represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetScheme()")]
+    [AspectMethodReplace("System.Uri::get_Scheme()")]
     public static string GetScheme(Uri instance)
     {
         var result = instance.Scheme;
@@ -211,7 +211,7 @@ public class UriAspect
     /// </summary>
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>The display string representation of the URI represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::GetOriginalString()")]
+    [AspectMethodReplace("System.Uri::get_OriginalString()")]
     public static string GetOriginalString(Uri instance)
     {
         var result = instance.OriginalString;

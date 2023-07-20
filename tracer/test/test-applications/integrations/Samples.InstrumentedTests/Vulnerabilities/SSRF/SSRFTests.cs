@@ -28,7 +28,7 @@ public class SSRFTests : InstrumentationTestsBase
     public void GivenAHttpWebRequest_WhenGetResponseTaintedURL_VulnerabilityIsLoged()
     {
         HttpWebRequest.Create(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -36,7 +36,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         var request = HttpWebRequest.Create(taintedUrlValue);
         request.GetResponseAsync();
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -105,21 +105,12 @@ public class SSRFTests : InstrumentationTestsBase
         AssertTainted(uri);
     }
 
-#if NET6_0_OR_GREATER
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted10()
-    {
-        Uri uri = new Uri(taintedUrlValue, new UriCreationOptions());
-        AssertTainted(uri);
-    }
-#endif
-
     [Fact]
     public void GivenAURI_WhenGetAsyncFromtainted_IsTainted()
     {
         HttpClient client = new HttpClient();
         client.GetAsync(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -127,7 +118,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         HttpClient client = new HttpClient();
         client.GetStreamAsync(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -136,8 +127,9 @@ public class SSRFTests : InstrumentationTestsBase
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         client.SendAsync(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
+
 #if NET5_0_OR_GREATER
     [Fact]    
     public void GivenAURI_WhenSendFromtainted_Vulnerable()
@@ -145,7 +137,7 @@ public class SSRFTests : InstrumentationTestsBase
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -154,7 +146,7 @@ public class SSRFTests : InstrumentationTestsBase
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         ExecuteAction(() => client.Send(message));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -163,7 +155,7 @@ public class SSRFTests : InstrumentationTestsBase
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -172,546 +164,547 @@ public class SSRFTests : InstrumentationTestsBase
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         ExecuteAction(() => client.Send(message, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 #endif
     [Fact]
     public void GivenAHttpWebRequest_WhenCreated_Vulnerable2()
     {
         HttpWebRequest.Create(new Uri(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateDefault_Vulnerable()
     {
         HttpWebRequest.CreateDefault(new Uri(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateHttp_Vulnerable()
     {
         HttpWebRequest.CreateHttp(new Uri(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateHttp_Vulnerable2()
     {
         HttpWebRequest.CreateHttp(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebRequest_WhenCreateHttp_Vulnerable()
     {
         WebRequest.CreateHttp(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebRequest_WhenCreateHttp_Vulnerable2()
     {
         WebRequest.Create(taintedUrlValue);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
+#if !NETFRAMEWORK
     [Fact]
     public void GivenAWebClient_WhenDownloadString_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadString(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadData_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadData(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadDataAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadDataAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadDataAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadDataAsync(new Uri(taintedUrlValue), null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadDataTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadDataTaskAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadDataTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadDataTaskAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFile_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadFile(taintedUrlValue, file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFile_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadFile(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFileAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadFileAsync(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFileAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadFileAsync(new Uri(taintedUrlValue), file, null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFileTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadFileTaskAsync(taintedUrlValue, file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadFileTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadFileTaskAsync(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadString_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadString(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadStringAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadStringAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadStringAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadStringAsync(new Uri(taintedUrlValue), null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadStringTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.DownloadStringTaskAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenDownloadStringTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.DownloadStringTaskAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenRead_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenRead(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenRead_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenRead(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenReadAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenReadAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenReadAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenReadAsync(new Uri(taintedUrlValue), null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenReadTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenReadTaskAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenReadTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenReadTaskAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWrite_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenWrite(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWrite_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenWrite(taintedUrlValue, "GET"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWrite_Vulnerable4()
     {
         ExecuteAction(() => webclient.OpenWrite(new Uri(taintedUrlValue), "GET"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenWriteAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenWriteAsync(new Uri(taintedUrlValue), "GET"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.OpenWriteAsync(new Uri(taintedUrlValue), "GET", null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.OpenWriteTaskAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.OpenWriteTaskAsync(taintedUrlValue, "GET"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteTaskAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.OpenWriteTaskAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenOpenWriteTaskAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.OpenWriteTaskAsync(new Uri(taintedUrlValue), "GET"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadData_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadData(taintedUrlValue, new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadData_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadData(taintedUrlValue, "GET", new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadData_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadData(new Uri(taintedUrlValue), "GET", new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadDataAsync(new Uri(taintedUrlValue), new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadDataAsync(new Uri(taintedUrlValue), "GET", new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadDataAsync(new Uri(taintedUrlValue), "GET", new Byte[] { }, null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadDataTaskAsync(taintedUrlValue, new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataTaskAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadDataTaskAsync(taintedUrlValue, "GET", new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataTaskAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadDataTaskAsync(new Uri(taintedUrlValue), new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadDataTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadDataTaskAsync(new Uri(taintedUrlValue), "GET", new Byte[] { }));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFile_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadFile(taintedUrlValue, taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFile_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadFile(taintedUrlValue, "GET", file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFile_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadFile(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFile_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadFile(new Uri(taintedUrlValue), "GET", file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadFileAsync(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadFileAsync(new Uri(taintedUrlValue), "GET", file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadFileAsync(new Uri(taintedUrlValue), "GET", file, null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadFileTaskAsync(taintedUrlValue, file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadFileTaskAsync(taintedUrlValue, "GET", file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileTaskAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadFileTaskAsync(new Uri(taintedUrlValue), file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadFileTaskAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadFileTaskAsync(new Uri(taintedUrlValue), "GET", file));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadString_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadString(taintedUrlValue, "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadString_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadString(taintedUrlValue, "GET", "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadString_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadString(new Uri(taintedUrlValue), "GET", "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadStringAsync(new Uri(taintedUrlValue), "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadStringAsync(new Uri(taintedUrlValue), "GET", "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadStringAsync(new Uri(taintedUrlValue), "GET", "data", null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadStringTaskAsync(taintedUrlValue, "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadStringTaskAsync(taintedUrlValue, "GET", "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringTaskAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadStringTaskAsync(new Uri(taintedUrlValue), "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadStringTaskAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadStringTaskAsync(new Uri(taintedUrlValue), "GET", "data"));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValues_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadValues(taintedUrlValue, new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValues_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadValues(taintedUrlValue, "GET", new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValues_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadValues(new Uri(taintedUrlValue), "GET", new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadValuesAsync(new Uri(taintedUrlValue), new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadValuesAsync(new Uri(taintedUrlValue), "GET", new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadValuesAsync(new Uri(taintedUrlValue), "GET", new NameValueCollection(), null));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesTaskAsync_Vulnerable()
     {
         ExecuteAction(() => webclient.UploadValuesTaskAsync(taintedUrlValue, new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -719,231 +712,232 @@ public class SSRFTests : InstrumentationTestsBase
     {
         ExecuteAction(() => webclient.UploadValuesTaskAsync(taintedUrlValue, "GET", new NameValueCollection()));
         System.Threading.Thread.Sleep(1000);
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesTaskAsync_Vulnerable2()
     {
         ExecuteAction(() => webclient.UploadValuesTaskAsync(new Uri(taintedUrlValue), new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAWebClient_WhenUploadValuesTaskAsync_Vulnerable3()
     {
         ExecuteAction(() => webclient.UploadValuesTaskAsync(new Uri(taintedUrlValue), "GET", new NameValueCollection()));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
+#endif
 
     [Fact]
     public void GivenAHttpClient_WhenDownloadString_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpClient_WhenGetStringAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetStreamAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable3()
     {
         ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable4()
     {
         ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue), HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable5()
     {
         ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable6()
     {
         ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue), CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable7()
     {
         ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable8()
     {
         ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue), HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().PostAsync(taintedUrlValue, new Mock<HttpContent>().Object));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().PostAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable3()
     {
         ExecuteAction(() => new HttpClient().PostAsync(taintedUrlValue, new Mock<HttpContent>().Object, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable4()
     {
         ExecuteAction(() => new HttpClient().PostAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().PutAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable3()
     {
         ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable4()
     {
         ExecuteAction(() => new HttpClient().PutAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().DeleteAsync(taintedUrlValue));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().DeleteAsync(new Uri(taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable3()
     {
         ExecuteAction(() => new HttpClient().DeleteAsync(taintedUrlValue, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable4()
     {
         ExecuteAction(() => new HttpClient().DeleteAsync(new Uri(taintedUrlValue), CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue)));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_VulnerableUri()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue))));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable3()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable4()
     {
-        new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable5()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue)), HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable6()
     {
+        var taintedUrlValue2 = taintedUrlValue + "ewewew";
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue)), HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable7()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue)), CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerableSSRF();
     }
 
     [Fact]
@@ -952,7 +946,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Execute(request));
-        AssertVulnerable();
+        AssertVulnerable("SSRF");
     }
 
     [Fact]
@@ -961,7 +955,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.ExecuteAsync(request, CancellationToken.None));
-        AssertVulnerable();
+        AssertVulnerable("SSRF");
     }
 
     [Fact]
@@ -970,7 +964,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Delete(request));
-        AssertVulnerable();
+        AssertVulnerable("SSRF");
     }
 
     [Fact]
@@ -979,7 +973,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Post(request));
-        AssertVulnerable();
+        AssertVulnerable("SSRF");
     }
 
     [Fact]
@@ -988,7 +982,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Get(request));
-        AssertVulnerable();
+        AssertVulnerable("SSRF");
     }
 
     [Fact]
@@ -1120,7 +1114,7 @@ public class SSRFTests : InstrumentationTestsBase
         AssertTainted(builder.Uri);
     }
 
-    void ExecuteAction(Action c)
+    private void ExecuteAction(Action c)
     {
         try
         {
@@ -1129,5 +1123,10 @@ public class SSRFTests : InstrumentationTestsBase
         catch (Exception)
         {
         }
+    }
+
+    private void AssertVulnerableSSRF(string evidence = null)
+    {
+        AssertVulnerable("SSRF", ":+-" + (evidence ?? taintedUrlValue) + "-+:");
     }
 }
