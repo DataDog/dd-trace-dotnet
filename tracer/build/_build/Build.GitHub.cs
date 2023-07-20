@@ -1113,7 +1113,7 @@ partial class Build
 
                     var mutation = new Mutation()
                                   .UpdateIssueComment(arg)
-                                  .Select(x => new { x.IssueComment });
+                                  .Select(x => new { x.IssueComment.Id });
 
                     await connection.Run(mutation);
                     updated = true;
