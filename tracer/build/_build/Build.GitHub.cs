@@ -181,8 +181,7 @@ partial class Build
                 }
 
                 // Console.WriteLine(markdown.ToString());
-                await HideCommentsInPullRequest(PullRequestNumber.Value, "## Snapshots difference");
-                await PostCommentToPullRequest(PullRequestNumber.Value, markdown.ToString());
+                await ReplaceCommentInPullRequest(prNumber, "## Snapshots difference", markdown);
 
                 void RecordChange(StringBuilder diffsInFile, Dictionary<string, int> diffCounts)
                 {
@@ -849,8 +848,7 @@ partial class Build
                   oldBuild.SourceVersion,
                   newBuild.SourceVersion);
 
-              await HideCommentsInPullRequest(prNumber, "## Code Coverage Report");
-              await PostCommentToPullRequest(prNumber, markdown);
+              await ReplaceCommentInPullRequest(prNumber, "## Code Coverage Report", markdown);
           });
 
     Target CompareBenchmarksResults => _ => _
@@ -883,8 +881,7 @@ partial class Build
 
              var markdown = CompareBenchmarks.GetMarkdown(masterDir, prDir, prNumber, oldBuild.SourceVersion, GitHubRepositoryName);
 
-             await HideCommentsInPullRequest(prNumber, "## Benchmarks Report");
-             await PostCommentToPullRequest(prNumber, markdown);
+             await ReplaceCommentInPullRequest(prNumber, "## Benchmarks Report", markdown);
          });
 
     Target CompareThroughputResults => _ => _
@@ -944,8 +941,7 @@ partial class Build
              if(isPr)
              {
                  Logger.Information("Updating PR comment on GitHub");
-                 await HideCommentsInPullRequest(prNumber, "## Throughput/Crank Report");
-                 await PostCommentToPullRequest(prNumber, markdown);
+                 await ReplaceCommentInPullRequest(prNumber, "## Throughput/Crank Report", markdown);
              }
 
              async Task<(Microsoft.TeamFoundation.Build.WebApi.Build, string Version)> GetCrankArtifactsForLatestBenchmarkBranch(BuildHttpClient httpClient, AbsolutePath directory)
@@ -1035,7 +1031,7 @@ partial class Build
              {
                  new(commitName, testedCommit, ExecutionTimeSourceType.CurrentCommit, commitDir),
                  new("master", masterBuild.SourceVersion, ExecutionTimeSourceType.Master, masterDir),
-             };
+              };
 
              var markdown = CompareExecutionTime.GetMarkdown(sources);
 
@@ -1047,8 +1043,7 @@ partial class Build
              if(isPr)
              {
                  Logger.Information("Updating PR comment on GitHub");
-                 await HideCommentsInPullRequest(prNumber, "## Execution-Time Benchmarks Report");
-                 await PostCommentToPullRequest(prNumber, markdown);
+                 await ReplaceCommentInPullRequest(prNumber, "## Execution-Time Benchmarks Report", markdown);
              }
 
              async Task<Microsoft.TeamFoundation.Build.WebApi.Build> GetExecutionBenchmarkArtifacts(BuildHttpClient httpClient, string branch, AbsolutePath directory)
@@ -1078,6 +1073,70 @@ partial class Build
              }
          });
 
+    async Task ReplaceCommentInPullRequest(int prNumber, string title, string markdown)
+    {
+        try
+        {
+            Console.WriteLine("Replacing comment in GitHub");
+        
+            var clientId = "nuke-ci-client";
+            var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
+            var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
+
+            var query = new Octokit.GraphQL.Query()
+                       .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
+                       .PullRequest(prNumber)
+                       .Comments()
+                       .AllPages()
+                       .Select(comment => new { comment.Id, comment.Body });
+
+            var prComments = (await connection.Run(query)).ToList();
+        
+            Console.WriteLine($"Found {prComments} comments for PR {prNumber}");
+
+            var updated = false;
+            foreach (var prComment in prComments)
+            {
+                if (! prComment.Body.StartsWith(title))
+                {
+                    continue;
+                }
+
+                try
+                {
+                    var arg = new UpdateIssueCommentInput
+                    {
+                        Id = prComment.Id,
+                        Body = markdown,
+                        ClientMutationId = clientId
+                    };
+
+                    var mutation = new Mutation()
+                       .UpdateIssueComment(arg);
+
+                    await connection.Run(mutation);
+                    updated = true;
+                    Console.WriteLine($"Updated comment {prComment.Id} for PR {prNumber}");
+
+                }
+                catch (Exception ex)
+                {
+                    Logger.Warning($"Error updating comment with ID {prComment.Id}: {ex}");
+                }
+            }
+
+            if (!updated)
+            {
+                Console.WriteLine($"No comment matching title was found in {prNumber}, posting it for the first time.");
+                await PostCommentToPullRequest(prNumber, markdown);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.Warning($"There was an error trying to update comment with title '{title}': {ex}");
+        }
+    }
+
     async Task PostCommentToPullRequest(int prNumber, string markdown)
     {
         Console.WriteLine("Posting comment to GitHub");
@@ -1102,66 +1161,6 @@ partial class Build
             var response = await result.Content.ReadAsStringAsync();
             Console.WriteLine("Error: " + response);
             result.EnsureSuccessStatusCode();
-        }
-    }
-
-    async Task HideCommentsInPullRequest(int prNumber, string prefix)
-    {
-        try
-        {
-            Console.WriteLine("Looking for comments to hide in GitHub");
-
-            var clientId = "nuke-ci-client";
-            var productInformation = Octokit.GraphQL.ProductHeaderValue.Parse(clientId);
-            var connection = new Octokit.GraphQL.Connection(productInformation, GitHubToken);
-
-            var query = new Octokit.GraphQL.Query()
-                       .Repository(GitHubRepositoryName, GitHubRepositoryOwner)
-                       .PullRequest(prNumber)
-                       .Comments()
-                       .AllPages()
-                       .Select(issue => new { issue.Id, issue.Body, issue.IsMinimized, });
-
-            var issueComments =  (await connection.Run(query)).ToList();
-
-            Console.WriteLine($"Found {issueComments} comments for PR {prNumber}");
-
-            var count = 0;
-            foreach (var issueComment in issueComments)
-            {
-                if (issueComment.IsMinimized || ! issueComment.Body.StartsWith(prefix))
-                {
-                    continue;
-                }
-
-                try
-                {
-                    var arg = new MinimizeCommentInput
-                    {
-                        Classifier = ReportedContentClassifiers.Outdated,
-                        SubjectId = issueComment.Id,
-                        ClientMutationId = clientId
-                    };
-
-                    var mutation = new Mutation()
-                                  .MinimizeComment(arg)
-                                  .Select(x => new { x.MinimizedComment.IsMinimized });
-
-                    await connection.Run(mutation);
-                    count++;
-
-                }
-                catch (Exception ex)
-                {
-                    Logger.Warning($"Error minimising comment with ID {issueComment.Id}: {ex}");
-                }
-            }
-
-            Console.WriteLine($"Minimised {count} comments for PR {prNumber}");
-        }
-        catch (Exception ex)
-        {
-            Logger.Warning($"There was an error trying to minimise old comments with prefix '{prefix}': {ex}");
         }
     }
 
