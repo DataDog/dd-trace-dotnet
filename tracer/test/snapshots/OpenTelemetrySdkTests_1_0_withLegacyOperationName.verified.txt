@@ -27,9 +27,6 @@
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -46,7 +43,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: StartSpan,
+    Name: MyServiceName.internal,
     Resource: StartSpan,
     Service: MyServiceName,
     Type: custom,
@@ -60,16 +57,13 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: StartSpan2,
+    Name: MyServiceName.internal,
     Resource: StartSpan2,
     Service: MyServiceName,
     Type: custom,
@@ -83,16 +77,13 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: StartRootSpan,
+    Name: MyServiceName.internal,
     Resource: StartRootSpan,
     Service: MyServiceName,
     Type: custom,
@@ -106,16 +97,13 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_6,
-    Name: InnerSpanOk,
+    Name: MyServiceName.internal,
     Resource: InnerSpanOk,
     Service: MyServiceName,
     Type: custom,
@@ -129,16 +117,13 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: InnerSpanError,
+    Name: MyServiceName.internal,
     Resource: InnerSpanError,
     Service: MyServiceName,
     Type: custom,
@@ -155,16 +140,13 @@
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: InnerSpan,
+    Name: MyServiceName.internal,
     Resource: InnerSpanUpdated,
     Service: MyServiceName,
     Type: custom,
@@ -185,16 +167,13 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_9,
-    Name: Response,
+    Name: OtherLibrary.internal,
     Resource: Response,
     Service: MyServiceName,
     Type: custom,
@@ -209,16 +188,13 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: StartActiveSpan.Child,
+    Name: MyServiceName.internal,
     Resource: StartActiveSpan.Child,
     Service: MyServiceName,
     Type: custom,
@@ -232,16 +208,13 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.instance.id: Guid_3,
       service.name: MyServiceName,
       service.version: 1.0.x,
-      span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version
+      span.kind: internal
     }
   },
   {
     TraceId: Id_11,
     SpanId: Id_12,
-    Name: SayHello2,
+    Name: MyServiceName.internal,
     Resource: SayHello2,
     Service: MyServiceName,
     Type: custom,
@@ -256,9 +229,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -273,7 +243,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_13,
     SpanId: Id_14,
-    Name: SayHello3,
+    Name: MyServiceName.internal,
     Resource: SayHello3,
     Service: MyServiceName,
     Type: custom,
@@ -288,9 +258,6 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
       service.name: MyServiceName,
       service.version: 1.0.x,
       span.kind: internal,
-      telemetry.sdk.language: dotnet,
-      telemetry.sdk.name: opentelemetry,
-      telemetry.sdk.version: sdk-version,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -305,7 +272,7 @@ at Samples.OpenTelemetrySdk.Program.RunSpanUpdateMethods(TelemetrySpan span),
   {
     TraceId: Id_15,
     SpanId: Id_16,
-    Name: Transform,
+    Name: AdditionalActivitySource.internal,
     Resource: Transform,
     Service: CustomServiceName,
     Type: custom,

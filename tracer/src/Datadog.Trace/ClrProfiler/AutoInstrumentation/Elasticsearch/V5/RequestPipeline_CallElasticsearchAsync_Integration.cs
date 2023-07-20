@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V5
         AssemblyName = ElasticsearchV5Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV5Constants.RequestPipelineTypeName,
         MethodName = "CallElasticsearchAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Elasticsearch.Net.ElasticsearchResponse`1<T>>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Elasticsearch.Net.ElasticsearchResponse`1[!0]]",
         ParameterTypeNames = new[] { "Elasticsearch.Net.RequestData", ClrNames.CancellationToken },
         MinimumVersion = ElasticsearchV5Constants.Version5,
         MaximumVersion = ElasticsearchV5Constants.Version5,

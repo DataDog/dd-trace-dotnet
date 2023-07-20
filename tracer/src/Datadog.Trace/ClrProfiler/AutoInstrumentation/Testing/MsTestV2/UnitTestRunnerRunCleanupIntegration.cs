@@ -18,7 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
     MethodName = "RunCleanup",
     ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.RunCleanupResult",
-    ParameterTypeNames = new string[0],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]

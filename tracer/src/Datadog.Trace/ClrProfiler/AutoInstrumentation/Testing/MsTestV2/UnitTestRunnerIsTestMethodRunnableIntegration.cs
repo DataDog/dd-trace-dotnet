@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
     MethodName = "IsTestMethodRunnable",
     ReturnTypeName = ClrNames.Bool,
-    ParameterTypeNames = new string[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]&" },
+    ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodInfo", "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]&" },
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]

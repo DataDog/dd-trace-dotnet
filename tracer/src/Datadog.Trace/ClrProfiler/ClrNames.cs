@@ -39,13 +39,13 @@ namespace Datadog.Trace.ClrProfiler
 
         public const string HttpRequestMessage = "System.Net.Http.HttpRequestMessage";
         public const string HttpResponseMessage = "System.Net.Http.HttpResponseMessage";
-        public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>";
+        public const string HttpResponseMessageTask = "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]";
 
         public const string GenericTask = "System.Threading.Tasks.Task`1";
-        public const string IgnoreGenericTask = "System.Threading.Tasks.Task`1<_>";
-        public const string GenericParameterTask = "System.Threading.Tasks.Task`1<T>";
-        public const string ObjectTask = "System.Threading.Tasks.Task`1<System.Object>";
-        public const string Int32Task = "System.Threading.Tasks.Task`1<System.Int32>";
+        public const string GenericTaskWithGenericClassParameter = "System.Threading.Tasks.Task`1[!0]";
+        public const string GenericTaskWithGenericMethodParameter = "System.Threading.Tasks.Task`1[!!0]";
+        public const string ObjectTask = "System.Threading.Tasks.Task`1[System.Object]";
+        public const string Int32Task = "System.Threading.Tasks.Task`1[System.Int32]";
 
         public const string Type = "System.Type";
 

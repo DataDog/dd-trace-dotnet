@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf
 {
@@ -17,13 +18,19 @@ namespace Datadog.Trace.AppSec.Waf
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
             _returnCode = returnCode;
-            Actions = new((int)returnStruct.ActionsSize);
-            ReadActions(returnStruct);
-            ShouldBlock = Actions.Contains("block");
+            Actions = returnStruct.Actions.DecodeStringArray();
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
+            var events = returnStruct.Events.DecodeObjectArray();
+            if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
+            else
+            {
+                // Serialize all the events
+                Data = JsonConvert.SerializeObject(events);
+            }
+
+            ShouldBlock = Actions.Contains("block");
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
-            Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
             Timeout = returnStruct.Timeout;
         }
 
@@ -32,6 +39,8 @@ namespace Datadog.Trace.AppSec.Waf
         public string Data { get; }
 
         public List<string> Actions { get; }
+
+        public List<object> Events { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -48,16 +57,5 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldBeReported { get; }
 
         public bool Timeout { get; }
-
-        private void ReadActions(DdwafResultStruct returnStruct)
-        {
-            var pointer = returnStruct.ActionsArray;
-            for (var i = 0; i < returnStruct.ActionsSize; i++)
-            {
-                var pointerString = Marshal.ReadIntPtr(pointer, IntPtr.Size * i);
-                var action = Marshal.PtrToStringAnsi(pointerString);
-                Actions.Add(action);
-            }
-        }
     }
 }

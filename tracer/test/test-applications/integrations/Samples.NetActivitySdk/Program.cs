@@ -217,6 +217,7 @@ public static class Program
         links.Add(new ActivityLink(someContext));
 
         using var ctor4 = _source.StartActivity("Ctor4", ActivityKind.Server, default(ActivityContext), tags, links);
+        ctor4.DisplayName = "Ctor4DisplayName";
     }
 
     private static IEnumerable<KeyValuePair<string, object>> GenerateKeyValuePairs()

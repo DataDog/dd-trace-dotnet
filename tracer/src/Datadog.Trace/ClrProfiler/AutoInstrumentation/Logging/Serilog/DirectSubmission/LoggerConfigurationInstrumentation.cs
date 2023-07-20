@@ -20,7 +20,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
         TypeName = "Serilog.LoggerConfiguration",
         MethodName = "CreateLogger",
         ReturnTypeName = "Serilog.Core.Logger",
-        ParameterTypeNames = new string[0],
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",
         IntegrationName = nameof(IntegrationId.Serilog))]
