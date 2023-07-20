@@ -97,7 +97,7 @@ internal interface IBsonWriterProxy : IDuckType
     /// <summary>
     /// Writes a BSON Decimal128 to the writer.
     /// </summary>
-    /// <param name="value">The <see cref="MongoDB.Bson.Decimal128"/> value.</param>
+    /// <param name="value">The <c>MongoDB.Bson.Decimal128</c>.</param>
     void WriteDecimal128(object value);
 
     /// <summary>
