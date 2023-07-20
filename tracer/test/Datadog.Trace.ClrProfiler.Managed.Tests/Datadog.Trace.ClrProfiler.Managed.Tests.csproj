@@ -19,6 +19,7 @@
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
     <PackageReference Include="log4net" Version="$(Log4NetVersion)" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog" Version="$(NLogVersion)" Condition=" $(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 
