@@ -24,13 +24,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
 {
     public class ILoggerDuckTypingTests
     {
-        private readonly NullDatadogSink _sink;
+        private readonly NullDirectSubmissionLogSink _sink;
         private readonly LogFormatter _formatter;
         private readonly Type _iloggerProviderType;
 
         public ILoggerDuckTypingTests()
         {
-            _sink = new NullDatadogSink();
+            _sink = new NullDirectSubmissionLogSink();
             _formatter = LogSettingsHelper.GetFormatter();
             _iloggerProviderType = LoggerFactoryIntegrationCommon<ILoggerProvider>.ProviderInterfaces;
         }
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         public void CanDuckTypeExternalScopeProviderAndUseWithProxyProvider()
         {
             var scopeProvider = new LoggerExternalScopeProvider();
-            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
+            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDirectSubmissionLogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
             var proxyProvider = (ISupportExternalScope)loggerProvider.DuckImplement(_iloggerProviderType);
             proxyProvider.SetScopeProvider(scopeProvider);
 
@@ -144,7 +144,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         public void CanSetProviderUsingHelper()
         {
             var factory = new LoggerFactory();
-            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDatadogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
+            var loggerProvider = new DirectSubmissionLoggerProvider(new NullDirectSubmissionLogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
             LoggerFactoryIntegrationCommon<LoggerFactory>.AddDirectSubmissionLoggerProvider(factory, loggerProvider);
         }
 

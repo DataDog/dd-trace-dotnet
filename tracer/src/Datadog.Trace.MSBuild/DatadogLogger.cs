@@ -338,7 +338,7 @@ namespace Datadog.Trace.MSBuild
             }
         }
 
-        private class MsBuildLogEvent : DatadogLogEvent
+        private class MsBuildLogEvent : DirectSubmissionLogEvent
         {
             private readonly string _level;
             private readonly string _message;
