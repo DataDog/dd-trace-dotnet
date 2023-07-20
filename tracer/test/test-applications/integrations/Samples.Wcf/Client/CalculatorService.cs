@@ -204,7 +204,7 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
             Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
-            return base.Channel.Begin_ServerAsyncAdd(n1, n2, , throwsException, synchronouslyCompletes, callback, state);
+            return base.Channel.Begin_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes, callback, state);
         }
     }
 
