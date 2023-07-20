@@ -146,6 +146,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "aws.queue.name", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "consumer"));
 
@@ -164,6 +167,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "aws.queue.name", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "producer"));
 
@@ -182,6 +188,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "aws.queue.name", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 

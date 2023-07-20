@@ -60,7 +60,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                var sqsSpans = spans.Where(span => span.Service == "SQS");
+                var sqsSpans = spans.Where(
+                    span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
                 ValidateIntegrationSpans(sqsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SQS_HOST");
