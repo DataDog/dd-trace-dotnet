@@ -190,8 +190,8 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerAsyncAdd(1, 2)");
-                double result = calculator.Sync_ServerAsyncAdd(1, 2);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerAsyncAdd(1, 2, false, false)");
+                double result = calculator.Sync_ServerAsyncAdd(1, 2, false, false);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
             }
             catch (Exception ex)
@@ -203,8 +203,8 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2)");
-                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, false)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, false, null, null);
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
                 double result = calculator.End_ServerAsyncAdd(asyncResult);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
@@ -218,8 +218,53 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerAsyncAdd(1, 2)");
-                double result = await calculator.Task_ServerAsyncAdd(1, 2);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, false)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, false, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, true)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, true, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, true)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, true, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerAsyncAdd(1, 2, false, false)");
+                double result = await calculator.Task_ServerAsyncAdd(1, 2, false, false);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
             }
             catch (Exception ex)
