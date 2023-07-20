@@ -296,10 +296,10 @@ public class DirectSubmissionLoggerTests
         AssertLogs(api, expectedLogs: 3);
     }
 
-    private static Microsoft.Extensions.Logging.ILogger GetLogger(out DatadogSinkTests.TestLogsApi api, out DatadogSink sink)
+    private static Microsoft.Extensions.Logging.ILogger GetLogger(out DatadogSinkTests.TestLogsApi api, out DirectSubmissionLogSink sink)
     {
         api = new DatadogSinkTests.TestLogsApi();
-        sink = new DatadogSink(api, Formatter, BatchingOptions);
+        sink = new DirectSubmissionLogSink(api, Formatter, BatchingOptions);
 
         var rawLogger = new DirectSubmissionLogger(
             name: nameof(DirectSubmissionLoggerTests),

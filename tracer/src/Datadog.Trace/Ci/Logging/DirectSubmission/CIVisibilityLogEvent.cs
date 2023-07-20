@@ -11,7 +11,7 @@ using Datadog.Trace.Logging.DirectSubmission.Sink;
 
 namespace Datadog.Trace.Ci.Logging.DirectSubmission
 {
-    internal class CIVisibilityLogEvent : DatadogLogEvent
+    internal class CIVisibilityLogEvent : DirectSubmissionLogEvent
     {
         private readonly string _source;
         private readonly string? _logLevel;
