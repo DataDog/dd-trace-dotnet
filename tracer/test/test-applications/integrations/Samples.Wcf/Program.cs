@@ -45,7 +45,7 @@ namespace Samples.Wcf
             {
                 binding = ConfigureCustomBinding();
                 baseAddress = new Uri($"http://localhost:{port}/{WcfNamespace}/");
-                expectedExceptionCount = 7;
+                expectedExceptionCount = 10;
             }
             else
             {

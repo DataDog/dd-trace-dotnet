@@ -52,14 +52,50 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             }
 
             var operationContext = WcfCommon.GetCurrentOperationContext();
+
             if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
             {
-                return new CallTargetState(WcfCommon.CreateScope(operationContextProxy.RequestContext));
+                var requestContext = operationContextProxy.RequestContext;
+
+                // First, capture the active scope
+                var activeScope = Tracer.Instance.InternalActiveScope;
+                var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
+
+                // Then, create the new scope
+                var scope = WcfCommon.CreateScope(requestContext);
+
+                if (scope != null)
+                {
+                    // Save the scope to retrieve it during the AsyncMethodInvoker.InvokeEnd method
+                    WcfCommon.Scopes.Add(((IDuckType)requestContext).Instance, scope);
+                }
+
+                return new CallTargetState(scope, activeScope, spanContextRaw);
             }
             else
             {
                 return CallTargetState.GetDefault();
             }
+        }
+
+        internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
+        {
+            if (exception != null)
+            {
+                state.Scope.DisposeWithException(exception);
+            }
+            else if (state.Scope != null)
+            {
+                // InvokeBegin should have started an async operation that will ultimately call InvokeEnd
+                // The current thread will be reused by WCF to process other requests so we need to restore the old scope
+                if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+                {
+                    rawAccess.Active = state.PreviousScope;
+                    DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);
+                }
+            }
+
+            return new CallTargetReturn<TReturn>(returnValue);
         }
     }
 }

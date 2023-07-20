@@ -51,13 +51,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 yield return new object[] { "v0", binding, false, true };
                 yield return new object[] { "v0", binding, false, false };
-                yield return new object[] { "v0", binding, true,  true };
-                yield return new object[] { "v0", binding, true,  false };
+                yield return new object[] { "v0", binding, true, true };
+                yield return new object[] { "v0", binding, true, false };
 
                 yield return new object[] { "v1", binding, false, true };
                 yield return new object[] { "v1", binding, false, false };
-                yield return new object[] { "v1", binding, true,  true };
-                yield return new object[] { "v1", binding, true,  false };
+                yield return new object[] { "v1", binding, true, true };
+                yield return new object[] { "v1", binding, true, false };
             }
         }
 
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 7;
+            var expectedSpanCount = 11;
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
