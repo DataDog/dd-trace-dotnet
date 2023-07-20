@@ -67,12 +67,26 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAwsSqsV0(),
             };
 
-        public static Result IsAwsSns(this MockSpan span, string metadataSchemaVersion) =>
-        metadataSchemaVersion switch
-        {
-            "v1" => span.IsAwsSnsV1(),
-            _ => span.IsAwsSnsV0(),
-        };
+        public static Result IsAwsSnsInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsInboundV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
+
+        public static Result IsAwsSnsOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsOutboundV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
+
+        public static Result IsAwsSnsRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsRequestV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
 
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
