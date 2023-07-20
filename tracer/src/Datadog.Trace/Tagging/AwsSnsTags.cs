@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tagging
         private string _peerServiceOverride = null;
 
         // For the sake of unit tests, define a default constructor
-        // though the AWS SQS integration should use the constructor that takes a spanKind
+        // though the AWS SNS integration should use the constructor that takes a spanKind
         // so the setter is only invoked once
         [Obsolete("Use constructor that takes a SpanKind")]
         public AwsSnsV1Tags()
