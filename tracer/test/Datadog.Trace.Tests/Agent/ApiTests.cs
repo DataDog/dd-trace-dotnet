@@ -68,9 +68,10 @@ namespace Datadog.Trace.Tests.Agent
 
             var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
 
-            await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
+            var responseResult = await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
 
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
+            responseResult.Should().Be(false);
         }
 
         [Fact]

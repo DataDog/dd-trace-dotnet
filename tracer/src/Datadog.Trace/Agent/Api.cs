@@ -367,7 +367,7 @@ namespace Datadog.Trace.Agent
                 response?.Dispose();
             }
 
-            if (response.StatusCode == 429)
+            if (response.StatusCode == 429 || response.StatusCode == 413 || response.StatusCode == 408)
             {
                 var retryAfter = response.GetHeader("Retry-After");
                 _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
