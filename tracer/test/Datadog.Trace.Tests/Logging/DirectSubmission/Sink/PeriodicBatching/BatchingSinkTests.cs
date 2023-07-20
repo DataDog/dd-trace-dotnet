@@ -16,17 +16,24 @@ using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using BatchingSink = Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching.BatchingSink<Datadog.Trace.Logging.DirectSubmission.Sink.DirectSubmissionLogEvent>;
 
 namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 {
     public class BatchingSinkTests
     {
+        private const int FailuresBeforeCircuitBreak = 10;
         private const int DefaultQueueLimit = 100_000;
         private static readonly TimeSpan TinyWait = TimeSpan.FromMilliseconds(200);
         private static readonly TimeSpan CircuitBreakPeriod = TimeSpan.FromSeconds(1);
 
         private static readonly BatchingSinkOptions DefaultBatchingOptions
-            = new(batchSizeLimit: 2, queueLimit: DefaultQueueLimit, period: TinyWait, circuitBreakPeriod: CircuitBreakPeriod);
+            = new(
+                batchSizeLimit: 2,
+                queueLimit: DefaultQueueLimit,
+                period: TinyWait,
+                circuitBreakPeriod: CircuitBreakPeriod,
+                failuresBeforeCircuitBreak: FailuresBeforeCircuitBreak);
 
         private readonly ITestOutputHelper _output;
 
@@ -49,7 +56,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             sink.Batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
-            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
+            batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
 
         [Fact]
@@ -64,7 +71,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             batches.Count.Should().Be(1);
             sink.Batches.TryPeek(out var batch).Should().BeTrue();
-            batch.Should().BeEquivalentTo(new List<DatadogLogEvent> { evt });
+            batch.Should().BeEquivalentTo(new List<DirectSubmissionLogEvent> { evt });
         }
 
         [Fact]
@@ -85,7 +92,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void AfterMultipleFailures_SinkIsPermanentlyDisabled()
         {
             var mutex = new ManualResetEventSlim();
-            var emitResults = Enumerable.Repeat(false, BatchingSink.FailuresBeforeCircuitBreak);
+            var emitResults = Enumerable.Repeat(false, FailuresBeforeCircuitBreak);
             var sink = new InMemoryBatchedSink(
                 DefaultBatchingOptions,
                 () => mutex.Set(),
@@ -93,13 +100,13 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             sink.Start();
             var evt = new TestEvent("Some event");
 
-            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 sink.EnqueueLog(evt);
                 WaitForBatches(sink, batchCount: i + 1);
             }
 
-            mutex.Wait(30_000).Should().BeTrue($"Sink should be disabled after {BatchingSink.FailuresBeforeCircuitBreak} faults");
+            mutex.Wait(30_000).Should().BeTrue($"Sink should be disabled after {FailuresBeforeCircuitBreak} faults");
         }
 
         [Fact]
@@ -121,7 +128,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
         public void AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
         {
             var emitResults = new[] { true }
-               .Concat(Enumerable.Repeat(false, BatchingSink.FailuresBeforeCircuitBreak));
+               .Concat(Enumerable.Repeat(false, FailuresBeforeCircuitBreak));
 
             var sink = new InMemoryBatchedSink(
                 DefaultBatchingOptions,
@@ -136,7 +143,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             _output.WriteLine($"Found {batches.Count} batches");
 
             // Put the sink in a broken status (temporary)
-            for (var i = 0; i < BatchingSink.FailuresBeforeCircuitBreak; i++)
+            for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
             {
                 _output.WriteLine($"Queueing broken event {i + 1}");
                 sink.EnqueueLog(evt);
@@ -150,16 +157,64 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             Thread.Sleep(CircuitBreakPeriod);
             Thread.Sleep(CircuitBreakPeriod);
             // ensure we _don't_ have any more batches
-            sink.Batches.Count.Should().Be(BatchingSink.FailuresBeforeCircuitBreak + 1);
+            sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 1);
 
             // queue another log now circuit is partially open
             _output.WriteLine($"Queueing event in partially open sink");
             sink.EnqueueLog(evt);
-            batches = WaitForBatches(sink, batchCount: BatchingSink.FailuresBeforeCircuitBreak + 2);
+            batches = WaitForBatches(sink, batchCount: FailuresBeforeCircuitBreak + 2);
             _output.WriteLine($"Found {batches.Count} batches");
         }
 
-        private static ConcurrentStack<IList<DatadogLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
+        [Fact]
+        public async Task ClosingAfterStart_PreventsEmitting_AndCantBeRestarted()
+        {
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            var evt = new TestEvent("Some event");
+            sink.EnqueueLog(evt);
+            sink.Start();
+            WaitForBatches(sink).Should().HaveCount(1);
+
+            sink.CloseImmediately();
+            await Task.Delay(500);
+            sink.EnqueueLog(evt);
+
+            await Task.Delay(2_000);
+            sink.Batches.Should().HaveCountLessOrEqualTo(1);
+            await sink.DisposeAsync();
+
+            await Task.Delay(2_000);
+            sink.Batches.Should().HaveCountLessOrEqualTo(1);
+        }
+
+        [Fact]
+        public void ClosingImmediatelyCallsDisableSinkAction()
+        {
+            var mutex = new ManualResetEventSlim();
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions, () => mutex.Set());
+            var evt = new TestEvent("Some event");
+            sink.EnqueueLog(evt);
+            sink.Start();
+
+            sink.CloseImmediately();
+            mutex.Wait(TimeSpan.FromSeconds(3)).Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task ClosingImmediatelyPreventsEmitting()
+        {
+            var sink = new InMemoryBatchedSink(DefaultBatchingOptions);
+            var evt = new TestEvent("Some event");
+            sink.EnqueueLog(evt);
+
+            sink.CloseImmediately();
+            sink.Start();
+
+            await Task.Delay(5_000);
+            sink.Batches.Should().BeEmpty();
+        }
+
+        private static ConcurrentStack<IList<DirectSubmissionLogEvent>> WaitForBatches(InMemoryBatchedSink pbs, int batchCount = 1)
         {
             var deadline = DateTime.UtcNow.AddSeconds(30);
             var batches = pbs.Batches;
@@ -172,7 +227,7 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             return batches;
         }
 
-        internal class TestEvent : DatadogLogEvent
+        internal class TestEvent : DirectSubmissionLogEvent
         {
             private readonly string _evt;
 
@@ -201,9 +256,9 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                 _emitResults = emitResults ?? Array.Empty<bool>();
             }
 
-            public ConcurrentStack<IList<DatadogLogEvent>> Batches { get; } = new();
+            public ConcurrentStack<IList<DirectSubmissionLogEvent>> Batches { get; } = new();
 
-            protected override Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
+            protected override Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
                 Batches.Push(events.ToList());
                 _emitCount++;
@@ -212,6 +267,10 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
                                  : true;
 
                 return Task.FromResult(result);
+            }
+
+            protected override void FlushingEvents(int queueSizeBeforeFlush)
+            {
             }
         }
     }
