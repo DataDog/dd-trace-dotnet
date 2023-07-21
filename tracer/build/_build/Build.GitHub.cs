@@ -1097,7 +1097,7 @@ partial class Build
             var updated = false;
             foreach (var prComment in prComments)
             {
-                if (! prComment.Body.StartsWith(title))
+                if (prComment.IsMinimized || !prComment.Body.StartsWith(title))
                 {
                     continue;
                 }
