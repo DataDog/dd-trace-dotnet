@@ -88,12 +88,11 @@ internal static class PropagationModuleImpl
         return result;
     }
 
-    // This method taints the object with the first source. If it is a string, it taints the full string, 0 length range otherwise.
-    public static object? PropagateResultWhenInputTainted(object result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
+    public static object? PropagateResultWhenInputTainted(string result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
     {
         try
         {
-            if (result is null)
+            if (string.IsNullOrEmpty(result))
             {
                 return result;
             }
@@ -163,44 +162,16 @@ internal static class PropagationModuleImpl
         return result;
     }
 
-    private static bool PropagateResultWhenInputTainted(object result, object? input, TaintedObjects taintedObjects)
+    private static bool PropagateResultWhenInputTainted(string result, object? input, TaintedObjects taintedObjects)
     {
         if (input is not null)
         {
-            if (result is string)
+            var tainted = taintedObjects.Get(input);
+            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
             {
-                return PropagateResultWhenInputTaintedString((string)result, input, taintedObjects);
+                taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
+                return true;
             }
-            else
-            {
-                return PropagateResultWhenInputTaintedObject(result, input, taintedObjects);
-            }
-        }
-        else
-        {
-            return false;
-        }
-    }
-
-    private static bool PropagateResultWhenInputTaintedObject(object result, object input, TaintedObjects taintedObjects)
-    {
-        var tainted = taintedObjects.Get(input);
-        if (tainted?.Ranges[0].Source is not null)
-        {
-            taintedObjects.Taint(result, new Range[] { new Range(0, 0, tainted.Ranges[0].Source) });
-            return true;
-        }
-
-        return false;
-    }
-
-    private static bool PropagateResultWhenInputTaintedString(string result, object input, TaintedObjects taintedObjects)
-    {
-        var tainted = taintedObjects.Get(input);
-        if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
-        {
-            taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
-            return true;
         }
 
         return false;
@@ -245,7 +216,6 @@ internal static class PropagationModuleImpl
         return results;
     }
 
-    // This method propagates tainted value keeping all the previous ranges.
     public static object? PropagateTaint(object? input, object result, int offset = 0)
     {
         try

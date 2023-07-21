@@ -22,7 +22,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(string uriText)
         {
             var result = new UriBuilder(uriText);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText);
             return result;
         }
 
@@ -35,7 +35,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(Uri uri)
         {
             var result = new UriBuilder(uri);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uri.OriginalString);
             return result;
         }
 
@@ -49,7 +49,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(string uriText, string host)
         {
             var result = new UriBuilder(uriText, host);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText, host);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host);
             return result;
         }
 
@@ -64,7 +64,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(string uriText, string host, int port)
         {
             var result = new UriBuilder(uriText, host, port);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText, host);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host);
             return result;
         }
 
@@ -80,7 +80,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(string uriText, string host, int port, string path)
         {
             var result = new UriBuilder(uriText, host, port, path);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText, host, path);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host, path);
             return result;
         }
 
@@ -97,7 +97,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(string uriText, string host, int port, string path, string extra)
         {
             var result = new UriBuilder(uriText, host, port, path, extra);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText, host, path, extra);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host, path, extra);
             return result;
         }
 
@@ -110,20 +110,7 @@ namespace Hdiv.AST.Aspects.System
         public static string ToString(UriBuilder instance)
         {
             var result = instance.ToString();
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
-            return result;
-        }
-
-        /// <summary>
-        /// Taints the Uri if the instance is tainted
-        /// </summary>
-        /// <param name="instance">the UriBuilder instance</param>
-        /// <returns>the result of the original method</returns>
-        [AspectMethodReplace("System.UriBuilder::get_Uri()")]
-        public static Uri GetUri(UriBuilder instance)
-        {
-            var result = instance.Uri;
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
             return result;
         }
     }
