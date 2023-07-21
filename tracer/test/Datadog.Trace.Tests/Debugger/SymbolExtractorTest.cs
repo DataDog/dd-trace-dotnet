@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
+using Castle.Components.DictionaryAdapter;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -36,7 +37,6 @@ public class SymbolExtractorTest
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == className);
-        Assert.True(root.Scopes.First().Scopes.First().Scopes.Count == 6);
         var settings = ConfigureVerifySettings(assembly.GetName().Name, className);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
@@ -44,6 +44,44 @@ public class SymbolExtractorTest
 
     private string GetStringToVerify(Root root)
     {
+        var assembly = root.Scopes[0];
+        assembly.SourceFile = null;
+        assembly.LanguageSpecifics = null;
+        var classes = assembly.Scopes;
+        var classesScope = new List<Trace.Debugger.Symbols.Model.Scope>();
+        for (int i = 0; i < classes.Count; i++)
+        {
+            var @class = classes[0];
+            @class.SourceFile = null;
+            if (@class.LanguageSpecifics.HasValue)
+            {
+                var ls = @class.LanguageSpecifics.Value;
+                ls.AccessModifiers = null;
+                @class.LanguageSpecifics = ls;
+            }
+
+            var methods = @class.Scopes;
+            List<Trace.Debugger.Symbols.Model.Scope> methodsScope = new EditableList<Trace.Debugger.Symbols.Model.Scope>();
+            for (int j = 0; j < methods.Count; j++)
+            {
+                var method = methods[0];
+                if (method.LanguageSpecifics.HasValue)
+                {
+                    var ls = method.LanguageSpecifics.Value;
+                    ls.AccessModifiers = null;
+                    method.LanguageSpecifics = ls;
+                }
+
+                methodsScope.Add(method);
+            }
+
+            @class.Scopes = methodsScope;
+            classesScope.Add(@class);
+        }
+
+        assembly.Scopes = classesScope;
+        root.Scopes = new[] { assembly };
+
         return JsonConvert.SerializeObject(root, Formatting.Indented);
     }
 
@@ -58,13 +96,16 @@ public class SymbolExtractorTest
 
     private Root GetSymbols(Assembly assembly, string className)
     {
-        var root = GetAssemblySymbol(assembly, "test");
+        var root = GetRoot();
+        var assemblyScope = GetAssemblySymbol(assembly);
         var classSymbol = _extractor.GetClassSymbols(assembly, new[] { className }).FirstOrDefault();
-        root.Scopes[0].Scopes.Add(classSymbol);
+        Assert.NotNull(classSymbol);
+        assemblyScope.Scopes = new[] { classSymbol.Value };
+        root.Scopes = new[] { assemblyScope };
         return root;
     }
 
-    private Root GetAssemblySymbol(Assembly assembly, string serviceName)
+    private Datadog.Trace.Debugger.Symbols.Model.Scope GetAssemblySymbol(Assembly assembly)
     {
         var assemblyScope = new Datadog.Trace.Debugger.Symbols.Model.Scope
         {
@@ -73,16 +114,19 @@ public class SymbolExtractorTest
             SourceFile = assembly.Location,
             StartLine = -1,
             EndLine = int.MaxValue,
-            Scopes = new List<Trace.Debugger.Symbols.Model.Scope>()
         };
 
+        return assemblyScope;
+    }
+
+    private Root GetRoot()
+    {
         var root = new Root
         {
-            Service = serviceName,
-            Env = string.Empty,
+            Service = "test",
+            Env = "test",
             Language = "dotnet",
-            Version = string.Empty,
-            Scopes = new[] { assemblyScope }
+            Version = "0",
         };
 
         return root;

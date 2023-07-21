@@ -21,34 +21,32 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolBatchUploadApi>();
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly ArraySegment<byte> _event;
+        private readonly Lazy<ArraySegment<byte>> _event;
         private string? _endpoint;
 
-        private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string? serviceName)
         {
             _apiRequestFactory = apiRequestFactory;
-            _event = GetEventAsArraySegment();
+            _event = new Lazy<ArraySegment<byte>>(() => GetEventAsArraySegment(serviceName));
             discoveryService.SubscribeToChanges(c => _endpoint = c.SymbolDbEndpoint);
         }
 
-        private ArraySegment<byte> GetEventAsArraySegment()
+        private ArraySegment<byte> GetEventAsArraySegment(string? serviceName)
         {
             var @event = string.Empty;
             try
             {
-                @event = @$"""ddsource"": ""dd_debugger"",
-""service"": ""{Tracer.Instance.Settings.EnvironmentInternal}""
-""runtimeId"": ""{Tracer.RuntimeId}""";
+                var sb = new StringBuilder();
+                sb.Append(@"{");
+                sb.Append(@"""ddsource"": ""dd_debugger"",");
+                sb.Append(@$"""service"": ""{serviceName}"",");
+                sb.Append(@$"""runtimeId"": ""{Tracer.RuntimeId}""");
+                sb.Append(@"}");
+                @event = sb.ToString();
 
                 var count = Encoding.UTF8.GetByteCount(@event);
                 var eventAsBytes = new byte[count];
-                count = Encoding.UTF8.GetBytes(@event, 0, @event.Length, eventAsBytes, 0);
-                if (count == 0)
-                {
-                    Log.Error("Failed to initialize event {Event}", @event);
-                    return default;
-                }
-
+                Encoding.UTF8.GetBytes(@event, 0, @event.Length, eventAsBytes, 0);
                 return new ArraySegment<byte>(eventAsBytes);
             }
             catch (Exception e)
@@ -58,9 +56,9 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        public static SymbolBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService)
+        public static SymbolBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string? serviceName)
         {
-            return new SymbolBatchUploadApi(apiRequestFactory, discoveryService);
+            return new SymbolBatchUploadApi(apiRequestFactory, discoveryService, serviceName);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
@@ -71,10 +69,10 @@ namespace Datadog.Trace.Debugger.Symbols
                 return false;
             }
 
-            if (_event == default || _event.Count == 0)
+            if (_event.Value == default || _event.Value.Count == 0)
             {
                 Log.Error("Failed to initialize event");
-                return default;
+                return false;
             }
 
             var uri = _apiRequestFactory.GetEndpoint(endpoint);
@@ -87,8 +85,8 @@ namespace Datadog.Trace.Debugger.Symbols
             while (retries < maxRetries)
             {
                 using var response = await multipartRequest.PostAsync(
-                                         new MultipartFormItem("symbols", MimeTypes.Json, null, symbols),
-                                         new MultipartFormItem("event", MimeTypes.Json, "event", _event)).
+                                         new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols),
+                                         new MultipartFormItem("event", MimeTypes.Json, "event.json", _event.Value)).
                                                             ConfigureAwait(false);
 
                 if (response.StatusCode is >= 200 and <= 299)

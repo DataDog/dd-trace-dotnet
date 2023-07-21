@@ -38,7 +38,7 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolSinkMock();
+        var symbolExtractor = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create("env", "version");
 
@@ -61,7 +61,7 @@ public class LiveDebuggerTests
         var rcmSubscriptionManagerMock = new RcmSubscriptionManagerMock();
         var lineProbeResolver = new LineProbeResolverMock();
         var debuggerSink = new DebuggerSinkMock();
-        var symbolExtractor = new SymbolSinkMock();
+        var symbolExtractor = new SymbolsUploaderMock();
         var probeStatusPoller = new ProbeStatusPollerMock();
         var updater = ConfigurationUpdater.Create(string.Empty, string.Empty);
 
@@ -197,7 +197,7 @@ public class LiveDebuggerTests
         }
     }
 
-    private class SymbolSinkMock : ISymbolSink
+    private class SymbolsUploaderMock : ISymbolsUploader
     {
         public void Dispose()
         {

@@ -10,6 +10,6 @@ namespace Datadog.Trace.Debugger.Sink
 {
     internal interface IBatchUploadApi
     {
-        Task<bool> SendBatchAsync(ArraySegment<byte> symbols);
+        Task<bool> SendBatchAsync(ArraySegment<byte> data);
     }
 }
