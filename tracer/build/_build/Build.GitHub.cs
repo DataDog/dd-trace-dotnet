@@ -1097,7 +1097,7 @@ partial class Build
             var updated = false;
             foreach (var prComment in prComments)
             {
-                if (! prComment.Body.StartsWith(title))
+                if (prComment.IsMinimized || !prComment.Body.StartsWith(title))
                 {
                     continue;
                 }
@@ -1118,6 +1118,7 @@ partial class Build
                     await connection.Run(mutation);
                     updated = true;
                     Console.WriteLine($"Updated comment {prComment.Id} for PR {prNumber}");
+                    break;
 
                 }
                 catch (Exception ex)
