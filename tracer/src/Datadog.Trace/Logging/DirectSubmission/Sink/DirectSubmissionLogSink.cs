@@ -1,4 +1,4 @@
-// <copyright file="DatadogSink.cs" company="Datadog">
+// <copyright file="DirectSubmissionLogSink.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,11 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal class DatadogSink : BatchingSink, IDatadogSink
+    internal class DirectSubmissionLogSink : BatchingSink<DirectSubmissionLogEvent>, IDirectSubmissionLogSink
     {
         // Maximum size for a single log is 1MB, we slightly err on the cautious side
         internal const int MaxMessageSizeBytes = 1000 * 1024;
@@ -37,25 +38,25 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         private const byte SuffixAsUtf8Byte = 0x5D; // ']'
         private const byte SeparatorAsUtf8Byte = 0x2C; // ','
 
-        private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<DatadogSink>();
+        private readonly IDatadogLogger _logger = DatadogLogging.GetLoggerFor<DirectSubmissionLogSink>();
         private readonly ILogsApi _api;
         private readonly LogFormatter _formatter;
-        private readonly Action<DatadogLogEvent>? _oversizeLogCallback;
+        private readonly Action<DirectSubmissionLogEvent>? _oversizeLogCallback;
         private readonly StringBuilder _logStringBuilder = new(InitialBuilderSizeBytes);
         private byte[] _serializedLogs = new byte[InitialAllLogsSizeBytes];
         private int _byteCount = 0;
         private int _logCount = 0;
 
-        public DatadogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
+        public DirectSubmissionLogSink(ILogsApi api, LogFormatter formatter, BatchingSinkOptions sinkOptions)
             : this(api, formatter, sinkOptions, oversizeLogCallback: null, sinkDisabledCallback: null)
         {
         }
 
-        public DatadogSink(
+        public DirectSubmissionLogSink(
             ILogsApi api,
             LogFormatter formatter,
             BatchingSinkOptions sinkOptions,
-            Action<DatadogLogEvent>? oversizeLogCallback,
+            Action<DirectSubmissionLogEvent>? oversizeLogCallback,
             Action? sinkDisabledCallback)
             : base(sinkOptions, sinkDisabledCallback)
         {
@@ -68,7 +69,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
         /// Emit a batch of log events to Datadog logs-backend.
         /// </summary>
         /// <param name="events">The events to emit.</param>
-        protected override async Task<bool> EmitBatch(Queue<DatadogLogEvent> events)
+        protected override async Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
         {
             var allSucceeded = true;
             try
@@ -164,6 +165,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
                 _logger.Error(e, "An error occured sending logs to Datadog");
                 return false;
             }
+        }
+
+        protected override void FlushingEvents(int queueSizeBeforeFlush)
+        {
+            TelemetryFactory.Metrics.RecordGaugeDirectLogQueue(queueSizeBeforeFlush);
         }
 
         public override async Task DisposeAsync()

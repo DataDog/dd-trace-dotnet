@@ -17,11 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
     /// </summary>
     internal class DirectSubmissionSerilogSink
     {
-        private readonly IDatadogSink _sink;
+        private readonly IDirectSubmissionLogSink _sink;
         private readonly int _minimumLevel;
         private bool _isDisabled;
 
-        internal DirectSubmissionSerilogSink(IDatadogSink sink, DirectSubmissionLogLevel minimumLevel)
+        internal DirectSubmissionSerilogSink(IDirectSubmissionLogSink sink, DirectSubmissionLogLevel minimumLevel)
         {
             _sink = sink;
             _minimumLevel = (int)minimumLevel;
@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.DirectSu
             }
 
             TelemetryFactory.Metrics.RecordCountDirectLogLogs(MetricTags.IntegrationName.Serilog);
-            _sink.EnqueueLog(new SerilogDatadogLogEvent(logEvent));
+            _sink.EnqueueLog(new SerilogDirectSubmissionLogEvent(logEvent));
         }
 
         internal void Disable()

@@ -147,6 +147,33 @@ TEST_F(CLRHelperTest, GetsTypeInfoFromTypeRefs) {
   EXPECT_EQ(expected, actual);
 }
 
+TEST_F(CLRHelperTest, GetsTypeInfoFromTypeSpecs)
+{
+    std::set<shared::WSTRING> expected = {
+	WStr("<StayAndLayDown>d__4`2"), 
+	WStr("Samples.ExampleLibrary.Class1"), 
+	WStr("Samples.ExampleLibrary.FakeClient.Biscuit`1"), 
+	WStr("Samples.ExampleLibrary.FakeClient.DogClient`2"), 
+	WStr("Samples.ExampleLibrary.FakeClient.DogTrick`1"), 
+	WStr("Samples.ExampleLibrary.GenericTests.GenericTarget`2"), 
+	WStr("Samples.ExampleLibrary.GenericTests.StructContainer`1"),
+	WStr("System.Collections.Generic.List`1"),
+	WStr("System.Func`3"),
+	WStr("System.Runtime.CompilerServices.AsyncTaskMethodBuilder`1"),
+	WStr("System.Runtime.CompilerServices.TaskAwaiter`1"),
+	WStr("System.Threading.Tasks.Task`1") };
+  std::set<shared::WSTRING> actual;
+  for (auto& type_def : EnumTypeSpecs(metadata_import_))
+  {
+    auto type_info = GetTypeInfo(metadata_import_, type_def);
+    if (type_info.IsValid())
+    {
+      actual.insert(type_info.name);
+    }
+  }
+  EXPECT_EQ(actual, expected);
+}
+
 TEST_F(CLRHelperTest, GetsTypeInfoFromModuleRefs) {
   // TODO(cbd): figure out how to create a module ref, for now its empty
   std::set<shared::WSTRING> expected = {};
