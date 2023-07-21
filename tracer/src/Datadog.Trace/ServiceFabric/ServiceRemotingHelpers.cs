@@ -107,6 +107,7 @@ namespace Datadog.Trace.ServiceFabric
             string? methodName = null;
             string? resourceName = null;
             string? serviceUrl = null;
+            string? remotingServiceName = null;
 
             string serviceFabricServiceName = PlatformHelpers.ServiceFabric.ServiceName;
 
@@ -119,6 +120,7 @@ namespace Datadog.Trace.ServiceFabric
 
                 serviceUrl = eventArgs.ServiceUri?.AbsoluteUri;
                 resourceName = serviceUrl == null ? methodName : $"{serviceUrl}/{methodName}";
+                remotingServiceName = serviceUrl?.StartsWith("fabric:/") == true ? serviceUrl.Substring(8) : null;
             }
 
             tags.ApplicationId = PlatformHelpers.ServiceFabric.ApplicationId;
@@ -128,6 +130,7 @@ namespace Datadog.Trace.ServiceFabric
             tags.NodeName = PlatformHelpers.ServiceFabric.NodeName;
             tags.ServiceName = serviceFabricServiceName;
             tags.RemotingUri = serviceUrl;
+            tags.RemotingServiceName = remotingServiceName;
             tags.RemotingMethodName = methodName;
 
             if (messageHeader != null)

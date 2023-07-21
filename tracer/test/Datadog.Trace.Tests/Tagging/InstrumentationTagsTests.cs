@@ -6,6 +6,7 @@
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -404,6 +405,74 @@ namespace Datadog.Trace.Tests.Tagging
             tags.SetTag("peer.service", customService);
             tags.MethodService = service;
             tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromRemotingService()
+        {
+            var service = "HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingServiceName = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.service");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromRemotingUri()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingUri = uri;
+
+            tags.PeerService.Should().Be(uri);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.uri");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_RemotingServiceTakesPrecedenceOverRemotingUri()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var service = "HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingUri = uri;
+            tags.RemotingServiceName = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var service = "HelloWorld/Service";
+            var customService = "client-service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.RemotingUri = uri;
+            tags.RemotingServiceName = service;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");

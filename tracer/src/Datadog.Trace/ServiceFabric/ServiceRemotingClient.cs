@@ -60,6 +60,7 @@ namespace Datadog.Trace.ServiceFabric
             {
                 var tags = tracer.CurrentTraceSettings.Schema.Client.CreateServiceRemotingClientTags();
                 var span = ServiceRemotingHelpers.CreateSpan(tracer, context: null, tags, eventArgs, messageHeaders);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 try
                 {

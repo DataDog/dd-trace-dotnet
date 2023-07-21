@@ -590,6 +590,7 @@ namespace Datadog.Trace
 
         // Service Remoting
         internal const string ServiceRemotingUri = "service-fabric.service-remoting.uri";
+        internal const string ServiceRemotingServiceName = "service-fabric.service-remoting.service";
         internal const string ServiceRemotingMethodName = "service-fabric.service-remoting.method-name";
         internal const string ServiceRemotingMethodId = "service-fabric.service-remoting.method-id";
         internal const string ServiceRemotingInterfaceId = "service-fabric.service-remoting.interface-id";

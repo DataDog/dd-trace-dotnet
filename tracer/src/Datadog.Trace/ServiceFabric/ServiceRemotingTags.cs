@@ -44,6 +44,9 @@ namespace Datadog.Trace.ServiceFabric
         [Tag(Trace.Tags.ServiceRemotingUri)]
         public string? RemotingUri { get; set; }
 
+        [Tag(Trace.Tags.ServiceRemotingServiceName)]
+        public string? RemotingServiceName { get; set; }
+
         [Tag(Trace.Tags.ServiceRemotingMethodName)]
         public string? RemotingMethodName { get; set; }
 
@@ -75,9 +78,38 @@ namespace Datadog.Trace.ServiceFabric
 
     internal partial class ServiceRemotingClientV1Tags : ServiceRemotingClientTags
     {
+        private string? _peerServiceOverride = null;
+
         public ServiceRemotingClientV1Tags()
             : base()
         {
+        }
+
+        // Use a private setter for setting the "peer.service" tag so we avoid
+        // accidentally setting the value ourselves and instead calculate the
+        // value from predefined precursor attributes.
+        // However, this can still be set from ITags.SetTag so the user can
+        // customize the value if they wish.
+        [Tag(Trace.Tags.PeerService)]
+        public string? PeerService
+        {
+            get => _peerServiceOverride ?? RemotingServiceName ?? RemotingUri;
+            private set => _peerServiceOverride = value;
+        }
+
+        [Tag(Trace.Tags.PeerServiceSource)]
+        public string? PeerServiceSource
+        {
+            get
+            {
+                return _peerServiceOverride is not null
+                        ? "peer.service"
+                        : RemotingServiceName is not null
+                            ? Trace.Tags.ServiceRemotingServiceName
+                            : RemotingUri is not null
+                                ? Trace.Tags.ServiceRemotingUri
+                                : null;
+            }
         }
     }
 }
