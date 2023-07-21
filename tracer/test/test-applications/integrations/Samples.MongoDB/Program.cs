@@ -28,8 +28,10 @@ namespace Samples.MongoDB
             // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
             var guidByteArray = Guid.Parse("6F88CE3F-BEBE-41F6-8E72-BB168A05E07A").ToByteArray();
             var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
+            // We'd like to test with the following two, but you're only allowed one type of UUID
+            // in a  collection in some versions of mongo
+            // BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy
             var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
-            var uuidLegacyBinary = new BsonBinaryData(Guid.Empty.ToByteArray(), BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
             var largeTagValue = string.Join(" ", Enumerable.Repeat("Test", 1000));
 
             var newDocument = new BsonDocument
@@ -61,7 +63,6 @@ namespace Samples.MongoDB
                 // Adding Binary data and long string value to BsonDocument
                 newDocument.Add("genericBinary", genericBinary);
                 newDocument.Add("uuidStandardBinary", uuidStandardBinary);
-                newDocument.Add("uuidLegacyBinary", uuidLegacyBinary);
                 newDocument.Add("largeKey",  largeTagValue);
                 
                 Run(collection, newDocument);
@@ -166,14 +167,5 @@ namespace Samples.MongoDB
             }
         }
 #endif
-        
-        // Function to generate a random string with the specified length
-        private static string GenerateRandomString(int length)
-        {
-            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
-            var random = new Random();
-            return new string(Enumerable.Repeat(chars, length)
-                                        .Select(s => s[random.Next(s.Length)]).ToArray());
-        }
     }
 }
