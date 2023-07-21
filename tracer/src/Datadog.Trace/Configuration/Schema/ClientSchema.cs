@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -60,6 +61,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
                 _ => new GrpcClientV1Tags(),
+            };
+
+        public ServiceRemotingClientTags CreateServiceRemotingClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
+                _ => new ServiceRemotingClientV1Tags(),
             };
     }
 }

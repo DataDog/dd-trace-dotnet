@@ -580,6 +580,21 @@ namespace Datadog.Trace
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
 
+        // general Service Fabric
+        internal const string ServiceFabricApplicationId = "service-fabric.application-id";
+        internal const string ServiceFabricApplicationName = "service-fabric.application-name";
+        internal const string ServiceFabricPartitionId = "service-fabric.partition-id";
+        internal const string ServiceFabricNodeId = "service-fabric.node-id";
+        internal const string ServiceFabricNodeName = "service-fabric.node-name";
+        internal const string ServiceFabricServiceName = "service-fabric.service-name";
+
+        // Service Remoting
+        internal const string ServiceRemotingUri = "service-fabric.service-remoting.uri";
+        internal const string ServiceRemotingMethodName = "service-fabric.service-remoting.method-name";
+        internal const string ServiceRemotingMethodId = "service-fabric.service-remoting.method-id";
+        internal const string ServiceRemotingInterfaceId = "service-fabric.service-remoting.interface-id";
+        internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
+
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 
         internal const string TagPropagationError = "_dd.propagation_error";
