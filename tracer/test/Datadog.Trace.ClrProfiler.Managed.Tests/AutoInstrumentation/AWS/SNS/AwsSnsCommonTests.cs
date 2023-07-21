@@ -5,9 +5,12 @@
 
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using Amazon.SimpleNotificationService.Model;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNSTests;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Propagators;
 using Datadog.Trace.Sampling;
 using FluentAssertions;
 using Moq;
@@ -17,6 +20,18 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS;
 
 public class AwsSnsCommonTests
 {
+    private readonly SpanContext _spanContext;
+
+    public AwsSnsCommonTests()
+    {
+        ulong upper = 1234567890123456789;
+        ulong lower = 9876543210987654321;
+
+        var traceId = new TraceId(upper, lower);
+        ulong spanId = 6766950223540265769;
+        _spanContext = new SpanContext(traceId, spanId, 0, "test-service", "origin");
+    }
+
     public static IEnumerable<object[]> SchemaSpanKindOperationNameData
         => new List<object[]>
         {
@@ -39,6 +54,28 @@ public class AwsSnsCommonTests
         topicArn = null;
         // When the request does not contain a `TopicArn` it should return `null`
         AwsSnsCommon.GetTopicName(topicArn).Should().Be(null);
+    }
+
+    [Fact]
+    public void InjectHeadersIntoMessage_AddsDatadogAttribute()
+    {
+        // Arrange
+        var request = new PublishRequest();
+        var proxy = new PublishRequestProxy(request);
+
+        // Act
+        ContextPropagation.InjectHeadersIntoMessage<PublishRequest>(proxy, _spanContext);
+
+        // Now, attempt to extract the SpanContext from the message
+        var getter = new MemoryStreamCarrierGetter();
+        var extracted = DatadogContextPropagator.Instance.TryExtract(proxy, getter, out var extractedSpanContext);
+
+        // Assert
+        extracted.Should().BeTrue();
+        extractedSpanContext.Should().NotBeNull();
+        extractedSpanContext.TraceId.Should().Be(_spanContext.TraceId);
+        extractedSpanContext.SpanId.Should().Be(_spanContext.SpanId);
+        proxy.CloseMemoryStream();
     }
 
     [Theory]
