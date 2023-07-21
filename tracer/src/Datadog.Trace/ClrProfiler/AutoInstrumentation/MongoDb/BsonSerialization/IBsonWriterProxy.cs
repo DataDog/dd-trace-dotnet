@@ -68,7 +68,7 @@ internal interface IBsonWriterProxy : IDuckType
     /// Pushes new settings for the writer.
     /// </summary>
     /// <param name="configurator">The settings configurator.</param>
-    void PushSettings(Action<object> configurator);
+    void PushSettings(object configurator);
 
     /// <summary>
     /// Writes BSON binary data to the writer.

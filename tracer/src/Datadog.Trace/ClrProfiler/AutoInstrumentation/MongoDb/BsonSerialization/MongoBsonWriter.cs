@@ -72,7 +72,7 @@ internal class MongoBsonWriter
     }
 
     [DuckReverseMethod]
-    public void PushSettings(Action<object> configurator)
+    public void PushSettings(object configurator)
     {
         _bsonWriterProxy.PushSettings(configurator);
     }
