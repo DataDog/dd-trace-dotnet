@@ -36,24 +36,6 @@ namespace Samples.DataStreams.RabbitMQ
 
             // produce (direct exchange)
             List<string> directQueues = PublishMessageToDirectExchange(model);
-<<<<<<< Updated upstream
-            foreach (var queue in directQueues) 
-            {
-                GetMessage(model, queue);
-            }
-
-            // produce/consume operation (fanout exchange)
-            List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
-            foreach (var queue in fanoutQueues)
-            {
-                GetMessage(model, queue);
-            }
-
-            // produce/consume operation (topic exchange)
-            List<string> topicQueues = PublishMessageToTopicExchange(model);
-            foreach (var queue in topicQueues)
-            {
-=======
 
             // produce (fanout exchange)
             List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
@@ -69,7 +51,6 @@ namespace Samples.DataStreams.RabbitMQ
                 GetMessage(model, queue);
             }
             foreach (var queue in fanoutQueues) {
->>>>>>> Stashed changes
                 GetMessage(model, queue);
             }
         }
