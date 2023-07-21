@@ -125,5 +125,20 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateMsmqTags("spanKind").Should().BeOfType(expectedType);
         }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAwsSqsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSqsTags),
+                _ => typeof(AwsSqsV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateAwsSqsTags("spanKind").Should().BeOfType(expectedType);
+        }
     }
 }

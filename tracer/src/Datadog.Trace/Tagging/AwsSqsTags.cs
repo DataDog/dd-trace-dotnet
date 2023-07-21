@@ -3,12 +3,24 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.SourceGenerators;
 
+#pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Tagging
 {
     internal partial class AwsSqsTags : AwsSdkTags
     {
+        public AwsSqsTags()
+            : this(SpanKinds.Client)
+        {
+        }
+
+        public AwsSqsTags(string spanKind)
+        {
+            SpanKind = spanKind;
+        }
+
         [Tag(Trace.Tags.AwsQueueName)]
         public string QueueName { get; set; }
 
@@ -16,6 +28,48 @@ namespace Datadog.Trace.Tagging
         public string QueueUrl { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
-        public override string SpanKind => SpanKinds.Client;
+        public override string SpanKind { get; }
+    }
+
+    internal partial class AwsSqsV1Tags : AwsSqsTags
+    {
+        private string _peerServiceOverride = null;
+
+        // For the sake of unit tests, define a default constructor
+        // though the AWS SQS integration should use the constructor that takes a spanKind
+        // so the setter is only invoked once
+        [Obsolete("Use constructor that takes a SpanKind")]
+        public AwsSqsV1Tags()
+            : this(SpanKinds.Client)
+        {
+        }
+
+        public AwsSqsV1Tags(string spanKind)
+            : base(spanKind)
+        {
+        }
+
+        // Use a private setter for setting the "peer.service" tag so we avoid
+        // accidentally setting the value ourselves and instead calculate the
+        // value from predefined precursor attributes.
+        // However, this can still be set from ITags.SetTag so the user can
+        // customize the value if they wish.
+        [Tag(Trace.Tags.PeerService)]
+        public string PeerService
+        {
+            get => _peerServiceOverride ?? QueueName;
+            private set => _peerServiceOverride = value;
+        }
+
+        [Tag(Trace.Tags.PeerServiceSource)]
+        public string PeerServiceSource
+        {
+            get
+            {
+                return _peerServiceOverride is not null
+                           ? "peer.service"
+                           : Trace.Tags.AwsQueueName;
+            }
+        }
     }
 }
