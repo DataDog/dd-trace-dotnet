@@ -14,14 +14,13 @@ namespace Datadog.Trace.Configuration;
 
 internal class ExtraServicesProvider
 {
-    // internal for testing
-    internal const int MaxExtraServices = 64;
-    private const string FakeValue = null;
+    private const int MaxExtraServices = 64;
+    private const string? FakeValue = null;
 
     public static readonly ExtraServicesProvider Instance = new();
 
     // no concurrent hash set, so use a dictionary with empty values
-    private readonly ConcurrentDictionary<string, string> _extraServices = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string?> _extraServices = new(StringComparer.OrdinalIgnoreCase);
     private int _serviceCount = 0;
 
     internal void AddService(string serviceName)
@@ -35,7 +34,7 @@ internal class ExtraServicesProvider
         }
 
         Interlocked.Increment(ref _serviceCount);
-        _extraServices.AddOrUpdate(serviceName, FakeValue, (string _, string _) => null!);
+        _extraServices.AddOrUpdate(serviceName, FakeValue, (_, _) => null!);
     }
 
     internal string[]? GetExtraServices()
