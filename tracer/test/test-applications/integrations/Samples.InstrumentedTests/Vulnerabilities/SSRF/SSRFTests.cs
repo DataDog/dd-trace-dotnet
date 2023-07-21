@@ -35,7 +35,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        var response = httpMessageInvoker.Send(message, CancellationToken.None);
+        httpMessageInvoker.Send(message, CancellationToken.None);
         AssertVulnerableSSRF();
     }
 
@@ -44,7 +44,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        var response = httpMessageInvoker.SendAsync(message, CancellationToken.None).Result;
+        _ = httpMessageInvoker.SendAsync(message, CancellationToken.None).Result;
         AssertVulnerableSSRF();
     }
 #endif
@@ -761,6 +761,7 @@ public class SSRFTests : InstrumentationTestsBase
         ExecuteAction(() => webclient.UploadValuesTaskAsync(new Uri(taintedUrlValue), "GET", new NameValueCollection()));
         AssertVulnerableSSRF();
     }
+
 #endif
 
     [Fact]
@@ -769,6 +770,15 @@ public class SSRFTests : InstrumentationTestsBase
         ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue));
         AssertVulnerableSSRF();
     }
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public void GivenAHttpClient_WhenDownloadString_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
 
     [Fact]
     public void GivenAHttpClient_WhenGetStringAsync_Vulnerable()
@@ -782,12 +792,23 @@ public class SSRFTests : InstrumentationTestsBase
         ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue));
         AssertVulnerableSSRF();
     }
+
     [Fact]
     public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue)));
         AssertVulnerableSSRF();
     }
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
     [Fact]
     public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable()
     {

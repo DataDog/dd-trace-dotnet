@@ -29,7 +29,13 @@ public class HttpClientAspect
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String)")]
+#if NET5_0_OR_GREATER
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String, System.Threading.CancellationToken)", 1)]
+#endif
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String)")]
+#if NET5_0_OR_GREATER
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String, System.Threading.CancellationToken)", 1)]
+#endif
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption)", 1)]
