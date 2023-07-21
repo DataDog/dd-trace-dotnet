@@ -24,6 +24,17 @@ namespace Samples.MongoDB
             Console.WriteLine($"Profiler attached: {SampleHelpers.IsProfilerAttached()}");
             Console.WriteLine($"Platform: {(Environment.Is64BitProcess ? "x64" : "x32")}");
 
+            // Create binary data (e.g., byte array)
+            // Further details about binary types: https://studio3t.com/knowledge-base/articles/mongodb-best-practices-uuid-data/#binary-subtypes-0x03-and-0x04
+            var guidByteArray = Guid.Parse("6F88CE3F-BEBE-41F6-8E72-BB168A05E07A").ToByteArray();
+            var genericBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.Binary);
+            
+            var uuidLegacyBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidLegacy, GuidRepresentation.CSharpLegacy);
+            // We'd like to test with the following two, but you're only allowed one type of UUID
+            // in a collection in some versions of mongo
+            // var uuidStandardBinary = new BsonBinaryData(guidByteArray, BsonBinarySubType.UuidStandard);
+            var largeTagValue = string.Join(" ", Enumerable.Repeat("Test", 1000));
+
             var newDocument = new BsonDocument
             {
                 { "name", "MongoDB" },
@@ -49,6 +60,15 @@ namespace Samples.MongoDB
                 Run(collection, newDocument);
                 RunAsync(collection, newDocument).Wait();
 
+                // Running large BsonDocument query
+                // Adding Binary data and long string value to BsonDocument
+                newDocument.Add("genericBinary", genericBinary);
+                newDocument.Add("uuidLegacyBinary", uuidLegacyBinary);
+                newDocument.Add("largeKey",  largeTagValue);
+                
+                Run(collection, newDocument);
+                collection.FindSync(newDocument).FirstOrDefault();
+                
 #if MONGODB_2_2 && !MONGODB_2_15
                 WireProtocolExecuteIntegrationTest(client);
 #endif
