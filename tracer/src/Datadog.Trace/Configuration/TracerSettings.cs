@@ -116,6 +116,10 @@ namespace Datadog.Trace.Configuration
                           .WithKeys(ConfigurationKeys.TraceEnabled)
                           .AsBool(defaultValue: true);
 
+            ApmEnabledInternal = config
+                          .WithKeys(ConfigurationKeys.ApmEnabled)
+                          .AsBool(defaultValue: true);
+
             var disabledIntegrationNames = config.WithKeys(ConfigurationKeys.DisabledIntegrations)
                                                                .AsString()
                                                               ?.Split(new[] { ';' }, StringSplitOptions.RemoveEmptyEntries) ??
@@ -463,6 +467,17 @@ namespace Datadog.Trace.Configuration
             PublicApiUsage.TracerSettings_TraceEnabled_Set)]
         [ConfigKey(ConfigurationKeys.TraceEnabled)]
         internal bool TraceEnabledInternal { get; private set; }
+
+        /// <summary>
+        /// Gets or sets a value indicating whether tracing is enabled.
+        /// Default is <c>true</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ApmEnabled"/>
+        [GeneratePublicApi(
+            PublicApiUsage.TracerSettings_ApmEnabled_Get,
+            PublicApiUsage.TracerSettings_ApmEnabled_Set)]
+        [ConfigKey(ConfigurationKeys.ApmEnabled)]
+        internal bool ApmEnabledInternal { get; private set; }
 
         /// <summary>
         /// Gets or sets the names of disabled integrations.

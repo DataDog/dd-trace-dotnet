@@ -410,8 +410,12 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStart(object arg)
         {
             var tracer = CurrentTracer;
-            var security = CurrentSecurity;
+            if (!tracer.Settings.TraceEnabledInternal)
+            {
+                return;
+            }
 
+            var security = CurrentSecurity;
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Enabled;
 
@@ -440,8 +444,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnRoutingEndpointMatched(object arg)
         {
             var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.Settings.TraceEnabledInternal ||
+                !tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -573,8 +577,12 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnMvcBeforeAction(object arg)
         {
             var tracer = CurrentTracer;
-            var security = CurrentSecurity;
+            if (!tracer.Settings.TraceEnabledInternal)
+            {
+                return;
+            }
 
+            var security = CurrentSecurity;
             var shouldTrace = tracer.Settings.IsIntegrationEnabled(IntegrationId);
             var shouldSecure = security.Enabled;
             var shouldUseIast = Iast.Iast.Instance.Settings.Enabled;
@@ -618,8 +626,8 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnMvcAfterAction(object arg)
         {
             var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
+            if (!tracer.Settings.TraceEnabledInternal ||
+                !tracer.Settings.IsIntegrationEnabled(IntegrationId) ||
                 !tracer.Settings.RouteTemplateResourceNamesEnabled)
             {
                 return;
@@ -658,8 +666,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingHttpRequestInStop(object arg)
         {
             var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.TraceEnabledInternal || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }
@@ -673,8 +680,7 @@ namespace Datadog.Trace.DiagnosticListeners
         private void OnHostingUnhandledException(object arg)
         {
             var tracer = CurrentTracer;
-
-            if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
+            if (!tracer.Settings.TraceEnabledInternal || !tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 return;
             }

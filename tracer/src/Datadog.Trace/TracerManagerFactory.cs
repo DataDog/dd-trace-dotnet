@@ -248,6 +248,10 @@ namespace Datadog.Trace
                     sampler.RegisterRule(new GlobalSamplingRule(globalRate));
                 }
             }
+            else if (!settings.ApmEnabledInternal)
+            {
+                sampler.RegisterRule(new GlobalSamplingRule(0.001f)); // TODO : Apply a time based sampling rule
+            }
 
             return sampler;
         }

@@ -13,7 +13,7 @@ internal static partial class PublicApiUsageExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 165;
+    public const int Length = 168;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.PublicApiUsage"/> value.
@@ -158,6 +158,8 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_StatsComputationEnabled_Set => "name:tracersettings_statscomputationenabled_set",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Get => "name:tracersettings_traceenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Set => "name:tracersettings_traceenabled_set",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Get => "name:tracersettings_apmenabled_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Set => "name:tracersettings_apmenabled_set",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Get => "name:tracersettings_tracermetricsenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set => "name:tracersettings_tracermetricsenabled_set",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Build => "name:tracersettings_build",
@@ -185,6 +187,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StartupDiagnosticLogEnabled_Get => "name:immutabletracersettings_startupdiagnosticlogenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StatsComputationEnabled_Get => "name:immutabletracersettings_statscomputationenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get => "name:immutabletracersettings_traceenabled_get",
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_ApmEnabled_Get => "name:immutabletracersettings_apmenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get => "name:immutabletracersettings_tracermetricsenabled_get",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources => "name:immutabletracersettings_fromdefaultsources",
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer => "name:opentracingtracerfactory_createtracer",
@@ -336,6 +339,8 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_StatsComputationEnabled_Set,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Set,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Set,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Build,
@@ -363,6 +368,7 @@ internal static partial class PublicApiUsageExtensions
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StartupDiagnosticLogEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StatsComputationEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get,
+            Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_ApmEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources,
             Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer,
@@ -514,6 +520,8 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_StatsComputationEnabled_Set),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TraceEnabled_Set),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_ApmEnabled_Set),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_TracerMetricsEnabled_Set),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.TracerSettings_Build),
@@ -541,6 +549,7 @@ internal static partial class PublicApiUsageExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StartupDiagnosticLogEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_StatsComputationEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get),
+            nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_ApmEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_TracerMetricsEnabled_Get),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.ImmutableTracerSettings_FromDefaultSources),
             nameof(Datadog.Trace.Telemetry.Metrics.PublicApiUsage.OpenTracingTracerFactory_CreateTracer),
@@ -692,6 +701,8 @@ internal static partial class PublicApiUsageExtensions
             "name:tracersettings_statscomputationenabled_set",
             "name:tracersettings_traceenabled_get",
             "name:tracersettings_traceenabled_set",
+            "name:tracersettings_apmenabled_get",
+            "name:tracersettings_apmenabled_set",
             "name:tracersettings_tracermetricsenabled_get",
             "name:tracersettings_tracermetricsenabled_set",
             "name:tracersettings_build",
@@ -719,6 +730,7 @@ internal static partial class PublicApiUsageExtensions
             "name:immutabletracersettings_startupdiagnosticlogenabled_get",
             "name:immutabletracersettings_statscomputationenabled_get",
             "name:immutabletracersettings_traceenabled_get",
+            "name:immutabletracersettings_apmenabled_get",
             "name:immutabletracersettings_tracermetricsenabled_get",
             "name:immutabletracersettings_fromdefaultsources",
             "name:opentracingtracerfactory_createtracer",

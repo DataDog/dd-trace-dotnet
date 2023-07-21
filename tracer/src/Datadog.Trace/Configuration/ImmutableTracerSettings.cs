@@ -88,6 +88,7 @@ namespace Datadog.Trace.Configuration
             GitMetadataEnabled = settings.GitMetadataEnabled;
             ServiceNameInternal = settings.ServiceNameInternal;
             TraceEnabledInternal = settings.TraceEnabledInternal;
+            ApmEnabledInternal = settings.ApmEnabledInternal;
             ExporterInternal = new ImmutableExporterSettings(settings.ExporterInternal, true);
 #pragma warning disable 618 // App analytics is deprecated, but still used
             AnalyticsEnabledInternal = settings.AnalyticsEnabledInternal;
@@ -231,6 +232,14 @@ namespace Datadog.Trace.Configuration
         /// <seealso cref="ConfigurationKeys.TraceEnabled"/>
         [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_TraceEnabled_Get)]
         internal bool TraceEnabledInternal { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether tracing is enabled.
+        /// Default is <c>true</c>.
+        /// </summary>
+        /// <seealso cref="ConfigurationKeys.ApmEnabled"/>
+        [GeneratePublicApi(PublicApiUsage.ImmutableTracerSettings_ApmEnabled_Get)]
+        internal bool ApmEnabledInternal { get; }
 
         /// <summary>
         /// Gets the exporter settings that dictate how the tracer exports data.

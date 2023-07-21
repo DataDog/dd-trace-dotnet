@@ -1,4 +1,4 @@
-﻿// <copyright file="PublicApiUsage.cs" company="Datadog">
+// <copyright file="PublicApiUsage.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -191,6 +191,8 @@ internal enum PublicApiUsage
     [Description("name:tracersettings_statscomputationenabled_set")] TracerSettings_StatsComputationEnabled_Set,
     [Description("name:tracersettings_traceenabled_get")] TracerSettings_TraceEnabled_Get,
     [Description("name:tracersettings_traceenabled_set")] TracerSettings_TraceEnabled_Set,
+    [Description("name:tracersettings_apmenabled_get")] TracerSettings_ApmEnabled_Get,
+    [Description("name:tracersettings_apmenabled_set")] TracerSettings_ApmEnabled_Set,
     [Description("name:tracersettings_tracermetricsenabled_get")] TracerSettings_TracerMetricsEnabled_Get,
     [Description("name:tracersettings_tracermetricsenabled_set")] TracerSettings_TracerMetricsEnabled_Set,
     [Description("name:tracersettings_build")] TracerSettings_Build,
@@ -219,6 +221,7 @@ internal enum PublicApiUsage
     [Description("name:immutabletracersettings_startupdiagnosticlogenabled_get")] ImmutableTracerSettings_StartupDiagnosticLogEnabled_Get,
     [Description("name:immutabletracersettings_statscomputationenabled_get")] ImmutableTracerSettings_StatsComputationEnabled_Get,
     [Description("name:immutabletracersettings_traceenabled_get")] ImmutableTracerSettings_TraceEnabled_Get,
+    [Description("name:immutabletracersettings_apmenabled_get")] ImmutableTracerSettings_ApmEnabled_Get,
     [Description("name:immutabletracersettings_tracermetricsenabled_get")] ImmutableTracerSettings_TracerMetricsEnabled_Get,
     [Description("name:immutabletracersettings_fromdefaultsources")] ImmutableTracerSettings_FromDefaultSources,
 

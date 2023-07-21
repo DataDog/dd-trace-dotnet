@@ -1,12 +1,4 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:63394/",
-      "sslPort": 44320
-    }
-  },
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
@@ -50,7 +42,8 @@
         "DD_IAST_VULNERABILITIES_PER_REQUEST": "100",
         "DD_IAST_REQUEST_SAMPLING": "100",
         "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
-        "DD_WRITE_INSTRUMENTATION_TO_DISK": "true"
+        "DD_WRITE_INSTRUMENTATION_TO_DISK": "true",
+        "DD_APM_ENABLED": "false"
       },
       "Logging": {
         "LogLevel": {
@@ -59,7 +52,7 @@
           "Microsoft.Hosting.Lifetime": "Warning"
         }
       },
-      "nativeDebugging": true,
+      "nativeDebugging": false,
       "use64Bit": false,
       "applicationUrl": "http://localhost:54587"
     },
@@ -87,6 +80,14 @@
       "nativeDebugging": true,
       "use64Bit": true,
       "applicationUrl": "http://localhost:54569"
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:63394/",
+      "sslPort": 44320
     }
   }
 }
