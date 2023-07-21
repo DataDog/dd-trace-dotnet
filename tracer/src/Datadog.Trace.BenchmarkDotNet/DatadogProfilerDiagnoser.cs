@@ -213,9 +213,8 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
         environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
-        environment["DD_CIVISIBILITY_BENCHMARK_NAME"] = parameters.BenchmarkCase.Descriptor.DisplayInfo;
-        environment["DD_CIVISIBILITY_BENCHMARK_TRACEID"] = traceId.ToString();
-        environment["DD_CIVISIBILITY_BENCHMARK_SPANID"] = spanId.ToString();
+        environment[ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetTestName] = parameters.BenchmarkCase.Descriptor.DisplayInfo;
+        environment[ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetSpanId] = spanId.ToString();
 
         const string profilerEnabled = "DD_PROFILING_ENABLED";
         if (!environment.TryGetValue(profilerEnabled, out _))
