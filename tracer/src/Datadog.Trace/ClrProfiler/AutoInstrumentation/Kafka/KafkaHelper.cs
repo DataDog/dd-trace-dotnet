@@ -195,7 +195,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // Consumer spans should always be measured
                 span.SetTag(Tags.Measured, "1");
 
-                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
 
                 if (dataStreamsManager.IsEnabled)
