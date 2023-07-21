@@ -118,6 +118,7 @@ partial class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -317,6 +318,21 @@ partial class Build : NukeBuild
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "bundle")
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
+    Target BuildBenchmarkNuget => _ => _
+        .Unlisted()
+        .DependsOn(CreateBenchmarkIntegrationHome, ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "benchmark")
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
