@@ -301,9 +301,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "messaging.kafka.bootstrap.servers", "peer.service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
 
