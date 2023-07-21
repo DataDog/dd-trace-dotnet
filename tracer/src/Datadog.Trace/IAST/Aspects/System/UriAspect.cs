@@ -19,33 +19,6 @@ namespace Datadog.Trace.Iast.Aspects.System;
 public class UriAspect
 {
     /// <summary>
-    /// Uri .ctor(System.String) aspect.
-    /// </summary>
-    /// <param name="uriText">A string that identifies the resource to be represented by the System.Uri instance.</param>
-    /// <returns>The initialized System.Uri instance created using the specified URI string.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String)")]
-    public static Uri Init(string uriText)
-    {
-        var result = new Uri(uriText);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText);
-        return result;
-    }
-
-    /// <summary>
-    /// Uri .ctor(System.String,System.Boolean) aspect.
-    /// </summary>
-    /// <param name="uriText">A string that identifies the resource to be represented by the System.Uri instance.</param>
-    /// <param name="escape">true to escape the URI string; otherwise, false.</param>
-    /// <returns>The initialized System.Uri instance created using the specified URI string and escape value.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String,System.Boolean)")]
-    public static Uri Init(string uriText, bool escape)
-    {
-        var result = new Uri(uriText, escape);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriText);
-        return result;
-    }
-
-    /// <summary>
     /// Uri .ctor(System.Uri,System.String,System.Boolean) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
@@ -56,21 +29,7 @@ public class UriAspect
     public static Uri Init(Uri uriBase, string uriText, bool escape)
     {
         var result = new Uri(uriBase, uriText, escape);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriBase, uriText);
-        return result;
-    }
-
-    /// <summary>
-    /// Uri .ctor(System.String,System.UriKind) aspect.
-    /// </summary>
-    /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
-    /// <param name="urikind">One of the System.UriKind values that specifies the type of the URI.</param>
-    /// <returns>The initialized System.Uri instance created using the specified base URI and URI kind.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriKind)")]
-    public static Uri Init(string uriBase, UriKind urikind)
-    {
-        var result = new Uri(uriBase, urikind);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriBase);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
         return result;
     }
 
@@ -84,7 +43,7 @@ public class UriAspect
     public static Uri Init(Uri uriBase, string relativeUri)
     {
         var result = new Uri(uriBase, relativeUri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriBase, relativeUri);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri);
         return result;
     }
 
@@ -98,7 +57,7 @@ public class UriAspect
     public static Uri Init(Uri uriBase, Uri relativeUri)
     {
         var result = new Uri(uriBase, relativeUri);
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uriBase, relativeUri);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
         return result;
     }
 
@@ -111,7 +70,7 @@ public class UriAspect
     public static string GetAbsoluteUri(Uri instance)
     {
         var result = instance.AbsoluteUri;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -124,7 +83,7 @@ public class UriAspect
     public static string GetAbsolutePath(Uri instance)
     {
         var result = instance.AbsolutePath;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -137,7 +96,7 @@ public class UriAspect
     public static string GetLocalPath(Uri instance)
     {
         var result = instance.LocalPath;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -150,7 +109,7 @@ public class UriAspect
     public static string GetHost(Uri instance)
     {
         var result = instance.Host;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -163,7 +122,7 @@ public class UriAspect
     public static string GetPathAndQuery(Uri instance)
     {
         var result = instance.PathAndQuery;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -176,7 +135,7 @@ public class UriAspect
     public static string GetAuthority(Uri instance)
     {
         var result = instance.Authority;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -189,7 +148,7 @@ public class UriAspect
     public static string GetQuery(Uri instance)
     {
         var result = instance.Query;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -202,20 +161,7 @@ public class UriAspect
     public static string GetScheme(Uri instance)
     {
         var result = instance.Scheme;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
-        return result;
-    }
-
-    /// <summary>
-    /// Uri GetOriginalString aspect.
-    /// </summary>
-    /// <param name="instance">The System.Uri instance.</param>
-    /// <returns>The display string representation of the URI represented by the System.Uri instance.</returns>
-    [AspectMethodReplace("System.Uri::get_OriginalString()")]
-    public static string GetOriginalString(Uri instance)
-    {
-        var result = instance.OriginalString;
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 
@@ -228,7 +174,7 @@ public class UriAspect
     public static string ToString(Uri instance)
     {
         string result = instance.ToString();
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }
 }

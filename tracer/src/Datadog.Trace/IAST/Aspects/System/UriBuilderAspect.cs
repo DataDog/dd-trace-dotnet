@@ -35,7 +35,7 @@ namespace Hdiv.AST.Aspects.System
         public static UriBuilder Init(Uri uri)
         {
             var result = new UriBuilder(uri);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
             return result;
         }
 

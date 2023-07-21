@@ -32,7 +32,7 @@ internal static class IastModule
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
     }
 
-    internal static Scope? OnSSRF(object evidence)
+    internal static Scope? OnSSRF(string evidence)
     {
         try
         {
@@ -218,12 +218,12 @@ internal static class IastModule
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
     }
 
-    private static Scope? GetScope(object evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
+    private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
         var tracer = Tracer.Instance;
-        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId) || evidenceValue is null)
+        if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
-            // integration disabled, don't create a scope, skip this span or evidence null (evidence is always required)
+            // integration disabled, don't create a scope, skip this span
             return null;
         }
 
@@ -261,12 +261,6 @@ internal static class IastModule
             return null;
         }
 
-        var evidenceStringValue = evidenceValue.ToString();
-        if (string.IsNullOrEmpty(evidenceStringValue))
-        {
-            return null;
-        }
-
         // Sometimes we do not have the file/line but we have the method/class.
         var filename = frameInfo.StackFrame?.GetFileName();
         var vulnerability = new Vulnerability(
@@ -277,7 +271,7 @@ internal static class IastModule
                 line: !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
                 spanId: currentSpan?.SpanId,
                 methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(frameInfo.StackFrame) : null),
-            new Evidence(evidenceStringValue, tainted?.Ranges),
+            new Evidence(evidenceValue, tainted?.Ranges),
             integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))

@@ -6,6 +6,7 @@
 #if !NETFRAMEWORK
 using System.Net.Http;
 #endif
+using System;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.HttpClient;
 #if NETFRAMEWORK
 using Datadog.Trace.DuckTyping;
@@ -28,34 +29,45 @@ public class HttpClientAspect
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String)")]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String)")]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String)")]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String)")]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption)", 1)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Threading.CancellationToken)", 1)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.String,System.Net.Http.HttpContent)", 1)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.String,System.Net.Http.HttpContent)", 1)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String)")]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri,System.Threading.CancellationToken)", 1)]
-    public static object Review(object parameter)
+    public static object Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
+        return parameter;
+    }
+
+    /// <summary>
+    /// Launches a SSRF vulnerability if the url is tainted
+    /// </summary>
+    /// <param name="parameter">the sensitive parameter of the method</param>
+    /// <returns>the parameter</returns>
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+    public static object ReviewUri(Uri parameter)
+    {
+        IastModule.OnSSRF(parameter.OriginalString);
         return parameter;
     }
 
@@ -80,7 +92,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastModule.OnSSRF(uri);
+            IastModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;
@@ -92,7 +104,7 @@ public class HttpClientAspect
 
         if (uri is not null)
         {
-            IastModule.OnSSRF(uri);
+            IastModule.OnSSRF(uri.OriginalString);
         }
 
         return parameter;

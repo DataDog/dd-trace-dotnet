@@ -43,7 +43,7 @@ public class SSRFTests : InstrumentationTestsBase
     public void GivenAURI_WhenCreateFromtainted_IsTainted()
     {
         Uri uri = new Uri(taintedUrlValue);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Obsolete("Testing")]
@@ -51,7 +51,7 @@ public class SSRFTests : InstrumentationTestsBase
     public void GivenAURI_WhenCreateFromtainted_IsTainted2()
     {
         Uri uri = new Uri(taintedUrlValue, true);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Obsolete("Testing")]
@@ -59,7 +59,7 @@ public class SSRFTests : InstrumentationTestsBase
     public void GivenAURI_WhenCreateFromtainted_IsTainted3()
     {
         Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue, true);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Obsolete("Testing")]
@@ -67,42 +67,42 @@ public class SSRFTests : InstrumentationTestsBase
     public void GivenAURI_WhenCreateFromtainted_IsTainted4()
     {
         Uri uri = new Uri(new Uri(taintedUrlValue), "eee", true);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted5()
     {
         Uri uri = new Uri(new Uri(taintedUrlValue), "eee");
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted6()
     {
         Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted7()
     {
         Uri uri = new Uri(taintedUrlValue, UriKind.Absolute);
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted8()
     {
         Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedUrlValue));
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]    
     public void GivenAURI_WhenCreateFromtainted_IsTainted9()
     {
         Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedValue));
-        AssertTainted(uri);
+        AssertTainted(uri.OriginalString);
     }
 
     [Fact]
