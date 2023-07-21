@@ -30,9 +30,4 @@ internal class QueueHelper
 
         return ConsumerToQueueMap.TryGetValue(consumer, out queue);
     }
-
-    public static void RemoveQueue(object consumer)
-    {
-        ConsumerToQueueMap.Remove(consumer);
-    }
 }
