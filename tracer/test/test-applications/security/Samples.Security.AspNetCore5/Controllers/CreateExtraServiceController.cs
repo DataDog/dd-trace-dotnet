@@ -18,7 +18,7 @@ public class CreateExtraServiceController: Controller
         scope.Span.ServiceName = serviceName;
 
         // fake a http.url tag so it'll appear in the snapshot
-        scope.Span.SetTag("http.url", "http://localhost:00000/createextraservice/?serviceName=extraVegetables");
+        scope.Span.SetTag("http.url", $"http://localhost:00000/createextraservice/?serviceName={serviceName}");
 
         return Content("Created: " + serviceName);
     }
