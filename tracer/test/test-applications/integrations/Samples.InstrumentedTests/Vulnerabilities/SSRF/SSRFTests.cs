@@ -14,7 +14,8 @@ public class SSRFTests : InstrumentationTestsBase
     protected string notTaintedValue = "http://localhost/nottainted";
     protected string notTaintedHost = "myhost";
     protected string taintedHost = "localhost";
-    protected string taintedUrlValue = "http://127.0.0.1/invalid";
+    protected string taintedQuery = "e=22";
+    protected string taintedUrlValue = "http://127.0.0.1/invalid?q=1";
     protected string file = "invalid@#file";
     protected static WebClient webclient = new WebClient();
     protected byte sourceType = 5;
@@ -23,7 +24,30 @@ public class SSRFTests : InstrumentationTestsBase
     {
         AddTainted(taintedUrlValue, sourceType);
         AddTainted(taintedHost, sourceType);
+        AddTainted(taintedQuery, sourceType);
     }
+
+    //HttpMessageInvoker
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public void GivenAHttpMessageInvoker_WhenSend_VulnerabilityIsLoged()
+    {
+        var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        var response = httpMessageInvoker.Send(message, CancellationToken.None);
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpMessageInvoker_WhenSendAsync_VulnerabilityIsLoged()
+    {
+        var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        var response = httpMessageInvoker.SendAsync(message, CancellationToken.None).Result;
+        AssertVulnerableSSRF();
+    }
+#endif
 
     [Fact]
     public void GivenAHttpWebRequest_WhenGetResponseTaintedURL_VulnerabilityIsLoged()
@@ -1002,7 +1026,7 @@ public class SSRFTests : InstrumentationTestsBase
         AssertTainted(uri.ToString());
         AssertTainted(uri.AbsolutePath);
         AssertTainted(uri.Scheme);
-        AssertNotTainted(uri.Query); // query is empty ...
+        AssertTainted(uri.Query); 
         AssertTainted(uri.Authority);
         AssertTainted(uri.Host);
         AssertTainted(uri.LocalPath);
@@ -1121,6 +1145,51 @@ public class SSRFTests : InstrumentationTestsBase
         UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
         AssertTainted(builder.ToString());
         AssertTainted(builder.Uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
+        AssertTainted(builder.Query);
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted2()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
+        AssertTainted(builder.Host);
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted3()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
+        AssertTainted(builder.Path);
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted14()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(notTaintedValue));
+        builder.Query = taintedQuery;
+        AssertTainted(builder.ToString());
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted15()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(notTaintedValue));
+        builder.Path = taintedUrlValue;
+        AssertTainted(builder.ToString());
+    }
+
+    [Fact]
+    public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted17()
+    {
+        UriBuilder builder = new UriBuilder(new Uri(notTaintedValue));
+        builder.Host = taintedHost;
+        AssertTainted(builder.ToString());
     }
 
     private void ExecuteAction(Action c)

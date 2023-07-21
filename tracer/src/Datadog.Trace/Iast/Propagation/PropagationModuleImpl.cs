@@ -167,7 +167,7 @@ internal static class PropagationModuleImpl
         if (input is not null)
         {
             var tainted = taintedObjects.Get(input);
-            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
+            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null && taintedObjects.Get(result) is null)
             {
                 taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
                 return true;

@@ -8,6 +8,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -74,6 +76,12 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StreamWriter), ".ctor")]
     [InlineData(typeof(FileStream), ".ctor")]
     [InlineData(typeof(DirectoryInfo), null, new string[] { "void CreateAsSymbolicLink(System.String)" }, true)]
+    [InlineData(typeof(HttpClient), null, new string[] { }, true)]
+    [InlineData(typeof(HttpMessageInvoker), null, new string[] { }, true)]
+    [InlineData(typeof(WebRequest), null, new string[] { }, true)]
+    [InlineData(typeof(WebClient), null, new string[] { }, true)]
+    [InlineData(typeof(Uri), null, new string[] { }, true)]
+    [InlineData(typeof(UriBuilder), null, new string[] { }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -193,6 +201,12 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StreamReader))]
     [InlineData(typeof(FileStream))]
     [InlineData(typeof(DirectoryInfo))]
+    [InlineData(typeof(Uri))]
+    [InlineData(typeof(HttpClient))]
+    [InlineData(typeof(HttpMessageInvoker))]
+    [InlineData(typeof(WebRequest))]
+    [InlineData(typeof(WebClient))]
+    [InlineData(typeof(UriBuilder))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type)

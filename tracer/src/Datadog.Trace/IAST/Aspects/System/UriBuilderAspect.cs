@@ -102,6 +102,81 @@ namespace Hdiv.AST.Aspects.System
         }
 
         /// <summary>
+        /// Uri SetHost aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <param name="parameter">The parameter value.</param>
+        [AspectMethodReplace("System.UriBuilder::set_Host(System.String)")]
+        public static void SetHost(UriBuilder instance, string parameter)
+        {
+            instance.Host = parameter;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+
+        /// <summary>
+        /// Uri set_Query aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <param name="parameter">The parameter value.</param>
+        [AspectMethodReplace("System.UriBuilder::set_Query(System.String)")]
+        public static void SetQuery(UriBuilder instance, string parameter)
+        {
+            instance.Query = parameter;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+
+        /// <summary>
+        /// Uri set_Path aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <param name="parameter">The parameter value.</param>
+        [AspectMethodReplace("System.UriBuilder::set_Path(System.String)")]
+        public static void SetPath(UriBuilder instance, string parameter)
+        {
+            instance.Path = parameter;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(instance.Uri.OriginalString, parameter);
+        }
+
+        /// <summary>
+        /// Uri GetHost aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <returns>The host propoerty of the UriBuilder.</returns>
+        [AspectMethodReplace("System.UriBuilder::get_Host()")]
+        public static string GetHost(UriBuilder instance)
+        {
+            var result = instance.Host;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            return result;
+        }
+
+        /// <summary>
+        /// Uri GetHost aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <returns>The host propoerty of the UriBuilder.</returns>
+        [AspectMethodReplace("System.UriBuilder::get_Query()")]
+        public static string GetQuery(UriBuilder instance)
+        {
+            var result = instance.Query;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            return result;
+        }
+
+        /// <summary>
+        /// Uri GetHost aspect.
+        /// </summary>
+        /// <param name="instance">The UriBuilder instance.</param>
+        /// <returns>The host propoerty of the UriBuilder.</returns>
+        [AspectMethodReplace("System.UriBuilder::get_Path()")]
+        public static string GetPath(UriBuilder instance)
+        {
+            var result = instance.Path;
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.Uri.OriginalString);
+            return result;
+        }
+
+        /// <summary>
         /// Taints the UriBuilder if the instance is tainted
         /// </summary>
         /// <param name="instance">the UriBuilder instance</param>
