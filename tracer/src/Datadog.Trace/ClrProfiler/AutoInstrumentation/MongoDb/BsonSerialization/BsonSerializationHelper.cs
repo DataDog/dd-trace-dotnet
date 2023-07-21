@@ -8,6 +8,7 @@
 using System;
 using System.IO;
 using System.Reflection.Emit;
+using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -48,24 +49,7 @@ internal static class BsonSerializationHelper
 
         try
         {
-            using var stringWriter = new TruncatedTextWriter(sb);
-
-            // Create a "real" JsonWriter
-            var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
-            var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
-
-            // Wrap the real writer with our custom proxy that has extra behaviours
-            var customBsonWriter = new MongoBsonWriter(jsonWriter, jsonWriterSettings);
-            var customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
-
-            // Find the serializer and serializer
-            var nominalType = obj.GetType();
-            var serializer = helper.BsonSerializerLookupProxy.LookupSerializer(nominalType);
-            var rootContext = helper.BsonSerializationContextProxy.CreateRoot(customWriterProxy, null);
-            var bsonSerializationArgs = helper.CreateBsonSerializationArgsFunc(nominalType);
-            serializer.Serialize(rootContext, bsonSerializationArgs, obj);
-
-            stringWriter.Flush();
+            SerializeWithCustomWriter(obj, sb, helper);
             return StringBuilderCache.GetStringAndRelease(sb);
         }
         catch (Exception ex)
@@ -75,6 +59,28 @@ internal static class BsonSerializationHelper
             // Fallback to default
             return obj.ToString();
         }
+    }
+
+    private static void SerializeWithCustomWriter(object obj, StringBuilder sb, BsonHelper helper)
+    {
+        using var stringWriter = new TruncatedTextWriter(sb);
+
+        // Create a "real" JsonWriter
+        var jsonWriterSettings = helper.JsonWriterSettingsProxy.Defaults;
+        var jsonWriter = helper.CreateJsonWriterFunc(stringWriter, jsonWriterSettings).DuckCast<IBsonWriterProxy>();
+
+        // Wrap the real writer with our custom proxy that has extra behaviours
+        var customBsonWriter = new MongoBsonWriter(jsonWriter, jsonWriterSettings);
+        var customWriterProxy = customBsonWriter.DuckImplement(helper.IBsonWriterType);
+
+        // Find the serializer and serializer
+        var nominalType = obj.GetType();
+        var serializer = helper.BsonSerializerLookupProxy.LookupSerializer(nominalType);
+        var rootContext = helper.BsonSerializationContextProxy.CreateRoot(customWriterProxy, null);
+        var bsonSerializationArgs = helper.CreateBsonSerializationArgsFunc(nominalType);
+        serializer.Serialize(rootContext, bsonSerializationArgs, obj);
+
+        stringWriter.Flush();
     }
 
     private class BsonHelper
@@ -220,13 +226,27 @@ internal static class BsonSerializationHelper
 
             var createBsonSerializationArgsFunc = (Func<Type, object>)createBsonSerializationArgs.CreateDelegate(typeof(Func<Type, object>));
 
-            return new BsonHelper(
+            var helper = new BsonHelper(
                 bsonSerializationContextProxy: bsonSerializationContextProxy,
                 jsonWriterSettingsProxy: jsonWriterSettingsProxy,
                 bsonSerializerLookupProxy: bsonSerializerLookupProxy,
                 createJsonWriterFunc: createJsonWriterFunc,
                 createBsonSerializationArgsFunc: createBsonSerializationArgsFunc,
                 ibsonWriterType: ibsonWriterType);
+
+            // smoke test - we don't verify the Duck types until we actually try to create a proxy,
+            // so we do it once here, just to confirm that it will work later
+            try
+            {
+                SerializeWithCustomWriter(string.Empty, new StringBuilder(1), helper);
+            }
+            catch (Exception ex)
+            {
+                Log.Information(ex, "Error creating BsonHelper - execution error");
+                return null;
+            }
+
+            return helper;
         }
     }
 }
