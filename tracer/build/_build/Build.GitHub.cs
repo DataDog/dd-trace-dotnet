@@ -1088,7 +1088,7 @@ partial class Build
                        .PullRequest(prNumber)
                        .Comments()
                        .AllPages()
-                       .Select(comment => new { comment.Id, comment.Body });
+                       .Select(comment => new { comment.Id, comment.Body, comment.IsMinimized });
 
             var prComments = (await connection.Run(query)).ToList();
         
