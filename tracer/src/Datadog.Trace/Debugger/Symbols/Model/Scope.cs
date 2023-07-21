@@ -18,9 +18,6 @@ internal record struct Scope
     [JsonProperty("name")]
     internal string Name { get; set; }
 
-    [JsonProperty("type")]
-    internal string Type { get; set; }
-
     [JsonProperty("sourceFile")]
     internal string SourceFile { get; set; }
 
@@ -37,5 +34,5 @@ internal record struct Scope
     internal IReadOnlyList<Symbol> Symbols { get; set; }
 
     [JsonProperty("scopes")]
-    internal IList<Scope> Scopes { get; set; }
+    internal IReadOnlyList<Scope> Scopes { get; set; }
 }

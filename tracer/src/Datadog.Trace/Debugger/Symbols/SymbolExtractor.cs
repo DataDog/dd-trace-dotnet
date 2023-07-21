@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -22,12 +23,19 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
 
-        internal IEnumerable<Model.Scope> GetClassSymbols(Assembly assembly, string[] typeToExtract = null)
+        internal IEnumerable<Model.Scope?> GetClassSymbols(Assembly assembly, string[]? typesToExtract = null)
         {
             using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
-            var module = pdbReader?.Module;
 
-            if (module?.Types == null)
+            if (pdbReader == null)
+            {
+                Log.Warning("Could not found a PDB file for assembly {Assembly}", assembly.FullName);
+                yield break;
+            }
+
+            var module = pdbReader.Module;
+
+            if (module.Types == null)
             {
                 yield break;
             }
@@ -36,12 +44,12 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 var type = module.Types[i];
 
-                if (typeToExtract != null && !typeToExtract.Any(t => t.Equals(type.FullName)))
+                if (typesToExtract != null && !typesToExtract.Any(t => t.Equals(type.FullName)))
                 {
                     continue;
                 }
 
-                Model.Scope classScope = default;
+                Model.Scope? classScope = null;
                 try
                 {
                     if (type.Fields?.Count == 0 && type.Methods?.Count == 0)
@@ -53,7 +61,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                     var classScopes = GetMethodSymbols(type.Methods, pdbReader, out var classStartLine, out var classEndLine, out var typeSourceFile);
 
-                    var classLanguageSpecifics = GetClassLanguageSpecifics(type, i, module);
+                    var classLanguageSpecifics = GetClassLanguageSpecifics(type, module);
 
                     classScope = new Model.Scope
                     {
@@ -76,9 +84,9 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private LanguageSpecifics GetClassLanguageSpecifics(TypeDef type, int i, ModuleDefMD module)
+        private LanguageSpecifics GetClassLanguageSpecifics(TypeDef type, ModuleDefMD module)
         {
-            var interfaceNames = GetClassInterfaceNames(type, i);
+            var interfaceNames = GetClassInterfaceNames(type);
 
             var baseClassNames = GetClassBaseClassNames(type, module);
 
@@ -101,16 +109,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 SourceFile = assembly.Location,
                 StartLine = -1,
                 EndLine = int.MaxValue,
-                LanguageSpecifics = null,
-                Scopes = new List<Model.Scope>()
+                LanguageSpecifics = new LanguageSpecifics() { Annotations = assembly.CustomAttributes.Select(att => att.AttributeType.Name).ToArray(), },
+                Scopes = Array.Empty<Model.Scope>()
             };
 
             return assemblyScope;
         }
 
-        private Symbol[] GetFieldSymbols(IList<FieldDef> typeFields)
+        private Symbol[]? GetFieldSymbols(IList<FieldDef>? typeFields)
         {
-            if (typeFields.Count <= 0)
+            if (typeFields is not { Count: > 0 })
             {
                 return null;
             }
@@ -131,13 +139,13 @@ namespace Datadog.Trace.Debugger.Symbols
             return typeSymbols;
         }
 
-        private List<Model.Scope> GetMethodSymbols(IList<MethodDef> typeMethods, DatadogPdbReader pdbReader, out int classStartLine, out int classEndLine, out string typeSourceFile)
+        private List<Model.Scope>? GetMethodSymbols(IList<MethodDef>? typeMethods, DatadogPdbReader pdbReader, out int classStartLine, out int classEndLine, out string? typeSourceFile)
         {
             classStartLine = -1;
             classEndLine = -1;
             typeSourceFile = null;
 
-            if (typeMethods.Count <= 0)
+            if (typeMethods is not { Count: > 0 })
             {
                 return null;
             }
@@ -147,8 +155,7 @@ namespace Datadog.Trace.Debugger.Symbols
             for (var j = 0; j < typeMethods.Count; j++)
             {
                 var method = typeMethods[j];
-                var symbolMethod = pdbReader.GetMethodSymbolInfo(method.MDToken.ToInt32());
-                if (symbolMethod == null)
+                if (pdbReader.GetMethodSymbolInfoOrDefault(method.MDToken.ToInt32()) is not { } symbolMethod)
                 {
                     continue;
                 }
@@ -162,12 +169,12 @@ namespace Datadog.Trace.Debugger.Symbols
                     classStartLine = startLine;
                 }
 
-                Symbol[] argsSymbol;
-                Symbol[] localsSymbol;
-                Symbol[] methodSymbols;
+                Symbol[]? argsSymbol;
+                Symbol[]? localsSymbol;
+                Symbol[]? methodSymbols;
 
                 // arguments
-                Symbol[] GetArgsSymbol()
+                Symbol[]? GetArgsSymbol()
                 {
                     if (method.Parameters.Count <= 0)
                     {
@@ -193,7 +200,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 argsSymbol = GetArgsSymbol();
 
                 // locals
-                Symbol[] GetLocalsSymbol(out int localsCount1)
+                Symbol[]? GetLocalsSymbol(out int localsCount1)
                 {
                     localsCount1 = 0;
                     if (method.Body is not { Variables.Count: > 0 })
@@ -224,7 +231,7 @@ namespace Datadog.Trace.Debugger.Symbols
                                 }
                             }
 
-                            Local local = null;
+                            Local? local = null;
                             for (var i = 0; i < methodLocals.Count; i++)
                             {
                                 if (methodLocals[i].Index != localSymbol.Index)
@@ -253,7 +260,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 localsSymbol = GetLocalsSymbol(out var localsCount);
 
-                Symbol[] ConcatMethodSymbols()
+                Symbol[]? ConcatMethodSymbols()
                 {
                     var argsCount = argsSymbol?.Length ?? 0;
                     var symbolsCount = argsCount + localsCount;
@@ -271,7 +278,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                     if (localsCount > 0)
                     {
-                        Array.Copy(localsSymbol, 0, methodSymbols, argsCount, localsCount);
+                        Array.Copy(localsSymbol!, 0, methodSymbols, argsCount, localsCount);
                     }
 
                     return methodSymbols;
@@ -313,9 +320,9 @@ namespace Datadog.Trace.Debugger.Symbols
             return classScopes;
         }
 
-        private string[] GetClassBaseClassNames(TypeDef type, ModuleDefMD module)
+        private string[]? GetClassBaseClassNames(TypeDef type, ModuleDefMD module)
         {
-            string[] baseClassNames = null;
+            string[]? baseClassNames = null;
             var baseType = type.BaseType;
             var objectType = module.CorLibTypes.Object.TypeDefOrRef;
             if (objectType != null && baseType != null && baseType != objectType)
@@ -333,7 +340,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return baseClassNames;
         }
 
-        private string[] GetClassInterfaceNames(TypeDef type, int i)
+        private string[]? GetClassInterfaceNames(TypeDef type)
         {
             var interfaces = type.Interfaces;
             if (interfaces.Count <= 0)
@@ -342,9 +349,9 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var interfaceNames = new string[interfaces.Count];
-            for (var j = 0; j < type.Interfaces.Count; j++)
+            for (var j = 0; j < interfaces.Count; j++)
             {
-                interfaceNames[j] = interfaces[i].Interface.FullName;
+                interfaceNames[j] = interfaces[j].Interface.FullName;
             }
 
             return interfaceNames;

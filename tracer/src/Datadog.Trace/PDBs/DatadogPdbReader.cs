@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -19,7 +20,6 @@ using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 using Datadog.Trace.Vendors.dnlib.IO;
-using SymbolMethodImpl = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable.SymbolMethodImpl;
 using SymbolReaderFactory = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory;
 
 namespace Datadog.Trace.Pdb
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Pdb
 
         internal ModuleDefMD Module { get; }
 
-        public static DatadogPdbReader CreatePdbReader(Assembly assembly)
+        public static DatadogPdbReader? CreatePdbReader(Assembly assembly)
         {
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
             if (!TryFindPdbFile(assembly, out var pdbFullPath))
@@ -64,7 +64,7 @@ namespace Datadog.Trace.Pdb
             return new DatadogPdbReader(dnlibReader, module, pdbFullPath);
         }
 
-        private static bool TryFindPdbFile(Assembly assembly, [NotNullWhen(true)] out string pdbFullPath)
+        private static bool TryFindPdbFile(Assembly assembly, [NotNullWhen(true)] out string? pdbFullPath)
         {
             try
             {
@@ -110,20 +110,20 @@ namespace Datadog.Trace.Pdb
             return false;
         }
 
-        public string GetSourceLinkJsonDocument()
+        public string? GetSourceLinkJsonDocument()
         {
             var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        public SymbolMethod GetMethodSymbolInfo(int methodMetadataToken)
+        public SymbolMethod? GetMethodSymbolInfoOrDefault(int methodMetadataToken)
         {
             var rid = MDToken.ToRID(methodMetadataToken);
             var mdMethod = Module.ResolveMethod(rid);
-            return TryGetSymbolMethodOfAsyncMethod(mdMethod) ?? _symbolReader.GetMethod(mdMethod, version: 1);
+            return GetSymbolMethodOfAsyncMethodOrDefault(mdMethod) ?? _symbolReader.GetMethod(mdMethod, version: 1);
         }
 
-        private SymbolMethod TryGetSymbolMethodOfAsyncMethod(MethodDef mdMethod)
+        private SymbolMethod? GetSymbolMethodOfAsyncMethodOrDefault(MethodDef mdMethod)
         {
             // Determine if the given mdMethod is a kickoff of a state machine (aka an async method)
             // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
@@ -159,16 +159,15 @@ namespace Datadog.Trace.Pdb
             return _symbolReader.Documents;
         }
 
-        internal string[] GetLocalVariableNames(int methodToken, int localVariablesCount)
+        internal string[]? GetLocalVariableNamesOrDefault(int methodToken, int localVariablesCount)
         {
-            var symbolMethod = GetMethodSymbolInfo(methodToken);
-            if (symbolMethod == null)
+            if (GetMethodSymbolInfoOrDefault(methodToken) is not { } symbolMethod)
             {
-                return null; // Method was not found in PDB file
+                return null;
             }
 
             var localVariables = symbolMethod.GetLocalVariables();
-            string[] localNames = new string[localVariablesCount];
+            var localNames = new string[localVariablesCount];
             foreach (var local in localVariables)
             {
                 if (local.Attributes.HasFlag(PdbLocalAttributes.DebuggerHidden))
