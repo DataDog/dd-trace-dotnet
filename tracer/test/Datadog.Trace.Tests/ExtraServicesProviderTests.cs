@@ -29,7 +29,7 @@ public class ExtraServicesProviderTests
     [InlineData(64, 64)]
     [InlineData(65, 64)]
     [InlineData(100, 64)]
-    public void Service_Stored_Should_Exceed_Limit(int itemsToAdd, int expectCount)
+    public void Service_Stored_Should_Not_Exceed_Limit(int itemsToAdd, int expectCount)
     {
         var target = new ExtraServicesProvider();
 
