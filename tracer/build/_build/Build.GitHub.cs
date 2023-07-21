@@ -1118,6 +1118,7 @@ partial class Build
                     await connection.Run(mutation);
                     updated = true;
                     Console.WriteLine($"Updated comment {prComment.Id} for PR {prNumber}");
+                    break;
 
                 }
                 catch (Exception ex)
