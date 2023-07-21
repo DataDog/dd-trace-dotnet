@@ -13,8 +13,10 @@ using ActivitySource = System.Diagnostics.ActivitySource;
 
 namespace Benchmarks.Trace;
 
-[MemoryDiagnoser]
-[BenchmarkAgent6]
+// Benchmarks commented out to look into better way of benchmarking on CI as it may not work with auto-instrumentation
+
+// [MemoryDiagnoser]
+// [BenchmarkAgent6]
 public class OpenTelemetryAutoBenchmark
 {
     internal static ActivitySource ActivitySource { get; set; }
@@ -48,7 +50,7 @@ public class OpenTelemetryAutoBenchmark
         Datadog.Trace.ClrProfiler.Instrumentation.Initialize();
     }
 
-    [Benchmark]
+    // [Benchmark]
     public void CreateActivitySpan()
     {
         using (var activity = ActivitySource.StartActivity("name"))
@@ -57,7 +59,7 @@ public class OpenTelemetryAutoBenchmark
         }
     }
 
-    [Benchmark]
+    // [Benchmark]
     public void CreateOpenTelemetrySpan()
     {
         using (var openTelemetry = OpenTelemetryTracer.StartActiveSpan("name"))
