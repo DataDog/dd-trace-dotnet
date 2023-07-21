@@ -28,35 +28,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
         public WafConfigurator(WafLibraryInvoker wafLibraryInvoker) => _wafLibraryInvoker = wafLibraryInvoker;
 
-        public bool CheckVersionCompatibility()
-        {
-            var versionWaf = _wafLibraryInvoker.GetVersion();
-            var versionWafSplit = versionWaf.Split('.');
-            if (versionWafSplit.Length != 3)
-            {
-                Log.Warning("Waf version {WafVersion} has a non expected format", versionWaf);
-                return false;
-            }
-
-            var canParse = int.TryParse(versionWafSplit[1], out var wafMinor);
-            canParse &= int.TryParse(versionWafSplit[0], out var wafMajor);
-            var tracerVersion = GetType().Assembly.GetName().Version;
-            if (tracerVersion is null || !canParse)
-            {
-                Log.Warning("Waf version {WafVersion} or tracer version {TracerVersion} have a non expected format", versionWaf, tracerVersion);
-                return false;
-            }
-
-            // tracer >= 2.34.0 needs waf >= 1.11 cause it passes a ddwafobject for diagnostics instead of a ruleset info struct which causes unpredictable unmanaged crashes
-            if (tracerVersion is { Minor: >= 34, Major: >= 2 } && wafMajor == 1 && wafMinor <= 10)
-            {
-                Log.Warning("Waf version {WafVersion} is not compatible with tracer version {TracerVersion}", versionWaf, tracerVersion);
-                return false;
-            }
-
-            return true;
-        }
-
         private static void LogRuleDetailsIfDebugEnabled(JToken root)
         {
             if (Log.IsEnabled(LogEventLevel.Debug))
@@ -142,7 +113,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return InitResult.FromUnusableRuleFile();
             }
 
-            var diagnostics = IntPtr.Zero;
+            var ruleSetInfo = new DdwafRuleSetInfo();
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
 
@@ -155,14 +126,22 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 args.ValueRegex = valueRegex;
                 args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                diagnostics = _wafLibraryInvoker.ObjectMap();
-                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics);
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, ruleSetInfo);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
                 }
 
-                var initResult = InitResult.From(diagnostics, wafHandle, _wafLibraryInvoker);
+                var initResult = InitResult.From(ruleSetInfo, wafHandle, _wafLibraryInvoker);
+                if (initResult.LoadedRules == 0)
+                {
+                    Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
+                }
+                else
+                {
+                    Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
+                }
+
                 if (initResult.HasErrors)
                 {
                     var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
@@ -173,18 +152,6 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
 
                     var errorMess = StringBuilderCache.GetStringAndRelease(sb);
                     Log.Warning("WAF initialization failed. Some rules are invalid in rule file {RulesFile}: {ErroringRules}", rulesFile, errorMess);
-                }
-                else
-                {
-                    // sometimes loaded rules will be 0 if other errors happen above, that's why it should be the fallback log
-                    if (initResult.LoadedRules == 0)
-                    {
-                        Log.Error("DDAS-0003-03: AppSec could not read the rule file {RulesFile}. Reason: All rules are invalid. AppSec will not run any protections in this application.", rulesFile);
-                    }
-                    else
-                    {
-                        Log.Information("DDAS-0015-00: AppSec loaded {LoadedRules} rules from file {RulesFile}.", initResult.LoadedRules, rulesFile);
-                    }
                 }
 
                 return initResult;
@@ -201,7 +168,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                _wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
+                _wafLibraryInvoker.RuleSetInfoFree(ruleSetInfo);
+                _wafLibraryInvoker.ObjectFreePtr(rulesObj.RawPtr);
                 rulesObj.Dispose();
                 foreach (var arg in argsToDispose)
                 {
