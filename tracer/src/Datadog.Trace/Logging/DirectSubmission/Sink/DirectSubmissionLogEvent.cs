@@ -1,4 +1,4 @@
-﻿// <copyright file="DatadogLogEvent.cs" company="Datadog">
+﻿// <copyright file="DirectSubmissionLogEvent.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -9,7 +9,7 @@ using Datadog.Trace.Logging.DirectSubmission.Formatting;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink
 {
-    internal abstract class DatadogLogEvent
+    internal abstract class DirectSubmissionLogEvent
     {
         /// <summary>
         /// Formats the event to the provided <see cref="StringBuilder"/>

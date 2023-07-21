@@ -5,6 +5,7 @@
 
 using System;
 using System.Reflection;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
@@ -39,7 +40,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -62,7 +63,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -87,7 +88,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         controller.Should().BeOfType<TelemetryController>();
         TelemetryFactory.Config.Should().BeOfType<NullConfigurationTelemetry>();
@@ -114,7 +115,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         controller.Should().BeOfType<TelemetryControllerV2>();
         TelemetryFactory.Config.Should().BeOfType<ConfigurationTelemetry>();
@@ -140,11 +141,11 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller1 = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Metrics;
 
-        var controller2 = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Metrics;
 
@@ -182,7 +183,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         TelemetryFactory.Metrics.Should().BeOfType<NullMetricsTelemetryCollector>();
     }
@@ -207,7 +208,7 @@ public class TelemetryFactoryTests
             metricsEnabled: true,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
 
         TelemetryFactory.Metrics.Should().BeOfType<MetricsTelemetryCollector>();
     }
@@ -235,7 +236,7 @@ public class TelemetryFactoryTests
             debugEnabled: false);
 
         // First controller
-        var controller1 = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Config;
 
@@ -254,7 +255,7 @@ public class TelemetryFactoryTests
         var v1Controller1 = controller1.Should().BeOfType<TelemetryControllerV2>().Subject;
 
         // Second controller
-        var controller2 = factory.CreateTelemetryController(tracerSettings, settings);
+        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Config;
 

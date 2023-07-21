@@ -7,6 +7,8 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Transports;
+using Datadog.Trace.Tests.Agent;
 using FluentAssertions;
 using Xunit;
 
@@ -15,128 +17,219 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class TelemetryTransportManagerV2Tests
 {
     [Fact]
-    public async Task WhenHaveSuccess_ReturnsSuccess()
+    public async Task WhenHaveSuccess_ReturnsTrue()
     {
         const int requestCount = 10;
         var telemetryPushResults = Enumerable.Repeat(TelemetryPushResult.Success, requestCount).ToArray();
-        var transportManager = TestTransport.CreateManagerWith(telemetryPushResults);
+        var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
+        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
 
         for (var i = 0; i < requestCount; i++)
         {
             var telemetryPushResult = await transportManager.TryPushTelemetry(null!);
-            telemetryPushResult.Should().Be(TelemetryTransportResult.Success);
+            telemetryPushResult.Should().Be(true);
         }
     }
 
     [Theory]
-    [InlineData((int)TelemetryPushResult.TransientFailure)]
-    [InlineData((int)TelemetryPushResult.FatalError)]
-    public async Task OnInitialError_TreatsAsTransient(int errorType)
-    {
-        var transportManager = TestTransport.CreateManagerWith((TelemetryPushResult)errorType);
-
-        var telemetryPushResult = await transportManager.TryPushTelemetry(null!);
-
-        telemetryPushResult.Should().Be(TelemetryTransportResult.TransientError);
-    }
-
-    [Fact]
-    public async Task OnMultipleInitialFatalError_ReturnsFatal()
-    {
-        var transportManager = TestTransport.CreateManagerWith(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
-
-        await transportManager.TryPushTelemetry(null!);
-        var telemetryPushResult = await transportManager.TryPushTelemetry(null!);
-
-        telemetryPushResult.Should().Be(TelemetryTransportResult.FatalError);
-    }
-
-    [Fact]
-    public async Task OnMultipleFatalErrorAfterSuccess_ReturnsTransient()
-    {
-        var transportManager = TestTransport.CreateManagerWith(
-            TelemetryPushResult.Success,
-            TelemetryPushResult.FatalError,
-            TelemetryPushResult.FatalError);
-
-        await transportManager.TryPushTelemetry(null!);
-        var firstResult = await transportManager.TryPushTelemetry(null!);
-        var secondResult = await transportManager.TryPushTelemetry(null!);
-
-        firstResult.Should().Be(TelemetryTransportResult.TransientError);
-        secondResult.Should().Be(TelemetryTransportResult.TransientError);
-    }
-
-    [Theory]
     [InlineData((int)TelemetryPushResult.FatalError)]
     [InlineData((int)TelemetryPushResult.TransientFailure)]
-    public async Task OnMultipleTransientErrorsAfterSuccess_ReturnsFatal(int errorType)
+    public async Task WhenHaveFailure_ReturnsFalse(int result)
     {
-        var results = new[] { TelemetryPushResult.Success }
-                     .Concat(Enumerable.Repeat((TelemetryPushResult)errorType, TelemetryTransportManager.MaxTransientErrors))
-                     .Concat(new[] { TelemetryPushResult.FatalError })
-                     .ToArray();
+        const int requestCount = 10;
+        var telemetryPushResults = Enumerable.Repeat((TelemetryPushResult)result, requestCount).ToArray();
+        var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
+        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
 
-        var transportManager = TestTransport.CreateManagerWith(results);
-
-        await transportManager.TryPushTelemetry(null!);
-        for (var i = 0; i < TelemetryTransportManager.MaxTransientErrors - 1; i++)
+        for (var i = 0; i < requestCount; i++)
         {
-            var result = await transportManager.TryPushTelemetry(null!);
-            result.Should().Be(TelemetryTransportResult.TransientError);
+            var telemetryPushResult = await transportManager.TryPushTelemetry(null!);
+            telemetryPushResult.Should().Be(false);
         }
-
-        var finalResult = await transportManager.TryPushTelemetry(null!);
-
-        finalResult.Should().Be(TelemetryTransportResult.FatalError);
-    }
-
-    [Fact]
-    public async Task WithOneTransport_WhenRunOutOfTransports_ImmediatelyStopsWithoutCallingTransport()
-    {
-        var transportManager = TestTransport.CreateManagerWith(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
-
-        await transportManager.TryPushTelemetry(null!);
-        var result = await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.FatalError);
-
-        // This shouldn't be called by parent, but makes sure we don't crash
-        result = await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.FatalError); // short circuit
-    }
-
-    [Fact]
-    public async Task WithTwoTransports_WhenRunOutOfTransports_ImmediatelyStopsWithoutCallingTransport()
-    {
-        var transport1 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
-        var transport2 = new TestTransport(TelemetryPushResult.FatalError, TelemetryPushResult.FatalError);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport1, transport2 });
-
-        await transportManager.TryPushTelemetry(null!);
-        var result = await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.TransientError); // fatal error, on to next transport
-
-        await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.TransientError); // first failure of second transport
-
-        result = await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.FatalError); // second failure, out of transports
-
-        // shouldn't call this, but make sure we don't crash
-        result = await transportManager.TryPushTelemetry(null!);
-        result.Should().Be(TelemetryTransportResult.FatalError);
     }
 
     [Fact]
     public async Task TestTransport_ThrowsIfCalledTooManyTimes()
     {
         var transport1 = new TestTransport(TelemetryPushResult.TransientFailure);
-        var transportManager = new TelemetryTransportManagerV2(new ITelemetryTransport[] { transport1 });
+        var transports = new TelemetryTransports(transport1, null);
+        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
 
         await transportManager.TryPushTelemetry(null!);
 
         var call = async () => await transportManager.TryPushTelemetry(null!);
         await call.Should().ThrowExactlyAsync<InvalidOperationException>();
+    }
+
+    [Fact]
+    public async Task WhenHaveFailure_SwitchesTransport()
+    {
+        var transport1 = new TestTransport(TelemetryPushResult.TransientFailure, TelemetryPushResult.Success);
+        var transport2 = new TestTransport(TelemetryPushResult.TransientFailure);
+        var transports = new TelemetryTransports(transport1, transport2);
+        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
+
+        var fail1 = await transportManager.TryPushTelemetry(null!);
+        var fail2 = await transportManager.TryPushTelemetry(null!);
+        var success = await transportManager.TryPushTelemetry(null!);
+
+        fail1.Should().BeFalse();
+        fail2.Should().BeFalse();
+        success.Should().BeTrue();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WhenOnlyAgentAvailable_AlwaysUsesAgent(bool? initiallyAvailableInDiscovery)
+    {
+        var transports = new TelemetryTransports(
+            agentTransport: new TestTransport(),
+            agentlessTransport: null);
+        var discoveryService = new DiscoveryServiceMock();
+        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+
+        if (initiallyAvailableInDiscovery == true)
+        {
+            discoveryService.TriggerChange();
+        }
+        else if (initiallyAvailableInDiscovery == false)
+        {
+            discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+        }
+
+        // initial value
+        var nextTransport = manager.GetNextTransport(null);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // on error
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // agent no longer available
+        discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // agent available again
+        discoveryService.TriggerChange();
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentTransport);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void WhenOnlyAgentlessAvailable_AlwaysUsesAgentless(bool? initiallyAvailableInDiscovery)
+    {
+        var transports = new TelemetryTransports(agentTransport: null, agentlessTransport: new TestTransport());
+        var discoveryService = new DiscoveryServiceMock();
+        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+
+        if (initiallyAvailableInDiscovery == true)
+        {
+            discoveryService.TriggerChange();
+        }
+        else if (initiallyAvailableInDiscovery == false)
+        {
+            discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+        }
+
+        // initial value
+        var nextTransport = manager.GetNextTransport(null);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // on failure
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // agent no longer available
+        discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // agent available again
+        discoveryService.TriggerChange();
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WhenBothAvailable_AndInitiallyAvailableOrUnknownDiscovery_UsesAgent(bool notifyAvailable)
+    {
+        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var discoveryService = new DiscoveryServiceMock();
+        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+
+        if (notifyAvailable)
+        {
+            discoveryService.TriggerChange();
+        }
+
+        // initial value
+        var nextTransport = manager.GetNextTransport(null);
+        nextTransport.Should().Be(transports.AgentTransport);
+    }
+
+    [Fact]
+    public void WhenBothAvailable_AndInitiallyUnAvailable_UsesAgentless()
+    {
+        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var discoveryService = new DiscoveryServiceMock();
+        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+
+        discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+
+        // initial value
+        var nextTransport = manager.GetNextTransport(null);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+    }
+
+    [Fact]
+    public void WhenBothAvailable_UsesNextExpectedTransport()
+    {
+        var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
+        var discoveryService = new DiscoveryServiceMock();
+        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+
+        // initial value
+        var nextTransport = manager.GetNextTransport(null);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // we now know agent is available, but it failed, so switch to agentless
+        discoveryService.TriggerChange();
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // agentless failed, and agent is available, so switch to agent
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // agent failed, so switch back to agentless
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // Now know agent is not available, agentless failed, but stick to agentless
+        discoveryService.TriggerChange(telemetryProxyEndpoint: null);
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // Same as above
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
+
+        // Agent is available again, so switch to agent
+        discoveryService.TriggerChange();
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentTransport);
+
+        // And we're back to the starting point again
+        nextTransport = manager.GetNextTransport(nextTransport);
+        nextTransport.Should().Be(transports.AgentlessTransport);
     }
 
     internal class TestTransport : ITelemetryTransport
@@ -147,11 +240,6 @@ public class TelemetryTransportManagerV2Tests
         public TestTransport(params TelemetryPushResult[] results)
         {
             _results = results;
-        }
-
-        public static TelemetryTransportManagerV2 CreateManagerWith(params TelemetryPushResult[] results)
-        {
-            return new TelemetryTransportManagerV2(new ITelemetryTransport[] { new TestTransport(results) });
         }
 
         public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)

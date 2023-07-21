@@ -9,14 +9,14 @@ internal partial class MetricsTelemetryCollector
     public void RecordDistributionInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
         var index = 0 + (int)tag;
-        _buffer.Distributions[index].Values.TryEnqueue(value);
+        _buffer.Distributions[index].TryEnqueue(value);
     }
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Distribution" /> values.
     /// </summary>
-    private static DistributionKey[] GetDistributionBuffer()
-        => new DistributionKey[]
+    private static AggregatedDistribution[] GetDistributionBuffer()
+        => new AggregatedDistribution[]
         {
             // init_time, index = 0
             new(new[] { "component:total" }),
@@ -42,4 +42,6 @@ internal partial class MetricsTelemetryCollector
     /// </summary>
     private static int[] DistributionEntryCounts { get; }
         = new []{ 14, };
+
+    private const int _distributionsLength = 14;
 }
