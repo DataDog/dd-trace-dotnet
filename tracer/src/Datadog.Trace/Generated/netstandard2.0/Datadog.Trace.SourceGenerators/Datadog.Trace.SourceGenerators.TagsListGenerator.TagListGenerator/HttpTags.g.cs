@@ -45,6 +45,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] HttpStatusCodeBytes = new byte[] { 176, 104, 116, 116, 112, 46, 115, 116, 97, 116, 117, 115, 95, 99, 111, 100, 101 };
 #endif
+        // HostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> HostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] HostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -56,6 +62,7 @@ namespace Datadog.Trace.Tagging
                 "http.url" => HttpUrl,
                 "http-client-handler-type" => HttpClientHandlerType,
                 "http.status_code" => HttpStatusCode,
+                "out.host" => Host,
                 _ => base.GetTag(key),
             };
         }
@@ -78,6 +85,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "http.status_code": 
                     HttpStatusCode = value;
+                    break;
+                case "out.host": 
+                    Host = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(HttpTags));
@@ -118,6 +128,11 @@ namespace Datadog.Trace.Tagging
             if (HttpStatusCode is not null)
             {
                 processor.Process(new TagItem<string>("http.status_code", HttpStatusCode, HttpStatusCodeBytes));
+            }
+
+            if (Host is not null)
+            {
+                processor.Process(new TagItem<string>("out.host", Host, HostBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -164,6 +179,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("http.status_code (tag):")
                   .Append(HttpStatusCode)
+                  .Append(',');
+            }
+
+            if (Host is not null)
+            {
+                sb.Append("out.host (tag):")
+                  .Append(Host)
                   .Append(',');
             }
 

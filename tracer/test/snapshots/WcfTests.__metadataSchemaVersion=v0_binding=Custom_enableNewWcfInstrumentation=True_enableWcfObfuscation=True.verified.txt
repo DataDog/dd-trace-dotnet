@@ -1,1 +1,29 @@
-[]
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: WebClient,
+    Resource: WebClient,
+    Service: Samples.Wcf,
+    Type: custom,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      otel.library.name: Samples.Wcf,
+      otel.status_code: STATUS_CODE_UNSET,
+      otel.trace_id: Guid_1,
+      runtime-id: Guid_2,
+      span.kind: internal,
+      version: 1.0.0,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

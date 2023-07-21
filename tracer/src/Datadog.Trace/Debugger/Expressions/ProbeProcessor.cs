@@ -35,6 +35,15 @@ namespace Datadog.Trace.Debugger.Expressions
         /// <remarks>Exceptions should be caught and logged by the caller</remarks>
         internal ProbeProcessor(ProbeDefinition probe)
         {
+            InitializeProbeProcessor(probe);
+        }
+
+        internal ProbeInfo ProbeInfo { get; private set; }
+
+        private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && (_metric?.Json == null) && ProbeInfo.MetricKind == MetricKind.COUNT;
+
+        private void InitializeProbeProcessor(ProbeDefinition probe)
+        {
             _evaluator = default;
             var location = probe.Where.MethodName != null
                                ? ProbeLocation.Method
@@ -70,10 +79,6 @@ namespace Datadog.Trace.Debugger.Expressions
                 (probe as SpanDecorationProbe)?.TargetSpan);
         }
 
-        internal ProbeInfo ProbeInfo { get; }
-
-        private bool IsMetricCountWithoutExpression => ProbeInfo.ProbeType == ProbeType.Metric && (_metric?.Json == null) && ProbeInfo.MetricKind == MetricKind.COUNT;
-
         [DebuggerStepThrough]
         private bool HasCondition() => _condition.HasValue;
 
@@ -84,8 +89,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
         internal ProbeProcessor UpdateProbeProcessor(ProbeDefinition probe)
         {
-            SetExpressions(probe);
-            _evaluator = new ProbeExpressionEvaluator(_templates, _condition, _metric, _spanDecorations);
+            InitializeProbeProcessor(probe);
             return this;
         }
 

@@ -70,8 +70,13 @@
    <assembly fullname="Microsoft.Extensions.Logging" />
    <assembly fullname="Microsoft.Extensions.Logging.Abstractions" />
    <assembly fullname="Microsoft.Extensions.Primitives">
+      <type fullname="Microsoft.Extensions.Primitives.StringSegment" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues" />
       <type fullname="Microsoft.Extensions.Primitives.StringValues/Enumerator" />
+   </assembly>
+   <assembly fullname="Microsoft.Net.Http.Headers">
+      <type fullname="Microsoft.Net.Http.Headers.SameSiteMode" />
+      <type fullname="Microsoft.Net.Http.Headers.SetCookieHeaderValue" />
    </assembly>
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter" />
    <assembly fullname="Microsoft.VisualStudio.TestPlatform.TestFramework" />
@@ -670,6 +675,7 @@
       <type fullname="System.Runtime.CompilerServices.INotifyCompletion" />
       <type fullname="System.Runtime.CompilerServices.InternalsVisibleToAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsByRefLikeAttribute" />
+      <type fullname="System.Runtime.CompilerServices.IsExternalInit" />
       <type fullname="System.Runtime.CompilerServices.IsReadOnlyAttribute" />
       <type fullname="System.Runtime.CompilerServices.IsVolatile" />
       <type fullname="System.Runtime.CompilerServices.IteratorStateMachineAttribute" />
@@ -910,7 +916,6 @@
       <type fullname="System.Threading.Monitor" />
       <type fullname="System.Threading.Mutex" />
       <type fullname="System.Threading.ReaderWriterLockSlim" />
-      <type fullname="System.Threading.SpinLock" />
       <type fullname="System.Threading.SpinWait" />
       <type fullname="System.Threading.SynchronizationContext" />
       <type fullname="System.Threading.ThreadLocal`1" />

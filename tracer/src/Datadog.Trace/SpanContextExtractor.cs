@@ -22,6 +22,15 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SpanContextExtractor>();
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="SpanContextExtractor"/> class
+        /// </summary>
+        [PublicApi]
+        public SpanContextExtractor()
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Ctor);
+        }
+
         /// <inheritdoc />
         [PublicApi]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)

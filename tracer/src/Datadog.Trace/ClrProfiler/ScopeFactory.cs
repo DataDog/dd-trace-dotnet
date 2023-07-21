@@ -100,8 +100,8 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
-                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
                 span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
@@ -113,16 +113,13 @@ namespace Datadog.Trace.ClrProfiler
                 if (requestUri is not null)
                 {
                     tags.HttpUrl = HttpRequestUtils.GetUrl(requestUri, tracer.TracerManager.QueryStringManager);
-
-                    if (tags is HttpV1Tags v1Tags)
-                    {
-                        v1Tags.SetHost(HttpRequestUtils.GetNormalizedHost(requestUri.Host));
-                    }
+                    tags.Host = HttpRequestUtils.GetNormalizedHost(requestUri.Host);
                 }
 
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {

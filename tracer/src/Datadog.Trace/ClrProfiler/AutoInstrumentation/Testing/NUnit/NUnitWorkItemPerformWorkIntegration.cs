@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit;
     MinimumVersion = "3.0.0",
     MaximumVersion = "3.*.*",
     IntegrationName = NUnitIntegration.IntegrationName,
-    CallTargetIntegrationType = IntegrationType.Derived)]
+    CallTargetIntegrationKind = CallTargetKind.Derived)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public static class NUnitWorkItemPerformWorkIntegration

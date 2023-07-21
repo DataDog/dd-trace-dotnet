@@ -18,6 +18,7 @@ using Datadog.Trace.Debugger.ProbeStatuses;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Sink.Models;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using FluentAssertions;
 using Xunit;
 
@@ -85,6 +86,7 @@ public class LiveDebuggerTests
                     statsEndpoint: "traceStatsEndpoint",
                     dataStreamsMonitoringEndpoint: "dataStreamsMonitoringEndpoint",
                     eventPlatformProxyEndpoint: "eventPlatformProxyEndpoint",
+                    telemetryProxyEndpoint: "telemetryProxyEndpoint",
                     clientDropP0: false));
         }
 
@@ -141,6 +143,16 @@ public class LiveDebuggerTests
         }
 
         public byte[] GetCapabilities()
+        {
+            throw new NotImplementedException();
+        }
+
+        public GetRcmRequest BuildRequest(RcmClientTracer rcmTracer, string lastPollError)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void ProcessResponse(GetRcmResponse response)
         {
             throw new NotImplementedException();
         }

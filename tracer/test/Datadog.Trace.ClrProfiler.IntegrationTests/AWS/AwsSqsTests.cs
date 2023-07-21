@@ -61,6 +61,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsSqsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sqs");
+                settings.AddSimpleScrubber("out.host: aws_sqs_arm64", "out.host: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sqs");
                 settings.AddSimpleScrubber("peer.service: aws_sqs_arm64", "peer.service: aws_sqs");
                 if (!string.IsNullOrWhiteSpace(host))

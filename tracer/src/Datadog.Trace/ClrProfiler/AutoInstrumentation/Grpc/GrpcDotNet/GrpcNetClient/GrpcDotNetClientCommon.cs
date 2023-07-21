@@ -14,6 +14,7 @@ using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetClient
 {
@@ -36,13 +37,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
 
             try
             {
-                var tags = new GrpcClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var tags = clientSchema.CreateGrpcClientTags();
                 var method = grpcCall.Method;
+                tags.Host = HttpRequestUtils.GetNormalizedHost(grpcCall.Channel.Address.Host);
                 GrpcCommon.AddGrpcTags(tags, tracer, method.GrpcType, name: method.Name, path: method.FullName, serviceName: method.ServiceName);
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, GrpcCommon.ServiceName);
-
-                scope = tracer.StartActiveInternal(GrpcCommon.OperationName, tags: tags, serviceName: serviceName, startTime: null);
+                var operationName = clientSchema.GetOperationNameForProtocol("grpc");
+                var serviceName = clientSchema.GetServiceName(component: "grpc-client");
+                scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName, startTime: null);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Grpc;

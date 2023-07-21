@@ -12,7 +12,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
     /// <summary>
     /// Microsoft.Azure.Cosmos.Container.QueryIteratorsIntegrations calltarget instrumentation
     /// </summary>
-    // Database level instrumentations for quering users
+    /// <remarks>
+    /// https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs
+    /// </remarks>
+    // Database level instrumentations for querying users
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L609
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",
@@ -22,6 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L646
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",
@@ -32,7 +37,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
 
-    // Database level instrumentations for quering containers
+    // Database level instrumentations for querying containers
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L572
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",
@@ -42,6 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L538
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",
@@ -51,6 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L588
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",
@@ -60,6 +68,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CosmosDb
         MinimumVersion = CosmosCommon.Major3Minor6,
         MaximumVersion = CosmosCommon.Major3MinorX,
         IntegrationName = CosmosCommon.IntegrationName)]
+    // https://github.com/Azure/azure-cosmos-dotnet-v3/blob/a25730a77ab43a8e460ddc292f1a6d8eb193395a/Microsoft.Azure.Cosmos/src/Resource/Database/DatabaseCore.cs#L555C57-L555C57
     [InstrumentMethod(
         AssemblyName = CosmosCommon.MicrosoftAzureCosmosClientAssemblyName,
         TypeName = "Microsoft.Azure.Cosmos.DatabaseCore",

@@ -61,9 +61,9 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.10.0";
+    const string LibDdwafVersion = "1.11.0";
 
-    const string OlderLibDdwafVersion = "1.4.0";
+    string[] OlderLibDdwafVersions = new [] {"1.3.0", "1.10.0"};
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -494,25 +494,24 @@ partial class Build
 
                     var testBinFolder = testDir / "bin" / BuildConfiguration;
 
-                    //older waf to test
-                    var oldVersionTempPath = TempDirectory / $"libddwaf.{OlderLibDdwafVersion}";
-                    Console.WriteLine("oldversion path is:" + oldVersionTempPath);
-                    await DownloadWafVersion(OlderLibDdwafVersion, oldVersionTempPath);
-
                     // dotnet test runs under x86 for net461, even on x64 platforms
                     // so copy both, just to be safe
                     if (IsWin)
                     {
                         foreach (var arch in WafWindowsArchitectureFolders)
                         {
-                            var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
                             var source = MonitoringHomeDirectory / arch;
                             foreach (var fmk in frameworks)
                             {
                                 var dest = testBinFolder / fmk / arch;
                                 CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-                                CopyFile(oldVersionPath, dest / $"ddwaf-{OlderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
+                                foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                                {
+                                    var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                                    var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
+                                    await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                                    CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
+                                }
                             }
                         }
                     }
@@ -520,9 +519,7 @@ partial class Build
                     {
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
-                        var source = MonitoringHomeDirectory / (IsOsx ? "osx" : arch);
-                        var patchedArchWaf = (IsOsx ? archWaf + "-x64" : archWaf);
-                        var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
+
                         foreach (var fmk in frameworks)
                         {
                             // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
@@ -535,9 +532,15 @@ partial class Build
                             var dest = testBinFolder / fmk;
 
                             // use the files from the monitoring native folder
-                            CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-
-                            CopyFile(oldVersionPath, dest / $"libddwaf-{OlderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                            CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                            foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                            {
+                                var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                                var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                                var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
+                                await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                                CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                            }
                         }
                     }
                 });
@@ -1523,6 +1526,7 @@ partial class Build
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
+                "Sandbox.LegacySecurityPolicy", // Doesn't run on Linux
                 "Samples.Trimming",
             };
 
@@ -1583,7 +1587,7 @@ partial class Build
                         "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.GraphQL7" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
                         "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
+                        "Samples.AWS.Lambda" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                         var name when projectsToSkip.Contains(name) => false,
                         var name when multiPackageProjects.Contains(name) => false,
                         "Samples.AspNetCoreRazorPages" => true,

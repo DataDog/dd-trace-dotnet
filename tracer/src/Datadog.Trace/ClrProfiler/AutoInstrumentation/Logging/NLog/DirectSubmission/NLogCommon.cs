@@ -43,6 +43,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             {
                 var nlogAssembly = typeof(TTarget).Assembly;
                 _targetType = nlogAssembly.GetType("NLog.Targets.TargetWithContext");
+                if (_targetType?.GetProperty("IncludeScopeProperties") is not null)
+                {
+                    _nLogVersion = NLogVersion.NLog50;
+                    _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogV5Target(
+                                                             TracerManager.Instance.DirectLogSubmission.Sink,
+                                                             TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+                    return;
+                }
+
                 if (_targetType is not null)
                 {
                     _nLogVersion = NLogVersion.NLog45;
@@ -79,11 +88,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
         }
 
-        internal enum NLogVersion
+        private enum NLogVersion
         {
-            NLog45 = 0,
-            NLog43To45 = 1,
-            NLogPre43 = 2,
+            NLog50,
+            NLog45,
+            NLog43To45,
+            NLogPre43,
         }
 
         public static void AddDatadogTarget(object loggingConfiguration)
@@ -95,6 +105,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             switch (_nLogVersion)
             {
+                case NLogVersion.NLog50:
+                    AddDatadogTargetNLog50(loggingConfiguration, _targetProxy);
+                    break;
                 case NLogVersion.NLog45:
                     AddDatadogTargetNLog45(loggingConfiguration, _targetProxy);
                     break;
@@ -169,6 +182,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
 
             return properties;
+        }
+
+        // internal for testing
+        internal static void AddDatadogTargetNLog50(object loggingConfiguration, object targetProxy)
+        {
+            // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
+            // if not enabled.
+            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationProxy>();
+            if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
+            {
+                foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
+                {
+                    if (target is IDuckType { Instance: DirectSubmissionNLogV5Target })
+                    {
+                        // already added
+                        return;
+                    }
+                }
+            }
+
+            // need to add the new target to the logging configuraiton
+            loggingConfigurationProxy.AddTarget(NLogConstants.DatadogTargetName, targetProxy);
+            loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
+
+            Log.Information("Direct log submission via NLog 5.0+ enabled");
         }
 
         // internal for testing
@@ -262,6 +300,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.LoggingRules.Add(instance);
 
             Log.Information("Direct log submission via NLog <4.3 enabled");
+        }
+
+        // internal for testing
+        internal static object CreateNLogTargetProxy(DirectSubmissionNLogV5Target target)
+        {
+            if (_targetType is null)
+            {
+                ThrowHelper.ThrowNullReferenceException($"{nameof(_targetType)} is null");
+            }
+
+            // create a new instance of DirectSubmissionNLogTarget
+            var reverseProxy = target.DuckImplement(_targetType);
+            var targetProxy = reverseProxy.DuckCast<ITargetWithContextV5BaseProxy>();
+            target.SetBaseProxy(targetProxy);
+            // theoretically this should be called per logging configuration
+            // but we don't need to so hack in the call here
+            targetProxy.Initialize(null);
+            return reverseProxy;
         }
 
         // internal for testing

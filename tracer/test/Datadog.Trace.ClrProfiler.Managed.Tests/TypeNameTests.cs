@@ -36,13 +36,13 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { ClrNames.AsyncCallback, typeof(AsyncCallback) };
             yield return new object[] { ClrNames.HttpRequestMessage, typeof(System.Net.Http.HttpRequestMessage) };
             yield return new object[] { ClrNames.HttpResponseMessage, typeof(System.Net.Http.HttpResponseMessage) };
-            yield return new object[] { ClrNames.HttpResponseMessageTask, "System.Threading.Tasks.Task`1<System.Net.Http.HttpResponseMessage>" }; // Generic full names have square brackets
+            yield return new object[] { ClrNames.HttpResponseMessageTask, "System.Threading.Tasks.Task`1[System.Net.Http.HttpResponseMessage]" }; // Generic full names have square brackets
             yield return new object[] { ClrNames.GenericTask, typeof(Task<>) };
             yield return new object[] { ClrNames.Stream, typeof(Stream) };
-            yield return new object[] { ClrNames.IgnoreGenericTask, "System.Threading.Tasks.Task`1<_>" };
-            yield return new object[] { ClrNames.GenericParameterTask, "System.Threading.Tasks.Task`1<T>" };
-            yield return new object[] { ClrNames.ObjectTask, "System.Threading.Tasks.Task`1<System.Object>" };
-            yield return new object[] { ClrNames.Int32Task, "System.Threading.Tasks.Task`1<System.Int32>" };
+            yield return new object[] { ClrNames.GenericTaskWithGenericClassParameter, "System.Threading.Tasks.Task`1[!0]" };
+            yield return new object[] { ClrNames.GenericTaskWithGenericMethodParameter, "System.Threading.Tasks.Task`1[!!0]" };
+            yield return new object[] { ClrNames.ObjectTask, "System.Threading.Tasks.Task`1[System.Object]" };
+            yield return new object[] { ClrNames.Int32Task, "System.Threading.Tasks.Task`1[System.Int32]" };
             yield return new object[] { ClrNames.TimeSpan, "System.TimeSpan" };
             yield return new object[] { ClrNames.Type, typeof(Type) };
             yield return new object[] { ClrNames.Activity, "System.Diagnostics.Activity" };

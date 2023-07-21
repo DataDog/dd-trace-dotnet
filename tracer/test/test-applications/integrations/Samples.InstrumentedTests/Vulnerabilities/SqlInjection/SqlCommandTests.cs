@@ -39,7 +39,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQuery());
         AssertVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryWithTainted_VulnerabilityIsReported2()
     {
@@ -99,7 +99,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteReader(CommandBehavior.Default));
         AssertNotVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarWithTainted_VulnerabilityIsReported()
     {
@@ -113,14 +113,14 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalar());
         AssertNotVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithTainted_VulnerabilityIsReported()
     {
         TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteReaderAsync(CommandBehavior.Default));
         AssertVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteReaderAsyncCommandBehaviorWithNotTainted_VulnerabilityIsNotReported()
     {
@@ -183,7 +183,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         TestRealDDBBLocalCall(() => new SqlCommand(notTaintedQuery, databaseConnection).ExecuteScalarAsync());
         AssertNotVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteScalarAsyncCancellationTokenWithTainted_VulnerabilityIsReported()
     {
@@ -204,7 +204,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         TestRealDDBBLocalCall(() => new SqlCommand(taintedQuery, databaseConnection).ExecuteNonQueryAsync());
         AssertVulnerable();
     }
-    
+
     [Fact]
     public void GivenASqlCommand_WhenCallingExecuteNonQueryAsyncWithNotTainted_VulnerabilityIsNotReported()
     {

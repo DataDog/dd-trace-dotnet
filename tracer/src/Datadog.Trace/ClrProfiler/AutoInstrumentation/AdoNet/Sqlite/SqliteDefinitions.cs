@@ -15,7 +15,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "7.*.*",
     IntegrationName = nameof(IntegrationId.Sqlite),
     DataReaderType = "Microsoft.Data.Sqlite.SqliteDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<Microsoft.Data.Sqlite.SqliteDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[Microsoft.Data.Sqlite.SqliteDataReader]",
     TargetMethodAttributes = new[]
     {
         // int Microsoft.Data.Sqlite.SqliteCommand.ExecuteNonQuery()
@@ -41,7 +41,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     MaximumVersion = "2.*.*",
     IntegrationName = nameof(IntegrationId.Sqlite),
     DataReaderType = "System.Data.SQLite.SqliteDataReader",
-    DataReaderTaskType = "System.Threading.Tasks.Task`1<System.Data.SQLite.SqliteDataReader>",
+    DataReaderTaskType = "System.Threading.Tasks.Task`1[System.Data.SQLite.SqliteDataReader]",
     TargetMethodAttributes = new[]
     {
         // int System.Data.SQLite.SQLiteCommand.ExecuteNonQuery()

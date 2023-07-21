@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         MaximumVersion = MongoDbIntegration.Major2,
         MethodName = "ExecuteAsync",
         ParameterTypeNames = new[] { "MongoDB.Driver.Core.Connections.IConnection", ClrNames.CancellationToken },
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,
         TypeNames = new[]
         {
             "MongoDB.Driver.Core.WireProtocol.CommandUsingQueryMessageWireProtocol`1",

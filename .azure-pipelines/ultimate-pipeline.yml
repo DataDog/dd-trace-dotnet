@@ -101,7 +101,7 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 7.0.101
+  dotnetCoreSdkLatestVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -1693,12 +1693,6 @@ stages:
 
     strategy:
       matrix:
-        netcoreapp3_1:
-          publishTargetFramework: "netcoreapp3.1"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:core3.1"
-        net5:
-          publishTargetFramework: "net5.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:5.0"
         net6:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
@@ -3948,6 +3942,20 @@ stages:
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
 
+      - script: ./run.sh INTEGRATIONS
+        workingDirectory: system-tests
+        displayName: Run Integrations tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+
+      - script: |
+          ./run.sh PARAMETRIC
+        workingDirectory: system-tests
+        displayName: Run parametric tests
+        env:
+          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          TEST_LIBRARY: dotnet
+
       - script: |
           mkdir -p all_logs
           cp -r ./logs* ./all_logs
@@ -3959,17 +3967,6 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-
-      - script: |
-          cd parametric
-          pip install wheel
-          pip install -r requirements.txt
-          ./run.sh
-        workingDirectory: system-tests
-        displayName: Run parametric tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-          CLIENTS_ENABLED: dotnet
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

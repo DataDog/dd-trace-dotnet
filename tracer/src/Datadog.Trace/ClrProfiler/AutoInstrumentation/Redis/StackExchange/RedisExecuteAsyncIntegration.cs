@@ -16,7 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis.StackExchange
     [InstrumentMethod(
         AssemblyNames = new string[] { "StackExchange.Redis", "StackExchange.Redis.StrongName" },
         MethodName = "ExecuteAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<T>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1<!!0>",
         ParameterTypeNames = new[] { "StackExchange.Redis.Message", "StackExchange.Redis.ResultProcessor`1[!!0]", "StackExchange.Redis.ServerEndPoint" },
         MinimumVersion = "1.0.0",
         MaximumVersion = "2.*.*",

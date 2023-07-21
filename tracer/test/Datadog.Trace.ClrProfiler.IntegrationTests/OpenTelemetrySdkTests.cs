@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -42,7 +43,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "attribute-boolArrayEmpty",
             "attribute-doubleArray",
             "attribute-doubleArrayEmpty",
+            "telemetry.sdk.name",
+            "telemetry.sdk.language",
+            "telemetry.sdk.version"
         };
+
+        private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
 
         public OpenTelemetrySdkTests(ITestOutputHelper output)
             : base("OpenTelemetrySdk", output)
@@ -51,15 +57,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion(string.Empty);
         }
 
+        public static IEnumerable<object[]> GetData()
+        {
+            foreach (var version in PackageVersions.OpenTelemetry)
+            {
+                yield return new object[] { version[0], false };
+                yield return new object[] { version[0], true };
+            }
+        }
+
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsOpenTelemetry(metadataSchemaVersion, Resources, ExcludeTags);
 
         [SkippableTheory]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [MemberData(nameof(PackageVersions.OpenTelemetry), MemberType = typeof(PackageVersions))]
-        public async Task SubmitsTraces(string packageVersion)
+        [MemberData(nameof(GetData))]
+        public async Task SubmitsTraces(string packageVersion, bool legacyOperationNames)
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
+
+            if (legacyOperationNames)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "true");
+            }
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -82,9 +102,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion);
+                var filename = nameof(OpenTelemetrySdkTests) + GetSuffix(packageVersion, legacyOperationNames);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -115,9 +136,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot
-                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion);
+                var filename = nameof(OpenTelemetrySdkTests) + "WithActivitySource" + GetSuffix(packageVersion, false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
+                settings.AddRegexScrubber(_versionRegex, "telemetry.sdk.version: sdk-version");
                 await VerifyHelper.VerifySpans(spans, settings)
                                   .UseFileName(filename)
                                   .DisableRequireUniquePrefix();
@@ -144,18 +166,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static string GetSuffix(string packageVersion)
+        private static string GetSuffix(string packageVersion, bool legacyOperationNames)
         {
+            var legacyEnabled = string.Empty;
+            if (legacyOperationNames)
+            {
+                legacyEnabled = "_withLegacyOperationName";
+            }
+
             // The snapshots are only different in .NET Core 2.1 - .NET 5 with package version 1.0.1
 #if !NET6_0_OR_GREATER
             if (!string.IsNullOrEmpty(packageVersion)
              && new Version(packageVersion) < new Version("1.2.0"))
             {
-                return "_1_0";
+                return "_1_0" + legacyEnabled;
             }
 #endif
 
-            return string.Empty; // default is >= 1.2.0
+            // New tags added in v1.5.1
+            if (!string.IsNullOrEmpty(packageVersion)
+            && new Version(packageVersion) <= new Version("1.5.0"))
+            {
+                return "_up_to_1_5_0" + legacyEnabled;
+            }
+
+            return string.Empty + legacyEnabled;
         }
     }
 }

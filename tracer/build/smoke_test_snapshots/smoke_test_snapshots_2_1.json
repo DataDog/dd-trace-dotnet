@@ -14,6 +14,7 @@
         "http.method": "GET",
         "http.status_code": "200",
         "http.url": "http://localhost:5000/api/values",
+        "out.host": "localhost",
         "runtime-id": "b34b2bed-9444-4597-87f6-b8202b03b1b8",
         "span.kind": "client",
         "_dd.p.dm": "-0"
@@ -37,7 +38,7 @@
       "parent_id": 1,
       "type": "web",
       "meta": {
-        "_dd.appsec.waf.version": "1.10.0",
+        "_dd.appsec.waf.version": "1.11.0",
         "_dd.runtime_family": "dotnet",
         "aspnet_core.route": "api/values",
         "component": "aspnet_core",

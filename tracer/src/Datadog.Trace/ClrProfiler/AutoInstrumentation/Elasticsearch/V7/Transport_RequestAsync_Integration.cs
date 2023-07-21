@@ -18,7 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch.V7
         AssemblyName = ElasticsearchV7Constants.ElasticsearchAssemblyName,
         TypeName = ElasticsearchV7Constants.TransportTypeName,
         MethodName = "RequestAsync",
-        ReturnTypeName = ClrNames.GenericParameterTask,
+        ReturnTypeName = ClrNames.GenericTaskWithGenericClassParameter,
         ParameterTypeNames = new[] { "Elasticsearch.Net.HttpMethod", ClrNames.String, ClrNames.CancellationToken, "Elasticsearch.Net.PostData", "Elasticsearch.Net.IRequestParameters" },
         MinimumVersion = ElasticsearchV7Constants.Version7,
         MaximumVersion = ElasticsearchV7Constants.Version7,

@@ -5,7 +5,7 @@
 
 #nullable enable
 using System;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
@@ -25,40 +25,34 @@ internal class TelemetryControllerV2 : ITelemetryController
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryControllerV2>();
     private readonly TelemetryDataBuilderV2 _dataBuilder = new();
+    private readonly ConcurrentQueue<WorkItem> _queue = new();
     private readonly TelemetryDataAggregator _aggregator = new(previous: null);
-    private readonly ApplicationTelemetryCollectorV2 _application;
+    private readonly ApplicationTelemetryCollectorV2 _application = new();
     private readonly IConfigurationTelemetry _configuration;
     private readonly IDependencyTelemetryCollector _dependencies;
-    private readonly IntegrationTelemetryCollector _integrations;
-    private readonly ProductsTelemetryCollector _products;
-    private readonly TelemetryTransportManagerV2 _transportManager;
+    private readonly IntegrationTelemetryCollector _integrations = new();
+    private readonly ProductsTelemetryCollector _products = new();
     private readonly IMetricsTelemetryCollector _metrics;
-    private readonly TimeSpan _flushInterval;
-    private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
-    private bool _fatalError;
+    private readonly Scheduler _scheduler;
+    private TelemetryTransportManagerV2 _transportManager;
+    private bool _sendTelemetry;
+    private bool _isStarted;
     private string? _namingVersion;
-    private bool _appStartedSent;
 
     internal TelemetryControllerV2(
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
-        IntegrationTelemetryCollector integrations,
         IMetricsTelemetryCollector metrics,
-        ProductsTelemetryCollector products,
-        ApplicationTelemetryCollectorV2 application,
         TelemetryTransportManagerV2 transportManager,
         TimeSpan flushInterval)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
-        _integrations = integrations ?? throw new ArgumentNullException(nameof(integrations));
-        _products = products ?? throw new ArgumentNullException(nameof(products));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
-        _application = application ?? throw new ArgumentNullException(nameof(application));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
-        _flushInterval = flushInterval;
+        _scheduler = new(flushInterval, metricsAggregationInterval: TimeSpan.FromSeconds(10), _processExit);
 
         try
         {
@@ -80,8 +74,6 @@ internal class TelemetryControllerV2 : ITelemetryController
         _flushTask = Task.Run(PushTelemetryLoopAsync);
     }
 
-    public bool FatalError => Volatile.Read(ref _fatalError);
-
     public void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName)
     {
         // Note that this _doesn't_ clear the configuration held by ImmutableTracerSettings
@@ -91,11 +83,13 @@ internal class TelemetryControllerV2 : ITelemetryController
         settings.Telemetry.CopyTo(_configuration);
         _application.RecordTracerSettings(settings, defaultServiceName);
         _namingVersion = ((int)settings.MetadataSchemaVersion).ToString();
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.EnableSending, null));
     }
 
     public void Start()
     {
-        _tracerInitialized.TrySetResult(true);
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTracerStarted, null));
+        _scheduler.SetTracerInitialized();
     }
 
     public void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error)
@@ -129,23 +123,37 @@ internal class TelemetryControllerV2 : ITelemetryController
     public void IntegrationDisabledDueToError(IntegrationId integrationId, string error)
         => _integrations.IntegrationDisabledDueToError(integrationId, error);
 
-    public async Task DisposeAsync(bool sendAppClosingTelemetry)
+    public Task DisposeAsync(bool sendAppClosingTelemetry)
     {
-        TerminateLoop(sendAppClosingTelemetry);
+        return Task.CompletedTask;
+    }
+
+    public async Task DisposeAsync()
+    {
+        TerminateLoop();
         await _flushTask.ConfigureAwait(false);
     }
 
-    public Task DisposeAsync()
+    public void DisableSending()
     {
-        return DisposeAsync(sendAppClosingTelemetry: true);
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.DisableSending, null));
     }
 
-    private void TerminateLoop(bool sendAppClosingTelemetry)
+    public void SetTransportManager(TelemetryTransportManagerV2 manager)
+    {
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTransportManager, manager));
+    }
+
+    public void SetFlushInterval(TimeSpan flushInterval)
+    {
+        _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetFlushInterval, flushInterval));
+    }
+
+    private void TerminateLoop()
     {
         // If there's a fatal error, TerminateLoop() may be called more than once
         // (at error-time, and at process end). The following are idempotent so that's safe.
-        _processExit.TrySetResult(sendAppClosingTelemetry);
-        _tracerInitialized.TrySetResult(true);
+        _processExit.TrySetResult(true);
         AppDomain.CurrentDomain.AssemblyLoad -= CurrentDomain_OnAssemblyLoad;
     }
 
@@ -168,48 +176,71 @@ internal class TelemetryControllerV2 : ITelemetryController
 
     private async Task PushTelemetryLoopAsync()
     {
-#if !NET5_0_OR_GREATER
-        var tasks = new Task[2];
-        tasks[0] = _tracerInitialized.Task;
-        tasks[1] = _processExit.Task;
-
-        // wait for initialization before trying to send first telemetry
-        // .NET 5.0 has an explicit overload for this
-        await Task.WhenAny(tasks).ConfigureAwait(false);
-#else
-        await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
-#endif
-
         while (true)
         {
-            if (_processExit.Task.IsCompleted)
+            // Process all the messages in the queue before sending next telemetry
+            while (_queue.TryDequeue(out var item))
+            {
+                switch (item.Type)
+                {
+                    case WorkItem.ItemType.SetTransportManager:
+                        _transportManager.Dispose(); // dispose the old one
+                        _transportManager = (TelemetryTransportManagerV2)item.State!;
+                        break;
+                    case WorkItem.ItemType.SetTracerStarted:
+                        _isStarted = true;
+                        break;
+                    case WorkItem.ItemType.EnableSending:
+                        _sendTelemetry = true;
+                        break;
+                    case WorkItem.ItemType.DisableSending:
+                        _sendTelemetry = false;
+                        break;
+                    case WorkItem.ItemType.SetFlushInterval:
+                        _scheduler.SetFlushInterval((TimeSpan)item.State!);
+                        break;
+                }
+            }
+
+            if (_scheduler.ShouldAggregateMetrics)
+            {
+                // aggregate metrics if the timer has expired or if we're about to exit
+                _metrics.AggregateMetrics();
+            }
+
+            var isFinalPush = _processExit.Task.IsCompleted;
+            if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
+            {
+                await PushTelemetry(sendAppClosing: isFinalPush).ConfigureAwait(false);
+            }
+
+            if (isFinalPush)
             {
                 Log.Debug("Process exit requested, ending telemetry loop");
-                var sendAppClosingTelemetry = _processExit.Task.Result;
-                if (sendAppClosingTelemetry)
-                {
-                    await PushTelemetry(isFinalPush: true).ConfigureAwait(false);
-                }
-
+                TerminateLoop();
                 return;
             }
 
-            await PushTelemetry(isFinalPush: false).ConfigureAwait(false);
-
-#if NET5_0_OR_GREATER
-            // .NET 5.0 has an explicit overload for this
-            await Task.WhenAny(Task.Delay(_flushInterval), _processExit.Task).ConfigureAwait(false);
-#else
-            tasks[0] = Task.Delay(_flushInterval);
-            await Task.WhenAny(tasks).ConfigureAwait(false);
-#endif
+            await _scheduler.WaitForNextInterval().ConfigureAwait(false);
         }
     }
 
-    private async Task PushTelemetry(bool isFinalPush)
+    private async Task PushTelemetry(bool sendAppClosing)
     {
         try
         {
+            // Always retrieve the metrics data, regardless of whether it's consumed, because we
+            // need to make sure we clear the buffers. If we don't we could get overflows.
+            // We will lose these metrics if the endpoint errors, but better than growing too much.
+            MetricResults? metrics = _metrics.GetMetrics();
+
+            if (!_sendTelemetry)
+            {
+                // sending is currently disabled, so don't fetch the other data or attempt to send
+                Log.Debug("Telemetry pushing currently disabled, skipping");
+                return;
+            }
+
             var application = _application.GetApplicationData();
             var host = _application.GetHostData();
             if (application is null || host is null)
@@ -218,29 +249,19 @@ internal class TelemetryControllerV2 : ITelemetryController
                 return;
             }
 
-            var success = await PushTelemetry(application, host).ConfigureAwait(false);
-            if (!success)
-            {
-                if (isFinalPush)
-                {
-                    Log.Debug("Unable to send final telemetry, skipping app-closing telemetry ");
-                    return;
-                }
-                else
-                {
-                    _fatalError = true;
-                    Log.Debug("Unable to send telemetry, ending telemetry loop");
-                    TerminateLoop(sendAppClosingTelemetry: false);
-                }
-            }
+            // use values from previous failed attempt if necessary
+            var input = _aggregator.Combine(
+                _configuration.GetData(),
+                _dependencies.GetData(),
+                _integrations.GetData(),
+                in metrics,
+                _products.GetData());
 
-            if (isFinalPush)
-            {
-                var closingTelemetryData = _dataBuilder.BuildAppClosingTelemetryData(application, host, _namingVersion);
+            var data = _dataBuilder.BuildTelemetryData(application, host, in input, _namingVersion, sendAppClosing);
 
-                Log.Debug("Pushing app-closing telemetry");
-                await _transportManager.TryPushTelemetry(closingTelemetryData).ConfigureAwait(false);
-            }
+            Log.Debug("Pushing telemetry changes");
+            var result = await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);
+            _aggregator.SaveDataIfRequired(result, in input);
         }
         catch (Exception ex)
         {
@@ -248,41 +269,158 @@ internal class TelemetryControllerV2 : ITelemetryController
         }
     }
 
-    private async Task<bool> PushTelemetry(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host)
+    private readonly struct WorkItem
     {
-        // use values from previous failed attempt if necessary
-        var input = new TelemetryInput(
-            _configuration.GetData(),
-            _dependencies.GetData(),
-            _integrations.GetData(),
-            _metrics.GetMetrics(),
-            _products.GetData());
-
-        var sendAppStarted = !_appStartedSent;
-        var data = _dataBuilder.BuildTelemetryData(application, host, in input, sendAppStarted, _namingVersion);
-
-        Log.Debug("Pushing telemetry changes");
-        var result = await _transportManager.TryPushTelemetry(data).ConfigureAwait(false);
-        _aggregator.SaveDataIfRequired(result, in input);
-
-        switch (result)
+        public WorkItem(ItemType type, object? state)
         {
-            case TelemetryTransportResult.FatalError:
-                return false; // big problem, abandon hope
+            Type = type;
+            State = state;
+        }
 
-            case TelemetryTransportResult.TransientError:
-                return true; // there was an error, but try again next time
+        public enum ItemType
+        {
+            SetTransportManager,
+            SetFlushInterval,
+            EnableSending,
+            DisableSending,
+            SetTracerStarted
+        }
 
-            case TelemetryTransportResult.Success:
-                if (sendAppStarted)
-                {
-                    _appStartedSent = true;
-                }
+        public ItemType Type { get; }
 
-                return true;
-            default:
-                // Should never happen
-                throw new Exception($"Unexpected telemetry result type: {result}");
+        public object? State { get; }
+    }
+
+    /// <summary>
+    /// Internal for testing
+    /// </summary>
+    internal class Scheduler
+    {
+        private const int DelayTaskIndex = 0;
+        private const int ProcessTaskIndex = 1;
+        private const int InitializationTaskIndex = 2;
+
+        private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _processExitSource;
+        private readonly Task[] _tasks;
+        private readonly TimeSpan _metricsAggregationInterval;
+        private readonly IClock _clock;
+        private readonly IDelayFactory _delayFactory;
+        private TimeSpan _flushInterval;
+        private DateTime _lastFlush;
+        private DateTime _lastAggregation;
+        private bool _initializationFlushExecuted = false;
+
+        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource)
+        : this(flushInterval, metricsAggregationInterval, processExitSource, new Clock(), new DelayFactory())
+        {
+        }
+
+        // For testing only
+        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        {
+            _clock = clock;
+            _delayFactory = delayFactory;
+            _processExitSource = processExitSource;
+            _flushInterval = flushInterval;
+            _metricsAggregationInterval = metricsAggregationInterval;
+            ShouldAggregateMetrics = false; // wait for first interval before aggregating metrics
+            ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
+            _lastFlush = _lastAggregation = _clock.UtcNow;
+
+            // Using a task array instead of overloads to avoid allocating the array every loop
+            _tasks = new Task[3];
+            _tasks[DelayTaskIndex] = Task.CompletedTask; // Replaced on first iteration of WaitForNextInterval(), but ensures there's no nulls around
+            _tasks[ProcessTaskIndex] = processExitSource.Task;
+            _tasks[InitializationTaskIndex] = _tracerInitialized.Task;
+        }
+
+        public interface IDelayFactory
+        {
+            Task Delay(TimeSpan delay);
+        }
+
+        public bool ShouldAggregateMetrics { get; private set; }
+
+        public bool ShouldFlushTelemetry { get; private set; }
+
+        public void SetFlushInterval(TimeSpan flushInterval)
+        {
+            _flushInterval = flushInterval;
+        }
+
+        public void SetTracerInitialized()
+        {
+            _tracerInitialized.TrySetResult(true);
+        }
+
+        public async Task WaitForNextInterval()
+        {
+            // Calculate how long before the next flush. Accounts for the fact that it might
+            // take a long time to push telemetry if the network is slow or faulty
+            var nextAggregation = _lastAggregation.Add(_metricsAggregationInterval);
+
+            // Note that we don't start flushing until initialized
+            var nextFlush = _lastFlush.Add(_flushInterval);
+            var nextAction = !_initializationFlushExecuted || nextAggregation < nextFlush ? nextAggregation : nextFlush;
+            var waitPeriod = nextAction - _clock.UtcNow;
+
+            Task? completedTask = null;
+            if (waitPeriod <= TimeSpan.Zero)
+            {
+                Log.Debug(
+                    "Time to push telemetry exceeded the flush interval, triggering the next iteration immediately");
+            }
+            else
+            {
+                _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod);
+                completedTask = await Task.WhenAny(_tasks).ConfigureAwait(false);
+            }
+
+            if (_processExitSource.Task.IsCompleted)
+            {
+                // end of the line, flush everything, don't bother recalculating;
+                ShouldAggregateMetrics = true;
+                ShouldFlushTelemetry = true;
+                return;
+            }
+
+            // Should we aggregate metrics?
+            var now = _clock.UtcNow;
+            ShouldAggregateMetrics = nextAggregation <= now;
+            if (ShouldAggregateMetrics)
+            {
+                _lastAggregation = now;
+            }
+
+            // Should we flush telemetry?
+            if (completedTask == _tracerInitialized.Task)
+            {
+                _initializationFlushExecuted = true;
+                // We've just been started, so should always flush telemetry
+                ShouldFlushTelemetry = true;
+                // replace the tracerInitializedTask with a task that never completes
+                _tasks[InitializationTaskIndex] = Task.Delay(Timeout.Infinite);
+            }
+            else
+            {
+                ShouldFlushTelemetry = _initializationFlushExecuted && (nextFlush <= now);
+            }
+
+            if (ShouldFlushTelemetry)
+            {
+                _lastFlush = now;
+            }
+        }
+
+        private class Clock : IClock
+        {
+            public DateTime UtcNow => DateTime.UtcNow;
+        }
+
+        private class DelayFactory : IDelayFactory
+        {
+            public Task Delay(TimeSpan delay) => Task.Delay(delay);
         }
     }
 }

@@ -87,8 +87,8 @@ public class TelemetryMetricGeneratorTests
                 /// <summary>
                 /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> values.
                 /// </summary>
-                private static MetricKey[] GetTestMetricBuffer()
-                    => new MetricKey[]
+                private static AggregatedMetric[] GetTestMetricBuffer()
+                    => new AggregatedMetric[]
                     {
                     };
 
@@ -99,6 +99,8 @@ public class TelemetryMetricGeneratorTests
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ };
+
+                private const int _countsLength = 0;
             }
             """;
 
@@ -232,31 +234,31 @@ public class TelemetryMetricGeneratorTests
                 // Negative values are normalized during polling
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[0].Value, increment);
+                    Interlocked.Add(ref _buffer.Counts[0], increment);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int increment = 1)
                 {
                     var index = 1 + (int)tag;
-                    Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+                    Interlocked.Add(ref _buffer.Counts[index], increment);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1)
                 {
                     var index = 4 + ((int)tag1 * 2) + (int)tag2;
-                    Interlocked.Add(ref _buffer.Counts[index].Value, increment);
+                    Interlocked.Add(ref _buffer.Counts[index], increment);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[10].Value, increment);
+                    Interlocked.Add(ref _buffer.Counts[10], increment);
                 }
 
                 /// <summary>
                 /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> values.
                 /// </summary>
-                private static MetricKey[] GetTestMetricBuffer()
-                    => new MetricKey[]
+                private static AggregatedMetric[] GetTestMetricBuffer()
+                    => new AggregatedMetric[]
                     {
                         // metric.zero, index = 0
                         new(null),
@@ -282,6 +284,8 @@ public class TelemetryMetricGeneratorTests
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 3, 6, 1, };
+
+                private const int _countsLength = 11;
             }
             """;
 
@@ -437,31 +441,31 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[0].Value, value);
+                    Interlocked.Exchange(ref _buffer.Gauges[0], value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int value)
                 {
                     var index = 1 + (int)tag;
-                    Interlocked.Exchange(ref _buffer.Gauges[index].Value, value);
+                    Interlocked.Exchange(ref _buffer.Gauges[index], value);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int value)
                 {
                     var index = 4 + ((int)tag1 * 2) + (int)tag2;
-                    Interlocked.Exchange(ref _buffer.Gauges[index].Value, value);
+                    Interlocked.Exchange(ref _buffer.Gauges[index], value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[10].Value, value);
+                    Interlocked.Exchange(ref _buffer.Gauges[10], value);
                 }
 
                 /// <summary>
                 /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> values.
                 /// </summary>
-                private static MetricKey[] GetTestMetricBuffer()
-                    => new MetricKey[]
+                private static AggregatedMetric[] GetTestMetricBuffer()
+                    => new AggregatedMetric[]
                     {
                         // metric.zero, index = 0
                         new(null),
@@ -487,6 +491,8 @@ public class TelemetryMetricGeneratorTests
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 3, 6, 1, };
+
+                private const int _gaugesLength = 11;
             }
             """;
 
@@ -642,31 +648,31 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(double value)
                 {
-                    _buffer.Distributions[0].Values.TryEnqueue(value);
+                    _buffer.Distributions[0].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, double value)
                 {
                     var index = 1 + (int)tag;
-                    _buffer.Distributions[index].Values.TryEnqueue(value);
+                    _buffer.Distributions[index].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, double value)
                 {
                     var index = 4 + ((int)tag1 * 2) + (int)tag2;
-                    _buffer.Distributions[index].Values.TryEnqueue(value);
+                    _buffer.Distributions[index].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(double value)
                 {
-                    _buffer.Distributions[10].Values.TryEnqueue(value);
+                    _buffer.Distributions[10].TryEnqueue(value);
                 }
 
                 /// <summary>
                 /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.TestMetric" /> values.
                 /// </summary>
-                private static DistributionKey[] GetTestMetricBuffer()
-                    => new DistributionKey[]
+                private static AggregatedDistribution[] GetTestMetricBuffer()
+                    => new AggregatedDistribution[]
                     {
                         // metric.zero, index = 0
                         new(null),
@@ -692,6 +698,8 @@ public class TelemetryMetricGeneratorTests
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 3, 6, 1, };
+
+                private const int _distributionsLength = 11;
             }
             """;
 

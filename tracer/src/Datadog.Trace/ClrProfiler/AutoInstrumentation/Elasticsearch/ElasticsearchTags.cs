@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Tagging;
 
@@ -53,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             {
                 return _peerServiceOverride is not null
                         ? "peer.service"
-                        : "network.destination.name";
+                        : "out.host";
             }
         }
     }

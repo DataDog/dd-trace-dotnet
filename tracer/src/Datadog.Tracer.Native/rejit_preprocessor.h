@@ -42,6 +42,9 @@ protected:
     virtual const bool GetIsDerived(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsInterface(const RejitRequestDefinition& definition) = 0;
     virtual const bool GetIsExactSignatureMatch(const RejitRequestDefinition& definition) = 0;
+    virtual const bool GetIsEnabled(const RejitRequestDefinition& definition) = 0;
+    virtual const bool SupportsSelectiveEnablement() = 0;
+
     virtual const std::unique_ptr<RejitHandlerModuleMethod> CreateMethod(mdMethodDef methodDef,
                                                                          RejitHandlerModule* module,
                                                                          const FunctionInfo& functionInfo,
@@ -54,6 +57,10 @@ protected:
                           ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, mdTypeDef typeDef,
                           std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
                           const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
+
+    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
+                                  const std::vector<RejitRequestDefinition>& definitions,
+                                  std::vector<MethodIdentifier>& rejitRequests, bool isRevert);
 
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
@@ -73,10 +80,6 @@ public:
     void EnqueueRequestRevertForLoadedModules(const std::vector<ModuleID>& modulesVector,
                                              const std::vector<RejitRequestDefinition>& requests,
                                              std::shared_ptr<std::promise<ULONG>> promise);
-
-    ULONG PreprocessRejitRequests(const std::vector<ModuleID>& modules,
-                                  const std::vector<RejitRequestDefinition>& definitions,
-                                  std::vector<MethodIdentifier>& rejitRequests);
 
     void EnqueuePreprocessRejitRequests(const std::vector<ModuleID>& modules,
                                   const std::vector<RejitRequestDefinition>& definitions,
@@ -102,6 +105,9 @@ protected:
     const bool GetIsDerived(const IntegrationDefinition& definition) final;
     const bool GetIsInterface(const IntegrationDefinition& definition) final;
     const bool GetIsExactSignatureMatch(const IntegrationDefinition& definition) final;
+    const bool GetIsEnabled(const IntegrationDefinition& definition) final;
+    const bool SupportsSelectiveEnablement() final;
+
     const std::unique_ptr<RejitHandlerModuleMethod>
     CreateMethod(mdMethodDef methodDef, RejitHandlerModule* module, const FunctionInfo& functionInfo,
                  const IntegrationDefinition& integrationDefinition) final;

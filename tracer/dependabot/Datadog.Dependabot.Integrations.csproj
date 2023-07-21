@@ -28,28 +28,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.106.34 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.106.34" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.200 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.200" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.101.62 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.62" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.102.2 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.102.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.33.0 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.33.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.35.2 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.2" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.5 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.4.5" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.8 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.4.8" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -58,8 +58,8 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.4.1 -->
-    <PackageReference Include="GraphQL" Version="7.4.1" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.5.0 -->
+    <PackageReference Include="GraphQL" Version="7.5.0" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
@@ -73,8 +73,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.0.5 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.0.5" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.3.3 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.3.3" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -93,13 +93,13 @@
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Assembly: Microsoft.Extensions.Logging.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/7.0.0 -->
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging.Abstractions/7.0.1 -->
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.1" />
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.1.1 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.2.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.2.0" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
@@ -108,18 +108,18 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.19.1 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.19.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.20.0 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.20.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.19.1 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.19.1" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.20.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
-    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.0.2 -->
-    <PackageReference Include="MSTest.TestAdapter" Version="3.0.2" />
+    <!-- Latest package https://www.nuget.org/packages/MSTest.TestAdapter/3.1.1 -->
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.TestFramework -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.TestFramework -->
@@ -128,8 +128,8 @@
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.0.33 -->
-    <PackageReference Include="MySql.Data" Version="8.0.33" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.1.0 -->
+    <PackageReference Include="MySql.Data" Version="8.1.0" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.1.4 -->
-    <PackageReference Include="NLog" Version="5.1.4" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.2 -->
+    <PackageReference Include="NLog" Version="5.2.2" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -153,13 +153,13 @@
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.4.0 -->
-    <PackageReference Include="OpenTelemetry" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.5.1 -->
+    <PackageReference Include="OpenTelemetry" Version="1.5.1" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.4.0 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.5.1 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.5.1" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
@@ -173,13 +173,13 @@
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
-    <!-- Latest package https://www.nuget.org/packages/Serilog/2.12.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Serilog/3.0.1 -->
     <PackageReference Include="Serilog" Version="2.12.0" />
 
     <!-- Integration: ServiceStack.Redis -->
     <!-- Assembly: ServiceStack.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.8.0 -->
-    <PackageReference Include="ServiceStack.Redis" Version="6.8.0" />
+    <!-- Latest package https://www.nuget.org/packages/ServiceStack.Redis/6.9.0 -->
+    <PackageReference Include="ServiceStack.Redis" Version="6.9.0" />
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
@@ -193,18 +193,18 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.5 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.9 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.9" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
-    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/1.0.117 -->
-    <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <!-- Latest package https://www.nuget.org/packages/System.Data.SQLite/1.0.118 -->
+    <PackageReference Include="System.Data.SQLite" Version="1.0.118" />
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.111 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.6.111" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.122 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
@@ -213,7 +213,7 @@
 
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/4.10.2 -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.0.0 -->
     <PackageReference Include="System.ServiceModel.Http" Version="4.10.2" />
 
     <!-- Integration: System.Net.Requests -->
@@ -223,13 +223,43 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.4.2 -->
-    <PackageReference Include="xunit" Version="2.4.2" />
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.5.0 -->
+    <PackageReference Include="xunit" Version="2.5.0" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.4.2 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.4.2" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.5.0 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.5.0" />
+
+    <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
+    <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Abstractions/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Abstractions" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.AspNetCore.Identity -->
+    <!-- Assembly: Microsoft.AspNetCore.Identity -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
+    <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.2.5 -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+
+    <!-- Integration: Microsoft.AspNetCore.Server.IIS -->
+    <!-- Assembly: Microsoft.AspNetCore.Server.IIS -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.IIS/2.2.6 -->
+    <PackageReference Include="Microsoft.AspNetCore.Server.IIS" Version="2.2.6" />
+
+    <!-- Integration: Microsoft.AspNetCore.Server.Kestrel.Core -->
+    <!-- Assembly: Microsoft.AspNetCore.Server.Kestrel.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.Kestrel.Core/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Core" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.Extensions.Identity.Core -->
+    <!-- Assembly: Microsoft.Extensions.Identity.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.9 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.9" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
@@ -238,18 +268,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.53.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.53.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.53.0" />
-
-    <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
-    <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.2.5 -->
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
 
   </ItemGroup>
 

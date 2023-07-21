@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -1287,16 +1287,36 @@ void CorProfiler::DisableTracerCLRProfiler()
     Shutdown();
 }
 
-void CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
-    if (_dataflow != nullptr)
+    const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
+    for (int i = 0; i < length; i++)
     {
-        Logger::Info("Registerubg IAST Aspects.");
-        _dataflow->LoadAspects(aspects, aspectsLength);
-    }
-    else
-    {
-        Logger::Info("IAST is disabled.");
+        if (WSTRING(keys[i]) == debugVarName)
+        {
+            if (values[i] == nullptr || *values[i] == WStr('\0'))
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }
+        }
     }
 }
 
@@ -1518,11 +1538,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         }
 
         Logger::Debug("JITCompilationStarted: Startup hook registered.");
-        hr = this->info_->ApplyMetaData(module_id);
-        if (FAILED(hr))
-        {
-            Logger::Warn("JITCompilationStarted: Error applying metadata to module_id: ", module_id);
-        }
     }
 
     return S_OK;
@@ -1723,7 +1738,9 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
                 TypeReference(integrationAssembly, integrationType, {}, {}),
                 isDerived,
                 isInterface,
-                true);
+                true,
+                -1,
+                enable ? -1 : 0);
 
             if (Logger::IsDebugEnabled())
             {
@@ -1772,7 +1789,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
             // remove the call target definitions
             std::vector<IntegrationDefinition> integration_definitions = integration_definitions_;
             integration_definitions_.clear();
-            for (const auto& integration : integration_definitions)
+            for (auto& integration : integration_definitions)
             {
                 if (std::find(integrationDefinitions.begin(), integrationDefinitions.end(), integration) ==
                     integrationDefinitions.end())
@@ -1798,6 +1815,184 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
         Logger::Info("InitializeProfiler: Total integrations in profiler: ", integration_definitions_.size());
     }
 }
+
+long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    long enabledTargets = 0;
+    shared::WSTRING definitionsId = shared::WSTRING(id);
+    auto definitions = definitions_ids.Get();
+
+    auto defsIdFound = definitions->find(definitionsId) != definitions->end();
+    if (defsIdFound)
+    {
+        Logger::Info("RegisterCallTargetDefinitions: Id already processed.");
+        return 0;
+    }
+    definitions->emplace(definitionsId);
+
+    if (items != nullptr && rejit_handler != nullptr)
+    {
+        std::vector<IntegrationDefinition> integrationDefinitions;
+
+        for (int i = 0; i < size; i++)
+        {
+            const auto& current = items[i];
+
+            const shared::WSTRING& targetAssembly = shared::WSTRING(current.targetAssembly);
+            const shared::WSTRING& targetType = shared::WSTRING(current.targetType);
+            const shared::WSTRING& targetMethod = shared::WSTRING(current.targetMethod);
+
+            const shared::WSTRING& integrationAssembly = shared::WSTRING(current.integrationAssembly);
+            const shared::WSTRING& integrationType = shared::WSTRING(current.integrationType);
+
+            std::vector<shared::WSTRING> signatureTypes;
+            for (int sIdx = 0; sIdx < current.signatureTypesLength; sIdx++)
+            {
+                const auto& currentSignature = current.signatureTypes[sIdx];
+                if (currentSignature != nullptr)
+                {
+                    signatureTypes.push_back(shared::WSTRING(currentSignature));
+                }
+            }
+
+            const Version& minVersion = Version(current.targetMinimumMajor, current.targetMinimumMinor, current.targetMinimumPatch, 0);
+            const Version& maxVersion = Version(current.targetMaximumMajor, current.targetMaximumMinor, current.targetMaximumPatch, 0);
+
+            const auto& integration = IntegrationDefinition(
+                MethodReference(targetAssembly, targetType, targetMethod, minVersion, maxVersion, signatureTypes),
+                TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
+                current.GetIsInterface(), true, current.categories, enabledCategories);
+
+            if (integration.GetEnabled())
+            {
+                enabledTargets++;
+            }
+
+            if (Logger::IsDebugEnabled())
+            {
+                std::string kind = current.GetIsDerived() ? "DERIVED" : "DEFAULT";
+                if (current.GetIsInterface())
+                {
+                    kind += " INTERFACE";
+                }
+                Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
+                              signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
+                              integrationAssembly, " | ", integrationType, " | kind: ", kind, " | categories: ", current.categories,
+                              integration.GetEnabled() ? " ENABLED " : " DISABLED ", "]");
+            }
+
+            integrationDefinitions.push_back(integration);
+        }
+
+        auto modules = module_ids.Get();
+
+        integration_definitions_.reserve(integration_definitions_.size() + integrationDefinitions.size());
+        for (const auto& integration : integrationDefinitions)
+        {
+            integration_definitions_.push_back(integration);
+        }
+
+        Logger::Info("Total number of modules to analyze: ", modules->size());
+        if (rejit_handler != nullptr)
+        {
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), integrationDefinitions, promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+            Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
+        }
+
+        Logger::Info("RegisterCallTargetDefinitions: Added ", size, " call targets (enabled: ", enabledTargets,
+                      ", enabled categories: ", enabledCategories ,") ");
+    }
+
+    return enabledTargets;
+}
+long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
+{
+    long numReJITs = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("EnableCallTargetDefinitions: enabledCategories: ", enabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (!integration.GetEnabled() && integration.SetEnabled(true, enabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRejitForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                 promise);
+
+            // wait and get the value from the future<int>
+            numReJITs = future.get();
+        }
+        Logger::Debug("  Total number of ReJIT Requested: ", numReJITs);
+    }
+    return numReJITs;
+}
+long CorProfiler::DisableCallTargetDefinitions(UINT32 disabledCategories)
+{
+    long numReverts = 0;
+    if (rejit_handler != nullptr)
+    {
+        auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+        Logger::Info("DisableCallTargetDefinitions: enabledCategories: ", disabledCategories, " from managed side.");
+
+        std::vector<IntegrationDefinition> affectedDefinitions;
+        for (auto& integration : integration_definitions_)
+        {
+            if (integration.GetEnabled() && !integration.SetEnabled(false, disabledCategories))
+            {
+                affectedDefinitions.push_back(integration);
+            }
+        }
+
+        if (affectedDefinitions.size() > 0)
+        {
+            auto modules = module_ids.Get();
+            auto promise = std::make_shared<std::promise<ULONG>>();
+            std::future<ULONG> future = promise->get_future();
+            tracer_integration_preprocessor->EnqueueRequestRevertForLoadedModules(modules.Ref(), affectedDefinitions,
+                                                                                  promise);
+
+            // wait and get the value from the future<int>
+            numReverts = future.get();
+        }
+        Logger::Debug("  Total number of Reverts Requested: ", numReverts);
+    }
+    return numReverts;
+}
+
+int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
+{
+    auto _ = trace::Stats::Instance()->InitializeProfilerMeasure();
+
+    if (_dataflow != nullptr)
+    {
+        Logger::Info("Registerubg IAST Aspects.");
+        _dataflow->LoadAspects(aspects, aspectsLength);
+        return aspectsLength;
+    }
+    else
+    {
+        Logger::Info("IAST is disabled.");
+    }
+    return 0;
+}
+
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)
@@ -2960,6 +3155,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Create method member ref for AppDomain tokens
     mdMemberRef appdomain_get_currentdomain_member_ref = mdMemberRefNil;
     mdMemberRef appdomain_get_isfullytrusted_member_ref = mdMemberRefNil;
+    mdMemberRef appdomain_get_ishomogenous_member_ref = mdMemberRefNil;
     if (system_appdomain_type_ref != mdTypeRefNil)
     {
         // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
@@ -2989,7 +3185,20 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                             &appdomain_get_isfullytrusted_member_ref);
         if (FAILED(hr))
         {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsFullyTrusted");
+            return hr;
+        }
+
+        // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
+        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                                  ELEMENT_TYPE_BOOLEAN};
+        hr = metadata_emit->DefineMemberRef(
+            system_appdomain_type_ref, WStr("get_IsHomogenous"), appdomain_get_ishomogenous_signature,
+            sizeof(appdomain_get_ishomogenous_signature), &appdomain_get_ishomogenous_member_ref);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsHomogenous");
             return hr;
         }
     }
@@ -3189,12 +3398,28 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterWrapper_void.Return();
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
-    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil)
+    ILInstr* pIsHomogenousBranch = nullptr;
+
+    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil
+        && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil
+        && appdomain_get_ishomogenous_member_ref != mdMemberRefNil)
     {
         // Step 1) Check if the assembly is loaded in a fully trusted domain.
 
         // call System.AppDomain.get_CurrentDomain() and set the false branch target for IsAlreadyLoaded()
         pIsNotAlreadyLoadedBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
+        // callvirt System.AppDomain.get_Homogenous()
+        rewriterWrapper_void.CallMember(appdomain_get_ishomogenous_member_ref, true);
+
+        // check if the return of the method call is true or false
+        pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
+        // return if IsHomogenous is false
+        rewriterWrapper_void.Return();
+
+        // call System.AppDomain.get_CurrentDomain()
+        pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
         // callvirt System.AppDomain.get_IsFullyTrusted()
         rewriterWrapper_void.CallMember(appdomain_get_isfullytrusted_member_ref, true);
         // check if the return of the method call is true or false
