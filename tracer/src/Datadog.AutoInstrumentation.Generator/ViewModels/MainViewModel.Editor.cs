@@ -719,7 +719,6 @@ internal interface {proxyName} : IDuckType
         var returnTypeParamDocumentation = string.Empty;
         var returnType = string.Empty;
         var returnTypeParameter = string.Empty;
-        var returnConstraint = string.Empty;
 
         if (!methodDef.ReturnType.IsGenericInstanceType)
         {
