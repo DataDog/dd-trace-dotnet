@@ -220,9 +220,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -296,9 +294,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue2,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -372,9 +368,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -448,9 +442,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue2,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -549,9 +541,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -600,9 +590,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -701,9 +689,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue2,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
@@ -752,9 +738,7 @@
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
-      peer.service: MyAsyncSQSQueue2,
-      span.kind: consumer,
-      _dd.peer.service.source: aws.queue.name
+      span.kind: consumer
     }
   },
   {
