@@ -7,8 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
@@ -16,6 +16,7 @@ using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Reports;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.BenchmarkDotNet;
 
@@ -44,26 +45,12 @@ internal class DatadogExporter : IExporter
     private DatadogExporter()
     {
         TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", DateTime.UtcNow, false);
-        var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
-        TestModule = TestSession.CreateModule(
-            Assembly.GetEntryAssembly()?.GetName().Name ?? "Session",
-            "BenchmarkDotNet",
-            version);
-        LifetimeManager.Instance.AddAsyncShutdownTask(
-            async () =>
-            {
-                await TestModule.CloseAsync().ConfigureAwait(false);
-                TestSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
-                await TestSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
-            });
     }
 
     /// <inheritdoc />
     public string Name => nameof(DatadogExporter);
 
     internal TestSession TestSession { get; }
-
-    internal TestModule TestModule { get; }
 
     /// <inheritdoc />
     public void ExportToLog(Summary summary, ILogger logger)
@@ -73,7 +60,21 @@ internal class DatadogExporter : IExporter
     /// <inheritdoc />
     public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
     {
+        return AsyncUtil.RunSync(() => ExportToFilesAsync(summary, consoleLogger));
+    }
+
+    private async Task<IEnumerable<string>> ExportToFilesAsync(Summary summary, ILogger consoleLogger)
+    {
+        var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
+        var datadogDiagnoser = DatadogDiagnoser.Default;
+
         var testSession = TestSession;
+        var testModule = TestSession.CreateModule(
+            Assembly.GetEntryAssembly()?.GetName().Name ?? "Session",
+            "BenchmarkDotNet",
+            version,
+            startDate: datadogDiagnoser.ModuleStartTime ?? testSession.StartTime);
+
         Dictionary<Type, TestSuiteWithEndDate> testSuites = new();
         Exception? exception = null;
 
@@ -81,29 +82,14 @@ internal class DatadogExporter : IExporter
         {
             foreach (var report in summary.Reports)
             {
-                var benchmarkStartDate = DateTime.MinValue;
-                var benchmarkEndDate = DateTime.MinValue;
-
                 if (report?.BenchmarkCase?.Descriptor is { Type: { } type } descriptor && summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
                 {
-                    if (report.Metrics is { } metrics)
-                    {
-                        foreach (var metric in metrics)
-                        {
-                            if (metric.Key == "StartDate")
-                            {
-                                benchmarkStartDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
-                            }
-                            else if (metric.Key == "EndDate")
-                            {
-                                benchmarkEndDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
-                            }
-                        }
-                    }
+                    datadogDiagnoser.TestStartTimeByBenchmark.TryGetValue(report.BenchmarkCase, out var benchmarkStartDate);
+                    datadogDiagnoser.TestEndTimeByBenchmark.TryGetValue(report.BenchmarkCase, out var benchmarkEndDate);
 
                     if (!testSuites.TryGetValue(type, out var testSuiteWithEndDate))
                     {
-                        testSuiteWithEndDate = new TestSuiteWithEndDate(TestModule.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), benchmarkEndDate);
+                        testSuiteWithEndDate = new TestSuiteWithEndDate(testModule.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), benchmarkEndDate);
                         testSuites[type] = testSuiteWithEndDate;
                     }
 
@@ -263,6 +249,8 @@ internal class DatadogExporter : IExporter
             {
                 item.Value.Suite.Close(item.Value.EndDate - item.Value.Suite.StartTime);
             }
+
+            await testModule.CloseAsync(datadogDiagnoser.ModuleEndTime - datadogDiagnoser.ModuleStartTime).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -274,6 +262,9 @@ internal class DatadogExporter : IExporter
         {
             testSession.SetErrorInfo(exception);
         }
+
+        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
+        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTime.UtcNow - testSession.StartTime).ConfigureAwait(false);
 
         if (exception is not null)
         {

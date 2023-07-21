@@ -23,8 +23,7 @@ public static class DatadogExtensions
     /// <returns>Same configuration instance</returns>
     public static IConfig WithDatadog(this IConfig config, bool? enableProfiler = null)
     {
-        var cfg = config.HideColumns(DatadogColumnHidingRule.Default)
-                     .AddLogger(DatadogLogger.Default)
+        var cfg = config
                      .AddDiagnoser(DatadogDiagnoser.Default);
 
         enableProfiler ??= EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled, string.Empty).ToBoolean();

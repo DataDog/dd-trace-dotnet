@@ -29,29 +29,31 @@ namespace Datadog.Trace.BenchmarkDotNet;
 /// </summary>
 internal class DatadogProfilerDiagnoser : IDiagnoser
 {
+    private PlatformNotSupportedException? _platformNotSupportedException;
+
     /// <summary>
-    /// Default DatadogExporter instance
+    /// Default DatadogProfilerDiagnoser instance
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
     public Dictionary<BenchmarkCase, (TraceId TraceId, ulong SpanId)> IdsByBenchmarks { get; } = new();
 
+    /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
 
+    /// <inheritdoc />
     public IEnumerable<IExporter> Exporters { get; } = Array.Empty<IExporter>();
 
+    /// <inheritdoc />
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
 
-    public RunMode GetRunMode(BenchmarkCase benchmarkCase)
-    {
-        return RunMode.NoOverhead;
-    }
+    /// <inheritdoc />
+    public RunMode GetRunMode(BenchmarkCase benchmarkCase) => RunMode.NoOverhead;
 
-    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase)
-    {
-        return false;
-    }
+    /// <inheritdoc />
+    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase) => false;
 
+    /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
         if (signal == HostSignal.BeforeProcessStart)
@@ -64,19 +66,28 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             IdsByBenchmarks[parameters.BenchmarkCase] = (traceId, spanId);
 
             string? monitoringHome = null, profiler32Path = null, profiler64Path = null, ldPreload = null, loaderConfig = null;
-            foreach (var homePath in GetHomeFolderPaths(parameters))
+            try
             {
-                if (string.IsNullOrEmpty(homePath) || !Directory.Exists(homePath))
+                foreach (var homePath in GetHomeFolderPaths(parameters))
                 {
-                    continue;
-                }
+                    if (string.IsNullOrEmpty(homePath) || !Directory.Exists(homePath))
+                    {
+                        continue;
+                    }
 
-                var tmpHomePath = Path.GetFullPath(homePath);
-                if (GetPaths(tmpHomePath, ref profiler32Path, ref profiler64Path, ref loaderConfig, ref ldPreload))
-                {
-                    monitoringHome = tmpHomePath;
-                    break;
+                    var tmpHomePath = Path.GetFullPath(homePath);
+                    if (GetPaths(tmpHomePath, ref profiler32Path, ref profiler64Path, ref loaderConfig, ref ldPreload))
+                    {
+                        monitoringHome = tmpHomePath;
+                        break;
+                    }
                 }
+            }
+            catch (PlatformNotSupportedException platformNotSupportedException)
+            {
+                // Store the exception if the platform is not supported and ignore everything.
+                _platformNotSupportedException = platformNotSupportedException;
+                return;
             }
 
             if (!File.Exists(profiler64Path))
@@ -266,18 +277,22 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         }
     }
 
-    public IEnumerable<Metric> ProcessResults(DiagnoserResults results)
-    {
-        return Enumerable.Empty<Metric>();
-    }
-
+    /// <inheritdoc />
     public void DisplayResults(ILogger logger)
     {
-        logger.WriteLine("Datadog Profiler, profiles sent.");
+        if (_platformNotSupportedException is null)
+        {
+            logger.WriteLine("Datadog Profiler, profiles sent.");
+        }
+        else
+        {
+            logger.WriteLine("Datadog Profiler: " + _platformNotSupportedException.Message);
+        }
     }
 
-    public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters)
-    {
-        return Enumerable.Empty<ValidationError>();
-    }
+    /// <inheritdoc />
+    public IEnumerable<Metric> ProcessResults(DiagnoserResults results) => Enumerable.Empty<Metric>();
+
+    /// <inheritdoc />
+    public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters) => Enumerable.Empty<ValidationError>();
 }
