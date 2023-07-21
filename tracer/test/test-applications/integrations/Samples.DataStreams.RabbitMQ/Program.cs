@@ -31,12 +31,12 @@ namespace Samples.DataStreams.RabbitMQ
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();
         
-            // produce/consume operation (default exchange)
+            // produce (default exchange)
             PublishMessageToDefaultExchange(model);
-            GetMessage(model, DefaultQueue);
 
-            // produce/consume operation (direct exchange)
+            // produce (direct exchange)
             List<string> directQueues = PublishMessageToDirectExchange(model);
+<<<<<<< Updated upstream
             foreach (var queue in directQueues) 
             {
                 GetMessage(model, queue);
@@ -53,6 +53,23 @@ namespace Samples.DataStreams.RabbitMQ
             List<string> topicQueues = PublishMessageToTopicExchange(model);
             foreach (var queue in topicQueues)
             {
+=======
+
+            // produce (fanout exchange)
+            List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
+
+            // produce (topic exchange)
+            List<string> topicQueues = PublishMessageToTopicExchange(model);
+
+            GetMessage(model, DefaultQueue);
+            foreach (var queue in directQueues) {
+                GetMessage(model, queue);
+            }
+            foreach (var queue in topicQueues) {
+                GetMessage(model, queue);
+            }
+            foreach (var queue in fanoutQueues) {
+>>>>>>> Stashed changes
                 GetMessage(model, queue);
             }
         }
