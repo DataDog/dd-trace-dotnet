@@ -57,7 +57,15 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? QueueName;
+            get
+            {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
+                return _peerServiceOverride ?? QueueName;
+            }
             private set => _peerServiceOverride = value;
         }
 
@@ -66,6 +74,11 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
                 return _peerServiceOverride is not null
                            ? "peer.service"
                            : Trace.Tags.AwsQueueName;
