@@ -76,8 +76,9 @@ namespace Datadog.Trace.Ci
             var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable("DD_CIVISIBILITY_BENCHMARK_SPANID");
             if (!string.IsNullOrEmpty(benchmarkName) && !string.IsNullOrEmpty(benchmarkSpanId))
             {
-                Profiler.Instance.ContextTracker.SetEndpoint(ulong.Parse(benchmarkSpanId), benchmarkName);
-                Log.Information("SetEndpoint: {SpanId} | {Name}", ulong.Parse(benchmarkSpanId), benchmarkName);
+                var parsedBenchmarkSpanId = ulong.Parse(benchmarkSpanId);
+                Profiler.Instance.ContextTracker.Set(parsedBenchmarkSpanId, parsedBenchmarkSpanId);
+                Profiler.Instance.ContextTracker.SetEndpoint(parsedBenchmarkSpanId, benchmarkName);
                 return;
             }
 
