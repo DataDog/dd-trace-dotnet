@@ -17,11 +17,12 @@ public class SSRFTests : InstrumentationTestsBase
     protected string taintedUrlValue = "http://127.0.0.1/invalid";
     protected string file = "invalid@#file";
     protected static WebClient webclient = new WebClient();
+    protected byte sourceType = 5;
 
     public SSRFTests()
     {
-        AddTainted(taintedUrlValue);
-        AddTainted(taintedHost);
+        AddTainted(taintedUrlValue, sourceType);
+        AddTainted(taintedHost, sourceType);
     }
 
     [Fact]
@@ -453,6 +454,14 @@ public class SSRFTests : InstrumentationTestsBase
     {
         ExecuteAction(() => webclient.UploadData(taintedUrlValue, "GET", new Byte[] { }));
         AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAWebClient_WhenUploadData_Vulnerable3Builder()
+    {
+        var urlText = new UriBuilder(taintedUrlValue).ToString();
+        ExecuteAction(() => webclient.UploadData(urlText, "GET", new Byte[] { }));
+        AssertVulnerableSSRF(urlText);
     }
 
     [Fact]
@@ -946,7 +955,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Execute(request));
-        AssertVulnerable("SSRF");
+        AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
     [Fact]
@@ -955,7 +964,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.ExecuteAsync(request, CancellationToken.None));
-        AssertVulnerable("SSRF");
+        AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
     [Fact]
@@ -964,7 +973,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Delete(request));
-        AssertVulnerable("SSRF");
+        AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
     [Fact]
@@ -973,7 +982,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Post(request));
-        AssertVulnerable("SSRF");
+        AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
     [Fact]
@@ -982,7 +991,7 @@ public class SSRFTests : InstrumentationTestsBase
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
         ExecuteAction(() => client.Get(request));
-        AssertVulnerable("SSRF");
+        AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
     [Fact]
@@ -1014,7 +1023,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1022,7 +1031,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, "host");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1030,7 +1039,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, taintedHost);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1038,7 +1047,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, "host", 22);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1046,7 +1055,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, taintedHost, 33);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1054,7 +1063,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, taintedHost, 33, "");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1062,7 +1071,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, notTaintedHost, 33, "");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
 
@@ -1071,7 +1080,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, notTaintedHost, 33, taintedUrlValue);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1079,7 +1088,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, notTaintedHost, 33, taintedUrlValue, "");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1087,7 +1096,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, notTaintedHost, 33, notTaintedValue, "?eee=" + taintedHost);
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1095,7 +1104,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(notTaintedValue, taintedHost, 33, "", "");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1103,7 +1112,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, notTaintedHost, 33, notTaintedValue, "");
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -1111,7 +1120,7 @@ public class SSRFTests : InstrumentationTestsBase
     {
         UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
         AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri);
+        AssertTainted(builder.Uri.OriginalString);
     }
 
     private void ExecuteAction(Action c)
@@ -1127,6 +1136,6 @@ public class SSRFTests : InstrumentationTestsBase
 
     private void AssertVulnerableSSRF(string evidence = null)
     {
-        AssertVulnerable("SSRF", ":+-" + (evidence ?? taintedUrlValue) + "-+:");
+        AssertVulnerable("SSRF", ":+-" + (evidence ?? taintedUrlValue) + "-+:", true, sourceType);
     }
 }
