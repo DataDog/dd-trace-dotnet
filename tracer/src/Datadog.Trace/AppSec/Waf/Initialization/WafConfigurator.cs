@@ -142,7 +142,7 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 return InitResult.FromUnusableRuleFile();
             }
 
-            var diagnostics = IntPtr.Zero;
+            Obj? diagnostics = null;
             var keyRegex = IntPtr.Zero;
             var valueRegex = IntPtr.Zero;
 
@@ -155,8 +155,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                 args.ValueRegex = valueRegex;
                 args.FreeWafFunction = _wafLibraryInvoker.ObjectFreeFuncPtr;
 
-                diagnostics = _wafLibraryInvoker.ObjectMap();
-                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics);
+                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
+                var wafHandle = _wafLibraryInvoker.Init(rulesObj.RawPtr, ref args, diagnostics.RawPtr);
                 if (wafHandle == IntPtr.Zero)
                 {
                     Log.Warning("DDAS-0005-00: WAF initialization failed.");
@@ -201,8 +201,8 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
                     Marshal.FreeHGlobal(valueRegex);
                 }
 
-                _wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
-                rulesObj.Dispose();
+                diagnostics?.Dispose(_wafLibraryInvoker);
+                rulesObj.Dispose(_wafLibraryInvoker);
                 foreach (var arg in argsToDispose)
                 {
                     arg.Dispose();
