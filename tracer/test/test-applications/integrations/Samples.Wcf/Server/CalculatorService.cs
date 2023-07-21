@@ -1,4 +1,6 @@
 using System;
+using System.ServiceModel;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Samples.Wcf.Server
@@ -22,26 +24,49 @@ namespace Samples.Wcf.Server
             return result;
         }
 
-        public IAsyncResult BeginServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state)
+        public IAsyncResult BeginServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state)
         {
-            LoggingHelper.WriteLineWithDate($"[Server] Received BeginServerAsyncAdd({n1},{n2})");
-            var tcs = new TaskCompletionSource<double>(state);
+            LoggingHelper.WriteLineWithDate($"[Server] Received BeginServerAsyncAdd({n1},{n2},{throwsException},{synchronouslyCompletes})");
 
-            var task = PerformAddWithDelay(n1, n2);
-            task.ContinueWith(t =>
+            var asyncResult = new SimpleAsyncResult<Tuple<double, bool>>(state);
+
+            if (synchronouslyCompletes)
             {
-                tcs.SetResult(t.Result);
-                callback(tcs.Task);
-            });
+                if (throwsException)
+                {
+                    throw new FaultException("Something happened");
+                }
 
-            return tcs.Task;
+                asyncResult.CompleteSynchronously(Tuple.Create(n1 + n2, false));
+                callback(asyncResult);
+            }
+            else
+            {
+                var task = PerformAddWithDelay(n1, n2);
+                task.ContinueWith(
+                    t =>
+                    {
+                        asyncResult.Complete(Tuple.Create(t.Result, throwsException));
+                        callback(asyncResult);
+                    });
+            }
+
+            return asyncResult;
         }
 
         public double EndServerAsyncAdd(IAsyncResult asyncResult)
         {
             LoggingHelper.WriteLineWithDate("[Server] Received EndServerAsyncAdd(asyncResult)");
             LoggingHelper.WriteLineWithDate($"[Server] Return: {asyncResult}");
-            return ((Task<double>)asyncResult).Result;
+
+            var result = (SimpleAsyncResult<Tuple<double, bool>>)asyncResult;
+
+            if (result.Result.Item2)
+            {
+                throw new FaultException("Something happened");
+            }
+
+            return result.Result.Item1;
         }
 
         private async Task<double> PerformAddWithDelay(double n1, double n2)
@@ -58,5 +83,36 @@ namespace Samples.Wcf.Server
             LoggingHelper.WriteLineWithDate($"[Server] Return: {result}");
             return result;
         }
+
+        private class SimpleAsyncResult<T> : IAsyncResult
+        {
+            private readonly ManualResetEvent _mutex = new ManualResetEvent(false);
+
+            public SimpleAsyncResult(object state)
+            {
+                AsyncState = state;
+            }
+
+            public void Complete(T result)
+            {
+                Result = result;
+                IsCompleted = true;
+                _mutex.Set();
+            }
+
+            public void CompleteSynchronously(T result)
+            {
+                CompletedSynchronously = true;
+                Complete(result);
+            }
+
+            public T Result { get; private set; }
+
+            public bool IsCompleted { get; private set; }
+            public WaitHandle AsyncWaitHandle => _mutex;
+            public object AsyncState { get; }
+            public bool CompletedSynchronously { get; private set; }
+        }
+
     }
 }

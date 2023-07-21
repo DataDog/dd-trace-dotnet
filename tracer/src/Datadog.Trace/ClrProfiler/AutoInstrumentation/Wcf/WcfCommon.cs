@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.ExtensionMethods;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.Wcf;
 
         public static Func<object> GetCurrentOperationContext => _getCurrentOperationContext.Value;
+
+        public static ConditionalWeakTable<object, Scope> Scopes { get; } = new();
 
         internal static Scope CreateScope<TRequestContext>(TRequestContext requestContext)
             where TRequestContext : IRequestContext
@@ -54,7 +57,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             try
             {
                 SpanContext propagatedContext = null;
-                var tagsFromHeaders = Enumerable.Empty<KeyValuePair<string, string>>();
                 string host = null;
                 string userAgent = null;
                 string httpMethod = null;

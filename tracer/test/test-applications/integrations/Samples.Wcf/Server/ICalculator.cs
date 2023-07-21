@@ -23,7 +23,7 @@ namespace Samples.Wcf.Server
         Task<double> ServerTaskAdd(double n1, double n2);
 
         [OperationContract(AsyncPattern = true)]
-        IAsyncResult BeginServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state);
+        IAsyncResult BeginServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state);
         double EndServerAsyncAdd(IAsyncResult result);
     }
 }
