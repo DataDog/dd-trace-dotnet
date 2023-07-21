@@ -82,12 +82,14 @@ namespace Datadog.Trace.AppSec.Waf
             return initResult;
         }
 
-        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, IntPtr diagnostics)
+        private UpdateResult UpdateWafAndDisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose)
         {
             UpdateResult res;
+            Obj? diagnostics = null;
             try
             {
-                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, diagnostics);
+                diagnostics = new Obj(_wafLibraryInvoker.ObjectMap());
+                var newHandle = _wafLibraryInvoker.Update(_wafHandle, updateData.RawPtr, diagnostics.RawPtr);
                 if (newHandle != IntPtr.Zero)
                 {
                     var oldHandle = _wafHandle;
@@ -114,14 +116,10 @@ namespace Datadog.Trace.AppSec.Waf
             return res;
         }
 
-        private void DisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, IntPtr diagnostics)
+        private void DisposeItems(Obj updateData, IEnumerable<Obj> argsToDispose, Obj? diagnostics)
         {
-            if (diagnostics != IntPtr.Zero)
-            {
-                _wafLibraryInvoker.ObjectFreePtr(ref diagnostics);
-            }
-
-            updateData.Dispose();
+            diagnostics?.Dispose(_wafLibraryInvoker);
+            updateData.Dispose(_wafLibraryInvoker);
 
             foreach (var arg in argsToDispose)
             {
@@ -176,7 +174,6 @@ namespace Datadog.Trace.AppSec.Waf
             try
             {
                 var encodedArgs = Encoder.Encode(arguments, _wafLibraryInvoker, argsToDispose, false);
-                IntPtr diagnostics = _wafLibraryInvoker.ObjectMap();
 
                 // only if rules are provided will the waf give metrics
                 if (arguments.ContainsKey("rules"))
@@ -184,7 +181,7 @@ namespace Datadog.Trace.AppSec.Waf
                     TelemetryFactory.Metrics.RecordCountWafUpdates();
                 }
 
-                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose, diagnostics);
+                updated = UpdateWafAndDisposeItems(encodedArgs, argsToDispose);
             }
             catch
             {

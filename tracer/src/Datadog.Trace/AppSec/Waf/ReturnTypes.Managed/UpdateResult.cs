@@ -12,12 +12,11 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(IntPtr diagnostics, bool success, bool unusableRules = false)
+        internal UpdateResult(Obj? diagObject, bool success, bool unusableRules = false)
         {
-            if (diagnostics != IntPtr.Zero)
+            if (diagObject != null)
             {
                 Dictionary<string, object>? rules = null;
-                var diagObject = Obj.Wrap(diagnostics);  // Do not free the pointer on dispose
                 if (diagObject.ArgsType == ObjType.Invalid)
                 {
                     Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
@@ -88,8 +87,8 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string? RuleFileVersion { get; }
 
-        public static UpdateResult FromUnusableRules() => new UpdateResult(IntPtr.Zero, false, true);
+        public static UpdateResult FromUnusableRules() => new UpdateResult(null, false, true);
 
-        public static UpdateResult FromFailed() => new UpdateResult(IntPtr.Zero, false);
+        public static UpdateResult FromFailed() => new UpdateResult(null, false);
     }
 }

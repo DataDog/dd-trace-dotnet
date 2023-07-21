@@ -71,11 +71,14 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IntPtr RawPtr => ptr;
 
-        public static Obj Wrap(IntPtr ptr)
+        public void Dispose(WafLibraryInvoker waf)
         {
-            var res = new Obj(ptr);
-            res.disposed = true;
-            return res;
+            if (waf != null)
+            {
+                var rawPtr = ptr;
+                waf.ObjectFreePtr(ref rawPtr);
+                Dispose();
+            }
         }
 
         public void Dispose()
