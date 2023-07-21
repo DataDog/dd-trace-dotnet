@@ -56,6 +56,9 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
+            // First we make sure that CI Visibility is initialized.
+            CIVisibility.InitializeFromManualInstrumentation();
+
             var traceId = RandomIdGenerator.Shared.NextTraceId(true);
             var spanId = RandomIdGenerator.Shared.NextSpanId(true);
             IdsByBenchmarks[parameters.BenchmarkCase] = (traceId, spanId);
@@ -170,20 +173,21 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
 
     private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig, TraceId traceId, ulong spanId)
     {
+        var tracer = Tracer.Instance;
         var environment = parameters.Process.StartInfo.Environment;
         if (!environment.TryGetValue(ConfigurationKeys.ServiceName, out _))
         {
-            environment[ConfigurationKeys.ServiceName] = parameters.BenchmarkCase.Descriptor.FolderInfo;
+            environment[ConfigurationKeys.ServiceName] = tracer.DefaultServiceName;
         }
 
         if (!environment.TryGetValue(ConfigurationKeys.Environment, out _))
         {
-            environment[ConfigurationKeys.Environment] = "benchmarks";
+            environment[ConfigurationKeys.Environment] = tracer.Settings.EnvironmentInternal;
         }
 
         if (!environment.TryGetValue(ConfigurationKeys.ServiceVersion, out _))
         {
-            environment[ConfigurationKeys.ServiceVersion] = CIEnvironmentValues.Instance.Branch;
+            environment[ConfigurationKeys.ServiceVersion] = tracer.Settings.ServiceVersionInternal;
         }
 
         environment["COR_ENABLE_PROFILING"] = "1";
@@ -209,7 +213,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
         environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
-        environment["DD_CIVISIBILITY_BENCHMARK_NAME"] = parameters.BenchmarkCase.Descriptor.FolderInfo;
+        environment["DD_CIVISIBILITY_BENCHMARK_NAME"] = parameters.BenchmarkCase.Descriptor.DisplayInfo;
         environment["DD_CIVISIBILITY_BENCHMARK_TRACEID"] = traceId.ToString();
         environment["DD_CIVISIBILITY_BENCHMARK_SPANID"] = spanId.ToString();
 
