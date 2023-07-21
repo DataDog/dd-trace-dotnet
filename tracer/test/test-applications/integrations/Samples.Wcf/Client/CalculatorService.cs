@@ -46,13 +46,13 @@ public interface ICalculator
     double End_ServerTaskAdd(IAsyncResult result);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    double Sync_ServerAsyncAdd(double n1, double n2);
+    double Sync_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2);
+    System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", AsyncPattern = true, Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state);
+    IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state);
     double End_ServerAsyncAdd(IAsyncResult result);
 }
 
@@ -181,30 +181,30 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
         }
     }
 
-    public double Sync_ServerAsyncAdd(double n1, double n2)
+    public double Sync_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes)
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
             Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
-            return base.Channel.Sync_ServerAsyncAdd(n1, n2);
+            return base.Channel.Sync_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
         }
     }
 
-    public System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2)
+    public System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes)
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
             Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
-            return base.Channel.Task_ServerAsyncAdd(n1, n2);
+            return base.Channel.Task_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
         }
     }
 
-    public IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state)
+    public IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state)
     {
         using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
         {
             Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
-            return base.Channel.Begin_ServerAsyncAdd(n1, n2, callback, state);
+            return base.Channel.Begin_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes, callback, state);
         }
     }
 
