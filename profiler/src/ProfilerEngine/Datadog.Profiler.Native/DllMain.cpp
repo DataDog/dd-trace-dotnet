@@ -90,13 +90,13 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 
     if (ppv == nullptr)
     {
-        Log::Error("DllGetClassObject(): the specified out-param 'ppv' is null.");
+        Log::Info("DllGetClassObject(): the specified out-param 'ppv' is null.");
         return E_FAIL;
     }
 
     if (rclsid != CLSID_CorProfiler)
     {
-        Log::Error(
+        Log::Info(
             "DllGetClassObject(): the specified 'rclsid' ",
             riid.Data1, "-", riid.Data2, "-", riid.Data3, "-", riid.Data4,
             " is not CLSID_CorProfiler.");
@@ -105,7 +105,7 @@ extern "C" HRESULT STDMETHODCALLTYPE DllGetClassObject(REFCLSID rclsid, REFIID r
 
     if (!IsProfilingEnabled())
     {
-        Log::Error("DllGetClassObject(): Profiling is not enabled.");
+        Log::Info("DllGetClassObject(): Profiling is not enabled.");
 
         return CORPROF_E_PROFILER_CANCEL_ACTIVATION;
     }
