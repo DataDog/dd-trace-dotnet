@@ -60,7 +60,7 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm
             var allSpans = new List<MockSpan>();
             allSpans.AddRange(spans1);
             allSpans.AddRange(spans2);
-            await VerifySpans(allSpans.ToImmutableList(), settings);
+            await VerifySpans(allSpans.ToImmutableList(), settings, testName: $"{GetTestName()}_{nameof(TestExtraServiceField)}");
         }
     }
 }
