@@ -343,9 +343,9 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 
-        public static Result IsMsmqV1(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsMsmqInboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "msmq.send")
+                .Matches(Name, "msmq.process")
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("msmq.command")
@@ -357,7 +357,37 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
-                .MatchesOneOf("span.kind", "client", "producer", "consumer"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsMsmqOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "msmq.send")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("msmq.command")
+                .IsOptional("msmq.message.transactional")
+                .IsPresent("msmq.queue.path")
+                .IsOptional("msmq.queue.transactional")
+                .IsPresent("out.host")
+                .Matches("component", "msmq")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsMsmqClientV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Msmq - Client")
+            .Properties(s => s
+                .Matches(Name, "msmq.command")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("msmq.command")
+                .IsOptional("msmq.message.transactional")
+                .IsPresent("msmq.queue.path")
+                .IsOptional("msmq.queue.transactional")
+                .IsPresent("out.host")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
+                .Matches("component", "msmq")
+                .Matches("span.kind", "client"));
 
         public static Result IsMySqlV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
