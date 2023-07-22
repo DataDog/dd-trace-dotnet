@@ -30,7 +30,8 @@ public static class DatadogExtensions
         switch (enableProfiler)
         {
             case true:
-                cfg = cfg.AddDiagnoser(DatadogProfilerDiagnoser.Default);
+                cfg = cfg.AddDiagnoser(DatadogProfilerDiagnoser.Default)
+                         .WithOption(ConfigOptions.KeepBenchmarkFiles, true);
                 break;
             case false:
                 EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled, null);
