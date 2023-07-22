@@ -26,26 +26,26 @@ namespace Samples.Wcf
             {
                 binding = new WSHttpBinding();
                 baseAddress = new Uri($"http://localhost:{port}/{WcfNamespace}/");
-                expectedExceptionCount = 0;
+                expectedExceptionCount = 2;
             }
             else if (args.Length > 0 && args[0].Equals("BasicHttpBinding", StringComparison.OrdinalIgnoreCase))
             {
                 binding = new BasicHttpBinding();
                 baseAddress = new Uri($"http://localhost:{port}/{WcfNamespace}/");
-                expectedExceptionCount = 0;
+                expectedExceptionCount = 2;
             }
             else if (args.Length > 0 && args[0].Equals("NetTcpBinding", StringComparison.OrdinalIgnoreCase))
             {
                 binding = new NetTcpBinding();
                 ((NetTcpBinding)binding).TransferMode = TransferMode.Streamed;
                 baseAddress = new Uri($"net.tcp://localhost:{port}/{WcfNamespace}/");
-                expectedExceptionCount = 0;
+                expectedExceptionCount = 2;
             }
             else if (args.Length > 0 && args[0].Equals("Custom", StringComparison.OrdinalIgnoreCase))
             {
                 binding = ConfigureCustomBinding();
                 baseAddress = new Uri($"http://localhost:{port}/{WcfNamespace}/");
-                expectedExceptionCount = 7;
+                expectedExceptionCount = 13;
             }
             else
             {

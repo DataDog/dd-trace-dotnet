@@ -11,13 +11,17 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
     [StructLayout(LayoutKind.Sequential)]
     internal struct DdwafResultStruct
     {
-        /** Whether there has been a timeout during the operation **/
         public bool Timeout;
-        /** Array of events generated, this is guaranteed to be an array **/
-        public DdwafObjectStruct Events;
-        /** Array of actions generated, this is guaranteed to be an array **/
-        public DdwafObjectStruct Actions;
-        /** Total WAF runtime in nanoseconds **/
+
+        public IntPtr Data;
+
+        public IntPtr ActionsArray;
+
+        public uint ActionsSize;
+
+        /// <summary>
+        /// Total WAF runtime in nanoseconds
+        /// </summary>
         public ulong TotalRuntime;
     }
 }

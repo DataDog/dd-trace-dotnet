@@ -126,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAwsSqsV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqs.request")
                 .Matches(Type, "http"))
