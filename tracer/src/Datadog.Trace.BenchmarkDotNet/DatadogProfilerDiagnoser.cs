@@ -30,13 +30,18 @@ namespace Datadog.Trace.BenchmarkDotNet;
 internal class DatadogProfilerDiagnoser : IDiagnoser
 {
     private PlatformNotSupportedException? _platformNotSupportedException;
+    private string? _monitoringHome;
+    private string? _profiler32Path;
+    private string? _profiler64Path;
+    private string? _ldPreload;
+    private string? _loaderConfig;
 
     /// <summary>
     /// Default DatadogProfilerDiagnoser instance
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
-    public Dictionary<BenchmarkCase, (TraceId TraceId, ulong SpanId)> IdsByBenchmarks { get; } = new();
+    public Dictionary<BenchmarkCase, ulong> SpanIdByBenchmark { get; } = new();
 
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
@@ -58,54 +63,13 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            // First we make sure that CI Visibility is initialized.
-            CIVisibility.InitializeFromManualInstrumentation();
-
-            var traceId = RandomIdGenerator.Shared.NextTraceId(true);
             var spanId = RandomIdGenerator.Shared.NextSpanId(true);
-            IdsByBenchmarks[parameters.BenchmarkCase] = (traceId, spanId);
-
-            string? monitoringHome = null, profiler32Path = null, profiler64Path = null, ldPreload = null, loaderConfig = null;
-            try
+            SpanIdByBenchmark[parameters.BenchmarkCase] = spanId;
+            EnsureAndFillProfilerPathVariables(parameters);
+            if (_platformNotSupportedException is null)
             {
-                foreach (var homePath in GetHomeFolderPaths(parameters))
-                {
-                    if (string.IsNullOrEmpty(homePath) || !Directory.Exists(homePath))
-                    {
-                        continue;
-                    }
-
-                    var tmpHomePath = Path.GetFullPath(homePath);
-                    if (GetPaths(tmpHomePath, ref profiler32Path, ref profiler64Path, ref loaderConfig, ref ldPreload))
-                    {
-                        monitoringHome = tmpHomePath;
-                        break;
-                    }
-                }
+                SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, spanId);
             }
-            catch (PlatformNotSupportedException platformNotSupportedException)
-            {
-                // Store the exception if the platform is not supported and ignore everything.
-                _platformNotSupportedException = platformNotSupportedException;
-                return;
-            }
-
-            if (!File.Exists(profiler64Path))
-            {
-                throw new FileNotFoundException(null, profiler64Path);
-            }
-
-            if (profiler32Path is not null && !File.Exists(profiler64Path))
-            {
-                throw new FileNotFoundException(null, profiler32Path);
-            }
-
-            if (!File.Exists(loaderConfig))
-            {
-                throw new FileNotFoundException(null, loaderConfig);
-            }
-
-            SetEnvironmentVariables(parameters, monitoringHome, profiler32Path, profiler64Path, ldPreload, loaderConfig, traceId, spanId);
         }
     }
 
@@ -182,7 +146,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         return true;
     }
 
-    private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig, TraceId traceId, ulong spanId)
+    private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig, ulong spanId)
     {
         var tracer = Tracer.Instance;
         var environment = parameters.Process.StartInfo.Environment;
@@ -295,4 +259,51 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
 
     /// <inheritdoc />
     public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters) => Enumerable.Empty<ValidationError>();
+
+    private void EnsureAndFillProfilerPathVariables(DiagnoserActionParameters parameters)
+    {
+        if (!string.IsNullOrEmpty(_monitoringHome))
+        {
+            return;
+        }
+
+        try
+        {
+            foreach (var homePath in GetHomeFolderPaths(parameters))
+            {
+                if (string.IsNullOrEmpty(homePath) || !Directory.Exists(homePath))
+                {
+                    continue;
+                }
+
+                var tmpHomePath = Path.GetFullPath(homePath);
+                if (GetPaths(tmpHomePath, ref _profiler32Path, ref _profiler64Path, ref _loaderConfig, ref _ldPreload))
+                {
+                    _monitoringHome = tmpHomePath;
+                    break;
+                }
+            }
+        }
+        catch (PlatformNotSupportedException platformNotSupportedException)
+        {
+            // Store the exception if the platform is not supported and ignore everything.
+            _platformNotSupportedException = platformNotSupportedException;
+            return;
+        }
+
+        if (!File.Exists(_profiler64Path))
+        {
+            throw new FileNotFoundException(null, _profiler64Path);
+        }
+
+        if (_profiler32Path is not null && !File.Exists(_profiler32Path))
+        {
+            throw new FileNotFoundException(null, _profiler32Path);
+        }
+
+        if (!File.Exists(_loaderConfig))
+        {
+            throw new FileNotFoundException(null, _loaderConfig);
+        }
+    }
 }

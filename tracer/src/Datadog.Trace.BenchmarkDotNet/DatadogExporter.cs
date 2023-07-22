@@ -124,9 +124,9 @@ internal class DatadogExporter : IExporter
                     }
 
                     Test? testMethod;
-                    if (DatadogProfilerDiagnoser.Default.IdsByBenchmarks.TryGetValue(report.BenchmarkCase, out var ids))
+                    if (DatadogProfilerDiagnoser.Default.SpanIdByBenchmark.TryGetValue(report.BenchmarkCase, out var spanId))
                     {
-                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, ids.TraceId, ids.SpanId);
+                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, default, spanId);
                     }
                     else
                     {
