@@ -26,7 +26,7 @@ public static class DatadogExtensions
         var cfg = config
                      .AddDiagnoser(DatadogDiagnoser.Default);
 
-        enableProfiler ??= EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled, string.Empty).ToBoolean();
+        enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled) ?? string.Empty).ToBoolean();
         switch (enableProfiler)
         {
             case true:
