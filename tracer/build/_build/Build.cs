@@ -323,7 +323,8 @@ partial class Build : NukeBuild
 
     Target BuildBenchmarkNuget => _ => _
         .Unlisted()
-        .DependsOn(CreateBenchmarkIntegrationHome, ExtractDebugInfoLinux)
+        .DependsOn(CreateBenchmarkIntegrationHome)
+        .After(ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
