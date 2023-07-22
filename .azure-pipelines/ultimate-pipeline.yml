@@ -2873,12 +2873,16 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and runner tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build Bundle and Benchmark NuGet and runner tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/benchmark
+      displayName: Uploading Benchmark package
+      artifact: benchmark-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
@@ -3269,6 +3273,13 @@ stages:
           inputs:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download benchmark nuget package
+          inputs:
+            artifact: benchmark-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
 
         # runner tool
         - task: DownloadPipelineArtifact@2
