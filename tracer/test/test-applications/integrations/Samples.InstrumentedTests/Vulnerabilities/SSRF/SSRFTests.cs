@@ -6,6 +6,7 @@ using Moq;
 using System.Net.Http;
 using System.Threading;
 using Xunit;
+using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
@@ -65,73 +66,34 @@ public class SSRFTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted()
+    [Obsolete]
+    public void GivenAURI_WhenMakeRelativeFromtainted_IsTainted()
     {
         Uri uri = new Uri(taintedUrlValue);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Obsolete("Testing")]
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted2()
-    {
-        Uri uri = new Uri(taintedUrlValue, true);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Obsolete("Testing")]
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted3()
-    {
-        Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue, true);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Obsolete("Testing")]
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted4()
-    {
-        Uri uri = new Uri(new Uri(taintedUrlValue), "eee", true);
-        AssertTainted(uri.OriginalString);
+        var uriRelative = uri.MakeRelative(uri);
+        uriRelative.Should().NotBeNullOrWhiteSpace();
+        AssertTainted(uriRelative);
     }
 
     [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted5()
+    public void GivenAURI_WhenMakeRelativeFromtainted_IsTainted2()
     {
-        Uri uri = new Uri(new Uri(taintedUrlValue), "eee");
-        AssertTainted(uri.OriginalString);
+        Uri uri = new Uri(taintedUrlValue);
+        var uriRelative = uri.MakeRelativeUri(uri);
+        uriRelative.Should().NotBeNull();
+        AssertTainted(uriRelative.OriginalString);
     }
 
     [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted6()
+    public void GivenAURI_WhenSetBaseAddress_IsVulnerable()
     {
-        Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue);
-        AssertTainted(uri.OriginalString);
+        HttpClient client = new HttpClient();
+        client.BaseAddress = new Uri(taintedUrlValue);
+        AssertVulnerableSSRF();
     }
 
     [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted7()
-    {
-        Uri uri = new Uri(taintedUrlValue, UriKind.Absolute);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted8()
-    {
-        Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedUrlValue));
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]    
-    public void GivenAURI_WhenCreateFromtainted_IsTainted9()
-    {
-        Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedValue));
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenGetAsyncFromtainted_IsTainted()
+    public void GivenAURI_WhenGetAsyncFromtainted_IsVulnerable()
     {
         HttpClient client = new HttpClient();
         client.GetAsync(taintedUrlValue);
@@ -139,7 +101,7 @@ public class SSRFTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAURI_WhenGetStreamAsyncFromtainted_IsTainted()
+    public void GivenAURI_WhenGetStreamAsyncFromtainted_IsVulnerable()
     {
         HttpClient client = new HttpClient();
         client.GetStreamAsync(taintedUrlValue);
@@ -147,7 +109,7 @@ public class SSRFTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenAURI_WhenSendAsyncFromtainted_IsTainted()
+    public void GivenAURI_WhenSendAsyncFromtainted_IsVulnerable()
     {
         HttpClient client = new HttpClient();
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
@@ -772,8 +734,23 @@ public class SSRFTests : InstrumentationTestsBase
     }
 
 #if NET5_0_OR_GREATER
+
     [Fact]
-    public void GivenAHttpClient_WhenDownloadString_Vulnerable2()
+    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable4()
+    {
+        ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue, CancellationToken.None));
         AssertVulnerableSSRF();
@@ -807,6 +784,13 @@ public class SSRFTests : InstrumentationTestsBase
         ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue, CancellationToken.None));
         AssertVulnerableSSRF();
     }
+
+        [Fact]
+    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable7()
+    {
+        ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
 #endif
 
     [Fact]
@@ -815,18 +799,68 @@ public class SSRFTests : InstrumentationTestsBase
         ExecuteAction(() => new HttpClient().GetStreamAsync(taintedUrlValue));
         AssertVulnerableSSRF();
     }
+
+#if NETCOREAPP
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable4()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content")));
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content")));
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable5()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content"), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable6()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content"), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+#endif
+
+#if NET5_0_OR_GREATER
+    [Fact]
+    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().GetStreamAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
     [Fact]
     public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue)));
         AssertVulnerableSSRF();
     }
+
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable()
     {
         ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue));
         AssertVulnerableSSRF();
     }
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetAsync_Vulnerable9()
+    {
+        ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable2()
     {
