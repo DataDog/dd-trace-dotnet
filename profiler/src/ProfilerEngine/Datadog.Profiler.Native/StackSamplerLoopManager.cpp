@@ -64,6 +64,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
+
+    _deadlockCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks");
 }
 
 StackSamplerLoopManager::~StackSamplerLoopManager()
@@ -284,7 +286,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
-    // TODO: update deadlock count metrics when available
+    _deadlockCountMetric->Incr();
     _currentStatistics->IncrDeadlockCount();
 
     PerformDeadlockIntervention(collectionDurationNs);

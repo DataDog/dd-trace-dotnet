@@ -24,6 +24,9 @@
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
 #include "StackSamplerLoop.h"
+#include "MetricsRegistry.h"
+#include "CounterMetric.h"
+
 
 // forward declaration
 class IClrLifetime;
@@ -231,6 +234,7 @@ private:
     std::int64_t _threadSuspensionStart;
     std::unique_ptr<Statistics> _statisticsReadyToSend;
     std::unique_ptr<Statistics> _currentStatistics;
+    std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
     IClrLifetime const* _pClrLifetime;
     bool _isStopped = false;
