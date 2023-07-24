@@ -530,6 +530,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("service_mapping");
                     WriteDictionary(instanceSettings.ServiceNameMappings);
 
+                    writer.WritePropertyName("dbm_propagation_mode");
+                    writer.WriteValue(Environment.GetEnvironmentVariable("DD_DBM_PROPAGATION_MODE"));
+
                     writer.WriteEndObject();
                     // ReSharper restore MethodHasAsyncOverload
                 }
