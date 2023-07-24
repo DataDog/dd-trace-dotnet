@@ -84,8 +84,8 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
             yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
             yield return new object[] { CreateFunc(s => s.Exporter.DogStatsdPort), 8125 };
-            yield return new object[] { CreateFunc(s => s.PropagationStyleInject), new[] { "Datadog" } };
-            yield return new object[] { CreateFunc(s => s.PropagationStyleExtract), new[] { "Datadog" } };
+            yield return new object[] { CreateFunc(s => s.PropagationStyleInject), new[] { "tracecontext", "Datadog" } };
+            yield return new object[] { CreateFunc(s => s.PropagationStyleExtract), new[] { "tracecontext", "Datadog" } };
             yield return new object[] { CreateFunc(s => s.ServiceNameMappings), null };
 
             yield return new object[] { CreateFunc(s => s.TraceId128BitGenerationEnabled), false };
