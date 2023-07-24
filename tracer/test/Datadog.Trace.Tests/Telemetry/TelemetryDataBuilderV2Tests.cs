@@ -226,8 +226,7 @@ public class TelemetryDataBuilderV2Tests
         public static IEnumerable<object[]> Data()
         {
             var options = new[] { true, false };
-            return from config in options
-                   from hasDeps in options
+            return from hasDeps in options
                    from hasIntegrations in options
                    from hasConfig in options
                    from hasMetrics in options
