@@ -9,8 +9,11 @@ using System.Reflection;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -22,34 +25,56 @@ namespace Datadog.Trace.Debugger.Symbols
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolsUploader));
 
         private readonly JsonSerializerSettings _jsonSerializerSettings;
-        private readonly CancellationTokenSource _cancellationTokenSource;
         private readonly string _serviceName;
         private readonly string? _serviceVersion;
         private readonly string? _environment;
         private readonly SymbolExtractor _symbolExtractor;
+        private readonly IDiscoveryService _discoveryService;
         private readonly SemaphoreSlim _assemblySemaphore;
+        private readonly SemaphoreSlim _discoveryServiceSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
-        private readonly IBatchUploadApi _api;
         private readonly long _sizeLimit;
+        private readonly CancellationTokenSource _cancellationToken;
+        private readonly IBatchUploadApi _api;
         private byte[]? _payload;
+        private string? _isSymbolUploaderEnabled;
 
-        private SymbolsUploader(string? environment, string? serviceVersion, string serviceName, SymbolExtractor symbolExtractor, IBatchUploadApi api, int sizeLimit)
+        private SymbolsUploader(SymbolExtractor symbolExtractor, IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
+            _isSymbolUploaderEnabled = null;
             _alreadyProcessed = new HashSet<string>();
-            _environment = environment;
-            _serviceVersion = serviceVersion;
+            _environment = tracerSettings.EnvironmentInternal;
+            _serviceVersion = tracerSettings.ServiceVersionInternal;
             _serviceName = serviceName;
             _symbolExtractor = symbolExtractor;
-            _assemblySemaphore = new SemaphoreSlim(1);
-            _cancellationTokenSource = new CancellationTokenSource();
-            _sizeLimit = sizeLimit * 1024 * 1024;
+            _discoveryService = discoveryService;
             _api = api;
+            _assemblySemaphore = new SemaphoreSlim(1);
+            _discoveryServiceSemaphore = new SemaphoreSlim(0);
+            _sizeLimit = settings.SymbolBatchSizeInMb * 1024 * 1024;
+            _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
+            _discoveryService.SubscribeToChanges(ConfigurationChanged);
         }
 
-        public static SymbolsUploader Create(string? environment, string? serviceVersion, string serviceName, SymbolExtractor symbolExtractor, IBatchUploadApi api, int sizeLimit)
+        private void ConfigurationChanged(AgentConfiguration configuration)
         {
-            return new SymbolsUploader(environment, serviceVersion, serviceName, symbolExtractor, api, sizeLimit);
+            _isSymbolUploaderEnabled = configuration.SymbolDbEndpoint;
+            _discoveryServiceSemaphore.Release(1);
+            _discoveryService.RemoveSubscription(ConfigurationChanged);
+        }
+
+        public static ISymbolsUploader Create(SymbolExtractor symbolExtractor, IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        {
+            if (api is not NoOpSymbolBatchUploadApi &&
+               (settings.SymbolDatabaseUploadEnabled ||
+                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false").ToBoolean() ?? false)))
+            {
+                return new SymbolsUploader(symbolExtractor, api, discoveryService, settings, tracerSettings, serviceName);
+            }
+
+            Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
+            return new NoOpUploader();
         }
 
         private void RegisterToAssemblyLoadEvent()
@@ -63,7 +88,12 @@ namespace Datadog.Trace.Debugger.Symbols
         private async Task ProcessItemAsync(Assembly assembly)
         {
             await Task.Yield();
-            await _assemblySemaphore.WaitAsync().ConfigureAwait(false);
+            await _assemblySemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
+
+            if (_cancellationToken.IsCancellationRequested)
+            {
+                return;
+            }
 
             try
             {
@@ -113,7 +143,7 @@ namespace Datadog.Trace.Debugger.Symbols
             await UploadClasses(root, _symbolExtractor.GetClassSymbols(assembly)).ConfigureAwait(false);
         }
 
-        public async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)
+        private async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)
         {
             var count = 0;
             var builder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
@@ -175,7 +205,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
-            return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            return await _api!.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
         }
 
         private int SerializeClass(Model.Scope classScope, StringBuilder sb)
@@ -205,6 +235,11 @@ namespace Datadog.Trace.Debugger.Symbols
 
         public async Task StartExtractingAssemblySymbolsAsync()
         {
+            if (await WaitForDiscoveryServiceAsync().ConfigureAwait(false) == false)
+            {
+                return;
+            }
+
             RegisterToAssemblyLoadEvent();
             var assemblies = AppDomain.CurrentDomain.GetAssemblies();
             for (var i = 0; i < assemblies.Length; i++)
@@ -213,10 +248,31 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
+        private async Task<bool> WaitForDiscoveryServiceAsync()
+        {
+            await _discoveryServiceSemaphore.WaitAsync(TimeSpan.FromSeconds(10), _cancellationToken.Token).ConfigureAwait(false);
+            _discoveryServiceSemaphore.Dispose();
+            if (_cancellationToken.IsCancellationRequested)
+            {
+                return false;
+            }
+
+            if (!string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
+            {
+                return true;
+            }
+            else
+            {
+                Log.Warning("Upload symbol database is not supported");
+            }
+
+            return false;
+        }
+
         public void Dispose()
         {
-            _cancellationTokenSource.Cancel();
-            _cancellationTokenSource.Dispose();
+            _cancellationToken.Cancel();
+            _cancellationToken.Dispose();
             _assemblySemaphore.Dispose();
         }
     }

@@ -52,6 +52,8 @@ namespace Datadog.Trace.Debugger
                                          .AsInt32(DefaultSymbolBatchSizeInMb, maxDepth => maxDepth > 0)
                                          .Value;
 
+            SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
+
             DiagnosticsIntervalSeconds = config
                                         .WithKeys(ConfigurationKeys.Debugger.DiagnosticsInterval)
                                         .AsInt32(DefaultDiagnosticsIntervalSeconds, interval => interval > 0)
@@ -72,6 +74,8 @@ namespace Datadog.Trace.Debugger
         public int UploadBatchSize { get; }
 
         public int SymbolBatchSizeInMb { get; }
+
+        public bool SymbolDatabaseUploadEnabled { get; }
 
         public int DiagnosticsIntervalSeconds { get; }
 

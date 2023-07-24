@@ -12,4 +12,16 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         Task StartExtractingAssemblySymbolsAsync();
     }
+
+    internal class NoOpUploader : ISymbolsUploader
+    {
+        public void Dispose()
+        {
+        }
+
+        public async Task StartExtractingAssemblySymbolsAsync()
+        {
+            await Task.CompletedTask.ConfigureAwait(false);
+        }
+    }
 }

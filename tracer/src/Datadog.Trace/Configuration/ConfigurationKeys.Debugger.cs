@@ -47,6 +47,19 @@ namespace Datadog.Trace.Configuration
             public const string SymbolBatchSizeInMb = "DD_DEBUGGER_SYMBOL_BATCH_SIZE_MB";
 
             /// <summary>
+            /// Configuration key for allowing uploading symbol database for internal use.
+            /// Default value is false (disabled).
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
+            public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASED_UPLOAD_ENABLED";
+
+            /// <summary>
+            /// Configuration key for allowing uploading symbol database for internal use.
+            /// Default value is false (disabled).
+            /// </summary>
+            public const string SymbolDatabaseUploadEnabledInternal = "DD_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
+
+            /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
             /// Default value is 3600.
             /// </summary>
