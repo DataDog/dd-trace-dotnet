@@ -228,6 +228,7 @@ namespace Datadog.Trace.Debugger.Symbols
                                 if (symbolMethod.SequencePoints[m].Offset >= currentScope.StartOffset)
                                 {
                                     line = symbolMethod.SequencePoints[m].Line;
+                                    break;
                                 }
                             }
 

@@ -21,44 +21,44 @@ namespace Datadog.Trace.Debugger.Symbols
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<SymbolBatchUploadApi>();
         private readonly IApiRequestFactory _apiRequestFactory;
-        private readonly Lazy<ArraySegment<byte>> _event;
+        private readonly ArraySegment<byte> _eventMetadata;
         private string? _endpoint;
 
-        private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string? serviceName)
+        private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ArraySegment<byte> eventMetadataMetadata)
         {
             _apiRequestFactory = apiRequestFactory;
-            _event = new Lazy<ArraySegment<byte>>(() => GetEventAsArraySegment(serviceName));
+            _eventMetadata = eventMetadataMetadata;
             discoveryService.SubscribeToChanges(c => _endpoint = c.SymbolDbEndpoint);
         }
 
-        private ArraySegment<byte> GetEventAsArraySegment(string? serviceName)
+        private static ArraySegment<byte> GetEventAsArraySegment(string? serviceName)
         {
-            var @event = string.Empty;
+            var sb = new StringBuilder();
+            sb.Append(@"{");
+            sb.Append(@"""ddsource"": ""dd_debugger"",");
+            sb.Append(@$"""service"": ""{serviceName}"",");
+            sb.Append(@$"""runtimeId"": ""{Tracer.RuntimeId}""");
+            sb.Append(@"}");
+            var eventMetadata = sb.ToString();
+
+            var count = Encoding.UTF8.GetByteCount(eventMetadata);
+            var eventAsBytes = new byte[count];
+            Encoding.UTF8.GetBytes(eventMetadata, 0, eventMetadata.Length, eventAsBytes, 0);
+            return new ArraySegment<byte>(eventAsBytes);
+        }
+
+        public static IBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string? serviceName)
+        {
             try
             {
-                var sb = new StringBuilder();
-                sb.Append(@"{");
-                sb.Append(@"""ddsource"": ""dd_debugger"",");
-                sb.Append(@$"""service"": ""{serviceName}"",");
-                sb.Append(@$"""runtimeId"": ""{Tracer.RuntimeId}""");
-                sb.Append(@"}");
-                @event = sb.ToString();
-
-                var count = Encoding.UTF8.GetByteCount(@event);
-                var eventAsBytes = new byte[count];
-                Encoding.UTF8.GetBytes(@event, 0, @event.Length, eventAsBytes, 0);
-                return new ArraySegment<byte>(eventAsBytes);
+                var eventMetadata = GetEventAsArraySegment(serviceName);
+                return new SymbolBatchUploadApi(apiRequestFactory, discoveryService, eventMetadata);
             }
             catch (Exception e)
             {
-                Log.Error(e, "Failed to initialize event {Event}", @event);
-                return default;
+                Log.Error(e, "Failed to create {Class}. Creating instead {NoOpClass}.", nameof(SymbolBatchUploadApi), nameof(NoOpSymbolBatchUploadApi));
+                return new NoOpSymbolBatchUploadApi();
             }
-        }
-
-        public static SymbolBatchUploadApi Create(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, string? serviceName)
-        {
-            return new SymbolBatchUploadApi(apiRequestFactory, discoveryService, serviceName);
         }
 
         public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
@@ -66,12 +66,6 @@ namespace Datadog.Trace.Debugger.Symbols
             if (Volatile.Read(ref _endpoint) is not { } endpoint)
             {
                 Log.Warning("Failed to upload symbol: symbol endpoint not yet retrieved from discovery service");
-                return false;
-            }
-
-            if (_event.Value == default || _event.Value.Count == 0)
-            {
-                Log.Error("Failed to initialize event");
                 return false;
             }
 
@@ -86,7 +80,7 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 using var response = await multipartRequest.PostAsync(
                                          new MultipartFormItem("file", MimeTypes.Json, "file.json", symbols),
-                                         new MultipartFormItem("event", MimeTypes.Json, "event.json", _event.Value)).
+                                         new MultipartFormItem("event", MimeTypes.Json, "event.json", _eventMetadata)).
                                                             ConfigureAwait(false);
 
                 if (response.StatusCode is >= 200 and <= 299)
@@ -95,7 +89,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 retries++;
-                var content = await response.ReadAsStringAsync().ConfigureAwait(false);
 
                 if (ShouldRetry(response.StatusCode))
                 {
@@ -103,6 +96,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
                 else
                 {
+                    var content = await response.ReadAsStringAsync().ConfigureAwait(false);
                     Log.Error<int, string>("Failed to upload symbol with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, content);
                     return false;
                 }

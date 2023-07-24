@@ -7,11 +7,16 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Debugger;
 using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
+using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 
@@ -19,21 +24,25 @@ namespace Datadog.Trace.Tests.Debugger;
 
 public class SymbolUploaderTest
 {
-    private const int SizeLimit = 1;
     private readonly MockBatchUploadApi _api;
-    private readonly SymbolsUploader _upload;
+    private readonly ISymbolsUploader _upload;
 
     public SymbolUploaderTest()
     {
+        var discoveryService = new DiscoveryServiceMock();
         _api = new MockBatchUploadApi();
-        _upload = SymbolsUploader.Create("test", "0", nameof(SymbolUploaderTest), new SymbolExtractor(), _api, SizeLimit);
+        var settings = new DebuggerSettings(
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInMb, "1" } }),
+            NullConfigurationTelemetry.Instance);
+        _upload = SymbolsUploader.Create(new SymbolExtractor(), _api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
     }
 
     [Fact]
     public async Task SizeLimitHasNotReached_OneBatch()
     {
         var (root, classes) = GenerateSymbolString(1);
-        await _upload.UploadClasses(root, classes);
+        var success = await UploadClasses(root, classes);
+        Assert.True(success);
         var result = DeserializeRoot(_api.Segments.SelectMany(arr => arr).ToArray());
         Assert.NotNull(result);
         var assembly = result.Scopes[0];
@@ -48,7 +57,8 @@ public class SymbolUploaderTest
     public async Task SizeLimitHasReached_MoreThanOneBatch()
     {
         var (root, classes) = GenerateSymbolString(1000);
-        await _upload.UploadClasses(root, classes);
+        var success = await UploadClasses(root, classes);
+        Assert.True(success);
         var result = DeserializeRoot(_api.Segments.SelectMany(arr => arr).ToArray());
         Assert.NotNull(result);
         var assembly = result.Scopes[0];
@@ -57,6 +67,18 @@ public class SymbolUploaderTest
         Assert.True(classesScope.Count == 1000);
         Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
         Assert.True(classesScope.All(cls => cls.ScopeType == SymbolType.Class));
+    }
+
+    private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> classes)
+    {
+        var uploadClassesMethod = ((SymbolsUploader)_upload).GetType().GetMethod("UploadClasses", BindingFlags.Instance | BindingFlags.NonPublic);
+        if (uploadClassesMethod == null)
+        {
+            return false;
+        }
+
+        await ((Task)uploadClassesMethod.Invoke(_upload, new object?[] { root, classes })!).ConfigureAwait(false);
+        return true;
     }
 
     private Root? DeserializeRoot(byte[] json)

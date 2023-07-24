@@ -58,18 +58,9 @@ internal class LiveDebuggerFactory
         var lineProbeResolver = LineProbeResolver.Create();
         var probeStatusPoller = ProbeStatusPoller.Create(probeStatusSink, settings);
 
-        var symbolsApiFactory = AgentTransportStrategy.Get(
-            tracerSettings.ExporterInternal,
-            productName: "debugger",
-            tcpTimeout: TimeSpan.FromSeconds(15),
-            AgentHttpHeaderNames.MinimalHeaders,
-            () => new SymbolsAgentHeaderHelper(),
-            uri => uri);
-
-        var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService, serviceName);
-        var symbolsUploader = SymbolsUploader.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal, serviceName, new SymbolExtractor(), symbolBatchApi, settings.SymbolBatchSizeInMb);
-
         var configurationUpdater = ConfigurationUpdater.Create(tracerSettings.EnvironmentInternal, tracerSettings.ServiceVersionInternal);
+
+        var symbolsUploader = CreateSymbolsUploader(discoveryService, tracerSettings, serviceName, settings);
 
         IDogStatsd statsd;
         if (FrameworkDescription.Instance.IsWindows()
@@ -85,5 +76,20 @@ internal class LiveDebuggerFactory
 
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
         return LiveDebugger.Create(settings, serviceName, discoveryService, remoteConfigurationManager, lineProbeResolver, debuggerSink, symbolsUploader, probeStatusPoller, configurationUpdater, statsd);
+    }
+
+    private static ISymbolsUploader CreateSymbolsUploader(IDiscoveryService discoveryService, ImmutableTracerSettings tracerSettings, string serviceName, DebuggerSettings settings)
+    {
+        var symbolsApiFactory = AgentTransportStrategy.Get(
+            tracerSettings.ExporterInternal,
+            productName: "debugger",
+            tcpTimeout: TimeSpan.FromSeconds(15),
+            AgentHttpHeaderNames.MinimalHeaders,
+            () => new SymbolsAgentHeaderHelper(),
+            uri => uri);
+
+        var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService, serviceName);
+        var symbolsUploader = SymbolsUploader.Create(new SymbolExtractor(), symbolBatchApi, discoveryService, settings, tracerSettings, serviceName);
+        return symbolsUploader;
     }
 }
