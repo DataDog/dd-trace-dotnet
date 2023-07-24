@@ -30,29 +30,45 @@ namespace Samples.DataStreams.RabbitMQ
             var factory = new ConnectionFactory() { HostName = Host };
             using var connection = factory.CreateConnection();
             using var model = connection.CreateModel();
-        
-            // produce/consume operation (default exchange)
+
+            // This should create 4 separate Rabbit Pipeline:
+            // 1. default exchange pipeline:
+            //    (direction:out, topic:DefaultQueue) -> (direction:in, topic:DefaultQueue)
+            // 2. direct exchange pipeline:
+            //    (direction:out, exchange:DirectExchange, has_routing_key:True) ->
+            //    (direction:in, topic:DirectQueue1)
+            // 3. fanout exchange pipeline (fanning out into 3 consumers)
+            //    (direction:out, exchange:FanoutExchange, has_routing_key:False) ->
+            //        (direction:in, topic:FanoutQueue1)
+            //        (direction:in, topic:FanoutQueue2)
+            //        (direction:in, topic:FanoutQueue3)
+            // 4. topic exchange -- 2 separate publishes resulting in pipelines as follows:
+            //    (direction:out, exchange:TopicExchange, has_routing_key:True) ->
+            //        (direction:in, topic:FanoutQueue1)
+            //        (direction:in, topic:FanoutQueue3)
+            //    (direction:out, exchange:TopicExchange, has_routing_key:True) ->
+            //        (direction:in, topic:FanoutQueue2)
+
+            // produce (default exchange)
             PublishMessageToDefaultExchange(model);
-            GetMessage(model, DefaultQueue);
 
-            // produce/consume operation (direct exchange)
+            // produce (direct exchange)
             List<string> directQueues = PublishMessageToDirectExchange(model);
-            foreach (var queue in directQueues) 
-            {
-                GetMessage(model, queue);
-            }
 
-            // produce/consume operation (fanout exchange)
+            // produce (fanout exchange)
             List<string> fanoutQueues = PublishMessageToFanoutExchange(model);
-            foreach (var queue in fanoutQueues)
-            {
+
+            // produce (topic exchange)
+            List<string> topicQueues = PublishMessageToTopicExchange(model);
+
+            GetMessage(model, DefaultQueue);
+            foreach (var queue in directQueues) {
                 GetMessage(model, queue);
             }
-
-            // produce/consume operation (topic exchange)
-            List<string> topicQueues = PublishMessageToTopicExchange(model);
-            foreach (var queue in topicQueues)
-            {
+            foreach (var queue in topicQueues) {
+                GetMessage(model, queue);
+            }
+            foreach (var queue in fanoutQueues) {
                 GetMessage(model, queue);
             }
         }
@@ -168,11 +184,6 @@ namespace Samples.DataStreams.RabbitMQ
                                routingKey: "test.topic.chocolate.cake",
                                basicProperties: null,
                                body: Encoding.UTF8.GetBytes(Message));
-            // Routes to queue3.
-            model.BasicPublish(exchange: TopicExchange,
-                               routingKey: "test.topic.chocolate.icecream",
-                               basicProperties: null,
-                               body: Encoding.UTF8.GetBytes(Message));
             // Routes to queue2.
             model.BasicPublish(exchange: TopicExchange,
                                routingKey: "test.topic.vanilla.icecream",
@@ -183,8 +194,6 @@ namespace Samples.DataStreams.RabbitMQ
             List<string> output = new List<string>();
             output.Add(TopicQueue1);
             output.Add(TopicQueue2);
-            // Adds queue3 twice since we expect 2 messages to be consumed by it.
-            output.Add(TopicQueue3);
             output.Add(TopicQueue3);
             return output;
         }
