@@ -1584,7 +1584,7 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
   - job: DockerTest
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 1440 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_linux_matrix']]
 
@@ -2316,7 +2316,7 @@ stages:
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - job: DockerTest
-      timeoutInMinutes: 60 #default value
+      timeoutInMinutes: 1440 #default value
       strategy:
         matrix:
           net5_0:
