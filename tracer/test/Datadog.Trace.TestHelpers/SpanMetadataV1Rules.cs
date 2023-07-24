@@ -344,6 +344,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "client"));
 
         public static Result IsMsmqInboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Msmq - Inbound")
             .Properties(s => s
                 .Matches(Name, "msmq.process")
                 .Matches(Type, "queue"))
@@ -357,6 +358,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("span.kind", "consumer"));
 
         public static Result IsMsmqOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Msmq - Outbound")
             .Properties(s => s
                 .Matches(Name, "msmq.send")
                 .Matches(Type, "queue"))
