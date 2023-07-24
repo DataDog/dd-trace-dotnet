@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -73,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                     resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
-                    query = protocolWithCommand.Command.ToString();
+                    query = BsonSerializationHelper.ToShortString(((IDuckType)protocolWithCommand.Command).Instance);
                 }
                 catch (Exception ex)
                 {

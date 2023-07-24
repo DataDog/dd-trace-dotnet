@@ -7,6 +7,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
 {
@@ -38,8 +39,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TReturn> OnMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            var scope = Tracer.Instance.InternalActiveScope;
-            scope.DisposeWithException(exception);
+            var operationContext = WcfCommon.GetCurrentOperationContext();
+
+            if (operationContext != null && operationContext.TryDuckCast<IOperationContextStruct>(out var operationContextProxy))
+            {
+                var requestContext = operationContextProxy.RequestContext;
+
+                // Retrieve the scope that we saved during InvokeBegin
+                if (WcfCommon.Scopes.TryGetValue(((IDuckType)requestContext).Instance, out var scope))
+                {
+                    scope.DisposeWithException(exception);
+                }
+            }
+
             return new CallTargetReturn<TReturn>(returnValue);
         }
     }
