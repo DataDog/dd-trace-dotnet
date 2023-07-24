@@ -225,7 +225,16 @@ namespace Datadog.Trace
 
         protected virtual ITraceSampler GetSampler(ImmutableTracerSettings settings)
         {
-            var sampler = new TraceSampler(new TracerRateLimiter(settings.MaxTracesSubmittedPerSecondInternal));
+            var traceRateLimit = settings.MaxTracesSubmittedPerSecondInternal;
+            int? traceRateIntervalMilliseconds = null;
+            if (!settings.ApmEnabledInternal)
+            {
+                // TODO : Detect if the setting has been overriden
+                traceRateLimit = 1; // 1 trace per minute max
+                traceRateIntervalMilliseconds = 60_000;
+            }
+
+            var sampler = new TraceSampler(new TracerRateLimiter(traceRateLimit, traceRateIntervalMilliseconds));
 
             if (!string.IsNullOrWhiteSpace(settings.CustomSamplingRulesInternal))
             {
@@ -250,7 +259,7 @@ namespace Datadog.Trace
             }
             else if (!settings.ApmEnabledInternal)
             {
-                sampler.RegisterRule(new GlobalSamplingRule(0.001f)); // TODO : Apply a time based sampling rule
+                sampler.RegisterRule(new GlobalSamplingRule(1)); // Keep all APM traces by default
             }
 
             return sampler;
