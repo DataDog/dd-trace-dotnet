@@ -182,7 +182,6 @@ SET k ?"
             { null, null },
             { string.Empty, string.Empty },
             { "\n  \n", "\n  \n" },
-            { "\n  \n", "\n  \n" },
             { "EEK key value1 value2", "EEK key value1 value2" },
             { "YIKES key value1 value2", "YIKES key value1 value2" },
             { "OOPSEY key value1 value2", "OOPSEY key value1 value2" },
