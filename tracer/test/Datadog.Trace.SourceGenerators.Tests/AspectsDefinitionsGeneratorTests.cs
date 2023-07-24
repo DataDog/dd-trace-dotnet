@@ -95,8 +95,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
         };
     }
 }
@@ -147,8 +147,8 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
         };
     }
 }
@@ -218,11 +218,11 @@ namespace Datadog.Trace.ClrProfiler
     {
         public static string[] Aspects = new string[] {
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Propagation,[])] MyTests.TestAspectClass1",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[StringOptimization],Sink,[WeakCipher,WeakHash])] MyTests.TestAspectClass2",
-"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
 "  [AspectMethodReplace(\"System.String::Concat(System.Object,System.Object,System.Object)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.Object,System.Object,System.Object)",
+"  [AspectMethodReplace(\"System.String::Concat(System.String,System.String)\",\"\",[0],[False],[StringLiterals_Any],Propagation,[])] Concat(System.String,System.String)",
         };
     }
 }

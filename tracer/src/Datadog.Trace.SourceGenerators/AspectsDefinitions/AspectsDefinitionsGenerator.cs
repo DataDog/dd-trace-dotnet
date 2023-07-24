@@ -47,7 +47,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
            context.CompilationProvider
                   .Combine(classDeclarations.Collect());
 
-        IncrementalValueProvider<IReadOnlyList<string>> detailsToRender =
+        IncrementalValueProvider<IReadOnlyList<AspectClassDefinition>> detailsToRender =
            compilationAndClasses.Select(static (x, ct) => GetDefinitionsToWrite(x.Left, x.Right, ct));
         context.RegisterSourceOutput(detailsToRender, static (spc, source) => Execute(source, spc));
     }
@@ -73,33 +73,33 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         return null;
     }
 
-    private static IReadOnlyList<string> GetDefinitionsToWrite(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, CancellationToken ct)
+    private static IReadOnlyList<AspectClassDefinition> GetDefinitionsToWrite(Compilation compilation, ImmutableArray<ClassDeclarationSyntax> classes, CancellationToken ct)
     {
         if (classes.IsDefaultOrEmpty)
         {
             // nothing to do yet
-            return Array.Empty<string>();
+            return Array.Empty<AspectClassDefinition>();
         }
 
         return GetAspectSources(compilation, classes.Distinct(), ct);
     }
 
-    private static void Execute(IReadOnlyList<string> definitions, SourceProductionContext context)
+    private static void Execute(IReadOnlyList<AspectClassDefinition> definitions, SourceProductionContext context)
     {
         string source = GetSource(definitions);
         context.AddSource("AspectsDefinitions.g.cs", SourceText.From(source, Encoding.UTF8));
     }
 
-    private static IReadOnlyList<string> GetAspectSources(Compilation compilation, IEnumerable<ClassDeclarationSyntax> classes, CancellationToken cancellationToken)
+    private static IReadOnlyList<AspectClassDefinition> GetAspectSources(Compilation compilation, IEnumerable<ClassDeclarationSyntax> classes, CancellationToken cancellationToken)
     {
         INamedTypeSymbol? aspectClassAttribute = compilation.GetTypeByMetadataName(Constants.AspectClassAttributeFullName);
         if (aspectClassAttribute is null)
         {
             // nothing to do if this type isn't available
-            return Array.Empty<string>();
+            return Array.Empty<AspectClassDefinition>();
         }
 
-        var results = new List<string>();
+        var results = new List<AspectClassDefinition>();
 
         List<(string, INamedTypeSymbol)> classSymbols = new List<(string, INamedTypeSymbol)>();
 
@@ -130,9 +130,9 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
             }
         }
 
-        foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1, StringComparer.InvariantCulture))
+        foreach (var classSymbol in classSymbols)
         {
-            results.Add(classSymbol.Item1);
+            List<string> aspects = new List<string>();
             foreach (var member in classSymbol.Item2.GetMembers())
             {
                 var memberAttributes = member.GetAttributes();
@@ -142,10 +142,13 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
                     if (attribute != null)
                     {
                         string functionName = GetFullName(member);
-                        results.Add("  " + attribute.ToString() + " " + functionName);
+                        aspects.Add("  " + attribute.ToString() + " " + functionName);
                     }
                 }
             }
+
+            aspects.Sort(StringComparer.InvariantCulture);
+            results.Add(new AspectClassDefinition { AspectClass = classSymbol.Item1, Aspects = aspects });
         }
 
         return results;
@@ -233,7 +236,7 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
         return string.Empty;
     }
 
-    private static string GetSource(IReadOnlyList<string> definitions)
+    private static string GetSource(IReadOnlyList<AspectClassDefinition> definitions)
     {
         var sb = new StringBuilder();
         sb.AppendLine("""
@@ -252,11 +255,17 @@ namespace Datadog.Trace.ClrProfiler
         public static string[] Aspects = new string[] {
 """);
 
-        foreach (var definition in definitions)
+        foreach (var definition in definitions.OrderBy(d => d.AspectClass, StringComparer.InvariantCulture))
         {
             sb.Append("\"");
-            sb.Append(definition.Replace("\"", "\\\""));
+            sb.Append(definition.AspectClass.Replace("\"", "\\\""));
             sb.AppendLine("\",");
+            foreach (var aspect in definition.Aspects)
+            {
+                sb.Append("\"");
+                sb.Append(aspect.Replace("\"", "\\\""));
+                sb.AppendLine("\",");
+            }
         }
 
         sb.AppendLine("""
@@ -265,5 +274,11 @@ namespace Datadog.Trace.ClrProfiler
 }
 """);
         return sb.ToString();
+    }
+
+    private struct AspectClassDefinition
+    {
+        public string AspectClass;
+        public List<string> Aspects;
     }
 }
