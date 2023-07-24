@@ -22,7 +22,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsMsmq(metadataSchemaVersion);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
+            span.Tags["span.kind"] switch
+            {
+                SpanKinds.Consumer => span.IsMsmqInbound(metadataSchemaVersion),
+                SpanKinds.Producer => span.IsMsmqOutbound(metadataSchemaVersion),
+                SpanKinds.Client => span.IsMsmqClient(metadataSchemaVersion),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the MSMQ integration: {span.Tags["span.kind"]}", nameof(span)),
+            };
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]

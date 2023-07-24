@@ -353,9 +353,6 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
-                .IsPresent("peer.service")
-                .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .Matches("span.kind", "consumer"));
 
@@ -369,6 +366,9 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
                 .Matches("component", "msmq")
                 .Matches("span.kind", "producer"));
 
