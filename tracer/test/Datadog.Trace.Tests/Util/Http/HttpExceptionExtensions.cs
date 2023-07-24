@@ -40,16 +40,16 @@ public class HttpExceptionExtensions
     {
         foreach (var exception in SocketExceptions)
         {
-            exception.IsSocketException().Should().BeTrue();
+            exception.IsSocketException().Should().BeTrue($"{exception.GetType()} should count as SocketException");
         }
     }
 
     [Fact]
     public void IsSocketException_False()
     {
-        foreach (var exception in SocketExceptions)
+        foreach (var exception in NonSocketExceptions)
         {
-            exception.IsSocketException().Should().BeFalse();
+            exception.IsSocketException().Should().BeFalse($"{exception?.GetType()} should not count as SocketException");
         }
     }
 }
