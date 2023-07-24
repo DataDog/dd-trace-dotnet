@@ -318,7 +318,7 @@ bool CorProfilerCallback::InitializeServices()
         _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
     {
-        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider, _metricsRegistry);
 
         _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
     }
