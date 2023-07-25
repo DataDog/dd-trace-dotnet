@@ -29,15 +29,19 @@ public class HttpClientAspect
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String)")]
-#if NET5_0_OR_GREATER
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String, System.Threading.CancellationToken)", 1)]
-#endif
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String)")]
-#if NET5_0_OR_GREATER
-    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String, System.Threading.CancellationToken)", 1)]
+#if NETCOREAPP3_1_OR_GREATER
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String,System.Threading.CancellationToken)", 1)]
+#endif
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken) ", 2)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.String,System.Net.Http.HttpContent) ", 1)]
 #endif
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String)")]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
@@ -60,6 +64,15 @@ public class HttpClientAspect
     /// <returns>the parameter</returns>
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri)")]
+#if NETCOREAPP3_1_OR_GREATER
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+#endif
+#if !NETFRAMEWORK
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
+#endif
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption)", 1)]
@@ -71,6 +84,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+    [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
     public static object ReviewUri(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
@@ -89,8 +103,10 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
+#if !NETFRAMEWORK
     [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
+#endif
 #if !NETFRAMEWORK
     public static object ReviewHttpRequestMessage(HttpRequestMessage parameter)
     {

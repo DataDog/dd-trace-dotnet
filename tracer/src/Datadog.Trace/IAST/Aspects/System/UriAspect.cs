@@ -6,6 +6,9 @@
 using System;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
+#if NET6_0_OR_GREATER
+using Microsoft.Extensions.Options;
+#endif
 
 #nullable enable
 
@@ -48,16 +51,179 @@ public class UriAspect
     }
 
     /// <summary>
-    /// Uri .ctor(System.Uri,System.Uri) aspect.
+    /// Uri .ctor(System.Uri,System.String) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
-    /// <param name="relativeUri">The relative URI.</param>
-    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI.</returns>
+    /// <param name="relativeUri">The relative URI string.</param>
+    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
     [AspectCtorReplace("System.Uri::.ctor(System.Uri,System.Uri)")]
     public static Uri Init(Uri uriBase, Uri relativeUri)
     {
         var result = new Uri(uriBase, relativeUri);
         PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, relativeUri.OriginalString);
+        return result;
+    }
+
+    /// <summary>
+    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// </summary>
+    /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
+    /// <param name="dontEscape">dontEscape parameter.</param>
+    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.Boolean)")]
+    public static Uri Init(string uriBase, bool dontEscape)
+    {
+        var result = new Uri(uriBase, dontEscape);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        return result;
+    }
+
+    /// <summary>
+    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// </summary>
+    /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
+    /// <param name="uriKind">UriKind parameter.</param>
+    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriKind)")]
+    public static Uri Init(string uriBase, UriKind uriKind)
+    {
+        var result = new Uri(uriBase, uriKind);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        return result;
+    }
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// </summary>
+    /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
+    /// <param name="options">UriCreationOptions parameter.</param>
+    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriCreationOptions)")]
+    public static Uri Init(string uriBase, in UriCreationOptions options)
+    {
+        var result = new Uri(uriBase, in options);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
+        return result;
+    }
+#endif
+
+    /// <summary>
+    /// Uri TryCreate(System.String, System.UriKind, System.Uri ByRef) aspect.
+    /// </summary>
+    /// <param name="uri">The base URI used to resolve the relative URI.</param>
+    /// <param name="kind">The kind of uri.</param>
+    /// <param name="uriCreated">The uri created.</param>
+    /// <returns>True if the uri was created.</returns>
+    [AspectCtorReplace("System.Uri::TryCreate(System.String,System.UriKind,System.Uri)")]
+    public static bool TryCreate(string uri, UriKind kind, out Uri? uriCreated)
+    {
+        var result = Uri.TryCreate(uri, kind, out uriCreated);
+        if (uriCreated is not null)
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+        }
+
+        return result;
+    }
+
+#if NET6_0_OR_GREATER
+    /// <summary>
+    /// Uri TryCreate(System.String, System.UriCreationOptions,System.Uri) aspect.
+    /// </summary>
+    /// <param name="uri">The base URI used to resolve the relative URI.</param>
+    /// <param name="options">The options of uri.</param>
+    /// <param name="uriCreated">The uri created.</param>
+    /// <returns>True if the uri was created.</returns>
+    [AspectCtorReplace("System.Uri::TryCreate(System.String,System.UriCreationOptions,System.Uri ByRef)")]
+    public static bool TryCreate(string uri, in UriCreationOptions options, out Uri? uriCreated)
+    {
+        var result = Uri.TryCreate(uri, options, out uriCreated);
+        if (uriCreated is not null)
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, uri);
+        }
+
+        return result;
+    }
+#endif
+
+    /// <summary>
+    /// Uri TryCreate(System.String, System.UriCreationOptions, System.Uri ByRef) aspect.
+    /// </summary>
+    /// <param name="baseUri">The base URI used to resolve the relative URI.</param>
+    /// <param name="relativeUri">The options of uri.</param>
+    /// <param name="uriCreated">The uri created.</param>
+    /// <returns>True if the uri was created.</returns>
+    [AspectCtorReplace("System.Uri::TryCreate(System.Uri,System.String,System.Uri)")]
+    public static bool TryCreate(Uri? baseUri, string? relativeUri, out Uri? uriCreated)
+    {
+        var result = Uri.TryCreate(baseUri, relativeUri, out uriCreated);
+        if (uriCreated is not null)
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Uri TryCreate(System.String, System.UriCreationOptions, System.Uri ByRef) aspect.
+    /// </summary>
+    /// <param name="baseUri">The base URI used to resolve the relative URI.</param>
+    /// <param name="relativeUri">The options of uri.</param>
+    /// <param name="uriCreated">The uri created.</param>
+    /// <returns>True if the uri was created.</returns>
+    [AspectCtorReplace("System.Uri::TryCreate(System.Uri,System.Uri,System.Uri)")]
+    public static bool TryCreate(Uri? baseUri, Uri? relativeUri, out Uri? uriCreated)
+    {
+        var result = Uri.TryCreate(baseUri, relativeUri, out uriCreated);
+        if (uriCreated is not null)
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(uriCreated.OriginalString, baseUri?.OriginalString, relativeUri?.OriginalString);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Uri UnescapeDataString aspect.
+    /// </summary>
+    /// <param name="uri">The uri as string.</param>
+    /// <returns>The resulting method result.</returns>
+    [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)")]
+    public static string UnescapeDataString(string uri)
+    {
+        var result = Uri.UnescapeDataString(uri);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+        return result;
+    }
+
+    /// <summary>
+    /// Uri EscapeUriString aspect.
+    /// </summary>
+    /// <param name="uri">The uri as string.</param>
+    /// <returns>The resulting method result.</returns>
+    [AspectMethodReplace("System.Uri::EscapeUriString(System.String)")]
+    public static string EscapeUriString(string uri)
+    {
+#pragma warning disable SYSLIB0013 // obsolete
+        var result = Uri.EscapeUriString(uri);
+#pragma warning restore 0168
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
+        return result;
+    }
+
+    /// <summary>
+    /// Uri EscapeDataString aspect.
+    /// </summary>
+    /// <param name="uri">The uri as string.</param>
+    /// <returns>The resulting method result.</returns>
+    [AspectMethodReplace("System.Uri::EscapeDataString(System.String)")]
+    public static string EscapeDataString(string uri)
+    {
+        var result = Uri.EscapeDataString(uri);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
         return result;
     }
 
@@ -97,6 +263,42 @@ public class UriAspect
     {
         var result = instance.LocalPath;
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        return result;
+    }
+
+    /// <summary>
+    /// Uri MakeRelative aspect.
+    /// </summary>
+    /// <param name="instance">The System.Uri instance.</param>
+    /// <param name="uri">The uri argument.</param>
+    /// <returns>The relative Uri.</returns>
+    [AspectMethodReplace("System.Uri::MakeRelative(System.Uri)")]
+    public static string? MakeRelative(Uri instance, Uri uri)
+    {
+        var result = instance.MakeRelative(uri);
+        if (!string.IsNullOrWhiteSpace(result))
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
+        }
+
+        return result;
+    }
+
+    /// <summary>
+    /// Uri MakeRelativeUri aspect.
+    /// </summary>
+    /// <param name="instance">The System.Uri instance.</param>
+    /// <param name="uri">The uri argument.</param>
+    /// <returns>The relative Uri.</returns>
+    [AspectMethodReplace("System.Uri::MakeRelativeUri(System.Uri)")]
+    public static Uri? MakeRelativeUri(Uri instance, Uri uri)
+    {
+        var result = instance.MakeRelativeUri(uri);
+        if (!string.IsNullOrWhiteSpace(result?.OriginalString))
+        {
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result!.OriginalString, uri.OriginalString);
+        }
+
         return result;
     }
 
