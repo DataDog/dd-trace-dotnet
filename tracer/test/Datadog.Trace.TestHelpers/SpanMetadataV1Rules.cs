@@ -191,9 +191,9 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAwsSnsV1(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSnsInboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "sns.request")
+                .Matches(Name, "aws.sns.process")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("aws.agent", "dotnet-aws-sdk")
@@ -206,6 +206,48 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsAwsSnsOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.sns.send")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SNS")
+                .IsOptional("aws.topic.name")
+                .IsOptional("aws.topic.arn")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "aws.topic.name", "peer.service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAwsSnsRequestV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.sns.request")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "SNS")
+                .IsOptional("aws.topic.name")
+                .IsOptional("aws.topic.arn")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "aws.topic.name", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
