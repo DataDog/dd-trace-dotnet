@@ -888,7 +888,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
             var exceptions = new List<Exception>();
             try
             {
@@ -907,7 +907,7 @@ partial class Build
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
                             .When(CodeCoverage, ConfigureCodeCoverage)
-                            .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                            .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
@@ -1251,7 +1251,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                    .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1270,7 +1270,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1339,7 +1339,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&Category=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&Category=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1380,7 +1380,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1432,7 +1432,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
+                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions" : Filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1471,7 +1471,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1710,7 +1710,7 @@ partial class Build
 
             var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-            var filter = string.IsNullOrEmpty(Filter) switch
+            var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => $"({Filter}){dockerFilter}{armFilter}",
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
@@ -1791,7 +1791,7 @@ partial class Build
 
             var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-            var filter = string.IsNullOrEmpty(Filter) switch
+            var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => Filter,
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
