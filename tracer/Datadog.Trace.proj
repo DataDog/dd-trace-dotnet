@@ -33,9 +33,9 @@
 
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
-    <!-- Filter the sample projects by TargetFramework -->
+    <!-- Filter the sample projects by TargetFramework and optionally sample name -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
@@ -48,9 +48,9 @@
   <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
 
     <!-- Assumes that the core C# projects are already built first -->
-    <!-- Filter the sample projects by TargetFramework -->
+    <!-- Filter the sample projects by TargetFramework and optionally sample name -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
