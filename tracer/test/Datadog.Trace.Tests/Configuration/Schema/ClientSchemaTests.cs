@@ -49,6 +49,22 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
         [Theory]
         [MemberData(nameof(GetAllConfigs))]
+        public void GetOperationNameForRequestTypeIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var requestType = "some-remoting.client";
+            var expectedValue = schemaVersion switch
+            {
+                SchemaVersion.V0 => requestType,
+                _ => $"{requestType}.request",
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Server.GetOperationNameForRequestType(requestType).Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
         public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally

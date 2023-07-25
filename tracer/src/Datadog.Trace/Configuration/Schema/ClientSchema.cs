@@ -35,6 +35,13 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{protocol}.client.request",
             };
 
+        public string GetOperationNameForRequestType(string requestType) =>
+            _version switch
+            {
+                SchemaVersion.V0 => $"{requestType}",
+                _ => $"{requestType}.request",
+            };
+
         public string GetServiceName(string component)
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(component, out var mappedServiceName))
