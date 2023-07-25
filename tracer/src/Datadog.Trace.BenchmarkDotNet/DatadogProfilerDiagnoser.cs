@@ -41,7 +41,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
-    public Dictionary<BenchmarkCase, ulong> SpanIdByBenchmark { get; } = new();
+    public Dictionary<BenchmarkCase, (TraceId TraceId, ulong SpanId)> SpanIdByBenchmark { get; } = new();
 
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
@@ -63,12 +63,15 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (signal == HostSignal.BeforeProcessStart)
         {
-            var spanId = RandomIdGenerator.Shared.NextSpanId(true);
-            SpanIdByBenchmark[parameters.BenchmarkCase] = spanId;
+            CIVisibility.InitializeFromManualInstrumentation();
+            var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? false;
+            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
+            var spanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
+            SpanIdByBenchmark[parameters.BenchmarkCase] = (traceId, spanId);
             EnsureAndFillProfilerPathVariables(parameters);
             if (_platformNotSupportedException is null)
             {
-                SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, spanId);
+                SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, traceId, spanId);
             }
         }
     }
@@ -146,7 +149,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         return true;
     }
 
-    private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig, ulong spanId)
+    private static void SetEnvironmentVariables(DiagnoserActionParameters parameters, string? monitoringHome, string? profiler32Path, string? profiler64Path, string? ldPreload, string? loaderConfig, TraceId traceId, ulong spanId)
     {
         var tracer = Tracer.Instance;
         var environment = parameters.Process.StartInfo.Environment;
@@ -239,6 +242,15 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         {
             environment[profilerAgentless] = "1";
         }
+
+        ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var processId);
+        var lstTagsValues = new List<string>();
+        lstTagsValues.Add($"parent-runtime-id:{RuntimeId.Get()}");
+        lstTagsValues.Add($"parent-process-id:{processId}");
+        lstTagsValues.Add($"parent-traceid:{traceId}");
+        lstTagsValues.Add($"parent-spanid:{spanId}");
+        lstTagsValues.Add($"civisibility-test:1");
+        environment[ConfigurationKeys.GlobalTags] = string.Join(", ", lstTagsValues);
     }
 
     /// <inheritdoc />
