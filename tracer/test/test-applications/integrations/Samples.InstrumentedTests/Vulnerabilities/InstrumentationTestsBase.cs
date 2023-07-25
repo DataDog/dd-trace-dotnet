@@ -231,10 +231,19 @@ public class InstrumentationTestsBase
         return spans;
     }
 
+    protected void AssertTaintedFormatWithOriginalCallCheck(object instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        AssertTaintedFormatWithOriginalCallCheck(null, instrumented, notInstrumented);
+    }
+
     protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
-        FormatTainted(instrumented).Should().Be(expected.ToString());
+        if (expected is not null)
+        {
+            FormatTainted(instrumented).Should().Be(expected.ToString());
+        }
+
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
