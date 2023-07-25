@@ -1,6 +1,19 @@
-﻿## Automatic Instrumentation
+﻿## Automatic Instrumentation <!-- omit in toc -->
 
-The _ClrProfiler_ folder contains the majority of code required for automatic instrumentation of target methods. Since v2.0.0, we exclusively use "Call Target" modification, in which we rewrite the target method to add our instrumentation. 
+The _ClrProfiler_ folder contains the majority of code required for automatic instrumentation of target methods. Since v2.0.0, we exclusively use "Call Target" modification, in which we rewrite the target method to add our instrumentation.
+
+- [Creating a new automatic instrumentation implementation](#creating-a-new-automatic-instrumentation-implementation)
+- [Instrumentation classes](#instrumentation-classes)
+  - [`OnMethodEnd` and `OnMethodBegin` parameters](#onmethodend-and-onmethodbegin-parameters)
+    - [`OnMethodBegin`](#onmethodbegin)
+    - [`OnMethodEnd`](#onmethodend)
+- [Duck-typing, instrumentation classes, and constraints](#duck-typing-instrumentation-classes-and-constraints)
+- [Instrumentation attributes](#instrumentation-attributes)
+- [Instrumentable methods](#instrumentable-methods)
+  - [Inheritance](#inheritance)
+  - [Properties](#properties)
+- [Interfaces](#interfaces)
+- [Current Limitations](#current-limitations)
 
 ### Creating a new automatic instrumentation implementation
 
@@ -8,6 +21,7 @@ Creating a new instrumentation implementation typically uses the following proce
 
 1. Identify the operation of interest that we want to measure. Also gather the tags, resource names that we will need to set. Don't forget to check what has been implemented by other tracers.
 2. Find an appropriate instrumentation point in the target library. You may need to use multiple instrumentation points, and you may need to use different targets for different _versions_ of the library
+   1. Ensure that the type/method is not within the [Current Limitations](#current-limitations) of the `CallTarget` rewriting
 3. Create an instrumentation class using one of the standard "shapes" (described below), and place it in the [ClrProfiler/AutoInstrumentation folder](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation). If the methods you need to instrument have different prototypes (especially the number of parameters), you will need multiple class to instrument them.
 4. Add an `[InstrumentMethod]` attribute to the instrumentation class, as described below. Alternatively, add an assembly-level `[AdoNetClientInstrumentMethods]` attribute
 5. (Optional) Create duck-typing unit tests in _Datadog.Trace.Tests_ to confirm any duck types are valid. This can make the feedback cycle much faster than relying on integration tests
@@ -250,3 +264,15 @@ Interface methods can be instrumented by setting the `TypeName` to the name of t
     public class My_Integration
     {
 ```
+
+### Current Limitations
+
+There are some current limitations with what types/methods with our `CallTarget` approach (refer to [method_rewriter.cpp](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L69) for more information):
+
+1. Static methods in a ValueType (struct) cannot be instrumented.
+2. Generic ValueTypes (struct) cannot be instrumented.
+3. Nested ValueTypes (struct) inside a Generic parent type will not expose the type instance (the instance willbe always null).
+4. Nested types (reference types) inside a Generic parent type will not expose the type instance (the instance will be casted as an `object` type).
+5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
+
+Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
