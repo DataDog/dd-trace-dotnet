@@ -50,7 +50,8 @@ StackSamplerLoop::StackSamplerLoop(
     IManagedThreadList* pManagedThreadList,
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector)
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -68,7 +69,10 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime{0},
     _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
-    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
+    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
+    _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -87,6 +91,12 @@ StackSamplerLoop::StackSamplerLoop(
 
     _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
     OpSysTools::SetNativeThreadName(_pLoopThread, ThreadName);
+
+    if(_areInternalMetricsEnabled)
+    {
+        _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
+        _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
+    }
 }
 
 StackSamplerLoop::~StackSamplerLoop()
@@ -165,20 +175,40 @@ void StackSamplerLoop::MainLoop()
 
 void StackSamplerLoop::MainLoopIteration()
 {
+    int64_t timestampNanosecs1 = 0;
+    int64_t timestampNanosecs2 = 0;
+
     // In each iteration, a few threads are sampled to compute wall time.
-    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    if (_isWalltimeEnabled)
     {
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
+        }
+
         // First we collect threads that have trace context to increase the chance to get
         CodeHotspotIteration();
         // Then we collect threads that do not have trace context
         WalltimeProfilingIteration();
+
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
+            _walltimeDurationMetric->Add(static_cast<double>(timestampNanosecs2 - timestampNanosecs1));
+        }
     }
 
     // When CPU profiling is enabled, most of the threads are scanned
     // and if they are currently running, they are sampled.
-    if (_pConfiguration->IsCpuProfilingEnabled())
+    if (_isCpuEnabled)
     {
         CpuProfilingIteration();
+
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
+            _cpuDurationMetric->Add(static_cast<double>(timestampNanosecs1 - timestampNanosecs2));
+        }
     }
 }
 

@@ -234,6 +234,7 @@ private:
     std::int64_t _threadSuspensionStart;
     std::unique_ptr<Statistics> _statisticsReadyToSend;
     std::unique_ptr<Statistics> _currentStatistics;
+    MetricsRegistry& _metricsRegistry;
     std::shared_ptr<CounterMetric> _deadlockCountMetric;
 
     IClrLifetime const* _pClrLifetime;

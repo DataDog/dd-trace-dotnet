@@ -57,7 +57,8 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0}
+    _deadlockInterventionInProgress{0},
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
@@ -125,8 +126,8 @@ void StackSamplerLoopManager::RunStackSampling()
             _pManagedThreadList,
             _pCodeHotspotsThreadList,
             _pWallTimeCollector,
-            _pCpuTimeCollector
-            );
+            _pCpuTimeCollector,
+            _metricsRegistry);
         _pStackSamplerLoop = stackSamplerLoop;
     }
 }

@@ -61,6 +61,7 @@ public:
     bool IsGcThreadsCpuTimeEnabled() const override;
     std::string const& GetGitRepositoryUrl() const override;
     std::string const& GetGitCommitSha() const override;
+    bool IsInternalMetricsEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -137,4 +138,5 @@ private:
     std::string _namedPipeName;
     bool _isTimestampsAsLabelEnabled;
     bool _isDebugInfoEnabled;
+    bool _isInternalMetricsEnabled;
 };
