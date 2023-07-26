@@ -108,7 +108,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.Host = host;
 
@@ -120,7 +120,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -133,7 +133,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.Host = host;
@@ -141,6 +141,18 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
             tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_ConsumerHasNoPeerService()
+        {
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.Host = host;
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
         }
 
         [Fact]

@@ -179,10 +179,24 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsMongoDbV0(),
             };
 
-        public static Result IsMsmq(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsMsmqClient(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsMsmqV1(),
+                "v1" => span.IsMsmqClientV1(),
+                _ => span.IsMsmqV0(),
+            };
+
+        public static Result IsMsmqInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsMsmqInboundV1(),
+                _ => span.IsMsmqV0(),
+            };
+
+        public static Result IsMsmqOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsMsmqOutboundV1(),
                 _ => span.IsMsmqV0(),
             };
 
