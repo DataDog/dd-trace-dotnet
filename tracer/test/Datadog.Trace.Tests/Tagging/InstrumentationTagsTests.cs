@@ -57,7 +57,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromBootstrapServers()
         {
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.BootstrapServers = bootstrapServer;
 
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.BootstrapServers = bootstrapServer;
@@ -90,6 +90,18 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
             tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void KafkaV1Tags_PeerService_ConsumerHasNoPeerService()
+        {
+            var bootstrapServer = "localhost";
+            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+
+            tags.BootstrapServers = bootstrapServer;
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
         }
 
         [Fact]
