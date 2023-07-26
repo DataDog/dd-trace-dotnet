@@ -23,38 +23,38 @@ public class TraceTagCollectionTests
 {
     private const int MaxHeaderLength = 512;
 
-    private static readonly KeyValuePair<string, string>[] EmptyTags = Array.Empty<KeyValuePair<string, string>>();
+    private static readonly SerializableDictionary EmptyTags = new();
 
-    public static TheoryData<KeyValuePair<string, string>[], string> SerializeData() => new()
+    public static TheoryData<SerializableDictionary, string> SerializeData() => new()
     {
         { EmptyTags, string.Empty },
         {
-            new KeyValuePair<string, string>[]
+            new()
             {
-                new("_dd.p.key1", "value1"),
-                new("_dd.p.key2", "value2"),
-                new("_dd.p.key3", "value3"),
+                { "_dd.p.key1", "value1" },
+                { "_dd.p.key2", "value2" },
+                { "_dd.p.key3", "value3" },
             },
             "_dd.p.key1=value1,_dd.p.key2=value2,_dd.p.key3=value3"
         },
         {
             // missing prefix
-            new KeyValuePair<string, string>[] { new("key1", "value1") }, string.Empty
+            new() { { "key1", "value1" } }, string.Empty
         },
         {
             // missing key
-            new KeyValuePair<string, string>[]
+            new()
             {
-                new(string.Empty, "value1"),
+                { string.Empty, "value1" },
             },
             string.Empty
         },
         {
             // missing value
-            new KeyValuePair<string, string>[]
+            new()
             {
-                new("_dd.p.key1", null),
-                new("_dd.p.key2", string.Empty),
+                { "_dd.p.key1", null },
+                { "_dd.p.key2", string.Empty },
             },
             string.Empty
         },
@@ -80,7 +80,7 @@ public class TraceTagCollectionTests
 
     [Theory]
     [MemberData(nameof(SerializeData))]
-    public void ToPropagationHeaderValue(KeyValuePair<string, string>[] pairs, string expectedHeader)
+    public void ToPropagationHeaderValue(SerializableDictionary pairs, string expectedHeader)
     {
         var traceTags = new TraceTagCollection();
 

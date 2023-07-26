@@ -104,18 +104,21 @@ namespace Datadog.Trace.TestHelpers
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            TelemetryWrapper latest = default;
             while (DateTime.UtcNow < deadline)
             {
-                if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
+                var current = Telemetry;
+                foreach (var telemetry in current)
                 {
-                    break;
+                    if (hasExpectedValues(telemetry))
+                    {
+                        return telemetry;
+                    }
                 }
 
                 Thread.Sleep(sleepTime);
             }
 
-            return latest;
+            return null;
         }
 
         public void Dispose()
