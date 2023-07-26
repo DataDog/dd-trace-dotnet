@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static CallTargetState OnMethodBegin<TTarget, TConsumer>(TTarget instance, string queue, bool autoAck, string consumerTag, bool noLocal, bool exclusive, IDictionary<string, object> arguments, TConsumer consumer)
         {
             QueueHelper.SetQueue(consumer, queue);
-            return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Client, queue: queue));
+            return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Consumer, queue: queue));
         }
 
         /// <summary>
