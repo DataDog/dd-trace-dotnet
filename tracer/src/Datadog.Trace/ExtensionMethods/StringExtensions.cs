@@ -44,16 +44,12 @@ namespace Datadog.Trace.ExtensionMethods
 
             if (value.Length == 1)
             {
-                if (value[0] == 'T' || value[0] == 't' ||
-                    value[0] == 'Y' || value[0] == 'y' ||
-                    value[0] == '1')
+                if (value[0] is 'T' or 't' or 'Y' or 'y' or '1')
                 {
                     return true;
                 }
 
-                if (value[0] == 'F' || value[0] == 'f' ||
-                    value[0] == 'N' || value[0] == 'n' ||
-                    value[0] == '0')
+                if (value[0] is 'F' or 'f' or 'N' or 'n' or '0')
                 {
                     return false;
                 }

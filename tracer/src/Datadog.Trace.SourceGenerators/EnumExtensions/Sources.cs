@@ -82,7 +82,7 @@ internal class Sources
                 public static string[] GetNames()
                     => new []
                     {{{GetNames(sb, in enumToGenerate)}}
-                    };{{GetDescriptions(sb, in enumToGenerate)}}
+                    };{{GetDescriptions(sb, in enumToGenerate)}}{{GetKeys(sb, in enumToGenerate)}}
             }
             """;
     }
@@ -102,6 +102,71 @@ internal class Sources
             AppendDescription(sb, member, enumToGenerate.FullyQualifiedName);
             sb.Append(',');
         }
+
+        return sb.ToString();
+    }
+
+    private static string GetKeys(StringBuilder sb, in EnumToGenerate enumToGenerate)
+    {
+        if (enumToGenerate.FullyQualifiedName != "Datadog.Trace.Configuration.IntegrationId")
+        {
+            return string.Empty;
+        }
+
+        sb.Clear();
+        sb.AppendLine()
+          .Append(
+               $$"""
+
+    /// <summary>
+    /// Returns an IntegrationSettingsKeys value with all the keys.
+    /// </summary>
+    /// <param name="value">The value to retrieve the string value for</param>
+    /// <returns>IntegrationSettingsKeys instance with all values</returns>
+    public static Datadog.Trace.Configuration.IntegrationSettingsKeys GetKeys(this {{enumToGenerate.FullyQualifiedName}} value)
+        => value switch
+        {
+""");
+        foreach (var member in enumToGenerate.Names)
+        {
+            sb.AppendLine()
+              .Append("            ")
+              .Append(enumToGenerate.FullyQualifiedName)
+              .Append('.')
+              .Append(member.Property)
+              .Append(" => new Datadog.Trace.Configuration.IntegrationSettingsKeys(")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ENABLED\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ENABLED\", ")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_ENABLED\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_ENABLED\", ")
+
+              .Append("\"DD_TRACE_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_SAMPLE_RATE\", ")
+
+              .Append("\"DD_")
+              .Append(member.Property)
+              .Append("_ANALYTICS_SAMPLE_RATE\"),");
+        }
+
+        sb.Append(
+               $$"""
+
+                            _ => default,
+                        };
+                """);
 
         return sb.ToString();
     }

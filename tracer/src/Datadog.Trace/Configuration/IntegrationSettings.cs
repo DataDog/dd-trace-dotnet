@@ -30,7 +30,7 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Metrics.Record(PublicApiUsage.IntegrationSettings_Ctor);
         }
 
-        internal IntegrationSettings(string integrationName, IConfigurationSource? source, IConfigurationTelemetry telemetry)
+        internal IntegrationSettings(string integrationName, IConfigurationSource? source, IConfigurationTelemetry telemetry, int? index = null)
         {
             if (integrationName is null)
             {
@@ -45,25 +45,64 @@ namespace Datadog.Trace.Configuration
             }
 
             var config = new ConfigurationBuilder(source, telemetry);
-            EnabledInternal = config
-                     .WithKeys(
-                          string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
-                          string.Format("DD_{0}_ENABLED", integrationName))
-                     .AsBool();
+
+            if (index != null)
+            {
+                var keys = ((IntegrationId)index).GetKeys();
+                EnabledInternal = config
+                                 .WithKeys(keys.EnabledKey, keys.EnabledFallbackKey)
+                                 .AsBool();
+
+                AnalyticsEnabledInternal = config
+                                          .WithKeys(keys.AnalyticsEnabledKey, keys.AnalyticsEnabledFallbackKey)
+                                          .AsBool();
+
+                AnalyticsSampleRateInternal = config
+                                             .WithKeys(keys.AnalyticsSampleRateKey, keys.AnalyticsSampleRateFallbackKey)
+                                             .AsDouble(1.0);
+            }
+            else
+            {
+#if NET6_0_OR_GREATER
+                EnabledInternal = config
+                                 .WithKeys(
+                                      string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ENABLED"),
+                                      string.Create(null, stackalloc char[128], $"DD_{integrationName}_ENABLED"))
+                                 .AsBool();
+
+                AnalyticsEnabledInternal = config
+                                          .WithKeys(
+                                               string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_ENABLED"),
+                                               string.Create(null, stackalloc char[128], $"DD_{integrationName}_ANALYTICS_ENABLED"))
+                                          .AsBool();
+
+                AnalyticsSampleRateInternal = config
+                                             .WithKeys(
+                                                  string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_SAMPLE_RATE"),
+                                                  string.Create(null, stackalloc char[128], $"DD_{integrationName}_ANALYTICS_SAMPLE_RATE"))
+                                             .AsDouble(1.0);
+#else
+                EnabledInternal = config
+                                 .WithKeys(
+                                      string.Format(ConfigurationKeys.Integrations.Enabled, integrationName),
+                                      string.Format("DD_{0}_ENABLED", integrationName))
+                                 .AsBool();
 
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            AnalyticsEnabledInternal = config
-                              .WithKeys(
-                                   string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
-                                   string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
-                              .AsBool();
+                AnalyticsEnabledInternal = config
+                                          .WithKeys(
+                                               string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName),
+                                               string.Format("DD_{0}_ANALYTICS_ENABLED", integrationName))
+                                          .AsBool();
 
-            AnalyticsSampleRateInternal = config
-                                 .WithKeys(
-                                      string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
-                                      string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
-                                 .AsDouble(1.0);
+                AnalyticsSampleRateInternal = config
+                                     .WithKeys(
+                                          string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName),
+                                          string.Format("DD_{0}_ANALYTICS_SAMPLE_RATE", integrationName))
+                                     .AsDouble(1.0);
 #pragma warning restore 618
+#endif
+            }
         }
 
         /// <summary>

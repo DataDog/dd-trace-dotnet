@@ -48,11 +48,47 @@ internal partial class TracerSettingsSnapshot : SettingsSnapshotBase
             var newValue = settings.IntegrationsInternal.Settings[i];
             var oldValue = Integrations.Settings[i];
             var integrationName = newValue.IntegrationNameInternal;
-            RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), oldValue.EnabledInternal, newValue.EnabledInternal);
+
+            RecordChanges();
+
+            void RecordChanges()
+            {
+#if NET6_0_OR_GREATER
+                if (oldValue.EnabledInternal != newValue.EnabledInternal)
+                {
+                    RecordIfChanged(telemetry, string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ENABLED"), oldValue.EnabledInternal, newValue.EnabledInternal);
+                }
+
 #pragma warning disable 618 // App analytics is deprecated, but still used
-            RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName), oldValue.AnalyticsEnabledInternal, newValue.AnalyticsEnabledInternal);
-            RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName), oldValue.AnalyticsSampleRateInternal, newValue.AnalyticsSampleRateInternal);
+                if (oldValue.AnalyticsEnabledInternal != newValue.AnalyticsEnabledInternal)
+                {
+                    RecordIfChanged(telemetry, string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_ENABLED"), oldValue.AnalyticsEnabledInternal, newValue.AnalyticsEnabledInternal);
+                }
+
+                if (oldValue.AnalyticsSampleRateInternal != newValue.AnalyticsSampleRateInternal)
+                {
+                    RecordIfChanged(telemetry, string.Create(null, stackalloc char[128], $"DD_TRACE_{integrationName}_ANALYTICS_SAMPLE_RATE"), oldValue.AnalyticsSampleRateInternal, newValue.AnalyticsSampleRateInternal);
+                }
 #pragma warning restore 618
+#else
+                if (oldValue.EnabledInternal != newValue.EnabledInternal)
+                {
+                    RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.Enabled, integrationName), oldValue.EnabledInternal, newValue.EnabledInternal);
+                }
+
+#pragma warning disable 618 // App analytics is deprecated, but still used
+                if (oldValue.AnalyticsEnabledInternal != newValue.AnalyticsEnabledInternal)
+                {
+                    RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.AnalyticsEnabled, integrationName), oldValue.AnalyticsEnabledInternal, newValue.AnalyticsEnabledInternal);
+                }
+
+                if (oldValue.AnalyticsSampleRateInternal != newValue.AnalyticsSampleRateInternal)
+                {
+                    RecordIfChanged(telemetry, string.Format(ConfigurationKeys.Integrations.AnalyticsSampleRate, integrationName), oldValue.AnalyticsSampleRateInternal, newValue.AnalyticsSampleRateInternal);
+                }
+#pragma warning restore 618
+#endif
+            }
         }
 
         Exporter.RecordChanges(settings.ExporterInternal, telemetry);

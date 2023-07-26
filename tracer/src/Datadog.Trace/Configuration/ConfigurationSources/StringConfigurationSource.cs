@@ -57,7 +57,14 @@ namespace Datadog.Trace.Configuration
         }
 
         [return: NotNullIfNotNull(nameof(data))]
-        internal static IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
+        internal static unsafe IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings)
+        {
+            return ParseCustomKeyValuesInternal(data, allowOptionalMappings, &Selector);
+            static bool Selector(ref string key, ref string value) => true;
+        }
+
+        [return: NotNullIfNotNull(nameof(data))]
+        internal static unsafe IDictionary<string, string>? ParseCustomKeyValuesInternal(string? data, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
             // A null return value means the key was not present,
             // and CompositeConfigurationSource depends on this behavior
@@ -94,7 +101,11 @@ namespace Datadog.Trace.Configuration
                         // it's a key with no value.
                         // note we already did TrimStart(), so we only need TrimEnd().
                         var key = trimmedEntry.TrimEnd();
-                        dictionary[key] = string.Empty;
+                        var value = string.Empty;
+                        if (selector(ref key, ref value))
+                        {
+                            dictionary[key] = value;
+                        }
                     }
                     else if (colonIndex > 0)
                     {
@@ -103,7 +114,10 @@ namespace Datadog.Trace.Configuration
                         // note we already did TrimStart() on the key, so it only needs TrimEnd().
                         var key = trimmedEntry.Substring(0, colonIndex).TrimEnd();
                         var value = trimmedEntry.Substring(colonIndex + 1).Trim();
-                        dictionary[key] = value;
+                        if (selector(ref key, ref value))
+                        {
+                            dictionary[key] = value;
+                        }
                     }
                 }
             }
@@ -166,6 +180,31 @@ namespace Datadog.Trace.Configuration
         public IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings)
         {
             return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> from parsing
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <param name="selector">Selector for dictionary</param>
+        /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        [PublicApi]
+        public unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector)
+        {
+            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings: false, selector: selector);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> from parsing
+        /// </summary>
+        /// <param name="key">The key</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping</param>
+        /// <param name="selector">Selector for dictionary</param>
+        /// <returns><see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        [PublicApi]
+        public unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+        {
+            return ParseCustomKeyValuesInternal(GetString(key), allowOptionalMappings, selector: selector);
         }
 
         /// <inheritdoc />
@@ -302,7 +341,21 @@ namespace Datadog.Trace.Configuration
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings);
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, selector);
+
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings, selector);
+
+        private unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        {
+            return GetDictionary(key, telemetry, validator, allowOptionalMappings, &Selector);
+            static bool Selector(ref string key, ref string value) => true;
+        }
+
+        private unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
             var value = GetString(key);
 
@@ -314,7 +367,7 @@ namespace Datadog.Trace.Configuration
             // We record the original dictionary value here instead of serializing the _parsed_ value
             // Currently we have no validation of the dictionary values during parsing, so there's no way to get
             // a validation error that needs recording at this stage
-            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings);
+            var result = ParseCustomKeyValuesInternal(value, allowOptionalMappings, selector);
 
             if (validator is null || validator(result))
             {

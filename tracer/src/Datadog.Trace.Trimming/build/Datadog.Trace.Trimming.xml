@@ -938,6 +938,7 @@
       <type fullname="System.Threading.ThreadAbortException" />
    </assembly>
    <assembly fullname="System.Threading.ThreadPool">
+      <type fullname="System.Threading.IThreadPoolWorkItem" />
       <type fullname="System.Threading.ThreadPool" />
    </assembly>
    <assembly fullname="System.Threading.Timer">

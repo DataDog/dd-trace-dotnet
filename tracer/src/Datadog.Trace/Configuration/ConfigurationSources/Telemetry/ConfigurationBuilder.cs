@@ -34,7 +34,7 @@ internal readonly struct ConfigurationBuilder
 
     public HasKeys WithKeys(string key, string fallbackKey1, string fallbackKey2, string fallbackKey3) => new(_source, _telemetry, key, fallbackKey1, fallbackKey2, fallbackKey3);
 
-    internal readonly struct HasKeys
+    internal readonly ref struct HasKeys
     {
         public HasKeys(ITelemeteredConfigurationSource source, IConfigurationTelemetry telemetry, string key, string? fallbackKey1 = null, string? fallbackKey2 = null, string? fallbackKey3 = null)
         {
@@ -235,13 +235,21 @@ internal readonly struct ConfigurationBuilder
         // ****************
         public IDictionary<string, string>? AsDictionary() => AsDictionary(allowOptionalMappings: false);
 
-        public IDictionary<string, string>? AsDictionary(bool allowOptionalMappings)
+        public unsafe IDictionary<string, string>? AsDictionary(delegate*<ref string, ref string, bool> selector) => AsDictionary(allowOptionalMappings: false, selector);
+
+        public unsafe IDictionary<string, string>? AsDictionary(bool allowOptionalMappings)
+        {
+            return AsDictionary(allowOptionalMappings, &Selector);
+            static bool Selector(ref string key, ref string value) => true;
+        }
+
+        public unsafe IDictionary<string, string>? AsDictionary(bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
             // TODO: Handle/allow default values + validation?
-            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings)
-                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings))
-                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings))
-                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings));
+            var result = Source.GetDictionary(Key, Telemetry, validator: null, allowOptionalMappings, selector)
+                      ?? (FallbackKey1 is null ? null : Source.GetDictionary(FallbackKey1, Telemetry, validator: null, allowOptionalMappings, selector))
+                      ?? (FallbackKey2 is null ? null : Source.GetDictionary(FallbackKey2, Telemetry, validator: null, allowOptionalMappings, selector))
+                      ?? (FallbackKey3 is null ? null : Source.GetDictionary(FallbackKey3, Telemetry, validator: null, allowOptionalMappings, selector));
 
             // We have a valid value
             if (result is { Result: { } value, IsValid: true })

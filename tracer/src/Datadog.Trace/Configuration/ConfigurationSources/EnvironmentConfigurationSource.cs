@@ -5,11 +5,11 @@
 
 #nullable enable
 
-using System;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Configuration
 {
@@ -40,17 +40,7 @@ namespace Datadog.Trace.Configuration
         [PublicApi]
         public override string? GetString(string key)
         {
-            try
-            {
-                return Environment.GetEnvironmentVariable(key);
-            }
-            catch
-            {
-                // We should not add a dependency from the Configuration system to the Logger system,
-                // so do nothing
-            }
-
-            return null;
+            return EnvironmentHelpers.GetEnvironmentVariable(key);
         }
     }
 }

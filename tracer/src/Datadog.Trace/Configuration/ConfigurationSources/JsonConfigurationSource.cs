@@ -186,7 +186,56 @@ namespace Datadog.Trace.Configuration
             return GetDictionaryInternal(key, allowOptionalMappings);
         }
 
-        private IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
+        /// </summary>
+        /// <remarks>
+        /// Example JSON where `globalTags` is the configuration key.
+        /// {
+        ///  "globalTags": {
+        ///     "name1": "value1",
+        ///     "name2": "value2"
+        ///     }
+        /// }
+        /// </remarks>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="selector">Selector for dictionary items</param>
+        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
+        public unsafe IDictionary<string, string>? GetDictionary(string key, delegate*<ref string, ref string, bool> selector)
+        {
+            return GetDictionaryInternal(key, allowOptionalMappings: false, selector: selector);
+        }
+
+        /// <summary>
+        /// Gets a <see cref="ConcurrentDictionary{TKey, TValue}"/> containing all of the values.
+        /// </summary>
+        /// <remarks>
+        /// Example JSON where `globalTags` is the configuration key.
+        /// {
+        ///  "globalTags": {
+        ///     "name1": "value1",
+        ///     "name2": "value2"
+        ///     }
+        /// }
+        /// </remarks>
+        /// <param name="key">The key that identifies the setting.</param>
+        /// <param name="allowOptionalMappings">Determines whether to create dictionary entries when the input has no value mapping. This only applies to string values, not JSON objects</param>
+        /// <param name="selector">Selector for dictionary items</param>
+        /// <returns><see cref="IDictionary{TKey, TValue}"/> containing all of the key-value pairs.</returns>
+        /// <exception cref="JsonReaderException">Thrown if the configuration value is not a valid JSON string.</exception>
+        public unsafe IDictionary<string, string>? GetDictionary(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+        {
+            return GetDictionaryInternal(key, allowOptionalMappings, selector);
+        }
+
+        private unsafe IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings)
+        {
+            return GetDictionaryInternal(key, allowOptionalMappings, &Selector);
+            static bool Selector(ref string key, ref string value) => true;
+        }
+
+        private unsafe IDictionary<string, string>? GetDictionaryInternal(string key, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -198,8 +247,23 @@ namespace Datadog.Trace.Configuration
             {
                 try
                 {
-                    var dictionary = ConvertToDictionary(key, token);
-                    return dictionary;
+                    var originalDictionary = ConvertToDictionary(key, token);
+                    Dictionary<string, string>? dictionary = null;
+                    if (originalDictionary is not null)
+                    {
+                        foreach (var kvp in originalDictionary)
+                        {
+                            var dctKey = kvp.Key;
+                            var dctValue = kvp.Value;
+                            if (selector(ref dctKey, ref dctValue))
+                            {
+                                dictionary ??= new Dictionary<string, string>(originalDictionary.Count);
+                                dictionary[kvp.Key] = kvp.Value;
+                            }
+                        }
+                    }
+
+                    return dictionary ?? originalDictionary;
                 }
                 catch (Exception e)
                 {
@@ -208,7 +272,7 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
-            return StringConfigurationSource.ParseCustomKeyValuesInternal(token.ToString(), allowOptionalMappings);
+            return StringConfigurationSource.ParseCustomKeyValuesInternal(token.ToString(), allowOptionalMappings, selector);
         }
 
         /// <inheritdoc />
@@ -370,6 +434,14 @@ namespace Datadog.Trace.Configuration
         ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
             => GetDictionary(key, telemetry, validator, allowOptionalMappings);
 
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, delegate*<ref string, ref string, bool> selector)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings: false, selector: selector);
+
+        /// <inheritdoc />
+        unsafe ConfigurationResult<IDictionary<string, string>>? ITelemeteredConfigurationSource.GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
+            => GetDictionary(key, telemetry, validator, allowOptionalMappings, selector);
+
         private protected virtual JToken? SelectToken(string key) => _configuration?.SelectToken(key, errorWhenNoMatch: false);
 
         private protected virtual IDictionary<string, string>? ConvertToDictionary(string key, JToken token)
@@ -377,7 +449,13 @@ namespace Datadog.Trace.Configuration
             return token.ToObject<ConcurrentDictionary<string, string>>();
         }
 
-        private ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        private unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings)
+        {
+            return GetDictionary(key, telemetry, validator, allowOptionalMappings, &Selector);
+            static bool Selector(ref string key, ref string value) => true;
+        }
+
+        private unsafe ConfigurationResult<IDictionary<string, string>>? GetDictionary(string key, IConfigurationTelemetry telemetry, Func<IDictionary<string, string>, bool>? validator, bool allowOptionalMappings, delegate*<ref string, ref string, bool> selector)
         {
             var token = SelectToken(key);
             if (token == null)
@@ -393,7 +471,23 @@ namespace Datadog.Trace.Configuration
                 {
                     try
                     {
-                        var dictionary = ConvertToDictionary(key, token);
+                        var originalDictionary = ConvertToDictionary(key, token);
+                        IDictionary<string, string>? dictionary = null;
+                        if (originalDictionary is not null)
+                        {
+                            foreach (var kvp in originalDictionary)
+                            {
+                                var dctKey = kvp.Key;
+                                var dctValue = kvp.Value;
+                                if (selector(ref dctKey, ref dctValue))
+                                {
+                                    dictionary ??= new Dictionary<string, string>(originalDictionary.Count);
+                                    dictionary[kvp.Key] = kvp.Value;
+                                }
+                            }
+                        }
+
+                        dictionary ??= originalDictionary;
                         if (dictionary is null)
                         {
                             return null;
@@ -409,7 +503,7 @@ namespace Datadog.Trace.Configuration
                     }
                 }
 
-                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings);
+                var result = StringConfigurationSource.ParseCustomKeyValuesInternal(tokenAsString, allowOptionalMappings, selector);
                 return Validate(result);
             }
             catch (InvalidCastException)

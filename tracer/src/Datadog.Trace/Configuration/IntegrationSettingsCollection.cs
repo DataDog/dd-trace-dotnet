@@ -76,7 +76,7 @@ namespace Datadog.Trace.Configuration
 
                 if (name != null)
                 {
-                    integrations[i] = new IntegrationSettings(name, source, telemetry);
+                    integrations[i] = new IntegrationSettings(name, source, telemetry, index: i);
                 }
             }
 
