@@ -8,76 +8,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SSRF;
 
 public class HttpClientTests : SSRFTests
 {
-    [Fact]
-    public void GivenAURI_WhenSetBaseAddress_IsVulnerable()
-    {
-        HttpClient client = new HttpClient();
-        client.BaseAddress = new Uri(taintedUrlValue);
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenGetAsyncFromtainted_IsVulnerable()
-    {
-        HttpClient client = new HttpClient();
-        client.GetAsync(taintedUrlValue);
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenGetStreamAsyncFromtainted_IsVulnerable()
-    {
-        HttpClient client = new HttpClient();
-        client.GetStreamAsync(taintedUrlValue);
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenSendAsyncFromtainted_IsVulnerable()
-    {
-        HttpClient client = new HttpClient();
-        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        client.SendAsync(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
-        AssertVulnerableSSRF();
-    }
-
-#if NET5_0_OR_GREATER
-    [Fact]
-    public void GivenAURI_WhenSendFromtainted_Vulnerable()
-    {
-        HttpClient client = new HttpClient();
-        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenSendFromtainted_Vulnerable2()
-    {
-        HttpClient client = new HttpClient();
-        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        ExecuteAction(() => client.Send(message));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenSendFromtainted_Vulnerable3()
-    {
-        HttpClient client = new HttpClient();
-        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAURI_WhenSendFromtainted_Vulnerable4()
-    {
-        HttpClient client = new HttpClient();
-        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        ExecuteAction(() => client.Send(message, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-#endif
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String)")]
 
     [Fact]
     public void GivenAHttpClient_WhenDownloadString_Vulnerable()
@@ -86,36 +17,8 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-#if NET5_0_OR_GREATER
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String)")]
 
-    [Fact]
-    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable4()
-    {
-        ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue), CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable3()
-    {
-        ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue), CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable2()
-    {
-        ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-#endif
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable()
-    {
-        ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue)));
-        AssertVulnerableSSRF();
-    }
     [Fact]
     public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable()
     {
@@ -123,65 +26,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable2()
-    {
-        ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue)));
-        AssertVulnerableSSRF();
-    }
-
-#if NET5_0_OR_GREATER
-    [Fact]
-    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable3()
-    {
-        ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable7()
-    {
-        ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue), CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-#endif
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable()
-    {
-        ExecuteAction(() => new HttpClient().GetStreamAsync(taintedUrlValue));
-        AssertVulnerableSSRF();
-    }
-
-#if NETCOREAPP
-    [Fact]
-    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable4()
-    {
-        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content")));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable3()
-    {
-        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content")));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable5()
-    {
-        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content"), CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable6()
-    {
-        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content"), CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-#endif
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String,System.Threading.CancellationToken)", 1)]
 
 #if NET5_0_OR_GREATER
     [Fact]
@@ -192,12 +37,55 @@ public class HttpClientTests : SSRFTests
     }
 #endif
 
+#if NETCOREAPP
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.String,System.Net.Http.HttpContent) ", 1)]
+
     [Fact]
-    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable2()
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable4()
     {
-        ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue)));
+        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content")));
         AssertVulnerableSSRF();
     }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content")));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken) ", 2)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable5()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(taintedUrlValue, new StringContent("content"), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PatchAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetPatchAsync_Vulnerable6()
+    {
+        ExecuteAction(() => new HttpClient().PatchAsync(new Uri(taintedUrlValue), new StringContent("content"), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.String)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable()
+    {
+        ExecuteAction(() => new HttpClient().GetStreamAsync(taintedUrlValue));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String)")]
 
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable()
@@ -206,6 +94,8 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Threading.CancellationToken)", 1)]
+
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable9()
     {
@@ -213,12 +103,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenGetAsync_Vulnerable2()
-    {
-        ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue)));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption)", 1)]
 
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable3()
@@ -227,12 +112,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenGetAsync_Vulnerable4()
-    {
-        ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue), HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Threading.CancellationToken)", 1)]
 
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable5()
@@ -241,6 +121,26 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue)));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetAsync_Vulnerable4()
+    {
+        ExecuteAction(() => new HttpClient().GetAsync(new Uri(taintedUrlValue), HttpCompletionOption.ResponseHeadersRead));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable6()
     {
@@ -248,12 +148,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenGetAsync_Vulnerable7()
-    {
-        ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.Uri,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
 
     [Fact]
     public void GivenAHttpClient_WhenGetAsync_Vulnerable8()
@@ -262,6 +157,18 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetAsync(System.String,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetAsync_Vulnerable7()
+    {
+        ExecuteAction(() => new HttpClient().GetAsync(taintedUrlValue, HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.String,System.Net.Http.HttpContent)", 1)]
+
+
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable()
     {
@@ -269,12 +176,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenPostAsync_Vulnerable2()
-    {
-        ExecuteAction(() => new HttpClient().PostAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
 
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable3()
@@ -283,6 +185,17 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenPostAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().PostAsync(new Uri(taintedUrlValue), new Mock<HttpContent>().Object));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PostAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+
     [Fact]
     public void GivenAHttpClient_WhenPostAsync_Vulnerable4()
     {
@@ -290,12 +203,8 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenPutAsync_Vulnerable()
-    {
-        ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object));
-        AssertVulnerableSSRF();
-    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent)", 1)]
 
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable2()
@@ -304,12 +213,7 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenPutAsync_Vulnerable3()
-    {
-        ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.Uri,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
 
     [Fact]
     public void GivenAHttpClient_WhenPutAsync_Vulnerable4()
@@ -318,6 +222,26 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.String,System.Net.Http.HttpContent)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenPutAsync_Vulnerable()
+    {
+        ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenPutAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().PutAsync(taintedUrlValue, new Mock<HttpContent>().Object, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String)")]
+
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable()
     {
@@ -325,12 +249,8 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
-    [Fact]
-    public void GivenAHttpClient_WhenDeleteAsync_Vulnerable2()
-    {
-        ExecuteAction(() => new HttpClient().DeleteAsync(new Uri(taintedUrlValue)));
-        AssertVulnerableSSRF();
-    }
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)
+
 
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable3()
@@ -339,12 +259,113 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenDeleteAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().DeleteAsync(new Uri(taintedUrlValue)));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+
     [Fact]
     public void GivenAHttpClient_WhenDeleteAsync_Vulnerable4()
     {
         ExecuteAction(() => new HttpClient().DeleteAsync(new Uri(taintedUrlValue), CancellationToken.None));
         AssertVulnerableSSRF();
     }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue)));
+        AssertVulnerableSSRF();
+    }
+
+#if NET5_0_OR_GREATER
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.String,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().GetByteArrayAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetByteArrayAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetByteArrayAsync_Vulnerable7()
+    {
+        ExecuteAction(() => new HttpClient().GetByteArrayAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
+#if NET5_0_OR_GREATER
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable4()
+    {
+        ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.String,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().GetStringAsync(taintedUrlValue, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStringAsync(System.Uri)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStringAsync_Vulnerable()
+    {
+        ExecuteAction(() => new HttpClient().GetStringAsync(new Uri(taintedUrlValue)));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::GetStreamAsync(System.Uri)")]
+
+    [Fact]
+    public void GivenAHttpClient_WhenGetStreamAsync_Vulnerable2()
+    {
+        ExecuteAction(() => new HttpClient().GetStreamAsync(new Uri(taintedUrlValue)));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
+
+    [Fact]
+    public void GivenAURI_WhenSetBaseAddress_IsVulnerable()
+    {
+        HttpClient client = new HttpClient();
+        client.BaseAddress = new Uri(taintedUrlValue);
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::SendAsync(System.Net.Http.HttpRequestMessage)")]
 
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable()
@@ -360,24 +381,12 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::SendAsync(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption)", 1)]
+
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable2()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), HttpCompletionOption.ResponseHeadersRead));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenSendAsync_Vulnerable3()
-    {
-        ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
-        AssertVulnerableSSRF();
-    }
-
-    [Fact]
-    public void GivenAHttpClient_WhenSendAsync_Vulnerable4()
-    {
-        ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), CancellationToken.None));
         AssertVulnerableSSRF();
     }
 
@@ -387,6 +396,17 @@ public class HttpClientTests : SSRFTests
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue)), HttpCompletionOption.ResponseHeadersRead));
         AssertVulnerableSSRF();
     }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::SendAsync(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
+
+
+    [Fact]
+    public void GivenAHttpClient_WhenSendAsync_Vulnerable3()
+    {
+        ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), HttpCompletionOption.ResponseHeadersRead, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable6()
     {
@@ -395,10 +415,77 @@ public class HttpClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAHttpClient_WhenSendAsync_Vulnerable4()
+    {
+        ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, taintedUrlValue), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
     [Fact]
     public void GivenAHttpClient_WhenSendAsync_Vulnerable7()
     {
         ExecuteAction(() => new HttpClient().SendAsync(new HttpRequestMessage(HttpMethod.Get, new Uri(taintedUrlValue)), CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+#if NET5_0_OR_GREATER
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption,System.Threading.CancellationToken)", 2)]
+
+    [Fact]
+    public void GivenAURI_WhenSendFromtainted_Vulnerable()
+    {
+        HttpClient client = new HttpClient();
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage)")]
+
+    [Fact]
+    public void GivenAURI_WhenSendFromtainted_Vulnerable2()
+    {
+        HttpClient client = new HttpClient();
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        ExecuteAction(() => client.Send(message));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage,System.Net.Http.HttpCompletionOption)", 1)]
+
+    [Fact]
+    public void GivenAURI_WhenSendFromtainted_Vulnerable3()
+    {
+        HttpClient client = new HttpClient();
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        ExecuteAction(() => client.Send(message, HttpCompletionOption.ResponseContentRead));
+        AssertVulnerableSSRF();
+    }
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAURI_WhenSendFromtainted_Vulnerable4()
+    {
+        HttpClient client = new HttpClient();
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        ExecuteAction(() => client.Send(message, CancellationToken.None));
+        AssertVulnerableSSRF();
+    }
+#endif
+
+    // Testing [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
+
+    [Fact]
+    public void GivenAURI_WhenSendAsyncFromtainted_IsVulnerable()
+    {
+        HttpClient client = new HttpClient();
+        var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
+        client.SendAsync(message, HttpCompletionOption.ResponseContentRead, CancellationToken.None);
         AssertVulnerableSSRF();
     }
 }

@@ -18,7 +18,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="uriText">the uri</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String)")]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String)", AspectFilter.StringLiterals)]
         public static UriBuilder Init(string uriText)
         {
             var result = new UriBuilder(uriText);
@@ -45,7 +45,7 @@ namespace Hdiv.AST.Aspects.System
         /// <param name="uriText">the uri</param>
         /// <param name="host">the host</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String)")]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String)", AspectFilter.StringLiterals)]
         public static UriBuilder Init(string uriText, string host)
         {
             var result = new UriBuilder(uriText, host);
@@ -60,7 +60,7 @@ namespace Hdiv.AST.Aspects.System
         /// <param name="host">the host</param>
         /// <param name="port">the port</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32)")]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32)", AspectFilter.StringLiterals)]
         public static UriBuilder Init(string uriText, string host, int port)
         {
             var result = new UriBuilder(uriText, host, port);
@@ -76,7 +76,7 @@ namespace Hdiv.AST.Aspects.System
         /// <param name="port">the port</param>
         /// <param name="path">the path</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String)")]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String)", AspectFilter.StringLiterals)]
         public static UriBuilder Init(string uriText, string host, int port, string path)
         {
             var result = new UriBuilder(uriText, host, port, path);
@@ -93,7 +93,7 @@ namespace Hdiv.AST.Aspects.System
         /// <param name="path">the path</param>
         /// <param name="extra">the extra parameter</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String,System.String)")]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String,System.String)", AspectFilter.StringLiterals)]
         public static UriBuilder Init(string uriText, string host, int port, string path, string extra)
         {
             var result = new UriBuilder(uriText, host, port, path, extra);
@@ -106,7 +106,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Host(System.String)")]
+        [AspectMethodReplace("System.UriBuilder::set_Host(System.String)", AspectFilter.StringLiterals)]
         public static void SetHost(UriBuilder instance, string parameter)
         {
             instance.Host = parameter;
@@ -118,7 +118,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Query(System.String)")]
+        [AspectMethodReplace("System.UriBuilder::set_Query(System.String)", AspectFilter.StringLiterals)]
         public static void SetQuery(UriBuilder instance, string parameter)
         {
             instance.Query = parameter;
@@ -130,7 +130,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Path(System.String)")]
+        [AspectMethodReplace("System.UriBuilder::set_Path(System.String)", AspectFilter.StringLiterals)]
         public static void SetPath(UriBuilder instance, string parameter)
         {
             instance.Path = parameter;

@@ -6,6 +6,8 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SSRF;
 
 public class HttpWebRequestTests : SSRFTests
 {
+    // Test [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.String)")]
+
     [Fact]
     public void GivenAHttpWebRequest_WhenGetResponseTaintedURL_VulnerabilityIsLoged()
     {
@@ -21,6 +23,7 @@ public class HttpWebRequestTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Test [AspectMethodInsertBefore("System.Net.WebRequest::Create(System.Uri)")]
 
     [Fact]
     public void GivenAHttpWebRequest_WhenCreated_Vulnerable2()
@@ -29,6 +32,8 @@ public class HttpWebRequestTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Test [AspectMethodInsertBefore("System.Net.WebRequest::CreateDefault(System.Uri)")]
+
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateDefault_Vulnerable()
     {
@@ -36,12 +41,16 @@ public class HttpWebRequestTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Test [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.Uri)")]
+
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateHttp_Vulnerable()
     {
         HttpWebRequest.CreateHttp(new Uri(taintedUrlValue));
         AssertVulnerableSSRF();
     }
+
+    // Test [AspectMethodInsertBefore("System.Net.WebRequest::CreateHttp(System.String)")]
 
     [Fact]
     public void GivenAHttpWebRequest_WhenCreateHttp_Vulnerable2()

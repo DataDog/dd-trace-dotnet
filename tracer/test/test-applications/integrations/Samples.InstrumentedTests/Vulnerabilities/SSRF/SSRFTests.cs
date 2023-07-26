@@ -8,7 +8,7 @@ public class SSRFTests : InstrumentationTestsBase
     protected string notTaintedHost = "myhost";
     protected string taintedHost = "localhost";
     protected string taintedQuery = "e=22";
-    protected string taintedUrlValue = "http://127.0.0.1/invalid?q=1";
+    protected string taintedUrlValue = "http://127.0.0.1/invalid?q=1#e";
     protected string taintedUrlValue2 = "http://127.0.0.1";
     protected string file = "invalid@#file";
     protected byte sourceType = 5;

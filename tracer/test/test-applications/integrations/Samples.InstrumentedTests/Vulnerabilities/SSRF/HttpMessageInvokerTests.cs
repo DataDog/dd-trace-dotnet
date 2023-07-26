@@ -1,4 +1,3 @@
-#if NET5_0_OR_GREATER
 using System.Net.Http;
 using System.Threading;
 using Xunit;
@@ -9,6 +8,10 @@ public class HttpMessageInvokerTests : SSRFTests
 {
     //HttpMessageInvoker
 
+#if NET5_0_OR_GREATER
+
+    // Test [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
+
     [Fact]
     public void GivenAHttpMessageInvoker_WhenSend_VulnerabilityIsLoged()
     {
@@ -17,6 +20,10 @@ public class HttpMessageInvokerTests : SSRFTests
         httpMessageInvoker.Send(message, CancellationToken.None);
         AssertVulnerableSSRF();
     }
+
+#endif
+
+    // Test [AspectMethodInsertBefore("System.Net.Http.HttpMessageInvoker::SendAsync(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", 1)]
 
     [Fact]
     public void GivenAHttpMessageInvoker_WhenSendAsync_VulnerabilityIsLoged()
@@ -27,4 +34,3 @@ public class HttpMessageInvokerTests : SSRFTests
         AssertVulnerableSSRF();
     }
 }
-#endif

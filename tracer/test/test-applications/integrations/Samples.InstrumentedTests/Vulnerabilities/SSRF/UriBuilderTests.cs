@@ -5,6 +5,8 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SSRF;
 
 public class UriBuilderTests : SSRFTests
 {
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.String)")]
+
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted()
     {
@@ -12,6 +14,8 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.ToString());
         AssertTainted(builder.Uri.OriginalString);
     }
+
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String)")]
 
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted2()
@@ -29,6 +33,8 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.Uri.OriginalString);
     }
 
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32)")]
+
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted4()
     {
@@ -44,6 +50,8 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.ToString());
         AssertTainted(builder.Uri.OriginalString);
     }
+
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String)")]
 
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted6()
@@ -69,6 +77,9 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.ToString());
         AssertTainted(builder.Uri.OriginalString);
     }
+
+
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String,System.String)")]
 
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted9()
@@ -102,6 +113,8 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.Uri.OriginalString);
     }
 
+    // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.Uri)")]
+
     [Fact]
     public void GivenAUriBuilder_WhenToString_IsTainted13()
     {
@@ -110,12 +123,16 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.Uri.OriginalString);
     }
 
+    // Test [AspectMethodReplace("System.UriBuilder::get_Query()")]
+
     [Fact]
     public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted()
     {
         UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
         AssertTainted(builder.Query);
     }
+
+    // Test [AspectMethodReplace("System.UriBuilder::get_Host()")]
 
     [Fact]
     public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted2()
@@ -124,12 +141,17 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.Host);
     }
 
+    // Test [AspectMethodReplace("System.UriBuilder::get_Path()")]
+
     [Fact]
     public void GivenAUriBuilder_WhenGetSensitiveProperty_IsTainted3()
     {
         UriBuilder builder = new UriBuilder(new Uri(taintedUrlValue));
         AssertTainted(builder.Path);
     }
+
+    // Test [AspectMethodReplace("System.Object::ToString()", "System.UriBuilder")]
+    // Test [AspectMethodReplace("System.UriBuilder::set_Query(System.String)")]
 
     [Fact]
     public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted14()
@@ -139,6 +161,8 @@ public class UriBuilderTests : SSRFTests
         AssertTainted(builder.ToString());
     }
 
+    // Test [AspectMethodReplace("System.UriBuilder::set_Path(System.String)")]
+
     [Fact]
     public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted15()
     {
@@ -146,6 +170,8 @@ public class UriBuilderTests : SSRFTests
         builder.Path = taintedUrlValue;
         AssertTainted(builder.ToString());
     }
+
+    // Test [AspectMethodReplace("System.UriBuilder::set_Host(System.String)")]
 
     [Fact]
     public void GivenAUriBuilder_WhenSetSensitiveProperty_IsTainted17()

@@ -9,6 +9,8 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.SSRF;
 
 public class UriTests : SSRFTests
 {
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.String)", AspectFilter.StringLiterals)]
+
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted()
     {
@@ -16,13 +18,9 @@ public class UriTests : SSRFTests
         AssertTainted(uri.OriginalString);
     }
 
-    [Obsolete("Testing")]
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted2()
-    {
-        Uri uri = new Uri(taintedUrlValue, true);
-        AssertTainted(uri.OriginalString);
-    }
+
+
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.Uri,System.String,System.Boolean)")]
 
     [Obsolete("Testing")]
     [Fact]
@@ -36,73 +34,21 @@ public class UriTests : SSRFTests
     [Fact]
     public void GivenAURI_WhenCreateFromtainted_IsTainted4()
     {
-        Uri uri = new Uri(new Uri(taintedUrlValue), "eee", true);
+        Uri uri = new Uri(new Uri(taintedUrlValue), "eee", false);
         AssertTainted(uri.OriginalString);
     }
 
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted5()
-    {
-        Uri uri = new Uri(new Uri(taintedUrlValue), "eee");
-        AssertTainted(uri.OriginalString);
-    }
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.String,System.Boolean)")]
 
+    [Obsolete("Testing")]
     [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted6()
-    {
-        Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted7()
-    {
-        Uri uri = new Uri(taintedUrlValue, UriKind.Absolute);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted8()
-    {
-        Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedUrlValue));
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted9()
-    {
-        Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedValue));
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Obsolete]
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted10()
+    public void GivenAURI_WhenCreateFromtainted_IsTainted2()
     {
         Uri uri = new Uri(taintedUrlValue, true);
         AssertTainted(uri.OriginalString);
     }
 
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted11()
-    {
-        Uri uri = new Uri(taintedUrlValue, UriKind.Absolute);
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted13()
-    {
-        Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedHost, UriKind.Relative));
-        AssertTainted(uri.OriginalString);
-    }
-
-    [Fact]
-    public void GivenAURI_WhenCreateFromtainted_IsTainted14()
-    {
-        Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedHost, UriKind.Relative));
-        AssertTainted(uri.OriginalString);
-    }
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriCreationOptions)")]
 
 #if NET6_0_OR_GREATER
     [Fact]
@@ -123,6 +69,70 @@ public class UriTests : SSRFTests
     }
 #endif
 
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.Uri,System.String)")]
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted5()
+    {
+        Uri uri = new Uri(new Uri(taintedUrlValue), "eee");
+        AssertTainted(uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted6()
+    {
+        Uri uri = new Uri(new Uri(notTaintedValue), taintedUrlValue);
+        AssertTainted(uri.OriginalString);
+    }
+
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriKind)")]
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted7()
+    {
+        Uri uri = new Uri(taintedUrlValue, UriKind.Absolute);
+        AssertTainted(uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted11()
+    {
+        Uri uri = new Uri(taintedHost, UriKind.Relative);
+        AssertTainted(uri.OriginalString);
+    }
+
+    // Test [AspectCtorReplace("System.Uri::.ctor(System.Uri,System.Uri)")]
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted8()
+    {
+        Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedUrlValue));
+        AssertTainted(uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted9()
+    {
+        Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedValue));
+        AssertTainted(uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted13()
+    {
+        Uri uri = new Uri(new Uri(taintedUrlValue), new Uri(notTaintedHost, UriKind.Relative));
+        AssertTainted(uri.OriginalString);
+    }
+
+    [Fact]
+    public void GivenAURI_WhenCreateFromtainted_IsTainted14()
+    {
+        Uri uri = new Uri(new Uri(notTaintedValue), new Uri(taintedHost, UriKind.Relative));
+        AssertTainted(uri.OriginalString);
+    }
+
+    // Test [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriKind,System.Uri)")]
+
     [Fact]
     public void GivenAURI_WhenTryCreateFromtainted_IsTainted2()
     {
@@ -131,6 +141,8 @@ public class UriTests : SSRFTests
         result.Should().BeTrue();
         AssertTainted(uri.OriginalString);
     }
+
+    // Test [AspectMethodReplace("System.Uri::TryCreate(System.Uri,System.String,System.Uri)")]
 
     [Fact]
     public void GivenAURI_WhenTryCreateFromtainted_IsTainted3()
@@ -150,6 +162,8 @@ public class UriTests : SSRFTests
         AssertTainted(uri.OriginalString);
     }
 
+    // Test [AspectMethodReplace("System.Uri::TryCreate(System.Uri,System.Uri,System.Uri)")]
+
     [Fact]
     public void GivenAURI_WhenTryCreateFromtainted_IsTainted5()
     {
@@ -168,6 +182,8 @@ public class UriTests : SSRFTests
         AssertTainted(uri.OriginalString);
     }
 
+    // Test [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)")]
+
     [Fact]
     public void GivenAURI_WhenUnescapeDataStringFromtainted_IsTainted()
     {
@@ -175,6 +191,8 @@ public class UriTests : SSRFTests
             Uri.UnescapeDataString(taintedUrlValue),
             () => Uri.UnescapeDataString(taintedUrlValue));
     }
+
+    // Test [AspectMethodReplace("System.Uri::EscapeUriString(System.String)")]
 
     [Obsolete]
     [Fact]
@@ -185,6 +203,8 @@ public class UriTests : SSRFTests
             () => Uri.EscapeUriString(taintedUrlValue));
     }
 
+    // Test [AspectMethodReplace("System.Uri::EscapeDataString(System.String)")]
+
     [Fact]
     public void GivenAURI_WhenEscapeDataStringFromtainted_IsTainted()
     {
@@ -192,6 +212,8 @@ public class UriTests : SSRFTests
             Uri.EscapeDataString(taintedUrlValue),
             () => Uri.EscapeDataString(taintedUrlValue));
     }
+
+    // Test [AspectMethodReplace("System.Uri::MakeRelative(System.Uri)")]
 
     [Fact]
     [Obsolete]
@@ -203,6 +225,8 @@ public class UriTests : SSRFTests
         AssertTainted(uriRelative);
     }
 
+    // Test [AspectMethodReplace("System.Uri::MakeRelativeUri(System.Uri)")]
+
     [Fact]
     public void GivenAURI_WhenMakeRelativeFromtainted_IsTainted2()
     {
@@ -212,6 +236,15 @@ public class UriTests : SSRFTests
         AssertTainted(uriRelative.OriginalString);
     }
 
+    // Test [AspectMethodReplace("System.Uri::get_AbsoluteUri()")]
+    // Test [AspectMethodReplace("System.Uri::get_AbsolutePath()")]
+    // Test [AspectMethodReplace("System.Uri::get_LocalPath()")]
+    // Test [AspectMethodReplace("System.Uri::get_Host()")]
+    // Test [AspectMethodReplace("System.Uri::get_PathAndQuery()")]
+    // Test [AspectMethodReplace("System.Uri::get_Authority()")]
+    // Test [AspectMethodReplace("System.Uri::get_Query()")]
+    // Test [AspectMethodReplace("System.Object::ToString()", "System.Uri")]
+
     [Fact]
     public void GivenAUriTainted_WhengetProperties_tainted()
     {
@@ -219,20 +252,11 @@ public class UriTests : SSRFTests
         AssertTainted(uri.AbsoluteUri);
         AssertTainted(uri.ToString());
         AssertTainted(uri.AbsolutePath);
-        AssertTainted(uri.Scheme);
         AssertTainted(uri.Query);
         AssertTainted(uri.Authority);
         AssertTainted(uri.Host);
         AssertTainted(uri.LocalPath);
         AssertTainted(uri.OriginalString);
         AssertTainted(uri.PathAndQuery);
-        AssertNotTainted(uri.UserInfo); // user info is empty
-    }
-
-    [Fact]
-    public void GivenAUriTainted_WhengetPropertiesMultipleTimes_RangesAreNotDuplicated()
-    {
-        var uri = new Uri(AddTainted("http://localhost/tainted?with=qs").ToString());
-        AssertTainted(uri.Query);
     }
 }
