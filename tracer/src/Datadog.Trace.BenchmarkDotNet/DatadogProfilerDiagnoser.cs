@@ -243,13 +243,12 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             environment[profilerAgentless] = "1";
         }
 
-        ProcessHelpers.GetCurrentProcessInformation(out _, out _, out var processId);
         var lstTagsValues = new List<string>();
-        lstTagsValues.Add($"parent-runtime-id:{RuntimeId.Get()}");
-        lstTagsValues.Add($"parent-process-id:{processId}");
-        lstTagsValues.Add($"parent-traceid:{traceId}");
-        lstTagsValues.Add($"parent-spanid:{spanId}");
-        lstTagsValues.Add($"civisibility-test:1");
+        lstTagsValues.Add($"test.runtime-id:{RuntimeId.Get()}");
+        lstTagsValues.Add($"test.session_id:{DatadogExporter.Default.TestSession.Tags.SessionId}");
+        lstTagsValues.Add($"test.trace_id:{(traceId.Upper == 0 ? traceId.Lower.ToString() : traceId.ToString())}");
+        lstTagsValues.Add($"test.span_id:{spanId}");
+        lstTagsValues.Add($"test.civisibility:1");
         environment[ConfigurationKeys.GlobalTags] = string.Join(", ", lstTagsValues);
     }
 
