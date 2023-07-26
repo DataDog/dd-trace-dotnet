@@ -2,17 +2,13 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: amqp.command,
-    Resource: basic.consume,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
     Service: Samples.RabbitMQ,
-    Type: queue,
     Tags: {
-      amqp.command: basic.consume,
-      amqp.queue: hello,
-      component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0
     },
@@ -27,17 +23,13 @@
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: amqp.command,
-    Resource: basic.consume,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
     Service: Samples.RabbitMQ,
-    Type: queue,
     Tags: {
-      amqp.command: basic.consume,
-      amqp.queue: hello,
-      component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0
     },
@@ -52,17 +44,13 @@
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: amqp.command,
-    Resource: basic.consume,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
     Service: Samples.RabbitMQ,
-    Type: queue,
     Tags: {
-      amqp.command: basic.consume,
-      amqp.queue: hello,
-      component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
       version: 1.0.0,
       _dd.p.dm: -0
     },
@@ -77,249 +65,352 @@
   {
     TraceId: Id_7,
     SpanId: Id_8,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_9,
     Name: amqp.command,
-    Resource: basic.consume,
+    Resource: exchange.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
+    ParentId: Id_2,
     Tags: {
-      amqp.command: basic.consume,
-      amqp.queue: hello,
+      amqp.command: exchange.declare,
+      amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
-      runtime-id: Guid_1,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_3,
     SpanId: Id_10,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Name: amqp.command,
+    Resource: exchange.declare,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_4,
     Tags: {
+      amqp.command: exchange.declare,
+      amqp.exchange: test-exchange-name,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_11,
+    TraceId: Id_5,
+    SpanId: Id_11,
+    Name: amqp.command,
+    Resource: exchange.declare,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_6,
+    Tags: {
+      amqp.command: exchange.declare,
+      amqp.exchange: test-exchange-name,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_7,
     SpanId: Id_12,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Name: amqp.command,
+    Resource: exchange.declare,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_8,
     Tags: {
+      amqp.command: exchange.declare,
+      amqp.exchange: test-exchange-name,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_1,
+    SpanId: Id_13,
+    Name: amqp.command,
+    Resource: queue.bind,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_2,
+    Tags: {
+      amqp.command: queue.bind,
+      amqp.exchange: test-exchange-name,
+      amqp.queue: test-queue-name,
+      amqp.routing_key: test-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_3,
     SpanId: Id_14,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Name: amqp.command,
+    Resource: queue.bind,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_4,
     Tags: {
+      amqp.command: queue.bind,
+      amqp.exchange: test-exchange-name,
+      amqp.queue: test-queue-name,
+      amqp.routing_key: test-routing-key,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_15,
+    TraceId: Id_5,
+    SpanId: Id_15,
+    Name: amqp.command,
+    Resource: queue.bind,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_6,
+    Tags: {
+      amqp.command: queue.bind,
+      amqp.exchange: test-exchange-name,
+      amqp.queue: test-queue-name,
+      amqp.routing_key: test-routing-key,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_7,
     SpanId: Id_16,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: False),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: False),
+    Name: amqp.command,
+    Resource: queue.bind,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_8,
     Tags: {
+      amqp.command: queue.bind,
+      amqp.exchange: test-exchange-name,
+      amqp.queue: test-queue-name,
+      amqp.routing_key: test-routing-key,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_1,
     SpanId: Id_17,
     Name: amqp.command,
-    Resource: basic.get test-queue-name,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_10,
+    ParentId: Id_2,
     Tags: {
-      amqp.command: basic.get,
+      amqp.command: queue.declare,
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      span.kind: consumer,
-      version: 1.0.0
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_11,
+    TraceId: Id_3,
     SpanId: Id_18,
     Name: amqp.command,
-    Resource: basic.get test-queue-name,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_12,
+    ParentId: Id_4,
     Tags: {
-      amqp.command: basic.get,
+      amqp.command: queue.declare,
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      span.kind: consumer,
-      version: 1.0.0
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_5,
     SpanId: Id_19,
     Name: amqp.command,
-    Resource: basic.get test-queue-name,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_14,
+    ParentId: Id_6,
     Tags: {
-      amqp.command: basic.get,
+      amqp.command: queue.declare,
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      span.kind: consumer,
-      version: 1.0.0
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_15,
+    TraceId: Id_7,
     SpanId: Id_20,
     Name: amqp.command,
-    Resource: basic.get test-queue-name,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_16,
+    ParentId: Id_8,
     Tags: {
-      amqp.command: basic.get,
+      amqp.command: queue.declare,
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      span.kind: consumer,
-      version: 1.0.0
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_1,
     SpanId: Id_21,
-    Name: amqp.command,
-    Resource: basic.publish test-exchange-name -> test-routing-key,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_10,
+    ParentId: Id_2,
     Tags: {
-      amqp.command: basic.publish,
-      amqp.exchange: test-exchange-name,
-      amqp.routing_key: test-routing-key,
+      amqp.command: basic.get,
+      amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      message.size: 62,
-      span.kind: producer,
+      language: dotnet,
+      span.kind: consumer,
       version: 1.0.0
     }
   },
   {
-    TraceId: Id_11,
+    TraceId: Id_3,
     SpanId: Id_22,
-    Name: amqp.command,
-    Resource: basic.publish test-exchange-name -> test-routing-key,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_12,
+    ParentId: Id_4,
     Tags: {
-      amqp.command: basic.publish,
-      amqp.exchange: test-exchange-name,
-      amqp.routing_key: test-routing-key,
+      amqp.command: basic.get,
+      amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      message.size: 62,
-      span.kind: producer,
+      language: dotnet,
+      span.kind: consumer,
       version: 1.0.0
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_5,
     SpanId: Id_23,
-    Name: amqp.command,
-    Resource: basic.publish test-exchange-name -> test-routing-key,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_14,
+    ParentId: Id_6,
     Tags: {
-      amqp.command: basic.publish,
-      amqp.exchange: test-exchange-name,
-      amqp.routing_key: test-routing-key,
+      amqp.command: basic.get,
+      amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      message.size: 62,
-      span.kind: producer,
+      language: dotnet,
+      span.kind: consumer,
       version: 1.0.0
     }
   },
   {
-    TraceId: Id_15,
+    TraceId: Id_7,
     SpanId: Id_24,
-    Name: amqp.command,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_8,
+    Tags: {
+      amqp.command: basic.get,
+      amqp.queue: test-queue-name,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      span.kind: consumer,
+      version: 1.0.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_25,
+    Name: amqp.send,
     Resource: basic.publish test-exchange-name -> test-routing-key,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_16,
+    ParentId: Id_2,
     Tags: {
       amqp.command: basic.publish,
       amqp.exchange: test-exchange-name,
@@ -327,422 +418,359 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 62,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_9,
-    SpanId: Id_25,
-    Name: amqp.command,
-    Resource: exchange.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_10,
-    Tags: {
-      amqp.command: exchange.declare,
-      amqp.exchange: test-exchange-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_11,
+    TraceId: Id_3,
     SpanId: Id_26,
-    Name: amqp.command,
-    Resource: exchange.declare,
+    Name: amqp.send,
+    Resource: basic.publish test-exchange-name -> test-routing-key,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_12,
+    ParentId: Id_4,
     Tags: {
-      amqp.command: exchange.declare,
+      amqp.command: basic.publish,
       amqp.exchange: test-exchange-name,
+      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      message.size: 62,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_5,
     SpanId: Id_27,
-    Name: amqp.command,
-    Resource: exchange.declare,
+    Name: amqp.send,
+    Resource: basic.publish test-exchange-name -> test-routing-key,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_14,
+    ParentId: Id_6,
     Tags: {
-      amqp.command: exchange.declare,
+      amqp.command: basic.publish,
       amqp.exchange: test-exchange-name,
+      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      message.size: 62,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_15,
+    TraceId: Id_7,
     SpanId: Id_28,
-    Name: amqp.command,
-    Resource: exchange.declare,
+    Name: amqp.send,
+    Resource: basic.publish test-exchange-name -> test-routing-key,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_16,
+    ParentId: Id_8,
     Tags: {
-      amqp.command: exchange.declare,
+      amqp.command: basic.publish,
       amqp.exchange: test-exchange-name,
+      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      message.size: 62,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_9,
+    TraceId: Id_1,
     SpanId: Id_29,
-    Name: amqp.command,
-    Resource: queue.bind,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_10,
+    ParentId: Id_25,
     Tags: {
-      amqp.command: queue.bind,
-      amqp.exchange: test-exchange-name,
+      amqp.command: basic.get,
       amqp.queue: test-queue-name,
-      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      language: dotnet,
+      message.size: 62,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_11,
+    TraceId: Id_3,
     SpanId: Id_30,
-    Name: amqp.command,
-    Resource: queue.bind,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_12,
+    ParentId: Id_26,
     Tags: {
-      amqp.command: queue.bind,
-      amqp.exchange: test-exchange-name,
+      amqp.command: basic.get,
       amqp.queue: test-queue-name,
-      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      language: dotnet,
+      message.size: 62,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_13,
+    TraceId: Id_5,
     SpanId: Id_31,
-    Name: amqp.command,
-    Resource: queue.bind,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_14,
+    ParentId: Id_27,
     Tags: {
-      amqp.command: queue.bind,
-      amqp.exchange: test-exchange-name,
+      amqp.command: basic.get,
       amqp.queue: test-queue-name,
-      amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      language: dotnet,
+      message.size: 62,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_15,
+    TraceId: Id_7,
     SpanId: Id_32,
-    Name: amqp.command,
-    Resource: queue.bind,
+    Name: amqp.process,
+    Resource: basic.get test-queue-name,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_16,
+    ParentId: Id_28,
     Tags: {
-      amqp.command: queue.bind,
-      amqp.exchange: test-exchange-name,
-      amqp.queue: test-queue-name,
-      amqp.routing_key: test-routing-key,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_9,
-    SpanId: Id_33,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_10,
-    Tags: {
-      amqp.command: queue.declare,
+      amqp.command: basic.get,
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      language: dotnet,
+      message.size: 62,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_11,
+    TraceId: Id_33,
     SpanId: Id_34,
-    Name: amqp.command,
-    Resource: queue.declare,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
     Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_12,
     Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
       env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_13,
-    SpanId: Id_35,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_14,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_15,
+    TraceId: Id_35,
     SpanId: Id_36,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_38,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_40,
+    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_33,
+    SpanId: Id_41,
     Name: amqp.command,
     Resource: queue.declare,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_16,
+    ParentId: Id_34,
     Tags: {
       amqp.command: queue.declare,
-      amqp.queue: test-queue-name,
+      amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_9,
-    SpanId: Id_37,
-    Name: amqp.command,
-    Resource: basic.get test-queue-name,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_21,
-    Tags: {
-      amqp.command: basic.get,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 62,
-      runtime-id: Guid_1,
-      span.kind: consumer,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_11,
-    SpanId: Id_38,
-    Name: amqp.command,
-    Resource: basic.get test-queue-name,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_22,
-    Tags: {
-      amqp.command: basic.get,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 62,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_13,
-    SpanId: Id_39,
-    Name: amqp.command,
-    Resource: basic.get test-queue-name,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_23,
-    Tags: {
-      amqp.command: basic.get,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 62,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_15,
-    SpanId: Id_40,
-    Name: amqp.command,
-    Resource: basic.get test-queue-name,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_24,
-    Tags: {
-      amqp.command: basic.get,
-      amqp.queue: test-queue-name,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 62,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_41,
+    TraceId: Id_35,
     SpanId: Id_42,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_43,
-    SpanId: Id_44,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_45,
-    SpanId: Id_46,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_47,
-    SpanId: Id_48,
-    Name: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Resource: Program.PublishAndGetDefault(useDefaultQueue: True),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_41,
-    SpanId: Id_49,
     Name: amqp.command,
+    Resource: queue.declare,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_36,
+    Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: ,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_37,
+    SpanId: Id_43,
+    Name: amqp.command,
+    Resource: queue.declare,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_38,
+    Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: ,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_39,
+    SpanId: Id_44,
+    Name: amqp.command,
+    Resource: queue.declare,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_40,
+    Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: ,
+      component: RabbitMQ,
+      env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_33,
+    SpanId: Id_45,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_42,
+    ParentId: Id_34,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_1
@@ -754,13 +782,13 @@
     }
   },
   {
-    TraceId: Id_43,
-    SpanId: Id_50,
-    Name: amqp.command,
+    TraceId: Id_35,
+    SpanId: Id_46,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_44,
+    ParentId: Id_36,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_2
@@ -772,13 +800,13 @@
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_51,
-    Name: amqp.command,
+    TraceId: Id_37,
+    SpanId: Id_47,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_46,
+    ParentId: Id_38,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_3
@@ -790,13 +818,13 @@
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_52,
-    Name: amqp.command,
+    TraceId: Id_39,
+    SpanId: Id_48,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_48,
+    ParentId: Id_40,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_4
@@ -808,13 +836,13 @@
     }
   },
   {
-    TraceId: Id_41,
-    SpanId: Id_53,
-    Name: amqp.command,
+    TraceId: Id_33,
+    SpanId: Id_49,
+    Name: amqp.send,
     Resource: basic.publish <default> -> <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_42,
+    ParentId: Id_34,
     Tags: {
       amqp.command: basic.publish,
       amqp.exchange: ,
@@ -822,18 +850,21 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_43,
-    SpanId: Id_54,
-    Name: amqp.command,
+    TraceId: Id_35,
+    SpanId: Id_50,
+    Name: amqp.send,
     Resource: basic.publish <default> -> <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_44,
+    ParentId: Id_36,
     Tags: {
       amqp.command: basic.publish,
       amqp.exchange: ,
@@ -841,18 +872,21 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_55,
-    Name: amqp.command,
+    TraceId: Id_37,
+    SpanId: Id_51,
+    Name: amqp.send,
     Resource: basic.publish <default> -> <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_46,
+    ParentId: Id_38,
     Tags: {
       amqp.command: basic.publish,
       amqp.exchange: ,
@@ -860,18 +894,21 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_56,
-    Name: amqp.command,
+    TraceId: Id_39,
+    SpanId: Id_52,
+    Name: amqp.send,
     Resource: basic.publish <default> -> <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_48,
+    ParentId: Id_40,
     Tags: {
       amqp.command: basic.publish,
       amqp.exchange: ,
@@ -879,86 +916,21 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_41,
-    SpanId: Id_57,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_42,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: ,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_43,
-    SpanId: Id_58,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_44,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: ,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_45,
-    SpanId: Id_59,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_46,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: ,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_47,
-    SpanId: Id_60,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_48,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: ,
-      component: RabbitMQ,
-      env: integration_tests,
-      span.kind: client,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_41,
-    SpanId: Id_61,
-    Name: amqp.command,
+    TraceId: Id_33,
+    SpanId: Id_53,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_53,
+    ParentId: Id_49,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_1
@@ -979,13 +951,13 @@
     }
   },
   {
-    TraceId: Id_43,
-    SpanId: Id_62,
-    Name: amqp.command,
+    TraceId: Id_35,
+    SpanId: Id_54,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_54,
+    ParentId: Id_50,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_2
@@ -1006,13 +978,13 @@
     }
   },
   {
-    TraceId: Id_45,
-    SpanId: Id_63,
-    Name: amqp.command,
+    TraceId: Id_37,
+    SpanId: Id_55,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_55,
+    ParentId: Id_51,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_3
@@ -1033,13 +1005,13 @@
     }
   },
   {
-    TraceId: Id_47,
-    SpanId: Id_64,
-    Name: amqp.command,
+    TraceId: Id_39,
+    SpanId: Id_56,
+    Name: amqp.process,
     Resource: basic.get <generated>,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_56,
+    ParentId: Id_52,
     Tags: {
       amqp.command: basic.get,
       amqp.queue: AmqQueue_4
@@ -1054,6 +1026,90 @@
     },
     Metrics: {
       process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_58,
+    Name: PublishToConsumer(),
+    Resource: PublishToConsumer(),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_60,
+    Name: PublishToConsumer(),
+    Resource: PublishToConsumer(),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_61,
+    SpanId: Id_62,
+    Name: PublishToConsumer(),
+    Resource: PublishToConsumer(),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_64,
+    Name: PublishToConsumer(),
+    Resource: PublishToConsumer(),
+    Service: Samples.RabbitMQ,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -1228,93 +1284,97 @@
     }
   },
   {
-    TraceId: Id_81,
+    TraceId: Id_57,
+    SpanId: Id_81,
+    Name: amqp.send,
+    Resource: basic.publish <default> -> hello,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_58,
+    Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
+      env: integration_tests,
+      message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_59,
     SpanId: Id_82,
-    Name: PublishToConsumer(),
-    Resource: PublishToConsumer(),
+    Name: amqp.send,
+    Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_60,
     Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_83,
+    TraceId: Id_61,
+    SpanId: Id_83,
+    Name: amqp.send,
+    Resource: basic.publish <default> -> hello,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_62,
+    Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
+      env: integration_tests,
+      message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
+    }
+  },
+  {
+    TraceId: Id_63,
     SpanId: Id_84,
-    Name: PublishToConsumer(),
-    Resource: PublishToConsumer(),
+    Name: amqp.send,
+    Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_64,
     Tags: {
+      amqp.command: basic.publish,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
+      message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
+      span.kind: producer,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_85,
-    SpanId: Id_86,
-    Name: PublishToConsumer(),
-    Resource: PublishToConsumer(),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_87,
-    SpanId: Id_88,
-    Name: PublishToConsumer(),
-    Resource: PublishToConsumer(),
-    Service: Samples.RabbitMQ,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_65,
-    SpanId: Id_89,
-    Name: amqp.command,
+    SpanId: Id_85,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1326,14 +1386,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_67,
-    SpanId: Id_90,
-    Name: amqp.command,
+    SpanId: Id_86,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1345,14 +1408,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_69,
-    SpanId: Id_91,
-    Name: amqp.command,
+    SpanId: Id_87,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1364,14 +1430,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_71,
-    SpanId: Id_92,
-    Name: amqp.command,
+    SpanId: Id_88,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1383,14 +1452,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_73,
-    SpanId: Id_93,
-    Name: amqp.command,
+    SpanId: Id_89,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1402,14 +1474,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_75,
-    SpanId: Id_94,
-    Name: amqp.command,
+    SpanId: Id_90,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1421,14 +1496,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_77,
-    SpanId: Id_95,
-    Name: amqp.command,
+    SpanId: Id_91,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1440,14 +1518,17 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_79,
-    SpanId: Id_96,
-    Name: amqp.command,
+    SpanId: Id_92,
+    Name: amqp.send,
     Resource: basic.publish <default> -> hello,
     Service: Samples.RabbitMQ,
     Type: queue,
@@ -1459,98 +1540,136 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       span.kind: producer,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.peer.service.source: out.host
     }
   },
   {
-    TraceId: Id_81,
-    SpanId: Id_97,
-    Name: amqp.command,
-    Resource: basic.publish <default> -> hello,
+    TraceId: Id_57,
+    SpanId: Id_93,
+    Name: amqp.process,
+    Resource: basic.deliver,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_81,
+    Tags: {
+      amqp.command: basic.deliver,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      message.size: 17,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_94,
+    Name: amqp.process,
+    Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
     ParentId: Id_82,
     Tags: {
-      amqp.command: basic.publish,
+      amqp.command: basic.deliver,
       amqp.exchange: ,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
-      span.kind: producer,
-      version: 1.0.0
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_83,
-    SpanId: Id_98,
-    Name: amqp.command,
-    Resource: basic.publish <default> -> hello,
+    TraceId: Id_61,
+    SpanId: Id_95,
+    Name: amqp.process,
+    Resource: basic.deliver,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_83,
+    Tags: {
+      amqp.command: basic.deliver,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      message.size: 17,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
+    SpanId: Id_96,
+    Name: amqp.process,
+    Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
     ParentId: Id_84,
     Tags: {
-      amqp.command: basic.publish,
+      amqp.command: basic.deliver,
       amqp.exchange: ,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       message.size: 17,
-      span.kind: producer,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_85,
-    SpanId: Id_99,
-    Name: amqp.command,
-    Resource: basic.publish <default> -> hello,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_86,
-    Tags: {
-      amqp.command: basic.publish,
-      amqp.exchange: ,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      message.size: 17,
-      span.kind: producer,
-      version: 1.0.0
-    }
-  },
-  {
-    TraceId: Id_87,
-    SpanId: Id_100,
-    Name: amqp.command,
-    Resource: basic.publish <default> -> hello,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_88,
-    Tags: {
-      amqp.command: basic.publish,
-      amqp.exchange: ,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      message.size: 17,
-      span.kind: producer,
-      version: 1.0.0
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
     }
   },
   {
     TraceId: Id_65,
-    SpanId: Id_101,
-    Name: amqp.command,
+    SpanId: Id_97,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_89,
+    ParentId: Id_85,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1570,16 +1689,15 @@
   },
   {
     TraceId: Id_67,
-    SpanId: Id_102,
-    Name: amqp.command,
+    SpanId: Id_98,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_90,
+    ParentId: Id_86,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1599,16 +1717,15 @@
   },
   {
     TraceId: Id_69,
-    SpanId: Id_103,
-    Name: amqp.command,
+    SpanId: Id_99,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_91,
+    ParentId: Id_87,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1628,16 +1745,15 @@
   },
   {
     TraceId: Id_71,
-    SpanId: Id_104,
-    Name: amqp.command,
+    SpanId: Id_100,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_92,
+    ParentId: Id_88,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1657,16 +1773,15 @@
   },
   {
     TraceId: Id_73,
-    SpanId: Id_105,
-    Name: amqp.command,
+    SpanId: Id_101,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_93,
+    ParentId: Id_89,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1686,16 +1801,15 @@
   },
   {
     TraceId: Id_75,
-    SpanId: Id_106,
-    Name: amqp.command,
+    SpanId: Id_102,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_94,
+    ParentId: Id_90,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1715,16 +1829,15 @@
   },
   {
     TraceId: Id_77,
-    SpanId: Id_107,
-    Name: amqp.command,
+    SpanId: Id_103,
+    Name: amqp.process,
     Resource: basic.deliver,
     Service: Samples.RabbitMQ,
     Type: queue,
-    ParentId: Id_95,
+    ParentId: Id_91,
     Tags: {
       amqp.command: basic.deliver,
       amqp.exchange: ,
-      amqp.queue: hello,
       amqp.routing_key: hello,
       component: RabbitMQ,
       env: integration_tests,
@@ -1744,139 +1857,106 @@
   },
   {
     TraceId: Id_79,
+    SpanId: Id_104,
+    Name: amqp.process,
+    Resource: basic.deliver,
+    Service: Samples.RabbitMQ,
+    Type: queue,
+    ParentId: Id_92,
+    Tags: {
+      amqp.command: basic.deliver,
+      amqp.exchange: ,
+      amqp.routing_key: hello,
+      component: RabbitMQ,
+      env: integration_tests,
+      language: dotnet,
+      message.size: 17,
+      runtime-id: Guid_1,
+      span.kind: consumer,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_57,
+    SpanId: Id_105,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_81,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_59,
+    SpanId: Id_106,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_82,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_61,
+    SpanId: Id_107,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_83,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_63,
     SpanId: Id_108,
-    Name: amqp.command,
-    Resource: basic.deliver,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
     Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_96,
+    ParentId: Id_84,
     Tags: {
-      amqp.command: basic.deliver,
-      amqp.exchange: ,
-      amqp.queue: hello,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
       env: integration_tests,
       language: dotnet,
-      message.size: 17,
       runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_81,
-    SpanId: Id_109,
-    Name: amqp.command,
-    Resource: basic.deliver,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_97,
-    Tags: {
-      amqp.command: basic.deliver,
-      amqp.exchange: ,
-      amqp.queue: hello,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 17,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_83,
-    SpanId: Id_110,
-    Name: amqp.command,
-    Resource: basic.deliver,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_98,
-    Tags: {
-      amqp.command: basic.deliver,
-      amqp.exchange: ,
-      amqp.queue: hello,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 17,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_85,
-    SpanId: Id_111,
-    Name: amqp.command,
-    Resource: basic.deliver,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_99,
-    Tags: {
-      amqp.command: basic.deliver,
-      amqp.exchange: ,
-      amqp.queue: hello,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 17,
-      runtime-id: Guid_1,
-      span.kind: consumer,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_87,
-    SpanId: Id_112,
-    Name: amqp.command,
-    Resource: basic.deliver,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    ParentId: Id_100,
-    Tags: {
-      amqp.command: basic.deliver,
-      amqp.exchange: ,
-      amqp.queue: hello,
-      amqp.routing_key: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      language: dotnet,
-      message.size: 17,
-      runtime-id: Guid_1,
-      span.kind: consumer,
       version: 1.0.0,
       _dd.p.dm: -0
     },
@@ -1889,6 +1969,90 @@
   },
   {
     TraceId: Id_65,
+    SpanId: Id_109,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_85,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_67,
+    SpanId: Id_110,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_86,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_69,
+    SpanId: Id_111,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_87,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_71,
+    SpanId: Id_112,
+    Name: consumer.Received event,
+    Resource: consumer.Received event,
+    Service: Samples.RabbitMQ,
+    ParentId: Id_88,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      version: 1.0.0,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_73,
     SpanId: Id_113,
     Name: consumer.Received event,
     Resource: consumer.Received event,
@@ -1909,7 +2073,7 @@
     }
   },
   {
-    TraceId: Id_67,
+    TraceId: Id_75,
     SpanId: Id_114,
     Name: consumer.Received event,
     Resource: consumer.Received event,
@@ -1930,7 +2094,7 @@
     }
   },
   {
-    TraceId: Id_69,
+    TraceId: Id_77,
     SpanId: Id_115,
     Name: consumer.Received event,
     Resource: consumer.Received event,
@@ -1951,7 +2115,7 @@
     }
   },
   {
-    TraceId: Id_71,
+    TraceId: Id_79,
     SpanId: Id_116,
     Name: consumer.Received event,
     Resource: consumer.Received event,
@@ -1972,168 +2136,112 @@
     }
   },
   {
-    TraceId: Id_73,
-    SpanId: Id_117,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
-    Service: Samples.RabbitMQ,
-    ParentId: Id_93,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_75,
+    TraceId: Id_117,
     SpanId: Id_118,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
+    Name: amqp.command,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
-    ParentId: Id_94,
+    Type: queue,
     Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_77,
-    SpanId: Id_119,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
-    Service: Samples.RabbitMQ,
-    ParentId: Id_95,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_79,
+    TraceId: Id_119,
     SpanId: Id_120,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
+    Name: amqp.command,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
-    ParentId: Id_96,
+    Type: queue,
     Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_81,
-    SpanId: Id_121,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
-    Service: Samples.RabbitMQ,
-    ParentId: Id_97,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_83,
+    TraceId: Id_121,
     SpanId: Id_122,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
+    Name: amqp.command,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
-    ParentId: Id_98,
+    Type: queue,
     Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
     }
   },
   {
-    TraceId: Id_85,
-    SpanId: Id_123,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
-    Service: Samples.RabbitMQ,
-    ParentId: Id_99,
-    Tags: {
-      env: integration_tests,
-      language: dotnet,
-      runtime-id: Guid_1,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_87,
+    TraceId: Id_123,
     SpanId: Id_124,
-    Name: consumer.Received event,
-    Resource: consumer.Received event,
+    Name: amqp.command,
+    Resource: queue.declare,
     Service: Samples.RabbitMQ,
-    ParentId: Id_100,
+    Type: queue,
     Tags: {
+      amqp.command: queue.declare,
+      amqp.queue: hello,
+      component: RabbitMQ,
       env: integration_tests,
-      language: dotnet,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
+      span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
+      _dd.agent_psr: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0
@@ -2151,10 +2259,13 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2176,10 +2287,13 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2201,10 +2315,13 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -2226,110 +2343,13 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
+      peer.service: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_133,
-    SpanId: Id_134,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      runtime-id: Guid_1,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_135,
-    SpanId: Id_136,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      runtime-id: Guid_1,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_137,
-    SpanId: Id_138,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      runtime-id: Guid_1,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.p.dm: -0
-    },
-    Metrics: {
-      process_id: 0,
-      _dd.agent_psr: 1.0,
-      _dd.top_level: 1.0,
-      _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 1.0
-    }
-  },
-  {
-    TraceId: Id_139,
-    SpanId: Id_140,
-    Name: amqp.command,
-    Resource: queue.declare,
-    Service: Samples.RabbitMQ,
-    Type: queue,
-    Tags: {
-      amqp.command: queue.declare,
-      amqp.queue: hello,
-      component: RabbitMQ,
-      env: integration_tests,
-      runtime-id: Guid_1,
-      span.kind: client,
-      version: 1.0.0,
-      _dd.p.dm: -0
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,

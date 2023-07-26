@@ -235,10 +235,24 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsProcessV0(),
             };
 
-        public static Result IsRabbitMQ(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsRabbitMQAdmin(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsRabbitMQV1(),
+                "v1" => span.IsRabbitMQAdminV1(),
+                _ => span.IsRabbitMQV0(),
+            };
+
+        public static Result IsRabbitMQInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsRabbitMQInboundV1(),
+                _ => span.IsRabbitMQV0(),
+            };
+
+        public static Result IsRabbitMQOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsRabbitMQOutboundV1(),
                 _ => span.IsRabbitMQV0(),
             };
 
