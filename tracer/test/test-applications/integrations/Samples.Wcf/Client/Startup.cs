@@ -2,11 +2,14 @@ using System;
 using System.ServiceModel;
 using System.ServiceModel.Channels;
 using System.Threading.Tasks;
+using ActivitySampleHelper;
 
 namespace Samples.Wcf.Client
 {
     public class Startup
     {
+        private static readonly ActivitySourceHelper _sampleHelpers = new("Samples.Wcf");
+
         public static async Task InvokeCalculatorService(Binding binding, Uri baseAddress, int expectedExceptionCount)
         {
             var calculatorServiceBaseAddress = new Uri(baseAddress, "CalculatorService");
@@ -14,12 +17,16 @@ namespace Samples.Wcf.Client
             int exceptionsSeen = 0;
             using (var calculator = new CalculatorClient(binding, address))
             {
-                // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
-                calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
+                using(var scope = _sampleHelpers.CreateScope("WebClient"))
+                {
+                    calculator.DatadogScope = scope;
+                    // Add the CustomEndpointBehavior / ClientMessageInspector to add headers on calls to the service
+                    calculator.ChannelFactory.Endpoint.EndpointBehaviors.Add(new CustomEndpointBehavior());
 
-                exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
-                exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
-                // exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator); // Ignore the async server endpoint because it is flaky in CI right now
+                    exceptionsSeen += await Invoke_ServerSyncAdd_Endpoints(calculator);
+                    exceptionsSeen += await Invoke_ServerTaskAdd_Endpoints(calculator);
+                    exceptionsSeen += await Invoke_ServerAsyncAdd_Endpoints(calculator);
+                }
             }
 
             if (exceptionsSeen != expectedExceptionCount)
@@ -47,6 +54,7 @@ namespace Samples.Wcf.Client
         {
             int exceptionsSeen = 0;
 
+
             try
             {
                 Console.WriteLine();
@@ -56,7 +64,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -69,7 +77,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -84,7 +92,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -97,9 +105,10 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
+
 
             return exceptionsSeen;
         }
@@ -128,7 +137,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -143,7 +152,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -156,7 +165,7 @@ namespace Samples.Wcf.Client
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
@@ -181,21 +190,36 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerAsyncAdd(1, 2)");
-                double result = calculator.Sync_ServerAsyncAdd(1, 2);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Sync_ServerAsyncAdd(1, 2, false, false)");
+                double result = calculator.Sync_ServerAsyncAdd(1, 2, false, false);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
             }
             catch (Exception ex)
             {
-                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2)");
-                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, false)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, false, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, false)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, false, null, null);
                 LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
                 double result = calculator.End_ServerAsyncAdd(asyncResult);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
@@ -209,13 +233,43 @@ namespace Samples.Wcf.Client
             try
             {
                 Console.WriteLine();
-                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerAsyncAdd(1, 2)");
-                double result = await calculator.Task_ServerAsyncAdd(1, 2);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, false, true)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, false, true, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
                 LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
             }
             catch (Exception ex)
             {
                 LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Begin_ServerAsyncAdd(1, 2, true, true)");
+                IAsyncResult asyncResult = calculator.Begin_ServerAsyncAdd(1, 2, true, true, null, null);
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: End_ServerAsyncAdd(asyncResult)");
+                double result = calculator.End_ServerAsyncAdd(asyncResult);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex.Message}");
+                exceptionsSeen++;
+            }
+
+            try
+            {
+                Console.WriteLine();
+                LoggingHelper.WriteLineWithDate($"[Client] Invoke: Task_ServerAsyncAdd(1, 2, false, false)");
+                double result = await calculator.Task_ServerAsyncAdd(1, 2, false, false);
+                LoggingHelper.WriteLineWithDate($"[Client] Result: {result}");
+            }
+            catch (Exception ex)
+            {
+                LoggingHelper.WriteLineWithDate($"[Client] Message resulted in an exception. Exception message: {ex}");
                 exceptionsSeen++;
             }
 

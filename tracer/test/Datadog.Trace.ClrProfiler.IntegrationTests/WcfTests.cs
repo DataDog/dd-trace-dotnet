@@ -51,13 +51,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 yield return new object[] { "v0", binding, false, true };
                 yield return new object[] { "v0", binding, false, false };
-                yield return new object[] { "v0", binding, true,  true };
-                yield return new object[] { "v0", binding, true,  false };
+                yield return new object[] { "v0", binding, true, true };
+                yield return new object[] { "v0", binding, true, false };
 
                 yield return new object[] { "v1", binding, false, true };
                 yield return new object[] { "v1", binding, false, false };
-                yield return new object[] { "v1", binding, true,  true };
-                yield return new object[] { "v1", binding, true,  false };
+                yield return new object[] { "v1", binding, true, true };
+                yield return new object[] { "v1", binding, true, false };
             }
         }
 
@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public async Task SubmitsTraces(string metadataSchemaVersion, string binding, bool enableNewWcfInstrumentation, bool enableWcfObfuscation)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
             if (enableNewWcfInstrumentation)
             {
@@ -87,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 6;
+            var expectedSpanCount = 14;
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;
@@ -98,9 +99,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 // Filter out WCF spans unrelated to the actual request handling, and filter them before returning spans
                 // so we can wait on the exact number of spans we expect.
                 agent.SpanFilters.Add(s => !s.Resource.Contains("schemas.xmlsoap.org") && !s.Resource.Contains("www.w3.org"));
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web);
+                // The test adds a custom span to show that propagation works with WCF headers
+                agent.SpanFilters.Add(s => s.Type == SpanTypes.Web || s.Type == SpanTypes.Custom);
                 var spans = agent.WaitForSpans(expectedSpanCount);
-                ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
+                ValidateIntegrationSpans(spans.Where(s => s.Type == SpanTypes.Web), metadataSchemaVersion, expectedServiceName: "Samples.Wcf", isExternalSpan: false);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings(metadataSchemaVersion, binding, enableNewWcfInstrumentation, enableWcfObfuscation);
 

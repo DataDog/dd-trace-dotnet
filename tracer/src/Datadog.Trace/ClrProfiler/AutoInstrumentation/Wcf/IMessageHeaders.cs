@@ -21,5 +21,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
         /// Gets the To header
         /// </summary>
         Uri To { get; }
+
+        /// <summary>
+        /// Gets a given header
+        /// </summary>
+        T GetHeader<T>(string name, string ns);
+
+        /// <summary>
+        /// Finds a given header
+        /// </summary>
+        int FindHeader(string name, string ns);
     }
 }
