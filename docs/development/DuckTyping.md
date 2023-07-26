@@ -26,8 +26,8 @@ public class Program
                 // getters to access the anonymous object internals were generated
                 // automatically for us.
 
-                // We use the `As` extension method to call the duck typing proxy creator.
-		var proxyInstance = obj.As<IDuckAnonymous>();
+                // We use the `DuckCast` extension method to call the duck typing proxy creator.
+		var proxyInstance = obj.DuckCast<IDuckAnonymous>();
 
 		// Here we can access the internal properties
 		Console.WriteLine($"Name: {proxyInstance.Name}");
@@ -300,6 +300,69 @@ public interface IMyProxy
     Tuple<int, int> WrapIntInt(int a, int b);
 }
 ```
+
+## Duck typing static types
+
+If you want to duck-type a `static` type so that you can call a method on it, then there _is_ no object you can call `DuckCast<>` on! In that case, you need to use a slightly lower-level API. 
+
+For example, if you have defined a duck type interface `proxyTargetType`, and a reference to the target `Type` you want to duck-type `staticType`, you would call
+
+```csharp
+DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyTargetType, staticType);
+if (proxyResult.Success)
+{
+    // Pass in null, as there's no "instance" to duck type here
+    return proxyResult.CreateInstance(null);
+}
+else
+{
+    // duck typing failed, throw exception etc
+}
+```
+
+For example, consider this target type:
+
+```csharp
+public static class ObjectFactory
+{
+    public static object CreateObject() => new();
+}
+```
+
+And you want to call `CreateObject`, so you create an interface
+
+```csharp
+public interface IObjectFactoryProxy
+{
+    object CreateObject();
+}
+```
+
+You could create a duck type proxy using:
+
+```csharp
+// You need a reference to the target `Type`. Ideally, you can get this
+// from calling typeof(T) on an integration's generic parameter or something similar
+// but the below will also work
+Type staticType = Type.GetType("Namespace.ObjectFactory, SomeAssembly");
+Type proxyType = typeof(IObjectFactoryProxy); // The type of our proxy
+
+// Try to create the proxy result
+DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(proxyType, staticType);
+if (proxyResult.Success)
+{
+    // Pass in null, as there's no "instance" to duck type here, to create an instance of our proxy
+    var proxy = (IObjectFactoryProxy)proxyResult.CreateInstance(null);
+    
+    // invoke methods on the proxy
+    object obj = proxy.CreateObject();
+}
+else
+{
+    // duck typing failed, throw exception etc
+}
+```
+
 
 ## Duck chaining
 
@@ -866,3 +929,94 @@ Intel Core i7-1068NG7 CPU 2.30GHz, 1 CPU, 2 logical and 2 physical cores
 | PrivateOutParameterMethod |    .NET 4.7.2 | Out-Param Method |   Public | 3.7001 ns | 0.0380 ns | 0.0318 ns |  1.00 |    0.00 |     - |     - |     - |         - |
 | PrivateOutParameterMethod | .NET Core 3.1 | Out-Param Method |   Public | 3.9932 ns | 0.0553 ns | 0.0490 ns |  1.08 |    0.01 |     - |     - |     - |         - |
 </details>
+
+
+## Reverse DuckTyping / Duck implementing
+
+Duck typing is useful when you need to access members of a third-party object that you can't reference directly at runtime (as is typicaly the case for integrations). However, the reverse operation is sometimes required, where we have a custom type that we want to pass to the third-party method, but that custom type needs to implement some third-party interface that we can't reference directly.
+
+In this situation you can use reverse-duck-typing (also call duck-implementing) to create a proxy object that wraps your custom object and implements the required interface, delegating calls to the interface member to the underlying custom object
+
+For example, given the following example (analgous the first duck-typing example in this document)
+
+```csharp
+public class Program
+{
+	public static void Main()
+	{
+		// Create our custom object that we want the third-party library to use
+		MyType customObject = new MyType { Name = ".NET Core", Version = "3.1" };
+
+        // Create a proxy instance that wraps our customObject and implements the 
+        // required interface. Ideally, you can use generics and typeof() to get a 
+        // reference to the type you need (or the assembly at least) instead of searching
+        // everywhere, but sometimes that's not possible
+        Type interface = Type.GetType("Some.Namespace.IFrameworkDetails, MyAssembly");
+
+        // Calling `DuckImplement()` creates the proxy object, and returns it as an `object`
+        object proxy = customObject.DuckImplement(interface);
+		
+        // Pass the proxy object to the third-party library function that needs
+        // an object that implements IFrameworkDetails
+		Process(proxy);
+	}
+	
+    // Imagine this method is defined in a third party library
+	public static void Process(IFrameworkDetails obj) 
+	{
+		// Here we can access the internal properties
+		Console.WriteLine($"Name: {proxyInstance.Name}");
+		Console.WriteLine($"Version: {proxyInstance.Version}");
+	}
+
+    public class MyType
+    {
+        [DuckImplement]
+        public string Name { get; }
+
+        [DuckImplement]
+        public string Version { get; }
+    }
+	
+    // This is the interface we need to implement, but we can't reference it directly
+	// public interface IFrameworkDetails 
+	// {
+	// 	   string Name { get; }
+	// 	   string Version { get; }
+	// }
+}
+```
+
+For this particular case the generated proxy type by the Duck Type library will look something like this:
+
+```csharp
+public readonly struct IFrameworkDetails___MyType : IFrameworkDetails, IDuckType
+{
+    private readonly MyType _currentInstance;
+
+    // *** IDuckType implementation
+    public object Instance => _currentInstance;
+    public Type Type => typeof(MyType);
+
+    // *** IFrameworkDetails implementation
+    public string Name => _currentInstance.Name;
+    public string Version => _currentInstance.Version;
+}
+```
+
+Add `[DuckImplement]` to any of the properties and methods that are required by the interface/base type. The duck-typing will only consider these decorated methods when implementing the interface/base type.
+
+If you need to disambiguate between overloads on the target interface, you can specify explicit parameters in `[DuckImplement]`, for example:
+
+```csharp
+internal class DirectSubmissionLoggerProvider
+{
+    [DuckReverseMethod(ParameterTypeNames = new[] { "Microsoft.Extensions.Logging.IExternalScopeProvider, Microsoft.Extensions.Logging.Abstractions" })]
+    public void SetScopeProvider(IExternalScopeProvider scopeProvider)
+    {
+        // ...
+    }
+
+    // ...
+}
+```

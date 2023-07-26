@@ -891,6 +891,7 @@
       <type fullname="System.Security.Cryptography.HashAlgorithm" />
    </assembly>
    <assembly fullname="System.Text.Encoding.Extensions">
+      <type fullname="System.Text.UnicodeEncoding" />
       <type fullname="System.Text.UTF8Encoding" />
    </assembly>
    <assembly fullname="System.Text.RegularExpressions">
