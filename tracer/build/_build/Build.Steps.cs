@@ -1651,6 +1651,7 @@ partial class Build
                     .SetProperty("BuildInParallel", "true")
                     .SetProperty("CheckEolTargetFramework", "false")
                     .SetProperty("SampleName", sampleName)
+                    .When(IncludeTestsRequiringDocker.HasValue, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker!.Value ? "true" : "false"))
                     .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
                     .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
