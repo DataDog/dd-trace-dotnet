@@ -93,7 +93,13 @@ namespace Datadog.Trace.Configuration.Schema
         public AwsSqsTags CreateAwsSqsTags(string spanKind) => _version switch
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSqsTags(),
-            _ => new AwsSqsV1Tags(spanKind)
+            _ => new AwsSqsV1Tags(spanKind),
+        };
+
+        public AwsSnsTags CreateAwsSnsTags(string spanKind) => _version switch
+        {
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSnsTags(),
+            _ => new AwsSnsV1Tags(spanKind),
         };
     }
 }

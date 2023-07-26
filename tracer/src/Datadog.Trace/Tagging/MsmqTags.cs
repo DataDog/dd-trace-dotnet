@@ -69,7 +69,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? Host;
+            get => _peerServiceOverride ?? (SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer) ?
+                                                Host
+                                                : null);
             private set => _peerServiceOverride = value;
         }
 
@@ -79,8 +81,10 @@ namespace Datadog.Trace.Tagging
             get
             {
                 return _peerServiceOverride is not null
-                           ? "peer.service"
-                           : Trace.Tags.OutHost;
+                           ? Tags.PeerService
+                           : SpanKind.Equals(SpanKinds.Client) || SpanKind.Equals(SpanKinds.Producer)
+                               ? Tags.OutHost
+                               : null;
             }
         }
     }

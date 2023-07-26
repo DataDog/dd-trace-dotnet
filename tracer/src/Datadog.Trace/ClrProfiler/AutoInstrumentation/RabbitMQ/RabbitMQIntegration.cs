@@ -126,6 +126,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 return CallTargetState.GetDefault();
             }
 
+            string queue = null;
+
+            if (QueueHelper.TryGetQueue(instance, out var queueInner))
+            {
+                queue = queueInner;
+            }
+
             SpanContext propagatedContext = null;
 
             // try to extract propagated context values from headers
@@ -141,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, exchange: exchange, routingKey: routingKey);
+            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, "basic.deliver", parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, exchange: exchange, routingKey: routingKey);
             if (tags != null)
             {
                 tags.MessageSize = body?.Length.ToString() ?? "0";
