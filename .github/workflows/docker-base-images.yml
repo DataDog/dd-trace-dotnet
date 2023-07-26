@@ -1,21 +1,25 @@
-name: "Docker base images"
+name: "Rel Env docker base images"
 on:
-  # This GitHub Action will be invoked automatically from the main Azure DevOps build
-  # This job will only be launched when we are building the main branch (a snapshot) or when we are generating a release.
+  # This GitHub Action is invoked automatically from the main Azure DevOps
+  # build when building the main branch (a snapshot). It is launched from
+  # Azure DevOps instead of using a GitHub event, as it requires the assets
+  # that are created by the Azure DevOps build. The build only produces
+  # snapshots, not releases.
+  #
+  # The `auto_create_rel_env_release_images` workflow also invokes the
+  # `create-rel-env-docker-base-images` GitHub Action, which creates
+  # the release/latest (not snapshot) version of the images.
   workflow_dispatch:
     inputs:
       azdo_build_id:
         description: 'The specific AzDo build from which the release artifacts will be downloaded.'
-        required: false
-      is_snapshot:
-        description: 'True when we are building main branch, false when we are building a release'
-        required: false
-      targetBranch:
-        description: Parameter comming from only draft release. The branch that generates the trigger. 
-        required: false
-      commitSha:
-        description: Parameter comming from only draft release. Commit that trigger the build.
-        required: false
+        required: true
+
+      is_release_version:
+        description: 'Is this run generating release artifacts? Set to "True" to publish `:latest` tags, otherwise generates `:latest-snapshot` tags'
+        required: true
+        default: 'False'
+
 jobs:
   build-and-publish-base-image:
     runs-on: ubuntu-latest
@@ -37,48 +41,14 @@ jobs:
 
     - name: "Download build assets from Azure Pipelines"
       id: assets
-      run: |
-        # If AzureDevopsBuildId is empty we download release artifact, else we download the artifacts from azure build id
-        [ -z "$AzureDevopsBuildId" ] && ./tracer/build.sh DownloadReleaseArtifacts || ./tracer/build.sh DownloadAzurePipelineFromBuild     
+      run: ./tracer/build.sh DownloadAzurePipelineFromBuild
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
-        TargetBranch: "${{ github.event.inputs.targetBranch }}"
-        CommitSha: "${{ github.event.inputs.commitSha }}"
 
-    - name: Copy tooling files to artifacts path
-      shell: bash
-      run: |
-        echo "OUTPUT ARTIFACT PATH: ${{steps.assets.outputs.artifacts_path}}"
-        cp ./tracer/build/_build/docker/reliability-env/* ${{steps.assets.outputs.artifacts_path}}
-
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v2
-
-    - name: Set up Docker Buildx
-      id: buildx
-      uses: docker/setup-buildx-action@v2
-
-    - name: Generate image tags
-      id: docker-base-image-tags
-      shell: bash
-      run: |
-        if [ "$is_snapshot" = "True" ]; then
-          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_OUTPUT
-        else
-          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_OUTPUT
-        fi
-      env:
-        is_snapshot: "${{ github.event.inputs.is_snapshot}}"
-
-    - name: Login to Docker
-      run: docker login -u publisher -p ${{ secrets.GITHUB_TOKEN }} ghcr.io
-
-    - name: Docker Build linux-x64 image
-      uses: docker/build-push-action@v3
+    - uses: ./.github/actions/create-rel-env-docker-base-images
+      name: 'Create rel-env docker images'
       with:
-        push: true
-        tags: ${{ steps.docker-base-image-tags.outputs.tag-names }}
-        platforms: 'linux/amd64' 
-        context: ${{steps.assets.outputs.artifacts_path}}
-        build-args: |
-          LINUX_PACKAGE=datadog-dotnet-apm-${{steps.versions.outputs.version}}.tar.gz
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        is_release_version: "${{ github.event.inputs.is_release_version}}"
+        package_version: "${{steps.versions.outputs.version}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}

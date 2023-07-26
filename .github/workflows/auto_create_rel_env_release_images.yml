@@ -1,0 +1,57 @@
+name: Auto create Rel Env docker images on release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+    # If this is a 2.x.0 release, create the rel-env docker images from master
+    # If this is a 2.x.x hotfix release, create the rel-env images from the hotfix branch
+    # If this is a 1.x.x hotfix release, _don't_ create the images (required assets don't exist in that branch)
+    if: startsWith(github.event.release.tag_name, 'v2.')
+    runs-on: ubuntu-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v3
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: "Calculate variables"
+        id: variables
+        run: |
+          tag_name="${{ github.event.release.tag_name}}"
+          version="${tag_name:1}"
+
+          suffix=".0"
+          if [[ $tag_name == *$suffix ]]; then
+            ref="refs/heads/master"
+          else
+            ref="refs/heads/hotfix/$version"
+          fi
+
+          sha=$(git rev-parse tags/tag_name)
+
+          echo "using '$ref' ref for '$version' version, with sha '$sha'"
+          echo "tag=$tag_name" >> $GITHUB_OUTPUT
+          echo "ref=$ref" >> $GITHUB_OUTPUT
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "sha=$sha" >> $GITHUB_OUTPUT
+
+    - name: "Download build assets from Azure Pipelines"
+      id: assets
+      run: |
+        ./tracer/build.sh DownloadReleaseArtifacts
+      env:
+        TargetBranch: "${{ steps.variables.outputs.ref }}"
+        CommitSha: "${{ steps.variables.outputs.sha }}"
+
+    - uses: ./.github/actions/create-rel-env-docker-base-images
+      name: 'Create rel-env docker images'
+      with:
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        is_release_version: "True"
+        package_version: "${{steps.variables.outputs.version}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}
