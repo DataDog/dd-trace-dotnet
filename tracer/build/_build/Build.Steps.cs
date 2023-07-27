@@ -997,6 +997,7 @@ partial class Build
 
     Target CompileRegressionSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(Restore)
         .After(CompileRegressionDependencyLibs)
         .Requires(() => Framework)
@@ -1074,6 +1075,7 @@ partial class Build
 
     Target CompileSamplesWindows => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileDependencyLibs)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -1290,6 +1292,7 @@ partial class Build
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1487,8 +1490,17 @@ partial class Build
             }
         });
 
+    Target HackForMissingMsBuildLocation => _ => _
+       .Unlisted()
+       .Executes(() =>
+        {
+            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug: 
+            ProjectModelTasks.Initialize();
+        });
+
     Target CompileSamplesLinuxOrOsx => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
@@ -1623,6 +1635,7 @@ partial class Build
 
     Target CompileMultiApiPackageVersionSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
