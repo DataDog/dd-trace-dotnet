@@ -7,6 +7,8 @@ using System;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
 
+#nullable enable
+
 namespace Hdiv.AST.Aspects.System
 {
     /// <summary> UriBuilder class aspects </summary>
@@ -184,9 +186,10 @@ namespace Hdiv.AST.Aspects.System
         /// <param name="instance">the UriBuilder instance</param>
         /// <returns>the result of the original method</returns>
         [AspectMethodReplace("System.Object::ToString()", "System.UriBuilder")]
-        public static string ToString(object instance)
+        public static string? ToString(object? instance)
         {
-            var result = instance.ToString();
+            // We want the null reference exception to be launched here if target is null
+            var result = instance!.ToString();
             PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as UriBuilder)?.Uri?.OriginalString);
             return result;
         }

@@ -375,9 +375,10 @@ public class UriAspect
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>A string that represents the current System.Uri instance.</returns>
     [AspectMethodReplace("System.Object::ToString()", "System.Uri")]
-    public static string ToString(object instance)
+    public static string? ToString(object? instance)
     {
-        var result = instance.ToString();
+        // We want the null reference exception to be launched here if target is null
+        var result = instance!.ToString();
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
         return result;
     }
