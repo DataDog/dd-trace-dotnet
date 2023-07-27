@@ -66,6 +66,7 @@
       aws.requestId: Guid_2,
       aws.service: SNS,
       aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
+      aws.topic.name: MyTopic,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,

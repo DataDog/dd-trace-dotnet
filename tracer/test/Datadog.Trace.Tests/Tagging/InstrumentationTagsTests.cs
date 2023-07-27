@@ -6,6 +6,7 @@
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -57,7 +58,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromBootstrapServers()
         {
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.BootstrapServers = bootstrapServer;
 
@@ -69,7 +70,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void KafkaV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -82,7 +83,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var bootstrapServer = "localhost";
-            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+            var tags = new KafkaV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.BootstrapServers = bootstrapServer;
@@ -93,10 +94,22 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void KafkaV1Tags_PeerService_ConsumerHasNoPeerService()
+        {
+            var bootstrapServer = "localhost";
+            var tags = new KafkaV1Tags(SpanKinds.Consumer);
+
+            tags.BootstrapServers = bootstrapServer;
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
+        }
+
+        [Fact]
         public void MsmqV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.Host = host;
 
@@ -108,7 +121,7 @@ namespace Datadog.Trace.Tests.Tagging
         public void MsmqV1Tags_PeerService_PopulatesFromCustom()
         {
             var customService = "client-service";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
 
@@ -121,7 +134,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             var customService = "client-service";
             var host = ".";
-            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+            var tags = new MsmqV1Tags(SpanKinds.Producer);
 
             tags.SetTag("peer.service", customService);
             tags.Host = host;
@@ -129,6 +142,18 @@ namespace Datadog.Trace.Tests.Tagging
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
             tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void MsmqV1Tags_PeerService_ConsumerHasNoPeerService()
+        {
+            var host = ".";
+            var tags = new MsmqV1Tags(SpanKinds.Consumer);
+
+            tags.Host = host;
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
         }
 
         [Fact]
@@ -404,6 +429,74 @@ namespace Datadog.Trace.Tests.Tagging
             tags.SetTag("peer.service", customService);
             tags.MethodService = service;
             tags.Host = hostName;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromRemotingService()
+        {
+            var service = "HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingServiceName = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.service");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromRemotingUri()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingUri = uri;
+
+            tags.PeerService.Should().Be(uri);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.uri");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_RemotingServiceTakesPrecedenceOverRemotingUri()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var service = "HelloWorld/Service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.RemotingUri = uri;
+            tags.RemotingServiceName = service;
+
+            tags.PeerService.Should().Be(service);
+            tags.PeerServiceSource.Should().Be("service-fabric.service-remoting.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceRemotingClientV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var uri = "fabric:/HelloWorld/Service";
+            var service = "HelloWorld/Service";
+            var customService = "client-service";
+            var tags = new ServiceRemotingClientV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.RemotingUri = uri;
+            tags.RemotingServiceName = service;
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");

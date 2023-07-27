@@ -31,107 +31,103 @@ namespace Datadog.Trace.Tests.Configuration
         public ConfigurationSourceTests()
         {
             _envVars = GetTestData()
-                      .Concat(GetGlobalTestData())
-                      .Select(allArgs => (string)allArgs[0])
+                      .Select(allArgs => allArgs.Key)
+                      .Concat(GetGlobalTestData().Select(allArgs => allArgs.Key))
                       .Distinct()
                       .ToDictionary(key => key, key => Environment.GetEnvironmentVariable(key));
         }
 
-        public static IEnumerable<object[]> GetGlobalDefaultTestData()
+        public static IEnumerable<(Func<GlobalSettings, object> Getter, object Expected)> GetGlobalDefaultTestData()
         {
-            yield return new object[] { CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { CreateGlobalFunc(s => s.DiagnosticSourceEnabled), true };
+            yield return (CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (CreateGlobalFunc(s => s.DiagnosticSourceEnabled), true);
         }
 
-        public static IEnumerable<object[]> GetGlobalTestData()
+        public static IEnumerable<(string Key, string Value, Func<GlobalSettings, object> Getter, object Expected)> GetGlobalTestData()
         {
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 1, CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 0, CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, true, CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, false, CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "true", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "false", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "tRUe", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "fALse", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "1", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "0", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "yes", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "no", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "T", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "F", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "Y", CreateGlobalFunc(s => s.DebugEnabled), true };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "N", CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return (ConfigurationKeys.DebugEnabled, "true", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "false", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "tRUe", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "fALse", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "1", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "0", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "yes", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "no", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "T", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "F", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "Y", CreateGlobalFunc(s => s.DebugEnabled), true);
+            yield return (ConfigurationKeys.DebugEnabled, "N", CreateGlobalFunc(s => s.DebugEnabled), false);
 
             // garbage checks
-            yield return new object[] { ConfigurationKeys.DebugEnabled, "what_even_is_this", CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, 42, CreateGlobalFunc(s => s.DebugEnabled), false };
-            yield return new object[] { ConfigurationKeys.DebugEnabled, string.Empty, CreateGlobalFunc(s => s.DebugEnabled), false };
+            yield return (ConfigurationKeys.DebugEnabled, "what_even_is_this", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, "42", CreateGlobalFunc(s => s.DebugEnabled), false);
+            yield return (ConfigurationKeys.DebugEnabled, string.Empty, CreateGlobalFunc(s => s.DebugEnabled), false);
         }
 
-        public static IEnumerable<object[]> GetDefaultTestData()
+        public static IEnumerable<(Func<TracerSettings, object> SettingGetter, object ExpectedValue)> GetDefaultTestData()
         {
-            yield return new object[] { CreateFunc(s => s.TraceEnabled), true };
-            yield return new object[] { CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:8126/") };
-            yield return new object[] { CreateFunc(s => s.Environment), null };
-            yield return new object[] { CreateFunc(s => s.ServiceName), null };
-            yield return new object[] { CreateFunc(s => s.DisabledIntegrationNames.Count), 1 }; // The OpenTelemetry integration is disabled by default
-            yield return new object[] { CreateFunc(s => s.LogsInjectionEnabled), false };
-            yield return new object[] { CreateFunc(s => s.GlobalTags.Count), 0 };
+            yield return (CreateFunc(s => s.TraceEnabled), true);
+            yield return (CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:8126/"));
+            yield return (CreateFunc(s => s.Environment), null);
+            yield return (CreateFunc(s => s.ServiceName), null);
+            yield return (CreateFunc(s => s.DisabledIntegrationNames.Count), 1); // The OpenTelemetry integration is disabled by defa)t
+            yield return (CreateFunc(s => s.LogsInjectionEnabled), false);
+            yield return (CreateFunc(s => s.GlobalTags.Count), 0);
 #pragma warning disable 618 // App analytics is deprecated but supported
-            yield return new object[] { CreateFunc(s => s.AnalyticsEnabled), false };
+            yield return (CreateFunc(s => s.AnalyticsEnabled), false);
 #pragma warning restore 618
-            yield return new object[] { CreateFunc(s => s.CustomSamplingRules), null };
-            yield return new object[] { CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100 };
-            yield return new object[] { CreateFunc(s => s.TracerMetricsEnabled), false };
-            yield return new object[] { CreateFunc(s => s.Exporter.DogStatsdPort), 8125 };
-            yield return new object[] { CreateFunc(s => s.PropagationStyleInject), new[] { "Datadog" } };
-            yield return new object[] { CreateFunc(s => s.PropagationStyleExtract), new[] { "Datadog" } };
-            yield return new object[] { CreateFunc(s => s.ServiceNameMappings), null };
+            yield return (CreateFunc(s => s.CustomSamplingRules), null);
+            yield return (CreateFunc(s => s.MaxTracesSubmittedPerSecond), 100);
+            yield return (CreateFunc(s => s.TracerMetricsEnabled), false);
+            yield return (CreateFunc(s => s.Exporter.DogStatsdPort), 8125);
+            yield return (CreateFunc(s => s.PropagationStyleInject), new[] { "tracecontext", "Datadog" });
+            yield return (CreateFunc(s => s.PropagationStyleExtract), new[] { "tracecontext", "Datadog" });
+            yield return (CreateFunc(s => s.ServiceNameMappings), null);
 
-            yield return new object[] { CreateFunc(s => s.TraceId128BitGenerationEnabled), false };
-            yield return new object[] { CreateFunc(s => s.TraceId128BitLoggingEnabled), false };
+            yield return (CreateFunc(s => s.TraceId128BitGenerationEnabled), false);
+            yield return (CreateFunc(s => s.TraceId128BitLoggingEnabled), false);
         }
 
-        public static IEnumerable<object[]> GetTestData()
+        public static IEnumerable<(string Key, string Value, Func<TracerSettings, object> Getter, object Expected)> GetTestData()
         {
-            yield return new object[] { ConfigurationKeys.TraceEnabled, "true", CreateFunc(s => s.TraceEnabled), true };
-            yield return new object[] { ConfigurationKeys.TraceEnabled, "false", CreateFunc(s => s.TraceEnabled), false };
+            yield return (ConfigurationKeys.TraceEnabled, "true", CreateFunc(s => s.TraceEnabled), true);
+            yield return (ConfigurationKeys.TraceEnabled, "false", CreateFunc(s => s.TraceEnabled), false);
 
-            yield return new object[] { ConfigurationKeys.AgentHost, "test-host", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://test-host:8126/") };
-            yield return new object[] { ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:9000/") };
+            yield return (ConfigurationKeys.AgentHost, "test-host", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://test-host:8126/"));
+            yield return (ConfigurationKeys.AgentPort, "9000", CreateFunc(s => s.Exporter.AgentUri), new Uri("http://127.0.0.1:9000/"));
 
-            yield return new object[] { ConfigurationKeys.Environment, "staging", CreateFunc(s => s.Environment), "staging" };
+            yield return (ConfigurationKeys.Environment, "staging", CreateFunc(s => s.Environment), "staging");
 
-            yield return new object[] { ConfigurationKeys.ServiceVersion, "1.0.0", CreateFunc(s => s.ServiceVersion), "1.0.0" };
+            yield return (ConfigurationKeys.ServiceVersion, "1.0.0", CreateFunc(s => s.ServiceVersion), "1.0.0");
 
-            yield return new object[] { ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service" };
-            yield return new object[] { "DD_SERVICE_NAME", "web-service", CreateFunc(s => s.ServiceName), "web-service" };
+            yield return (ConfigurationKeys.ServiceName, "web-service", CreateFunc(s => s.ServiceName), "web-service");
+            yield return ("DD_SERVICE_NAME", "web-service", CreateFunc(s => s.ServiceName), "web-service");
 
-            yield return new object[] { ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", CreateFunc(s => s.DisabledIntegrationNames.Count), 3 }; // The OpenTelemetry integration is disabled by default
+            yield return (ConfigurationKeys.DisabledIntegrations, "integration1;integration2;;INTEGRATION2", CreateFunc(s => s.DisabledIntegrationNames.Count), 3); // The OpenTelemetry integration is disabled by defau)t
 
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
-            yield return new object[] { ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2 };
-            yield return new object[] { "DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1 };
-            yield return new object[] { ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", CreateFunc(s => s.GlobalTags), TagsWithColonsInValue };
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "keyonly:,nocolon,:,:valueonly,k2:v2", CreateFunc(s => s.GlobalTags), TagsK2V2);
+            yield return ("DD_TRACE_GLOBAL_TAGS", "k1:v1, k2:v2", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1,k1:v2", CreateFunc(s => s.GlobalTags.Count), 1);
+            yield return (ConfigurationKeys.GlobalTags, "k1:v1, k2:v2:with:colons, :leading:colon:bad, trailing:colon:good:", CreateFunc(s => s.GlobalTags), TagsWithColonsInValue);
 
 #pragma warning disable 618 // App Analytics is deprecated but still supported
-            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true };
-            yield return new object[] { ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false };
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "true", CreateFunc(s => s.AnalyticsEnabled), true);
+            yield return (ConfigurationKeys.GlobalAnalyticsEnabled, "false", CreateFunc(s => s.AnalyticsEnabled), false);
 #pragma warning restore 618
 
-            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", CreateFunc(s => s.HeaderTags), HeaderTagsWithOptionalMappings };
-            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag };
-            yield return new object[] { ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1 };
-            yield return new object[] { ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", CreateFunc(s => s.HeaderTags), HeaderTagsWithDots };
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:Content-Type,header3: Content-Type ,header4:C!!!ont_____ent----tYp!/!e,header6:9invalidtagname,:invalidtagonly,validheaderonly:,validheaderwithoutcolon,:", CreateFunc(s => s.HeaderTags), HeaderTagsWithOptionalMappings);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header2:tag1", CreateFunc(s => s.HeaderTags), HeaderTagsSameTag);
+            yield return (ConfigurationKeys.HeaderTags, "header1:tag1,header1:tag2", CreateFunc(s => s.HeaderTags.Count), 1);
+            yield return (ConfigurationKeys.HeaderTags, "header3:my.header.with.dot,my.new.header.with.dot", CreateFunc(s => s.HeaderTags), HeaderTagsWithDots);
 
-            yield return new object[] { ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", CreateFunc(s => s.ServiceNameMappings["elasticsearch"]), "custom-name" };
+            yield return (ConfigurationKeys.ServiceNameMappings, "elasticsearch:custom-name", CreateFunc(s => s.ServiceNameMappings["elasticsearch"]), "custom-name");
         }
 
         // JsonConfigurationSource needs to be tested with JSON data, which cannot be used with the other IConfigurationSource implementations.
-        public static IEnumerable<object[]> GetJsonTestData()
+        public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetJsonTestData()
         {
-            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2 };
+            yield return new(@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""k1"":""v1"", ""k2"": ""v2""} }", CreateFunc(s => s.GlobalTags), TagsK1V1K2V2);
         }
 
         public static IEnumerable<object[]> GetBadJsonTestData1()
@@ -146,10 +142,10 @@ namespace Datadog.Trace.Tests.Configuration
             yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"":""value1"", ""name2"": ""value2"" }" };
         }
 
-        public static IEnumerable<object[]> GetBadJsonTestData3()
+        public static IEnumerable<(string Value, Func<TracerSettings, object> Getter, object Expected)> GetBadJsonTestData3()
         {
             // Json doesn't represent dictionary of string to string
-            yield return new object[] { @"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", CreateFunc(s => s.GlobalTags.Count), 0 };
+            yield return (@"{ ""DD_TRACE_GLOBAL_TAGS"": { ""name1"": { ""name2"": [ ""vers"" ] } } }", CreateFunc(s => s.GlobalTags.Count), 0);
         }
 
         public static Func<TracerSettings, object> CreateFunc(Func<TracerSettings, object> settingGetter)
@@ -164,68 +160,64 @@ namespace Datadog.Trace.Tests.Configuration
 
         public void Dispose()
         {
-            foreach (var envVar in _envVars)
+            ResetEnvironment();
+        }
+
+        [Fact]
+        public void DefaultSetting()
+        {
+            foreach (var (settingGetter, expectedValue) in GetDefaultTestData())
             {
-                Environment.SetEnvironmentVariable(envVar.Key, envVar.Value, EnvironmentVariableTarget.Process);
+                var settings = new TracerSettings();
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetDefaultTestData))]
-        public void DefaultSetting(Func<TracerSettings, object> settingGetter, object expectedValue)
+        [Fact]
+        public void NameValueConfigurationSource()
         {
-            var settings = new TracerSettings();
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
+            {
+                var collection = new NameValueCollection { { key, value } };
+                IConfigurationSource source = new NameValueConfigurationSource(collection);
+                var settings = new TracerSettings(source);
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
-        [Theory]
-        [MemberData(nameof(GetTestData))]
-        public void NameValueConfigurationSource(
-            string key,
-            string value,
-            Func<TracerSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void EnvironmentConfigurationSource()
         {
-            var collection = new NameValueCollection { { key, value } };
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new TracerSettings(source);
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
-        }
-
-        [Theory]
-        [MemberData(nameof(GetTestData))]
-        public void EnvironmentConfigurationSource(
-            string key,
-            string value,
-            Func<TracerSettings, object> settingGetter,
-            object expectedValue)
-        {
-            TracerSettings settings;
-
-            if (key == "DD_SERVICE_NAME")
+            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
             {
-                // We need to ensure DD_SERVICE is empty.
-                Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
-                settings = GetTracerSettings(key, value);
-            }
-            else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
-            {
-                // We need to ensure all the agent URLs are empty.
-                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, null, EnvironmentVariableTarget.Process);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, null, EnvironmentVariableTarget.Process);
-                Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
+                TracerSettings settings;
 
-                settings = GetTracerSettings(key, value);
-            }
-            else
-            {
-                settings = GetTracerSettings(key, value);
-            }
+                if (key == "DD_SERVICE_NAME")
+                {
+                    // We need to ensure DD_SERVICE is empty.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.ServiceName, null, EnvironmentVariableTarget.Process);
+                    settings = GetTracerSettings(key, value);
+                }
+                else if (key == ConfigurationKeys.AgentHost || key == ConfigurationKeys.AgentPort)
+                {
+                    // We need to ensure all the agent URLs are empty.
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentHost, null, EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentPort, null, EnvironmentVariableTarget.Process);
+                    Environment.SetEnvironmentVariable(ConfigurationKeys.AgentUri, null, EnvironmentVariableTarget.Process);
 
-            var actualValue = settingGetter(settings);
-            actualValue.Should().BeEquivalentTo(expectedValue);
+                    settings = GetTracerSettings(key, value);
+                }
+                else
+                {
+                    settings = GetTracerSettings(key, value);
+                }
+
+                var actualValue = settingGetter(settings);
+                actualValue.Should().BeEquivalentTo(expectedValue, $"{key} should have correct value");
+                ResetEnvironment();
+            }
 
             static TracerSettings GetTracerSettings(string key, string value)
             {
@@ -235,78 +227,73 @@ namespace Datadog.Trace.Tests.Configuration
             }
         }
 
-        [Theory]
-        [MemberData(nameof(GetTestData))]
-        public void JsonConfigurationSource(
-            string key,
-            string value,
-            Func<TracerSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void JsonConfigurationSource()
         {
-            var config = new Dictionary<string, string> { [key] = value };
-            string json = JsonConvert.SerializeObject(config);
-            IConfigurationSource source = new JsonConfigurationSource(json);
-            var settings = new TracerSettings(source);
+            foreach (var (key, value, settingGetter, expectedValue) in GetTestData())
+            {
+                var config = new Dictionary<string, string> { [key] = value };
+                string json = JsonConvert.SerializeObject(config);
+                IConfigurationSource source = new JsonConfigurationSource(json);
+                var settings = new TracerSettings(source);
 
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalDefaultTestData))]
-        public void GlobalDefaultSetting(Func<GlobalSettings, object> settingGetter, object expectedValue)
+        [Fact]
+        public void GlobalDefaultSetting()
         {
-            var settings = new GlobalSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            foreach (var (settingGetter, expectedValue) in GetGlobalDefaultTestData())
+            {
+                var settings = new GlobalSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance);
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalTestData))]
-        public void GlobalNameValueConfigurationSource(
-            string key,
-            string value,
-            Func<GlobalSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void GlobalNameValueConfigurationSource()
         {
-            var collection = new NameValueCollection { { key, value } };
-            IConfigurationSource source = new NameValueConfigurationSource(collection);
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+            foreach (var (key, value, settingGetter, expectedValue) in GetGlobalTestData())
+            {
+                var collection = new NameValueCollection { { key, value } };
+                IConfigurationSource source = new NameValueConfigurationSource(collection);
+                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
-        [Theory]
-        [MemberData(nameof(GetGlobalTestData))]
-        public void GlobalEnvironmentConfigurationSource(
-            string key,
-            string value,
-            Func<GlobalSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void GlobalEnvironmentConfigurationSource()
         {
-            IConfigurationSource source = new EnvironmentConfigurationSource();
+            foreach (var (key, value, settingGetter, expectedValue) in GetGlobalTestData())
+            {
+                IConfigurationSource source = new EnvironmentConfigurationSource();
 
-            // save original value so we can restore later
-            Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
-            var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
+                // save original value so we can restore later
+                Environment.SetEnvironmentVariable(key, value, EnvironmentVariableTarget.Process);
+                var settings = new GlobalSettings(source, NullConfigurationTelemetry.Instance);
 
-            object actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+                object actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
         // Special case for dictionary-typed settings in JSON
-        [Theory]
-        [MemberData(nameof(GetJsonTestData))]
-        public void JsonConfigurationSourceWithJsonTypedSetting(
-            string value,
-            Func<TracerSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void JsonConfigurationSourceWithJsonTypedSetting()
         {
-            IConfigurationSource source = new JsonConfigurationSource(value);
-            var settings = new TracerSettings(source);
+            foreach (var (value, settingGetter, expectedValue) in GetJsonTestData())
+            {
+                IConfigurationSource source = new JsonConfigurationSource(value);
+                var settings = new TracerSettings(source);
 
-            var actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+                var actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
         [Theory]
@@ -325,18 +312,17 @@ namespace Datadog.Trace.Tests.Configuration
             Assert.Throws<JsonSerializationException>(() => { new JsonConfigurationSource(value); });
         }
 
-        [Theory]
-        [MemberData(nameof(GetBadJsonTestData3))]
-        public void JsonConfigurationSource_BadData3(
-            string value,
-            Func<TracerSettings, object> settingGetter,
-            object expectedValue)
+        [Fact]
+        public void JsonConfigurationSource_BadData3()
         {
-            IConfigurationSource source = new JsonConfigurationSource(value);
-            var settings = new TracerSettings(source);
+            foreach (var (value, settingGetter, expectedValue) in GetBadJsonTestData3())
+            {
+                IConfigurationSource source = new JsonConfigurationSource(value);
+                var settings = new TracerSettings(source);
 
-            var actualValue = settingGetter(settings);
-            Assert.Equal(expectedValue, actualValue);
+                var actualValue = settingGetter(settings);
+                Assert.Equal(expectedValue, actualValue);
+            }
         }
 
         [Theory]
@@ -355,6 +341,14 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new TracerSettings(source);
 
             Assert.Equal(expectedValue, settings.HeaderTags);
+        }
+
+        private void ResetEnvironment()
+        {
+            foreach (var envVar in _envVars)
+            {
+                Environment.SetEnvironmentVariable(envVar.Key, envVar.Value, EnvironmentVariableTarget.Process);
+            }
         }
     }
 }
