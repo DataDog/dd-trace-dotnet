@@ -57,6 +57,12 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] QueueBytes = new byte[] { 170, 97, 109, 113, 112, 46, 113, 117, 101, 117, 101 };
 #endif
+        // OutHostBytes = MessagePack.Serialize("out.host");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> OutHostBytes => new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#else
+        private static readonly byte[] OutHostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -70,6 +76,7 @@ namespace Datadog.Trace.Tagging
                 "amqp.routing_key" => RoutingKey,
                 "message.size" => MessageSize,
                 "amqp.queue" => Queue,
+                "out.host" => OutHost,
                 _ => base.GetTag(key),
             };
         }
@@ -98,6 +105,9 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "amqp.queue": 
                     Queue = value;
+                    break;
+                case "out.host": 
+                    OutHost = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(RabbitMQTags));
@@ -148,6 +158,11 @@ namespace Datadog.Trace.Tagging
             if (Queue is not null)
             {
                 processor.Process(new TagItem<string>("amqp.queue", Queue, QueueBytes));
+            }
+
+            if (OutHost is not null)
+            {
+                processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -208,6 +223,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("amqp.queue (tag):")
                   .Append(Queue)
+                  .Append(',');
+            }
+
+            if (OutHost is not null)
+            {
+                sb.Append("out.host (tag):")
+                  .Append(OutHost)
                   .Append(',');
             }
 

@@ -22,11 +22,17 @@ namespace Datadog.Trace.Tests.ExtensionMethods
                 var values = new byte[size];
                 rnd.NextBytes(values);
 
+                // Avoid duplicate test runs, as adds noise to xunit output
+                var usedOffsets = new HashSet<int>();
+
                 for (var i = 0; i < 10;  i++)
                 {
                     var offset = rnd.Next(size);
-                    var count = size - offset;
-                    yield return new object[] { values, offset, count };
+                    if (usedOffsets.Add(offset))
+                    {
+                        var count = size - offset;
+                        yield return new object[] { values, offset, count };
+                    }
                 }
             }
         }

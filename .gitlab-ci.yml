@@ -181,7 +181,7 @@ deploy_to_debugger_backend:
   rules:
     - if: '$DEPLOY_TO_DEBUGGER_BACKEND == "true"'
   trigger:
-    project: DataDog/debugger-backend
+    project: DataDog/debugger-demos
     branch: main
   variables:
     UPSTREAM_PACKAGE_JOB: build

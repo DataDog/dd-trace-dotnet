@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -19,16 +20,36 @@ namespace Datadog.Trace.Tests
     {
         private static readonly string TestPrefix = "test.prefix";
 
-        public static IEnumerable<object[]> GetHeaderCollections()
+        public enum HeaderCollectionType
         {
-            yield return new object[] { WebRequest.CreateHttp("http://localhost").Headers.Wrap() };
-            yield return new object[] { new NameValueCollection().Wrap() };
+            /// <summary>
+            /// NameValueCollection
+            /// </summary>
+            NameValueHeadersCollection,
+
+            /// <summary>
+            /// WebHeadersCollection
+            /// </summary>
+            WebHeadersCollection,
         }
+
+        public static TheoryData<HeaderCollectionType> GetHeaderCollections()
+            => new() { HeaderCollectionType.NameValueHeadersCollection, HeaderCollectionType.WebHeadersCollection, };
+
+        internal static IHeadersCollection GetHeadersCollection(HeaderCollectionType type)
+            => type switch
+            {
+                HeaderCollectionType.WebHeadersCollection => WebRequest.CreateHttp("http://localhost").Headers.Wrap(),
+                HeaderCollectionType.NameValueHeadersCollection => new NameValueCollection().Wrap(),
+                _ => throw new Exception("Unknown header collection type " + type),
+            };
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(IHeadersCollection headers)
+        internal void ExtractHeaderTags_MatchesCaseInsensitiveHeaders(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Initialize constants
             const string customHeader1Name = "dd-custom-header1";
             const string customHeader1Value = "match1";
@@ -64,8 +85,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(IHeadersCollection headers)
+        internal void ExtractHeaderTags_EmptyHeaders_AddsNoTags(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Do not add headers
 
             // Initialize header-tag arguments and expectations
@@ -86,8 +109,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(IHeadersCollection headers)
+        internal void ExtractHeaderTags_EmptyHeaderTags_AddsNoTags(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             // Add headers
             headers.Add("x-header-test-runner", "xunit");
 
@@ -107,8 +132,10 @@ namespace Datadog.Trace.Tests
 
         [Theory]
         [MemberData(nameof(GetHeaderCollections))]
-        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(IHeadersCollection headers)
+        internal void ExtractHeaderTags_ForEmptyStringMappings_CreatesNormalizedTagWithPrefix(HeaderCollectionType headersType)
         {
+            var headers = GetHeadersCollection(headersType);
+
             string invalidCharacterSequence = "*|&#$%&^`.";
             string normalizedReplacementSequence = new string('_', invalidCharacterSequence.Length);
 

@@ -19,12 +19,40 @@ public class MessagePackStringCacheTests : IDisposable
         MessagePackStringCache.Clear();
     }
 
-    public static TheoryData<string, Func<string, byte[]>> Data => new()
-                                                                   {
-                                                                       { "test-env", MessagePackStringCache.GetEnvironmentBytes },
-                                                                       { "test-version", MessagePackStringCache.GetVersionBytes },
-                                                                       { "test-origin", MessagePackStringCache.GetOriginBytes }
-                                                                   };
+    public enum FuncType
+    {
+        /// <summary>
+        /// MessagePackStringCache.GetEnvironmentBytes
+        /// </summary>
+        GetEnvironmentBytes,
+
+        /// <summary>
+        /// MessagePackStringCache.GetVersionBytes
+        /// </summary>
+        GetVersionBytes,
+
+        /// <summary>
+        /// MessagePackStringCache.GetOriginBytes
+        /// </summary>
+        GetOriginBytes,
+    }
+
+    public static TheoryData<string, FuncType> Data
+        => new()
+       {
+           { "test-env", FuncType.GetEnvironmentBytes },
+           { "test-version", FuncType.GetVersionBytes },
+           { "test-origin", FuncType.GetOriginBytes }
+       };
+
+    public static Func<string, byte[]> GetFunc(FuncType type)
+        => type switch
+        {
+            FuncType.GetEnvironmentBytes => MessagePackStringCache.GetEnvironmentBytes,
+            FuncType.GetVersionBytes => MessagePackStringCache.GetVersionBytes,
+            FuncType.GetOriginBytes => MessagePackStringCache.GetOriginBytes,
+            _ => throw new Exception("Unknown type " + type),
+        };
 
     [Theory]
     [InlineData(null)]
@@ -39,8 +67,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Clear(string value, Func<string, byte[]> func)
+    public void Clear(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var bytes1 = func(value);
         MessagePackStringCache.Clear();
         var bytes2 = func(value);
@@ -52,8 +81,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Serialized(string value, Func<string, byte[]> func)
+    public void Serialized(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var bytes = func(value);
         var deserializedString = MessagePackSerializer.Deserialize<string>(bytes);
 
@@ -62,8 +92,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Same_Value_Same_Thread(string value, Func<string, byte[]> func)
+    public void Same_Value_Same_Thread(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var bytes1 = func(value);
         var bytes2 = func(value);
 
@@ -73,8 +104,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Same_Value_Different_Threads(string value, Func<string, byte[]> func)
+    public void Same_Value_Different_Threads(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var bytes1 = func(value);
         var bytes2 = (byte[])null;
 
@@ -89,8 +121,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Different_Values_In_Same_Thread(string value, Func<string, byte[]> func)
+    public void Different_Values_In_Same_Thread(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var otherValue = value + "-1";
 
         var bytes1 = func(value);
@@ -108,8 +141,9 @@ public class MessagePackStringCacheTests : IDisposable
 
     [Theory]
     [MemberData(nameof(Data))]
-    public void Separate_Cache_Per_Thread(string value, Func<string, byte[]> func)
+    public void Separate_Cache_Per_Thread(string value, FuncType funcType)
     {
+        var func = GetFunc(funcType);
         var bytes1 = func(value);
         var bytes2 = (byte[])null;
         var bytes3 = (byte[])null;

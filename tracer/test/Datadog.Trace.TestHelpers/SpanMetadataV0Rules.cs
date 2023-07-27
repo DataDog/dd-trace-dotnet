@@ -387,6 +387,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("amqp.command")
+                .IsOptional("out.host")
                 .IsOptional("amqp.delivery_mode")
                 .IsOptional("amqp.exchange")
                 .IsOptional("amqp.routing_key")
@@ -395,9 +396,10 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
 
-        public static Result IsServiceRemotingV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsServiceRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Service Remoting - Client")
             .Properties(s => s
-                .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
+                .Matches(Name, "service_remoting.client"))
             .Tags(s => s
                 .IsOptional("service-fabric.application-id")
                 .IsOptional("service-fabric.application-name")
@@ -406,11 +408,31 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.node-name")
                 .IsOptional("service-fabric.service-name")
                 .IsPresent("service-fabric.service-remoting.uri")
+                .IsOptional("service-fabric.service-remoting.service")
                 .IsPresent("service-fabric.service-remoting.method-name")
                 .IsOptional("service-fabric.service-remoting.method-id")
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
-                .MatchesOneOf("span.kind", "client", "server"));
+                .Matches("span.kind", "client"));
+
+        public static Result IsServiceRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Service Remoting - Server")
+            .Properties(s => s
+                .Matches(Name, "service_remoting.server"))
+            .Tags(s => s
+                .IsOptional("service-fabric.application-id")
+                .IsOptional("service-fabric.application-name")
+                .IsOptional("service-fabric.partition-id")
+                .IsOptional("service-fabric.node-id")
+                .IsOptional("service-fabric.node-name")
+                .IsOptional("service-fabric.service-name")
+                .IsPresent("service-fabric.service-remoting.uri")
+                .IsOptional("service-fabric.service-remoting.service")
+                .IsPresent("service-fabric.service-remoting.method-name")
+                .IsOptional("service-fabric.service-remoting.method-id")
+                .IsOptional("service-fabric.service-remoting.interface-id")
+                .IsOptional("service-fabric.service-remoting.invocation-id")
+                .Matches("span.kind", "server"));
 
         public static Result IsServiceStackRedisV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
