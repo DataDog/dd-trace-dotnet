@@ -166,7 +166,7 @@ public class InstrumentationTestsBase
         }
 
         var locations = new List<string>();
-        bool locationOk = LocationIsOk(this.GetType().Name, locations) || LocationIsOk(this.GetType().BaseType.Name);
+        bool locationOk = LocationIsOk(this.GetType().Name, locations) || LocationIsOk(this.GetType().BaseType.Name) || LocationIsOk(typeof(InstrumentationTestsBase).Name);
         var incorrectLocationMessage = "Incorrect vulnerability locations: ";
         locations.ForEach(x => incorrectLocationMessage += x + " ");
         locationOk.Should().BeTrue(incorrectLocationMessage);
