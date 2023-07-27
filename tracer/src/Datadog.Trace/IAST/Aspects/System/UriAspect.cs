@@ -6,15 +6,11 @@
 using System;
 using Datadog.Trace.Iast.Dataflow;
 using Datadog.Trace.Iast.Propagation;
-#if NET6_0_OR_GREATER
-using Microsoft.Extensions.Options;
-#endif
 
 #nullable enable
 
 namespace Datadog.Trace.Iast.Aspects.System;
 
-#pragma warning disable CS0618 // Type or member is obsolete
 /// <summary> uri class aspects </summary>
 [AspectClass("System,System.Runtime", AspectFilter.StringOptimization)]
 [global::System.ComponentModel.Browsable(false)]
@@ -25,8 +21,8 @@ public class UriAspect
     /// Uri .ctor(System.String) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the URI.</param>
-    /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String)", AspectFilter.StringLiterals)]
+    /// <returns>The initialized System.Uri instance created.</returns>
+    [AspectCtorReplace("System.Uri::.ctor(System.String)", AspectFilter.StringLiterals_Any)]
     public static Uri Init(string uriBase)
     {
         var result = new Uri(uriBase);
@@ -44,7 +40,9 @@ public class UriAspect
     [AspectCtorReplace("System.Uri::.ctor(System.Uri,System.String,System.Boolean)")]
     public static Uri Init(Uri uriBase, string uriText, bool escape)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         var result = new Uri(uriBase, uriText, escape);
+#pragma warning restore CS0618 // Type or member is obsolete
         PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase.OriginalString, uriText);
         return result;
     }
@@ -64,7 +62,7 @@ public class UriAspect
     }
 
     /// <summary>
-    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// Uri .ctor(Uri uriBase, Uri relativeUri) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
     /// <param name="relativeUri">The relative URI string.</param>
@@ -78,26 +76,28 @@ public class UriAspect
     }
 
     /// <summary>
-    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// Uri .ctor(System.String,System.Boolean) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
     /// <param name="dontEscape">dontEscape parameter.</param>
     /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String,System.Boolean)", AspectFilter.StringLiterals)]
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.Boolean)", AspectFilter.StringLiteral_1)]
     public static Uri Init(string uriBase, bool dontEscape)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         var result = new Uri(uriBase, dontEscape);
+#pragma warning restore CS0618 // Type or member is obsolete
         PropagationModuleImpl.PropagateResultWhenInputTainted(result.OriginalString, uriBase);
         return result;
     }
 
     /// <summary>
-    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// Uri .ctor(System.String,System.UriKin) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
     /// <param name="uriKind">UriKind parameter.</param>
     /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriKind)", AspectFilter.StringLiterals)]
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriKind)", AspectFilter.StringLiteral_1)]
     public static Uri Init(string uriBase, UriKind uriKind)
     {
         var result = new Uri(uriBase, uriKind);
@@ -107,12 +107,12 @@ public class UriAspect
 
 #if NET6_0_OR_GREATER
     /// <summary>
-    /// Uri .ctor(System.Uri,System.String) aspect.
+    /// Uri .ctor(System.String,System.UriCreationOptions) aspect.
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the relative URI.</param>
     /// <param name="options">UriCreationOptions parameter.</param>
     /// <returns>The initialized System.Uri instance created using the specified base URI and relative URI string.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriCreationOptions)", AspectFilter.StringLiterals)]
+    [AspectCtorReplace("System.Uri::.ctor(System.String,System.UriCreationOptions)", AspectFilter.StringLiteral_1)]
     public static Uri Init(string uriBase, in UriCreationOptions options)
     {
         var result = new Uri(uriBase, in options);
@@ -128,7 +128,7 @@ public class UriAspect
     /// <param name="kind">The kind of uri.</param>
     /// <param name="uriCreated">The uri created.</param>
     /// <returns>True if the uri was created.</returns>
-    [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriKind,System.Uri)", AspectFilter.StringLiterals)]
+    [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriKind,System.Uri)", AspectFilter.StringLiteral_0)]
     public static bool TryCreate(string uri, UriKind kind, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(uri, kind, out uriCreated);
@@ -148,7 +148,7 @@ public class UriAspect
     /// <param name="options">The options of uri.</param>
     /// <param name="uriCreated">The uri created.</param>
     /// <returns>True if the uri was created.</returns>
-    [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriCreationOptions,System.Uri ByRef)", AspectFilter.StringLiterals)]
+    [AspectMethodReplace("System.Uri::TryCreate(System.String,System.UriCreationOptions,System.Uri)", AspectFilter.StringLiteral_0)]
     public static bool TryCreate(string uri, in UriCreationOptions options, out Uri? uriCreated)
     {
         var result = Uri.TryCreate(uri, options, out uriCreated);
@@ -204,7 +204,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)", AspectFilter.StringLiterals)]
+    [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)", AspectFilter.StringLiterals_Any)]
     public static string UnescapeDataString(string uri)
     {
         var result = Uri.UnescapeDataString(uri);
@@ -217,12 +217,12 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::EscapeUriString(System.String)", AspectFilter.StringLiterals)]
+    [AspectMethodReplace("System.Uri::EscapeUriString(System.String)", AspectFilter.StringLiterals_Any)]
     public static string EscapeUriString(string uri)
     {
 #pragma warning disable SYSLIB0013 // obsolete
         var result = Uri.EscapeUriString(uri);
-#pragma warning restore 0168
+#pragma warning restore SYSLIB0013
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri);
         return result;
     }
@@ -232,7 +232,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::EscapeDataString(System.String)", AspectFilter.StringLiterals)]
+    [AspectMethodReplace("System.Uri::EscapeDataString(System.String)", AspectFilter.StringLiterals_Any)]
     public static string EscapeDataString(string uri)
     {
         var result = Uri.EscapeDataString(uri);
@@ -288,7 +288,9 @@ public class UriAspect
     [AspectMethodReplace("System.Uri::MakeRelative(System.Uri)")]
     public static string? MakeRelative(Uri instance, Uri uri)
     {
+#pragma warning disable CS0618 // Type or member is obsolete
         var result = instance.MakeRelative(uri);
+#pragma warning restore CS0618 // Type or member is obsolete
         if (!string.IsNullOrWhiteSpace(result))
         {
             PropagationModuleImpl.PropagateResultWhenInputTainted(result, uri.OriginalString);
@@ -375,7 +377,7 @@ public class UriAspect
     [AspectMethodReplace("System.Object::ToString()", "System.Uri")]
     public static string ToString(Uri instance)
     {
-        string result = instance.ToString();
+        var result = instance.ToString();
         PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
         return result;
     }

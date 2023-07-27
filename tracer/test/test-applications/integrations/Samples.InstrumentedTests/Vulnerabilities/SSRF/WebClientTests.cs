@@ -580,6 +580,16 @@ public class WebClientTests : SSRFTests
         AssertVulnerableSSRF();
     }
 
+    // Testing [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
+
+    [Fact]
+    public void GivenAWebClient_WhenSetBaseAddress_Vulnerable4()
+    {
+        webclient.BaseAddress = taintedUrlValue;
+        AssertVulnerableSSRF();
+    }
+
+
     // Testing [AspectMethodInsertBefore("System.Net.WebClient::OpenWriteTaskAsync(System.String)")]
 
 
@@ -786,7 +796,6 @@ public class WebClientTests : SSRFTests
     public void GivenAWebClient_WhenUploadValuesTaskAsync_Vulnerable4()
     {
         ExecuteAction(() => webclient.UploadValuesTaskAsync(taintedUrlValue, "GET", new NameValueCollection()));
-        System.Threading.Thread.Sleep(1000);
         AssertVulnerableSSRF();
     }
 }

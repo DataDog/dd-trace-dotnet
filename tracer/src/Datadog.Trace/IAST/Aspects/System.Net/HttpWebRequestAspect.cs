@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
-/// <summary> HttpClient class aspects </summary>
+/// <summary> HttpWebRequest class aspects </summary>
 [AspectClass("System.Net.Requests,System", AspectType.Sink, VulnerabilityType.SSRF)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]

@@ -9,16 +9,18 @@ using Datadog.Trace.Iast.Propagation;
 
 namespace Hdiv.AST.Aspects.System
 {
-    /// <summary> UriBuilderAspect class aspects </summary>
+    /// <summary> UriBuilder class aspects </summary>
     [AspectClass("System,netstandard,System.Runtime.Extensions,System.Runtime")]
-    public partial class UriBuilderAspect
+    [global::System.ComponentModel.Browsable(false)]
+    [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
+    public class UriBuilderAspect
     {
         /// <summary>
         /// Taints the UriBuilder if the input parameters are tainted
         /// </summary>
         /// <param name="uriText">the uri</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String)", AspectFilter.StringLiterals)]
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String)", AspectFilter.StringLiteral_1)]
         public static UriBuilder Init(string uriText)
         {
             var result = new UriBuilder(uriText);
@@ -42,62 +44,62 @@ namespace Hdiv.AST.Aspects.System
         /// <summary>
         /// Taints the UriBuilder if the sensitive input parameters are tainted
         /// </summary>
-        /// <param name="uriText">the uri</param>
+        /// <param name="scheme">the scheme</param>
         /// <param name="host">the host</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String)", AspectFilter.StringLiterals)]
-        public static UriBuilder Init(string uriText, string host)
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String)")]
+        public static UriBuilder Init(string scheme, string host)
         {
-            var result = new UriBuilder(uriText, host);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host);
+            var result = new UriBuilder(scheme, host);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
             return result;
         }
 
         /// <summary>
         /// Taints the UriBuilder if the sensitive input parameters are tainted
         /// </summary>
-        /// <param name="uriText">the uri</param>
+        /// <param name="scheme">the scheme</param>
         /// <param name="host">the host</param>
         /// <param name="port">the port</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32)", AspectFilter.StringLiterals)]
-        public static UriBuilder Init(string uriText, string host, int port)
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32)")]
+        public static UriBuilder Init(string scheme, string host, int port)
         {
-            var result = new UriBuilder(uriText, host, port);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host);
+            var result = new UriBuilder(scheme, host, port);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host);
             return result;
         }
 
         /// <summary>
         /// Taints the UriBuilder if the sensitive input parameters are tainted
         /// </summary>
-        /// <param name="uriText">the uri</param>
+        /// <param name="scheme">the scheme</param>
         /// <param name="host">the host</param>
         /// <param name="port">the port</param>
         /// <param name="path">the path</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String)", AspectFilter.StringLiterals)]
-        public static UriBuilder Init(string uriText, string host, int port, string path)
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String)")]
+        public static UriBuilder Init(string scheme, string host, int port, string path)
         {
-            var result = new UriBuilder(uriText, host, port, path);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host, path);
+            var result = new UriBuilder(scheme, host, port, path);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path);
             return result;
         }
 
         /// <summary>
         /// Taints the UriBuilder if the sensitive input parameters are tainted
         /// </summary>
-        /// <param name="uriText">the uri</param>
+        /// <param name="scheme">the scheme</param>
         /// <param name="host">the host</param>
         /// <param name="port">the port</param>
         /// <param name="path">the path</param>
         /// <param name="extra">the extra parameter</param>
         /// <returns>the result of the original method</returns>
-        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String,System.String)", AspectFilter.StringLiterals)]
-        public static UriBuilder Init(string uriText, string host, int port, string path, string extra)
+        [AspectCtorReplace("System.UriBuilder::.ctor(System.String,System.String,System.Int32,System.String,System.String)")]
+        public static UriBuilder Init(string scheme, string host, int port, string path, string extra)
         {
-            var result = new UriBuilder(uriText, host, port, path, extra);
-            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, uriText, host, path, extra);
+            var result = new UriBuilder(scheme, host, port, path, extra);
+            PropagationModuleImpl.PropagateResultWhenInputTainted(result.Uri.OriginalString, host, path, extra);
             return result;
         }
 
@@ -106,7 +108,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Host(System.String)", AspectFilter.StringLiterals)]
+        [AspectMethodReplace("System.UriBuilder::set_Host(System.String)", AspectFilter.StringLiteral_1)]
         public static void SetHost(UriBuilder instance, string parameter)
         {
             instance.Host = parameter;
@@ -118,7 +120,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Query(System.String)", AspectFilter.StringLiterals)]
+        [AspectMethodReplace("System.UriBuilder::set_Query(System.String)", AspectFilter.StringLiteral_1)]
         public static void SetQuery(UriBuilder instance, string parameter)
         {
             instance.Query = parameter;
@@ -130,7 +132,7 @@ namespace Hdiv.AST.Aspects.System
         /// </summary>
         /// <param name="instance">The UriBuilder instance.</param>
         /// <param name="parameter">The parameter value.</param>
-        [AspectMethodReplace("System.UriBuilder::set_Path(System.String)", AspectFilter.StringLiterals)]
+        [AspectMethodReplace("System.UriBuilder::set_Path(System.String)", AspectFilter.StringLiteral_1)]
         public static void SetPath(UriBuilder instance, string parameter)
         {
             instance.Path = parameter;

@@ -51,6 +51,7 @@ public class WebClientAspect
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValues(System.String,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.Collections.Specialized.NameValueCollection)", 1)]
     [AspectMethodInsertBefore("System.Net.WebClient::UploadValuesTaskAsync(System.String,System.String,System.Collections.Specialized.NameValueCollection)", 2)]
+    [AspectMethodInsertBefore("System.Net.WebClient::set_BaseAddress(System.String)")]
     public static object Review(string parameter)
     {
         IastModule.OnSSRF(parameter);

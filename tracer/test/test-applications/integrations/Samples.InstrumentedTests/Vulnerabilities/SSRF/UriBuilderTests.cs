@@ -21,8 +21,9 @@ public class UriBuilderTests : SSRFTests
     public void GivenAUriBuilder_WhenToString_IsTainted2()
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, "host");
-        AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri.OriginalString);
+        // we don't taint the sheme
+        AssertNotTainted(builder.ToString());
+        AssertNotTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -39,8 +40,9 @@ public class UriBuilderTests : SSRFTests
     public void GivenAUriBuilder_WhenToString_IsTainted4()
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, "host", 22);
-        AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri.OriginalString);
+        // we don't taint the sheme
+        AssertNotTainted(builder.ToString());
+        AssertNotTainted(builder.Uri.OriginalString);
     }
 
     [Fact]
@@ -65,8 +67,9 @@ public class UriBuilderTests : SSRFTests
     public void GivenAUriBuilder_WhenToString_IsTainted7()
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, notTaintedHost, 33, "");
-        AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri.OriginalString);
+        // we don't taint the sheme
+        AssertNotTainted(builder.ToString());
+        AssertNotTainted(builder.Uri.OriginalString);
     }
 
 
@@ -109,8 +112,9 @@ public class UriBuilderTests : SSRFTests
     public void GivenAUriBuilder_WhenToString_IsTainted12()
     {
         UriBuilder builder = new UriBuilder(taintedUrlValue, notTaintedHost, 33, notTaintedValue, "");
-        AssertTainted(builder.ToString());
-        AssertTainted(builder.Uri.OriginalString);
+        // we don't taint the sheme
+        AssertNotTainted(builder.ToString());
+        AssertNotTainted(builder.Uri.OriginalString);
     }
 
     // Test [AspectCtorReplace("System.UriBuilder::.ctor(System.Uri)")]

@@ -24,7 +24,7 @@ namespace Datadog.Trace.Iast.Aspects.System.Net;
 public class HttpClientAspect
 {
     /// <summary>
-    /// Launches a SSRF vulnerability if the url is tainted
+    /// Launches a SSRF vulnerability if the url string is tainted
     /// </summary>
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
@@ -51,14 +51,14 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::PutAsync(System.String,System.Net.Http.HttpContent,System.Threading.CancellationToken)", 2)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.String,System.Threading.CancellationToken)", 1)]
-    public static object Review(string parameter)
+    public static string Review(string parameter)
     {
         IastModule.OnSSRF(parameter);
         return parameter;
     }
 
     /// <summary>
-    /// Launches a SSRF vulnerability if the url is tainted
+    /// Launches a SSRF vulnerability if the uri is tainted
     /// </summary>
     /// <param name="parameter">the sensitive parameter of the method</param>
     /// <returns>the parameter</returns>
@@ -85,7 +85,7 @@ public class HttpClientAspect
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri)")]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::DeleteAsync(System.Uri,System.Threading.CancellationToken)", 1)]
     [AspectMethodInsertBefore("System.Net.Http.HttpClient::set_BaseAddress(System.Uri)")]
-    public static object ReviewUri(Uri parameter)
+    public static Uri ReviewUri(Uri parameter)
     {
         IastModule.OnSSRF(parameter.OriginalString);
         return parameter;
