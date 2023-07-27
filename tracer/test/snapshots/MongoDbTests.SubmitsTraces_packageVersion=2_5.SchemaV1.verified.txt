@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Main(),
+    Name: Samples.MongoDB.internal,
     Resource: Main(),
     Service: Samples.MongoDB,
     Type: custom,
@@ -29,7 +29,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: sync-calls,
+    Name: Samples.MongoDB.internal,
     Resource: sync-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -47,7 +47,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: async-calls,
+    Name: Samples.MongoDB.internal,
     Resource: async-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -65,7 +65,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: sync-calls,
+    Name: Samples.MongoDB.internal,
     Resource: sync-calls,
     Service: Samples.MongoDB,
     Type: custom,
@@ -105,7 +105,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_7,
-    Name: sync-calls-execute,
+    Name: Samples.MongoDB.internal,
     Resource: sync-calls-execute,
     Service: Samples.MongoDB,
     Type: custom,
@@ -123,7 +123,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_8,
-    Name: async-calls-execute,
+    Name: Samples.MongoDB.internal,
     Resource: async-calls-execute,
     Service: Samples.MongoDB,
     Type: custom,

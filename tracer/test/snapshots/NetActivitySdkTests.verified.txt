@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: Ctor1,
+    Name: Samples.NetActivitySdk.server,
     Resource: Ctor1,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -29,7 +29,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: Ctor2,
+    Name: Samples.NetActivitySdk.server,
     Resource: Ctor2,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -55,7 +55,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_6,
-    Name: Ctor3,
+    Name: Samples.NetActivitySdk.server,
     Resource: Ctor3,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -83,7 +83,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_7,
-    Name: Ctor4,
+    Name: Samples.NetActivitySdk.server,
     Resource: Ctor4DisplayName,
     Service: Samples.NetActivitySdk,
     Type: web,
@@ -105,7 +105,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_9,
-    Name: ErrorSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: ErrorSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -134,7 +134,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_10,
-    Name: OkSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: OkSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -152,7 +152,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_11,
-    Name: UnsetStatusSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: UnsetStatusSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -170,7 +170,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_12,
-    Name: ParentSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: ParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -188,7 +188,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_13,
-    Name: ChildSpan,
+    Name: opentelemetry.internal,
     Resource: ChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -205,7 +205,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_14,
-    Name: W3CParentSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: W3CParentSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -223,7 +223,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_15,
-    Name: W3CChildSpan,
+    Name: opentelemetry.internal,
     Resource: W3CChildSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -240,7 +240,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_16,
-    Name: MiscSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: IAmMiscSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -258,7 +258,7 @@
   {
     TraceId: Id_8,
     SpanId: Id_17,
-    Name: MiscSpan2,
+    Name: opentelemetry.internal,
     Resource: MiscSpan2,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -275,7 +275,7 @@
   {
     TraceId: Id_18,
     SpanId: Id_19,
-    Name: Parent-NonW3CId,
+    Name: opentelemetry.internal,
     Resource: Parent-NonW3CId,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -299,7 +299,7 @@
   {
     TraceId: Id_18,
     SpanId: Id_20,
-    Name: Child-NonW3CId,
+    Name: opentelemetry.internal,
     Resource: Child-NonW3CId,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -315,7 +315,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: RootSpan,
+    Name: Samples.NetActivitySdk.internal,
     Resource: RootSpan,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -374,7 +374,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_24,
-    Name: SetTagsActivity,
+    Name: Samples.NetActivitySdk.internal,
     Resource: SetTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -407,7 +407,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_25,
-    Name: NameEvent,
+    Name: Samples.NetActivitySdk.internal,
     Resource: NameEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -425,7 +425,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_26,
-    Name: AddBaggage,
+    Name: Samples.NetActivitySdk.internal,
     Resource: AddBaggage,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -443,7 +443,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_27,
-    Name: NameDateEvent,
+    Name: Samples.NetActivitySdk.internal,
     Resource: NameDateEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -461,7 +461,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_28,
-    Name: SetBaggage,
+    Name: Samples.NetActivitySdk.internal,
     Resource: SetBaggage,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -479,7 +479,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_29,
-    Name: EmptyTagsEvent,
+    Name: Samples.NetActivitySdk.internal,
     Resource: EmptyTagsEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -497,7 +497,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_30,
-    Name: TagsEvent,
+    Name: Samples.NetActivitySdk.internal,
     Resource: TagsEvent,
     Service: Samples.NetActivitySdk,
     Type: custom,
@@ -515,7 +515,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_31,
-    Name: MultipleEvents,
+    Name: Samples.NetActivitySdk.internal,
     Resource: MultipleEvents,
     Service: Samples.NetActivitySdk,
     Type: custom,

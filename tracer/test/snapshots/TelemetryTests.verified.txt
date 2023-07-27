@@ -1,8 +1,8 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: GetAsync,
+    Name: Samples.Telemetry.internal,
     Resource: GetAsync,
     Service: Samples.Telemetry,
     Type: custom,
@@ -52,7 +52,7 @@
   {
     TraceId: Id_4,
     SpanId: Id_5,
-    Name: HttpListener.ReceivedRequest,
+    Name: opentelemetry.internal,
     Resource: HttpListener.ReceivedRequest,
     Service: Samples.Telemetry,
     Type: custom,

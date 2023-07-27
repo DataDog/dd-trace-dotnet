@@ -76,10 +76,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
-            if (legacyOperationNames)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "false");
-            }
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, legacyOperationNames.ToString());
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -122,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
             SetEnvironmentVariable("ADD_ADDITIONAL_ACTIVITY_SOURCE", "true");
+            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "false");
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -171,7 +169,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var legacyEnabled = string.Empty;
             // legacyOperationNames isn't the best name - if false it'll use Activity.OperationName
             // otherwise, when true it'll use the ActivitySource.Name + ActivityKind
-            if (!legacyOperationNames)
+            if (legacyOperationNames)
             {
                 legacyEnabled = "_withLegacyOperationName";
             }
