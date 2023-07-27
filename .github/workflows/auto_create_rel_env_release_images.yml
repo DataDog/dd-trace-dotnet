@@ -8,6 +8,7 @@ jobs:
     # If this is a 2.x.0 release, create the rel-env docker images from master
     # If this is a 2.x.x hotfix release, create the rel-env images from the hotfix branch
     # If this is a 1.x.x hotfix release, _don't_ create the images (required assets don't exist in that branch)
+  auto_create_rel_env_images:
     if: startsWith(github.event.release.tag_name, 'v2.')
     runs-on: ubuntu-latest
     env:
@@ -40,18 +41,18 @@ jobs:
           echo "version=$version" >> $GITHUB_OUTPUT
           echo "sha=$sha" >> $GITHUB_OUTPUT
 
-    - name: "Download build assets from Azure Pipelines"
-      id: assets
-      run: |
-        ./tracer/build.sh DownloadReleaseArtifacts
-      env:
-        TargetBranch: "${{ steps.variables.outputs.ref }}"
-        CommitSha: "${{ steps.variables.outputs.sha }}"
+      - name: "Download build assets from Azure Pipelines"
+        id: assets
+        run: |
+          ./tracer/build.sh DownloadReleaseArtifacts
+        env:
+          TargetBranch: "${{ steps.variables.outputs.ref }}"
+          CommitSha: "${{ steps.variables.outputs.sha }}"
 
-    - uses: ./.github/actions/create-rel-env-docker-base-images
-      name: 'Create rel-env docker images'
-      with:
-        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
-        is_release_version: "True"
-        package_version: "${{steps.variables.outputs.version}}"
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: ./.github/actions/create-rel-env-docker-base-images
+        name: 'Create rel-env docker images'
+        with:
+          artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+          is_release_version: "True"
+          package_version: "${{steps.variables.outputs.version}}"
+          github_token: ${{ secrets.GITHUB_TOKEN }}
