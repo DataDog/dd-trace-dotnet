@@ -387,6 +387,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("amqp.command")
+                .IsOptional("out.host")
                 .IsOptional("amqp.delivery_mode")
                 .IsOptional("amqp.exchange")
                 .IsOptional("amqp.routing_key")

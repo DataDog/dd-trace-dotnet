@@ -11,8 +11,9 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -35,8 +36,9 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -59,8 +61,9 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -83,8 +86,9 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      language: dotnet,
       runtime-id: Guid_1,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -278,6 +282,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 62,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -300,6 +305,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 62,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -322,6 +328,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 62,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -344,6 +351,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 62,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -364,6 +372,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -384,6 +393,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -404,6 +414,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -424,6 +435,7 @@
       amqp.exchange: test-exchange-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -446,6 +458,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -468,6 +481,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -490,6 +504,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -512,6 +527,7 @@
       amqp.routing_key: test-routing-key,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -532,6 +548,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -552,6 +569,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -572,6 +590,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -592,6 +611,7 @@
       amqp.queue: test-queue-name,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -886,6 +906,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -908,6 +929,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -930,6 +952,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -952,6 +975,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 61,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -972,6 +996,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -992,6 +1017,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1012,6 +1038,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1032,6 +1059,7 @@
       amqp.queue: ,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client
     },
@@ -1410,6 +1438,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1432,6 +1461,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1454,6 +1484,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1476,6 +1507,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1498,6 +1530,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1520,6 +1553,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1542,6 +1576,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1564,6 +1599,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1586,6 +1622,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1608,6 +1645,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1630,6 +1668,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -1652,6 +1691,7 @@
       component: RabbitMQ,
       env: integration_tests,
       message.size: 17,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: producer
     },
@@ -2259,6 +2299,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2283,6 +2324,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2307,6 +2349,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2331,6 +2374,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2355,6 +2399,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2379,6 +2424,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2403,6 +2449,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0
@@ -2427,6 +2474,7 @@
       amqp.queue: hello,
       component: RabbitMQ,
       env: integration_tests,
+      out.host: rabbitmq,
       runtime-id: Guid_1,
       span.kind: client,
       _dd.p.dm: -0

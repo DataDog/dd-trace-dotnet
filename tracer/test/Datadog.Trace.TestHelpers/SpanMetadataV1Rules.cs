@@ -536,9 +536,29 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("cmd.environment_variables")
                 .Matches("span.kind", "internal"));
 
-        public static Result IsRabbitMQV1(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsRabbitMQAdminV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Rabbit - Admin")
             .Properties(s => s
                 .Matches(Name, "amqp.command")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("amqp.command")
+                .IsPresent("out.host")
+                .IsOptional("amqp.delivery_mode")
+                .IsOptional("amqp.exchange")
+                .IsOptional("amqp.routing_key")
+                .IsOptional("amqp.queue")
+                .IsOptional("message.size")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
+                .Matches("component", "RabbitMQ")
+                .Matches("span.kind", "client"));
+
+        public static Result IsRabbitMQInboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Rabbit - Inbound")
+            .Properties(s => s
+                .Matches(Name, "amqp.process")
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("amqp.command")
@@ -548,7 +568,26 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("amqp.queue")
                 .IsOptional("message.size")
                 .Matches("component", "RabbitMQ")
-                .IsPresent("span.kind"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsRabbitMQOutboundV1(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Rabbit - Outbound")
+            .Properties(s => s
+                .Matches(Name, "amqp.send")
+                .Matches(Type, "queue"))
+            .Tags(s => s
+                .IsPresent("amqp.command")
+                .IsPresent("out.host")
+                .IsOptional("amqp.delivery_mode")
+                .IsOptional("amqp.exchange")
+                .IsOptional("amqp.routing_key")
+                .IsOptional("amqp.queue")
+                .IsOptional("message.size")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "out.host", "peer.service")
+                .Matches("component", "RabbitMQ")
+                .Matches("span.kind", "producer"));
 
         public static Result IsServiceRemotingClientV1(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Service Remoting - Client")

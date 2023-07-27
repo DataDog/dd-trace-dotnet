@@ -34,7 +34,7 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{messagingSystem}.process",
             };
 
-        public string GetInboundServiceName(string messagingSystem)
+        public string GetServiceName(string messagingSystem)
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(messagingSystem, out var mappedServiceName))
             {
@@ -62,20 +62,6 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{messagingSystem}.send",
             };
 
-        public string GetOutboundServiceName(string messagingSystem)
-        {
-            if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(messagingSystem, out var mappedServiceName))
-            {
-                return mappedServiceName;
-            }
-
-            return _version switch
-            {
-                SchemaVersion.V0 when !_removeClientServiceNamesEnabled => $"{_defaultServiceName}-{messagingSystem}",
-                _ => _defaultServiceName,
-            };
-        }
-
         public KafkaTags CreateKafkaTags(string spanKind)
             => _version switch
             {
@@ -101,5 +87,12 @@ namespace Datadog.Trace.Configuration.Schema
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsSnsTags(),
             _ => new AwsSnsV1Tags(spanKind),
         };
+
+        public RabbitMQTags CreateRabbitMqTags(string spanKind)
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new RabbitMQTags(spanKind),
+                _ => new RabbitMQV1Tags(spanKind),
+            };
     }
 }
