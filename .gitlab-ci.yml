@@ -200,3 +200,15 @@ package:
   stage: deploy
   variables:
     PRODUCT_NAME: auto_inject-dotnet
+
+temporary_test:
+  stage: deploy
+  tags: ["runner:windows-docker", "windowsversion:1809"]
+  rules:
+    - when: manual
+      allow_failure: true
+  script:
+    - echo "print variables"
+    - echo $CI_COMMIT_SHA
+    - echo $CI_COMMIT_TAG
+    - echo "print variables"
