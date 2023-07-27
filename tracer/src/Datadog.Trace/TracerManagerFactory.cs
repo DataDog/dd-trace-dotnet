@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Processors;
@@ -149,6 +150,18 @@ namespace Datadog.Trace
             var profiler = Profiler.Instance;
             telemetry.RecordProfilerSettings(profiler);
             telemetry.ProductChanged(TelemetryProductType.Profiler, enabled: profiler.Status.IsProfilerReady, error: null);
+
+            var requestedInjectors = settings.PropagationStyleInject;
+            var requestedExtractors = settings.PropagationStyleExtract;
+
+            // If Activity support is enabled, we must enable the W3C Trace Context propagators.
+            // We have not updated the settings object so our configuration telemetry accurately reflects what was set by the user
+            // It's ok to include W3C multiple times, we handle that later.
+            if (settings.IsActivityListenerEnabled)
+            {
+                requestedInjectors = requestedInjectors.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                requestedExtractors = requestedExtractors.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+            }
 
             SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 

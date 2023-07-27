@@ -277,19 +277,6 @@ namespace Datadog.Trace.Tests.Telemetry
                 (null, null) => "tracecontext,Datadog",
             };
 
-            // V1 telemetry will collect an additional ",tracecontext" in each propagator style when the following conditions are met
-            // - DD_TRACE_OTEL_ENABLED=true
-            // - "tracecontext" is not already included in the propagation configuration
-            if (activityListenerEnabled == "true" && !extractValue.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase))
-            {
-                extractValue += ",tracecontext";
-            }
-
-            if (activityListenerEnabled == "true" && !injectValue.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase))
-            {
-                injectValue += ",tracecontext";
-            }
-
             data[ConfigTelemetryData.PropagationStyleExtract].Should().Be(extractValue);
             data[ConfigTelemetryData.PropagationStyleInject].Should().Be(injectValue);
         }
