@@ -23,8 +23,6 @@ namespace Datadog.Trace
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TraceContext>();
 
-        private readonly TraceClock _clock;
-
         private IastRequestContext _iastRequestContext;
 
         private ArrayBuilder<Span> _spans;
@@ -50,7 +48,7 @@ namespace Datadog.Trace
 
             Tracer = tracer;
             Tags = tags ?? new TraceTagCollection();
-            _clock = TraceClock.Instance;
+            Clock = new TraceClock();
         }
 
         public Span RootSpan
@@ -59,7 +57,7 @@ namespace Datadog.Trace
             private set => _rootSpan = value;
         }
 
-        public TraceClock Clock => _clock;
+        public TraceClock Clock { get; }
 
         public IDatadogTracer Tracer { get; }
 
