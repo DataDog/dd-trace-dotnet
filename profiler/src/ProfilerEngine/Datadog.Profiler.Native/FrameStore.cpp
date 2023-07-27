@@ -340,7 +340,7 @@ bool FrameStore::GetTypeDesc(ClassID classId, TypeDesc*& pTypeDesc)
         }
 
         ComPtr<IMetaDataImport2> metadataImport;
-        INVOKE(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
+        INVOKE_INFO(_pCorProfilerInfo->GetModuleMetaData(moduleId, ofRead, IID_IMetaDataImport2, reinterpret_cast<IUnknown**>(metadataImport.GetAddressOf())));
 
         // try to get the type description
         TypeDesc typeDesc;
