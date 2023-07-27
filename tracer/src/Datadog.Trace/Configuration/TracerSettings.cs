@@ -261,7 +261,7 @@ namespace Datadog.Trace.Configuration
 
             OpenTelemetryLegacyOperationNameEnabled = config
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
-                                                     .AsBool(false);
+                                                     .AsBool(true);
 
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
