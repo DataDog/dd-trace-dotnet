@@ -206,6 +206,12 @@ void StackSamplerLoop::MainLoopIteration()
 
         if (_areInternalMetricsEnabled)
         {
+            // avoid an unnecessary call to OpSysTools::GetHighPrecisionTimestamp() if possible
+            if (timestampNanosecs2 == 0)
+            {
+                timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
+            }
+
             timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
             _cpuDurationMetric->Add(static_cast<double>(timestampNanosecs1 - timestampNanosecs2));
         }
