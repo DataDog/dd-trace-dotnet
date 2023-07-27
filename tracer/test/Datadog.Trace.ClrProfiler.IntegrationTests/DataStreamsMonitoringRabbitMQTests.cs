@@ -93,7 +93,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
             }
         }
 
-        points.SortBy(s => s.Hash);
+        points.OrderBy(s => s.TimestampType).ThenBy(s => s.Hash);
         return points.ToList();
     }
 }
