@@ -3,6 +3,8 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "EnvironmentVariables.h"
+#include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 
@@ -106,6 +108,16 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
+    // InternalCIVisibilitySpanId for CODE HOTSPOT in the whole process
+    const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
+    if (!internalCIVisibilitySpanId.empty())
+    {
+        const auto spanId = std::stoull(internalCIVisibilitySpanId);
+        _pStackSnapshotResult->SetLocalRootSpanId(spanId);
+        _pStackSnapshotResult->SetSpanId(spanId);
+        return true;
+    }
+    
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
     if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())
