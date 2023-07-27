@@ -42,6 +42,8 @@ debugger_*.h                               @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
+fault_tolerant_*.cpp                       @DataDog/debugger-dotnet
+fault_tolerant_*.h                         @DataDog/debugger-dotnet
 
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet

@@ -9,11 +9,8 @@
 #include "debugger_probes_tracker.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
-#include "fault_tolerant_tracker.h"
-#include "il_rewriter_wrapper.h"
+#include "fault_tolerant_manager.h"
 #include "logger.h"
-#include "stats.h"
-#include "version.h"
 #include <random>
 
 namespace debugger
@@ -51,7 +48,7 @@ bool DebuggerProbesInstrumentationRequester::IsCoreLibOr3rdParty(const WSTRING& 
     return false;
 }
 
-std::wstring DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
+WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
 {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -95,7 +92,7 @@ std::wstring DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
         ss << dis(gen);
     }
 
-    return ss.str();
+    return WSTRING(ss.str());
 }
 
 /**
@@ -189,15 +186,16 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
-    std::shared_ptr<trace::RejitWorkOffloader> work_offloader) :
+    std::shared_ptr<trace::RejitWorkOffloader> work_offloader,
+    std::shared_ptr<fault_tolerant::FaultTolerantManager> fault_tolerant_manager) :
     m_corProfiler(corProfiler),
+    m_debugger_rejit_preprocessor(
+    std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
-    m_debugger_rejit_preprocessor(
-        std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader))
+    m_fault_tolerant_manager(fault_tolerant_manager)
 {
     is_debugger_enabled = IsDebuggerEnabled();
-    is_fault_tolerant_instrumentation_enabled = IsFaultTolerantInstrumentationEnabled();
 }
 
 void DebuggerProbesInstrumentationRequester::RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes,
@@ -721,343 +719,6 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
     Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
 }
 
-void DebuggerProbesInstrumentationRequester::HandleFaultTolerantInstrumentationIfEnabled(const ModuleID moduleId, const ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef) const
-{
-    if (!is_fault_tolerant_instrumentation_enabled)
-    {
-        return;
-    }
-
-    auto enumMethods = trace::Enumerator<mdMethodDef>(
-        [&metadataImport, typeDef](HCORENUM* ptr, mdMethodDef arr[], ULONG max, ULONG* cnt) -> HRESULT {
-            return metadataImport->EnumMethods(ptr, typeDef, arr, max, cnt);
-        },
-        [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-    auto methodDefIterator = enumMethods.begin();
-    for (; methodDefIterator != enumMethods.end(); methodDefIterator = ++methodDefIterator)
-    {
-        const auto methodDef = *methodDefIterator;
-
-        /* Clone `methodDef` */
-
-        // Extract the function info from the mdMethodDef
-        const auto caller = GetFunctionInfo(metadataImport, methodDef);
-        if (!caller.IsValid())
-        {
-            Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef),
-                         " is not valid!");
-            continue;
-        }
-
-        auto functionInfo = FunctionInfo(caller);
-        auto hr = functionInfo.method_signature.TryParse();
-        if (FAILED(hr))
-        {
-            Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                         " cannot be parsed.");
-            continue;
-        }
-
-        if (functionInfo.name == WStr(".ctor") || functionInfo.name == WStr(".cctor"))
-        {
-            continue;
-        }
-
-        if (functionInfo.type.extend_from != nullptr &&
-            (functionInfo.type.extend_from->name == WStr("System.MulticastDelegate") ||
-             functionInfo.type.extend_from->name == WStr("System.Delegate")))
-        {
-            continue;
-        }
-
-        // TODO check for Enum and decide what to do
-
-        if (caller.type.name.rfind(L'@') != std::wstring::npos)
-        {
-            continue;
-        }
-
-        if (functionInfo.type.isAbstract && !functionInfo.type.IsStaticClass())
-        {
-            continue;
-        }
-
-        WCHAR methodName[1024];
-        ULONG methodNameLength = 0;
-        mdTypeDef _typeDef = 0;
-        DWORD _methodAttributes;
-        PCCOR_SIGNATURE _pSig = nullptr;
-        ULONG _nSig = 0;
-        ULONG pulCodeRVA;
-        DWORD pdwImplFlags;
-        hr = metadataImport->GetMethodProps(methodDef, &_typeDef, methodName, 1024, &methodNameLength,
-                                            &_methodAttributes, &_pSig, &_nSig, &pulCodeRVA, &pdwImplFlags);
-
-        if (FAILED(hr))
-        {
-            Logger::Warn("    * GetMethodProps has failed. MethodDef: ", shared::TokenStr(&methodDef));
-            continue;
-        }
-
-        _methodAttributes |= mdSpecialName;
-        _methodAttributes |= mdPrivate;
-        _methodAttributes &= ~mdVirtual;
-        _methodAttributes |= mdHideBySig;
-        //_methodAttributes |= mdFinal;
-
-        mdMethodDef originalTargetMethodDef = mdMethodDefNil;
-
-        auto newMethodName = functionInfo.name + WStr("<Original>");
-        newMethodName.erase(std::remove(newMethodName.begin(), newMethodName.end(), L'.'), newMethodName.end());
-        newMethodName.erase(std::remove(newMethodName.begin(), newMethodName.end(), L'_'), newMethodName.end());
-
-        hr = metadataEmit->DefineMethod(typeDef, newMethodName.c_str(), _methodAttributes, _pSig, _nSig,
-                                        pulCodeRVA, pdwImplFlags, &originalTargetMethodDef);
-        if (FAILED(hr))
-        {
-            Logger::Warn(
-                "    * Failed to create new <Original> method. MethodDef: ", shared::TokenStr(&methodDef),
-                " Method Name:",
-                functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") + moduleInfo.path);
-            continue;
-        }
-        else
-        {
-            Logger::Warn("    * Succeeded in the creation of the new <Original> method. MethodDef: ",
-                         shared::TokenStr(&methodDef), " Method Name:",
-                         functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") +
-                         moduleInfo.path);
-        }
-
-        mdMethodDef instrumentedTargetMethodDef = mdMethodDefNil;
-
-        newMethodName = functionInfo.name + WStr("<Instrumented>");
-        newMethodName.erase(std::remove(newMethodName.begin(), newMethodName.end(), L'.'), newMethodName.end());
-        newMethodName.erase(std::remove(newMethodName.begin(), newMethodName.end(), L'_'), newMethodName.end());
-
-        hr = metadataEmit->DefineMethod(typeDef, newMethodName.c_str(), _methodAttributes, _pSig, _nSig,
-                                        pulCodeRVA, pdwImplFlags, &instrumentedTargetMethodDef);
-        if (FAILED(hr))
-        {
-            Logger::Warn(
-                "    * Failed to create new <Instrumented> method. MethodDef: ", shared::TokenStr(&methodDef),
-                " Method Name:",
-                functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") + moduleInfo.path);
-            continue;
-        }
-        else
-        {
-            Logger::Warn("    * Succeeded in the creation of the new <Instrumented> method. MethodDef: ",
-                         shared::TokenStr(&methodDef), " Method Name:",
-                         functionInfo.type.name + WStr(".") + newMethodName + WStr(", Module Path: ") +
-                         moduleInfo.path);
-        }
-
-        // Define generic params (if exist)
-        if ((*_pSig & IMAGE_CEE_CS_CALLCONV_GENERIC) > 0)
-        {
-            std::vector<mdGenericParam> genericParams;
-
-            auto enumGenericParams = trace::Enumerator<mdGenericParam>(
-                [&metadataImport, methodDef](HCORENUM* ptr, mdGenericParam arr[], ULONG max, ULONG* cnt)
-                -> HRESULT { return metadataImport->EnumGenericParams(ptr, methodDef, arr, max, cnt); },
-                [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-            auto genericParamsIterator = enumGenericParams.begin();
-            for (; genericParamsIterator != enumGenericParams.end();
-                   genericParamsIterator = ++genericParamsIterator)
-            {
-                const auto genericParam = *genericParamsIterator;
-                genericParams.push_back(genericParam);
-            }
-
-            bool shouldSkipToNextMethod = false;
-
-            for (int genParam = 0; genParam < genericParams.size(); genParam++)
-            {
-                auto genericParam = genericParams[genParam];
-
-                ULONG pulParamSeq;
-                DWORD pdwParamFlags;
-                mdToken ptOwner;
-                DWORD reserved = 0;
-                WCHAR genericParamName[1024];
-                ULONG pchName;
-                std::vector<mdToken> constraintTypes;
-                mdGenericParam newGenericParam;
-
-                auto enumGenericParamConstraints = trace::Enumerator<mdGenericParamConstraint>(
-                    [&metadataImport, genericParam](HCORENUM* ptr, mdGenericParamConstraint arr[], ULONG max,
-                                                    ULONG* cnt) -> HRESULT {
-                        return metadataImport->EnumGenericParamConstraints(ptr, genericParam, arr, max, cnt);
-                    },
-                    [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-                auto genericParamConstraintsIterator = enumGenericParamConstraints.begin();
-                for (; genericParamConstraintsIterator != enumGenericParamConstraints.end();
-                       genericParamConstraintsIterator = ++genericParamConstraintsIterator)
-                {
-                    const auto genericParamConstraint = *genericParamConstraintsIterator;
-
-                    mdGenericParam genericParam;
-                    mdToken constraintType;
-                    hr = metadataImport->GetGenericParamConstraintProps(genericParamConstraint, &genericParam,
-                                                                        &constraintType);
-
-                    if (FAILED(hr))
-                    {
-                        Logger::Warn("    * GetGenericParamConstraintProps has failed. MethodDef: ",
-                                     shared::TokenStr(&methodDef));
-                        shouldSkipToNextMethod = true;
-                        break;
-                    }
-
-                    constraintTypes.push_back(constraintType);
-                }
-
-                if (shouldSkipToNextMethod)
-                {
-                    break;
-                }
-
-                hr = metadataImport->GetGenericParamProps(genericParam, &pulParamSeq, &pdwParamFlags, &ptOwner,
-                                                          &reserved, genericParamName, 1024, &pchName);
-
-                if (FAILED(hr))
-                {
-                    Logger::Warn("    * GetGenericParamProps has failed. MethodDef: ",
-                                 shared::TokenStr(&methodDef));
-                    shouldSkipToNextMethod = true;
-                    break;
-                }
-
-                if (!constraintTypes.empty())
-                {
-                    std::unique_ptr<mdToken[]> rtkConstraints =
-                        std::make_unique<mdToken[]>(constraintTypes.size() + 1);
-                    std::copy(constraintTypes.begin(), constraintTypes.end(), rtkConstraints.get());
-                    rtkConstraints[constraintTypes.size()] = 0;
-                    hr = metadataEmit->DefineGenericParam(instrumentedTargetMethodDef, pulParamSeq,
-                                                          pdwParamFlags, genericParamName, reserved,
-                                                          rtkConstraints.get(), &newGenericParam);
-                }
-                else
-                {
-                    hr = metadataEmit->DefineGenericParam(instrumentedTargetMethodDef, pulParamSeq,
-                                                          pdwParamFlags, genericParamName, reserved, nullptr,
-                                                          &newGenericParam);
-                }
-
-                if (FAILED(hr))
-                {
-                    Logger::Warn(
-                        "    * DefineGenericParam has failed for instrumentedTargetMethodDef. MethodDef: ",
-                        shared::TokenStr(&methodDef));
-                    shouldSkipToNextMethod = true;
-                    break;
-                }
-            }
-
-            if (shouldSkipToNextMethod)
-            {
-                continue;
-            }
-
-            for (int genParam = 0; genParam < genericParams.size(); genParam++)
-            {
-                auto genericParam = genericParams[genParam];
-
-                ULONG pulParamSeq;
-                DWORD pdwParamFlags;
-                mdToken ptOwner;
-                DWORD reserved = 0;
-                WCHAR genericParamName[1024];
-                ULONG pchName;
-                std::vector<mdToken> constraintTypes;
-                mdGenericParam newGenericParam;
-
-                auto enumGenericParamConstraints = trace::Enumerator<mdGenericParamConstraint>(
-                    [&metadataImport, genericParam](HCORENUM* ptr, mdGenericParamConstraint arr[], ULONG max,
-                                                    ULONG* cnt) -> HRESULT {
-                        return metadataImport->EnumGenericParamConstraints(ptr, genericParam, arr, max, cnt);
-                    },
-                    [&metadataImport](HCORENUM ptr) -> void { metadataImport->CloseEnum(ptr); });
-
-                auto genericParamConstraintsIterator = enumGenericParamConstraints.begin();
-                for (; genericParamConstraintsIterator != enumGenericParamConstraints.end();
-                       genericParamConstraintsIterator = ++genericParamConstraintsIterator)
-                {
-                    const auto genericParamConstraint = *genericParamConstraintsIterator;
-
-                    mdGenericParam genericParam;
-                    mdToken constraintType;
-                    hr = metadataImport->GetGenericParamConstraintProps(genericParamConstraint, &genericParam,
-                                                                        &constraintType);
-
-                    if (FAILED(hr))
-                    {
-                        Logger::Warn("    * GetGenericParamConstraintProps has failed. MethodDef: ",
-                                     shared::TokenStr(&methodDef));
-                        shouldSkipToNextMethod = true;
-                        break;
-                    }
-
-                    constraintTypes.push_back(constraintType);
-                }
-
-                if (shouldSkipToNextMethod)
-                {
-                    break;
-                }
-
-                hr = metadataImport->GetGenericParamProps(genericParam, &pulParamSeq, &pdwParamFlags, &ptOwner,
-                                                          &reserved, genericParamName, 1024, &pchName);
-
-                if (FAILED(hr))
-                {
-                    Logger::Warn("    * GetGenericParamProps has failed. MethodDef: ",
-                                 shared::TokenStr(&methodDef));
-                    shouldSkipToNextMethod = true;
-                    break;
-                }
-
-                if (!constraintTypes.empty())
-                {
-                    std::unique_ptr<mdToken[]> rtkConstraints =
-                        std::make_unique<mdToken[]>(constraintTypes.size() + 1);
-                    std::copy(constraintTypes.begin(), constraintTypes.end(), rtkConstraints.get());
-                    rtkConstraints[constraintTypes.size()] = 0;
-
-                    hr = metadataEmit->DefineGenericParam(originalTargetMethodDef, pulParamSeq, pdwParamFlags,
-                                                          genericParamName, reserved, rtkConstraints.get(),
-                                                          &newGenericParam);
-                }
-                else
-                {
-                    hr =
-                        metadataEmit->DefineGenericParam(originalTargetMethodDef, pulParamSeq, pdwParamFlags,
-                                                         genericParamName, reserved, nullptr, &newGenericParam);
-                }
-
-                if (FAILED(hr))
-                {
-                    Logger::Warn("    * DefineGenericParam has failed for originalTargetMethodDef. MethodDef: ",
-                                 shared::TokenStr(&methodDef));
-                }
-            }
-        }
-
-        fault_tolerant::FaultTolerantTracker::Instance()->AddFaultTolerant(
-            moduleId, methodDef, originalTargetMethodDef, instrumentedTargetMethodDef);
-    }
-
-    if (FAILED(this->m_corProfiler->info_->ApplyMetaData(moduleId)))
-    {
-        Logger::Warn("    * Failed to call ApplyMetadata.");
-    }
-}
-
 void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId)
 {
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
@@ -1109,7 +770,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     {
         auto typeDef = *typeDefIterator;
 
-        HandleFaultTolerantInstrumentationIfEnabled(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef);
+        m_fault_tolerant_manager->Apply(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef);
 
         // check if it is a nested type and the parent is our type
         mdTypeDef parentType;

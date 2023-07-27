@@ -20,6 +20,8 @@
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
 #include "Synchronized.hpp"
+#include "fault_tolerant_manager.h"
+#include "fault_tolerant_rewriter.h"
 
 #include "../../../shared/src/native-src/pal.h"
 
@@ -27,11 +29,18 @@
 namespace debugger
 {
 class DebuggerMethodRewriter;
+class DebuggerProbesInstrumentationRequester;
 }
 
 namespace iast
 {
 class Dataflow;
+}
+
+namespace fault_tolerant
+{
+class FaultTolerantManager;
+class FaultTolerantRewriter;
 }
 
 namespace trace
@@ -67,10 +76,16 @@ private:
     std::unique_ptr<TracerRejitPreprocessor> tracer_integration_preprocessor = nullptr;
     bool trace_annotations_enabled = false;
     bool call_target_bubble_up_exception_available = false;
+
     //
     // Debugger Members
     //
     std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
+
+    //
+    // Fault-Tolerant Instrumentation Members
+    //
+    std::shared_ptr<fault_tolerant::FaultTolerantManager> fault_tolerant_manager = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -222,6 +237,8 @@ public:
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
     friend class MethodRewriter;
+    friend class fault_tolerant::FaultTolerantManager;
+    friend class fault_tolerant::FaultTolerantRewriter;
 };
 
 // Note: Generally you should not have a single, global callback implementation,

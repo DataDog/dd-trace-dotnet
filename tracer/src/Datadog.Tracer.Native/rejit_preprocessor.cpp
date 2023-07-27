@@ -18,6 +18,26 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
 }
 
 template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport, ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef, const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler)
+{
+    if (fault_tolerant::FaultTolerantTracker::Instance()->IsKickoffMethod(moduleInfo.id, methodDef))
+    {
+        const auto originalMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests,
+                                            originalMethod,
+                                            functionInfo, moduleHandler);
+
+        const auto instrumentedMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
+                                            rejitRequests,
+                                            instrumentedMethod,
+                                            functionInfo, moduleHandler);
+    }
+}
+
+template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequestDefinition& definition, 
     ComPtr<IMetaDataImport2>& metadataImport, 
     ComPtr<IMetaDataEmit2>& metadataEmit, 
@@ -28,21 +48,8 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequ
     const FunctionInfo& functionInfo, 
     RejitHandlerModule* moduleHandler)
 {
-    if (fault_tolerant::FaultTolerantTracker::Instance()->IsKickoffMethod(moduleInfo.id, methodDef))
-    {
-        const auto originalMethod =
-            fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
-        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests,
-                                          originalMethod,
-                         functionInfo, moduleHandler);
-
-        const auto instrumentedMethod =
-            fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
-        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
-                                            rejitRequests,
-                         instrumentedMethod,
-                         functionInfo, moduleHandler);
-    }
+    EnqueueFaultTolerantMethods(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
+                               functionInfo, moduleHandler);
 
     RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, fInfo = functionInfo](
         const mdMethodDef method, RejitHandlerModule* module) {

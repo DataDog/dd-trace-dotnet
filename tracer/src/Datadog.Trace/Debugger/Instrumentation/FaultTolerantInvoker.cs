@@ -12,7 +12,7 @@ using Datadog.Trace.Vendors.Newtonsoft.Json;
 namespace Datadog.Trace.Debugger.Instrumentation
 {
     /// <summary>
-    /// MethodDebuggerInvoker
+    /// FaultTolerantInvoker
     /// </summary>
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]

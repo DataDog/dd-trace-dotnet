@@ -11,6 +11,7 @@
 #include "debugger_tokens.h"
 #include "integration.h"
 #include "tracer_tokens.h"
+#include "fault_tolerant_tokens.h"
 #include "../../../shared/src/native-src/com_ptr.h"
 #include "../../../shared/src/native-src/string.h"
 
@@ -23,9 +24,11 @@ private:
     std::mutex wrapper_mutex;
     std::once_flag tracer_tokens_once_flag;
     std::once_flag debugger_tokens_once_flag;
+    std::once_flag fault_tolerant_tokens_once_flag;
     std::unique_ptr<std::unordered_map<shared::WSTRING, mdTypeRef>> integration_types = nullptr;
     std::unique_ptr<TracerTokens> tracerTokens = nullptr;
     std::unique_ptr<debugger::DebuggerTokens> debuggerTokens = nullptr;
+    std::unique_ptr<fault_tolerant::FaultTolerantTokens> faultTolerantTokens = nullptr;
     std::unique_ptr<std::vector<IntegrationDefinition>> integrations = nullptr;
     mdTypeSpec moduleSpecSanityToken = mdTypeSpecNil;
 
@@ -128,6 +131,14 @@ public:
             });
 
         return debuggerTokens.get();
+    }
+
+    fault_tolerant::FaultTolerantTokens* GetFaultTolerantTokens()
+    {
+        std::call_once(fault_tolerant_tokens_once_flag,
+                       [this] { faultTolerantTokens = std::make_unique<fault_tolerant::FaultTolerantTokens>(this); });
+
+        return faultTolerantTokens.get();
     }
 };
 

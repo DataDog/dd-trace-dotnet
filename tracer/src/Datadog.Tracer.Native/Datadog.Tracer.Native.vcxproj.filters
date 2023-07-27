@@ -59,7 +59,21 @@
     <ClCompile Include="iast\dataflow.cpp" />
     <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
     <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
-    <ClCompile Include="fault_tolerant_tracker.cpp" />
+    <ClCompile Include="fault_tolerant_tracker.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_manager.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_rewriter.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
+    <ClCompile Include="fault_tolerant_tokens.cpp">
+      <Filter>FaultTolerant</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -147,7 +161,24 @@
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="Synchronized.hpp" />
-    <ClInclude Include="fault_tolerant_tracker.h" />
+    <ClInclude Include="fault_tolerant_tracker.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_manager.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_envionrment_variables_util.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_environment_variables.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_rewriter.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
+    <ClInclude Include="fault_tolerant_tokens.h">
+      <Filter>FaultTolerant</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -158,6 +189,9 @@
     </Filter>
     <Filter Include="shared">
       <UniqueIdentifier>{b31bbb47-af39-4840-88e2-eaba1bf73d34}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FaultTolerant">
+      <UniqueIdentifier>{c978629f-9250-49b5-a5f4-6bdcedfb1531}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

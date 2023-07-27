@@ -10,7 +10,6 @@ namespace debugger
 
 bool IsDebuggerEnabled();
 bool IsDebuggerInstrumentAllEnabled();
-bool IsFaultTolerantInstrumentationEnabled();
 
 } // namespace debugger
 

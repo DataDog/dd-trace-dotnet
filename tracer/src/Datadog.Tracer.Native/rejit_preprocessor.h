@@ -65,6 +65,12 @@ protected:
 public:
     RejitPreprocessor(CorProfiler* corProfiler, std::shared_ptr<RejitHandler> rejit_handler, std::shared_ptr<RejitWorkOffloader> work_offloader);
 
+    void EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport,
+                                    ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo,
+                                    mdTypeDef typeDef,
+                                    std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef,
+                                    const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler);
+
     ULONG RequestRejitForLoadedModules(const std::vector<ModuleID>& modules,
                                        const std::vector<RejitRequestDefinition>& requests,
                                        bool enqueueInSameThread = false);

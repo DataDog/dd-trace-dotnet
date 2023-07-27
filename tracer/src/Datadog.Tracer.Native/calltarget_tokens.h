@@ -1,7 +1,7 @@
 #ifndef DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 #define DD_CLR_PROFILER_CALLTARGET_TOKENS_H_
 
-#define BUFFER_SIZE 2000
+#define BUFFER_SIZE 1000
 
 #include <corhlpr.h>
 
