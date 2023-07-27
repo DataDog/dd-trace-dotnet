@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Threading;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.SourceGenerators;
 
@@ -10,6 +11,8 @@ namespace Datadog.Trace.Ci.Tagging;
 
 internal partial class TestModuleSpanTags : TestSessionSpanTags
 {
+    private int _itrSkippingCount = 0;
+
     public TestModuleSpanTags()
     {
     }
@@ -55,4 +58,23 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
 
     [Tag(CommonTags.OSVersion)]
     public string OSVersion { get; set; }
+
+    [Metric(TestTags.IntelligentTestRunnerSkippingCount)]
+    public double? IntelligentTestRunnerSkippingCount
+    {
+        get
+        {
+            if (_itrSkippingCount == 0)
+            {
+                return null;
+            }
+
+            return _itrSkippingCount;
+        }
+    }
+
+    internal void IncrementIntelligentTestRunnerSkippingCount()
+    {
+        Interlocked.Increment(ref _itrSkippingCount);
+    }
 }

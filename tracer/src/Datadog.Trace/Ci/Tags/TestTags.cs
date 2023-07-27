@@ -139,5 +139,30 @@ namespace Datadog.Trace.Ci.Tags
         /// Test command working directory
         /// </summary>
         public const string CommandWorkingDirectory = "test.working_directory";
+
+        /// <summary>
+        /// Test skipped by intelligent test runner
+        /// </summary>
+        public const string SkippedByIntelligentTestRunner = "test.skipped_by_itr";
+
+        /// <summary>
+        /// Test skipped reason by Intelligent test runner
+        /// </summary>
+        public const string SkippedByIntelligentTestRunnerReason = "Skipped by Datadog's Intelligent Test Runner";
+
+        /// <summary>
+        /// Intelligent Test Runner Skipping type
+        /// </summary>
+        public const string IntelligentTestRunnerSkippingType = "test.itr.tests_skipping.type";
+
+        /// <summary>
+        /// Intelligent Test Runner by test skipping type
+        /// </summary>
+        public const string IntelligentTestRunnerSkippingTypeTest = "test";
+
+        /// <summary>
+        /// Intelligent Test Runner skipping count
+        /// </summary>
+        public const string IntelligentTestRunnerSkippingCount = "test.itr.tests_skipping.count";
     }
 }

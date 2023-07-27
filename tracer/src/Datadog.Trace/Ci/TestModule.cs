@@ -99,6 +99,7 @@ public sealed class TestModule
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
                 WorkingDirectory = sessionSpanTags.WorkingDirectory,
+                IntelligentTestRunnerSkippingType = TestTags.IntelligentTestRunnerSkippingTypeTest,
             };
         }
         else
@@ -116,6 +117,7 @@ public sealed class TestModule
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
                 OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                IntelligentTestRunnerSkippingType = TestTags.IntelligentTestRunnerSkippingTypeTest,
             };
 
             tags.SetCIEnvironmentValues(environment);

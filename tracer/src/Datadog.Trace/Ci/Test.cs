@@ -347,6 +347,17 @@ public sealed class Test
             case TestStatus.Skip:
                 tags.Status = TestTags.StatusSkip;
                 tags.SkipReason = skipReason;
+                if (tags.SkipReason == TestTags.SkippedByIntelligentTestRunnerReason)
+                {
+                    tags.SkippedByIntelligentTestRunner = "true";
+                    Suite.Tags?.IncrementIntelligentTestRunnerSkippingCount();
+                    Suite.Module.Tags?.IncrementIntelligentTestRunnerSkippingCount();
+                }
+                else
+                {
+                    tags.SkippedByIntelligentTestRunner = "false";
+                }
+
                 break;
         }
 

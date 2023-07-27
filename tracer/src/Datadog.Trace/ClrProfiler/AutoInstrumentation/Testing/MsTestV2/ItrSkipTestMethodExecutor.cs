@@ -6,6 +6,7 @@
 using System;
 using System.Reflection;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
@@ -32,7 +33,7 @@ internal class ItrSkipTestMethodExecutor
         {
             // Create ITR skip span
             MsTestIntegration.OnMethodBegin(testMethodInfo, testMethod.GetType())
-                             .Close(TestStatus.Skip, TimeSpan.Zero, "Skipped by the Intelligent Test Runner");
+                             .Close(TestStatus.Skip, TimeSpan.Zero, TestTags.SkippedByIntelligentTestRunnerReason);
         }
 
         return _arrayInstance;

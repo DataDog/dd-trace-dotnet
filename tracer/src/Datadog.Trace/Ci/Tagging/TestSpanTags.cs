@@ -83,4 +83,7 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(TestTags.SkipReason)]
     public string SkipReason { get; set; }
+
+    [Tag(TestTags.SkippedByIntelligentTestRunner)]
+    public string SkippedByIntelligentTestRunner { get; set; }
 }
