@@ -41,7 +41,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
-    public Dictionary<BenchmarkCase, (TraceId TraceId, ulong SpanId)> SpanIdByBenchmark { get; } = new();
+    public Dictionary<BenchmarkCase, Tuple<TraceId, ulong>> SpanIdByBenchmark { get; } = new();
 
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
@@ -67,7 +67,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? false;
             var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
             var spanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
-            SpanIdByBenchmark[parameters.BenchmarkCase] = (traceId, spanId);
+            SpanIdByBenchmark[parameters.BenchmarkCase] = Tuple.Create(traceId, spanId);
             EnsureAndFillProfilerPathVariables(parameters);
             if (_platformNotSupportedException is null)
             {
@@ -191,8 +191,9 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
         environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
-        environment[ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetTestName] = parameters.BenchmarkCase.Descriptor.DisplayInfo;
-        environment[ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetSpanId] = spanId.ToString();
+        environment[ConfigurationKeys.CIVisibility.InternalTestName] = parameters.BenchmarkCase.Descriptor.DisplayInfo;
+        environment[ConfigurationKeys.CIVisibility.InternalRuntimeId] = RuntimeId.Get();
+        environment[ConfigurationKeys.CIVisibility.InternalSpanId] = spanId.ToString();
 
         const string profilerEnabled = "DD_PROFILING_ENABLED";
         if (!environment.TryGetValue(profilerEnabled, out _))
@@ -243,13 +244,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
             environment[profilerAgentless] = "1";
         }
 
-        var lstTagsValues = new List<string>();
-        lstTagsValues.Add($"test.runtime-id:{RuntimeId.Get()}");
-        lstTagsValues.Add($"test.session_id:{DatadogExporter.Default.TestSession.Tags.SessionId}");
-        lstTagsValues.Add($"test.trace_id:{(traceId.Upper == 0 ? traceId.Lower.ToString() : traceId.ToString())}");
-        lstTagsValues.Add($"test.span_id:{spanId}");
-        lstTagsValues.Add($"test.civisibility:1");
-        environment[ConfigurationKeys.GlobalTags] = string.Join(", ", lstTagsValues);
+        environment[ConfigurationKeys.RuntimeMetricsEnabled] = "1";
     }
 
     /// <inheritdoc />

@@ -121,8 +121,8 @@ namespace environment
     // Enables the workaround for dotnet issue 77973 (https://github.com/dotnet/runtime/issues/77973)
     const shared::WSTRING internal_workaround_77973_enabled = WStr("DD_INTERNAL_WORKAROUND_77973_ENABLED");
 
-    // Internal configuration key for setting the BenchmarkDotNet test name from parent process
-    const shared::WSTRING InternalBenchmarkDotNetTestName = WStr("DD_INTERNAL_CIVISIBILITY_BENCHMARKDOTNET_TESTNAME");
+    // Internal configuration key for setting the runtimeid from parent process
+    const shared::WSTRING internal_civisibility_runtimeid = WStr("DD_INTERNAL_CIVISIBILITY_RUNTIMEID");
 
 } // namespace environment
 } // namespace trace

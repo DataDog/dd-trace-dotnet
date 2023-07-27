@@ -1,7 +1,6 @@
 #include "runtimeid_store.h"
 
 #include "util.h"
-
 #include "../../../shared/src/native-src/util.h"
 
 namespace datadog::shared::nativeloader
@@ -13,7 +12,15 @@ RuntimeIdStore::RuntimeIdStore() : RuntimeIdStore(IsRunningOnIIS())
 RuntimeIdStore::RuntimeIdStore(bool isIis) :
     m_isIis{isIis}
 {
-    m_process_runtime_id = ::shared::GenerateRuntimeId();
+    const auto internalRuntimeId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalRuntimeId);
+    if (internalRuntimeId.empty())
+    {
+        m_process_runtime_id = ::shared::GenerateRuntimeId();
+    }
+    else
+    {
+        m_process_runtime_id = ::shared::ToString(internalRuntimeId);
+    }
 }
 
 const std::string& RuntimeIdStore::Get(AppDomainID app_domain)

@@ -73,15 +73,15 @@ namespace Datadog.Trace.Ci
             var settings = Settings;
 
             // Check if we are in a BenchmarkDotNet child process session.
-            var benchmarkName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetTestName);
-            var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetSpanId);
+            var benchmarkName = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalTestName);
+            var benchmarkSpanId = EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalSpanId);
             if (!string.IsNullOrEmpty(benchmarkName) && !string.IsNullOrEmpty(benchmarkSpanId))
             {
                 // Set the Benchmark span a name as a profiler endpoint
                 var parsedBenchmarkSpanId = ulong.Parse(benchmarkSpanId);
                 Profiler.Instance.ContextTracker.Set(parsedBenchmarkSpanId, parsedBenchmarkSpanId);
                 Profiler.Instance.ContextTracker.SetEndpoint(parsedBenchmarkSpanId, benchmarkName);
-                Log.Information("BenchmarkDotNet process detected, profiling for SpanId: {SpanId} and Endpoint: {Endpoint}", parsedBenchmarkSpanId, benchmarkName);
+                Log.Information("CI Visibility Context Tracker Set Endpoint for SpanId: {SpanId} and Endpoint: {Endpoint}", parsedBenchmarkSpanId, benchmarkName);
                 return;
             }
 
@@ -465,9 +465,9 @@ namespace Datadog.Trace.Ci
             // By configuration
             if (Settings.Enabled)
             {
-                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalBenchmarkDotNetSpanId)))
+                if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.CIVisibility.InternalTestName)))
                 {
-                    Log.Information("CI Visibility Enabled by Configuration (BENCHMARKDOTNET)");
+                    Log.Information("CI Visibility Enabled by internal test name environment variable.");
                     return true;
                 }
 

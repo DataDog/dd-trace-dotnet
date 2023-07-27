@@ -126,7 +126,7 @@ internal class DatadogExporter : IExporter
                     Test? testMethod;
                     if (DatadogProfilerDiagnoser.Default.SpanIdByBenchmark.TryGetValue(report.BenchmarkCase, out var tuple))
                     {
-                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, tuple.TraceId, tuple.SpanId);
+                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, tuple.Item1, tuple.Item2);
                     }
                     else
                     {
