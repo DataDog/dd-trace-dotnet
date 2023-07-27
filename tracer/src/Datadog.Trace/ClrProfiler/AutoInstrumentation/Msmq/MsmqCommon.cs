@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             try
             {
                 string operationName = GetOperationName(tracer, spanKind);
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundServiceName(MsmqConstants.MessagingType);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
                 MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
 
                 tags.Command = command;
