@@ -1,7 +1,6 @@
-#ifndef DD_CLR_PROFILER_FAULT_TOLERANT_H_
-#define DD_CLR_PROFILER_FAULT_TOLERANT_H_
+#ifndef DD_CLR_PROFILER_FAULT_TOLERANT_TRACKER_H_
+#define DD_CLR_PROFILER_FAULT_TOLERANT_TRACKER_H_
 
-#include "../../../shared/src/native-src/string.h"
 #include "../../../shared/src/native-src/util.h"
 #include "corhlpr.h"
 #include "integration.h"
@@ -41,6 +40,6 @@ public:
     std::tuple<LPCBYTE, ULONG> GetILBodyAndSize(ModuleID moduleId, mdMethodDef methodId);
 };
 
-} // namespace debugger
+} // namespace fault_tolerant
 
 #endif

@@ -42,6 +42,8 @@ debugger_*.h                               @DataDog/debugger-dotnet
 /tracer/test/Datadog.Trace.Debugger.IntegrationTests/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
+fault_tolerant_*.cpp                       @DataDog/debugger-dotnet
+fault_tolerant_*.h                         @DataDog/debugger-dotnet
 
 # Serverless
 /tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/   @DataDog/tracing-dotnet  @DataDog/serverless-apm

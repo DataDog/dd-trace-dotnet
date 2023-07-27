@@ -452,7 +452,7 @@ struct TypeSignature
 
 struct FunctionMethodSignature
 {
-public:
+private:
     PCCOR_SIGNATURE pbBase;
     unsigned len;
     ULONG numberOfTypeArguments = 0;
@@ -499,6 +499,11 @@ public:
     bool IsEmpty() const
     {
         return len == 0;
+    }
+
+    std::tuple<PCCOR_SIGNATURE, unsigned> GetFunctionSignatureAndLength()
+    {
+        return {pbBase, len};
     }
 };
 
