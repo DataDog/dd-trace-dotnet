@@ -265,7 +265,7 @@ namespace Datadog.Trace.Configuration
 
             var propagationStyleInject = config
                                         .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
-                                        .AsString();
+                                        .AsString(defaultValue: "tracecontext,Datadog");
 
             PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
 
@@ -277,7 +277,7 @@ namespace Datadog.Trace.Configuration
 
             var propagationStyleExtract = config
                                          .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
-                                         .AsString();
+                                         .AsString(defaultValue: "tracecontext,Datadog");
 
             PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
 
@@ -288,11 +288,18 @@ namespace Datadog.Trace.Configuration
             }
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
-            // It's ok to include W3C multiple times, we handle that later.
+            // Take care to not duplicate the W3C propagator so the telemetry obtained from our settings looks okay
             if (IsActivityListenerEnabled)
             {
-                PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
-                PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                if (!PropagationStyleInject.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
+                {
+                    PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                }
+
+                if (!PropagationStyleExtract.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
+                {
+                    PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                }
             }
             else
             {
