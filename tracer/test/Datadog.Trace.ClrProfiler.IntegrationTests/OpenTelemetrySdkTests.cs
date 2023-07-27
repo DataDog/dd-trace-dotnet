@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (legacyOperationNames)
             {
-                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "true");
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "false");
             }
 
             using (var telemetry = this.ConfigureTelemetry())
@@ -169,7 +169,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static string GetSuffix(string packageVersion, bool legacyOperationNames)
         {
             var legacyEnabled = string.Empty;
-            if (legacyOperationNames)
+            // legacyOperationNames isn't the best name - if false it'll use Activity.OperationName
+            // otherwise, when true it'll use the ActivitySource.Name + ActivityKind
+            if (!legacyOperationNames)
             {
                 legacyEnabled = "_withLegacyOperationName";
             }

@@ -605,8 +605,8 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value.
-            /// This flag defaults to <see langword="false"/> and is intended to allow beta users of OpenTelemetry support
-            /// to toggle on to give them time to upgrade to the new format. This additionally requires that
+            /// This flag defaults to <see langword="true"/> and is intended to allow beta users of OpenTelemetry support
+            /// to toggle off to swap to the different format of setting the OperationName. This additionally requires that
             /// the <c>ActivitySource</c> has a <c>Name</c> property which was introduced in .NET 5 and/or v5 of
             /// <c>System.Diagnostics</c> library.
             /// Note: This feature flag may be dropped when our OpenTelemetry support becomes generally available.
