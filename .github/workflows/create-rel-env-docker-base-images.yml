@@ -1,4 +1,4 @@
-name: "Rel Env docker base images"
+name: "Create Rel Env docker base images"
 on:
   # This GitHub Action is invoked automatically from the main Azure DevOps
   # build when building the main branch (a snapshot). It is launched from
