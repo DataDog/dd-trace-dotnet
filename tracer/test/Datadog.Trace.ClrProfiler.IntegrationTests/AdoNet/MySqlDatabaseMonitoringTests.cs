@@ -27,6 +27,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetEnvironmentVariable("DD_ENV", "testing");
         }
 
+        public static IEnumerable<object[]> GetEnabledConfig()
+            => from packageVersionArray in PackageVersions.SystemDataSqlClient
+               from metadataSchemaVersion in new[] { "v0", "v1" }
+               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
+
         public static IEnumerable<object[]> GetMySql8Data()
         {
             foreach (object[] item in PackageVersions.MySqlData)
@@ -45,50 +51,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
+        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, string.Empty);
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "100");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "randomValue");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "disabled");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "service");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetMySql8Data))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "full");
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         // Check that the spans have been tagged after the comment was propagated
@@ -100,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                 {
                     span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
                 }
-         }
+            }
             else
             {
                 foreach (var span in spans)
@@ -112,10 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
         {
-            if (propagationLevel != string.Empty)
-            {
-                SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagationLevel);
-            }
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagationLevel);
 
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
@@ -163,7 +127,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #endif
             fileName = fileName + (propagationLevel switch
             {
-                "service" or "full" => ".enabled",
+                "service" => ".service",
+                "full" => ".full",
                 _ => ".disabled",
             });
 

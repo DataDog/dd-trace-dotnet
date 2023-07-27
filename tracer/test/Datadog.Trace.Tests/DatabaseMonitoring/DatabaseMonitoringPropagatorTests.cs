@@ -31,13 +31,13 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         }
 
         [Theory]
-        [InlineData("string100", SamplingPriorityValues.UserKeep, "npgsql", "", "")]
-        [InlineData("full", SamplingPriorityValues.UserKeep, "sqlite", "", "")]
-        [InlineData("disabled", SamplingPriorityValues.UserKeep, "sqlclient", "", "")]
-        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service'*/")]
-        [InlineData("full", SamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service'*/")]
-        [InlineData("fUlL", SamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/")]
-        public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment)
+        [InlineData("string100", SamplingPriorityValues.UserKeep, "npgsql", "", "", null)]
+        [InlineData("full", SamplingPriorityValues.UserKeep, "sqlite", "", "", null)]
+        [InlineData("disabled", SamplingPriorityValues.UserKeep, "sqlclient", "", "", null)]
+        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='Test.Service-postgres',ddps='Test.Service'*/", "false")]
+        [InlineData("full", SamplingPriorityValues.UserReject, "sqlclient", "Test.Service-sql-server", "/*dddbs='Test.Service-sql-server',ddps='Test.Service'*/", "false")]
+        [InlineData("fUlL", SamplingPriorityValues.AutoKeep, "mysql", "Test.Service-mysql", "/*dddbs='Test.Service-mysql',ddps='Test.Service',traceparent='00-00000000000000006172c1c9a829c71c-05a5f7b5320d6e4d-01'*/", "true")]
+        public void ExpectedCommentInjected(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment, string traceParentInjectedTest)
         {
             DbmPropagationLevel dbmPropagationLevel;
             Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
@@ -46,8 +46,9 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             Enum.TryParse(integration, true, out integrationId);
 
             var context = new SpanContext(traceId: (TraceId)7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: dbServiceName, "origin");
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context, integrationId);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context, integrationId, out var traceParentInjected);
 
+            traceParentInjected.Should().Be(traceParentInjectedTest);
             returnedComment.Should().Be(expectedComment);
         }
 
@@ -64,8 +65,10 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context, IntegrationId.MySql);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context, IntegrationId.MySql, out var traceParentInjected);
 
+            // Always false since this test never runs for full mode
+            traceParentInjected.Should().Be("false");
             returnedComment.Should().Be(expectedComment);
         }
 
@@ -81,8 +84,10 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span.Context, IntegrationId.MySql);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span.Context, IntegrationId.MySql, out string traceParentInjected);
 
+            // Always false since this test never runs for full mode
+            traceParentInjected.Should().Be("false");
             returnedComment.Should().Be(expectedComment);
         }
     }

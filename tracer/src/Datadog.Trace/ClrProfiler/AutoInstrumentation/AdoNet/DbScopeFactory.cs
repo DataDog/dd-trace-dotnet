@@ -67,12 +67,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled && command.CommandType != CommandType.StoredProcedure)
                 {
-                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId);
+                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId, out var traceParentInjected);
 
                     if (propagatedCommand != string.Empty)
                     {
                         command.CommandText = $"{propagatedCommand} {commandText}";
-                        tags.DbmDataPropagated = "true";
+                        tags.DbmDataPropagated = traceParentInjected;
                     }
                 }
             }
