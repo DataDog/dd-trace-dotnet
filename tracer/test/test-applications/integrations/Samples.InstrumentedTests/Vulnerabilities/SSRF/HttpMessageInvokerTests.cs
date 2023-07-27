@@ -17,7 +17,7 @@ public class HttpMessageInvokerTests : SSRFTests
     {
         var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        httpMessageInvoker.Send(message, CancellationToken.None);
+        ExecuteFunc(() => httpMessageInvoker.Send(message, CancellationToken.None));
         AssertVulnerableSSRF();
     }
 
@@ -30,7 +30,7 @@ public class HttpMessageInvokerTests : SSRFTests
     {
         var httpMessageInvoker = new HttpMessageInvoker(new HttpClientHandler());
         var message = new HttpRequestMessage(HttpMethod.Get, taintedUrlValue);
-        _ = httpMessageInvoker.SendAsync(message, CancellationToken.None).Result;
+        ExecuteFunc(() => httpMessageInvoker.SendAsync(message, CancellationToken.None).Result);
         AssertVulnerableSSRF();
     }
 }

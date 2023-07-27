@@ -21,17 +21,6 @@ public class SSRFTests : InstrumentationTestsBase
         AddTainted(taintedQuery, sourceType);
     }
 
-    protected void ExecuteAction(Action c)
-    {
-        try
-        {
-            c.Invoke();
-        }
-        catch (Exception)
-        {
-        }
-    }
-
     protected void AssertVulnerableSSRF(string evidence = null)
     {
         AssertVulnerable("SSRF", ":+-" + (evidence ?? taintedUrlValue) + "-+:", true, sourceType);

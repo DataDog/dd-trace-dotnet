@@ -11,7 +11,7 @@ public class RestClientTests : SSRFTests
     {
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
-        ExecuteAction(() => client.Execute(request));
+        ExecuteFunc(() => client.Execute(request));
         AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
@@ -20,7 +20,7 @@ public class RestClientTests : SSRFTests
     {
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
-        ExecuteAction(() => client.ExecuteAsync(request, CancellationToken.None));
+        ExecuteFunc(() => client.ExecuteAsync(request, CancellationToken.None));
         AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
@@ -29,7 +29,7 @@ public class RestClientTests : SSRFTests
     {
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
-        ExecuteAction(() => client.Delete(request));
+        ExecuteFunc(() => client.Delete(request));
         AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
@@ -38,7 +38,7 @@ public class RestClientTests : SSRFTests
     {
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
-        ExecuteAction(() => client.Post(request));
+        ExecuteFunc(() => client.Post(request));
         AssertVulnerable("SSRF", sourceType: sourceType);
     }
 
@@ -47,7 +47,7 @@ public class RestClientTests : SSRFTests
     {
         var client = new RestClient(taintedUrlValue);
         var request = new RestRequest("", Method.Get);
-        ExecuteAction(() => client.Get(request));
+        ExecuteFunc(() => client.Get(request));
         AssertVulnerable("SSRF", sourceType: sourceType);
     }
 }

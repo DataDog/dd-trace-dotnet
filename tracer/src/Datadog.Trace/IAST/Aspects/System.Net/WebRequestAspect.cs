@@ -1,4 +1,4 @@
-// <copyright file="HttpWebRequestAspect.cs" company="Datadog">
+// <copyright file="WebRequestAspect.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,10 +11,10 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> HttpWebRequest class aspects </summary>
-[AspectClass("System.Net.Requests,System", AspectType.Sink, VulnerabilityType.SSRF)]
+[AspectClass("System.Net.Requests,System,netstandard", AspectType.Sink, VulnerabilityType.SSRF)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
-public class HttpWebRequestAspect
+public class WebRequestAspect
 {
     /// <summary>
     /// Launches a SSRF vulnerability if the url is tainted

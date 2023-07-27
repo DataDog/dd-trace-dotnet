@@ -276,7 +276,7 @@ public class InstrumentationTestsBase
         AssertNotTainted(instrumented);
     }
 
-    private static object ExecuteFunc(Action function)
+    protected static object ExecuteFunc(Action function)
     {
         try
         {
@@ -290,7 +290,7 @@ public class InstrumentationTestsBase
         return null;
     }
 
-    private static object ExecuteFunc(Func<Object> function)
+    protected static object ExecuteFunc(Func<Object> function)
     {
         try
         {

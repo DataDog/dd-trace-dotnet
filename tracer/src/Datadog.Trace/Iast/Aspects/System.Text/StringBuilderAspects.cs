@@ -66,7 +66,7 @@ public class StringBuilderAspects
     /// <param name="target"> StringBuilder instance </param>
     /// <returns> instance.ToString() </returns>
     [AspectMethodReplace("System.Object::ToString()", "System.Text.StringBuilder")]
-    public static string ToString(StringBuilder? target)
+    public static string ToString(object? target)
     {
         // We want the null reference exception to be launched here if target is null
         var result = target!.ToString();

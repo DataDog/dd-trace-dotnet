@@ -375,10 +375,10 @@ public class UriAspect
     /// <param name="instance">The System.Uri instance.</param>
     /// <returns>A string that represents the current System.Uri instance.</returns>
     [AspectMethodReplace("System.Object::ToString()", "System.Uri")]
-    public static string ToString(Uri instance)
+    public static string ToString(object instance)
     {
         var result = instance.ToString();
-        PropagationModuleImpl.PropagateResultWhenInputTainted(result, instance.OriginalString);
+        PropagationModuleImpl.PropagateResultWhenInputTainted(result, (instance as Uri)?.OriginalString);
         return result;
     }
 }
