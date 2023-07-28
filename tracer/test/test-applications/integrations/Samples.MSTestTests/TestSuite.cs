@@ -8,6 +8,8 @@ namespace Samples.MSTestTests
     [TestClass]
     public class TestSuite
     {
+        public const string SkippedByIntelligentTestRunnerReason = "Skipped by Datadog Intelligent Test Runner";
+
         [AssemblyInitialize]
         public static void AssemblyInit(TestContext context)
         {
@@ -96,6 +98,12 @@ namespace Samples.MSTestTests
         public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
         {
             Assert.AreEqual(expectedResult, xValue / yValue);
+        }
+
+        [TestMethod]
+        [Ignore(SkippedByIntelligentTestRunnerReason)]
+        public void SkipByITRSimulation()
+        {
         }
     }
 }

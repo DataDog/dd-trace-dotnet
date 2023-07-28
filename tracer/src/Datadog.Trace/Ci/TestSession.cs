@@ -45,7 +45,7 @@ public sealed class TestSession
         {
             Command = command ?? string.Empty,
             WorkingDirectory = WorkingDirectory,
-            IntelligentTestRunnerSkippingType = TestTags.IntelligentTestRunnerSkippingTypeTest,
+            IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
         };
 
         tags.SetCIEnvironmentValues(environment);

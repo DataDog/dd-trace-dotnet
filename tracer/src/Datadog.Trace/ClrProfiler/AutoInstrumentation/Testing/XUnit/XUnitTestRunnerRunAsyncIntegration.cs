@@ -43,7 +43,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             {
                 Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 // Refresh values after skip reason change, and create Skip by ITR span.
-                runnerInstance.SkipReason = TestTags.SkippedByIntelligentTestRunnerReason;
+                runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
                 skippableRunnerInstance.SkipReason = runnerInstance.SkipReason;
                 XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
             }

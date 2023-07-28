@@ -36,7 +36,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
         {
             var version = string.IsNullOrEmpty(packageVersion) ? new Version("2.2.8") : new Version(packageVersion);
             List<MockSpan> spans = null;
-            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? 13 : 15;
+            var expectedSpanCount = version.CompareTo(new Version("2.2.5")) < 0 ? 14 : 16;
 
             try
             {
@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
 
                             // remove ITR skippeable tags
-                            AssertTargetSpanExists(targetSpan, CommonTags.TestsSkipped);
+                            AssertTargetSpanExists(targetSpan, IntelligentTestRunnerTags.TestsSkipped);
 
                             // checks the origin tag
                             CheckOriginTag(targetSpan);
@@ -125,8 +125,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     CheckSimpleTestSpan(targetSpan);
                                     break;
 
+                                case "SkipByITRSimulation":
+                                    AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
+                                    AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "true");
+                                    break;
+
                                 case "SimpleSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "SimpleErrorTest":
@@ -141,6 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "TraitSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetSpan);
                                     CheckTraitsValues(targetSpan);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "TraitErrorTest":
@@ -166,6 +174,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         targetSpan,
                                         TestTags.Parameters,
                                         "{\"metadata\":{},\"arguments\":{\"xValue\":\"(default)\",\"yValue\":\"(default)\",\"expectedResult\":\"(default)\"}}");
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "SimpleErrorParameterizedTest":

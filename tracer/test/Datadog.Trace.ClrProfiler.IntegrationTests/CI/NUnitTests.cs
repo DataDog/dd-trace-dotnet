@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const int ExpectedSpanCount = 30;
+        private const int ExpectedSpanCount = 31;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static string[] _testSuiteNames =
@@ -120,7 +120,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanExists(targetSpan, TestTags.CodeOwners);
 
                             // remove ITR skippeable tags
-                            AssertTargetSpanExists(targetSpan, CommonTags.TestsSkipped);
+                            AssertTargetSpanExists(targetSpan, IntelligentTestRunnerTags.TestsSkipped);
 
                             // checks the origin tag
                             CheckOriginTag(targetSpan);
@@ -147,8 +147,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                     CheckSimpleTestSpan(targetSpan);
                                     break;
 
+                                case "SkipByITRSimulation":
+                                    AssertTargetSpanEqual(targetSpan, TestTags.Status, TestTags.StatusSkip);
+                                    AssertTargetSpanEqual(targetSpan, TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "true");
+                                    break;
+
                                 case "SimpleSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetSpan);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "SimpleErrorTest":
@@ -163,6 +170,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "TraitSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetSpan);
                                     CheckTraitsValues(targetSpan);
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "TraitErrorTest":
@@ -189,6 +197,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         "{\"metadata\":{\"test_name\":\"SimpleSkipParameterizedTest(1,1,2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"1\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleSkipParameterizedTest(2,2,4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"2\",\"expectedResult\":\"4\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleSkipParameterizedTest(3,3,6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"3\",\"expectedResult\":\"6\"}}");
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "SimpleErrorParameterizedTest":
@@ -207,6 +216,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                                 case "SimpleAssertInconclusive":
                                     CheckSimpleSkipFromAttributeTest(targetSpan, "The test is inconclusive.");
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "Test" when suite.Contains("SetupError"):

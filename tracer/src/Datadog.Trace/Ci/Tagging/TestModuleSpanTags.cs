@@ -11,7 +11,7 @@ namespace Datadog.Trace.Ci.Tagging;
 
 internal partial class TestModuleSpanTags : TestSessionSpanTags
 {
-    private int _itrSkippingCount = 0;
+    private int _itrSkippingCount;
 
     public TestModuleSpanTags()
     {
@@ -59,22 +59,11 @@ internal partial class TestModuleSpanTags : TestSessionSpanTags
     [Tag(CommonTags.OSVersion)]
     public string OSVersion { get; set; }
 
-    [Metric(TestTags.IntelligentTestRunnerSkippingCount)]
-    public double? IntelligentTestRunnerSkippingCount
-    {
-        get
-        {
-            if (_itrSkippingCount == 0)
-            {
-                return null;
-            }
+    [Metric(IntelligentTestRunnerTags.SkippingCount)]
+    public double? IntelligentTestRunnerSkippingCount => _itrSkippingCount == 0 ? null : _itrSkippingCount;
 
-            return _itrSkippingCount;
-        }
-    }
-
-    internal void IncrementIntelligentTestRunnerSkippingCount()
+    internal void AddIntelligentTestRunnerSkippingCount(int increment)
     {
-        Interlocked.Increment(ref _itrSkippingCount);
+        Interlocked.Add(ref _itrSkippingCount, increment);
     }
 }

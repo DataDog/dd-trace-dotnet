@@ -162,6 +162,16 @@ public sealed class TestSuite
             Tags.Status = TestTags.StatusPass;
         }
 
+        if (Tags.IntelligentTestRunnerSkippingCount is { } itrSkippingCount)
+        {
+            Module.Tags.AddIntelligentTestRunnerSkippingCount((int)itrSkippingCount);
+            Tags.TestsSkipped = "true";
+        }
+        else
+        {
+            Tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
+        }
+
         span.Finish(duration.Value);
 
         Current = null;

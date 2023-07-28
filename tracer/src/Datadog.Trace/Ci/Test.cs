@@ -334,6 +334,8 @@ public sealed class Test
             CIVisibility.Manager?.WriteEvent(testCoverage);
         }
 
+        tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
+
         // Set status
         switch (status)
         {
@@ -347,11 +349,11 @@ public sealed class Test
             case TestStatus.Skip:
                 tags.Status = TestTags.StatusSkip;
                 tags.SkipReason = skipReason;
-                if (tags.SkipReason == TestTags.SkippedByIntelligentTestRunnerReason)
+                if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
                 {
                     tags.SkippedByIntelligentTestRunner = "true";
-                    Suite.Tags?.IncrementIntelligentTestRunnerSkippingCount();
-                    Suite.Module.Tags?.IncrementIntelligentTestRunnerSkippingCount();
+                    tags.TestsSkipped = "true";
+                    Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
                 }
                 else
                 {
