@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DatabaseMonitoring;
@@ -58,6 +59,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
                 scope.Span.Type = SpanTypes.Sql;
+
+                // if the database command has parameters, adds them as tags
+                if (command is DbCommand { Parameters.Count: > 0 } dbCommand)
+                {
+                    foreach (DbParameter parameter in dbCommand.Parameters)
+                    {
+                        scope.Span.SetTag(parameter.ParameterName, parameter.Value?.ToString() ?? string.Empty);
+                    }
+                }
+
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(integrationId);
 
                 if (Iast.Iast.Instance.Settings.Enabled)
