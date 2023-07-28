@@ -59,7 +59,7 @@ namespace Datadog.Trace.Logging.DirectSubmission
             DirectLogSubmissionMinimumLevel = config
                                              .WithKeys(ConfigurationKeys.DirectLogSubmission.MinimumLevel)
                                              .GetAs(
-                                                  () => DefaultMinimumLevel,
+                                                  () => new DefaultResult<DirectSubmissionLogLevel>(DefaultMinimumLevel, nameof(DirectSubmissionLogLevel.Information)),
                                                   converter: x => DirectSubmissionLogLevelExtensions.Parse(x) ?? ParsingResult<DirectSubmissionLogLevel>.Failure(),
                                                   validator: null);
 
