@@ -76,7 +76,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
 
-            SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, legacyOperationNames.ToString());
+            if (!legacyOperationNames)
+            {
+                // this will use the Activity.OperationName as the Span.OperationName
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "false");
+            }
+            else
+            {
+                // this will use the ActivitySource.Name + Activity.Kind as the Span.OperationName
+                SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled, "true");
+            }
 
             using (var telemetry = this.ConfigureTelemetry())
             using (var agent = EnvironmentHelper.GetMockAgent())
