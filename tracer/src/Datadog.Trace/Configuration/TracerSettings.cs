@@ -263,29 +263,23 @@ namespace Datadog.Trace.Configuration
                                                      .WithKeys(ConfigurationKeys.FeatureFlags.OpenTelemetryLegacyOperationNameEnabled)
                                                      .AsBool(false);
 
-            var propagationStyleInject = config
-                                        .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
-                                        .AsString(defaultValue: "tracecontext,Datadog");
+            PropagationStyleInject = config
+                                    .WithKeys(ConfigurationKeys.PropagationStyleInject, "DD_PROPAGATION_STYLE_INJECT", ConfigurationKeys.PropagationStyle)
+                                    .GetAs(
+                                         getDefaultValue: () => new DefaultResult<string[]>(
+                                             new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
+                                             $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                         validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
+                                         converter: style => TrimSplitString(style, commaSeparator));
 
-            PropagationStyleInject = TrimSplitString(propagationStyleInject, commaSeparator);
-
-            if (PropagationStyleInject.Length == 0)
-            {
-                // default value
-                PropagationStyleInject = new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog };
-            }
-
-            var propagationStyleExtract = config
-                                         .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
-                                         .AsString(defaultValue: "tracecontext,Datadog");
-
-            PropagationStyleExtract = TrimSplitString(propagationStyleExtract, commaSeparator);
-
-            if (PropagationStyleExtract.Length == 0)
-            {
-                // default value
-                PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog };
-            }
+            PropagationStyleExtract = config
+                                     .WithKeys(ConfigurationKeys.PropagationStyleExtract, "DD_PROPAGATION_STYLE_EXTRACT", ConfigurationKeys.PropagationStyle)
+                                     .GetAs(
+                                          getDefaultValue: () => new DefaultResult<string[]>(
+                                              new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog },
+                                              $"{ContextPropagationHeaderStyle.W3CTraceContext},{ContextPropagationHeaderStyle.Datadog}"),
+                                          validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
+                                          converter: style => TrimSplitString(style, commaSeparator));
 
             // If Activity support is enabled, we must enable the W3C Trace Context propagators.
             // Take care to not duplicate the W3C propagator so the telemetry obtained from our settings looks okay
@@ -294,11 +288,17 @@ namespace Datadog.Trace.Configuration
                 if (!PropagationStyleInject.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
                 {
                     PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                    // "manually" record the updated value for v2 telemetry using the "unknown" origin, as we
+                    // can't easily tell from here which was the original source (that we're modifying)
+                    telemetry.Record(ConfigurationKeys.PropagationStyleInject, string.Join(",", PropagationStyleInject), recordValue: true, ConfigurationOrigins.Unknown);
                 }
 
                 if (!PropagationStyleExtract.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
                 {
                     PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                    // "manually" record the updated value for v2 telemetry using the "unknown" origin, as we
+                    // can't easily tell from here which was the original source (that we're modifying)
+                    telemetry.Record(ConfigurationKeys.PropagationStyleExtract, string.Join(",", PropagationStyleExtract), recordValue: true, ConfigurationOrigins.Unknown);
                 }
             }
             else
