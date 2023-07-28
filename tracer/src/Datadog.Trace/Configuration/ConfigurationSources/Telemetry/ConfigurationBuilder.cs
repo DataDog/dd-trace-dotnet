@@ -106,7 +106,7 @@ internal readonly struct ConfigurationBuilder
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T? GetAs<T>(Func<T>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
             var result = Source.GetAs<T>(Key, Telemetry, converter, validator, recordValue: true)
                       ?? (FallbackKey1 is null ? null : Source.GetAs<T>(FallbackKey1, Telemetry, converter, validator, recordValue: true))
@@ -126,8 +126,8 @@ internal readonly struct ConfigurationBuilder
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue?.ToString(), recordValue: true, ConfigurationOrigins.Default);
-            return defaultValue!;
+            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
+            return defaultValue.Result!;
         }
 
         // ****************

@@ -168,7 +168,7 @@ namespace Datadog.Trace.Configuration
             MetadataSchemaVersion = config
                                    .WithKeys(ConfigurationKeys.MetadataSchemaVersion)
                                    .GetAs(
-                                        () => SchemaVersion.V0,
+                                        () => new DefaultResult<SchemaVersion>(SchemaVersion.V0, "V0"),
                                         converter: x => x switch
                                         {
                                             "v1" or "V1" => SchemaVersion.V1,
@@ -364,7 +364,7 @@ namespace Datadog.Trace.Configuration
             DbmPropagationMode = config
                                 .WithKeys(ConfigurationKeys.DbmPropagationMode)
                                 .GetAs(
-                                     () => DbmPropagationLevel.Disabled,
+                                     () => new DefaultResult<DbmPropagationLevel>(DbmPropagationLevel.Disabled, nameof(DbmPropagationLevel.Disabled)),
                                      converter: x => ToDbmPropagationInput(x) ?? ParsingResult<DbmPropagationLevel>.Failure(),
                                      validator: null);
 
