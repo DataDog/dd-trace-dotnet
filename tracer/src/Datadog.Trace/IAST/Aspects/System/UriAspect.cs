@@ -22,7 +22,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uriBase">The base URI used to resolve the URI.</param>
     /// <returns>The initialized System.Uri instance created.</returns>
-    [AspectCtorReplace("System.Uri::.ctor(System.String)", AspectFilter.StringLiterals_Any)]
+    [AspectCtorReplace("System.Uri::.ctor(System.String)", AspectFilter.StringLiteral_1)]
     public static Uri Init(string uriBase)
     {
         var result = new Uri(uriBase);
@@ -204,7 +204,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)", AspectFilter.StringLiterals_Any)]
+    [AspectMethodReplace("System.Uri::UnescapeDataString(System.String)", AspectFilter.StringLiteral_0)]
     public static string UnescapeDataString(string uri)
     {
         var result = Uri.UnescapeDataString(uri);
@@ -217,7 +217,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::EscapeUriString(System.String)", AspectFilter.StringLiterals_Any)]
+    [AspectMethodReplace("System.Uri::EscapeUriString(System.String)", AspectFilter.StringLiteral_0)]
     public static string EscapeUriString(string uri)
     {
 #pragma warning disable SYSLIB0013 // obsolete
@@ -232,7 +232,7 @@ public class UriAspect
     /// </summary>
     /// <param name="uri">The uri as string.</param>
     /// <returns>The resulting method result.</returns>
-    [AspectMethodReplace("System.Uri::EscapeDataString(System.String)", AspectFilter.StringLiterals_Any)]
+    [AspectMethodReplace("System.Uri::EscapeDataString(System.String)", AspectFilter.StringLiteral_0)]
     public static string EscapeDataString(string uri)
     {
         var result = Uri.EscapeDataString(uri);
