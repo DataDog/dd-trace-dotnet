@@ -18,5 +18,5 @@ internal static class CodeCoverageTags
     /// <summary>
     /// Code coverage global percentage value
     /// </summary>
-    public const string TotalLines = "test.code_coverage.lines_pct";
+    public const string PercentageOfTotalLines = "test.code_coverage.lines_pct";
 }
