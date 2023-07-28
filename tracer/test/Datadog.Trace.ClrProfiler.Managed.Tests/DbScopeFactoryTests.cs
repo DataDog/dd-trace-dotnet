@@ -151,6 +151,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
 
             // Should have injected the data
             command.CommandText.Should().NotBe(previousCommandData);
+            command.CommandText.Should().Contain(previousCommandData);
         }
 
         [Theory]
