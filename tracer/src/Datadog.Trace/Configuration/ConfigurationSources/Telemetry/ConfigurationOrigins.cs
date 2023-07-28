@@ -49,4 +49,10 @@ internal enum ConfigurationOrigins
     /// </summary>
     [Description("default")]
     Default,
+
+    /// <summary>
+    /// Set where it is difficult/not possible to determine the source of a config
+    /// </summary>
+    [Description("unknown")]
+    Unknown,
 }

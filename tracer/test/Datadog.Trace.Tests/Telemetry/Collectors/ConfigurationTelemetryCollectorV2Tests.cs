@@ -1,8 +1,9 @@
-// <copyright file="ConfigurationTelemetryCollectorV2Tests.cs" company="Datadog">
+﻿// <copyright file="ConfigurationTelemetryCollectorV2Tests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -209,8 +210,26 @@ public class ConfigurationTelemetryCollectorV2Tests
             (null, null) => (ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog"),
         };
 
+        // V2 telemetry will collect an additional ",tracecontext" in each propagator style when the following conditions are met
+        // It will then record it with the "specific" key,
+        // - DD_TRACE_OTEL_ENABLED=true
+        // - "tracecontext" is not already included in the propagation configuration
+        if (activityListenerEnabled == "true" && !ContainsTraceContext(extractValue))
+        {
+            extractKey = ConfigurationKeys.PropagationStyleExtract;
+            extractValue += ",tracecontext";
+        }
+
+        if (activityListenerEnabled == "true" && !ContainsTraceContext(injectValue))
+        {
+            injectKey = ConfigurationKeys.PropagationStyleInject;
+            injectValue += ",tracecontext";
+        }
+
         GetLatestValueFromConfig(data, extractKey).Should().Be(extractValue);
         GetLatestValueFromConfig(data, injectKey).Should().Be(injectValue);
+
+        static bool ContainsTraceContext(string value) => value.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase);
     }
 
 #if NETFRAMEWORK
