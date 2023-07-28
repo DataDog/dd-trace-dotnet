@@ -287,7 +287,21 @@ namespace Datadog.Trace.Configuration
                 PropagationStyleExtract = new[] { ContextPropagationHeaderStyle.W3CTraceContext, ContextPropagationHeaderStyle.Datadog };
             }
 
-            if (!IsActivityListenerEnabled)
+            // If Activity support is enabled, we must enable the W3C Trace Context propagators.
+            // Take care to not duplicate the W3C propagator so the telemetry obtained from our settings looks okay
+            if (IsActivityListenerEnabled)
+            {
+                if (!PropagationStyleInject.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
+                {
+                    PropagationStyleInject = PropagationStyleInject.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                }
+
+                if (!PropagationStyleExtract.Contains(ContextPropagationHeaderStyle.W3CTraceContext, StringComparer.OrdinalIgnoreCase))
+                {
+                    PropagationStyleExtract = PropagationStyleExtract.Concat(ContextPropagationHeaderStyle.W3CTraceContext);
+                }
+            }
+            else
             {
                 DisabledIntegrationNamesInternal.Add(nameof(Configuration.IntegrationId.OpenTelemetry));
             }
