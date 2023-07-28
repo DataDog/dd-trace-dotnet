@@ -680,11 +680,29 @@ partial class Build
                .Where(filepath => Path.GetExtension(filepath) != ".txt")
                .ForEach(DeleteFile);
 
-            // Copy existing files from tracer home to the Bundle location
-            CopyDirectoryRecursively(MonitoringHomeDirectory, BenchmarkHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            // Copy existing files from tracer home to the Benchmark location
+            var requiredFiles = new[]
+            {
+                "Datadog.Trace.dll",
+                "Datadog.Trace.pdb",
+                "System.Diagnostics.DiagnosticSource.dll",
+                "System.Reflection.Emit.dll",
+                "System.Reflection.Emit.ILGeneration.dll",
+                "System.Reflection.Emit.Lightweight.dll",
+                "System.Threading.dll",
+                "Datadog.Profiler.Native.dll",
+                "Datadog.Trace.ClrProfiler.Native.dll",
+                "Datadog.Tracer.Native.dll",
+                "Datadog.Profiler.Native.so",
+                "Datadog.Trace.ClrProfiler.Native.so",
+                "Datadog.Tracer.Native.so",
+                "loader.conf",
+            };
 
-            // Add the create log path script
-            CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BenchmarkHomeDirectory);
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BenchmarkHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite, excludeFile: info =>
+            {
+                return Array.FindIndex(requiredFiles, s => s == info.Name) == -1;
+            });
         });
 
     Target ExtractDebugInfoLinux => _ => _

@@ -1,6 +1,7 @@
 #include "runtimeid_store.h"
 
 #include "util.h"
+
 #include "../../../shared/src/native-src/util.h"
 
 namespace datadog::shared::nativeloader

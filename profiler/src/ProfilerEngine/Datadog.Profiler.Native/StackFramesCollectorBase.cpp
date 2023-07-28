@@ -4,9 +4,10 @@
 #include "StackFramesCollectorBase.h"
 
 #include "EnvironmentVariables.h"
-#include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
+
+#include "shared/src/native-src/util.h"
 
 #include <assert.h>
 #include <chrono>
@@ -109,12 +110,24 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
     // InternalCIVisibilitySpanId for CODE HOTSPOT in the whole process
-    const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
-    if (!internalCIVisibilitySpanId.empty())
+    static std::uint64_t ciVisibilitySpanId = 0;
+    static bool ciVisibilitySpanRequested = false;
+
+    if (!ciVisibilitySpanRequested)
     {
-        const auto spanId = std::stoull(internalCIVisibilitySpanId);
-        _pStackSnapshotResult->SetLocalRootSpanId(spanId);
-        _pStackSnapshotResult->SetSpanId(spanId);
+        const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
+        if (!internalCIVisibilitySpanId.empty())
+        {
+            ciVisibilitySpanId = std::stoull(internalCIVisibilitySpanId);
+        }
+
+        ciVisibilitySpanRequested = true;
+    }
+
+    if (ciVisibilitySpanId > 0)
+    {
+        _pStackSnapshotResult->SetLocalRootSpanId(ciVisibilitySpanId);
+        _pStackSnapshotResult->SetSpanId(ciVisibilitySpanId);
         return true;
     }
     
