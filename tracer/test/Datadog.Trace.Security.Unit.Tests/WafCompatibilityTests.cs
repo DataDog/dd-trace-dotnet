@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Diagnostics;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.TestHelpers;
@@ -16,7 +17,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitializeWithExportsMissing()
         {
-            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
+            // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.3.0");
             libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
@@ -26,7 +28,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [SkippableFact]
         public void ShouldNotInitializeWithDiagnosticsMissing()
         {
-            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.MacOs, SkipOn.ArchitectureValue.ARM64);
+            // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             var libraryInitializationResult = WafLibraryInvoker.Initialize("1.10.0");
             libraryInitializationResult.Success.Should().BeTrue();
             libraryInitializationResult.WafLibraryInvoker.Should().NotBeNull();
