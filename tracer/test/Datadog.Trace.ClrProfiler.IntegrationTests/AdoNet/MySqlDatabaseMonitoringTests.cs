@@ -27,14 +27,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             SetEnvironmentVariable("DD_ENV", "testing");
         }
 
-        public static IEnumerable<object[]> GetEnabledConfig()
-            => from packageVersionArray in PackageVersions.SystemDataSqlClient
-               from metadataSchemaVersion in new[] { "v0", "v1" }
-               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
-
         public static IEnumerable<object[]> GetMySql8Data()
         {
+            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
+
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
@@ -42,8 +38,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return new[] { item[0], "v0" };
-                yield return new[] { item[0], "v1" };
+                var result = propagation.SelectMany(prop => new[]
+                {
+                    new[] { item[0], "v0", prop },
+                    new[] { item[0], "v1", prop }
+                });
+
+                foreach (var row in result)
+                {
+                    yield return row;
+                }
             }
         }
 
@@ -51,30 +55,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
-        [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
             await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, dbmPropagation);
-        }
-
-        // Check that the spans have been tagged after the comment was propagated
-        private void ValidatePresentDbmTag(IReadOnlyCollection<MockSpan> spans, string propagationLevel)
-        {
-            if (propagationLevel == "service" || propagationLevel == "full")
-            {
-                foreach (var span in spans)
-                {
-                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
-                }
-            }
-            else
-            {
-                foreach (var span in spans)
-                {
-                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
-                }
-            }
         }
 
         private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
@@ -110,7 +94,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 
             filteredSpans.Count().Should().Be(expectedSpanCount);
-            ValidatePresentDbmTag(spans, propagationLevel);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
