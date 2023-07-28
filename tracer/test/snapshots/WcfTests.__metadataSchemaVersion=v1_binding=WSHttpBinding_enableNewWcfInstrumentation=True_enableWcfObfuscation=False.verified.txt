@@ -378,7 +378,7 @@ at Samples.Wcf.Server.CalculatorService.BeginServerAsyncAdd(Double n1, Double n2
   {
     TraceId: Id_1,
     SpanId: Id_28,
-    Name: WebClient,
+    Name: Samples.Wcf.internal,
     Resource: WebClient,
     Service: Samples.Wcf,
     Type: custom,

@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: WebClient,
+    Name: Samples.Wcf.internal,
     Resource: WebClient,
     Service: Samples.Wcf,
     Type: custom,
