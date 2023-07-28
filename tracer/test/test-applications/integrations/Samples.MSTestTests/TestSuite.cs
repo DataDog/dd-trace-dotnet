@@ -28,6 +28,12 @@ namespace Samples.MSTestTests
         }
 
         [TestMethod]
+        [Ignore(SkippedByIntelligentTestRunnerReason)]
+        public void SkipByITRSimulation()
+        {
+        }
+
+        [TestMethod]
         [Ignore("Simple skip reason")]
         public void SimpleSkipFromAttributeTest()
         {
@@ -98,12 +104,6 @@ namespace Samples.MSTestTests
         public void SimpleErrorParameterizedTest(int xValue, int yValue, int expectedResult)
         {
             Assert.AreEqual(expectedResult, xValue / yValue);
-        }
-
-        [TestMethod]
-        [Ignore(SkippedByIntelligentTestRunnerReason)]
-        public void SkipByITRSimulation()
-        {
         }
     }
 }
