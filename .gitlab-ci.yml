@@ -21,10 +21,6 @@ variables:
     description: "Set to true to deploy to debugger backend demo application"
   DOTNET_PACKAGE_VERSION:
     description: "Used by the package stage when triggered manually"
-  CI_COMMIT_SHA:
-    description: "Used to override the commit sha in the deploy stage when triggered manually"
-  CI_COMMIT_TAG:
-    description: "Used to override the commit tag in the deploy stage when triggered manually"
 
 build:
   only:
@@ -35,6 +31,7 @@ build:
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: build
   tags: ["runner:windows-docker", "windowsversion:1809"]
   script:
@@ -60,6 +57,7 @@ publish:
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
+      - $CI_COMMIT_TAG # We don't need to build/publish when building a release tag
   stage: publish
   tags: ["runner:windows-docker", "windowsversion:1809"]
   dependencies:
@@ -196,7 +194,8 @@ package:
     - if: $DOTNET_PACKAGE_VERSION
       when: on_success
     - if: '$CI_COMMIT_TAG =~ /^v[0-9]+\.[0-9]+\.[0-9]+(-prerelease)?$/'
-      when: on_success
+      when: manual
+      allow_failure: false
   script:
     - ../.gitlab/build-deb-rpm.sh
 
