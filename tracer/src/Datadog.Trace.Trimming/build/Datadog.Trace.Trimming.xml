@@ -169,6 +169,7 @@
    </assembly>
    <assembly fullname="System.Data" />
    <assembly fullname="System.Data.Common">
+      <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
       <type fullname="System.Data.DataColumn" />
