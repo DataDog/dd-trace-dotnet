@@ -6,9 +6,12 @@
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Data;
+using System.Linq;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using DbType = Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.DbType;
 
@@ -28,6 +31,26 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             yield return new object[] { new Oracle.ManagedDataAccess.Client.OracleCommand(), nameof(IntegrationId.Oracle),    DbType.Oracle     };
             yield return new object[] { new Oracle.DataAccess.Client.OracleCommand(),        nameof(IntegrationId.Oracle),    DbType.Oracle     };
         }
+
+        public static TheoryData<IDbCommand> GetDbmCommandsWithText()
+            => new()
+            {
+                new System.Data.SqlClient.SqlCommand { CommandText = "SELECT 1" },
+                new Microsoft.Data.SqlClient.SqlCommand { CommandText = "SELECT 1" },
+                new MySql.Data.MySqlClient.MySqlCommand { CommandText = "SELECT 1" },
+                new MySqlConnector.MySqlCommand { CommandText = "SELECT 1" },
+                new Npgsql.NpgsqlCommand { CommandText = "SELECT 1" },
+                // We don't support SqlLite or Oracle in DBM
+                // new Microsoft.Data.Sqlite.SqliteCommand { CommandText = "SELECT 1" },
+                // new System.Data.SQLite.SQLiteCommand { CommandText = "SELECT 1" },
+                // new Oracle.ManagedDataAccess.Client.OracleCommand { CommandText = "SELECT 1" },
+                // new Oracle.DataAccess.Client.OracleCommand { CommandText = "SELECT 1" },
+            };
+
+        public static IEnumerable<object[]> GetEnabledDbmData()
+            => from command in GetDbmCommandsWithText()
+               from dbm in new[] { "service", "full" }
+               select new[] { command[0], dbm };
 
         [Theory]
         [MemberData(nameof(GetDbCommands))]
@@ -107,6 +130,70 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
             // Create scope
             using var scope = CreateDbCommandScope(tracer, command);
             Assert.NotEqual("my-custom-type", scope.Span.ServiceName);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
+        public void CreateDbCommandScope_InjectsDbmWhenEnabled(IDbCommand command, string dbmMode)
+        {
+            var previousCommandData = command.CommandText;
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            // Should have injected the data
+            command.CommandText.Should().NotBe(previousCommandData);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetEnabledDbmData))]
+        public void CreateDbCommandScope_DoesNotInjectDbmIntoStoredProcedures(IDbCommand command, string dbmMode)
+        {
+            var previousCommandData = command.CommandText;
+            command.CommandType = CommandType.StoredProcedure;
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.DbmPropagationMode, dbmMode }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            // Should not have injected the data
+            command.CommandText.Should().Be(previousCommandData);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetDbmCommandsWithText))]
+        public void CreateDbCommandScope_DoesNotInjectDbmWhenDisabled(IDbCommand command)
+        {
+            var previousCommandData = command.CommandText;
+
+            var collection = new NameValueCollection
+            {
+                { ConfigurationKeys.DbmPropagationMode, "disabled" }
+            };
+            IConfigurationSource source = new NameValueConfigurationSource(collection);
+            var tracerSettings = new TracerSettings(source, NullConfigurationTelemetry.Instance);
+            var tracer = TracerHelper.Create(tracerSettings);
+
+            using var scope = CreateDbCommandScope(tracer, command);
+            scope.Should().NotBeNull();
+
+            // Should not have injected the data
+            command.CommandText.Should().Be(previousCommandData);
         }
 
         [Theory]
