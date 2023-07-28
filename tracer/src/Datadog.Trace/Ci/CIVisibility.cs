@@ -79,7 +79,6 @@ namespace Datadog.Trace.Ci
             {
                 // Set the Benchmark span a name as a profiler endpoint
                 var parsedBenchmarkSpanId = ulong.Parse(benchmarkSpanId);
-                Profiler.Instance.ContextTracker.Set(parsedBenchmarkSpanId, parsedBenchmarkSpanId);
                 Profiler.Instance.ContextTracker.SetEndpoint(parsedBenchmarkSpanId, benchmarkName);
                 Log.Information("CI Visibility Context Tracker Set Endpoint for SpanId: {SpanId} and Endpoint: {Endpoint}", parsedBenchmarkSpanId, benchmarkName);
                 return;
