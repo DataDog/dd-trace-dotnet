@@ -30,83 +30,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.Npgsql
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationNotSet(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitTracesInNpgsql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, string.Empty);
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationIntValue(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "100");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationRandomValue(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "randomValue");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationDisabled(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "disabled");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationService(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "service");
-        }
-
-        [SkippableTheory]
-        [MemberData(nameof(GetEnabledConfig))]
-        [Trait("Category", "EndToEnd")]
-        public async Task SubmitDbmCommentedSpanspropagationFull(string packageVersion, string metadataSchemaVersion)
-        {
-            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, "full");
-        }
-
-        // Check that the spans have been tagged after the comment was propagated
-        private void ValidatePresentDbmTag(IEnumerable<MockSpan> spans, string propagationLevel)
-        {
-            if (propagationLevel == "service" || propagationLevel == "full")
-            {
-                foreach (var span in spans)
-                {
-                    span.Tags?.Should().ContainKey(Tags.DbmDataPropagated);
-                }
-            }
-            else
-            {
-                foreach (var span in spans)
-                {
-                    span.Tags?.Should().NotContainKey(Tags.DbmDataPropagated);
-                }
-            }
+            await SubmitDbmCommentedSpans(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         private async Task SubmitDbmCommentedSpans(string packageVersion, string metadataSchemaVersion, string propagationLevel)
         {
-            if (propagationLevel != string.Empty)
-            {
-                SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagationLevel);
-            }
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", propagationLevel);
 
             // ALWAYS: 77 spans
             // - NpgsqlCommand: 21 spans (3 groups * 7 spans)
@@ -135,7 +74,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
             filteredSpans.Count().Should().Be(expectedSpanCount);
-            ValidatePresentDbmTag(spans, propagationLevel);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
@@ -148,7 +86,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #endif
             fileName = fileName + (propagationLevel switch
             {
-                "service" or "full" => ".enabled",
+                "full" => ".full",
+                "service" => ".service",
                 _ => ".disabled",
             });
 
