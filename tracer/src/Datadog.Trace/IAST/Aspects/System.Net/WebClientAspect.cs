@@ -13,7 +13,7 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System.Net;
 
 /// <summary> WebClient class aspects </summary>
-[AspectClass("System.Net.WebClient,System", AspectType.Sink, VulnerabilityType.SSRF)]
+[AspectClass("System.Net.WebClient,System", AspectType.Sink, VulnerabilityType.Ssrf)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class WebClientAspect
