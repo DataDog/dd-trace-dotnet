@@ -248,7 +248,7 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     {
         if (_platformNotSupportedException is null)
         {
-            logger.WriteLine("Datadog Profiler, profiles sent.");
+            logger.WriteLine($"Datadog Profiler was attached.");
         }
         else
         {
