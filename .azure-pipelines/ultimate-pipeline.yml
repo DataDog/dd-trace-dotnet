@@ -2707,6 +2707,7 @@ stages:
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_PROFILING_ENABLED: true
         DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data/benchmarks

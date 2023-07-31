@@ -24,7 +24,7 @@ namespace Benchmarks.Trace
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
             const string datadogProfiler = "-datadog:profiler";
 
-            var useDatadogProfiler = false;
+            bool? useDatadogProfiler = null;
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
             {
                 Console.WriteLine("Setting Jetbrains trace collection... (could take time downloading collector binaries)");
