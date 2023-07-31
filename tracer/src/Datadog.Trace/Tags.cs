@@ -372,6 +372,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The stream name associated with the AWS SDK Kinesis span.
+        /// </summary>
+        internal const string StreamName = "streamname";
+
+        /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";
