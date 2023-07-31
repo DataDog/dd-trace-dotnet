@@ -118,7 +118,7 @@ bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThre
         const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
         if (!internalCIVisibilitySpanId.empty())
         {
-            ciVisibilitySpanId = std::stoull(internalCIVisibilitySpanId);
+            ciVisibilitySpanId = std::stoull(shared::ToString(internalCIVisibilitySpanId));
         }
 
         ciVisibilitySpanRequested = true;

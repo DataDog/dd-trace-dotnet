@@ -243,14 +243,8 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
         const string profilerSamplingRate = "DD_INTERNAL_PROFILING_SAMPLING_RATE";
         environment[profilerSamplingRate] = "5";
 
-        var settings = CIVisibility.Settings;
         const string profilerAgentless = "DD_PROFILING_AGENTLESS";
-        if (!environment.TryGetValue(profilerAgentless, out _) && settings.Agentless)
-        {
-            environment[profilerAgentless] = "1";
-        }
-
-        environment[ConfigurationKeys.RuntimeMetricsEnabled] = "1";
+        environment[profilerAgentless] = CIVisibility.Settings.Agentless ? "1" : "0";
     }
 
     /// <inheritdoc />
