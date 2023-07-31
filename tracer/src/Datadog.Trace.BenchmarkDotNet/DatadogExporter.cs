@@ -84,8 +84,7 @@ internal class DatadogExporter : IExporter
             {
                 if (report?.BenchmarkCase?.Descriptor is { Type: { } type } descriptor && summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
                 {
-                    datadogDiagnoser.TestStartTimeByBenchmark.TryGetValue(report.BenchmarkCase, out var benchmarkStartDate);
-                    datadogDiagnoser.TestEndTimeByBenchmark.TryGetValue(report.BenchmarkCase, out var benchmarkEndDate);
+                    BenchmarkMetadata.GetTimes(report.BenchmarkCase, out var benchmarkStartDate, out var benchmarkEndDate);
 
                     if (!testSuites.TryGetValue(type, out var testSuiteWithEndDate))
                     {
@@ -123,16 +122,8 @@ internal class DatadogExporter : IExporter
                         }
                     }
 
-                    Test? testMethod;
-                    if (DatadogProfilerDiagnoser.Default.SpanIdByBenchmark.TryGetValue(report.BenchmarkCase, out var tuple))
-                    {
-                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, tuple.Item1, tuple.Item2);
-                    }
-                    else
-                    {
-                        testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
-                    }
-
+                    BenchmarkMetadata.GetIds(report.BenchmarkCase, out var traceId, out var spanId);
+                    var testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate, traceId, spanId);
                     testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
                     testMethod.SetBenchmarkMetadata(
                         new BenchmarkHostInfo

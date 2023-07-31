@@ -31,10 +31,6 @@ internal class DatadogDiagnoser : IDiagnoser
 
     public DateTime ModuleEndTime { get; private set; }
 
-    public Dictionary<BenchmarkCase, DateTime> TestStartTimeByBenchmark { get; } = new();
-
-    public Dictionary<BenchmarkCase, DateTime> TestEndTimeByBenchmark { get; } = new();
-
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "Datadog" };
 
@@ -56,7 +52,7 @@ internal class DatadogDiagnoser : IDiagnoser
         switch (signal)
         {
             case HostSignal.BeforeAnythingElse:
-                TestStartTimeByBenchmark[parameters.BenchmarkCase] = DateTime.UtcNow;
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, DateTime.UtcNow);
                 break;
             case HostSignal.BeforeProcessStart:
                 ModuleStartTime ??= DateTime.UtcNow;
@@ -65,7 +61,7 @@ internal class DatadogDiagnoser : IDiagnoser
                 ModuleEndTime = DateTime.UtcNow;
                 break;
             case HostSignal.AfterAll:
-                TestEndTimeByBenchmark[parameters.BenchmarkCase] = DateTime.UtcNow;
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, DateTime.UtcNow);
                 break;
         }
     }

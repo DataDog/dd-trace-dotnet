@@ -41,8 +41,6 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// </summary>
     public static readonly DatadogProfilerDiagnoser Default = new();
 
-    public Dictionary<BenchmarkCase, Tuple<TraceId, ulong>> SpanIdByBenchmark { get; } = new();
-
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "DatadogProfiler" };
 
@@ -61,18 +59,23 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
-        if (signal == HostSignal.BeforeProcessStart)
+        switch (signal)
         {
-            CIVisibility.InitializeFromManualInstrumentation();
-            var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? false;
-            var traceId = RandomIdGenerator.Shared.NextTraceId(useAllBits);
-            var spanId = RandomIdGenerator.Shared.NextSpanId(useAllBits);
-            SpanIdByBenchmark[parameters.BenchmarkCase] = Tuple.Create(traceId, spanId);
-            EnsureAndFillProfilerPathVariables(parameters);
-            if (_platformNotSupportedException is null)
-            {
-                SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, traceId, spanId);
-            }
+            case HostSignal.BeforeAnythingElse:
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, DateTime.UtcNow);
+                break;
+            case HostSignal.BeforeProcessStart:
+                BenchmarkMetadata.GetIds(parameters.BenchmarkCase, out var traceId, out var spanId);
+                EnsureAndFillProfilerPathVariables(parameters);
+                if (_platformNotSupportedException is null)
+                {
+                    SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, traceId, spanId);
+                }
+
+                break;
+            case HostSignal.AfterAll:
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, DateTime.UtcNow);
+                break;
         }
     }
 
