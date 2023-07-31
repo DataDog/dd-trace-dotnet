@@ -5,6 +5,7 @@
 #nullable enable
 
 using System.ComponentModel;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
 
@@ -42,7 +43,7 @@ public static class XUnitTestRunnerRunAsyncIntegration
             {
                 Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", runnerInstance.TestClass?.FullName ?? string.Empty, runnerInstance.TestMethod?.Name ?? string.Empty);
                 // Refresh values after skip reason change, and create Skip by ITR span.
-                runnerInstance.SkipReason = "Skipped by the Intelligent Test Runner";
+                runnerInstance.SkipReason = IntelligentTestRunnerTags.SkippedByReason;
                 skippableRunnerInstance.SkipReason = runnerInstance.SkipReason;
                 XUnitIntegration.CreateTest(ref runnerInstance, instance.GetType());
             }
