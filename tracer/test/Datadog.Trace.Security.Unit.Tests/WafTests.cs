@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
@@ -92,6 +93,36 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Theory]
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
+
+        [Fact]
+        public void MemoryLeakCheck()
+        {
+            // Warmup
+            for (int x = 0; x < 10; x++)
+            {
+                Execute(AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120");
+            }
+
+            // Test run
+            var baseline = GetMemory();
+
+            for (int x = 0; x < 1000; x++)
+            {
+                Execute(AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120");
+            }
+
+            var current = GetMemory();
+            current.Should().BeLessThanOrEqualTo(baseline + 10_000_000); // 10Mb margin
+        }
+
+        private long GetMemory()
+        {
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            var proc = Process.GetCurrentProcess();
+            proc.Refresh();
+            return proc.WorkingSet64;
+        }
 
         private void Execute(string address, object value, string flow, string rule)
         {
