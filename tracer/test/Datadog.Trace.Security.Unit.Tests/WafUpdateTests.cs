@@ -22,6 +22,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("SecuritySecuentialTests")]
     public class WafUpdateTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;

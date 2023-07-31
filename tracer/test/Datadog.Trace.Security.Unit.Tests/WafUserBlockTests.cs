@@ -17,6 +17,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("SecuritySecuentialTests")]
     public class WafUserBlockTests : WafLibraryRequiredTest
     {
         [Fact]
