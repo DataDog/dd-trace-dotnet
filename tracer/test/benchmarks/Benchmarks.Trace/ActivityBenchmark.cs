@@ -20,7 +20,7 @@ namespace Benchmarks.Trace;
 
 [MemoryDiagnoser]
 [BenchmarkAgent6]
-public class OpenTelemetryAutoBenchmark
+public class ActivityBenchmark
 {
     private const string SourceName = "BenchmarkSource";
     private static Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
@@ -29,7 +29,7 @@ public class OpenTelemetryAutoBenchmark
 
     private static readonly ActivitySource _source;
 
-    static OpenTelemetryAutoBenchmark()
+    static ActivityBenchmark()
     {
         _source = new ActivitySource(SourceName);
 
