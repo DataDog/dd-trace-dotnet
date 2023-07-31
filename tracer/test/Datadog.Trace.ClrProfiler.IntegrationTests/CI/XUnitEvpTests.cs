@@ -108,7 +108,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                         // ITR tags inside the test suite
                         testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
-                        testSuite.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
 
                         // Check Module
                         Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
@@ -155,9 +154,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                             // check the version
                             AssertTargetSpanEqual(targetTest, "version", "1.0.0");
-
-                            // remove ITR skippeable tags
-                            AssertTargetSpanExists(targetTest, IntelligentTestRunnerTags.TestsSkipped);
 
                             // checks the origin tag
                             CheckOriginTag(targetTest);

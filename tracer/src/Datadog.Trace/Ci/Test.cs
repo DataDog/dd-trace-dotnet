@@ -334,8 +334,6 @@ public sealed class Test
             CIVisibility.Manager?.WriteEvent(testCoverage);
         }
 
-        tags.TestsSkipped = CIVisibility.HasSkippableTests() ? "true" : "false";
-
         // Set status
         switch (status)
         {
@@ -352,7 +350,6 @@ public sealed class Test
                 if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
                 {
                     tags.SkippedByIntelligentTestRunner = "true";
-                    tags.TestsSkipped = "true";
                     Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
                 }
                 else
