@@ -538,6 +538,61 @@ public class ConfigurationBuilderTests
         [InlineData(null)]
         [InlineData("")]
         [InlineData("invalid")]
+        public void GetAs_RecordsTheDefaultValueInTelemetry(string value)
+        {
+            const string key = "key";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+
+            var telemetry = new ConfigurationTelemetry();
+            var actual = new ConfigurationBuilder(source, telemetry)
+                        .WithKeys(key)
+                        .GetAs<Guid?>(
+                             getDefaultValue: () => _default,
+                             validator: null,
+                             converter: _nullableConverter);
+
+            actual.Should().Be(_default);
+            var finalValue = telemetry.GetData()
+                                      .Where(x => x.Name == key)
+                                      .OrderByDescending(x => x.SeqId)
+                                      .FirstOrDefault()
+                                      .Value;
+            finalValue.Should().Be(_default.ToString());
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("invalid")]
+        public void GetAs_RecordsTheProvidedDefaultValueInTelemetry(string value)
+        {
+            const string key = "key";
+            const string stringifiedDefault = "TheDefault";
+            var collection = new Dictionary<string, object> { { key, value } };
+            var source = _factory.GetSource(collection);
+
+            var telemetry = new ConfigurationTelemetry();
+            var actual = new ConfigurationBuilder(source, telemetry)
+                        .WithKeys(key)
+                        .GetAs<Guid?>(
+                             getDefaultValue: () => new DefaultResult<Guid?>(_default, stringifiedDefault),
+                             validator: null,
+                             converter: _nullableConverter);
+
+            actual.Should().Be(_default);
+            var finalValue = telemetry.GetData()
+                                      .Where(x => x.Name == key)
+                                      .OrderByDescending(x => x.SeqId)
+                                      .FirstOrDefault()
+                                      .Value;
+            finalValue.Should().Be(stringifiedDefault);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("invalid")]
         public void GetAs_ReturnsNullWhenCantParseAndNoDefault(string value)
         {
             var collection = new Dictionary<string, object> { { "key", value } };

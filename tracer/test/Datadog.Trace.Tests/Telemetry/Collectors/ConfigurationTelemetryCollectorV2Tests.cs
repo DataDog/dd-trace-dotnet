@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
@@ -21,6 +22,13 @@ namespace Datadog.Trace.Tests.Telemetry;
 
 public class ConfigurationTelemetryCollectorV2Tests
 {
+    public static IEnumerable<object[]> GetPropagatorConfigurations()
+        => from propagationStyleExtract in new string[] { null, "tracecontext" }
+           from propagationStyleInject in new string[] { null, "datadog" }
+           from propagationStyle in new string[] { null, "B3" }
+           from activityListenerEnabled in new[] { "false", "true" }
+           select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle, activityListenerEnabled };
+
     [Fact]
     public void HasChangesAfterEachTracerSettingsAdded()
     {
@@ -168,6 +176,60 @@ public class ConfigurationTelemetryCollectorV2Tests
         var s = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, collector));
 
         GetLatestValueFromConfig(collector.GetData(), ConfigTelemetryData.NativeTracerVersion).Should().Be("None");
+    }
+
+    [Theory]
+    [MemberData(nameof(GetPropagatorConfigurations))]
+    public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle, string activityListenerEnabled)
+    {
+        var collector = new ConfigurationTelemetry();
+        var config = new NameValueCollection
+        {
+            { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
+            { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
+            { ConfigurationKeys.PropagationStyle, propagationStyle },
+            { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
+        };
+
+        _ = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(config), collector));
+
+        var data = collector.GetData();
+
+        using var scope = new AssertionScope();
+        var (extractKey, extractValue) = (propagationStyleExtract, propagationStyle) switch
+        {
+            (not null, _) => (ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract),
+            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, null) => (ConfigurationKeys.PropagationStyleExtract, "tracecontext,Datadog"),
+        };
+
+        var (injectKey, injectValue) = (propagationStyleInject, propagationStyle) switch
+        {
+            (not null, _) => (ConfigurationKeys.PropagationStyleInject, propagationStyleInject),
+            (null, not null) => (ConfigurationKeys.PropagationStyle, propagationStyle),
+            (null, null) => (ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog"),
+        };
+
+        // V2 telemetry will collect an additional ",tracecontext" in each propagator style when the following conditions are met
+        // It will then record it with the "specific" key,
+        // - DD_TRACE_OTEL_ENABLED=true
+        // - "tracecontext" is not already included in the propagation configuration
+        if (activityListenerEnabled == "true" && !ContainsTraceContext(extractValue))
+        {
+            extractKey = ConfigurationKeys.PropagationStyleExtract;
+            extractValue += ",tracecontext";
+        }
+
+        if (activityListenerEnabled == "true" && !ContainsTraceContext(injectValue))
+        {
+            injectKey = ConfigurationKeys.PropagationStyleInject;
+            injectValue += ",tracecontext";
+        }
+
+        GetLatestValueFromConfig(data, extractKey).Should().Be(extractValue);
+        GetLatestValueFromConfig(data, injectKey).Should().Be(injectValue);
+
+        static bool ContainsTraceContext(string value) => value.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase);
     }
 
 #if NETFRAMEWORK
