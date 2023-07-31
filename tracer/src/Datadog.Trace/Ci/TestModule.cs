@@ -99,6 +99,7 @@ public sealed class TestModule
                 SessionId = sessionSpanTags.SessionId,
                 Command = sessionSpanTags.Command,
                 WorkingDirectory = sessionSpanTags.WorkingDirectory,
+                IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
         }
         else
@@ -116,6 +117,7 @@ public sealed class TestModule
                 OSArchitecture = frameworkDescription.OSArchitecture,
                 OSPlatform = frameworkDescription.OSPlatform,
                 OSVersion = CIVisibility.GetOperatingSystemVersion(),
+                IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
             };
 
             tags.SetCIEnvironmentValues(environment);
@@ -375,7 +377,7 @@ public sealed class TestModule
             if (!CIVisibility.HasSkippableTests())
             {
                 // Adds the global code coverage percentage to the module
-                span.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                span.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
             }
 
             // If the code coverage path environment variable is set, we store the json file
@@ -397,13 +399,21 @@ public sealed class TestModule
 
         if (CIVisibility.Settings.TestsSkippingEnabled.HasValue)
         {
-            span.SetTag(CommonTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
-            span.SetTag(CommonTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
+            span.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, CIVisibility.Settings.TestsSkippingEnabled.Value ? "true" : "false");
+        }
+
+        if (Tags.IntelligentTestRunnerSkippingCount.HasValue)
+        {
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, "true");
+        }
+        else
+        {
+            span.SetTag(IntelligentTestRunnerTags.TestsSkipped, CIVisibility.HasSkippableTests() ? "true" : "false");
         }
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
-            span.SetTag(CommonTags.TestCodeCoverageEnabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+            span.SetTag(CodeCoverageTags.Enabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
         }
 
         span.Finish(duration.Value);
