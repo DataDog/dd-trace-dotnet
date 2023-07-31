@@ -7,6 +7,8 @@ namespace Samples.NUnitTests
 {
     public class TestSuite
     {
+        public const string SkippedByIntelligentTestRunnerReason = "Skipped by Datadog Intelligent Test Runner";
+
         [OneTimeSetUp]
         public void Setup()
         {
@@ -112,6 +114,12 @@ namespace Samples.NUnitTests
         public void SimpleAssertInconclusive()
         {
             Assert.Inconclusive("The test is inconclusive.");
+        }
+
+        [Test]
+        [Ignore(SkippedByIntelligentTestRunnerReason)]
+        public void SkipByITRSimulation()
+        {
         }
     }
 
