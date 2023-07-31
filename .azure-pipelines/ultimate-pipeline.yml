@@ -2703,6 +2703,12 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
       env:
