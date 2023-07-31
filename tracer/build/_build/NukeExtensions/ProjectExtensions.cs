@@ -23,19 +23,24 @@ public static class ProjectExtensions
         }
     }
 
-    public static bool RequiresDockerDependency(this Project project)
+    public static DockerDependencyType RequiresDockerDependency(this Project project)
     {
         try
         {
             // Using GetMsBuildProject() instead of built-in so that we can cache the MSBuild projects,
             // because this is very expensive
-            return bool.TryParse(GetMsBuildProject(project).GetProperty("RequiresDockerDependency")?.EvaluatedValue, out var hasDockerDependency)
-                && hasDockerDependency;
+            var propertyValue = GetMsBuildProject(project).GetProperty("RequiresDockerDependency")?.EvaluatedValue;
+            if (propertyValue is null)
+            {
+                return DockerDependencyType.None;
+            }
+
+            return Enum.Parse<DockerDependencyType>(propertyValue);
         }
         catch (Exception ex)
         {
             Logger.Information($"Error checking RequiresDockerDependency for {project?.Name}: {ex}");
-            return false;
+            return DockerDependencyType.None;
         }
     }
 

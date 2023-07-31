@@ -1157,7 +1157,7 @@ partial class Build
                     {
                         _ when exclude.Contains(project.Path) => false,
                         _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                        (_, _, true) => false, // can't use docker on Windows
+                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
                         (_, { } targets, _) => targets.Contains(Framework),
                         _ => true,
                     }
@@ -1305,9 +1305,9 @@ partial class Build
                 .Where(path =>
                 {
                     var project = Solution.GetProject(path);
-                    return (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
+                    return project.TryGetTargetFrameworks() switch
                     {
-                        (_, { } targets, _) => targets.Contains(Framework),
+                        { } targets => targets.Contains(Framework),
                         _ => true,
                     };
                 });
@@ -1571,7 +1571,8 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (var required, { } p) => p.RequiresDockerDependency() == required,
+                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
                 .Where(x => 
                            x.project?.Name switch
@@ -1616,7 +1617,8 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (var required, { } p) => p.RequiresDockerDependency() == required,
+                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
             var rid = (IsLinux, IsArm64) switch

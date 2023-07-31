@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

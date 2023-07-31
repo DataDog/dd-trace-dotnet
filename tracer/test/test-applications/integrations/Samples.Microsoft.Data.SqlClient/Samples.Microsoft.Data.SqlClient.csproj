@@ -7,7 +7,8 @@
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <!-- We don't need Docker for this sample on Windows -->
+    <RequiresDockerDependency>LinuxAndMac</RequiresDockerDependency>
 
   </PropertyGroup>
 

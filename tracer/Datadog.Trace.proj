@@ -8,14 +8,6 @@
     <CppProject Include="src\**\*.vcxproj"/>
     <CppTestProject Include="test\**\*.vcxproj"/>
     <FrameworkReproduction Include="test\test-applications\regression\StackExchange.Redis.AssemblyConflict.LegacyProject\StackExchange.Redis.AssemblyConflict.LegacyProject.csproj" />
-
-    <!-- Assumes that the core C# projects are already built first -->
-    <!-- Filter the sample projects by various attributes -->
-    <PackageVersionSampleFilteredBySampleName Include="@(PackageVersionSample)" Condition="'$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)'" />
-    <PackageVersionSampleFilteredByFramework Include="@(PackageVersionSampleFilteredBySampleName)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
-    <PackageVersionSampleFilteredByPlatform Include="@(PackageVersionSampleFilteredByFramework)" Condition="('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')" />
-    <PackageVersionSampleFilteredByDocker Include="@(PackageVersionSampleFilteredByPlatform)" Condition="'$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)' == '$(IncludeTestsRequiringDocker)'" />
-    <PackageVersionSampleFiltered Include="@(PackageVersionSampleFilteredByDocker)" Condition="'$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)' == '$(IncludeTestsRequiringDocker)'" />
   </ItemGroup>
 
   <!--  Used by CompileNativeSrcWindows-->
@@ -42,6 +34,16 @@
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
 
+    <ItemGroup>
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFilteredBySampleName Include="@(PackageVersionSample)" Condition="'$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)'" />
+      <PackageVersionSampleFilteredByFramework Include="@(PackageVersionSampleFilteredBySampleName)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleFilteredByPlatform Include="@(PackageVersionSampleFilteredByFramework)" Condition="('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')" />
+      <PackageVersionSampleFilteredByDocker Include="@(PackageVersionSampleFilteredByPlatform)" Condition="'$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None')" />
+      <PackageVersionSampleFiltered Include="@(PackageVersionSampleFilteredByDocker)" />
+    </ItemGroup>
+
     <!-- Build the sample projects concurrently -->
     <MSBuild Targets="Restore" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
@@ -50,6 +52,16 @@
 
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
+
+    <ItemGroup>
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFilteredBySampleName Include="@(PackageVersionSample)" Condition="'$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)'" />
+      <PackageVersionSampleFilteredByFramework Include="@(PackageVersionSampleFilteredBySampleName)" Condition="'%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)'" />
+      <PackageVersionSampleFilteredByPlatform Include="@(PackageVersionSampleFilteredByFramework)" Condition="('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')" />
+      <PackageVersionSampleFilteredByDocker Include="@(PackageVersionSampleFilteredByPlatform)" Condition="'$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None')" />
+      <PackageVersionSampleFiltered Include="@(PackageVersionSampleFilteredByDocker)" />
+    </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
     <MSBuild Targets="Publish" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
