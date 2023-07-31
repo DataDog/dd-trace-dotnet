@@ -57,6 +57,12 @@ namespace Datadog.Trace.ServiceFabric
 #else
         private static readonly byte[] RemotingUriBytes = new byte[] { 217, 35, 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 117, 114, 105 };
 #endif
+        // RemotingServiceNameBytes = MessagePack.Serialize("service-fabric.service-remoting.service");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> RemotingServiceNameBytes => new byte[] { 217, 39, 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] RemotingServiceNameBytes = new byte[] { 217, 39, 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
         // RemotingMethodNameBytes = MessagePack.Serialize("service-fabric.service-remoting.method-name");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> RemotingMethodNameBytes => new byte[] { 217, 43, 115, 101, 114, 118, 105, 99, 101, 45, 102, 97, 98, 114, 105, 99, 46, 115, 101, 114, 118, 105, 99, 101, 45, 114, 101, 109, 111, 116, 105, 110, 103, 46, 109, 101, 116, 104, 111, 100, 45, 110, 97, 109, 101 };
@@ -94,6 +100,7 @@ namespace Datadog.Trace.ServiceFabric
                 "service-fabric.node-name" => NodeName,
                 "service-fabric.service-name" => ServiceName,
                 "service-fabric.service-remoting.uri" => RemotingUri,
+                "service-fabric.service-remoting.service" => RemotingServiceName,
                 "service-fabric.service-remoting.method-name" => RemotingMethodName,
                 "service-fabric.service-remoting.method-id" => RemotingMethodId,
                 "service-fabric.service-remoting.interface-id" => RemotingInterfaceId,
@@ -126,6 +133,9 @@ namespace Datadog.Trace.ServiceFabric
                     break;
                 case "service-fabric.service-remoting.uri": 
                     RemotingUri = value;
+                    break;
+                case "service-fabric.service-remoting.service": 
+                    RemotingServiceName = value;
                     break;
                 case "service-fabric.service-remoting.method-name": 
                     RemotingMethodName = value;
@@ -188,6 +198,11 @@ namespace Datadog.Trace.ServiceFabric
             if (RemotingUri is not null)
             {
                 processor.Process(new TagItem<string>("service-fabric.service-remoting.uri", RemotingUri, RemotingUriBytes));
+            }
+
+            if (RemotingServiceName is not null)
+            {
+                processor.Process(new TagItem<string>("service-fabric.service-remoting.service", RemotingServiceName, RemotingServiceNameBytes));
             }
 
             if (RemotingMethodName is not null)
@@ -268,6 +283,13 @@ namespace Datadog.Trace.ServiceFabric
             {
                 sb.Append("service-fabric.service-remoting.uri (tag):")
                   .Append(RemotingUri)
+                  .Append(',');
+            }
+
+            if (RemotingServiceName is not null)
+            {
+                sb.Append("service-fabric.service-remoting.service (tag):")
+                  .Append(RemotingServiceName)
                   .Append(',');
             }
 

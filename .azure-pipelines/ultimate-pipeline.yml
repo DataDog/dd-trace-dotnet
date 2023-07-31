@@ -3382,6 +3382,7 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
+# Only run these on merges to master etc
 - stage: upload_container_images
   condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
@@ -3406,15 +3407,16 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
       - bash: |
-          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_snapshot=$(isMainBranch)"
+          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-rel-env-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
           curl \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_snapshot":"$(isMainBranch)"}}'
+            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/create-rel-env-docker-base-images.yml/dispatches \
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_release_version":"False"}}'
         displayName: Start the generation of docker base images on GitHub Actions worfklow
+        condition: eq(variables['isMainBranch'], true)
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 

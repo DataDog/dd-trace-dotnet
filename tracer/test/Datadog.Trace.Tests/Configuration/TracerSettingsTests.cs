@@ -630,10 +630,10 @@ namespace Datadog.Trace.Tests.Configuration
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "Datadog" })]
+        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
         public void PropagationStyleInject(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_INJECT";
@@ -648,16 +648,16 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
             }
         }
 
         [Theory]
         [InlineData("test1,, ,test2", "test3,, ,test4", "test5,, ,test6", new[] { "test1", "test2" })]
-        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "Datadog" })]
+        [InlineData("", "test3,, ,test4", "test5,, ,test6", new[] { "tracecontext", "Datadog" })]
         [InlineData(null, "test3,, ,test4", "test5,, ,test6", new[] { "test3", "test4" })]
         [InlineData(null, null, "test5,, ,test6", new[] { "test5", "test6" })]
-        [InlineData(null, null, null, new[] { "Datadog" })]
+        [InlineData(null, null, null, new[] { "tracecontext", "Datadog" })]
         public void PropagationStyleExtract(string value, string legacyValue, string fallbackValue, string[] expected)
         {
             const string legacyKey = "DD_PROPAGATION_STYLE_EXTRACT";
@@ -672,7 +672,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
             }
         }
 

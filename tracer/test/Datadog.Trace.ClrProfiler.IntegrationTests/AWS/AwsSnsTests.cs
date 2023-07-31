@@ -31,7 +31,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                from metadataSchemaVersion in new[] { "v0", "v1" }
                select new[] { packageVersionArray[0], metadataSchemaVersion };
 
-        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsAwsSns(metadataSchemaVersion);
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Tags["span.kind"] switch
+        {
+            SpanKinds.Consumer => span.IsAwsSnsInbound(metadataSchemaVersion),
+            SpanKinds.Producer => span.IsAwsSnsOutbound(metadataSchemaVersion),
+            SpanKinds.Client => span.IsAwsSnsRequest(metadataSchemaVersion),
+            _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the AWS SNS integration: {span.Tags["span.kind"]}", nameof(span)),
+        };
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
@@ -54,7 +60,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var frameworkName = "NetCore";
 #endif
                 var spans = agent.WaitForSpans(expectedCount);
-                var snsSpans = spans.Where(span => span.Name == "sns.request");
+                var snsSpans = spans.Where(span => span.Tags.TryGetValue("component", out var component) && component == "aws-sdk");
+
+                snsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
                 var host = Environment.GetEnvironmentVariable("AWS_SNS_HOST");
@@ -72,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 settings.DisableRequireUniquePrefix();
 
-                // Note: http.request spans are expected for the following SNS API's that don't have explicit support
+                // Note: http.request spans are expected for the following SNS APIs that don't have explicit support
                 // - ListTopics
                 // - GetTopicAttributes
                 // - SetTopicAttributes

@@ -71,8 +71,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             foreach (var kvp in _mappings)
             {
-                namingSchema.Messaging.GetInboundServiceName(kvp.Key).Should().Be(kvp.Value);
-                namingSchema.Messaging.GetOutboundServiceName(kvp.Key).Should().Be(kvp.Value);
+                namingSchema.Messaging.GetServiceName(kvp.Key).Should().Be(kvp.Value);
             }
         }
 
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                     _ => DefaultServiceName,
                 };
 
-                namingSchema.Messaging.GetInboundServiceName(key).Should().Be(expectedServiceName);
-                namingSchema.Messaging.GetOutboundServiceName(key).Should().Be(expectedServiceName);
+                namingSchema.Messaging.GetServiceName(key).Should().Be(expectedServiceName);
             }
         }
 
@@ -139,6 +137,21 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateAwsSqsTags("spanKind").Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAwsSnsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSnsTags),
+                _ => typeof(AwsSnsV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateAwsSnsTags("spanKind").Should().BeOfType(expectedType);
         }
     }
 }
