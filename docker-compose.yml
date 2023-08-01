@@ -716,7 +716,6 @@ services:
       - framework=${framework:-netcoreapp3.1}
       - Filter=${Filter:- } #optional
       - SampleName=${SampleName:- } #optional
-      - SampleName #optional
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
