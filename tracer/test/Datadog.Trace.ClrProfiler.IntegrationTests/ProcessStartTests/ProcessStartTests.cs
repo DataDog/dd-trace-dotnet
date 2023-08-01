@@ -62,7 +62,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task RunTest(string metadataSchemaVersion)
         {
-            const int expectedSpanCount = 5;
+            int expectedSpanCount = 5;
+            // 3 on non-windows because of SecureString
+            if (!EnvironmentTools.IsWindows())
+            {
+                expectedSpanCount = 3;
+            }
+
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
