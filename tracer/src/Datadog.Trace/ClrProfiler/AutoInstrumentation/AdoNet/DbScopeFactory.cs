@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || parent.GetTag(Tags.DbmDataPropagated) != null))
+                    (parent.ResourceName == commandText || commandText.StartsWith("/*dddbs=")))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
