@@ -14,6 +14,7 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
   - [Properties](#properties)
 - [Interfaces](#interfaces)
 - [Current Limitations](#current-limitations)
+- [Testing](#testing)
 
 ### Creating a new automatic instrumentation implementation
 
@@ -276,3 +277,152 @@ There are some current limitations with what types/methods with our `CallTarget`
 5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
 
 Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
+
+### Testing
+
+When adding a new integration or making changes, you must make sure to include _integration_ tests, in addition to any unit tests that you deem useful. Integration tests run real sample application that use the target libraries, are instrumented using automatic instrumentation, and create traces that are sent to a mock agent. They are one of the best ways of knowing for sure that your integration is _actually_ working as you expect!
+
+#### General approach
+
+This section describes how we typically build integration tests in the dd-trace-dotnet repo, and how they execute.
+
+Integration testing requires three main components:
+
+- A sample application, typically placed in the [tracer/test/test-applications/integrations](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/test/test-applications/integrations) folder, prefixed with `Samples.`, which makes use of your application
+- An integration test typically placed in the [Datadog.Trace.ClrProfiler.IntegrationTests](https://github.com/DataDog/dd-trace-dotnet/tree/master/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests) project. The test typically inherits from `TracingIntegrationTest`, runs the sample and a mock agent, and makes assertions about the traces and telemetry it receives.
+- Depending on the integration, you may need to run a service in docker (e.g. a database/message queue)
+- Update the package version generator
+
+An important aspect of the integration testing is testing against _multiple_ versions of your integration library. For some libraries, this can mean a lot of versions, so we have infrastructure for generating this automatically.
+
+#### Developing the integration test
+
+Often, the simplest way to get started is to duplicate an existing sample project and test.
+
+##### Creating the Sample project
+
+In your sample project file, ensure you have a property group that looks similar to the following:
+
+```xml
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <!-- The Version number specified here        👇 is the "default" version. This is used  -->
+    <ApiVersion Condition="'$(ApiVersion)' == ''">1.4.3</ApiVersion>
+    
+    <!-- 👇Required to build multiple projects with the same Configuration|Platform -->
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <GenerateTargetFrameworkAttribute>false</GenerateTargetFrameworkAttribute>
+
+    <!-- If you need to run a docker service (like a database, or message queue) then add this attribute.  -->
+    <RequiresDockerDependency>true</RequiresDockerDependency>
+
+  </PropertyGroup>
+  
+  <ItemGroup>
+    <!-- Use the ApiVersion variable in the library ref 👇 -->
+    <PackageReference Include="Some.Library" Version="$(ApiVersion)" />
+  </ItemGroup>
+
+  <!-- ... other configuration -->
+</Project>
+```
+
+The `$(ApiVersion)` creates an MSBuild variable. This is set to the defaul value you provide on Windows or when running from an IDE. During development it's often easiest to change this value and recompile your sample to test different versions (see the later section on running the tests locally).
+
+In CI, or when do "multi-version" testing, the project will be built multiple times, with different versions, substituting `$(ApiVersion)` for each of the supported package versions.
+
+##### Configuring the API versions
+
+We use a [Nuke](https://nuke.build/) target to automatically generate all the required boilerplate to test against multiple package versions. To add support for a new library you must:
+
+- Update [tracer/build/PackageVersionsGeneratorDefinitions.json](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/PackageVersionsGeneratorDefinitions.json) to describe which versions to test.
+- If you're instrumenting a new NuGet package/assembly, add an entry into [the `IntegrationMap` dictionary](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/build/_build/Honeypot/IntegrationGroups.cs) which maps from an assembly name to a NuGet package name.
+- Using `./tracer/build.ps1` (or appropriate script for your platform) run `./tracer/build.ps1 GeneratePackageVersions` to generate all the boilerplate.
+
+The JSON format has various mechanisms for only testing specific framework versions (if required), as well as which _specific_ versions to test on every PR (you can use `*` for "floating" versions which are automatically updated to new versions as packages are released.)
+
+Note that running `GeneratePackageVersions` updates _all_ the packages in the solution. This can lead to lots of unrelated changes (\*\*Cough, AWS SDK, Cough\*\*). It's best to revert the changes that don't apply strictly to your integration to avoid noise.
+
+##### Creating the integration test
+
+As for the sample, copying an existing test is often the simplest approach, but the important points are:
+
+- The Test should inherit from the abstract `TracingIntegrationTest` class.
+  - You will need to implement the `ValidateIntegrationSpan` method, which is used to validate spans have the required tags.
+- Pass your sample name in the base constructor
+- Start a mock agent in your integration tests
+- Use snapshot testing to assert that subsequent changes are correctly represented in traces
+
+##### Add required docker services
+
+If you need to run a database/message queue/other service to support your integration, you will need to update [the docker-compose.yml file](https://github.com/DataDog/dd-trace-dotnet/blob/master/docker-compose.yml)
+
+- Add the docker-compose service to the file.
+- Consider if you need a different service running on ARM64.
+- Make sure to "connect" the `IntegrationTests` and `IntegrationTests.Arm64` test services to your database service using `depends_on`.
+- Make sure to "connect" the `StartDependencies` (and `StartDependencies.Arm64`) services to your database service using `depends_on`, and update the `command` to make sure for your database service is listening on the correct port.
+- Use environment variables to pass the host information to the sample running in the integration tests container.
+
+Once all these steps are complete, you're ready to test
+
+#### Local testing using Nuke
+
+How you test your changes locally depends on several factors:
+
+- Do you need to do multi-api-version testing (normal for integrations)?
+- Do you need to run a docker service?
+- Are you on Windows/Linux/macOS
+
+If you need a docker service (i.e. you updated docker-compose.yml), its typically easiest to _not_ use docker-compose, and instead run a "standalone" version of the service. This is due to the way docker networking works. 
+
+For example, to run a MongoDB service locally, you can use something like this:
+
+```bash
+docker run --rm -p 27017:27017 mongo:4.0.9
+```
+
+Which exposes `localhost:27017` on your host. This is one the easiest ways to test on Windows. Things are trickier on macOS (Someone who uses it should update this!)
+
+##### On Windows
+
+On Windows, we _don't_ typically run multi-api-version tests. There is experimental support locally for this, but you may run into issues. To run against a _single_ version (the default version lised in the sample) you can use:
+
+```bash
+# Build the tracer with your changes
+# You need to run this every time you change your integration
+# But not if you're just changing a test/sample
+./tracer/build.ps1 BuildTracerHome -buildConfiguration Debug
+
+# Build and run the integration tests, building only
+# your sample, and running only your new tests
+# You can choose whichever framework is appropriate
+./tracer/build.ps1 BuildAndRunWindowsIntegrationTests -buildConfiguration Debug -framework net462 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+```
+
+##### On macOs
+
+TBC
+
+#### Testing in CI
+
+In CI, for PRs, the Windows build runs against a single API version (the default version listed in your sample's _.csproj_ file). On Linux, we test against all of the "specific" versions you listed in the _PackageVersionsGeneratorDefinitions.json_ file.
+
+When creating a new integration, or when making significant changes to an integration, you should _also_ do a dedicated run that tests all the supported minor versions for your package. 
+
+You can do this [by going to Azure DevOps](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54):
+
+- Click **Run Pipeline**
+- Under **branch/tag** set the name of your branch. Note that you _can't_ use the `pr/xyz` pseudo-branch here, it has to be your _real_ branch.
+- Under **Stages**, _optionally_ limit to only the stages you need. For example, to run Linux x64 and Linux arm64 integration tests, select the following stages, then click **Use selected stages**. (Check there are no missing "dependent" stages, as new stages may hae been added subsequently)
+  - `merge_commit_id`
+  - `generate_variables`
+  - `build_linux_tracer`
+  - `build_linux_profiler`
+  - `package_linux`
+  - `integration_tests_linux`
+- Under **Variables** set the following values, then click the **Back arrow**
+  - `perform_comprehensive_testing`= `true` - to test against all package versions
+  - `run_all_test_frameworks` = `true` - to test against all supported framework versions 
+  - `TEST_FILTER` = `MyNewIntegrationTests` - the test class to run
+  - `TEST_SAMPLE_NAME` = `Samples.MyNewSample` - the sample to build
+- Click **Run**
