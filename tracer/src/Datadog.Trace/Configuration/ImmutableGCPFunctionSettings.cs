@@ -12,7 +12,7 @@ namespace Datadog.Trace.Configuration
     /// References:
     /// https://cloud.google.com/functions/docs/configuring/env-var#runtime_environment_variables_set_automatically
     /// </summary>
-    internal class ImmutableGCPFunctionSettings
+    internal static class ImmutableGCPFunctionSettings
     {
         internal static bool GetIsGCPFunction()
         {

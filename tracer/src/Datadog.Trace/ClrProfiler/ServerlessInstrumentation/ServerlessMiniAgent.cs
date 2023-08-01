@@ -72,7 +72,7 @@ internal static class ServerlessMiniAgent
             process.StartInfo.FileName = serverlessMiniAgentPath;
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
-            process.OutputDataReceived += new DataReceivedEventHandler(MiniAgentDataReceivedHandler);
+            process.OutputDataReceived += MiniAgentDataReceivedHandler;
 
             process.Start();
             process.BeginOutputReadLine();
