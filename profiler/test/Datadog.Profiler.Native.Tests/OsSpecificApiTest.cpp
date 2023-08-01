@@ -19,7 +19,7 @@ TEST(OsSpecificApiTest, CheckLastErrorWithSystemMessage)
     bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
 
     ASSERT_TRUE(hasSystemMessage);
-    ASSERT_TRUE(expectedErrorCode == errorCode);
+    ASSERT_EQ(expectedErrorCode, errorCode);
 }
 
 TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
@@ -33,7 +33,7 @@ TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
     bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
 
     ASSERT_FALSE(hasSystemMessage);
-    ASSERT_TRUE(expectedErrorCode == errorCode);
+    ASSERT_EQ(expectedErrorCode, errorCode);
 }
 
 #else
