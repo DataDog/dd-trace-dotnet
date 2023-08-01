@@ -19,6 +19,9 @@ namespace Datadog.Trace.Tagging
         public string Operation { get; set; }
 
         [Tag(Trace.Tags.AwsRegion)]
+        public string AwsRegion { get; set; }
+
+        [Tag(Trace.Tags.Region)]
         public string Region { get; set; }
 
         [Tag(Trace.Tags.AwsRequestId)]
@@ -26,6 +29,9 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.AwsServiceName)]
         public string Service { get; set; }
+
+        [Tag(Trace.Tags.AwsService)]
+        public string AwsService { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }

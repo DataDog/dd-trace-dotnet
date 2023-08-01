@@ -9,11 +9,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSnsTags
     {
-        // TopicNameBytes = MessagePack.Serialize("aws.topic.name");
+        // AwsTopicNameBytes = MessagePack.Serialize("aws.topic.name");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> TopicNameBytes => new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
+        private static ReadOnlySpan<byte> AwsTopicNameBytes => new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
 #else
-        private static readonly byte[] TopicNameBytes = new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
+        private static readonly byte[] AwsTopicNameBytes = new byte[] { 174, 97, 119, 115, 46, 116, 111, 112, 105, 99, 46, 110, 97, 109, 101 };
+#endif
+        // TopicNameBytes = MessagePack.Serialize("topicname");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TopicNameBytes => new byte[] { 169, 116, 111, 112, 105, 99, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] TopicNameBytes = new byte[] { 169, 116, 111, 112, 105, 99, 110, 97, 109, 101 };
 #endif
         // TopicArnBytes = MessagePack.Serialize("aws.topic.arn");
 #if NETCOREAPP
@@ -32,7 +38,8 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "aws.topic.name" => TopicName,
+                "aws.topic.name" => AwsTopicName,
+                "topicname" => TopicName,
                 "aws.topic.arn" => TopicArn,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
@@ -44,6 +51,9 @@ namespace Datadog.Trace.Tagging
             switch(key)
             {
                 case "aws.topic.name": 
+                    AwsTopicName = value;
+                    break;
+                case "topicname": 
                     TopicName = value;
                     break;
                 case "aws.topic.arn": 
@@ -60,9 +70,14 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (AwsTopicName is not null)
+            {
+                processor.Process(new TagItem<string>("aws.topic.name", AwsTopicName, AwsTopicNameBytes));
+            }
+
             if (TopicName is not null)
             {
-                processor.Process(new TagItem<string>("aws.topic.name", TopicName, TopicNameBytes));
+                processor.Process(new TagItem<string>("topicname", TopicName, TopicNameBytes));
             }
 
             if (TopicArn is not null)
@@ -80,9 +95,16 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (TopicName is not null)
+            if (AwsTopicName is not null)
             {
                 sb.Append("aws.topic.name (tag):")
+                  .Append(AwsTopicName)
+                  .Append(',');
+            }
+
+            if (TopicName is not null)
+            {
+                sb.Append("topicname (tag):")
                   .Append(TopicName)
                   .Append(',');
             }

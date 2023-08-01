@@ -22,6 +22,9 @@ namespace Datadog.Trace.Tagging
         }
 
         [Tag(Trace.Tags.AwsTopicName)]
+        public string AwsTopicName { get; set; }
+
+        [Tag(Trace.Tags.TopicName)]
         public string TopicName { get; set; }
 
         [Tag(Trace.Tags.AwsTopicArn)]
