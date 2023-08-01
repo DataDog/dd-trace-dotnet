@@ -156,14 +156,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("out.host: mysql57", "out.host: mysql");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: mysql");
 
+            var fileName = nameof(MySqlCommandTests);
+
 #if NET5_0_OR_GREATER
-            var suffix = "Net";
+            fileName = fileName + ".Net";
 #elif NET462
-            var suffix = "Net462";
+            fileName = fileName + ".Net462";
 #else
-            var suffix = "NetCore";
+            fileName = fileName + ".NetCore";
 #endif
-            suffix = suffix + (dbmPropagation switch
+            fileName = fileName + (dbmPropagation switch
             {
                 "full" => ".tagged",
                 _ => ".untagged",
@@ -171,7 +173,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
                               .DisableRequireUniquePrefix()
-                              .UseFileName($"{nameof(MySqlCommandTests)}.{suffix}.Schema{metadataSchemaVersion.ToUpper()}");
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
 
             Assert.Equal(expectedSpanCount, filteredSpans.Count);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);

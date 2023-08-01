@@ -77,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
             settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
 
-            var fileName = nameof(NpgsqlCommandTests) + $".Schema{metadataSchemaVersion.ToUpper()}";
+            var fileName = nameof(NpgsqlCommandTests);
 #if NET462
             fileName = fileName + ".Net462";
 #endif
@@ -89,7 +89,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
                               .DisableRequireUniquePrefix()
-                              .UseFileName(fileName);
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]

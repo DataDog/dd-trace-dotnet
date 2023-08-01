@@ -90,17 +90,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             settings.AddSimpleScrubber("peer.service: (localdb)\\MSSQLLocalDB", "peer.service: sqlserver");
             settings.AddSimpleScrubber("peer.service: sqledge_arm64", "peer.service: sqlserver");
 
-            var fileName = nameof(SystemDataSqlClientTests) + $".Schema{metadataSchemaVersion.ToUpper()}";
+            var fileName = nameof(SystemDataSqlClientTests);
 
             fileName = fileName + (dbmPropagation switch
             {
-                "service" or "full" => ".enabled",
-                _ => ".disabled",
+                "full" => ".tagged",
+                _ => ".untagged",
             });
 
             await VerifyHelper.VerifySpans(spans, settings)
-                .DisableRequireUniquePrefix()
-                .UseFileName(fileName);
+                              .DisableRequireUniquePrefix()
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]
