@@ -22,48 +22,33 @@ internal static class ServerlessMiniAgent
             return null;
         }
 
-        string rustBinaryPath;
         if (Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
         {
-            rustBinaryPath = Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+            return Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+        }
+
+        // Environment.OSVersion.Platform can return PlatformID.Unix on MacOS, this is OK as GCP & Azure don't have MacOs functions.
+        if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.Win32NT)
+        {
+            Log.Error("Serverless Mini Agent is only supported on Windows and Linux.");
+            return null;
+        }
+
+        string rustBinaryPathRoot;
+        if (settings.IsRunningInGCPFunctions)
+        {
+            rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
         }
         else
         {
-            // Environment.OSVersion.Platform can return PlatformID.Unix on MacOS, this is OK as GCP & Azure don't have MacOs functions.
-            if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.Win32NT)
-            {
-                Log.Error("Serverless Mini Agent is only supported on Windows and Linux.");
-                return null;
-            }
-
-            var isWindows = os == PlatformID.Win32NT;
-            var dirPathSep = isWindows ? "\\" : "/";
-
-            string rustBinaryPathRoot;
-            if (settings.IsRunningInGCPFunctions)
-            {
-                rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
-            }
-            else
-            {
-                // IsAzureFunction
-                if (isWindows)
-                {
-                    rustBinaryPathRoot = "C:\\home\\site\\wwwroot";
-                }
-                else
-                {
-                    // linux
-                    rustBinaryPathRoot = "/home/site/wwwroot";
-                }
-            }
-
-            string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
-            string rustBinaryFileExtension = isWindows ? ".exe" : string.Empty;
-            rustBinaryPath = string.Format("{0}{1}{2}{3}datadog-serverless-trace-mini-agent{4}", rustBinaryPathRoot, dirPathSep, rustBinaryPathOsFolder, dirPathSep, rustBinaryFileExtension);
+            rustBinaryPathRoot = "/home/site/wwwroot";
         }
 
-        return rustBinaryPath;
+        var isWindows = os == PlatformID.Win32NT;
+
+        string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
+        string rustBinaryName = string.Format("datadog-serverless-trace-mini-agent{0}", isWindows ? ".exe" : string.Empty);
+        return System.IO.Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
     }
 
     internal static void StartServerlessMiniAgent(ImmutableTracerSettings settings)

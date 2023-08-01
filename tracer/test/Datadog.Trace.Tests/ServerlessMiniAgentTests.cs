@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathNullInNonFunctionEnvironments()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
+            var settings = new ImmutableTracerSettings(CreateConfigurationSource(("IsRunningInGCPFunctions", "false"), ("IsRunningInAzureFunctionsConsumptionPlan", "false")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
             path.Should().BeNull();
@@ -82,7 +82,7 @@ namespace Datadog.Trace.Tests
             var settings = new ImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Win32NT, settings);
-            path.Should().Be("C:\\home\\site\\wwwroot\\datadog-serverless-agent-windows-amd64\\datadog-serverless-trace-mini-agent.exe");
+            path.Should().Be("/home/site/wwwroot/datadog-serverless-agent-windows-amd64/datadog-serverless-trace-mini-agent.exe");
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
