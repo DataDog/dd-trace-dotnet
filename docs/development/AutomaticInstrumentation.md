@@ -15,6 +15,14 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
 - [Interfaces](#interfaces)
 - [Current Limitations](#current-limitations)
 - [Testing](#testing)
+  - [General approach](#general-approach)
+  - [Developing the integration test](#developing-the-integration-test)
+    - [Creating the Sample project](#creating-the-sample-project)
+    - [Configuring the API versions](#configuring-the-api-versions)
+    - [Creating the integration test](#creating-the-integration-test)
+    - [Add required docker services](#add-required-docker-services)
+  - [Local testing using Nuke](#local-testing-using-nuke)
+  - [Testing in CI](#testing-in-ci)
 
 ### Creating a new automatic instrumentation implementation
 
