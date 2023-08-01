@@ -3911,7 +3911,7 @@ stages:
       jobs: [test]
 
   - job: test
-    timeoutInMinutes: 120 # Except this to take ~60
+    timeoutInMinutes: 120 # Expect this to take ~60
     pool:
       vmImage: ubuntu-20.04
 
