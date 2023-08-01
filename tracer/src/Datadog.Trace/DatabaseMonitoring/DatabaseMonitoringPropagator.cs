@@ -17,8 +17,10 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId, out bool traceParentInjected)
         {
+            traceParentInjected = false;
+
             if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
@@ -40,6 +42,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
                 if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
                 {
+                    traceParentInjected = true;
                     propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
                 }
                 else
