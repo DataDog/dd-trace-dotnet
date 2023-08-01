@@ -31,6 +31,7 @@
 #include "MetricsRegistry.h"
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
+#include "IMetadataProvider.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -248,6 +249,7 @@ private :
     std::shared_ptr<ProxyMetric> _managedThreadsWithContextMetric;
 
     std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
+    std::unique_ptr<IMetadataProvider> _pMetadataProvider;
 
 private:
     static void ConfigureDebugLog();

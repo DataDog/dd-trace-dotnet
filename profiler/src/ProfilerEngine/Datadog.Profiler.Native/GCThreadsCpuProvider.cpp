@@ -71,5 +71,5 @@ FrameInfoView GCThreadsCpuProvider::GetFrameInfo()
 
 void GCThreadsCpuProvider::OnCpuDuration(std::uint64_t cpuTime)
 {
-    _cpuDurationMetric->Add(cpuTime);
+    _cpuDurationMetric->Add(static_cast<double>(cpuTime));
 }

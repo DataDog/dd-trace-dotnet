@@ -241,10 +241,12 @@
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
+    <ClInclude Include="MetadataProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="IMetadataProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
     <ClInclude Include="IUpscaleProvider.h" />
@@ -358,6 +360,7 @@
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="GCThreadsCpuProvider.cpp" />
+    <ClCompile Include="MetadataProvider.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
     <ClCompile Include="MeanMaxMetric.cpp" />

@@ -49,6 +49,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "AllocationsRecorder.h"
+#include "MetadataProvider.h"
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -311,6 +312,7 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
+        _pMetadataProvider.get(),
         _pAllocationsRecorder.get()
         );
 
@@ -696,7 +698,6 @@ void CorProfilerCallback::InspectProcessorInfo()
 
     SYSTEM_INFO systemInfo;
     GetNativeSystemInfo(&systemInfo);
-
     Log::Info("GetNativeSystemInfo results:"
               " wProcessorArchitecture=\"",
               SysInfoProcessorArchitectureToStr(systemInfo.wProcessorArchitecture), "\"",
@@ -820,15 +821,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     ConfigureDebugLog();
 
     _pConfiguration = std::make_unique<Configuration>();
-
+    _pMetadataProvider = std::make_unique<MetadataProvider>();
+    _pMetadataProvider->Initialize(_pConfiguration.get());
     PrintEnvironmentVariables();
 
     double coresThreshold = _pConfiguration->MinimumCores();
-    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
+    double cpuLimit = 0;
+    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold, cpuLimit))
     {
         Log::Warn("It is not safe to start the profiler. See previous log messages for more info.");
         return E_FAIL;
     }
+    _pMetadataProvider->Add(MetadataProvider::CpuLimit, std::to_string(cpuLimit));
+    _pMetadataProvider->Add(MetadataProvider::NbCores, std::to_string(OsSpecificApi::GetProcessorCount()));
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
@@ -871,6 +876,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
+    _pMetadataProvider->Add(MetadataProvider::ClrVersion, _pRuntimeInfo->GetClrString());
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
