@@ -28,6 +28,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 
         public static IEnumerable<object[]> GetMySql8Data()
         {
+            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
+
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if (!((string)item[0]).StartsWith("8") && !string.IsNullOrEmpty((string)item[0]))
@@ -35,13 +37,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return new[] { item[0], "v0" };
-                yield return new[] { item[0], "v1" };
+                var result = propagation.SelectMany(prop => new[]
+                {
+                    new[] { item[0], "v0", prop },
+                    new[] { item[0], "v1", prop }
+                });
+
+                foreach (var row in result)
+                {
+                    yield return row;
+                }
             }
         }
 
         public static IEnumerable<object[]> GetOldMySqlData()
         {
+            var propagation = new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" };
+
             foreach (object[] item in PackageVersions.MySqlData)
             {
                 if (((string)item[0]).StartsWith("8"))
@@ -49,8 +61,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
                     continue;
                 }
 
-                yield return new[] { item[0], "v0" };
-                yield return new[] { item[0], "v1" };
+                var result = propagation.SelectMany(prop => new[]
+                {
+                    new[] { item[0], "v0", prop },
+                    new[] { item[0], "v1", prop }
+                });
+
+                foreach (var row in result)
+                {
+                    yield return row;
+                }
             }
         }
 
@@ -59,18 +79,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [SkippableTheory]
         [MemberData(nameof(GetMySql8Data))]
         [Trait("Category", "EndToEnd")]
-        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTracesInMySql8(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            await SubmitsTraces(packageVersion, metadataSchemaVersion);
+            await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableTheory]
         [MemberData(nameof(GetOldMySqlData))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTracesInOldMySql(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
-            await SubmitsTraces(packageVersion, metadataSchemaVersion);
+            await SubmitsTraces(packageVersion, metadataSchemaVersion, dbmPropagation);
         }
 
         [SkippableFact]
@@ -96,8 +116,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             telemetry.AssertIntegrationDisabled(IntegrationId.MySql);
         }
 
-        private async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        private async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+
             // ALWAYS: 75 spans
             // - MySqlCommand: 19 spans (3 groups * 7 spans - 2 missing spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -141,6 +163,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 #else
             var suffix = "NetCore";
 #endif
+            suffix = suffix + (dbmPropagation switch
+            {
+                "full" => ".tagged",
+                _ => ".untagged",
+            });
 
             await VerifyHelper.VerifySpans(filteredSpans, settings)
                               .DisableRequireUniquePrefix()
