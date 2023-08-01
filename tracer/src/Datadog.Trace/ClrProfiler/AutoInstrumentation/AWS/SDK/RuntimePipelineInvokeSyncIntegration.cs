@@ -50,7 +50,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             {
                 var region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
                 tags.Region = region;
-                tags.AwsRegion = region;
             }
 
             return new CallTargetState(scope, state: executionContext);

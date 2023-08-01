@@ -50,15 +50,13 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aws.queue.name": 
-                    AwsQueueName = value;
-                    break;
                 case "queuename": 
                     QueueName = value;
                     break;
                 case "aws.queue.url": 
                     QueueUrl = value;
                     break;
+                case "aws.queue.name": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSqsTags));
                     break;

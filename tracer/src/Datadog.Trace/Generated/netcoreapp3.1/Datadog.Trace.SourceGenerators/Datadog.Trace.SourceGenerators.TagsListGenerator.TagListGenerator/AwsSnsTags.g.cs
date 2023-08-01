@@ -50,15 +50,13 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aws.topic.name": 
-                    AwsTopicName = value;
-                    break;
                 case "topicname": 
                     TopicName = value;
                     break;
                 case "aws.topic.arn": 
                     TopicArn = value;
                     break;
+                case "aws.topic.name": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSnsTags));
                     break;

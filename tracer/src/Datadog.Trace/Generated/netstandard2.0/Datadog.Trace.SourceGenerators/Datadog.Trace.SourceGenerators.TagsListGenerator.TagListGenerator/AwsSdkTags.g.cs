@@ -102,9 +102,6 @@ namespace Datadog.Trace.Tagging
                 case "aws.operation": 
                     Operation = value;
                     break;
-                case "aws.region": 
-                    AwsRegion = value;
-                    break;
                 case "region": 
                     Region = value;
                     break;
@@ -113,9 +110,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "aws.service": 
                     Service = value;
-                    break;
-                case "aws_service": 
-                    AwsService = value;
                     break;
                 case "http.method": 
                     HttpMethod = value;
@@ -128,6 +122,8 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "component": 
                 case "aws.agent": 
+                case "aws.region": 
+                case "aws_service": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSdkTags));
                     break;
                 default: 

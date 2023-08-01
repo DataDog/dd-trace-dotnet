@@ -19,7 +19,7 @@ namespace Datadog.Trace.Tagging
         public string Operation { get; set; }
 
         [Tag(Trace.Tags.AwsRegion)]
-        public string AwsRegion { get; set; }
+        public string AwsRegion => Region;
 
         [Tag(Trace.Tags.Region)]
         public string Region { get; set; }
@@ -31,7 +31,7 @@ namespace Datadog.Trace.Tagging
         public string Service { get; set; }
 
         [Tag(Trace.Tags.AwsService)]
-        public string AwsService { get; set; }
+        public string AwsService => Service;
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
