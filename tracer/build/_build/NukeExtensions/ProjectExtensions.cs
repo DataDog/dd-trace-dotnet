@@ -6,7 +6,6 @@ using Logger = Serilog.Log;
 
 public static class ProjectExtensions
 {
-    static int _isInitialized = 0;
     static readonly ConcurrentDictionary<string, Microsoft.Build.Evaluation.Project> MsBuildProjects = new();
     public static IReadOnlyCollection<string> TryGetTargetFrameworks(this Project project)
     {
