@@ -122,7 +122,7 @@ namespace Datadog.Trace.Telemetry
 
             var settings = _settings.Settings;
 
-            var data = new List<TelemetryValue>(27 + (settings.IsRunningInAzureAppService ? 5 : 0))
+            var data = new List<TelemetryValue>(29 + (settings.IsRunningInAzureAppService ? 5 : 0))
             {
                 new(ConfigTelemetryData.Platform, value: FrameworkDescription.Instance.ProcessArchitecture),
                 new(ConfigTelemetryData.Enabled, value: settings.TraceEnabledInternal),
@@ -153,6 +153,8 @@ namespace Datadog.Trace.Telemetry
                 new(ConfigTelemetryData.WcfObfuscationEnabled, value: settings.WcfObfuscationEnabled),
                 new(ConfigTelemetryData.DataStreamsMonitoringEnabled, value: settings.IsDataStreamsMonitoringEnabled),
                 new(ConfigTelemetryData.SpanSamplingRules, value: settings.SpanSamplingRules),
+                new(ConfigTelemetryData.PropagationStyleExtract, value: string.Join(",", settings.PropagationStyleExtract)),
+                new(ConfigTelemetryData.PropagationStyleInject, value: string.Join(",", settings.PropagationStyleInject)),
             };
 
             if (settings.IsRunningInAzureAppService)

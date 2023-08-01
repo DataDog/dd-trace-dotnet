@@ -71,8 +71,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             foreach (var kvp in _mappings)
             {
-                namingSchema.Messaging.GetInboundServiceName(kvp.Key).Should().Be(kvp.Value);
-                namingSchema.Messaging.GetOutboundServiceName(kvp.Key).Should().Be(kvp.Value);
+                namingSchema.Messaging.GetServiceName(kvp.Key).Should().Be(kvp.Value);
             }
         }
 
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                     _ => DefaultServiceName,
                 };
 
-                namingSchema.Messaging.GetInboundServiceName(key).Should().Be(expectedServiceName);
-                namingSchema.Messaging.GetOutboundServiceName(key).Should().Be(expectedServiceName);
+                namingSchema.Messaging.GetServiceName(key).Should().Be(expectedServiceName);
             }
         }
 

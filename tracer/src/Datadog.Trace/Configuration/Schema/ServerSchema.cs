@@ -32,5 +32,12 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 => $"{component}.request",
                 _ => "http.server.request",
             };
+
+        public string GetOperationNameForRequestType(string requestType) =>
+            _version switch
+            {
+                SchemaVersion.V0 => $"{requestType}",
+                _ => $"{requestType}.request",
+            };
     }
 }
