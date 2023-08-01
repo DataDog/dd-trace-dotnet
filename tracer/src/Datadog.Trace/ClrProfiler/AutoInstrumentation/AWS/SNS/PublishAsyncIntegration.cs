@@ -50,7 +50,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
             tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            var topicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            tags.TopicName = topicName;
+            tags.AwsTopicName = topicName;
 
             if (scope?.Span.Context != null)
             {
