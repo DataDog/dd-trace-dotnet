@@ -71,6 +71,7 @@
       aws.service: SNS,
       aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
       aws.topic.name: MyTopic,
+      aws_service: SNS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
@@ -79,6 +80,7 @@
       peer.service: MyTopic,
       runtime-id: Guid_1,
       span.kind: producer,
+      topicname: MyTopic,
       _dd.p.dm: -0,
       _dd.peer.service.source: aws.topic.name
     },

@@ -34,12 +34,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -59,12 +61,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -189,12 +193,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -214,12 +220,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      queuename: MyAsyncSQSQueue,
       span.kind: consumer
     }
   },
@@ -238,12 +246,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -263,12 +273,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -288,12 +300,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      queuename: MyAsyncSQSQueue2,
       span.kind: consumer
     }
   },
@@ -312,12 +326,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -337,12 +353,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -362,12 +380,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      queuename: MyAsyncSQSQueue,
       span.kind: consumer
     }
   },
@@ -386,12 +406,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -411,12 +433,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -436,12 +460,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      queuename: MyAsyncSQSQueue2,
       span.kind: consumer
     }
   },
@@ -460,12 +486,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -485,12 +513,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -510,12 +540,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -535,12 +567,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      queuename: MyAsyncSQSQueue,
       span.kind: consumer
     }
   },
@@ -559,12 +593,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -584,12 +620,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
+      queuename: MyAsyncSQSQueue,
       span.kind: consumer
     }
   },
@@ -608,12 +646,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -633,12 +673,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -658,12 +700,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: producer,
       _dd.peer.service.source: aws.queue.name
     }
@@ -683,12 +727,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      queuename: MyAsyncSQSQueue2,
       span.kind: consumer
     }
   },
@@ -707,12 +753,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -732,12 +780,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
+      queuename: MyAsyncSQSQueue2,
       span.kind: consumer
     }
   },
@@ -756,12 +806,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -781,12 +833,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
@@ -806,12 +860,14 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
       span.kind: client,
       _dd.peer.service.source: aws.queue.name
     }
