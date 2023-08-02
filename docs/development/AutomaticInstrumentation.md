@@ -409,7 +409,18 @@ On Windows, we _don't_ typically run multi-api-version tests. There is experimen
 
 ##### On macOs
 
-TBC
+On MacOs, you won't be able to run all tests as some images aren't arm compatible (e.g. Kafka), some tests are meant to run on Windows only (using VM fixes that though). That said the process is quite the same as  for Windows:
+
+```bash
+# Build the tracer with your changes
+# You need to run this every time you change your integration
+# But not if you're just changing a test/sample
+./tracer/build.sh BuildTracerHome -buildConfiguration Debug
+
+# Build and run the integration tests, building only
+# your sample, and running only your new tests
+# You can choose whichever framework is appropriate
+./tracer/build.sh BuildAndRunOSxIntegrationTests -buildConfiguration Debug -framework net6.0 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
 
 #### Testing in CI
 
