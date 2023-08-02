@@ -1,12 +1,4 @@
 {
-  "iisSettings": {
-    "windowsAuthentication": false,
-    "anonymousAuthentication": true,
-    "iisExpress": {
-      "applicationUrl": "http://localhost:63394/",
-      "sslPort": 44320
-    }
-  },
   "profiles": {
     "IIS Express": {
       "commandName": "IISExpress",
@@ -50,7 +42,9 @@
         "DD_IAST_VULNERABILITIES_PER_REQUEST": "100",
         "DD_IAST_REQUEST_SAMPLING": "100",
         "DD_IAST_MAX_CONCURRENT_REQUESTS": "1",
-        "DD_WRITE_INSTRUMENTATION_TO_DISK": "true"
+        "DD_WRITE_INSTRUMENTATION_TO_DISK": "true",
+        "DD_TAGS": "git.commit.sha:dc7c6043e840dc01cfe5f36fc5646012a636a6d7,git.repository_url:github.com/DataDog/dd-trace-dotnet",
+        "DD_SERVICE": "Samples.Asm.AspNetCore5-Iast-2"
       },
       "Logging": {
         "LogLevel": {
@@ -61,7 +55,7 @@
       },
       "nativeDebugging": true,
       "use64Bit": false,
-      "applicationUrl": "http://localhost:54587"
+      "applicationUrl": "http://localhost:5458"
     },
     "Samples.AspNetCore5.Linux": {
       "commandName": "Project",
@@ -86,7 +80,15 @@
       },
       "nativeDebugging": true,
       "use64Bit": true,
-      "applicationUrl": "http://localhost:54569"
+      "applicationUrl": "http://localhost:5458"
+    }
+  },
+  "iisSettings": {
+    "windowsAuthentication": false,
+    "anonymousAuthentication": true,
+    "iisExpress": {
+      "applicationUrl": "http://localhost:5458/",
+      "sslPort": 44320
     }
   }
 }

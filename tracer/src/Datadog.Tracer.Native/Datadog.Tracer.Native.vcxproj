@@ -269,6 +269,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="iast\app_domain_info.h" />
     <ClInclude Include="iast\aspect.h" />
     <ClInclude Include="calltarget_tokens.h" />
@@ -295,6 +296,8 @@
     <ClInclude Include="iast\iast_util.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
+    <ClInclude Include="iast\method_analyzer.h" />
+    <ClInclude Include="iast\method_analyzers.h" />
     <ClInclude Include="iast\method_info.h" />
     <ClInclude Include="iast\module_info.h" />
     <ClInclude Include="iast\signature_info.h" />
@@ -336,6 +339,7 @@
     <ClCompile Include="debugger_rejit_handler_module_method.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp" />
     <ClCompile Include="environment_variables_util.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />
     <ClCompile Include="iast\dataflow.cpp" />
@@ -343,6 +347,8 @@
     <ClCompile Include="iast\iast_util.cpp" />
     <ClCompile Include="iast\dataflow_il_analysis.cpp" />
     <ClCompile Include="iast\dataflow_il_rewriter.cpp" />
+    <ClCompile Include="iast\method_analyzer.cpp" />
+    <ClCompile Include="iast\method_analyzers.cpp" />
     <ClCompile Include="iast\method_info.cpp" />
     <ClCompile Include="iast\module_info.cpp" />
     <ClCompile Include="iast\signature_info.cpp" />

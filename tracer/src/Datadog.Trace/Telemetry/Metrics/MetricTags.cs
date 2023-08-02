@@ -209,6 +209,7 @@ internal static class MetricTags
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
+        [Description("integration_name:hardcodedsecret")]HardcodedSecret,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
     }
@@ -264,6 +265,7 @@ internal static class MetricTags
         [Description("vulnerability_type:insecure_cookie")] InsecureCookie = 9,
         [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
         [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
+        [Description("vulnerability_type:hardcoded_secret")] HardcodedSecret = 12,
     }
 
     public enum CIVisibilityTestFramework

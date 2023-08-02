@@ -59,6 +59,9 @@
     <ClCompile Include="iast\dataflow.cpp" />
     <ClCompile Include="iast\string_literal_aspect_filter.cpp" />
     <ClCompile Include="iast\string_optimization_aspect_filter.cpp" />
+    <ClCompile Include="iast\method_analyzers.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
+    <ClCompile Include="iast\method_analyzer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -146,9 +149,9 @@
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
     <ClInclude Include="Synchronized.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
+    <ClInclude Include="iast\method_analyzers.h" />
+    <ClInclude Include="iast\method_analyzer.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Debugger">
