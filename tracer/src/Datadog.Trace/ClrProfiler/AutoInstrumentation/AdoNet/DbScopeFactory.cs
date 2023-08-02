@@ -75,7 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                         command.CommandText = $"{propagatedCommand} {commandText}";
                         if (traceParentInjected)
                         {
-                            tags.DbmDataPropagated = "true";
+                            tags.DbmTraceInjected = "true";
                         }
                     }
                 }

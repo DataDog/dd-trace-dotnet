@@ -601,9 +601,9 @@ namespace Datadog.Trace
         internal const string TagPropagationError = "_dd.propagation_error";
 
         /// <summary>
-        /// Marks a span as injected when DBM data was propagated
+        /// Marks a span as injected when DBM comment has the traceParent on it
         /// </summary>
-        internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
+        internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
 
         internal static class User
         {
