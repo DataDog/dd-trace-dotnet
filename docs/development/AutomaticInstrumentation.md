@@ -34,19 +34,19 @@ Creating a new instrumentation implementation typically uses the following proce
 3. Create an instrumentation class using one of the standard "shapes" (described below), and place it in the [ClrProfiler/AutoInstrumentation folder](../../tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation). If the methods you need to instrument have different prototypes (especially the number of parameters), you will need multiple class to instrument them.
 4. Add an `[InstrumentMethod]` attribute to the instrumentation class, as described below. Alternatively, add an assembly-level `[AdoNetClientInstrumentMethods]` attribute
 5. (Optional) Create duck-typing unit tests in _Datadog.Trace.Tests_ to confirm any duck types are valid. This can make the feedback cycle much faster than relying on integration tests
-6. Create integration tests for your instrumentation 
+6. Create integration tests for your instrumentation. For more details, see [Testing](#testing).
    1. Create (or reuse) a sample application that uses the target library, which ideally exercises all the code paths in your new instrumentation. Use an `$(ApiVersion)` MSBuild variables to allow testing against multiple package versions in CI. 
    2. Add a new entry in the SpanMetadataRules files (see the /tracer/test/Datadog.Trace.TestHelpers/SpanMetadata*Rules.cs files) that define the expected Name, Type, and Tags for the new integration spans, and run build target `GenerateSpanDocumentation` to generate the updated Markdown file. For new instrumentation, you should add the definitions for all existing schema versions.
    3. Add an entry in [tracer/build/PackageVersionsGeneratorDefinitions.json](../../tracer/build/PackageVersionsGeneratorDefinitions.json) defining the range of all supported versions. See the existing definitions for examples. You may need to add an entry in the [tracer/build/Honeypot/IntegrationGroups.cs](../../tracer/build//Honeypot/IntegrationGroups.cs) to specify the Nuget Package instrumented by the integration. 
    4. Run `./tracer/build.ps1 GeneratePackageVersions`. This generates the xunit test data for package versions in the `TestData` that you can use as `[MemberData]` for your `[Theory]` tests. 
    5. If needed, add a docker image in the docker-compose.yml to allow the CI to test against it. Locally, you can use docker-compose as well and start only the dependencies you need.
    6. Use the `MockTracerAgent` and the newly defined `SpanMetadataRules` method in your integration test to confirm your instrumentation is working as expected.
-7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch
+7. After testing locally, push to GitHub, and do a manual run in Azure Devops for your branch. For more details, see [Testing in CI](#testing-in-ci).
    1. Navigate to the [consolidated-pipeline](https://dev.azure.com/datadoghq/dd-trace-dotnet/_build?definitionId=54)
    2. Click `Run Pipeline`
    3. Select your branch from the drop down
-   4. Click `Variables`, set `perform_comprehensive_testing` to true. (This is false for PRs by default for speed, but ensures your new code is tested against all the specified packages initially)
-   5. Select `Stages To Run`, and select only the `build*`, `unit_test*` and `integration_test*` stages. This avoids using excessive resources, and will complete your build faster
+   4. Click `Variables`, set `perform_comprehensive_testing` and `run_all_test_frameworks` to `true`. (This is false for PRs by default for speed, but ensures your new code is tested against all the specified packages initially). Set the `TEST_FILTER` and `TEST_SAMPLE_NAME` variables to the name of your test and sample respectively.
+   5. Select `Stages To Run`, and select only the `build*`, `package*`, `unit_test*` and `integration_test*` stages. This avoids using excessive resources, and will complete your build faster
    6. Add the instrumentation to the list of integrations in the [dotnet-core tracing documentation](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-core/#integrations) and/or [dotnet-framework tracing documentation](https://docs.datadoghq.com/tracing/setup_overview/compatibility_requirements/dotnet-framework/#integrations) as appropiate.
    7. Once your test branch works, create a PR for both the `dd-trace-dotnet` and `documentation` repositories and have them reference each other!
 
