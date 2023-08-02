@@ -6,7 +6,6 @@
 
 using System;
 using System.Collections.Concurrent;
-using BenchmarkDotNet.Running;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Util;
 
@@ -14,7 +13,7 @@ namespace Datadog.Trace.BenchmarkDotNet;
 
 internal static class BenchmarkMetadata
 {
-    private static readonly ConcurrentDictionary<BenchmarkCase, Metadata> MetadataByBenchmark;
+    private static readonly ConcurrentDictionary<object, Metadata> MetadataByBenchmark;
 
     static BenchmarkMetadata()
     {
@@ -22,9 +21,9 @@ internal static class BenchmarkMetadata
         CIVisibility.InitializeFromManualInstrumentation();
     }
 
-    public static void GetIds(BenchmarkCase benchmarkCase, out TraceId traceId, out ulong spanId)
+    public static void GetIds(object key, out TraceId traceId, out ulong spanId)
     {
-        var value = MetadataByBenchmark.GetOrAdd(benchmarkCase, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (value.TraceId is null)
         {
             var useAllBits = CIVisibility.Settings.TracerSettings?.TraceId128BitGenerationEnabled ?? false;
@@ -36,27 +35,27 @@ internal static class BenchmarkMetadata
         spanId = value.SpanId;
     }
 
-    public static void SetStartTime(BenchmarkCase benchmarkCase, DateTime dateTime)
+    public static void SetStartTime(object key, DateTime dateTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(benchmarkCase, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (dateTime < value.StartTime)
         {
             value.StartTime = dateTime;
         }
     }
 
-    public static void SetEndTime(BenchmarkCase benchmarkCase, DateTime dateTime)
+    public static void SetEndTime(object key, DateTime dateTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(benchmarkCase, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         if (dateTime > value.EndTime)
         {
             value.EndTime = dateTime;
         }
     }
 
-    public static void GetTimes(BenchmarkCase benchmarkCase, out DateTime startTime, out DateTime endTime)
+    public static void GetTimes(object key, out DateTime startTime, out DateTime endTime)
     {
-        var value = MetadataByBenchmark.GetOrAdd(benchmarkCase, @case => new());
+        var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         startTime = value.StartTime;
         endTime = value.EndTime;
     }

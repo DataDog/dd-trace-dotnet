@@ -59,23 +59,12 @@ internal class DatadogProfilerDiagnoser : IDiagnoser
     /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
-        switch (signal)
+        if (signal != HostSignal.BeforeProcessStart) { return; }
+        BenchmarkMetadata.GetIds(parameters.BenchmarkCase, out var traceId, out var spanId);
+        EnsureAndFillProfilerPathVariables(parameters);
+        if (_platformNotSupportedException is null)
         {
-            case HostSignal.BeforeAnythingElse:
-                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, DateTime.UtcNow);
-                break;
-            case HostSignal.BeforeProcessStart:
-                BenchmarkMetadata.GetIds(parameters.BenchmarkCase, out var traceId, out var spanId);
-                EnsureAndFillProfilerPathVariables(parameters);
-                if (_platformNotSupportedException is null)
-                {
-                    SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, traceId, spanId);
-                }
-
-                break;
-            case HostSignal.AfterAll:
-                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, DateTime.UtcNow);
-                break;
+            SetEnvironmentVariables(parameters, _monitoringHome, _profiler32Path, _profiler64Path, _ldPreload, _loaderConfig, traceId, spanId);
         }
     }
 

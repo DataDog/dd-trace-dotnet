@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using BenchmarkDotNet.Analysers;
-using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Exporters;
@@ -27,10 +26,6 @@ internal class DatadogDiagnoser : IDiagnoser
     /// </summary>
     public static readonly DatadogDiagnoser Default = new();
 
-    public DateTime? ModuleStartTime { get; private set; }
-
-    public DateTime ModuleEndTime { get; private set; }
-
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "Datadog" };
 
@@ -49,19 +44,22 @@ internal class DatadogDiagnoser : IDiagnoser
     /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
+        var utcNow = DateTime.UtcNow;
         switch (signal)
         {
             case HostSignal.BeforeAnythingElse:
-                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, DateTime.UtcNow);
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, utcNow);
                 break;
             case HostSignal.BeforeProcessStart:
-                ModuleStartTime ??= DateTime.UtcNow;
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type.Assembly, utcNow);
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type, utcNow);
                 break;
             case HostSignal.AfterProcessExit:
-                ModuleEndTime = DateTime.UtcNow;
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase.Descriptor.Type.Assembly, utcNow);
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase.Descriptor.Type, utcNow);
                 break;
             case HostSignal.AfterAll:
-                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, DateTime.UtcNow);
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, utcNow);
                 break;
         }
     }

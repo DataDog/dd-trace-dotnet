@@ -24,7 +24,8 @@ public static class DatadogExtensions
     public static IConfig WithDatadog(this IConfig config, bool? enableProfiler = null)
     {
         var cfg = config
-                     .AddDiagnoser(DatadogDiagnoser.Default);
+                 .AddDiagnoser(DatadogDiagnoser.Default)
+                 .AddLogger(DatadogSessionLogger.Default);
 
         enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled) ?? string.Empty).ToBoolean();
         switch (enableProfiler)
