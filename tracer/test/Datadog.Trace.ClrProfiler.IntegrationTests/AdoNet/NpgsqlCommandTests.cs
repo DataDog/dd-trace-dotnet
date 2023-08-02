@@ -10,12 +10,14 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class NpgsqlCommandTests : TracingIntegrationTest
     {
         public NpgsqlCommandTests(ITestOutputHelper output)
@@ -65,12 +67,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
-            int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
-            // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
-            actualSpanCount.Should().Be(expectedSpanCount);
-            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            // Assert an exact match once we can correctly instrument the generic constraint case
+            filteredSpans.Count.Should().Be(expectedSpanCount);
+            ValidateIntegrationSpans(spans , metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();

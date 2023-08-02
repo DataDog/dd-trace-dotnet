@@ -17,8 +17,8 @@ using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
-    [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class MySqlCommandTests : TracingIntegrationTest
     {
         public MySqlCommandTests(ITestOutputHelper output)
