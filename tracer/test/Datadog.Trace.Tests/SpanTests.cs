@@ -360,5 +360,15 @@ namespace Datadog.Trace.Tests
             span.GetTag(stringKey).Should().Be(stringValue);
             span.GetTag(numericKey).Should().BeNull();
         }
+
+        [Fact]
+        public void ServiceOverride_HasBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = "MyServiceB";
+
+            span.GetTag(Tags.BaseService).Should().Be(origName);
+        }
     }
 }

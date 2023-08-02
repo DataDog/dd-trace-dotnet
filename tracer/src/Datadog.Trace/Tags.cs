@@ -631,6 +631,11 @@ namespace Datadog.Trace
         /// </summary>
         internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
 
+        /// <summary>
+        /// Holds the original value for Service when Service is overriden after span creation
+        /// </summary>
+        internal const string BaseService = "_dd.base_service";
+
         internal static class User
         {
             internal const string Email = "usr.email";
