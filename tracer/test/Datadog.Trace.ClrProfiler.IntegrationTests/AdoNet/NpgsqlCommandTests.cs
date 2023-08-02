@@ -9,6 +9,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -68,7 +69,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
             // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
-            Assert.Equal(expectedSpanCount, actualSpanCount);
+            actualSpanCount.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
 

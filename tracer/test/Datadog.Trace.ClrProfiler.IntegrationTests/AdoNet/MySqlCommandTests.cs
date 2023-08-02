@@ -10,6 +10,7 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
@@ -150,6 +151,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             var filteredSpans = spans.Where(s => s.ParentId.HasValue && !s.Resource.Equals("SHOW WARNINGS", StringComparison.OrdinalIgnoreCase)).ToList();
 
+            filteredSpans.Count.Should().Be(expectedSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            telemetry.AssertIntegrationEnabled(IntegrationId.MySql);
+
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: mysql");
@@ -174,10 +179,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             await VerifyHelper.VerifySpans(filteredSpans, settings)
                               .DisableRequireUniquePrefix()
                               .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
-
-            Assert.Equal(expectedSpanCount, filteredSpans.Count);
-            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
-            telemetry.AssertIntegrationEnabled(IntegrationId.MySql);
         }
     }
 }
