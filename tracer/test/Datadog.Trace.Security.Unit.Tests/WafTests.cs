@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
@@ -17,6 +18,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
+    [Collection("SecuritySecuentialTests")]
     public class WafTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;
