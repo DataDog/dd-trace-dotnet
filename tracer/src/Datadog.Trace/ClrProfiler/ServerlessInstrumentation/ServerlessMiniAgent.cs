@@ -94,7 +94,10 @@ internal static class ServerlessMiniAgent
             return;
         }
 
-        var logTuple = ProcessMiniAgentLog(data);
+        var level = string.Empty;
+        var log = string.Empty.
+        ProcessMiniAgentLog(data, level, log);
+
         string level = logTuple.Item1;
         string processedLog = logTuple.Item2;
 
@@ -118,45 +121,48 @@ internal static class ServerlessMiniAgent
         }
     }
 
-    // Processes a raw log from the mini agent, returning a Tuple of the log level and the cleaned log data
+    // Processes a raw log from the mini agent, modifying two "out" parameters level and log.
     // For example, given this raw log:
     // [2023-06-06T01:31:30Z DEBUG datadog_trace_mini_agent::mini_agent] Random log
-    // This function will return:
-    // ("DEBUG", "Random log")
-    internal static Tuple<string, string> ProcessMiniAgentLog(string rawLog)
+    // level and log will be the following values:
+    // level == "DEBUG", log == "Random log"
+    internal static void ProcessMiniAgentLog(string rawLog, out string level, out string log)
     {
+        level = "INFO";
+        log = rawLog;
+
         int logPrefixCutoff = rawLog.IndexOf("]");
         if (logPrefixCutoff < 0 || logPrefixCutoff == rawLog.Length - 1)
         {
-            return Tuple.Create("INFO", rawLog);
+            return;
         }
 
         int levelLeftBound = rawLog.IndexOf(" ");
         if (levelLeftBound < 0)
         {
-            return Tuple.Create("INFO", rawLog);
+            return;
         }
 
         int levelRightBound = rawLog.IndexOf(" ", levelLeftBound + 1);
         if (levelRightBound < 0 || levelRightBound - levelLeftBound < 1)
         {
-            return Tuple.Create("INFO", rawLog);
+            return;
         }
 
-        string level = rawLog.Substring(levelLeftBound + 1, levelRightBound - levelLeftBound - 1);
+        string parsedLevel = rawLog.Substring(levelLeftBound + 1, levelRightBound - levelLeftBound - 1);
 
         if (!(level is "ERROR" or "WARN" or "INFO" or "DEBUG"))
         {
-            return Tuple.Create("INFO", rawLog);
+            return;
         }
 
-        string processedLog = rawLog.Substring(logPrefixCutoff + 2);
+        level = parsedLevel;
+        log = rawLog.Substring(logPrefixCutoff + 2);
 
         if (level is "DEBUG")
         {
-            return Tuple.Create("INFO", $"[DEBUG] {processedLog}");
+            level = "INFO";
+            log = $"[DEBUG] {log}";
         }
-
-        return Tuple.Create(level, processedLog);
     }
 }
