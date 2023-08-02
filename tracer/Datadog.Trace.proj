@@ -33,13 +33,15 @@
 
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'">
-    <!-- Filter the sample projects by TargetFramework -->
+
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Restore" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
@@ -47,14 +49,14 @@
   <!-- Used by CompileMultiApiPackageVersionSamples -->
   <Target Name="RestoreAndBuildSamplesForPackageVersionsOnly" Condition="'$(TestAllPackageVersions)'=='true'" DependsOnTargets="RestoreSamplesForPackageVersionsOnly">
 
-    <!-- Assumes that the core C# projects are already built first -->
-    <!-- Filter the sample projects by TargetFramework -->
     <ItemGroup>
-      <PackageVersionSampleCompile Include="@(PackageVersionSample)" Condition="('$(IncludeTestsRequiringDocker)' == '' OR '%(PackageVersionSample.RequiresDockerDependency)'=='$(IncludeTestsRequiringDocker)') AND ('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)')" />
+      <!-- Assumes that the core C# projects are already built first -->
+      <!-- Filter the sample projects by various attributes -->
+      <PackageVersionSampleFiltered Include="@(PackageVersionSample)" Condition="('$(SampleName)' == '' OR '%(PackageVersionSample.SampleName)' == '$(SampleName)') AND ('%(PackageVersionSample.TargetFramework)' == '' or '%(PackageVersionSample.TargetFramework)'=='$(TargetFramework)') AND (('$(IsAlpine)' != 'true' OR '%(PackageVersionSample.SkipAlpine)'!='true') AND ('$(IsArm64)' != 'true' OR '%(PackageVersionSample.SkipArm64)'!='true')) AND ('$(IncludeTestsRequiringDocker)' == '' OR ('$(IncludeTestsRequiringDocker)' == 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' != 'None') OR ('$(IncludeTestsRequiringDocker)' != 'true' AND '%(PackageVersionSample.RequiresDockerDependency)' == 'None'))" />
     </ItemGroup>
 
     <!-- Build the sample projects concurrently -->
-    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleCompile)" BuildInParallel="$(BuildInParallel)">
+    <MSBuild Targets="Publish" Projects="@(PackageVersionSampleFiltered)" BuildInParallel="$(BuildInParallel)">
       <Output TaskParameter="TargetOutputs" ItemName="CollectedBuildOutput"/>
     </MSBuild>
   </Target>
