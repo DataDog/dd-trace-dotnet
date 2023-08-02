@@ -94,6 +94,8 @@ namespace Datadog.Trace.Tests
         [InlineData("[2023-06-06T01:31:30Z WARN datadog_trace_mini_agent::mini_agent] Random Log", "WARN", "Random Log")]
         [InlineData("[2023-06-06T01:31:30Z INFO datadog_trace_mini_agent::mini_agent] Random Log", "INFO", "Random Log")]
         [InlineData("[2023-06-06T01:31:30Z YELL datadog_trace_mini_agent::mini_agent] Random Log", "INFO", "[2023-06-06T01:31:30Z YELL datadog_trace_mini_agent::mini_agent] Random Log")]
+        [InlineData("DEBUG Log", "INFO", "DEBUG Log")]
+        [InlineData("DEBUG  Log", "INFO", "DEBUG  Log")]
         [InlineData("Random Log", "INFO", "Random Log")]
         internal void CleanAndProperlyLogMiniAgentLogs(string rawLog, string expectedLevel, string expectedLog)
         {

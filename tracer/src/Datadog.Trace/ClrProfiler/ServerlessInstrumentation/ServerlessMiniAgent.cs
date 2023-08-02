@@ -8,6 +8,7 @@ using System.Diagnostics;
 using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 
@@ -22,13 +23,13 @@ internal static class ServerlessMiniAgent
             return null;
         }
 
-        if (Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
+        if (EnvironmentHelpers.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
         {
-            return Environment.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+            return EnvironmentHelpers.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
         }
 
         // Environment.OSVersion.Platform can return PlatformID.Unix on MacOS, this is OK as GCP & Azure don't have MacOs functions.
-        if (Environment.OSVersion.Platform != PlatformID.Unix && Environment.OSVersion.Platform != PlatformID.Win32NT)
+        if (os != PlatformID.Unix && os != PlatformID.Win32NT)
         {
             Log.Error("Serverless Mini Agent is only supported on Windows and Linux.");
             return null;
@@ -47,7 +48,7 @@ internal static class ServerlessMiniAgent
         var isWindows = os == PlatformID.Win32NT;
 
         string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
-        string rustBinaryName = isWindows ? "datadog-serverless-trace-mini-agent.exe" : "datadog-serverless-trace-mini-agent");
+        string rustBinaryName = isWindows ? "datadog-serverless-trace-mini-agent.exe" : "datadog-serverless-trace-mini-agent";
         return System.IO.Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
     }
 
@@ -130,20 +131,32 @@ internal static class ServerlessMiniAgent
             return Tuple.Create("INFO", rawLog);
         }
 
-        string level = rawLog.Substring(0, logPrefixCutoff).Split(' ')[1];
+        int levelLeftBound = rawLog.IndexOf(" ");
+        if (levelLeftBound < 0)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        int levelRightBound = rawLog.IndexOf(" ", levelLeftBound + 1);
+        if (levelRightBound < 0 || levelRightBound - levelLeftBound < 1)
+        {
+            return Tuple.Create("INFO", rawLog);
+        }
+
+        string level = rawLog.Substring(levelLeftBound + 1, levelRightBound - levelLeftBound - 1);
 
         if (!(level is "ERROR" or "WARN" or "INFO" or "DEBUG"))
         {
             return Tuple.Create("INFO", rawLog);
         }
 
-        string processedLog = rawLog.Substring(logPrefixCutoff + 1).Trim();
+        string processedLog = rawLog.Substring(logPrefixCutoff + 2);
 
         if (level is "DEBUG")
         {
             return Tuple.Create("INFO", $"[DEBUG] {processedLog}");
         }
 
-        return Tuple.Create(level, rawLog.Substring(logPrefixCutoff + 1).Trim());
+        return Tuple.Create(level, processedLog);
     }
 }
