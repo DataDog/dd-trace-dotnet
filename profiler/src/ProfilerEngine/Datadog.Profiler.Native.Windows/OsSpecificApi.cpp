@@ -28,12 +28,12 @@
 
 namespace OsSpecificApi {
 
-// return true if a system message was found for the last error code.
-// if not, false is return and message will contain GetLastError between ()
-bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
+// if a system message was not found for the last error code the message will contain GetLastError between ()
+std::tuple<DWORD, std::string> GetLastErrorMessage()
 {
+    std::string message;
     LPVOID pBuffer;
-    errorCode = GetLastError();
+    DWORD errorCode = GetLastError();
     DWORD length = FormatMessageA(
         FORMAT_MESSAGE_ALLOCATE_BUFFER |
             FORMAT_MESSAGE_FROM_SYSTEM |
@@ -51,7 +51,7 @@ bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
     {
         // only format the error code into the message if no system message available
         message = builder.str();
-        return false;
+        return std::make_pair(errorCode, message);
     }
 
     // otherwise, concat the system message to the error code
@@ -59,7 +59,7 @@ bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
     builder << ": " << sMsg;
     LocalFree(pBuffer);
     message = builder.str();
-    return true;
+    return std::make_pair(errorCode, message);
 }
 
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
@@ -87,10 +87,7 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
     }
     else
     {
-        DWORD errorCode;
-        std::string message;
-        GetLastErrorMessage(errorCode, message);
-
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         if (isFirstError && (errorCode != ERROR_INVALID_HANDLE)) // expected invalid handle case
         {
             isFirstError = false;
@@ -165,9 +162,7 @@ bool InitializeNtQueryInformationThreadCallback()
     auto hModule = GetModuleHandleA("NtDll.dll");
     if (hModule == nullptr)
     {
-        DWORD errorCode;
-        std::string message;
-        GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Error("Impossible to load ntdll.dll ", message);
         return false;
     }
@@ -175,9 +170,7 @@ bool InitializeNtQueryInformationThreadCallback()
     NtQueryInformationThread = (NtQueryInformationThread_)GetProcAddress(hModule, "NtQueryInformationThread");
     if (NtQueryInformationThread == nullptr)
     {
-        DWORD errorCode;
-        std::string message;
-        GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Error("Impossible to get NtQueryInformationThread ", message);
         return false;
     }
@@ -221,9 +214,7 @@ bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
         if (isFirstError && (lResult != STATUS_INVALID_HANDLE))
         {
             isFirstError = false;
-            DWORD errorCode;
-            std::string message;
-            GetLastErrorMessage(errorCode, message);
+            auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
             if (errorCode == 0)
             {
                 Log::Error("IsRunning() - NtQueryInformationThread failure 0x", std::hex, lResult);
@@ -251,9 +242,7 @@ int32_t GetProcessorCount()
     auto nbProcs = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
     if (nbProcs == 0)
     {
-        DWORD errorCode;
-        std::string message;
-        GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Info("Impossible to retrieve the number of processors ", message);
 
         return 1;
@@ -267,9 +256,7 @@ ScopedHandle GetThreadHandle(DWORD threadId)
     auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
     if (handle == NULL)
     {
-        DWORD errorCode;
-        std::string message;
-        GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' ", message);
     }
     return handle;

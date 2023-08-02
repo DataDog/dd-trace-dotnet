@@ -335,9 +335,7 @@ bool Windows64BitStackFramesCollector::SuspendTargetThreadImplementation(Managed
         // We wanted to suspend, but it resulted in error.
         // This can happen when the thread died after we called managedThreads->LoopNext().
         // Give up.
-        DWORD errorCode;
-        std::string message;
-        OsSpecificApi::GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Info("Windows64BitStackFramesCollector::SuspendTargetThreadImplementation() SuspendThread() returned -1.",
                   " CLR tid=0x", std::hex, pThreadInfo->GetClrThreadId(), "; OS tid=", std::dec, pThreadInfo->GetOsThreadId(), " ", message);
 

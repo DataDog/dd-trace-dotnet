@@ -10,29 +10,19 @@
 
 TEST(OsSpecificApiTest, CheckLastErrorWithSystemMessage)
 {
-    DWORD errorCode;
-    std::string message;
     const DWORD expectedErrorCode = 0;  // = success
-
     SetLastError(expectedErrorCode);
 
-    bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
-
-    ASSERT_TRUE(hasSystemMessage);
+    auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
     ASSERT_EQ(expectedErrorCode, errorCode);
 }
 
 TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
 {
-    DWORD errorCode;
-    std::string message;
     const DWORD expectedErrorCode = 123456;  // this one does not exist
-
     SetLastError(expectedErrorCode);
 
-    bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
-
-    ASSERT_FALSE(hasSystemMessage);
+    auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
     ASSERT_EQ(expectedErrorCode, errorCode);
 }
 

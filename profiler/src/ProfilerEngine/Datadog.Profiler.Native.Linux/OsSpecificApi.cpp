@@ -33,17 +33,15 @@
 
 namespace OsSpecificApi {
 
-bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
+std::pair<DWORD, std::string> OsSpecificApi::GetLastErrorMessage()
 {
-    errorCode = errno;
+    DWORD errorCode = errno;
     std::stringstream builder;
     builder << "(error code = 0x" << std::dec << errorCode << ")";
-
     builder << ": " << strerror(errorCode);
 
     message = builder.str();
-
-    return true;
+    return std::make_pair(errorCode, message);
 }
 
 

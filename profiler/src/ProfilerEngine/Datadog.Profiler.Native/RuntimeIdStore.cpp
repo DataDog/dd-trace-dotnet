@@ -110,9 +110,7 @@ void* RuntimeIdStore::LoadDynamicLibrary(std::string filePath)
     HMODULE dynLibPtr = LoadLibrary(::shared::ToWSTRING(filePath).c_str());
     if (dynLibPtr == NULL)
     {
-        DWORD errorCode;
-        std::string message;
-        OsSpecificApi::GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Warn("LoadDynamicLibrary: Error loading dynamic library '", filePath, "' ", message);
     }
     return dynLibPtr;
@@ -141,9 +139,7 @@ void* RuntimeIdStore::GetExternalFunction(void* instance, const char* const func
     FARPROC dynFunc = GetProcAddress((HMODULE)instance, funcName);
     if (dynFunc == NULL)
     {
-        DWORD errorCode;
-        std::string message;
-        OsSpecificApi::GetLastErrorMessage(errorCode, message);
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         Log::Warn("GetExternalFunction: Error loading dynamic function '", funcName, "' ", message);
     }
     return dynFunc;
