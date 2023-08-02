@@ -36,7 +36,7 @@ class LibddprofExporter : public IExporter
 {
 public:
     LibddprofExporter(
-        std::vector<SampleValueType>&& sampleTypeDefinitions,
+        std::vector<SampleValueType> sampleTypeDefinitions,
         IConfiguration* configuration,
         IApplicationStore* applicationStore,
         IRuntimeInfo* runtimeInfo,

@@ -63,7 +63,7 @@ std::string const LibddprofExporter::ProfileExtension = ".pprof";
 std::string const LibddprofExporter::AllocationsExtension = ".balloc";
 
 LibddprofExporter::LibddprofExporter(
-    std::vector<SampleValueType>&& sampleTypeDefinitions,
+    std::vector<SampleValueType> sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,

@@ -103,6 +103,8 @@ CorProfilerCallback::~CorProfilerCallback()
 #endif
 }
 
+#include "SampleValueTypeProvider.h"
+
 bool CorProfilerCallback::InitializeServices()
 {
     _metricsSender = IMetricsSenderFactory::Create();
@@ -128,35 +130,22 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
-    // Each sample contains a vector of values.
-    // The list of a provider value definitions is available statically.
-    // Based on previous providers list, an offset in the values vector is computed and passed to the provider constructor.
-    // So a provider knows which value slot can be used to store its value(s).
-    uint32_t valuesOffset = 0;
-    std::vector<SampleValueType> sampleTypeDefinitions;
+    auto valueTypeProvider = SampleValueTypeProvider();
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        auto valueTypes = WallTimeProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        auto valueTypes = CpuTimeProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        auto valueTypes = ExceptionsProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
         _pExceptionsProvider = RegisterService<ExceptionsProvider>(
-            valuesOffset,
+            valueTypeProvider,
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
@@ -165,7 +154,6 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry);
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
@@ -176,10 +164,8 @@ bool CorProfilerCallback::InitializeServices()
         {
             if (_pCorProfilerInfoLiveHeap != nullptr)
             {
-                auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
-                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
                 _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
-                    valuesOffset,
+                    valueTypeProvider,
                     _pCorProfilerInfoLiveHeap,
                     _pManagedThreadList,
                     _pFrameStore.get(),
@@ -188,12 +174,9 @@ bool CorProfilerCallback::InitializeServices()
                     pRuntimeIdStore,
                     _pConfiguration.get(),
                     _metricsRegistry);
-                valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
-                valueTypes = AllocationsProvider::SampleTypeDefinitions;
-                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
-                    valuesOffset,
+                    valueTypeProvider,
                     _pCorProfilerInfo,
                     _pManagedThreadList,
                     _pFrameStore.get(),
@@ -204,7 +187,6 @@ bool CorProfilerCallback::InitializeServices()
                     _pLiveObjectsProvider,
                     _metricsRegistry
                     );
-                valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
                 {
@@ -220,10 +202,8 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
-            auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -234,15 +214,12 @@ bool CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
-            auto valueTypes = ContentionProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pContentionProvider = RegisterService<ContentionProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -252,16 +229,12 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
-            // Use the same value type for timeline
-            auto valueTypes = GarbageCollectionProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
@@ -269,7 +242,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get()
                 );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
@@ -277,7 +250,6 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
         else
         {
@@ -311,6 +283,7 @@ bool CorProfilerCallback::InitializeServices()
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
+    auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
@@ -333,7 +306,7 @@ bool CorProfilerCallback::InitializeServices()
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
-        std::move(sampleTypeDefinitions),
+        sampleTypeDefinitions,
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),
@@ -1252,7 +1225,8 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    _pManagedThreadList->GetOrCreateThread(threadId);
+    _pManagedThreadList->GetOrCreateThread(threadId); // -> ManagedThreadInfo
+    // _threadProvider->EmitCreationEvent(pThreadInfo);
     return S_OK;
 }
 

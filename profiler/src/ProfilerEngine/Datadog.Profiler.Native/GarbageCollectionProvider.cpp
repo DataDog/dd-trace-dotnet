@@ -3,6 +3,7 @@
 
 #include "GarbageCollectionProvider.h"
 
+#include "SampleValueTypeProvider.h"
 
 std::vector<SampleValueType> GarbageCollectionProvider::SampleTypeDefinitions(
     {
@@ -10,7 +11,7 @@ std::vector<SampleValueType> GarbageCollectionProvider::SampleTypeDefinitions(
     });
 
 GarbageCollectionProvider::GarbageCollectionProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
@@ -18,7 +19,7 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.Register(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
     _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");

@@ -9,6 +9,7 @@
 #include "LiveObjectsProvider.h"
 #include "OpSysTools.h"
 #include "Sample.h"
+#include "SampleValueTypeProvider.h"
 
 std::vector<SampleValueType> LiveObjectsProvider::SampleTypeDefinitions(
 {
@@ -23,7 +24,7 @@ const std::string LiveObjectsProvider::Gen2("2");
 
 
 LiveObjectsProvider::LiveObjectsProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo13* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -33,7 +34,6 @@ LiveObjectsProvider::LiveObjectsProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    _valueOffset(valueOffset),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pFrameStore(pFrameStore),
     _pAppDomainStore(pAppDomainStore),
@@ -41,7 +41,7 @@ LiveObjectsProvider::LiveObjectsProvider(
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
 {
     _pAllocationsProvider = std::make_unique<AllocationsProvider>(
-        valueOffset,  // the values (allocation count and size are stored in the live object values, not tha allocation values)
+        valueTypeProvider.Register(SampleTypeDefinitions),
         pCorProfilerInfo,
         pManagedThreadList,
         pFrameStore,

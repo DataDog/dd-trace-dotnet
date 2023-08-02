@@ -14,6 +14,7 @@
 #include "Log.h"
 #include "MetricsRegistry.h"
 #include "OsSpecificApi.h"
+#include "SampleValueTypeProvider.h"
 
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
@@ -22,12 +23,10 @@
 std::vector<SampleValueType> AllocationsProvider::SampleTypeDefinitions(
     {
         {"alloc-samples", "count"},
-        {"alloc-size", "bytes"}
-    });
-
+        {"alloc-size", "bytes"}});
 
 AllocationsProvider::AllocationsProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -38,7 +37,28 @@ AllocationsProvider::AllocationsProvider(
     ISampledAllocationsListener* pListener,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawAllocationSample>("AllocationsProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    AllocationsProvider(
+        valueTypeProvider.Register(SampleTypeDefinitions),
+        pCorProfilerInfo, pManagedThreadList, pFrameStore,
+        pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
+        pConfiguration,
+        pListener,
+        metricsRegistry)
+{
+}
+
+AllocationsProvider::AllocationsProvider(
+    std::vector<SampleValueTypeProvider::Offset> valueTypes,
+    ICorProfilerInfo4* pCorProfilerInfo,
+    IManagedThreadList* pManagedThreadList,
+    IFrameStore* pFrameStore,
+    IThreadsCpuManager* pThreadsCpuManager,
+    IAppDomainStore* pAppDomainStore,
+    IRuntimeIdStore* pRuntimeIdStore,
+    IConfiguration* pConfiguration,
+    ISampledAllocationsListener* pListener,
+    MetricsRegistry& metricsRegistry) :
+    CollectorBase<RawAllocationSample>("AllocationsProvider", std::move(valueTypes), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

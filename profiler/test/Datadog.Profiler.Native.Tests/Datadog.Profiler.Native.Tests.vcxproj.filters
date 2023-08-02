@@ -115,6 +115,9 @@
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
+    <ClCompile Include="SampleValueTypeProviderTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

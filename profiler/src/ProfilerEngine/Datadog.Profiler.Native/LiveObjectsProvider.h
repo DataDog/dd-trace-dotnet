@@ -23,6 +23,7 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 class IConfiguration;
 class ISampledAllocationsListener;
+class SampleValueTypeProvider;
 
 class LiveObjectsProvider : public IService,
                             public IBatchedSamplesProvider,
@@ -30,11 +31,8 @@ class LiveObjectsProvider : public IService,
                             public IGarbageCollectionsListener
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     LiveObjectsProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo13* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
@@ -78,7 +76,8 @@ private:
     bool IsAlive(ObjectHandleID handle) const;
 
 private:
-    uint32_t _valueOffset = 0;
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
     ICorProfilerInfo13* _pCorProfilerInfo = nullptr;
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;

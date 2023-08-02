@@ -46,7 +46,7 @@ public:
         return TotalDuration;
     }
 
-    inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
+    inline void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         sample->AddLabel(Label(Sample::GarbageCollectionReasonLabel, GetReasonText()));
         sample->AddLabel(Label(Sample::GarbageCollectionTypeLabel, GetTypeText()));
