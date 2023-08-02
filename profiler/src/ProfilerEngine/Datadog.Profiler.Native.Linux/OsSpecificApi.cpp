@@ -7,18 +7,16 @@
 
 #include <fstream>
 #include <string>
+#include <sstream>
 
-#ifdef LINUX
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
@@ -37,11 +35,15 @@ namespace OsSpecificApi {
 
 bool GetLastErrorMessage(DWORD& errorCode, std::string& message)
 {
-    // TODO: is there any GetLastError()/FormatMessage() in Linux: dlerror() maybe?
-    errorCode = 0;
-    message = "(error code = ?)";
+    errorCode = errno;
+    std::stringstream builder;
+    builder << "(error code = 0x" << std::dec << errorCode << ")";
 
-    return false;
+    builder << ": " << strerror(errorCode);
+
+    message = builder.str();
+
+    return true;
 }
 
 

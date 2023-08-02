@@ -19,7 +19,7 @@ TEST(OsSpecificApiTest, CheckLastErrorWithSystemMessage)
     bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
 
     ASSERT_TRUE(hasSystemMessage);
-    ASSERT_TRUE(expectedErrorCode == errorCode);
+    ASSERT_EQ(expectedErrorCode, errorCode);
 }
 
 TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
@@ -33,20 +33,20 @@ TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
     bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
 
     ASSERT_FALSE(hasSystemMessage);
-    ASSERT_TRUE(expectedErrorCode == errorCode);
+    ASSERT_EQ(expectedErrorCode, errorCode);
 }
 
 #else
-// TODO: see how to update makefile.txt in order to reference the needed Native.Linux/OsSpecificApi.cpp
-//
 
-//TEST(OsSpecificApiTest, CheckDefaultLinux)
-//{
-//    DWORD errorCode;
-//    std::string message;
-//    bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
-//
-//    ASSERT_FALSE(hasSystemMessage);
-//}
+#include <errno.h>
 
+TEST(OsSpecificApiTest, CheckLastErrorMessageWithErrno)
+{
+    DWORD errorCode;
+    std::string message;
+    errno = 42;
+    bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
+
+    ASSERT_EQ(42, errorCode);
+}
 #endif
