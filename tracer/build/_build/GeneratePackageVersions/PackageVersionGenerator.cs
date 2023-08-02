@@ -60,7 +60,7 @@ namespace GeneratePackageVersions
                                                .GetTargetFrameworks()
                                                .Select(x => (TargetFramework)new TargetFramework.TargetFrameworkTypeConverter().ConvertFrom(x));
 
-                var requiresDockerDependency = project.RequiresDockerDependency();
+                var requiresDockerDependency = project.RequiresDockerDependency().ToString();
 
                 var packageVersions = await NuGetPackageHelper.GetNugetPackageVersions(entry);
                 var orderedPackageVersions =
@@ -218,7 +218,7 @@ namespace GeneratePackageVersions
                 _xUnitFileGenerator.Start();
             }
 
-            public void Write(PackageVersionEntry entry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions, bool requiresDockerDependency)
+            public void Write(PackageVersionEntry entry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions, string requiresDockerDependency)
             {
                 _msBuildPropsFileGenerator.Write(entry, versions, requiresDockerDependency);
                 _xUnitFileGenerator.Write(entry, versions, requiresDockerDependency);

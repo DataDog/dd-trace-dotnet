@@ -4,7 +4,7 @@
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.15.0'">$(DefineConstants);MONGODB_2_15</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.7.0'">$(DefineConstants);MONGODB_2_7</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.2.0'">$(DefineConstants);MONGODB_2_2</DefineConstants>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
