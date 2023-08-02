@@ -29,7 +29,7 @@
 namespace OsSpecificApi {
 
 // if a system message was not found for the last error code the message will contain GetLastError between ()
-std::tuple<DWORD, std::string> GetLastErrorMessage()
+std::pair<DWORD, std::string> GetLastErrorMessage()
 {
     std::string message;
     LPVOID pBuffer;

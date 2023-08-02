@@ -32,10 +32,9 @@ TEST(OsSpecificApiTest, CheckLastErrorWithoutSystemMessage)
 
 TEST(OsSpecificApiTest, CheckLastErrorMessageWithErrno)
 {
-    DWORD errorCode;
-    std::string message;
     errno = 42;
-    bool hasSystemMessage = OsSpecificApi::GetLastErrorMessage(errorCode, message);
+
+    auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
 
     ASSERT_EQ(42, errorCode);
 }
