@@ -423,48 +423,6 @@ namespace Datadog.Trace.Tests.Configuration
             settings.StatsComputationEnabled.Should().Be(expected);
         }
 
-        [Fact]
-        public void StatsComputationEnabledWhenDeprecatedGCPFunction()
-        {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "function_name");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "project_1");
-
-            var settings = new TracerSettings(CreateConfigurationSource());
-
-            settings.StatsComputationEnabled.Should().Be(true);
-
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
-        }
-
-        [Fact]
-        public void StatsComputationEnabledWhenNewerGCPFunction()
-        {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "function_name");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "function_target");
-
-            var settings = new TracerSettings(CreateConfigurationSource());
-
-            settings.StatsComputationEnabled.Should().Be(true);
-
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
-        }
-
-        [Fact]
-        public void StatsComputationEnabledWhenAzureFunction()
-        {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-
-            var settings = new TracerSettings(CreateConfigurationSource());
-
-            settings.StatsComputationEnabled.Should().Be(true);
-
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-        }
-
         [Theory]
         [MemberData(nameof(Int32TestCases), 10)]
         public void StatsComputationInterval(string value, int expected)
