@@ -172,7 +172,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "aws.queue.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "producer"));
 
@@ -196,7 +196,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "aws.queue.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "queuename", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
@@ -241,7 +241,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "aws.topic.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "topicname", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "producer"));
 
@@ -265,7 +265,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "aws.topic.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "topicname", "peer.service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 

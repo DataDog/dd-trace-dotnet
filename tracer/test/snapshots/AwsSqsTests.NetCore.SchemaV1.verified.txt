@@ -43,7 +43,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -70,7 +70,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -202,7 +202,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -255,7 +255,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -282,7 +282,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -335,7 +335,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -362,7 +362,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -415,7 +415,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -442,7 +442,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -495,7 +495,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -522,7 +522,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -549,7 +549,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -602,7 +602,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -655,7 +655,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -682,7 +682,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -709,7 +709,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -762,7 +762,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -815,7 +815,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -842,7 +842,7 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -869,7 +869,7 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
-      _dd.peer.service.source: aws.queue.name
+      _dd.peer.service.source: queuename
     }
   }
 ]
