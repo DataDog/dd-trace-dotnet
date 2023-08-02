@@ -13,7 +13,7 @@
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.228'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_228</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.219'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_219</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'>='1.0.206'">$(DefineConstants);STACKEXCHANGEREDIS_1_0_206</DefineConstants>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

@@ -659,7 +659,7 @@ std::vector<std::string> GetGenericTypeParameters(IMetaDataImport2* pMetadata, m
     mdGenericParam genericParams[MaxGenericParametersCount];
     HRESULT hr = pMetadata->EnumGenericParams(&hEnum, mdTokenType, genericParams, MaxGenericParametersCount, &genericParamsCount);
 
-    if (SUCCEEDED(hr))
+    if (hr == S_OK)  // S_FALSE is return if there is no generic parameters
     {
         WCHAR paramName[64];
         ULONG paramNameLen = 64;

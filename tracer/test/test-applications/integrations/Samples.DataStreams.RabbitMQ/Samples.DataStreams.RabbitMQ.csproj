@@ -4,7 +4,7 @@
     <ApiVersion Condition="'$(ApiVersion)' == ''">6.0.0</ApiVersion>
     <DefineConstants Condition="$(ApiVersion) &gt;= 6.0.0">$(DefineConstants);RABBITMQ_6_0</DefineConstants>
     <DefineConstants Condition="$(ApiVersion) &gt;= 5.0.0">$(DefineConstants);RABBITMQ_5_0</DefineConstants>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

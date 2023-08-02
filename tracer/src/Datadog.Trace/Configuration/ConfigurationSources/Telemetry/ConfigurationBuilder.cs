@@ -67,10 +67,20 @@ internal readonly struct ConfigurationBuilder
         public string AsRedactedString(string defaultValue)
             => AsString(() => defaultValue, validator: null, recordValue: false);
 
+        /// <summary>
+        /// Beware, this function won't record telemetry if the config isn't explicitly set.
+        /// If you can, use <see cref="AsString(string)"/> instead or record telemetry manually.
+        /// </summary>
+        /// <returns>the string value of the configuration if set</returns>
         public string? AsString() => AsString(getDefaultValue: null, validator: null, recordValue: true);
 
         public string AsString(string defaultValue) => AsString(defaultValue, validator: null);
 
+        /// <summary>
+        /// Beware, this function won't record telemetry if the config isn't explicitly set.
+        /// If you can, use <see cref="AsString(string, Func&lt;string, bool&gt;?)" /> instead or record telemetry manually.
+        /// </summary>
+        /// <returns>the string value of the configuration if set and valid</returns>
         public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
 
         public string AsString(string defaultValue, Func<string, bool>? validator)
