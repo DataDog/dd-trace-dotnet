@@ -38,11 +38,11 @@ internal static class ServerlessMiniAgent
         string rustBinaryPathRoot;
         if (settings.IsRunningInGCPFunctions)
         {
-            rustBinaryPathRoot = "/layers/google.dotnet.publish/publish/bin";
+            rustBinaryPathRoot = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin");
         }
         else
         {
-            rustBinaryPathRoot = "/home/site/wwwroot";
+            rustBinaryPathRoot = System.IO.Path.Combine("home", "site", "wwwroot");
         }
 
         var isWindows = os == PlatformID.Win32NT;

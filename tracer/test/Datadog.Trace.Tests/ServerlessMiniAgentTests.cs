@@ -37,7 +37,8 @@ namespace Datadog.Trace.Tests
             var settings = new ImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            path.Should().Be("/layers/google.dotnet.publish/publish/bin/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent");
+            var expectedPath = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            path.Should().Be(expectedPath);
 
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
@@ -52,7 +53,8 @@ namespace Datadog.Trace.Tests
             var settings = new ImmutableTracerSettings(source);
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            path.Should().Be("/layers/google.dotnet.publish/publish/bin/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent");
+            var expectedPath = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            path.Should().Be(expectedPath);
 
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
             System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
@@ -67,7 +69,8 @@ namespace Datadog.Trace.Tests
             var settings = new ImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            path.Should().Be("/home/site/wwwroot/datadog-serverless-agent-linux-amd64/datadog-serverless-trace-mini-agent");
+            var expectedPath = System.IO.Path.Combine("home", "site", "wwwroot", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            path.Should().Be(expectedPath);
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
@@ -82,7 +85,8 @@ namespace Datadog.Trace.Tests
             var settings = new ImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Win32NT, settings);
-            path.Should().Be("/home/site/wwwroot/datadog-serverless-agent-windows-amd64/datadog-serverless-trace-mini-agent.exe");
+            var expectedPath = System.IO.Path.Combine("home", "site", "wwwroot", "datadog-serverless-agent-windows-amd64", "datadog-serverless-trace-mini-agent.exe");
+            path.Should().Be(expectedPath);
 
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
             Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
