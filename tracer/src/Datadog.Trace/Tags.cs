@@ -340,8 +340,8 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The region associated with the AWS SDK span.
-        /// <remarks>AwsRegion is a duplicate. Use Region instead.</remarks>
         /// </summary>
+        [Obsolete("AwsRegion is a duplicate. Use Region instead.")]
         internal const string AwsRegion = "aws.region";
 
         /// <summary>
@@ -356,8 +356,8 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The service associated with the AWS SDK span.
-        /// <remarks>AwsServiceName is a duplicate. Use AwsService instead.</remarks>
         /// </summary>
+        [Obsolete("AwsServiceName is a duplicate. Use AwsService instead.")]
         internal const string AwsServiceName = "aws.service";
 
         /// <summary>
@@ -367,8 +367,8 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.
-        /// <remarks>AwsTopicName is a duplicate. Use TopicName instead.</remarks>
         /// </summary>
+        [Obsolete("AwsTopicName is a duplicate. Use TopicName instead.")]
         internal const string AwsTopicName = "aws.topic.name";
 
         /// <summary>
@@ -378,8 +378,8 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The queue name associated with the AWS SDK SQS span.
-        /// <remarks>AwsQueueName is a duplicate. Use QueueName instead.</remarks>
         /// </summary>
+        [Obsolete("AwsQueueName is a duplicate. Use QueueName instead.")]
         internal const string AwsQueueName = "aws.queue.name";
 
         /// <summary>
