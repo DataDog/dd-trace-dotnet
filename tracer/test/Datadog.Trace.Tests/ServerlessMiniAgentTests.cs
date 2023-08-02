@@ -100,9 +100,9 @@ namespace Datadog.Trace.Tests
         [InlineData("log", "INFO", "log")]
         internal void CleanAndProperlyLogMiniAgentLogs(string rawLog, string expectedLevel, string expectedLog)
         {
-            var level = string.Empty;
-            var log = string.Empty.
-            ServerlessMiniAgent.ProcessMiniAgentLog(rawLog, level, log);
+            var level = "INFO";
+            var log = rawLog;
+            ServerlessMiniAgent.ProcessMiniAgentLog(rawLog, out level, out log);
             expectedLevel.Should().Be(level);
             expectedLog.Should().Be(log);
         }

@@ -94,26 +94,23 @@ internal static class ServerlessMiniAgent
             return;
         }
 
-        var level = string.Empty;
-        var log = string.Empty.
-        ProcessMiniAgentLog(data, level, log);
-
-        string level = logTuple.Item1;
-        string processedLog = logTuple.Item2;
+        var level = "INFO";
+        var log = data;
+        ProcessMiniAgentLog(data, out level, out log);
 
         switch (level)
         {
             case "ERROR":
-                Log.Error("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                Log.Error("[Datadog Serverless Mini Agent] {Data}", log);
                 break;
             case "WARN":
-                Log.Warning("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                Log.Warning("[Datadog Serverless Mini Agent] {Data}", log);
                 break;
             case "INFO":
-                Log.Information("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                Log.Information("[Datadog Serverless Mini Agent] {Data}", log);
                 break;
             case "DEBUG":
-                Log.Debug("[Datadog Serverless Mini Agent] {Data}", processedLog);
+                Log.Debug("[Datadog Serverless Mini Agent] {Data}", log);
                 break;
             default:
                 Log.Information("[Datadog Serverless Mini Agent] {Data}", data);
@@ -151,7 +148,7 @@ internal static class ServerlessMiniAgent
 
         string parsedLevel = rawLog.Substring(levelLeftBound + 1, levelRightBound - levelLeftBound - 1);
 
-        if (!(level is "ERROR" or "WARN" or "INFO" or "DEBUG"))
+        if (!(parsedLevel is "ERROR" or "WARN" or "INFO" or "DEBUG"))
         {
             return;
         }
