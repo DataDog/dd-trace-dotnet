@@ -426,7 +426,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-centos7}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter ${Filter:- } --SampleName ${SampleName:- } --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
     cap_add:
@@ -435,6 +435,8 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
+      - Filter=${Filter:- } #optional
+      - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-default}
       - runCodeCoverage=${runCodeCoverage:-true}
       - DD_CLR_ENABLE_NGEN=${DD_CLR_ENABLE_NGEN:-1}
@@ -703,7 +705,7 @@ services:
       args:
         - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
     image: dd-trace-dotnet/${baseImage:-debian}-tester
-    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1}
+    command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --filter ${Filter:- } --SampleName ${SampleName:- }  --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
     cap_add:
@@ -712,6 +714,8 @@ services:
       - NugetPackageDirectory=/project/${relativeNugetPackageDirectory:-packages}
       - artifacts=/project/${relativeArtifacts:-tracer/src/bin/artifacts}
       - framework=${framework:-netcoreapp3.1}
+      - Filter=${Filter:- } #optional
+      - SampleName=${SampleName:- } #optional
       - baseImage=${baseImage:-debian}
       - TestAllPackageVersions=${TestAllPackageVersions:-true}
       - IncludeMinorPackageVersions=${IncludeMinorPackageVersions:-false}
