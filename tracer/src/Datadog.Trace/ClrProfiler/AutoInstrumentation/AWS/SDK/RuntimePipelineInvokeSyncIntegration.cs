@@ -48,8 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             var scope = Tracer.Instance.InternalActiveScope;
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
-                var region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
-                tags.Region = region;
+                tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;;
             }
 
             return new CallTargetState(scope, state: executionContext);
