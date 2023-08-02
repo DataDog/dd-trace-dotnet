@@ -67,11 +67,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
+            int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
             var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
             // Assert an exact match once we can correctly instrument the generic constraint case
-            filteredSpans.Count.Should().Be(expectedSpanCount);
-            ValidateIntegrationSpans(spans , metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+            actualSpanCount.Should().Be(expectedSpanCount);
+            ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();

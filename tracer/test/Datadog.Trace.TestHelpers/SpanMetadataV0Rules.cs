@@ -336,7 +336,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsNpgsqlV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -347,7 +348,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "postgres")
                 .Matches("component", "Npgsql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsOpenTelemetryV0(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => { })
@@ -480,8 +482,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
-                .Matches("span.kind", "client")
-                .IsOptional("_dd.dbm_trace_injected"));
+                .Matches("span.kind", "client"));
 
         public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
