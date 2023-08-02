@@ -7074,6 +7074,33 @@
         }
       ],
       "transformers": []
+    },
+    {
+      "id": "github-app-token",
+      "name": "Github App Token",
+      "tags": {
+        "type": "hardcoded_secret",
+        "category": "attack_attempt",
+        "confidence": "0"
+      },
+      "conditions": [
+        {
+          "parameters": {
+            "inputs": [
+              {
+                "address": "hardcoded.secret"
+              }
+            ],
+            "regex": "(ghu|ghs)_[0-9a-zA-Z]{36}",
+            "options": {
+              "case_sensitive": true,
+              "min_length": 6
+            }
+          },
+          "operator": "match_regex"
+        }
+      ],
+      "transformers": []
     }
   ]
 }

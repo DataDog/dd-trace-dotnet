@@ -38,6 +38,11 @@
     <Reference Include="System.Web" />
   </ItemGroup>
 
+  <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) OR '$(TargetFramework)' == 'netstandard2.0'">
+    <PackageReference Include="System.Reflection.Metadata" Version="5.0.0" />
+  </ItemGroup>
+
+
   <ItemGroup Condition=" !$(TargetFramework.StartsWith('net4')) ">
     <!-- Instrumented libraries -->
     <PackageReference Include="Microsoft.AspNetCore.Hosting.Abstractions" Version="2.0.0" PrivateAssets="All" />

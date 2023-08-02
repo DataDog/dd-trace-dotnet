@@ -9,6 +9,11 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    public Location(string fullPath)
+    {
+        Path = fullPath;
+    }
+
     public Location(string? stackFile, string? methodName, int? line, ulong? spanId, string? methodTypeName)
     {
         if (!string.IsNullOrEmpty(stackFile))

@@ -30,6 +30,29 @@ namespace Samples.Security.AspNetCore5.Controllers
     [ApiController]
     public class IastController : ControllerBase
     {
+        static string[] hardcodedSecrets = new[] {
+            "use strict",
+            "ghu_123456123456123456123456123456123456",
+            "view engine",
+            "/weak-hash",
+            "./routers/weak-hash",
+            "/weak-cipher",
+            "./routers/weak-cipher",
+            "./routers/sqli",
+            "/cmdi.min",
+            "./routers/cmdi.min",
+            "./routers/cmdi",
+            "/path-traversal",
+            "./routers/path-traversal",
+            "./routers/ldap",
+            "/unvalidated-redirect",
+            "./routers/unvalidated-redirect",
+            "ghu_123456123456123456123456123456654321",
+            "valueToHash",
+            "Example app listening on port ",
+            "Example app listening on port "
+        };
+
         static SQLiteConnection dbConnection = null;
 
         public IActionResult Index()

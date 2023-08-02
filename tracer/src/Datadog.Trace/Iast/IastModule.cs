@@ -6,8 +6,10 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
@@ -23,6 +25,7 @@ internal static class IastModule
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
+    private const string OperationNameHardcodedSecret = "hardcoded_secret";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -120,6 +123,12 @@ internal static class IastModule
     {
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
+    }
+
+    public static Scope? OnHardcodedSecret(List<Vulnerability> vulnerabilities)
+    {
+        // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
+        return AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities);
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
@@ -277,15 +286,31 @@ internal static class IastModule
         return null;
     }
 
+    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, List<Vulnerability> vulnerabilities)
+    {
+        // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
+        var batch = GetVulnerabilityBatch();
+        foreach (var vulnerability in vulnerabilities)
+        {
+            batch.Add(vulnerability);
+        }
+
+        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
+    }
+
     private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, Vulnerability vulnerability)
     {
         // we either are not in a request or the distributed tracer returned a scope that cannot be casted to Scope and we cannot access the root span.
         var batch = GetVulnerabilityBatch();
         batch.Add(vulnerability);
+        return AddVulnerabilityAsSingleSpan(tracer, integrationId, operationName, batch.ToJson());
+    }
 
+    private static Scope? AddVulnerabilityAsSingleSpan(Tracer tracer, IntegrationId integrationId, string operationName, string vulnsJson)
+    {
         var tags = new IastTags()
         {
-            IastJson = batch.ToJson(),
+            IastJson = vulnsJson,
             IastEnabled = "1"
         };
 
