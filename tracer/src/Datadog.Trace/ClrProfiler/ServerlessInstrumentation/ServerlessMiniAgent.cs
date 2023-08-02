@@ -47,7 +47,7 @@ internal static class ServerlessMiniAgent
         var isWindows = os == PlatformID.Win32NT;
 
         string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
-        string rustBinaryName = string.Format("datadog-serverless-trace-mini-agent{0}", isWindows ? ".exe" : string.Empty);
+        string rustBinaryName = isWindows ? "datadog-serverless-trace-mini-agent.exe" : "datadog-serverless-trace-mini-agent");
         return System.IO.Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
     }
 

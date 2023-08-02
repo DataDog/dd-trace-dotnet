@@ -205,7 +205,7 @@ namespace Datadog.Trace
         internal void Start()
         {
             // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
-            ServerlessMiniAgent.StartServerlessMiniAgent(this.Settings);
+            ServerlessMiniAgent.StartServerlessMiniAgent(Settings);
 
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
