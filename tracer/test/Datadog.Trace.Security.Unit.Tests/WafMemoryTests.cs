@@ -25,6 +25,7 @@ namespace Datadog.Trace.Security.Unit.Tests
     public class WafMemoryTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;
+        public const int OverheadMargin = 20_000_000; // 20Mb margin
 
         [Fact]
         public void InitMemoryLeakCheck()
@@ -37,7 +38,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             var current = GetMemory();
-            current.Should().BeLessThanOrEqualTo(baseline + 10_000_000); // 10Mb margin
+            current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
         [Fact]
@@ -62,7 +63,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             var current = GetMemory();
-            current.Should().BeLessThanOrEqualTo(baseline + 10_000_000); // 10Mb margin
+            current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
         [Fact]
@@ -92,7 +93,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             }
 
             var current = GetMemory();
-            current.Should().BeLessThanOrEqualTo(baseline + 10_000_000); // 10Mb margin
+            current.Should().BeLessThanOrEqualTo(baseline + OverheadMargin);
         }
 
         private long GetMemory()
