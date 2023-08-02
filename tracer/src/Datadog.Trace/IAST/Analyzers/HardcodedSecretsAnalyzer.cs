@@ -105,35 +105,31 @@ namespace Datadog.Trace.Iast.Analyzers
             var waf = Security.Instance.WafInitResult?.Waf;
             if (waf != null)
             {
-                using var context = waf.CreateContext();
-                if (context != null)
+                foreach (var assembly in assemblies)
                 {
-                    foreach (var assembly in assemblies)
+                    if (IsExcluded(assembly)) { continue; }
+                    var secrets = ProcessAssembly(waf, Security.Instance.Settings.WafTimeoutMicroSeconds, assembly);
+                    if (secrets.Count > 0)
                     {
-                        if (IsExcluded(assembly)) { continue; }
-                        var secrets = ProcessAssembly(context, Security.Instance.Settings.WafTimeoutMicroSeconds, assembly);
-                        if (secrets.Count > 0)
+                        List<Vulnerability> vulnerabilities = new List<Vulnerability>();
+                        var location = assembly.Location;
+                        foreach (var secret in secrets)
                         {
-                            List<Vulnerability> vulnerabilities = new List<Vulnerability>();
-                            var location = assembly.Location;
-                            foreach (var secret in secrets)
-                            {
-                                vulnerabilities.Add(new Vulnerability(
-                                    VulnerabilityTypeName.HardcodedSecret,
-                                    (VulnerabilityTypeName.HardcodedSecret + ":" + location + ":" + secret).GetStaticHashCode(),
-                                    new Location(location),
-                                    new Evidence(secret),
-                                    IntegrationId.HardcodedSecret));
-                            }
-
-                            IastModule.OnHardcodedSecret(vulnerabilities);
+                            vulnerabilities.Add(new Vulnerability(
+                                VulnerabilityTypeName.HardcodedSecret,
+                                (VulnerabilityTypeName.HardcodedSecret + ":" + location + ":" + secret).GetStaticHashCode(),
+                                new Location(location),
+                                new Evidence(secret),
+                                IntegrationId.HardcodedSecret));
                         }
+
+                        IastModule.OnHardcodedSecret(vulnerabilities);
                     }
                 }
             }
         }
 
-        private static List<string> ProcessAssembly(IContext context, ulong timeout, Assembly assembly)
+        private static List<string> ProcessAssembly(IWaf waf, ulong timeout, Assembly assembly)
         {
             List<string> res = new List<string>();
             try
@@ -146,9 +142,13 @@ namespace Datadog.Trace.Iast.Analyzers
                 while (!userStringHandle.IsNil)
                 {
                     var userString = mr.GetUserString(userStringHandle);
-                    if (CheckSecret(context, userString, timeout))
+                    using var context = waf.CreateContext();
+                    if (context != null)
                     {
-                        res.Add(userString);
+                        if (CheckSecret(context, userString, timeout))
+                        {
+                            res.Add(userString);
+                        }
                     }
 
                     userStringHandle = mr.GetNextHandle(userStringHandle);
@@ -200,6 +200,8 @@ namespace Datadog.Trace.Iast.Analyzers
                     }
                 }
             }
+
+            if (assembly.IsDynamic) { return true; }
 
             foreach (var regex in _excludedAssembliesRegexes)
             {

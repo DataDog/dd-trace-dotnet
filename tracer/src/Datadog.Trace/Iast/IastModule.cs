@@ -125,10 +125,10 @@ internal static class IastModule
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
-    public static Scope? OnHardcodedSecret(List<Vulnerability> vulnerabilities)
+    public static void OnHardcodedSecret(List<Vulnerability> vulnerabilities)
     {
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
-        return AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities);
+        AddVulnerabilityAsSingleSpan(Tracer.Instance, IntegrationId.HardcodedSecret, OperationNameHardcodedSecret, vulnerabilities)?.Dispose();
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)

@@ -3,7 +3,7 @@
     "windowsAuthentication": false,
     "anonymousAuthentication": true,
     "iisExpress": {
-      "applicationUrl": "http://localhost:63394/",
+      "applicationUrl": "http://localhost:5458/",
       "sslPort": 44320
     }
   },
@@ -61,7 +61,7 @@
       },
       "nativeDebugging": true,
       "use64Bit": false,
-      "applicationUrl": "http://localhost:54587"
+      "applicationUrl": "http://localhost:5458"
     },
     "Samples.AspNetCore5.Linux": {
       "commandName": "Project",
@@ -86,7 +86,7 @@
       },
       "nativeDebugging": true,
       "use64Bit": true,
-      "applicationUrl": "http://localhost:54569"
+      "applicationUrl": "http://localhost:5458"
     }
   }
 }
