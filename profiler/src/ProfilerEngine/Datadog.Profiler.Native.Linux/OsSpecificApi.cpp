@@ -40,7 +40,7 @@ std::pair<DWORD, std::string> OsSpecificApi::GetLastErrorMessage()
     builder << "(error code = 0x" << std::dec << errorCode << ")";
     builder << ": " << strerror(errorCode);
 
-    message = builder.str();
+    std::string message = builder.str();
     return std::make_pair(errorCode, message);
 }
 
