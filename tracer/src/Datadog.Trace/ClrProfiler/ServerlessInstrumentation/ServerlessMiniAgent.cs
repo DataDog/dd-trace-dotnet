@@ -23,9 +23,9 @@ internal static class ServerlessMiniAgent
             return null;
         }
 
-        if (EnvironmentHelpers.GetEnvironmentVariable("DD_MINI_AGENT_PATH") != null)
+        if (EnvironmentHelpers.GetEnvironmentVariable("DD_MINI_AGENT_PATH") is { } path)
         {
-            return EnvironmentHelpers.GetEnvironmentVariable("DD_MINI_AGENT_PATH");
+            return path;
         }
 
         // Environment.OSVersion.Platform can return PlatformID.Unix on MacOS, this is OK as GCP & Azure don't have MacOs functions.
