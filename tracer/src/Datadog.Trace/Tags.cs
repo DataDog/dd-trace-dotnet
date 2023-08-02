@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -338,6 +340,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The region associated with the AWS SDK span.
+        /// <remarks>AwsRegion is a duplicate. Use Region instead.</remarks>
         /// </summary>
         internal const string AwsRegion = "aws.region";
 
@@ -353,6 +356,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The service associated with the AWS SDK span.
+        /// <remarks>AwsServiceName is a duplicate. Use AwsService instead.</remarks>
         /// </summary>
         internal const string AwsServiceName = "aws.service";
 
@@ -363,6 +367,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.
+        /// <remarks>AwsTopicName is a duplicate. Use TopicName instead.</remarks>
         /// </summary>
         internal const string AwsTopicName = "aws.topic.name";
 
@@ -373,6 +378,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// The queue name associated with the AWS SDK SQS span.
+        /// <remarks>AwsQueueName is a duplicate. Use QueueName instead.</remarks>
         /// </summary>
         internal const string AwsQueueName = "aws.queue.name";
 

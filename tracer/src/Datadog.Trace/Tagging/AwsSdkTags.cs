@@ -28,10 +28,10 @@ namespace Datadog.Trace.Tagging
         public string RequestId { get; set; }
 
         [Tag(Trace.Tags.AwsServiceName)]
-        public string Service { get; set; }
+        public string AwsService => Service;
 
         [Tag(Trace.Tags.AwsService)]
-        public string AwsService => Service;
+        public string Service { get; set; }
 
         [Tag(Trace.Tags.HttpMethod)]
         public string HttpMethod { get; set; }
