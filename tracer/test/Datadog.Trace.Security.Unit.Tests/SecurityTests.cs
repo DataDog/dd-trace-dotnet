@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("block_request", null, 200, "auto", 200, "application/json", SecurityConstants.BlockedJsonTemplate)]
         [InlineData("block_request", null, 201, "html", 201, "text/html", SecurityConstants.BlockedHtmlTemplate)]
         [InlineData("redirect_request", "/toto", 302, null, 302, null, null)]
-        // if wrong redirect status code should default to 303
+        // if the wrong redirect status code should default to 303
         [InlineData("redirect_request", "/toto", 404, null, 303, null, null)]
         // if no location default to block request with default template  / 403
         [InlineData("redirect_request", "", 303, null, 403, "application/json", SecurityConstants.BlockedJsonTemplate)]
