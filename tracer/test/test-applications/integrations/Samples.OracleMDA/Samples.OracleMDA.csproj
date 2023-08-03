@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">19.10.1</ApiVersion>
     <TargetFrameworks>net462</TargetFrameworks>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

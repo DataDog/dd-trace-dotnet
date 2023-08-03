@@ -24,33 +24,33 @@ namespace Datadog.Trace.DatabaseMonitoring
             if ((integrationId is IntegrationId.MySql or IntegrationId.Npgsql or IntegrationId.SqlClient) &&
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
-                var propagatorSringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                propagatorSringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceNameInternal)}'");
+                var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                propagatorStringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceNameInternal)}'");
 
                 if (context.TraceContext?.Environment is { } envTag)
                 {
-                    propagatorSringBuilder.Append($",{SqlCommentEnv}='{Uri.EscapeDataString(envTag)}'");
+                    propagatorStringBuilder.Append($",{SqlCommentEnv}='{Uri.EscapeDataString(envTag)}'");
                 }
 
-                propagatorSringBuilder.Append($",{SqlCommentRootService}='{Uri.EscapeDataString(configuredServiceName)}'");
+                propagatorStringBuilder.Append($",{SqlCommentRootService}='{Uri.EscapeDataString(configuredServiceName)}'");
 
                 if (context.TraceContext?.ServiceVersion is { } versionTag)
                 {
-                    propagatorSringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
+                    propagatorStringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
                 }
 
                 // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
                 if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
                 {
                     traceParentInjected = true;
-                    propagatorSringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
+                    propagatorStringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
                 }
                 else
                 {
-                    propagatorSringBuilder.Append("*/");
+                    propagatorStringBuilder.Append("*/");
                 }
 
-                return StringBuilderCache.GetStringAndRelease(propagatorSringBuilder);
+                return StringBuilderCache.GetStringAndRelease(propagatorStringBuilder);
             }
 
             return string.Empty;
