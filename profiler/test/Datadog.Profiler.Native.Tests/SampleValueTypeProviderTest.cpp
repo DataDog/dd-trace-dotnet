@@ -23,6 +23,13 @@ testing::AssertionResult AreSampleValueTypeEqual(SampleValueType const& v1, Samp
     for (auto i = 0; i < expectedDefinitions.size(); i++)      \
         ASSERT_PRED2(AreSampleValueTypeEqual, expectedDefinitions[i], definitions[i]);
 
+#define ASSERT_OFFSETS(expectedOffsets, offsets)       \
+    ASSERT_EQ(expectedOffsets.size(), offsets.size()); \
+    for (auto i = 0; i < expectedOffsets.size(); i++)  \
+        ASSERT_EQ(expectedOffsets[i], offsets[i]);
+
+using ValueOffsets = std::vector<SampleValueTypeProvider::Offset>;
+
 TEST(SampleValueTypeProvider, RegisterValueTypes)
 {
     SampleValueTypeProvider provider;
@@ -30,9 +37,8 @@ TEST(SampleValueTypeProvider, RegisterValueTypes)
 
     auto offsets = provider.Register(valueTypes);
 
-    ASSERT_EQ(2, offsets.size());
-    ASSERT_EQ(0, offsets[0]); // cpu offset
-    ASSERT_EQ(1, offsets[1]); // walltime offset
+    ASSERT_OFFSETS((ValueOffsets{0, 1}), offsets);
+    //              cpu offset --^  ^-- walltime offset
 
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 }
@@ -44,19 +50,17 @@ TEST(SampleValueTypeProvider, RegisterTwiceSameValueType)
 
     auto offsets = provider.Register(valueTypes);
 
-    ASSERT_EQ(2, offsets.size());
-    ASSERT_EQ(0, offsets[0]); // cpu offset
-    ASSERT_EQ(1, offsets[1]); // walltime offset
+    ASSERT_OFFSETS((ValueOffsets{0, 1}), offsets);
+    //              cpu offset --^  ^-- walltime offset
 
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 
-    // Register a second time
+    // Register walltime a second time
 
     auto alreadyRegisteredValueType = std::vector<SampleValueType>{WallTimeValueType};
     auto offsets2 = provider.Register(alreadyRegisteredValueType);
 
-    ASSERT_EQ(1, offsets2.size());
-    ASSERT_EQ(1, offsets2[0]); // walltime offset did not changed
+    ASSERT_OFFSETS((ValueOffsets{1}), offsets2); // walltime offset did not changed
 
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 }
@@ -70,13 +74,10 @@ TEST(SampleValueTypeProvider, CheckSequentialRegistration)
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 
     // Register ExceptionValueType
-    auto anotherValuetype = std::vector<SampleValueType>{
-        ExceptionValueType};
+    auto anotherValuetype = std::vector<SampleValueType>{ExceptionValueType};
 
     auto offsets2 = provider.Register(anotherValuetype);
-
-    ASSERT_EQ(1, offsets2.size());
-    ASSERT_EQ(2, offsets2[0]);
+    ASSERT_OFFSETS((ValueOffsets{2}), offsets2);
 
     ASSERT_DEFINITIONS((std::vector<SampleValueType>{CpuValueType, WallTimeValueType, ExceptionValueType}), provider.GetValueTypes());
 }

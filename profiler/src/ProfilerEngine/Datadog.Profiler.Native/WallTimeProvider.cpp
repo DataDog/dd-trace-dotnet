@@ -8,7 +8,8 @@
 #include "IRuntimeIdStore.h"
 #include "IThreadsCpuManager.h"
 #include "RawWallTimeSample.h"
-#include "SampleValueTypeProvider.h"
+
+class SampleValueTypeProvider;
 
 std::vector<SampleValueType> WallTimeProvider::SampleTypeDefinitions(
     {

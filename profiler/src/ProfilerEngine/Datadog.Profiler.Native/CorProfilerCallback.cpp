@@ -44,6 +44,7 @@
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
 #include "Sample.h"
+#include "SampleValueTypeProvider.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
@@ -102,8 +103,6 @@ CorProfilerCallback::~CorProfilerCallback()
     CGroup::Cleanup();
 #endif
 }
-
-#include "SampleValueTypeProvider.h"
 
 bool CorProfilerCallback::InitializeServices()
 {
@@ -1225,8 +1224,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    _pManagedThreadList->GetOrCreateThread(threadId); // -> ManagedThreadInfo
-    // _threadProvider->EmitCreationEvent(pThreadInfo);
+    _pManagedThreadList->GetOrCreateThread(threadId);
     return S_OK;
 }
 
