@@ -341,7 +341,7 @@ namespace Datadog.Trace.Configuration
 
             // we only want to instantiate ImmutableAzureAppServiceSettings if we are for sure running
             // in AAS, or if we might be running in a Consumption Plan function.
-            var isMaybeAzureFunctionConsumptionPlan = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
+            var isMaybeAzureFunctionConsumptionPlan = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") == "Dynamic";
 
             if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)
             {
