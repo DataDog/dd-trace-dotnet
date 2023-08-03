@@ -20,7 +20,7 @@ using Datadog.Trace.Tests.Agent;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Debugger;
+namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 
 public class SymbolUploaderTest
 {
@@ -34,7 +34,7 @@ public class SymbolUploaderTest
         var settings = new DebuggerSettings(
             new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInMb, "1" } }),
             NullConfigurationTelemetry.Instance);
-        _upload = SymbolsUploader.Create(new SymbolExtractor(), _api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
+        _upload = SymbolsUploader.Create(_api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
     }
 
     [Fact]
@@ -99,9 +99,9 @@ public class SymbolUploaderTest
         };
 
         var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();
-        for (int i = 0; i < numberOfTypes; i++)
+        for (var i = 0; i < numberOfTypes; i++)
         {
-            scopes.Add(new Datadog.Trace.Debugger.Symbols.Model.Scope
+            scopes.Add(new Trace.Debugger.Symbols.Model.Scope
             {
                 Name = $"type: {i}",
                 ScopeType = SymbolType.Class,

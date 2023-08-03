@@ -1,0 +1,101 @@
+﻿{
+  "service": "test",
+  "env": "test",
+  "version": "0",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scopeType": "Assembly",
+      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "startLine": 0,
+      "endLine": 0,
+      "scopes": [
+        {
+          "scopeType": "Class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithStaticFieldClosure",
+          "startLine": 14,
+          "endLine": 31,
+          "languageSpecifics": {
+            "superClasses": [
+              "System.Object"
+            ]
+          },
+          "symbols": [
+            {
+              "name": "i",
+              "type": "Int32",
+              "symbolType": "Static_Field",
+              "line": -1
+            }
+          ],
+          "scopes": [
+            {
+              "scopeType": "Method",
+              "name": ".ctor",
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
+              "startLine": 14,
+              "endLine": 17,
+              "languageSpecifics": {
+                "returnType": "System.Void",
+                "startColumn": 9,
+                "endColumn": 10
+              },
+              "scopes": []
+            },
+            {
+              "scopeType": "Method",
+              "name": "Foo",
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
+              "startLine": 20,
+              "endLine": 30,
+              "languageSpecifics": {
+                "returnType": "System.Void",
+                "startColumn": 9,
+                "endColumn": 10
+              },
+              "symbols": [
+                {
+                  "name": "rand",
+                  "type": "System.Int32",
+                  "symbolType": "Local",
+                  "line": 20
+                },
+                {
+                  "name": "action",
+                  "type": "System.Action",
+                  "symbolType": "Local",
+                  "line": 20
+                }
+              ],
+              "scopes": [
+                {
+                  "scopeType": "Closure",
+                  "name": "Foo",
+                  "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithStaticFieldClosure.cs",
+                  "startLine": 24,
+                  "endLine": 27,
+                  "languageSpecifics": {
+                    "accessModifiers": [
+                      "Assembly"
+                    ],
+                    "returnType": "System.Void",
+                    "startColumn": 13,
+                    "endColumn": 14
+                  },
+                  "symbols": [
+                    {
+                      "name": "s",
+                      "type": "System.Int32",
+                      "symbolType": "Local",
+                      "line": 24
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
