@@ -47,6 +47,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         internal static IConfigurationTelemetry Config => Volatile.Read(ref _configurationV2);
 
+        /// <summary>
+        /// Gets the static log collector used to record diagnostic logs
+        /// </summary>
+        internal static DiagnosticLogCollector DiagnosticLogs { get; } = new();
+
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
 
@@ -193,6 +198,7 @@ namespace Datadog.Trace.Telemetry
                         Config,
                         _dependencies!,
                         Metrics,
+                        DiagnosticLogs,
                         transportManager,
                         settings.HeartbeatInterval);
                 }

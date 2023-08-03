@@ -24,7 +24,7 @@ public class TelemetryControllerV2SchedulerTests
 
     public TelemetryControllerV2SchedulerTests()
     {
-        _scheduler = new TelemetryControllerV2.Scheduler(FlushInterval, _processExit, _clock, _delayFactory);
+        _scheduler = new TelemetryControllerV2.Scheduler(FlushInterval, () => NeverComplete, _processExit, _clock, _delayFactory);
     }
 
     [Fact]
@@ -55,6 +55,7 @@ public class TelemetryControllerV2SchedulerTests
 
         // t = 5s;
         _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // triggered by first initialization, Next flush at 65s
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
 
         // wait for the next loop - delay should be FlushInterval
         _delayFactory.Task = delay =>
@@ -68,11 +69,13 @@ public class TelemetryControllerV2SchedulerTests
 
         // t = 65s;
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
 
         await _scheduler.WaitForNextInterval(); // next flush at 125s
 
         // t = 125s;
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
 
         // we'll interrupt the next delay with a process exit signal
         mutex.Reset();
@@ -92,11 +95,100 @@ public class TelemetryControllerV2SchedulerTests
         await waitTask;
 
         _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // final flush
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task TypicalLoop_WithLogsQueueTrigger()
+    {
+        var queueGenerator = new QueueTaskGenerator();
+        _scheduler = GetScheduler(queueGenerator);
+
+        // t = 0; should not send initially
+        _scheduler.ShouldFlushTelemetry.Should().BeFalse();
+
+        // we expect an infinite flush interval, because initialization is not complete
+        // we'll fast-forward to 5s for now
+        var delayMutex = new ManualResetEventSlim();
+        _delayFactory.Task = delay =>
+        {
+            delay.Should().Be(Timeout.InfiniteTimeSpan);
+            _clock.UtcNow += FiveSeconds;
+            delayMutex.Set();
+            return NeverComplete;
+        };
+
+        var waitTask = _scheduler.WaitForNextInterval();
+        waitTask.IsFaulted.Should().BeFalse();
+        _scheduler.SetTracerInitialized();
+        delayMutex.Wait();
+
+        await waitTask;
+
+        // t = 5s;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // triggered by first initialization, Next flush at 65s
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
+
+        // wait for the next loop - delay should be FlushInterval
+        // fast-forward 5s for now, and fire the queue
+        _delayFactory.Task = delay =>
+        {
+            _clock.UtcNow += FiveSeconds;
+            delayMutex.Set();
+            return NeverComplete;
+        };
+
+        var queueTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        queueGenerator.Task = () => queueTcs.Task;
+
+        waitTask = _scheduler.WaitForNextInterval();
+        waitTask.IsFaulted.Should().BeFalse();
+        delayMutex.Wait();
+        queueTcs.SetResult(true); // this triggers the queue task
+
+        await waitTask;
+
+        // t = 10s;
+        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // not a complete interval
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue(); // triggered by queue
+
+        // same deal again
+        delayMutex.Reset();
+        queueTcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        queueGenerator.Task = () => queueTcs.Task;
+
+        waitTask = _scheduler.WaitForNextInterval();
+        waitTask.IsFaulted.Should().BeFalse();
+        delayMutex.Wait();
+        queueTcs.SetResult(true); // this triggers the queue task
+
+        // t = 15s;
+        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // not a complete interval
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue(); // triggered by queue
+
+        // now lets run the next interval properly
+        queueGenerator.Task = () => NeverComplete;
+
+        _delayFactory.Task = delay =>
+        {
+            delay.Should().Be(TimeSpan.FromSeconds(50));
+            _clock.UtcNow += delay;
+            return Task.CompletedTask;
+        };
+        await _scheduler.WaitForNextInterval(); // next flush at 125s
+
+        // t = 125s;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
     }
 
     [Fact]
     public async Task DoesNotFlushTelemetryUntilInitialized()
     {
+        // queue immediately indicates it's overfull
+        var queue = new QueueTaskGenerator { Task = () => Task.CompletedTask };
+        _scheduler = GetScheduler(queue);
+
         // increment a full flush interval each time
         _delayFactory.Task = delay =>
         {
@@ -105,15 +197,19 @@ public class TelemetryControllerV2SchedulerTests
         };
 
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeFalse(); // even though queue is ready, can't flush yet
 
         await _scheduler.WaitForNextInterval();
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeFalse();
 
         await _scheduler.WaitForNextInterval();
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeFalse();
 
         await _scheduler.WaitForNextInterval();
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeFalse();
 
         // don't increment this time
         _delayFactory.Task = delay => NeverComplete;
@@ -121,6 +217,7 @@ public class TelemetryControllerV2SchedulerTests
         _scheduler.SetTracerInitialized();
         await _scheduler.WaitForNextInterval();
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+        _scheduler.ShouldFlushDiagnosticLogs.Should().BeTrue();
     }
 
     [Fact]
@@ -188,13 +285,20 @@ public class TelemetryControllerV2SchedulerTests
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
     }
 
-    private TelemetryControllerV2.Scheduler GetScheduler()
-        => new(FlushInterval, _processExit, _clock, _delayFactory);
+    private TelemetryControllerV2.Scheduler GetScheduler(QueueTaskGenerator queueTaskGenerator = null)
+        => new(FlushInterval, (queueTaskGenerator ?? new()).GetTask, _processExit, _clock, _delayFactory);
 
     private class DelayFactory : TelemetryControllerV2.Scheduler.IDelayFactory
     {
         public Func<TimeSpan, Task> Task { get; set; } = _ => System.Threading.Tasks.Task.CompletedTask;
 
         public Task Delay(TimeSpan delay) => Task(delay);
+    }
+
+    private class QueueTaskGenerator
+    {
+        public Func<Task> Task { get; set; } = () => NeverComplete;
+
+        public Task GetTask() => Task();
     }
 }

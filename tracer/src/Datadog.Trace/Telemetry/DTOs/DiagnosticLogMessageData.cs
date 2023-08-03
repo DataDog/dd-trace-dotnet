@@ -13,7 +13,17 @@ namespace Datadog.Trace.Telemetry.DTOs;
 
 internal class DiagnosticLogMessageData
 {
-    public DiagnosticLogMessageData(string message, TelemetryLogLevel level, long timestamp)
+    private const int FixedSerializationCharacters =
+        7 /*message*/ +
+        5 /*level*/ +
+        5 /*level value*/ +
+        4 /*tags*/ +
+        11 /*stack_trace*/ +
+        11 /* tracer_time */ +
+        10 /* tracer_time value */ +
+        15 /* json ,"{}  etc*/;
+
+    public DiagnosticLogMessageData(string message, TelemetryLogLevel level, DateTimeOffset timestamp)
     {
         Message = message;
         Level = level;
@@ -33,4 +43,7 @@ internal class DiagnosticLogMessageData
     /// Gets or sets unix timestamp (in seconds) for the log
     /// </summary>
     public long TracerTime { get; set; }
+
+    public int GetApproximateSerializationSize()
+        => Encoding.UTF8.GetMaxByteCount(FixedSerializationCharacters + Message.Length + (StackTrace?.Length ?? 0) + (Tags?.Length ?? 0));
 }

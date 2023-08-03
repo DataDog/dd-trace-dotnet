@@ -33,6 +33,7 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly IntegrationTelemetryCollector _integrations = new();
     private readonly ProductsTelemetryCollector _products = new();
     private readonly IMetricsTelemetryCollector _metrics;
+    private readonly DiagnosticLogCollector _diagnosticLogs;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
@@ -45,6 +46,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
         IMetricsTelemetryCollector metrics,
+        DiagnosticLogCollector diagnosticLogs,
         TelemetryTransportManagerV2 transportManager,
         TimeSpan flushInterval)
     {
@@ -52,7 +54,8 @@ internal class TelemetryControllerV2 : ITelemetryController
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
-        _scheduler = new(flushInterval, _processExit);
+        _diagnosticLogs = diagnosticLogs ?? throw new ArgumentNullException(nameof(diagnosticLogs));
+        _scheduler = new(flushInterval, _diagnosticLogs.WaitForLogsAsync, _processExit);
 
         try
         {
@@ -211,7 +214,7 @@ internal class TelemetryControllerV2 : ITelemetryController
 
             if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
             {
-                await PushTelemetry(sendAppClosing: isFinalPush).ConfigureAwait(false);
+                await PushTelemetry(includeLogs: _scheduler.ShouldFlushDiagnosticLogs, sendAppClosing: isFinalPush).ConfigureAwait(false);
             }
 
             if (isFinalPush)
@@ -225,7 +228,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         }
     }
 
-    private async Task PushTelemetry(bool sendAppClosing)
+    private async Task PushTelemetry(bool includeLogs, bool sendAppClosing)
     {
         try
         {
@@ -247,6 +250,16 @@ internal class TelemetryControllerV2 : ITelemetryController
             {
                 Log.Debug("Telemetry not initialized, skipping");
                 return;
+            }
+
+            if (includeLogs && _diagnosticLogs.GetLogs() is { } batches)
+            {
+                foreach (var batch in batches)
+                {
+                    var logPayload = _dataBuilder.BuildDiagnosticLogsTelemetryData(application, host, batch, _namingVersion);
+                    Log.Debug("Pushing diagnostic logs");
+                    await _transportManager.TryPushTelemetry(logPayload).ConfigureAwait(false);
+                }
             }
 
             // use values from previous failed attempt if necessary
@@ -299,36 +312,40 @@ internal class TelemetryControllerV2 : ITelemetryController
         private const int DelayTaskIndex = 0;
         private const int ProcessTaskIndex = 1;
         private const int InitializationTaskIndex = 2;
+        private const int LogQueueSizeTaskIndex = 3;
 
         private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _processExitSource;
         private readonly Task[] _tasks;
+        private readonly Func<Task> _logQueueTaskGenerator;
         private readonly IClock _clock;
         private readonly IDelayFactory _delayFactory;
         private TimeSpan _flushInterval;
         private DateTime _lastFlush;
         private bool _initializationFlushExecuted = false;
 
-        public Scheduler(TimeSpan flushInterval, TaskCompletionSource<bool> processExitSource)
-        : this(flushInterval, processExitSource, new Clock(), new DelayFactory())
+        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource)
+        : this(flushInterval, logQueueTaskGenerator, processExitSource, new Clock(), new DelayFactory())
         {
         }
 
         // For testing only
-        public Scheduler(TimeSpan flushInterval, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        public Scheduler(TimeSpan flushInterval, Func<Task> logQueueTaskGenerator, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
         {
             _clock = clock;
             _delayFactory = delayFactory;
             _processExitSource = processExitSource;
             _flushInterval = flushInterval;
+            _logQueueTaskGenerator = logQueueTaskGenerator;
             ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
             _lastFlush = _clock.UtcNow;
 
             // Using a task array instead of overloads to avoid allocating the array every loop
-            _tasks = new Task[3];
+            _tasks = new Task[4];
             _tasks[DelayTaskIndex] = Task.CompletedTask; // Replaced on first iteration of WaitForNextInterval(), but ensures there's no nulls around
             _tasks[ProcessTaskIndex] = processExitSource.Task;
             _tasks[InitializationTaskIndex] = _tracerInitialized.Task;
+            _tasks[LogQueueSizeTaskIndex] = _logQueueTaskGenerator();
         }
 
         public interface IDelayFactory
@@ -337,6 +354,8 @@ internal class TelemetryControllerV2 : ITelemetryController
         }
 
         public bool ShouldFlushTelemetry { get; private set; }
+
+        public bool ShouldFlushDiagnosticLogs { get; private set; }
 
         public void SetFlushInterval(TimeSpan flushInterval)
         {
@@ -352,15 +371,14 @@ internal class TelemetryControllerV2 : ITelemetryController
         {
             // Calculate how long before the next flush. Accounts for the fact that it might
             // take a long time to push telemetry if the network is slow or faulty
-
             var nextFlush = _lastFlush.Add(_flushInterval);
 
             // Note that we don't start flushing until initialized, so using infinite delay initially
             TimeSpan? waitPeriod = _initializationFlushExecuted
-                                 ? nextFlush - _clock.UtcNow
-                                 : null;
+                                       ? nextFlush - _clock.UtcNow
+                                       : null;
 
-            Task? completedTask = null;
+            var logFlushTask = _logQueueTaskGenerator();
             if (waitPeriod.HasValue && waitPeriod.Value <= TimeSpan.Zero)
             {
                 Log.Debug(
@@ -370,30 +388,45 @@ internal class TelemetryControllerV2 : ITelemetryController
             {
                 // if we don't have a wait period, it's because we're waiting for initialization
                 _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod ?? Timeout.InfiniteTimeSpan);
-                completedTask = await Task.WhenAny(_tasks).ConfigureAwait(false);
+                _tasks[LogQueueSizeTaskIndex] = logFlushTask;
+                await Task.WhenAny(_tasks).ConfigureAwait(false);
             }
 
             if (_processExitSource.Task.IsCompleted)
             {
                 // end of the line, flush everything, don't bother recalculating;
                 ShouldFlushTelemetry = true;
+                ShouldFlushDiagnosticLogs = true;
                 return;
             }
 
+            // Reset variables
+            ShouldFlushTelemetry = false;
+            ShouldFlushDiagnosticLogs = false;
             var now = _clock.UtcNow;
 
             // Should we flush telemetry?
-            if (completedTask == _tracerInitialized.Task)
+            if (!_initializationFlushExecuted && _tracerInitialized.Task.IsCompleted)
             {
                 _initializationFlushExecuted = true;
                 // We've just been started, so should always flush telemetry
                 ShouldFlushTelemetry = true;
+                // Including logs as we typically log a lot at startup
+                ShouldFlushDiagnosticLogs = true;
                 // replace the tracerInitializedTask with a task that never completes
                 _tasks[InitializationTaskIndex] = Task.Delay(Timeout.Infinite);
             }
-            else
+
+            if (_initializationFlushExecuted && logFlushTask.IsCompleted)
             {
-                ShouldFlushTelemetry = _initializationFlushExecuted && (nextFlush <= now);
+                // should flush logs if we've reached the threshold
+                ShouldFlushDiagnosticLogs = true;
+            }
+
+            if (_initializationFlushExecuted && (nextFlush <= now))
+            {
+                ShouldFlushTelemetry = true;
+                ShouldFlushDiagnosticLogs = true;
             }
 
             if (ShouldFlushTelemetry)
