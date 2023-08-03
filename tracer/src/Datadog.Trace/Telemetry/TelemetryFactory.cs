@@ -42,6 +42,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         internal static IConfigurationTelemetry Config => Volatile.Read(ref _configuration);
 
+        /// <summary>
+        /// Gets the static log collector used to record redacted error logs
+        /// </summary>
+        internal static RedactedErrorLogCollector RedactedErrorLogs { get; } = new();
+
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
 
@@ -163,6 +168,7 @@ namespace Datadog.Trace.Telemetry
                         Config,
                         _dependencies!,
                         Metrics,
+                        RedactedErrorLogs,
                         transportManager,
                         settings.HeartbeatInterval);
                 }
