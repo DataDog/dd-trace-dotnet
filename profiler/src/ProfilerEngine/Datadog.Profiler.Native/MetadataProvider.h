@@ -25,6 +25,7 @@ public:
     static const std::string NbCores;
     static const std::string CpuLimit;
     static const std::string ClrVersion;
+    static const std::string StartTime;
 
 public:
     MetadataProvider();

@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "MetadataProvider.h"
+#include "OsSpecificApi.h"
 #include "IConfiguration.h"
 
 const std::string MetadataProvider::ExceptionSampleLimit("ExceptionSampleLimit");
@@ -19,6 +20,7 @@ const std::string MetadataProvider::CoreMinimumOverride("CoreMinimumOverride");
 const std::string MetadataProvider::NbCores("NbCores");
 const std::string MetadataProvider::CpuLimit("CpuLimit");
 const std::string MetadataProvider::ClrVersion("ClrVersion");
+const std::string MetadataProvider::StartTime("start_time");
 
 
 MetadataProvider::MetadataProvider()
@@ -45,6 +47,12 @@ void MetadataProvider::Initialize(IConfiguration* configuration)
     Add(GcThreadsCpuTimeEnabled, (boolValue ? "true" : "false"));
     boolValue = configuration->IsInternalMetricsEnabled();
     Add(InternalMetricsEnabled, (boolValue ? "true" : "false"));
+
+    auto st = OsSpecificApi::GetProcessStartTime();
+    if (!st.empty())
+    {
+        Add(StartTime, st);
+    }
 }
 
 void MetadataProvider::Add(std::string key, std::string value)

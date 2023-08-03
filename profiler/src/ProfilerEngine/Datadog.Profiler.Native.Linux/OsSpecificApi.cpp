@@ -230,4 +230,8 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     return threads;
 }
 
-} // namespace OsSpecificApi
+std::string GetProcessStartTime()
+{
+    // TODO: implement for linux
+    return "";
+}
