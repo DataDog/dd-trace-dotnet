@@ -16,6 +16,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentRootService = "ddps";
         private const string SqlCommentVersion = "ddpv";
         private const string SqlCommentEnv = "dde";
+        internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
 
         internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId, out bool traceParentInjected)
         {
@@ -25,25 +26,25 @@ namespace Datadog.Trace.DatabaseMonitoring
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                propagatorStringBuilder.Append($"/*{SqlCommentSpanService}='{Uri.EscapeDataString(context.ServiceNameInternal)}'");
+                propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(context.ServiceNameInternal)).Append('\'');
 
                 if (context.TraceContext?.Environment is { } envTag)
                 {
-                    propagatorStringBuilder.Append($",{SqlCommentEnv}='{Uri.EscapeDataString(envTag)}'");
+                    propagatorStringBuilder.Append(',').Append(SqlCommentEnv).Append("='").Append(Uri.EscapeDataString(envTag)).Append('\'');
                 }
 
-                propagatorStringBuilder.Append($",{SqlCommentRootService}='{Uri.EscapeDataString(configuredServiceName)}'");
+                propagatorStringBuilder.Append(',').Append(SqlCommentRootService).Append("='").Append(Uri.EscapeDataString(configuredServiceName)).Append('\'');
 
                 if (context.TraceContext?.ServiceVersion is { } versionTag)
                 {
-                    propagatorStringBuilder.Append($",{SqlCommentVersion}='{Uri.EscapeDataString(versionTag)}'");
+                    propagatorStringBuilder.Append(',').Append(SqlCommentVersion).Append("='").Append(Uri.EscapeDataString(versionTag)).Append('\'');
                 }
 
                 // For SqlServer we don't inject the traceparent yet to not affect performance since this DB generates a new plan for any query changes
                 if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
                 {
                     traceParentInjected = true;
-                    propagatorStringBuilder.Append($",{W3CTraceContextPropagator.TraceParentHeaderName}='{W3CTraceContextPropagator.CreateTraceParentHeader(context)}'*/");
+                    propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(context)).Append("'*/");
                 }
                 else
                 {
