@@ -833,7 +833,8 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the tracer is running in AAS
+        /// Gets a value indicating whether the tracer is running in an Azure Function on a
+        /// consumption plan
         /// </summary>
         internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
 
