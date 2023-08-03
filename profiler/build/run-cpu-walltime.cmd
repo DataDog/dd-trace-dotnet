@@ -7,8 +7,8 @@ call install_timeit.cmd
 set DOTNET_ROOT=
 
 :: Run x64
-dotnet timeit PiComputation.windows.x64.json
+dotnet timeit CpuWallTime.windows.json --variable arch=x64
 
 :: Run x86
-dotnet timeit PiComputation.windows.x86.json
+dotnet timeit CpuWallTime.windows.json --variable arch=x86
 
