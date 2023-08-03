@@ -29,7 +29,10 @@ namespace Datadog.Trace.Tests
             var expectedNow = DateTimeOffset.UtcNow;
 
             // We cannot assume that expectedNow > now due to the difference of accuracy of QPC and UtcNow.
-            Assert.True(Math.Abs(expectedNow.Subtract(now).TotalMilliseconds) <= 30);
+            var allowedVariance = EnvironmentTools.IsOsx()
+                                        ? TimeSpan.FromMilliseconds(100) // The clock in virtualized osx is terrible
+                                        : TimeSpan.FromMilliseconds(30);
+            now.Should().BeCloseTo(expectedNow, allowedVariance);
         }
 
         [Fact]
