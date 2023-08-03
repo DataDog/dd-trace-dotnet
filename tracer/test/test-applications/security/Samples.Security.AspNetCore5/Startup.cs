@@ -12,6 +12,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Samples.Security.AspNetCore5.Data;
 using Samples.Security.AspNetCore5.Endpoints;
+using Samples.Security.AspNetCore5.Filters;
 using Samples.Security.AspNetCore5.IdentityStores;
 using SQLitePCL;
 
@@ -29,7 +30,12 @@ namespace Samples.Security.AspNetCore5
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
+            services.AddControllersWithViews().AddMvcOptions(o =>
+            {
+                o.Filters.Add<ExceptionFilter>(int.MinValue);
+                o.Filters.Add<ResultExceptionFilter>(int.MinValue);
+                o.Filters.Add<ActionFilter>(int.MinValue);
+            });
             if (Configuration.GetValue<bool>("CreateDb"))
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
@@ -120,7 +126,15 @@ namespace Samples.Security.AspNetCore5
                     // await context.Response.WriteAsync("do smth before all");
                     await next.Invoke();
                 });
-
+            
+            app.UseExceptionHandler(exceptionHandlerApp =>
+            {
+                exceptionHandlerApp.Run(context =>
+                {
+                    context.Response.StatusCode = StatusCodes.Status500InternalServerError;
+                    return null;
+                });
+            });
 
             app.UseEndpoints(
                 endpoints =>

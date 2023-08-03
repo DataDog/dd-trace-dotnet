@@ -413,6 +413,21 @@ internal partial class ProbeExpressionParser<T>
             return CallConvertToNumericType<T>(finalExpr);
         }
 
+        if (typeof(T) == typeof(bool))
+        {
+            var countProp = finalExpr.Type.GetProperty("Count");
+
+            if (countProp != null
+             && countProp.PropertyType == typeof(int)
+             && countProp.GetMethod.IsPublic
+             && finalExpr.Type.Name == "MatchCollection")
+            {
+                Expression countExpr = Expression.Property(finalExpr, countProp);
+                Expression compareExpr = Expression.GreaterThan(countExpr, Expression.Constant(0));
+                return compareExpr;
+            }
+        }
+
         if (typeof(T) != typeof(string))
         {
             // let the caller throw the correct exception

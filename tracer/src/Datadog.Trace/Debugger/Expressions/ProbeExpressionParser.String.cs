@@ -93,6 +93,6 @@ internal partial class ProbeExpressionParser<T>
         }
 
         var parameter = ParseTree(reader, parameters, itParameter);
-        return Expression.Call(source, method, parameter);
+        return Expression.Call(method, source, parameter);
     }
 }

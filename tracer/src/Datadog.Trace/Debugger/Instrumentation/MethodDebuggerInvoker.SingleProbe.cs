@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
@@ -296,6 +297,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method);
             state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
             state.HasLocalsOrReturnValue = false;
+            throw new BlockException();
         }
 
         private static MethodDebuggerState CreateInvalidatedDebuggerState()
