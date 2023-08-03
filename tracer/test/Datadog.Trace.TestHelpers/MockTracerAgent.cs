@@ -26,6 +26,7 @@ using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -129,6 +130,7 @@ namespace Datadog.Trace.TestHelpers
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false)
         {
+            var timedOut = true;
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
 
@@ -162,11 +164,14 @@ namespace Datadog.Trace.TestHelpers
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
                 {
+                    timedOut = false;
                     break;
                 }
 
                 Thread.Sleep(500);
             }
+
+            timedOut.Should().BeFalse($"TIMED OUT: Expected spans: {count}; Received spans: {relevantSpans.Count}");
 
             foreach (var headers in TraceRequestHeaders)
             {
