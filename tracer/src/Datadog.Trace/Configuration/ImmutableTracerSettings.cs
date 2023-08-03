@@ -531,6 +531,11 @@ namespace Datadog.Trace.Configuration
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
 
         /// <summary>
+        /// Gets the GCP Function settings
+        /// </summary>
+        internal ImmutableGCPFunctionSettings? GCPFunctionSettings { get; }
+
+        /// <summary>
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
         /// </summary>
         internal bool PeerServiceTagsEnabled { get; }

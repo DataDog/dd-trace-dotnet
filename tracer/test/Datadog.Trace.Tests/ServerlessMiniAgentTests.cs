@@ -22,74 +22,50 @@ namespace Datadog.Trace.Tests
         [Fact]
         public void GetMiniAgentPathNullInNonFunctionEnvironments()
         {
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource(("IsRunningInGCPFunctions", "false"), ("IsRunningInAzureFunctionsConsumptionPlan", "false")));
+            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
             path.Should().BeNull();
         }
 
         [Fact]
-        public void GetMiniAgentPathValidInDeprecatedGCPFunction()
+        public void GetMiniAgentPathValidInGCPFunction()
         {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "project_1");
-
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
+            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+                (ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "value"),
+                (ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "value")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            var expectedPath = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
             path.Should().Be(expectedPath);
-
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
-        }
-
-        [Fact]
-        public void GetMiniAgentPathValidInNonDeprecatedGCPFunction()
-        {
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "dummy_function");
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "dummy_target");
-            var source = CreateConfigurationSource();
-            var settings = new ImmutableTracerSettings(source);
-
-            var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            var expectedPath = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
-            path.Should().Be(expectedPath);
-
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
-            System.Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
         }
 
         [Fact]
         public void GetMiniAgentPathValidInLinuxAzureFunction()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
+            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Unix, settings);
-            var expectedPath = System.IO.Path.Combine("home", "site", "wwwroot", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
+            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-linux-amd64", "datadog-serverless-trace-mini-agent");
             path.Should().Be(expectedPath);
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
         }
 
         [Fact]
         public void GetMiniAgentPathValidInWindowsAzureFunction()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-
-            var settings = new ImmutableTracerSettings(CreateConfigurationSource());
+            var settings = new ImmutableTracerSettings(CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic")));
 
             var path = ServerlessMiniAgent.GetMiniAgentPath(System.PlatformID.Win32NT, settings);
-            var expectedPath = System.IO.Path.Combine("home", "site", "wwwroot", "datadog-serverless-agent-windows-amd64", "datadog-serverless-trace-mini-agent.exe");
+            var expectedPath = System.IO.Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot", "datadog-serverless-agent-windows-amd64", "datadog-serverless-trace-mini-agent.exe");
             path.Should().Be(expectedPath);
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
         }
 
         [Theory]

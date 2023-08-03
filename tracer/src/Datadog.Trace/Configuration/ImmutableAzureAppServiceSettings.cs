@@ -57,6 +57,8 @@ namespace Datadog.Trace.Configuration
             FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
             FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
 
+            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic");
+
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
                 AzureContext = AzureContext.AzureFunctions;
@@ -68,6 +70,8 @@ namespace Datadog.Trace.Configuration
                     SiteKind = "functionapp";
                     SiteType = "function";
                     IsFunctionsApp = true;
+                    IsFunctionsAppConsumptionPlan = WebsiteSKU == "Dynamic";
+
                     IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
                     PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
                     break;
@@ -114,6 +118,10 @@ namespace Datadog.Trace.Configuration
         public AzureContext AzureContext { get; private set; } = AzureContext.AzureAppService;
 
         public bool IsFunctionsApp { get; private set; }
+
+        public bool IsFunctionsAppConsumptionPlan { get; private set; }
+
+        public string WebsiteSKU { get; }
 
         public string? FunctionsExtensionVersion { get; }
 
@@ -182,16 +190,6 @@ namespace Datadog.Trace.Configuration
             }
 
             return null;
-        }
-
-        // Checks for azure functions specific env vars. Used when configuration hasn't been initialized yet.
-        internal static bool GetIsAzureConsumptionPlanFunction()
-        {
-            var isFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey) != null;
-
-            var websiteSKU = Environment.GetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU);
-            var isConsumptionPlan = websiteSKU == null || websiteSKU == "Dynamic";
-            return isFunction && isConsumptionPlan;
         }
     }
 }

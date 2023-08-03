@@ -16,6 +16,12 @@ namespace Datadog.Trace.Configuration
             internal const string AzureAppServicesContextKey = "DD_AZURE_APP_SERVICES";
 
             /// <summary>
+            /// Configuration key which is used as a flag to tell us whether we are running in the context of a Azure Function on a
+            /// consumption plan. Used in unit testing.
+            /// </summary>
+            internal const string AzureFunctionConsumptionPlanContextKey = "DD_AZURE_FUNCTION_CONSUMPTION_PLAN";
+
+            /// <summary>
             /// Configuration key which has the running version of the Azure Site Extension.
             /// This is set within the applicationHost.xdt file.
             /// </summary>
@@ -78,7 +84,7 @@ namespace Datadog.Trace.Configuration
 
             /// <summary>
             /// Used to identify consumption plan functions. Consumption plans will either not have this variable,
-            /// or will have a value of "Dynamic".
+            /// or will have a value of "dynamic".
             /// </summary>
             public const string WebsiteSKU = "WEBSITE_SKU";
         }

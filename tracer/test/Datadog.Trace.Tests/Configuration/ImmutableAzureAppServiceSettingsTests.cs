@@ -196,49 +196,45 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionTrueWhenFunctionsEnvVarsExist()
-        {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-
-            ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction().Should().BeTrue();
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
-        }
-
-        [Fact]
         public void GetIsAzureConsumptionPlanFunctionFalseWhenNoFunctionsEnvVars()
         {
-            ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction().Should().BeFalse();
+            var settings = new ImmutableAzureAppServiceSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
         }
 
         [Fact]
         public void GetIsAzureConsumptionPlanFunctionFalseWhenNotConsumptionPlan()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU, "Basic");
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
 
-            ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction().Should().BeFalse();
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU, null);
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
         }
 
         [Fact]
-        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlan()
+        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithNoSKU()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "dotnet");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "4");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic");
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"));
 
-            ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction().Should().BeTrue();
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
+        }
 
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.AzureAppService.WebsiteSKU, null);
+        [Fact]
+        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithDynamicSKU()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
         }
     }
 }

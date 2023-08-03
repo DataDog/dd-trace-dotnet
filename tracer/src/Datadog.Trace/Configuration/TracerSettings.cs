@@ -338,17 +338,25 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = config
                                         .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                                         .AsBool(false);
-            if (IsRunningInAzureAppService)
+
+            // we only want to instantiate ImmutableAzureAppServiceSettings if we are for sure running
+            // in AAS, or if we might be running in a Consumption Plan function.
+            var isMaybeAzureFunctionConsumptionPlan = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
+
+            if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
                 {
                     TraceEnabledInternal = false;
                 }
+
+                IsRunningInAzureFunctionsConsumptionPlan = AzureAppServiceMetadata.IsFunctionsAppConsumptionPlan;
             }
 
-            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsAzureConsumptionPlanFunction();
-            IsRunningInGCPFunctions = ImmutableGCPFunctionSettings.GetIsGCPFunction();
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
@@ -856,6 +864,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
+
+        /// <summary>
+        /// Gets the GCP Function settings
+        /// </summary>
+        internal ImmutableGCPFunctionSettings? GCPFunctionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.

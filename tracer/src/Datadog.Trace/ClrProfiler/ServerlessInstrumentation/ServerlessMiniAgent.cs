@@ -38,18 +38,18 @@ internal static class ServerlessMiniAgent
         string rustBinaryPathRoot;
         if (settings.IsRunningInGCPFunctions)
         {
-            rustBinaryPathRoot = System.IO.Path.Combine("layers", "google.dotnet.publish", "publish", "bin");
+            rustBinaryPathRoot = Path.Combine(Path.DirectorySeparatorChar.ToString(), "layers", "google.dotnet.publish", "publish", "bin");
         }
         else
         {
-            rustBinaryPathRoot = System.IO.Path.Combine("home", "site", "wwwroot");
+            rustBinaryPathRoot = Path.Combine(Path.DirectorySeparatorChar.ToString(), "home", "site", "wwwroot");
         }
 
         var isWindows = os == PlatformID.Win32NT;
 
         string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
         string rustBinaryName = isWindows ? "datadog-serverless-trace-mini-agent.exe" : "datadog-serverless-trace-mini-agent";
-        return System.IO.Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
+        return Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
     }
 
     internal static void StartServerlessMiniAgent(ImmutableTracerSettings settings)

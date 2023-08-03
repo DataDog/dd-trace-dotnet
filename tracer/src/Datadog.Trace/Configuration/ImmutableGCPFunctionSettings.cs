@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using Datadog.Trace.Configuration.Telemetry;
 
 namespace Datadog.Trace.Configuration
 {
@@ -12,14 +15,28 @@ namespace Datadog.Trace.Configuration
     /// References:
     /// https://cloud.google.com/functions/docs/configuring/env-var#runtime_environment_variables_set_automatically
     /// </summary>
-    internal static class ImmutableGCPFunctionSettings
+    internal class ImmutableGCPFunctionSettings
     {
-        internal static bool GetIsGCPFunction()
+        public ImmutableGCPFunctionSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
         {
-            bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey) != null;
-            bool isNewerGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey) != null;
+            source ??= NullConfigurationSource.Instance;
+            var config = new ConfigurationBuilder(source, telemetry);
 
-            return isDeprecatedGCPFunction || isNewerGCPFunction;
+            var deprecatedFunctionKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey).AsString();
+            var deprecatedProjectKey = config.WithKeys(ConfigurationKeys.GCPFunction.DeprecatedProjectKey).AsString();
+            IsDeprecatedFunction = deprecatedFunctionKey != null && deprecatedProjectKey != null;
+
+            var functionNameKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionNameKey).AsString();
+            var functionTargetKey = config.WithKeys(ConfigurationKeys.GCPFunction.FunctionTargetKey).AsString();
+            IsNewerFunction = functionNameKey != null && functionTargetKey != null;
+
+            IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;
         }
+
+        public bool IsGCPFunction { get; private set; }
+
+        public bool IsDeprecatedFunction { get; private set; }
+
+        public bool IsNewerFunction { get; private set; }
     }
 }

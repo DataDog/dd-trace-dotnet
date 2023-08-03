@@ -18,31 +18,37 @@ namespace Datadog.Trace.Tests.Configuration
         [Fact]
         public void GetIsGCPFunctionTrueWhenDeprecatedFunctionsEnvVarsExist()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "function_name");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "project_1");
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, "value"),
+                (ConfigurationKeys.GCPFunction.DeprecatedProjectKey, "value"));
 
-            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeTrue();
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey, null);
+            var settings = new ImmutableGCPFunctionSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsDeprecatedFunction.Should().BeTrue();
+            settings.IsGCPFunction.Should().BeTrue();
+            settings.IsNewerFunction.Should().BeFalse();
         }
 
         [Fact]
         public void GetIsGCPFunctionTrueWhenNonDeprecatedFunctionsEnvVarsExist()
         {
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, "function_name");
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, "function_target");
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.GCPFunction.FunctionNameKey, "value"),
+                (ConfigurationKeys.GCPFunction.FunctionTargetKey, "value"));
 
-            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeTrue();
-
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey, null);
-            Environment.SetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey, null);
+            var settings = new ImmutableGCPFunctionSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsNewerFunction.Should().BeTrue();
+            settings.IsGCPFunction.Should().BeTrue();
+            settings.IsDeprecatedFunction.Should().BeFalse();
         }
 
         [Fact]
         public void GetIsGCPFunctionFalseWhenNoFunctionsEnvVars()
         {
-            ImmutableGCPFunctionSettings.GetIsGCPFunction().Should().BeFalse();
+            var settings = new ImmutableGCPFunctionSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
+
+            settings.IsNewerFunction.Should().BeFalse();
+            settings.IsDeprecatedFunction.Should().BeFalse();
+            settings.IsGCPFunction.Should().BeFalse();
         }
     }
 }

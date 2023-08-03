@@ -11,6 +11,12 @@ namespace Datadog.Trace.Configuration
         internal class GCPFunction
         {
             /// <summary>
+            /// Configuration key which is used as a flag to tell us whether we are running in the context of a Google Cloud Function.
+            /// Used in unit testing.
+            /// </summary>
+            internal const string GCPFunctionContextKey = "DD_GCP_FUNCTION";
+
+            /// <summary>
             /// The name of functions running deprecated runtimes.
             /// </summary>
             internal const string DeprecatedFunctionNameKey = "FUNCTION_NAME";
