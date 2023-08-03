@@ -28,7 +28,6 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly string _serviceName;
         private readonly string? _serviceVersion;
         private readonly string? _environment;
-        private readonly SymbolExtractor _symbolExtractor;
         private readonly IDiscoveryService _discoveryService;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
@@ -39,14 +38,13 @@ namespace Datadog.Trace.Debugger.Symbols
         private byte[]? _payload;
         private string? _isSymbolUploaderEnabled;
 
-        private SymbolsUploader(SymbolExtractor symbolExtractor, IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        private SymbolsUploader(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
             _isSymbolUploaderEnabled = null;
             _alreadyProcessed = new HashSet<string>();
             _environment = tracerSettings.EnvironmentInternal;
             _serviceVersion = tracerSettings.ServiceVersionInternal;
             _serviceName = serviceName;
-            _symbolExtractor = symbolExtractor;
             _discoveryService = discoveryService;
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
@@ -64,13 +62,13 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService.RemoveSubscription(ConfigurationChanged);
         }
 
-        public static ISymbolsUploader Create(SymbolExtractor symbolExtractor, IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
+        public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
             if (api is not NoOpSymbolBatchUploadApi &&
                (settings.SymbolDatabaseUploadEnabled ||
                 (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false").ToBoolean() ?? false)))
             {
-                return new SymbolsUploader(symbolExtractor, api, discoveryService, settings, tracerSettings, serviceName);
+                return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceName);
             }
 
             Log.Information("Symbol database uploading is disabled. To enable it, please set {EnvironmentVariable} environment variable to 'true'.", ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled);
@@ -129,7 +127,13 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadAssemblySymbols(Assembly assembly)
         {
-            var assemblyScope = _symbolExtractor.GetAssemblySymbol(assembly);
+            using var symbolsExtractor = SymbolExtractor.Create(assembly);
+            if (symbolsExtractor == null)
+            {
+                return;
+            }
+
+            var assemblyScope = symbolsExtractor.GetAssemblySymbol();
 
             var root = new Root
             {
@@ -140,7 +144,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 Scopes = new[] { assemblyScope }
             };
 
-            await UploadClasses(root, _symbolExtractor.GetClassSymbols(assembly)).ConfigureAwait(false);
+            await UploadClasses(root, symbolsExtractor.GetClassSymbols()).ConfigureAwait(false);
         }
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)

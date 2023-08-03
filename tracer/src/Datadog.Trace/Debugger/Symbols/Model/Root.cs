@@ -13,6 +13,7 @@ namespace Datadog.Trace.Debugger.Symbols.Model
         Assembly,
         Class,
         Method,
+        Closure,
         Field,
         // ReSharper disable once InconsistentNaming
         Static_Field,

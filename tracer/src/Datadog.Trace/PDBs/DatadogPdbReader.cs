@@ -11,7 +11,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -32,22 +31,26 @@ namespace Datadog.Trace.Pdb
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogPdbReader>();
         private readonly SymbolReader _symbolReader;
+        private bool _disposed;
 
-        private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD module, string pdbFullPath)
+        private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD moduleDefMd, string pdbFullPath)
         {
             _symbolReader = symbolReader;
-            PdbFullPath = pdbFullPath;
-            Module = module;
+            Module = moduleDefMd;
+            // PdbFullPath = pdbFullPath;
         }
 
-        internal string PdbFullPath { get; }
+        ~DatadogPdbReader() => Dispose(false);
+
+        // internal string PdbFullPath { get; }
 
         internal ModuleDefMD Module { get; }
 
         public static DatadogPdbReader? CreatePdbReader(Assembly assembly)
         {
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-            if (!TryFindPdbFile(assembly, out var pdbFullPath))
+
+            if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
             {
                 return null;
             }
@@ -64,11 +67,11 @@ namespace Datadog.Trace.Pdb
             return new DatadogPdbReader(dnlibReader, module, pdbFullPath);
         }
 
-        private static bool TryFindPdbFile(Assembly assembly, [NotNullWhen(true)] out string? pdbFullPath)
+        private static bool TryFindPdbFile(string assemblyLocation, [NotNullWhen(true)] out string? pdbFullPath)
         {
             try
             {
-                string pdbInSameFolder = Path.ChangeExtension(assembly.Location, "pdb");
+                string pdbInSameFolder = Path.ChangeExtension(assemblyLocation, "pdb");
 
                 if (File.Exists(pdbInSameFolder))
                 {
@@ -101,19 +104,13 @@ namespace Datadog.Trace.Pdb
             }
             catch (Exception e)
             {
-                Logger.Error(e, "Error while trying to find PDB file for {Assembly} ({Location})", assembly, assembly.Location);
+                Logger.Error(e, "Error while trying to find PDB file for {Location}", assemblyLocation);
                 pdbFullPath = null;
                 return false;
             }
 
             pdbFullPath = null;
             return false;
-        }
-
-        public string? GetSourceLinkJsonDocument()
-        {
-            var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
-            return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
         public SymbolMethod? GetMethodSymbolInfoOrDefault(int methodMetadataToken)
@@ -191,8 +188,24 @@ namespace Datadog.Trace.Pdb
 
         public void Dispose()
         {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            if (disposing)
+            {
+                Module.Dispose();
+            }
+
             _symbolReader.Dispose();
-            Module.Dispose();
+            _disposed = true;
         }
     }
 }

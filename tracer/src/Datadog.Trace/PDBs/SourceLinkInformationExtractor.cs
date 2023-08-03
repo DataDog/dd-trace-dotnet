@@ -1,4 +1,4 @@
-﻿// <copyright file="SourceLinkInformationExtractor.cs" company="Datadog">
+// <copyright file="SourceLinkInformationExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -8,8 +8,11 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb.SourceLink;
+using Datadog.Trace.Vendors.dnlib.DotNet;
+using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Serilog;
 
@@ -29,29 +32,22 @@ internal static class SourceLinkInformationExtractor
         // If these conditions weren't met, the attributes won't be there, so we'll need to extract the information from the PDB file.
 
         return ExtractFromAssemblyAttributes(assembly, out commitSha, out repositoryUrl) ||
-               ExtractFromPdb(assembly, out commitSha, out repositoryUrl);
+               ExtractFromModule(assembly, out commitSha, out repositoryUrl);
     }
 
-    private static bool ExtractFromPdb(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
+    private static bool ExtractFromModule(Assembly assembly, [NotNullWhen(true)] out string? commitSha, [NotNullWhen(true)] out string? repositoryUrl)
     {
         commitSha = null;
         repositoryUrl = null;
+        var sourceLinkJsonDocument = GetSourceLinkJsonDocument(assembly);
 
-        var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
-        if (pdbReader == null)
-        {
-            Log.Information("PDB file for assembly {AssemblyFullPath} could not be found", assembly.Location);
-            return false;
-        }
-
-        var sourceLinkJsonDocument = pdbReader.GetSourceLinkJsonDocument();
         if (sourceLinkJsonDocument == null)
         {
-            Log.Information("PDB file {PdbFullPath} does not contain SourceLink information", pdbReader.PdbFullPath);
+            Log.Information("Module file {Module} does not contain SourceLink information", assembly.Location);
             return false;
         }
 
-        if (!ExtractSourceLinkMappingUrl(sourceLinkJsonDocument, pdbReader.PdbFullPath, out var sourceLinkMappedUri))
+        if (!ExtractSourceLinkMappingUrl(sourceLinkJsonDocument, assembly.Location, out var sourceLinkMappedUri))
         {
             return false;
         }
@@ -59,12 +55,31 @@ internal static class SourceLinkInformationExtractor
         return CompositeSourceLinkUrlParser.Instance.TryParseSourceLinkUrl(sourceLinkMappedUri, out commitSha, out repositoryUrl);
     }
 
+    private static string? GetSourceLinkJsonDocument(Assembly assembly)
+    {
+        try
+        {
+            using var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+            var sourceLink = module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
+            if (sourceLink != null)
+            {
+                return Encoding.UTF8.GetString(sourceLink.FileBlob);
+            }
+        }
+        catch (Exception e)
+        {
+            Log.Warning(e, "Fail to load module file {Module}.", assembly.Location);
+        }
+
+        return null;
+    }
+
     // Grab the SourceLink mapping URL. For example,
     // From:
     //       {"documents":{"C:\\dev\\dd-trace-dotnet\\*":"https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*"}}
     // Extract:
     //       https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-    private static bool ExtractSourceLinkMappingUrl(string sourceLinkJsonDocument, string pdbFullPath, [NotNullWhen(true)] out Uri? sourceLinkMappedUri)
+    private static bool ExtractSourceLinkMappingUrl(string sourceLinkJsonDocument, string moduleLocation, [NotNullWhen(true)] out Uri? sourceLinkMappedUri)
     {
         sourceLinkMappedUri = null;
         try
@@ -72,16 +87,16 @@ internal static class SourceLinkInformationExtractor
             string? sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();
             if (string.IsNullOrWhiteSpace(sourceLinkMappedUrl) || !Uri.TryCreate(sourceLinkMappedUrl, UriKind.Absolute, out sourceLinkMappedUri))
             {
-                Log.Information("PDB file {PdbFullPath} contained SourceLink information, but we failed to parse it.", pdbFullPath);
+                Log.Information("Module file {Module} contained SourceLink information, but we failed to parse it.", moduleLocation);
                 return false;
             }
 
-            Log.Information("PDB file {PdbFullPath} contained SourceLink information, and we successfully parsed it. The mapping uri is {SourceLinkMappedUri}.", pdbFullPath, sourceLinkMappedUri);
+            Log.Information("Module file {Module} contained SourceLink information, and we successfully parsed it. The mapping uri is {SourceLinkMappedUri}.", moduleLocation, sourceLinkMappedUri);
             return true;
         }
         catch (Exception e)
         {
-            Log.Warning(e, "PDB file {PdbFullPath} contained SourceLink document {Document}, but we failed to parse it.", pdbFullPath, sourceLinkJsonDocument);
+            Log.Warning(e, "Module file {Module} contained SourceLink document {Document}, but we failed to parse it.", moduleLocation, sourceLinkJsonDocument);
             return false;
         }
     }
@@ -102,15 +117,15 @@ internal static class SourceLinkInformationExtractor
                     repositoryUrl = amAttr.Value;
                     break;
                 case AssemblyInformationalVersionAttribute { InformationalVersion: { } informationalVersion }:
-                {
-                    var parts = informationalVersion.Split('+');
-                    if (parts.Length == 2)
                     {
-                        commitSha = parts[1];
-                    }
+                        var parts = informationalVersion.Split('+');
+                        if (parts.Length == 2)
+                        {
+                            commitSha = parts[1];
+                        }
 
-                    break;
-                }
+                        break;
+                    }
             }
 
             if (repositoryUrl != null && commitSha != null)
