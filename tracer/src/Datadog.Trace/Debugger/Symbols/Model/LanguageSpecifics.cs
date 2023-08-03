@@ -24,4 +24,10 @@ internal record struct LanguageSpecifics
 
     [JsonProperty("returnType")]
     internal string ReturnType { get; set; }
+
+    [JsonProperty("startColumn")]
+    internal int? StartColumn { get; set; }
+
+    [JsonProperty("endColumn")]
+    internal int? EndColumn { get; set; }
 }

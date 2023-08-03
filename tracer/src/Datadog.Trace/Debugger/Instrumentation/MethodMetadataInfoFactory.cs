@@ -10,7 +10,6 @@ using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 
 namespace Datadog.Trace.Debugger.Instrumentation
 {

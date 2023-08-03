@@ -89,7 +89,7 @@ internal class LiveDebuggerFactory
             uri => uri);
 
         var symbolBatchApi = SymbolBatchUploadApi.Create(symbolsApiFactory, discoveryService, serviceName);
-        var symbolsUploader = SymbolsUploader.Create(new SymbolExtractor(), symbolBatchApi, discoveryService, settings, tracerSettings, serviceName);
+        var symbolsUploader = SymbolsUploader.Create(symbolBatchApi, discoveryService, settings, tracerSettings, serviceName);
         return symbolsUploader;
     }
 }
