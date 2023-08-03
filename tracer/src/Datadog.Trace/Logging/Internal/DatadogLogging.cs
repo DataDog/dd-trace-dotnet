@@ -3,10 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.IO;
+using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Logging.Internal.Configuration;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -17,8 +21,10 @@ namespace Datadog.Trace.Logging
     internal static class DatadogLogging
     {
         internal static readonly LoggingLevelSwitch LoggingLevelSwitch = new(DefaultLogLevel);
+
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly IDatadogLogger SharedLogger;
+        private static readonly Timer? DiagnosticLogTimer;
 
         static DatadogLogging()
         {
@@ -38,6 +44,11 @@ namespace Datadog.Trace.Logging
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {
                     Task.Run(() => CleanLogFiles(fileConfig.LogFileRetentionDays, fileConfig.LogDirectory));
+                }
+
+                if (config.DiagnosticTelemetry is { } telemetry)
+                {
+                    DiagnosticLogTimer = CreateDiagnosticLogDisableTimer(telemetry);
                 }
 
                 var domainMetadata = DomainMetadata.Instance;
@@ -64,6 +75,7 @@ namespace Datadog.Trace.Logging
         internal static void CloseAndFlush()
         {
             SharedLogger.CloseAndFlush();
+            DiagnosticLogTimer?.Dispose();
         }
 
         internal static void Reset()
@@ -79,6 +91,16 @@ namespace Datadog.Trace.Logging
         internal static void UseDefaultLevel()
         {
             SetLogLevel(DefaultLogLevel);
+        }
+
+        // Internal for testing
+        internal static Timer CreateDiagnosticLogDisableTimer(DiagnosticTelemetryLoggingConfiguration telemetry)
+        {
+            return new Timer(
+                callback: state => ((LoggingLevelSwitch)state!).MinimumLevel = LogEventLevel.Fatal,
+                state: telemetry.LogLevelSwitch,
+                dueTime: telemetry.DisableAt - DateTimeOffset.UtcNow,
+                period: Timeout.InfiniteTimeSpan); // disable periodic invocation
         }
 
         internal static void CleanLogFiles(int deleteAfter, string logsDirectory)

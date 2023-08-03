@@ -12,8 +12,10 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
+using Datadog.Trace.Vendors.Serilog.Core;
 
 namespace Datadog.Trace.Logging;
 
@@ -36,12 +38,14 @@ internal static class DatadogLoggingFactory
             fileConfig = GetFileLoggingConfiguration(source, telemetry);
         }
 
+        var diagnosticLogConfig = GetDiagnosticTelemetryConfiguration(source, telemetry);
+
         var rateLimit = new ConfigurationBuilder(source, telemetry)
                        .WithKeys(ConfigurationKeys.LogRateLimit)
                        .AsInt32(DefaultRateLimit, x => x >= 0)
                        .Value;
 
-        return new DatadogLoggingConfiguration(rateLimit, fileConfig);
+        return new DatadogLoggingConfiguration(rateLimit, fileConfig, diagnosticLogConfig);
 
         static bool Contains(string?[]? array, string toMatch)
         {
@@ -71,7 +75,7 @@ internal static class DatadogLoggingFactory
         in DatadogLoggingConfiguration config,
         DomainMetadata domainMetadata)
     {
-        if (!config.File.HasValue)
+        if (config is { File: null, DiagnosticTelemetry: null })
         {
             // no enabled sinks
             return null;
@@ -79,8 +83,26 @@ internal static class DatadogLoggingFactory
 
         var loggerConfiguration =
             new LoggerConfiguration()
-               .Enrich.FromLogContext()
-               .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
+               .Enrich.FromLogContext();
+
+        LoggingLevelSwitch? fileLevelSwitch = null;
+        if (config.DiagnosticTelemetry is { } telemetry)
+        {
+            loggerConfiguration
+               .WriteTo.Logger(
+                    lc => lc
+                         .MinimumLevel.ControlledBy(telemetry.LogLevelSwitch)
+                         .WriteTo.Sink(new DiagnosticTelemetryLogSink(TelemetryFactory.DiagnosticLogs)));
+
+            // If we have diagnostic logs enabled, we don't set a "top-level"
+            // filter, and instead turn on filtering at the sink level.
+            fileLevelSwitch = DatadogLogging.LoggingLevelSwitch;
+        }
+        else
+        {
+            // if diagnostic logs are not enabled, filter logs at the top-level for perf
+            loggerConfiguration.MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
+        }
 
         if (config.File is { } fileConfig)
         {
@@ -94,7 +116,8 @@ internal static class DatadogLoggingFactory
                     rollingInterval: RollingInterval.Day,
                     rollOnFileSizeLimit: true,
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true);
+                    shared: true,
+                    levelSwitch: fileLevelSwitch);
         }
 
         try
@@ -233,5 +256,29 @@ internal static class DatadogLoggingFactory
                                   .Value;
 
         return new FileLoggingConfiguration(maxLogFileSize, logDirectory, logFileRetentionDays);
+    }
+
+    private static DiagnosticTelemetryLoggingConfiguration? GetDiagnosticTelemetryConfiguration(IConfigurationSource source, IConfigurationTelemetry telemetry)
+    {
+        var config = new ConfigurationBuilder(source, telemetry);
+
+        var enabledTimeStamp = config.WithKeys(ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled)
+                                    .AsInt32(
+                                         value =>
+                                         {
+                                             // should be now or in the past
+                                             // and disabled if more than 4 hours ago
+                                             var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                                             return value <= now
+                                                 && (value + DiagnosticTelemetryLoggingConfiguration.MaximumDurationSeconds) > now;
+                                         });
+
+        if (enabledTimeStamp is null)
+        {
+            return null;
+        }
+
+        var disableAt = enabledTimeStamp.Value + DiagnosticTelemetryLoggingConfiguration.MaximumDurationSeconds;
+        return new DiagnosticTelemetryLoggingConfiguration(DateTimeOffset.FromUnixTimeSeconds(disableAt));
     }
 }

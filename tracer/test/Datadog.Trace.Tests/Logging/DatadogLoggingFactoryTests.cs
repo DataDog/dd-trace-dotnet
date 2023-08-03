@@ -8,6 +8,7 @@ using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -97,6 +98,72 @@ public class DatadogLoggingFactoryTests
             config.File.HasValue.Should().BeTrue();
             config.File?.LogDirectory.Should().Be(logDirectory);
             Directory.Exists(logDirectory).Should().BeTrue();
+        }
+    }
+
+    public class DiagnosticLogConfiguration
+    {
+        private const int MaxLogDuration = DiagnosticTelemetryLoggingConfiguration.MaximumDurationSeconds;
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("C:/")]
+        [InlineData("/var/root")]
+        [InlineData("24.54")]
+        public void WhenNoOrInvalidConfiguration_TelemetryLogsDisabled(string value)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled, value },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.DiagnosticTelemetry.Should().BeNull();
+        }
+
+        [Fact]
+        public void WhenTimeStampIsInTheFuture_TelemetryLogsDisabled()
+        {
+            var timestamp = DateTimeOffset.UtcNow.AddHours(1);
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled, timestamp.ToUnixTimeSeconds().ToString() },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.DiagnosticTelemetry.Should().BeNull();
+        }
+
+        [Fact]
+        public void WhenTimeStampIsTooFarInThePast_TelemetryLogsDisabled()
+        {
+            var timestamp = DateTimeOffset.UtcNow.AddSeconds(MaxLogDuration + 1);
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled, timestamp.ToUnixTimeSeconds().ToString() },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.DiagnosticTelemetry.Should().BeNull();
+        }
+
+        [Fact]
+        public void WhenTimeStampIsOk_TelemetryLogsEnabled()
+        {
+            var timestamp = DateTimeOffset.UtcNow;
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled, timestamp.ToUnixTimeSeconds().ToString() },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.DiagnosticTelemetry.Should().NotBeNull();
+
+            // round trip to seconds to remove milliseconds
+            var disableAtTimeStamp = timestamp.AddSeconds(MaxLogDuration).ToUnixTimeSeconds();
+            var expectedDisableAt = DateTimeOffset.FromUnixTimeSeconds(disableAtTimeStamp);
+            config.DiagnosticTelemetry.DisableAt.Should().Be(expectedDisableAt);
         }
     }
 

@@ -697,6 +697,12 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.V2Enabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable diagnostic log collection.
+            /// Should be set to a unix timestamp (in seconds) for when collection was authorized.
+            /// </summary>
+            public const string DiagnosticTelemetryLogsEnabled = "DD_TELEMETRY_DIAGNOSTIC_LOG_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation

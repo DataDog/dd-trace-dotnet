@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -293,6 +294,42 @@ namespace Datadog.Trace.Tests.Logging
                 {
                     return false;
                 }
+            }
+        }
+
+        [Fact]
+        public async Task DiagnosticLogDisableTimerChangesMinimumLevel()
+        {
+            var now = DateTimeOffset.UtcNow;
+            var disableAt = now.AddSeconds(2);
+            var config = new DiagnosticTelemetryLoggingConfiguration(disableAt);
+            var timer = DatadogLogging.CreateDiagnosticLogDisableTimer(config);
+            try
+            {
+                var timeout = now.AddSeconds(10);
+                while (DateTimeOffset.UtcNow < timeout)
+                {
+                    if (config.LogLevelSwitch.MinimumLevel == LogEventLevel.Debug)
+                    {
+                        // still enabled
+                        await Task.Delay(500);
+                    }
+                    else if (config.LogLevelSwitch.MinimumLevel == LogEventLevel.Fatal)
+                    {
+                        // success
+                        return;
+                    }
+                    else
+                    {
+                        throw new Exception("Unexpected level for LogLevelSwitch: " + config.LogLevelSwitch.MinimumLevel);
+                    }
+                }
+
+                throw new Exception("Timer did not fire in expected time");
+            }
+            finally
+            {
+                timer.Dispose();
             }
         }
 
