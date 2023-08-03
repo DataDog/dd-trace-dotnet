@@ -33,10 +33,10 @@ namespace Datadog.Trace.Configuration
             IsGCPFunction = IsDeprecatedFunction || IsNewerFunction;
         }
 
-        public bool IsGCPFunction { get; private set; }
+        public bool IsGCPFunction { get; }
 
-        public bool IsDeprecatedFunction { get; private set; }
+        public bool IsDeprecatedFunction { get; }
 
-        public bool IsNewerFunction { get; private set; }
+        public bool IsNewerFunction { get; }
     }
 }
