@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(telemetry, enableDependencies);
+            AssertNoDiagnosticLogs(telemetry);
             agent.Telemetry.Should().BeEmpty();
         }
 
@@ -105,6 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
+            AssertNoDiagnosticLogs(agent);
         }
 
         [SkippableFact]
@@ -182,6 +185,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
                 AssertService(agent, "Samples.Telemetry", ServiceVersion);
                 AssertDependencies(agent, enableDependencies);
+                AssertNoDiagnosticLogs(agent);
             }
         }
 
@@ -211,6 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
+            AssertNoDiagnosticLogs(agent);
         }
 #endif
 
@@ -283,6 +288,48 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.GetMetricDataPoints(Count.TraceApiErrors).Should().BeEmpty();
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task Telemetry_SendsDiagnosticLogs()
+        {
+            using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
+            Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+
+            using var telemetry = new MockTelemetryAgent();
+            Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
+            EnableAgentlessTelemetry(telemetry.Port, enableDependencies: true, enableV2: true);
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.DiagnosticTelemetryLogsEnabled, DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString());
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
+            }
+
+            WaitForAllTelemetry(telemetry);
+            telemetry.Telemetry
+                     .Where(x => x.IsRequestType(TelemetryRequestTypes.DiagnosticLogs))
+                     .Should()
+                     .NotBeEmpty();
+
+            var allLogs = telemetry.Telemetry
+                                   .OrderBy(x => x.SeqId)
+                                   .Select(x => x.TryGetPayload<DiagnosticLogsPayload>(TelemetryRequestTypes.DiagnosticLogs))
+                                   .Where(x => x is not null)
+                                   .SelectMany(x => x.Logs)
+                                   .ToList();
+
+            // a debug log created in Instrumentation.cs
+            allLogs.Should().Contain(x => x.Message == "Initialization started.");
+            // an info log
+            allLogs.Should().Contain(x => x.Message == "Continuous Profiler is \"disabled\".");
+        }
+
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppStarted));
@@ -317,13 +364,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static void AssertDependencies(MockTracerAgent mockAgent, bool? enableDependencies)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            WaitForAllTelemetry(mockAgent);
             AssertDependencies(mockAgent.Telemetry.Cast<TelemetryWrapper>(), enableDependencies);
         }
 
         private static void AssertDependencies(MockTelemetryAgent telemetry, bool? enableDependencies)
         {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+            WaitForAllTelemetry(telemetry);
             AssertDependencies(telemetry.Telemetry, enableDependencies);
         }
 
@@ -351,6 +398,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .DisableRequireUniquePrefix()
                               .UseFileName("TelemetryTests");
         }
+
+        private static void WaitForAllTelemetry(MockTracerAgent mockAgent)
+            => mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+
+        private static void WaitForAllTelemetry(MockTelemetryAgent telemetry)
+            => telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+        private static void AssertNoDiagnosticLogs(MockTracerAgent mockAgent)
+        {
+            WaitForAllTelemetry(mockAgent);
+            AssertNoDiagnosticLogs(mockAgent.Telemetry.Cast<TelemetryWrapper>());
+        }
+
+        private static void AssertNoDiagnosticLogs(MockTelemetryAgent telemetry)
+        {
+            WaitForAllTelemetry(telemetry);
+            AssertNoDiagnosticLogs(telemetry.Telemetry);
+        }
+
+        private static void AssertNoDiagnosticLogs(IEnumerable<TelemetryWrapper> allData)
+            => allData.Where(x => x.IsRequestType(TelemetryRequestTypes.DiagnosticLogs)).Should().BeEmpty();
 
         private void EnableAgentlessTelemetry(int standaloneAgentPort, bool? enableDependencies, bool enableV2)
         {
