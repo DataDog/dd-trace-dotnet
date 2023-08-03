@@ -528,6 +528,9 @@ namespace Datadog.Trace
                     writer.WritePropertyName("stats_computation_enabled");
                     writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
 
+                    writer.WritePropertyName("dbm_propagation_mode");
+                    writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
+
                     writer.WritePropertyName("header_tags");
                     WriteDictionary(instanceSettings.HeaderTagsInternal);
 
