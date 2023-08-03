@@ -51,6 +51,6 @@ namespace GeneratePackageVersions
             Finished = true;
         }
 
-        public abstract void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions, bool requiresDockerDependency);
+        public abstract void Write(PackageVersionEntry packageVersionEntry, IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> versions, string requiresDockerDependency);
     }
 }
