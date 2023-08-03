@@ -119,7 +119,7 @@ namespace Datadog.Trace.Configuration
 
         public bool IsFunctionsApp { get; private set; }
 
-        public bool IsFunctionsAppConsumptionPlan { get; private set; }
+        public bool IsFunctionsAppConsumptionPlan { get; }
 
         public string WebsiteSKU { get; }
 
