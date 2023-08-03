@@ -3999,8 +3999,8 @@ stages:
         DD_CIVISIBILITY_ITR_ENABLED: 0
 
     - powershell: |
-        mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks
-        cp $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)/results_*.json $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks
+        mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+        cp $(System.DefaultWorkingDirectory)/profiler/build/jsonexporter_*.json $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
       displayName: Copy the results to benchmarks dir
       condition: succeededOrFailed()
       continueOnError: true
