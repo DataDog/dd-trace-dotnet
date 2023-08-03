@@ -3,9 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Castle.Components.DictionaryAdapter;
 using Datadog.Trace.Debugger.Symbols;
@@ -15,31 +17,50 @@ using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
-namespace Datadog.Trace.Tests.Debugger;
+namespace Datadog.Trace.Tests.Debugger.SymbolsTests;
 
 [UsesVerify]
 public class SymbolExtractorTest
 {
-    private readonly SymbolExtractor _extractor;
+    private const string TestSamplesNamespace = "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples";
 
-    public SymbolExtractorTest()
-    {
-        _extractor = new SymbolExtractor();
-    }
+    public static IEnumerable<object[]> TestSamples =>
+        typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<")).Select(type => new object[] { type });
 
     [Theory]
-    [InlineData(typeof(SymbolExtractorTest), "Datadog.Trace.Tests.Debugger.SymbolExtractorTest")]
-    private async Task Test(System.Type type, string className)
+    [MemberData(nameof(TestSamples))]
+    private async Task Test(Type type)
     {
         var assembly = Assembly.GetAssembly(type);
         Assert.NotNull(assembly);
-        var root = GetSymbols(assembly, className);
+        var root = GetSymbols(assembly, type.FullName);
         Assert.True(root.Scopes.Count == 1);
         Assert.True(root.Scopes.First().Scopes.Count == 1);
-        Assert.True(root.Scopes.First().Scopes.First().Name == className);
-        var settings = ConfigureVerifySettings(assembly.GetName().Name, className);
+        Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
+        var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
         var toVerify = GetStringToVerify(root);
         await Verifier.Verify(toVerify, settings);
+    }
+
+    [Fact]
+    private void CompilerGeneratedClassTest()
+    {
+        var assembly = Assembly.GetExecutingAssembly();
+        Assert.NotNull(assembly);
+        var compilerGeneratedTypes = CompilerGeneratedTypes(10);
+        Assert.True(compilerGeneratedTypes.Count == 10);
+        foreach (var generatedType in compilerGeneratedTypes)
+        {
+            Assert.NotNull(generatedType);
+            var root = GetSymbols(assembly, generatedType.FullName);
+            Assert.True(root.Scopes.Count == 1);
+            Assert.Null(root.Scopes.First().Scopes);
+        }
+
+        List<Type> CompilerGeneratedTypes(int numberOfTypes)
+        {
+            return assembly.GetTypes().SelectMany(t => t.GetNestedTypes(BindingFlags.NonPublic | BindingFlags.Public | BindingFlags.Static | BindingFlags.Instance)).Where(t => t.GetCustomAttribute<CompilerGeneratedAttribute>() != null).Take(numberOfTypes).ToList();
+        }
     }
 
     private string GetStringToVerify(Root root)
@@ -56,7 +77,7 @@ public class SymbolExtractorTest
             if (@class.LanguageSpecifics.HasValue)
             {
                 var ls = @class.LanguageSpecifics.Value;
-                ls.AccessModifiers = null;
+                ls.AccessModifiers = null; // depends on .net version
                 @class.LanguageSpecifics = ls;
             }
 
@@ -64,11 +85,11 @@ public class SymbolExtractorTest
             List<Trace.Debugger.Symbols.Model.Scope> methodsScope = new EditableList<Trace.Debugger.Symbols.Model.Scope>();
             for (int j = 0; j < methods.Count; j++)
             {
-                var method = methods[0];
+                var method = methods[j];
                 if (method.LanguageSpecifics.HasValue)
                 {
                     var ls = method.LanguageSpecifics.Value;
-                    ls.AccessModifiers = null;
+                    ls.AccessModifiers = null; // depends on .net version
                     method.LanguageSpecifics = ls;
                 }
 
@@ -82,7 +103,7 @@ public class SymbolExtractorTest
         assembly.Scopes = classesScope;
         root.Scopes = new[] { assembly };
 
-        return JsonConvert.SerializeObject(root, Formatting.Indented);
+        return JsonConvert.SerializeObject(root, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });
     }
 
     private VerifySettings ConfigureVerifySettings(string assemblyName, string className)
@@ -97,26 +118,13 @@ public class SymbolExtractorTest
     private Root GetSymbols(Assembly assembly, string className)
     {
         var root = GetRoot();
-        var assemblyScope = GetAssemblySymbol(assembly);
-        var classSymbol = _extractor.GetClassSymbols(assembly, new[] { className }).FirstOrDefault();
-        Assert.NotNull(classSymbol);
-        assemblyScope.Scopes = new[] { classSymbol.Value };
+        var extractor = SymbolExtractor.Create(assembly);
+        Assert.NotNull(extractor);
+        var assemblyScope = extractor.GetAssemblySymbol();
+        var classSymbol = extractor.GetClassSymbols(className);
+        assemblyScope.Scopes = classSymbol.HasValue ? new[] { classSymbol.Value } : null;
         root.Scopes = new[] { assemblyScope };
         return root;
-    }
-
-    private Datadog.Trace.Debugger.Symbols.Model.Scope GetAssemblySymbol(Assembly assembly)
-    {
-        var assemblyScope = new Datadog.Trace.Debugger.Symbols.Model.Scope
-        {
-            Name = assembly.FullName,
-            ScopeType = SymbolType.Assembly,
-            SourceFile = assembly.Location,
-            StartLine = -1,
-            EndLine = int.MaxValue,
-        };
-
-        return assemblyScope;
     }
 
     private Root GetRoot()

@@ -1,0 +1,90 @@
+﻿{
+  "service": "test",
+  "env": "test",
+  "version": "0",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scopeType": "Assembly",
+      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "startLine": 0,
+      "endLine": 0,
+      "scopes": [
+        {
+          "scopeType": "Class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithClosure",
+          "startLine": 13,
+          "endLine": 24,
+          "languageSpecifics": {
+            "superClasses": [
+              "System.Object"
+            ]
+          },
+          "scopes": [
+            {
+              "scopeType": "Method",
+              "name": "Foo",
+              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
+              "startLine": 13,
+              "endLine": 23,
+              "languageSpecifics": {
+                "returnType": "System.Void",
+                "startColumn": 9,
+                "endColumn": 10
+              },
+              "symbols": [
+                {
+                  "name": "action",
+                  "type": "System.Action",
+                  "symbolType": "Local",
+                  "line": 16707566
+                }
+              ],
+              "scopes": [
+                {
+                  "scopeType": "Closure",
+                  "name": "Foo",
+                  "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
+                  "startLine": 17,
+                  "endLine": 20,
+                  "languageSpecifics": {
+                    "accessModifiers": [
+                      "Assembly"
+                    ],
+                    "returnType": "System.Void",
+                    "startColumn": 13,
+                    "endColumn": 14
+                  },
+                  "symbols": [
+                    {
+                      "name": "s",
+                      "type": "System.Int32",
+                      "symbolType": "Local",
+                      "line": 17
+                    },
+                    {
+                      "name": "rand",
+                      "type": "System.Int32",
+                      "symbolType": "Local",
+                      "line": 17
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "scopeType": "Method",
+              "name": ".ctor",
+              "startLine": -1,
+              "endLine": 0,
+              "languageSpecifics": {
+                "returnType": "System.Void"
+              },
+              "scopes": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
