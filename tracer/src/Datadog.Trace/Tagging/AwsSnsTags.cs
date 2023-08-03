@@ -21,7 +21,12 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
+#pragma warning disable CS0618 // Duplicate of TopicName
         [Tag(Trace.Tags.AwsTopicName)]
+#pragma warning restore CS0618
+        public string AwsTopicName => TopicName;
+
+        [Tag(Trace.Tags.TopicName)]
         public string TopicName { get; set; }
 
         [Tag(Trace.Tags.AwsTopicArn)]
@@ -81,7 +86,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.AwsTopicName;
+                           : Trace.Tags.TopicName;
             }
         }
     }

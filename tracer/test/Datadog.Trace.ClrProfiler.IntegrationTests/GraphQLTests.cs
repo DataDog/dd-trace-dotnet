@@ -213,7 +213,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
 
-            await Fixture.TryStartApp(this);
+            await Fixture.TryStartApp(this, packageVersion: packageVersion);
             var testStart = DateTime.UtcNow;
             var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
 
