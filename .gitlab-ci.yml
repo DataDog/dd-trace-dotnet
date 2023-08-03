@@ -37,7 +37,7 @@ build:
   script:
     - if (Test-Path build-out) { remove-item -recurse -force build-out }
     - if (Test-Path artifacts) { remove-item -recurse -force artifacts }
-    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true datadog/dd-trace-dotnet-docker-build:latest
+    - docker run --rm -m 4096M -v "$(Get-Location):c:\mnt" -e CI_JOB_ID=${CI_JOB_ID} -e ENABLE_MULTIPROCESSOR_COMPILATION=false -e WINDOWS_BUILDER=true -e AWS_NETWORKING=true -e SIGN_WINDOWS=true -e NUGET_CERT_REVOCATION_MODE=offline datadog/dd-trace-dotnet-docker-build:latest
     - mkdir artifacts
     - xcopy /e/s build-out\${CI_JOB_ID}\*.* artifacts
     - remove-item -recurse -force build-out\${CI_JOB_ID}

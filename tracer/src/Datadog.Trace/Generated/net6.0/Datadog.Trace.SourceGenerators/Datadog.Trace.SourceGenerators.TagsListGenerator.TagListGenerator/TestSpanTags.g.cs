@@ -57,6 +57,12 @@ namespace Datadog.Trace.Ci.Tagging
 #else
         private static readonly byte[] SkipReasonBytes = new byte[] { 176, 116, 101, 115, 116, 46, 115, 107, 105, 112, 95, 114, 101, 97, 115, 111, 110 };
 #endif
+        // SkippedByIntelligentTestRunnerBytes = MessagePack.Serialize("test.skipped_by_itr");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SkippedByIntelligentTestRunnerBytes => new byte[] { 179, 116, 101, 115, 116, 46, 115, 107, 105, 112, 112, 101, 100, 95, 98, 121, 95, 105, 116, 114 };
+#else
+        private static readonly byte[] SkippedByIntelligentTestRunnerBytes = new byte[] { 179, 116, 101, 115, 116, 46, 115, 107, 105, 112, 112, 101, 100, 95, 98, 121, 95, 105, 116, 114 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -68,6 +74,7 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.codeowners" => CodeOwners,
                 "test.traits" => Traits,
                 "test.skip_reason" => SkipReason,
+                "test.skipped_by_itr" => SkippedByIntelligentTestRunner,
                 _ => base.GetTag(key),
             };
         }
@@ -93,6 +100,9 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.skip_reason": 
                     SkipReason = value;
+                    break;
+                case "test.skipped_by_itr": 
+                    SkippedByIntelligentTestRunner = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -130,6 +140,11 @@ namespace Datadog.Trace.Ci.Tagging
             if (SkipReason is not null)
             {
                 processor.Process(new TagItem<string>("test.skip_reason", SkipReason, SkipReasonBytes));
+            }
+
+            if (SkippedByIntelligentTestRunner is not null)
+            {
+                processor.Process(new TagItem<string>("test.skipped_by_itr", SkippedByIntelligentTestRunner, SkippedByIntelligentTestRunnerBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -176,6 +191,13 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.skip_reason (tag):")
                   .Append(SkipReason)
+                  .Append(',');
+            }
+
+            if (SkippedByIntelligentTestRunner is not null)
+            {
+                sb.Append("test.skipped_by_itr (tag):")
+                  .Append(SkippedByIntelligentTestRunner)
                   .Append(',');
             }
 

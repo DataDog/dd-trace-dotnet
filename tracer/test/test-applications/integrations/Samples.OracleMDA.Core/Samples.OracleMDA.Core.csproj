@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == ''">2.19.101</ApiVersion>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

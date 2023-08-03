@@ -162,6 +162,11 @@ public sealed class TestSuite
             Tags.Status = TestTags.StatusPass;
         }
 
+        if (Tags.IntelligentTestRunnerSkippingCount is { } itrSkippingCount)
+        {
+            Module.Tags.AddIntelligentTestRunnerSkippingCount((int)itrSkippingCount);
+        }
+
         span.Finish(duration.Value);
 
         Current = null;

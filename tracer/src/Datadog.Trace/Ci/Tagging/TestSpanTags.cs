@@ -33,7 +33,6 @@ internal partial class TestSpanTags : TestSuiteSpanTags
         RuntimeName = suiteTags.RuntimeName;
         RuntimeVersion = suiteTags.RuntimeVersion;
         StageName = suiteTags.StageName;
-        TestsSkipped = suiteTags.TestsSkipped;
         BuildSourceRoot = suiteTags.BuildSourceRoot;
         CiEnvVars = suiteTags.CiEnvVars;
         CIProvider = suiteTags.CIProvider;
@@ -83,4 +82,7 @@ internal partial class TestSpanTags : TestSuiteSpanTags
 
     [Tag(TestTags.SkipReason)]
     public string SkipReason { get; set; }
+
+    [Tag(IntelligentTestRunnerTags.SkippedBy)]
+    public string SkippedByIntelligentTestRunner { get; set; }
 }
