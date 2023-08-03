@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
 using Datadog.Trace.Debugger.RateLimiting;
@@ -50,7 +51,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var paramName = state.MethodMetadataInfo.ParameterNames[index];
                 var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }
@@ -91,7 +92,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }
@@ -113,6 +114,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref LineDebuggerState state)
         {
+            if (exception is BlockException)
+            {
+                throw exception;
+            }
+
             try
             {
                 if (!state.IsActive)
@@ -179,7 +185,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var captureInfo = new CaptureInfo<Type>(invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLine, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath));
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }

@@ -2910,6 +2910,9 @@
       "transformers": [
         "removeNulls",
         "urlDecodeUni"
+      ],
+      "on_match": [
+        "block"
       ]
     },
     {

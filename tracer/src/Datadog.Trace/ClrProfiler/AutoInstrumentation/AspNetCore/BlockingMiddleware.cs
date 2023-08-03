@@ -29,7 +29,7 @@ internal class BlockingMiddleware
         _endPipeline = endPipeline;
     }
 
-    private static Task WriteResponse(BlockingAction action, HttpContext context, out bool endedResponse)
+    public static Task WriteResponse(BlockingAction action, HttpContext context, out bool endedResponse)
     {
         var httpResponse = context.Response;
 
@@ -61,7 +61,7 @@ internal class BlockingMiddleware
 
         try
         {
-            context.Abort();
+            // context.Abort();
             endedResponse = true;
         }
         catch (Exception)
@@ -116,14 +116,14 @@ internal class BlockingMiddleware
             }
             catch (Exception e) when (GetBlockException(e) is { } blockException)
             {
-                var action = security.GetBlockingAction(blockException!.Result.Actions[0], context.Request.Headers.GetCommaSeparatedValues("Accept"));
+                var action = security.GetBlockingAction(blockException.Result?.Actions[0] ?? "block", context.Request.Headers.GetCommaSeparatedValues("Accept"));
                 await WriteResponse(action, context, out endedResponse).ConfigureAwait(false);
                 if (security.Enabled)
                 {
                     if (Tracer.Instance?.ActiveScope?.Span is Span span)
                     {
                         var securityCoordinator = new SecurityCoordinator(security, context, span);
-                        if (!blockException.Reported)
+                        if (blockException is { Reported: false, Result.Data: not null })
                         {
                             securityCoordinator.Report(blockException.Result.Data, blockException.Result.AggregatedTotalRuntime, blockException.Result.AggregatedTotalRuntimeWithBindings, endedResponse);
                         }

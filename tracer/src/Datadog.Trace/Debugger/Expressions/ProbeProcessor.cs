@@ -114,8 +114,10 @@ namespace Datadog.Trace.Debugger.Expressions
             return _evaluator;
         }
 
-        internal bool Process<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator)
+        internal Tuple<bool, bool> Process<TCapture>(ref CaptureInfo<TCapture> info, DebuggerSnapshotCreator snapshotCreator)
         {
+            bool IsAppSecEvent(ExpressionEvaluationResult expressionEvaluationResult) => expressionEvaluationResult.Decorations?.Any(d => d.TagName == "appsec.event") ?? false;
+
             ExpressionEvaluationResult evaluationResult = default;
             try
             {
@@ -134,7 +136,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             if (shouldStopCapture)
                             {
                                 snapshotCreator.Stop();
-                                return false;
+                                return new Tuple<bool, bool>(false, IsAppSecEvent(evaluationResult));
                             }
 
                             break;
@@ -142,7 +144,7 @@ namespace Datadog.Trace.Debugger.Expressions
 
                         if (captureBehaviour != CaptureBehaviour.Capture)
                         {
-                            return true;
+                            return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
                         }
 
                         break;
@@ -152,7 +154,8 @@ namespace Datadog.Trace.Debugger.Expressions
                         switch (captureBehaviour)
                         {
                             case CaptureBehaviour.Stop:
-                                return true;
+                                return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
+
                             case CaptureBehaviour.Delay:
                                 if (info.IsAsyncCapture())
                                 {
@@ -162,7 +165,8 @@ namespace Datadog.Trace.Debugger.Expressions
 
                                 snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
 
-                                return true;
+                                return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
+
                             case CaptureBehaviour.Capture:
                                 snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                 break;
@@ -183,7 +187,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             switch (captureBehaviour)
                             {
                                 case CaptureBehaviour.NoCapture or CaptureBehaviour.Stop:
-                                    return true;
+                                    return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
                                 case CaptureBehaviour.Capture:
                                     snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                                     break;
@@ -199,7 +203,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         if (shouldStopCapture)
                                         {
                                             snapshotCreator.Stop();
-                                            return false;
+                                            return new Tuple<bool, bool>(false, IsAppSecEvent(evaluationResult));
                                         }
 
                                         break;
@@ -219,13 +223,13 @@ namespace Datadog.Trace.Debugger.Expressions
                         if (snapshotCreator.CaptureBehaviour is CaptureBehaviour.NoCapture or CaptureBehaviour.Stop)
                         {
                             // there is a condition that should evaluate at exit phase and we are at entry phase
-                            return true;
+                            return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
                         }
 
                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
                         if (snapshotCreator.CaptureBehaviour == CaptureBehaviour.Delay)
                         {
-                            return true;
+                            return new Tuple<bool, bool>(true, IsAppSecEvent(evaluationResult));
                         }
 
                         break;
@@ -235,12 +239,13 @@ namespace Datadog.Trace.Debugger.Expressions
                             $"{info.MethodState} is not valid value here");
                 }
 
-                return ProcessCapture(ref info, ref snapshotCreator, ref evaluationResult);
+                var result = ProcessCapture(ref info, ref snapshotCreator, ref evaluationResult);
+                return new Tuple<bool, bool>(result, IsAppSecEvent(evaluationResult));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Failed to process probe. Probe Id: {ProbeId}", ProbeInfo.ProbeId);
-                return false;
+                return new Tuple<bool, bool>(false, IsAppSecEvent(evaluationResult));
             }
         }
 

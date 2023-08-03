@@ -36,6 +36,11 @@ namespace Datadog.Trace.AppSec
             Reported = reported;
         }
 
+        public BlockException(bool reported = false)
+        {
+            Reported = reported;
+        }
+
         public IResult Result { get; }
 
         public bool Reported { get; }

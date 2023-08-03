@@ -7,6 +7,8 @@ using System;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.AppSec.Waf;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
 using Datadog.Trace.Debugger.Instrumentation.Collections;
@@ -102,7 +104,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryStart, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
-            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
             {
                 state.IsActive = false;
             }
@@ -130,7 +132,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.EntryEnd, hasLocalOrArgument: hasArgumentsOrLocals, memberKind: ScopeMemberKind.This);
 
-            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
             {
                 state.IsActive = false;
             }
@@ -158,7 +160,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var paramName = state.MethodMetadataInfo.ParameterNames[index];
             var captureInfo = new CaptureInfo<TArg>(value: arg, methodState: MethodState.LogArg, name: paramName, memberKind: ScopeMemberKind.Argument);
 
-            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
             {
                 state.IsActive = false;
             }
@@ -192,7 +194,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
-            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
             {
                 state.IsActive = false;
             }
@@ -223,7 +225,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
 
-            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+            if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
             {
                 state.IsActive = false;
             }
@@ -257,7 +259,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (exception != null)
             {
                 var captureInfo = new CaptureInfo<Exception>(value: exception, invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Exception, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }
@@ -265,7 +267,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             else
             {
                 var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", invocationTargetType: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.ExitStart, memberKind: ScopeMemberKind.Return, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length);
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }
@@ -295,9 +297,12 @@ namespace Datadog.Trace.Debugger.Instrumentation
                                        !state.MethodMetadataInfo.Method.IsStatic;
 
             var captureInfo = new CaptureInfo<object>(value: state.InvocationTarget, type: state.MethodMetadataInfo.DeclaringType, invocationTargetType: state.MethodMetadataInfo.DeclaringType, memberKind: ScopeMemberKind.This, methodState: MethodState.ExitEnd, hasLocalOrArgument: hasArgumentsOrLocals, method: state.MethodMetadataInfo.Method);
-            state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
+            var result = state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
             state.HasLocalsOrReturnValue = false;
-            throw new BlockException();
+            if (result.Item2)
+            {
+                throw new BlockException(reported: true);
+            }
         }
 
         private static MethodDebuggerState CreateInvalidatedDebuggerState()
@@ -339,6 +344,11 @@ namespace Datadog.Trace.Debugger.Instrumentation
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void LogException(Exception exception, ref MethodDebuggerState state)
         {
+            if (exception is BlockException)
+            {
+                throw exception;
+            }
+
             try
             {
                 if (!state.IsActive)

@@ -57,7 +57,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                 var asyncInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments);
                 var captureInfo = new CaptureInfo<Type>(value: null, type: state.MethodMetadataInfo.DeclaringType, methodState: MethodState.BeginLineAsync, localsCount: state.MethodMetadataInfo.LocalVariableNames.Length, argumentsCount: state.MethodMetadataInfo.ParameterNames.Length, lineCaptureInfo: new LineCaptureInfo(lineNumber, probeFilePath), asyncCaptureInfo: asyncInfo);
 
-                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator))
+                if (!state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator).Item1)
                 {
                     state.IsActive = false;
                 }

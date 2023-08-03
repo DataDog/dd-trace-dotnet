@@ -192,7 +192,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             state = asyncState; // Denotes that subsequent re-entries of the `MoveNext` will be ignored by `BeginMethod`.
 
-            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
+            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator).Item1)
             {
                 asyncState.IsActive = false;
             }
@@ -224,7 +224,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             }
 
             var captureInfo = new CaptureInfo<TLocal>(value: local, methodState: MethodState.LogLocal, name: localName, memberKind: ScopeMemberKind.Local);
-            if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
+            if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator).Item1)
             {
                 asyncState.IsActive = false;
             }
@@ -259,7 +259,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, hoistedLocals: asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals, hoistedArgs: asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments);
             var capture = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, asyncCaptureInfo: asyncCaptureInfo, memberKind: ScopeMemberKind.Exception);
 
-            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator))
+            if (!asyncState.ProbeData.Processor.Process(ref capture, asyncState.SnapshotCreator).Item1)
             {
                 asyncState.IsActive = false;
             }
@@ -297,7 +297,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             if (exception != null)
             {
                 var captureInfo = new CaptureInfo<Exception>(value: exception, methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Exception, asyncCaptureInfo: asyncCaptureInfo);
-                if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
+                if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator).Item1)
                 {
                     asyncState.IsActive = false;
                 }
@@ -305,7 +305,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
             else if (returnValue != null)
             {
                 var captureInfo = new CaptureInfo<TReturn>(value: returnValue, name: "@return", methodState: MethodState.ExitStartAsync, memberKind: ScopeMemberKind.Return, asyncCaptureInfo: asyncCaptureInfo);
-                if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
+                if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator).Item1)
                 {
                     asyncState.IsActive = false;
                 }
@@ -336,7 +336,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
             var asyncCaptureInfo = new AsyncCaptureInfo(asyncState.MoveNextInvocationTarget, asyncState.KickoffInvocationTarget, asyncState.MethodMetadataInfo.KickoffInvocationTargetType, asyncState.MethodMetadataInfo.KickoffMethod, asyncState.MethodMetadataInfo.AsyncMethodHoistedArguments, asyncState.MethodMetadataInfo.AsyncMethodHoistedLocals);
             var captureInfo = new CaptureInfo<object>(value: asyncCaptureInfo.KickoffInvocationTarget, type: asyncCaptureInfo.KickoffInvocationTargetType, methodState: MethodState.ExitEndAsync, memberKind: ScopeMemberKind.This, asyncCaptureInfo: asyncCaptureInfo, hasLocalOrArgument: hasArgumentsOrLocals);
-            if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator))
+            if (!asyncState.ProbeData.Processor.Process(ref captureInfo, asyncState.SnapshotCreator).Item1)
             {
                 asyncState.IsActive = false;
             }
