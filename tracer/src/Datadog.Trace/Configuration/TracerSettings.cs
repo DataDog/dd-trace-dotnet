@@ -358,9 +358,10 @@ namespace Datadog.Trace.Configuration
                 IsRunningInAzureFunctionsConsumptionPlan = AzureAppServiceMetadata.IsFunctionsAppConsumptionPlan;
             }
 
-            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            // GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
 
-            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+            // IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+            IsRunningInGCPFunctions = ImmutableGCPFunctionSettings.GetIsGCPFunction();
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
