@@ -41,6 +41,11 @@
     <ClCompile Include="..\..\..\shared\src\native-src\string.cpp" />
     <ClCompile Include="..\..\..\shared\src\native-src\util.cpp" />
     <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\DogstatsdService.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
     <ClCompile Include="AdaptiveSamplerTest.cpp" />
     <ClCompile Include="AppDomainStoreHelper.cpp" />
     <ClCompile Include="ApplicationStoreTest.cpp" />
@@ -54,7 +59,7 @@
     <ClCompile Include="ManagedThreadListTest.cpp" />
     <ClCompile Include="MetricsRegistryTest.cpp" />
     <ClCompile Include="OpSysToolsTest.cpp" />
-    <ClCompile Include="OSpecificAPIHelper.cpp" />
+    <ClCompile Include="OsSpecificApiTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="ProfilerSignalManagerTest.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />

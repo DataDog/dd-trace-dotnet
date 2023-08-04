@@ -21,11 +21,46 @@
 #include "shared/src/native-src/loader.h"
 
 #include <memory>
+#include <sstream>
 
 #include <tlhelp32.h>
 #include <windows.h>
 
 namespace OsSpecificApi {
+
+// if a system message was not found for the last error code the message will contain GetLastError between ()
+std::pair<DWORD, std::string> GetLastErrorMessage()
+{
+    std::string message;
+    LPVOID pBuffer;
+    DWORD errorCode = GetLastError();
+    DWORD length = FormatMessageA(
+        FORMAT_MESSAGE_ALLOCATE_BUFFER |
+            FORMAT_MESSAGE_FROM_SYSTEM |
+            FORMAT_MESSAGE_IGNORE_INSERTS,
+        NULL,
+        errorCode,
+        MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT),
+        (char*)&pBuffer,
+        0, NULL);
+
+    std::stringstream builder;
+    builder << "(error code = 0x" << std::hex << errorCode << ")";
+
+    if (length == 0)
+    {
+        // only format the error code into the message if no system message available
+        message = builder.str();
+        return std::make_pair(errorCode, message);
+    }
+
+    // otherwise, concat the system message to the error code
+    char* sMsg = (char*)pBuffer;
+    builder << ": " << sMsg;
+    LocalFree(pBuffer);
+    message = builder.str();
+    return std::make_pair(errorCode, message);
+}
 
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
@@ -52,26 +87,18 @@ uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo)
     }
     else
     {
-        DWORD errorCode = GetLastError();
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
         if (isFirstError && (errorCode != ERROR_INVALID_HANDLE)) // expected invalid handle case
         {
             isFirstError = false;
-            LPVOID msgBuffer;
 
             if (errorCode == 0)
             {
-                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0)");
+                Log::Error("GetThreadCpuTime() error calling GetThreadTimes (error code = 0x0)");
             }
             else
             {
-                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-                if (msgBuffer != NULL)
-                {
-                    Log::Error("GetThreadCpuTime() error calling GetThreadTimes (last error = 0x", std::hex, errorCode, std::dec, "): ", (LPCTSTR)msgBuffer);
-                    LocalFree(msgBuffer);
-                }
+                Log::Error("GetThreadCpuTime() error calling GetThreadTimes ", message);
             }
         }
     }
@@ -135,14 +162,16 @@ bool InitializeNtQueryInformationThreadCallback()
     auto hModule = GetModuleHandleA("NtDll.dll");
     if (hModule == nullptr)
     {
-        Log::Error("Impossible to load ntdll.dll: 0x", std::hex, GetLastError());
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
+        Log::Error("Impossible to load ntdll.dll ", message);
         return false;
     }
 
     NtQueryInformationThread = (NtQueryInformationThread_)GetProcAddress(hModule, "NtQueryInformationThread");
     if (NtQueryInformationThread == nullptr)
     {
-        Log::Error("Impossible to get NtQueryInformationThread: 0x", std::hex, GetLastError());
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
+        Log::Error("Impossible to get NtQueryInformationThread ", message);
         return false;
     }
 
@@ -185,23 +214,14 @@ bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
         if (isFirstError && (lResult != STATUS_INVALID_HANDLE))
         {
             isFirstError = false;
-            LPVOID msgBuffer;
-            DWORD errorCode = GetLastError();
-
+            auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
             if (errorCode == 0)
             {
-                Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread");
+                Log::Error("IsRunning() - NtQueryInformationThread failure 0x", std::hex, lResult);
             }
             else
             {
-                FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                              NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-                if (msgBuffer != NULL)
-                {
-                    Log::Error("IsRunning() error 0x", std::hex, lResult, " calling NtQueryInformationThread (last error =  0x", std::hex, errorCode, std::dec, "): ", (LPTSTR)msgBuffer);
-                    LocalFree(msgBuffer);
-                }
+                Log::Error("IsRunning() - NtQueryInformationThread failure 0x", std::hex, lResult, " ", message);
             }
         }
 #endif
@@ -217,28 +237,17 @@ bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed)
 }
 
 // https://devblogs.microsoft.com/oldnewthing/20200824-00/?p=104116
-
 int32_t GetProcessorCount()
 {
     auto nbProcs = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
     if (nbProcs == 0)
     {
-        DWORD errorMessageID = ::GetLastError();
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
+        Log::Info("Impossible to retrieve the number of processors ", message);
 
-        LPSTR messageBuffer = nullptr;
-        // Free the Win32's string's buffer.
-        on_leave { LocalFree(messageBuffer); };
-
-        // Ask Win32 to give us the string version of that message ID.
-        // The parameters we pass in, tell Win32 to create the buffer that holds the message for us (because we don't yet know how long the message string will be).
-        size_t size = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                                     NULL, errorMessageID, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&messageBuffer, 0, NULL);
-
-        // Copy the error message into a std::string.
-        std::string message(messageBuffer, size);
-        Log::Info("An error occured and we were unable to retrieve the number of processors (Error: ", message, ")");
         return 1;
     }
+
     return nbProcs;
 }
 
@@ -247,21 +256,8 @@ ScopedHandle GetThreadHandle(DWORD threadId)
     auto handle = ScopedHandle(::OpenThread(THREAD_QUERY_INFORMATION, FALSE, threadId));
     if (handle == NULL)
     {
-        LPVOID msgBuffer;
-        DWORD errorCode = GetLastError();
-
-        FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
-                      NULL, errorCode, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPTSTR)&msgBuffer, 0, NULL);
-
-        if (msgBuffer != NULL)
-        {
-            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "': ", (LPTSTR)msgBuffer, " (", errorCode, ")");
-            LocalFree(msgBuffer);
-        }
-        else
-        {
-            Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' (", errorCode, ")");
-        }
+        auto [errorCode, message] = OsSpecificApi::GetLastErrorMessage();
+        Log::Debug("GetThreadHandle: Error getting thread handle for thread id '", threadId, "' ", message);
     }
     return handle;
 }

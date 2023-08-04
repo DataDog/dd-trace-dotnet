@@ -44,7 +44,7 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
             *pHR = E_ABORT;
             return GetStackSnapshotResult();
         }
-        
+
         // Sometimes, we could hit an access violation, so catch it and just return.
         // This can happen if we are in a deadlock situation and resume the target thread
         // while walking its stack.
