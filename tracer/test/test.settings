@@ -5,6 +5,7 @@
             <DataCollector friendlyName="datadog" uri="datacollector://Datadog/collector/1.0" enabled="True" />
         </DataCollectors>
     </DataCollectionRunSettings>
+
     <InProcDataCollectionRunSettings>
         <InProcDataCollectors>
             <!-- InProc collector to export the coverage to a json file -->
@@ -19,6 +20,7 @@
             </InProcDataCollector>
         </InProcDataCollectors>
     </InProcDataCollectionRunSettings>
+
     <LoggerRunSettings>
         <Loggers>
             <!-- Logger to write and export CI Visibility events -->
