@@ -11,6 +11,7 @@
 #include "MetricsRegistry.h"
 #include "ProfilerMockedInterface.h"
 #include "RuntimeInfoHelper.h"
+#include "IMetadataProvider.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 

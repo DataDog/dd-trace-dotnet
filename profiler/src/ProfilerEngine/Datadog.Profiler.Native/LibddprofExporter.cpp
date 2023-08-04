@@ -824,6 +824,12 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
 }
 std::string LibddprofExporter::GetMetadata() const
 {
+    // in tests, the metadata provider might be null
+    if (_metadataProvider == nullptr)
+    {
+        return "";
+    }
+
     // TODO: check if we plan to update the metadata after the application starts
     //       otherwise, we could cache the result once for all.
 
