@@ -23,12 +23,14 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly IApiRequestFactory _apiRequestFactory;
         private readonly ArraySegment<byte> _eventMetadata;
         private string? _endpoint;
+        private IDiscoveryService? _discoveryService;
 
         private SymbolBatchUploadApi(IApiRequestFactory apiRequestFactory, IDiscoveryService discoveryService, ArraySegment<byte> eventMetadataMetadata)
         {
             _apiRequestFactory = apiRequestFactory;
             _eventMetadata = eventMetadataMetadata;
-            discoveryService.SubscribeToChanges(c => _endpoint = c.SymbolDbEndpoint);
+            _discoveryService = discoveryService;
+            _discoveryService.SubscribeToChanges(ConfigurationChanged);
         }
 
         private static ArraySegment<byte> GetEventAsArraySegment(string? serviceName)
@@ -61,12 +63,22 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
+        private void ConfigurationChanged(AgentConfiguration config)
+        {
+            _endpoint = config.SymbolDbEndpoint;
+            if (!string.IsNullOrEmpty(Volatile.Read(ref _endpoint)))
+            {
+                _discoveryService!.RemoveSubscription(ConfigurationChanged);
+                _discoveryService = null;
+            }
+        }
+
         public async Task<bool> SendBatchAsync(ArraySegment<byte> symbols)
         {
             if (Volatile.Read(ref _endpoint) is not { } endpoint)
             {
-                Log.Warning("Failed to upload symbol: symbol endpoint not yet retrieved from discovery service");
-                return false;
+                // Should not happen
+                throw new Exception("Symbol database endpoint is not defined");
             }
 
             var uri = _apiRequestFactory.GetEndpoint(endpoint);

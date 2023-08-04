@@ -28,13 +28,13 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly string _serviceName;
         private readonly string? _serviceVersion;
         private readonly string? _environment;
-        private readonly IDiscoveryService _discoveryService;
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
         private readonly long _sizeLimit;
         private readonly CancellationTokenSource _cancellationToken;
         private readonly IBatchUploadApi _api;
+        private IDiscoveryService? _discoveryService;
         private byte[]? _payload;
         private string? _isSymbolUploaderEnabled;
 
@@ -58,8 +58,15 @@ namespace Datadog.Trace.Debugger.Symbols
         private void ConfigurationChanged(AgentConfiguration configuration)
         {
             _isSymbolUploaderEnabled = configuration.SymbolDbEndpoint;
+            if (string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
+            {
+                Log.Warning("Dynamic Instrumentation failed to upload symbols for auto-complete suggestions. Ensure that you are working with datadog-agent v7.45.0 or higher");
+                return;
+            }
+
             _discoveryServiceSemaphore.Release(1);
-            _discoveryService.RemoveSubscription(ConfigurationChanged);
+            _discoveryService!.RemoveSubscription(ConfigurationChanged);
+            _discoveryService = null;
         }
 
         public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
@@ -209,7 +216,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             Encoding.UTF8.GetBytes(symbol, 0, symbol.Length, _payload, 0);
-            return await _api!.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
+            return await _api.SendBatchAsync(new ArraySegment<byte>(_payload)).ConfigureAwait(false);
         }
 
         private int SerializeClass(Model.Scope classScope, StringBuilder sb)
@@ -241,6 +248,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             if (await WaitForDiscoveryServiceAsync().ConfigureAwait(false) == false)
             {
+                Log.Warning("Dynamic Instrumentation failed to upload symbols for auto-complete suggestions. Ensure that you are working with datadog-agent v7.45.0 or higher");
                 return;
             }
 
@@ -254,7 +262,8 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task<bool> WaitForDiscoveryServiceAsync()
         {
-            await _discoveryServiceSemaphore.WaitAsync(TimeSpan.FromSeconds(10), _cancellationToken.Token).ConfigureAwait(false);
+            await Task.Yield();
+            await _discoveryServiceSemaphore.WaitAsync(_cancellationToken.Token).ConfigureAwait(false);
             _discoveryServiceSemaphore.Dispose();
             if (_cancellationToken.IsCancellationRequested)
             {
@@ -264,10 +273,6 @@ namespace Datadog.Trace.Debugger.Symbols
             if (!string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
             {
                 return true;
-            }
-            else
-            {
-                Log.Warning("Upload symbol database is not supported");
             }
 
             return false;
