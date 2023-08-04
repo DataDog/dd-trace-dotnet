@@ -82,12 +82,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task TestInstrumentation(MockTracerAgent agent, string metadataSchemaVersion)
         {
-            int expectedSpanCount = 5;
             // 3 on non-windows because of SecureString
-            if (!EnvironmentTools.IsWindows())
-            {
-                expectedSpanCount = 3;
-            }
+            var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
 
             const string expectedOperationName = "command_execution";
 

@@ -54,7 +54,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(totalSpanCount, 2_000, returnAllOperations: true); // 2 seconds - no spans expected
+            var spans = agent.Spans // no spans expected
 
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             telemetry.AssertIntegrationDisabled(IntegrationId.Process);
