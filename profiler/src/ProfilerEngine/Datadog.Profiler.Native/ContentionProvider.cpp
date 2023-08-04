@@ -95,9 +95,12 @@ void ContentionProvider::OnContention(double contentionDurationNs)
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
-    if (result->GetFramesCount() == 0)
+    static uint64_t failureCount = 0;
+    if ((result->GetFramesCount() == 0) && (failureCount % 1000 == 0))
     {
-        Log::Warn("Failed to walk stack for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
+        // log every 1000 failures
+        failureCount++;
+        Log::Warn("Failed to walk ", failureCount, " stacks for sampled contention: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return;
     }
 
