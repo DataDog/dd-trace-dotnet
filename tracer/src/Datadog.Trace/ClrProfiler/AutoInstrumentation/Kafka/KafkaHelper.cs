@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundServiceName(MessagingType);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
                 KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Producer);
 
                 scope = tracer.StartActiveInternal(
@@ -80,8 +80,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 // Producer spans should always be measured
-                span.SetTag(Tags.Measured, "1");
+                span.SetMetric(Trace.Tags.Measured, 1.0);
 
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tags.SetAnalyticsSampleRate(KafkaConstants.IntegrationId, settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
             }
@@ -151,10 +152,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     }
                 }
 
-                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetInboundServiceName(MessagingType);
-                KafkaTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
+                var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+                var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateKafkaTags(SpanKinds.Consumer);
 
                 scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, tags: tags, serviceName: serviceName);
+                tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(KafkaConstants.IntegrationId);
 
                 string resourceName = $"Consume Topic {(string.IsNullOrEmpty(topic) ? "kafka" : topic)}";
 

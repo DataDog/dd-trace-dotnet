@@ -211,6 +211,10 @@ EXTERN_C long DisableCallTargetDefinitions(UINT32 disabledCategories)
 }
 
 
+EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    return trace::profiler->UpdateSettings(keys, values, length);
+}
 
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)

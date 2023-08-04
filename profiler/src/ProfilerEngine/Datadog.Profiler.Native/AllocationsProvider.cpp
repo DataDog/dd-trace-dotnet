@@ -85,9 +85,12 @@ void AllocationsProvider::OnAllocation(uint32_t allocationKind,
 
     uint32_t hrCollectStack = E_FAIL;
     const auto result = pStackFramesCollector->CollectStackSample(threadInfo.get(), &hrCollectStack);
-    if (result->GetFramesCount() == 0)
+    static uint64_t failureCount = 0;
+    if ((result->GetFramesCount() == 0) && (failureCount % 100 == 0))
     {
-        Log::Warn("Failed to walk stack for sampled allocation: ", HResultConverter::ToStringWithCode(hrCollectStack));
+        // log every 100 failures (every ~10 MB worse case)
+        failureCount++;
+        Log::Warn("Failed to walk ", failureCount, " stacks for sampled allocation: ", HResultConverter::ToStringWithCode(hrCollectStack));
         return;
     }
 

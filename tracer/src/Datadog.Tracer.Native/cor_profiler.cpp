@@ -46,7 +46,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     // check if debug mode is enabled
     if (IsDebugEnabled())
     {
-        Logger::EnableDebug();
+        Logger::EnableDebug(true);
     }
 
     CorProfilerBase::Initialize(cor_profiler_info_unknown);
@@ -1175,7 +1175,7 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
             if (status != std::future_status::timeout)
             {
                 const auto& numReJITs = future.get();
-                Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
+            Logger::Debug("[Tracer] Total number of ReJIT Requested: ", numReJITs);
             }
             else
             {
@@ -1284,6 +1284,39 @@ void CorProfiler::DisableTracerCLRProfiler()
     // https://docs.microsoft.com/en-us/dotnet/framework/unmanaged-api/profiling/icorprofilerinfo3-requestprofilerdetach-method
     Logger::Info("Disabling Tracer CLR Profiler...");
     Shutdown();
+}
+
+void CorProfiler::UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
+{
+    const WSTRING debugVarName = WStr("DD_TRACE_DEBUG");
+
+    for (int i = 0; i < length; i++)
+    {
+        if (WSTRING(keys[i]) == debugVarName)
+        {
+            if (values[i] == nullptr || *values[i] == WStr('\0'))
+            {
+                continue;
+            }
+
+            WSTRING value(values[i]);
+
+            if (IsTrue(value))
+            {
+                Logger::EnableDebug(true);
+                Logger::Info("Debug logging has been turned on by remote configuration");
+            }
+            else if (IsFalse(value))
+            {
+                Logger::EnableDebug(false);
+                Logger::Info("Debug logging has been turned off by remote configuration");
+            }
+            else
+            {
+                Logger::Warn("Received an invalid value for DD_TRACE_DEBUG: ", value);
+            }
+        }
+    }
 }
 
 HRESULT STDMETHODCALLTYPE CorProfiler::ProfilerDetachSucceeded()
@@ -1504,11 +1537,6 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
         }
 
         Logger::Debug("JITCompilationStarted: Startup hook registered.");
-        hr = this->info_->ApplyMetaData(module_id);
-        if (FAILED(hr))
-        {
-            Logger::Warn("JITCompilationStarted: Error applying metadata to module_id: ", module_id);
-        }
     }
 
     return S_OK;
@@ -1790,6 +1818,7 @@ void CorProfiler::InternalAddInstrumentation(WCHAR* id, CallTargetDefinition* it
 long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
 {
     long numReJITs = 0;
+    long enabledTargets = 0;
     shared::WSTRING definitionsId = shared::WSTRING(id);
     auto definitions = definitions_ids.Get();
 
@@ -1834,11 +1863,22 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
                 TypeReference(integrationAssembly, integrationType, {}, {}), current.GetIsDerived(),
                 current.GetIsInterface(), true, current.categories, enabledCategories);
 
+            if (integration.GetEnabled())
+            {
+                enabledTargets++;
+            }
+
             if (Logger::IsDebugEnabled())
             {
+                std::string kind = current.GetIsDerived() ? "DERIVED" : "DEFAULT";
+                if (current.GetIsInterface())
+                {
+                    kind += " INTERFACE";
+                }
                 Logger::Debug("  * Target: ", targetAssembly, " | ", targetType, ".", targetMethod, "(",
                               signatureTypes.size(), ") { ", minVersion.str(), " - ", maxVersion.str(), " } [",
-                              integrationAssembly, " | ", integrationType, "]");
+                              integrationAssembly, " | ", integrationType, " | kind: ", kind, " | categories: ", current.categories,
+                              integration.GetEnabled() ? " ENABLED " : " DISABLED ", "]");
             }
 
             integrationDefinitions.push_back(integration);
@@ -1864,10 +1904,11 @@ long CorProfiler::RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2
             Logger::Debug("Total number of ReJIT Requested: ", numReJITs);
         }
 
-        Logger::Info("RegisterCallTargetDefinitions: Total integrations in profiler: ", integration_definitions_.size());
+        Logger::Info("RegisterCallTargetDefinitions: Added ", size, " call targets (enabled: ", enabledTargets,
+                      ", enabled categories: ", enabledCategories ,") ");
     }
 
-    return numReJITs;
+    return enabledTargets;
 }
 long CorProfiler::EnableCallTargetDefinitions(UINT32 enabledCategories)
 {
@@ -3113,6 +3154,7 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     // Create method member ref for AppDomain tokens
     mdMemberRef appdomain_get_currentdomain_member_ref = mdMemberRefNil;
     mdMemberRef appdomain_get_isfullytrusted_member_ref = mdMemberRefNil;
+    mdMemberRef appdomain_get_ishomogenous_member_ref = mdMemberRefNil;
     if (system_appdomain_type_ref != mdTypeRefNil)
     {
         // Get a mdMemberRef for System.AppDomain.get_CurrentDomain()
@@ -3142,7 +3184,20 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
                                             &appdomain_get_isfullytrusted_member_ref);
         if (FAILED(hr))
         {
-            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed");
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsFullyTrusted");
+            return hr;
+        }
+
+        // Get a mdMemberRef for System.AppDomain.get_IsHomogenous()
+        COR_SIGNATURE appdomain_get_ishomogenous_signature[] = {IMAGE_CEE_CS_CALLCONV_HASTHIS, 0,
+                                                                  ELEMENT_TYPE_BOOLEAN};
+        hr = metadata_emit->DefineMemberRef(
+            system_appdomain_type_ref, WStr("get_IsHomogenous"), appdomain_get_ishomogenous_signature,
+            sizeof(appdomain_get_ishomogenous_signature), &appdomain_get_ishomogenous_member_ref);
+
+        if (FAILED(hr))
+        {
+            Logger::Warn("GenerateVoidILStartupMethod: DefineMemberRef failed for get_IsHomogenous");
             return hr;
         }
     }
@@ -3342,12 +3397,28 @@ HRESULT CorProfiler::GenerateVoidILStartupMethod(const ModuleID module_id, mdMet
     rewriterWrapper_void.Return();
 
     ILInstr* pIsFullyTrustedBranch = nullptr;
-    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil)
+    ILInstr* pIsHomogenousBranch = nullptr;
+
+    if (appdomain_get_currentdomain_member_ref != mdMemberRefNil
+        && appdomain_get_isfullytrusted_member_ref != mdMemberRefNil
+        && appdomain_get_ishomogenous_member_ref != mdMemberRefNil)
     {
         // Step 1) Check if the assembly is loaded in a fully trusted domain.
 
         // call System.AppDomain.get_CurrentDomain() and set the false branch target for IsAlreadyLoaded()
         pIsNotAlreadyLoadedBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
+        // callvirt System.AppDomain.get_Homogenous()
+        rewriterWrapper_void.CallMember(appdomain_get_ishomogenous_member_ref, true);
+
+        // check if the return of the method call is true or false
+        pIsHomogenousBranch = rewriterWrapper_void.CreateInstr(CEE_BRTRUE_S);
+        // return if IsHomogenous is false
+        rewriterWrapper_void.Return();
+
+        // call System.AppDomain.get_CurrentDomain()
+        pIsHomogenousBranch->m_pTarget = rewriterWrapper_void.CallMember(appdomain_get_currentdomain_member_ref, false);
+
         // callvirt System.AppDomain.get_IsFullyTrusted()
         rewriterWrapper_void.CallMember(appdomain_get_isfullytrusted_member_ref, true);
         // check if the return of the method call is true or false

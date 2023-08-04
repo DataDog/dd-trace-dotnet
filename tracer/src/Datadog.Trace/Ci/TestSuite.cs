@@ -8,6 +8,8 @@ using System;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci;
 
@@ -30,6 +32,7 @@ public sealed class TestSuite
             string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
             tags: tags,
             startTime: startDate);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestSuite;
         span.ResourceName = name;
@@ -157,6 +160,11 @@ public sealed class TestSuite
         else
         {
             Tags.Status = TestTags.StatusPass;
+        }
+
+        if (Tags.IntelligentTestRunnerSkippingCount is { } itrSkippingCount)
+        {
+            Module.Tags.AddIntelligentTestRunnerSkippingCount((int)itrSkippingCount);
         }
 
         span.Finish(duration.Value);

@@ -16,26 +16,19 @@ internal readonly struct TelemetryInput
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
         MetricResults? metrics,
-        ProductsData? products)
-    : this(configuration, dependencies, integrations, metrics?.Metrics, metrics?.Distributions, products)
-    {
-    }
-
-    public TelemetryInput(
-        ICollection<ConfigurationKeyValue>? configuration,
-        ICollection<DependencyTelemetryData>? dependencies,
-        ICollection<IntegrationTelemetryData>? integrations,
-        ICollection<MetricData>? metrics,
-        ICollection<DistributionMetricData>? distributions,
-        ProductsData? products)
+        ProductsData? products,
+        bool sendAppStarted)
     {
         Configuration = configuration;
         Dependencies = dependencies;
         Integrations = integrations;
-        Metrics = metrics;
-        Distributions = distributions;
+        Metrics = metrics?.Metrics;
+        Distributions = metrics?.Distributions;
         Products = products;
+        SendAppStarted = sendAppStarted;
     }
+
+    public bool SendAppStarted { get; }
 
     public ICollection<ConfigurationKeyValue>? Configuration { get; }
 

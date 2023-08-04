@@ -19,7 +19,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.TestMethodRunner",
     MethodName = "Execute",
     ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
-    ParameterTypeNames = new string[0],
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
@@ -51,12 +50,14 @@ public static class TestMethodRunnerExecuteIntegration
 
             if (unitTestResultObject != null && unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult))
             {
-                var outcome = unitTestResult.Outcome;
-                if (outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
-                    // This instrumentation catches all tests being ignored
-                    var test = MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType());
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo))
+                    {
+                        // This instrumentation catches all tests being ignored
+                        MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType())?
+                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    }
                 }
             }
         }

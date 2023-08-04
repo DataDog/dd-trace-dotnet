@@ -399,15 +399,19 @@ void LibddprofExporter::Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> 
     auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
-    // TODO: add timestamps when available
-
     auto add_res = ddog_prof_Profile_add(profile, ffiSample);
     if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR)
     {
         on_leave { ddog_Error_drop(&add_res.err); };
-        auto errorMessage = ddog_Error_message(&add_res.err);
-        Log::Warn("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
-        return;
+
+        static bool firstTimeError = true;
+        if (firstTimeError)
+        {
+            auto errorMessage = ddog_Error_message(&add_res.err);
+            Log::Error("Failed to add a sample: ", std::string_view(errorMessage.ptr, errorMessage.len));
+
+            firstTimeError = false;
+        }
     }
 }
 
@@ -507,7 +511,10 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
             if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
             {
                 auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
-                Log::Info("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
+                Log::Warn(
+                    "Failed to add an upscaling rule (", group.Group, ", ", upscalingInfo.LabelName, ") - [",
+                    sampled, "/", real, "]:",
+                    std::string_view(errorMessage.ptr, errorMessage.len));
                 ddog_Error_drop(&upscalingRuleAdd.err);
             }
         }
@@ -542,10 +549,14 @@ bool LibddprofExporter::Export()
     {
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(""));
         auto filePath = GenerateFilePath(applicationInfo.ServiceName, idx, AllocationsExtension);
-
+        static bool firstFailure = true;
         if (!_allocationsRecorder->Serialize(filePath))
         {
-            Log::Warn("Failed to serialize allocations in ", filePath);
+            if (firstFailure)
+            {
+                firstFailure = false;
+                Log::Warn("Failed to serialize allocations in ", filePath);
+            }
         }
     }
 
@@ -628,7 +639,6 @@ bool LibddprofExporter::Export()
         }
 
         auto* exporter = CreateExporter(_exporterBaseTags.GetFfiTags(), _endpoint);
-
         if (exporter == nullptr)
         {
             Log::Error("Unable to create exporter for application ", runtimeId);
@@ -642,6 +652,14 @@ bool LibddprofExporter::Export()
         additionalTags.Add("runtime-id", std::string(runtimeId));
         additionalTags.Add("profile_seq", std::to_string(exportsCount - 1));
         additionalTags.Add("number_of_cpu_cores", std::to_string(OsSpecificApi::GetProcessorCount()));
+        if (!applicationInfo.RepositoryUrl.empty())
+        {
+            additionalTags.Add("git.repository_url", applicationInfo.RepositoryUrl);
+        }
+        if (!applicationInfo.CommitSha.empty())
+        {
+            additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
+        }
 
         auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
         // use on_leave here, in case Send throws an exception.
@@ -790,7 +808,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, RequestTimeOutMs);
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, nullptr, RequestTimeOutMs);
     if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);

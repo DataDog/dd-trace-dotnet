@@ -60,19 +60,47 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreMvcV0(),
             };
 
-        public static Result IsAwsSqs(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsAwsSqsInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAwsSqsV1(),
-                _ => span.IsAwsSqsV0(),
+                "v1" => span.IsAwsSqsInboundV1(),
+                _ => span.IsAwsSqsRequestV0(),
             };
 
-        public static Result IsAwsSns(this MockSpan span, string metadataSchemaVersion) =>
-        metadataSchemaVersion switch
-        {
-            "v1" => span.IsAwsSnsV1(),
-            _ => span.IsAwsSnsV0(),
-        };
+        public static Result IsAwsSqsOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSqsOutboundV1(),
+                _ => span.IsAwsSqsRequestV0(),
+            };
+
+        public static Result IsAwsSqsRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSqsRequestV1(),
+                _ => span.IsAwsSqsRequestV0(),
+            };
+
+        public static Result IsAwsSnsInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsInboundV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
+
+        public static Result IsAwsSnsOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsOutboundV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
+
+        public static Result IsAwsSnsRequest(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsSnsRequestV1(),
+                _ => span.IsAwsSnsRequestV0(),
+            };
 
         public static Result IsCosmosDb(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
@@ -130,11 +158,18 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsHttpMessageHandlerV0(),
             };
 
-        public static Result IsKafka(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsKafkaInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsKafkaV1(),
-                _ => span.IsKafkaV0(),
+                "v1" => span.IsKafkaInboundV1(),
+                _ => span.IsKafkaInboundV0(),
+            };
+
+        public static Result IsKafkaOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsKafkaOutboundV1(),
+                _ => span.IsKafkaOutboundV0(),
             };
 
         public static Result IsMongoDb(this MockSpan span, string metadataSchemaVersion) =>
@@ -144,10 +179,24 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsMongoDbV0(),
             };
 
-        public static Result IsMsmq(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsMsmqClient(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsMsmqV1(),
+                "v1" => span.IsMsmqClientV1(),
+                _ => span.IsMsmqV0(),
+            };
+
+        public static Result IsMsmqInbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsMsmqInboundV1(),
+                _ => span.IsMsmqV0(),
+            };
+
+        public static Result IsMsmqOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsMsmqOutboundV1(),
                 _ => span.IsMsmqV0(),
             };
 
@@ -186,18 +235,39 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsProcessV0(),
             };
 
-        public static Result IsRabbitMQ(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsRabbitMQAdmin(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsRabbitMQV1(),
+                "v1" => span.IsRabbitMQAdminV1(),
                 _ => span.IsRabbitMQV0(),
             };
 
-        public static Result IsServiceRemoting(this MockSpan span, string metadataSchemaVersion) =>
+        public static Result IsRabbitMQInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsServiceRemotingV1(),
-                _ => span.IsServiceRemotingV0(),
+                "v1" => span.IsRabbitMQInboundV1(),
+                _ => span.IsRabbitMQV0(),
+            };
+
+        public static Result IsRabbitMQOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsRabbitMQOutboundV1(),
+                _ => span.IsRabbitMQV0(),
+            };
+
+        public static Result IsServiceRemotingClient(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsServiceRemotingClientV1(),
+                _ => span.IsServiceRemotingClientV0(),
+            };
+
+        public static Result IsServiceRemotingServer(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsServiceRemotingServerV1(),
+                _ => span.IsServiceRemotingServerV0(),
             };
 
         public static Result IsServiceStackRedis(this MockSpan span, string metadataSchemaVersion) =>

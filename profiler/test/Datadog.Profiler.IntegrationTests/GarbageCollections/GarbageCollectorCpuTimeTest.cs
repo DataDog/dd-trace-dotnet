@@ -1,4 +1,4 @@
-// <copyright file="GarbageCollectorCpuTime.cs" company="Datadog">
+// <copyright file="GarbageCollectorCpuTimeTest.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
@@ -15,7 +15,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectorCpuTimeTest
     {
         private const string ScenarioGenerics = "--scenario 12";
-        private const string GcFrame = "|lm: |ns: |ct: |fn:Garbage Collector";
+        private const string GcFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
 
         private readonly ITestOutputHelper _output;
 

@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
-        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Count metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Count metric, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -96,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             return GetMetricData(allData, metric.GetName(), tag1, tag2, tag3);
         }
 
-        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Gauge metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Gauge metric, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -210,7 +210,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             integration.Error.Should().BeNullOrEmpty();
         }
 
-        internal static IEnumerable<(string[] Tags, double Value, long Timestamp)> GetMetricData(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricData(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 

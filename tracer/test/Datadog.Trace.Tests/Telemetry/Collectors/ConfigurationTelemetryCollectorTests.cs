@@ -30,6 +30,13 @@ namespace Datadog.Trace.Tests.Telemetry
     {
         private const string ServiceName = "serializer-test-app";
 
+        public static IEnumerable<object[]> GetPropagatorConfigurations()
+            => from propagationStyleExtract in new string[] { null, "tracecontext" }
+               from propagationStyleInject in new string[] { null, "datadog" }
+               from propagationStyle in new string[] { null, "B3" }
+               from activityListenerEnabled in new[] { "false", "true" }
+               select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle, activityListenerEnabled };
+
         [Fact]
         public void HasChangesAfterEachTracerSettingsAdded()
         {
@@ -236,6 +243,55 @@ namespace Datadog.Trace.Tests.Telemetry
             var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
 
             data[ConfigTelemetryData.NativeTracerVersion].Should().Be("None");
+        }
+
+        [Theory]
+        [MemberData(nameof(GetPropagatorConfigurations))]
+        public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle, string activityListenerEnabled)
+        {
+            var collector = new ConfigurationTelemetryCollector();
+
+            var nameValueCollection = new NameValueCollection
+            {
+                { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
+                { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
+                { ConfigurationKeys.PropagationStyle, propagationStyle },
+                { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
+            };
+
+            collector.RecordTracerSettings(new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(nameValueCollection))), ServiceName);
+
+            var data = collector.GetConfigurationData().ToDictionary(x => x.Name, x => x.Value);
+
+            var extractValue = (propagationStyleExtract, propagationStyle) switch
+            {
+                (not null, _) => propagationStyleExtract,
+                (null, not null) => propagationStyle,
+                (null, null) => "tracecontext,Datadog",
+            };
+
+            var injectValue = (propagationStyleInject, propagationStyle) switch
+            {
+                (not null, _) => propagationStyleInject,
+                (null, not null) => propagationStyle,
+                (null, null) => "tracecontext,Datadog",
+            };
+
+            // V1 telemetry will collect an additional ",tracecontext" in each propagator style when the following conditions are met
+            // - DD_TRACE_OTEL_ENABLED=true
+            // - "tracecontext" is not already included in the propagation configuration
+            if (activityListenerEnabled == "true" && !extractValue.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase))
+            {
+                extractValue += ",tracecontext";
+            }
+
+            if (activityListenerEnabled == "true" && !injectValue.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase))
+            {
+                injectValue += ",tracecontext";
+            }
+
+            data[ConfigTelemetryData.PropagationStyleExtract].Should().Be(extractValue);
+            data[ConfigTelemetryData.PropagationStyleInject].Should().Be(injectValue);
         }
 
 #if NETFRAMEWORK

@@ -109,16 +109,16 @@ internal static class SecurityCoordinatorHelpers
                     {
                         pathParams.Add(p.Name, value);
                     }
-
-                    if (pathParams.Count == 0)
-                    {
-                        return;
-                    }
-
-                    var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
-                    var result = securityCoordinator.RunWaf(args);
-                    securityCoordinator.CheckAndBlock(result);
                 }
+
+                if (pathParams.Count == 0)
+                {
+                    return;
+                }
+
+                var args = new Dictionary<string, object> { { AddressesConstants.RequestPathParams, pathParams } };
+                var result = securityCoordinator.RunWaf(args);
+                securityCoordinator.CheckAndBlock(result);
             }
         }
     }

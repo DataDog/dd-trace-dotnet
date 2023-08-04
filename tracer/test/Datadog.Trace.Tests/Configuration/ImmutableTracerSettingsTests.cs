@@ -1,4 +1,4 @@
-﻿// <copyright file="ImmutableTracerSettingsTests.cs" company="Datadog">
+// <copyright file="ImmutableTracerSettingsTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -36,7 +36,12 @@ namespace Datadog.Trace.Tests.Configuration
             var properties = type.GetProperties(Flags);
             foreach (var propertyInfo in properties)
             {
-                propertyInfo.CanWrite.Should().BeFalse($"{propertyInfo.Name} should be read only");
+                if (propertyInfo.CanWrite)
+                {
+                    propertyInfo.SetMethod!.ReturnParameter!.GetRequiredCustomModifiers()
+                       .Should()
+                       .ContainSingle(m => m.FullName == "System.Runtime.CompilerServices.IsExternalInit", $"{propertyInfo.Name} should be read only or init only");
+                }
             }
 
             var fields = type.GetFields(Flags);

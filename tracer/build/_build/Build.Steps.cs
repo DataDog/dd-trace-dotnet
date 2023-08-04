@@ -888,7 +888,7 @@ partial class Build
                 .ToList();
 
             testProjects.ForEach(EnsureResultsDirectory);
-            var filter = string.IsNullOrEmpty(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
+            var filter = string.IsNullOrWhiteSpace(Filter) && IsArm64 ? "(Category!=ArmUnsupported)&(Category!=AzureFunctions)" : Filter;
             var exceptions = new List<Exception>();
             try
             {
@@ -907,7 +907,7 @@ partial class Build
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
                             .When(CodeCoverage, ConfigureCodeCoverage)
-                            .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                            .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
                                 .WithDatadogLogger()
@@ -997,6 +997,7 @@ partial class Build
 
     Target CompileRegressionSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(Restore)
         .After(CompileRegressionDependencyLibs)
         .Requires(() => Framework)
@@ -1013,7 +1014,7 @@ partial class Build
                         _ when path.Contains("StackExchange.Redis.AssemblyConflict.LegacyProject") => false,
                         _ when path.Contains("MismatchedTracerVersions") => false,
                         _ when path.Contains("dependency-libs") => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName),
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => path.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
                         (_, { } targets) => targets.Contains(Framework),
                         _ => true,
                     };
@@ -1074,6 +1075,7 @@ partial class Build
 
     Target CompileSamplesWindows => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileDependencyLibs)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
@@ -1154,8 +1156,8 @@ partial class Build
                     (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
                     {
                         _ when exclude.Contains(project.Path) => false,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName),
-                        (_, _, true) => false, // can't use docker on Windows
+                        _ when !string.IsNullOrWhiteSpace(SampleName) => project.Path.ToString().Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                        (_, _, DockerDependencyType.All) => false, // can't use docker on Windows
                         (_, { } targets, _) => targets.Contains(Framework),
                         _ => true,
                     }
@@ -1251,7 +1253,7 @@ partial class Build
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                     .SetLogsDirectory(TestLogsDirectory)
-                    .When(!string.IsNullOrEmpty(Filter), c => c.SetFilter(Filter))
+                    .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                     .When(TestAllPackageVersions, o => o.SetProcessEnvironmentVariable("TestAllPackageVersions", "true"))
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
@@ -1270,7 +1272,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&LoadFromGAC!=True&IIS!=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1290,6 +1292,7 @@ partial class Build
 
     Target CompileAzureFunctionsSamplesWindows => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileFrameworkReproductions)
         .Requires(() => MonitoringHomeDirectory != null)
         .Requires(() => Framework)
@@ -1302,9 +1305,9 @@ partial class Build
                 .Where(path =>
                 {
                     var project = Solution.GetProject(path);
-                    return (project, project.TryGetTargetFrameworks(), project.RequiresDockerDependency()) switch
+                    return project.TryGetTargetFrameworks() switch
                     {
-                        (_, { } targets, _) => targets.Contains(Framework),
+                        { } targets => targets.Contains(Framework),
                         _ => true,
                     };
                 });
@@ -1339,7 +1342,7 @@ partial class Build
                     //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "RunOnWindows=True&Category=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "RunOnWindows=True&Category=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1380,7 +1383,7 @@ partial class Build
                     .EnableCrashDumps()
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "Category=Smoke&LoadFromGAC!=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1432,7 +1435,7 @@ partial class Build
                                 .SetFramework(Framework)
                                 .EnableNoRestore()
                                 .EnableNoBuild()
-                                .SetFilter(Filter ?? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions")
+                                .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&LoadFromGAC=True&Category!=AzureFunctions" : Filter)
                                 .SetTestTargetPlatform(TargetPlatform)
                                 .SetIsDebugRun(isDebugRun)
                                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1471,7 +1474,7 @@ partial class Build
                     .SetFramework(Framework)
                     .EnableNoRestore()
                     .EnableNoBuild()
-                    .SetFilter(Filter ?? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions")
+                    .SetFilter(string.IsNullOrWhiteSpace(Filter) ? "(RunOnWindows=True)&MSI=True&Category!=AzureFunctions" : Filter)
                     .SetTestTargetPlatform(TargetPlatform)
                     .SetIsDebugRun(isDebugRun)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1487,8 +1490,17 @@ partial class Build
             }
         });
 
+    Target HackForMissingMsBuildLocation => _ => _
+       .Unlisted()
+       .Executes(() =>
+        {
+            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug: 
+            ProjectModelTasks.Initialize();
+        });
+
     Target CompileSamplesLinuxOrOsx => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
@@ -1523,6 +1535,7 @@ partial class Build
                 "MismatchedTracerVersions",
                 "IBM.Data.DB2.DBCommand",
                 "Sandbox.AutomaticInstrumentation", // Doesn't run on Linux
+                "Sandbox.LegacySecurityPolicy", // Doesn't run on Linux
                 "Samples.Trimming",
             };
 
@@ -1557,40 +1570,19 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
-                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) && p.Name.Contains(SampleName) => true,
-                    // The latest version of Nuke appears to have a bug that stops us calling RequiresDockerDependency() because
-                    // it can't locate MSBuild. No idea why, but this is just an optimisation for now, so taking the easy road.
-                    // (var required, { } p) => p.RequiresDockerDependency() == required,
-                    _ => true,
+                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
-                .Where(x =>
-                {
-                    return x.project?.Name switch
-                    {
-                        "LogsInjection.Log4Net.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.NLog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.NLog10.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
-                        "LogsInjection.NLog20.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
-                        "LogsInjection.Serilog.VersionConflict.2x" => Framework != TargetFramework.NETCOREAPP2_1,
-                        "LogsInjection.Serilog14.VersionConflict.2x" => Framework == TargetFramework.NET461 || Framework == TargetFramework.NET462,
-                        "Samples.AspNetCoreMvc21" => Framework == TargetFramework.NETCOREAPP2_1,
-                        "Samples.AspNetCoreMvc30" => Framework == TargetFramework.NETCOREAPP3_0,
-                        "Samples.AspNetCoreMvc31" => Framework == TargetFramework.NETCOREAPP3_1,
-                        "Samples.AspNetCoreMinimalApis" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.Security.AspNetCore2" => Framework == TargetFramework.NETCOREAPP2_1,
-                        "Samples.Security.AspNetCore5" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
-                        "Samples.Security.AspNetCoreBare" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NETCOREAPP3_0,
-                        "Samples.GraphQL4" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.GraphQL7" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.HotChocolate" => Framework == TargetFramework.NET7_0 || Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0,
-                        "Samples.AWS.Lambda" => Framework == TargetFramework.NETCOREAPP3_1 || Framework == TargetFramework.NET5_0 || Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
-                        var name when projectsToSkip.Contains(name) => false,
-                        var name when multiPackageProjects.Contains(name) => false,
-                        "Samples.AspNetCoreRazorPages" => true,
-                        _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName) ?? false,
-                        _ => true,
-                    };
-                })
+                .Where(x => 
+                           x.project?.Name switch
+                                  {
+                                      var name when projectsToSkip.Contains(name) => false,
+                                      var name when multiPackageProjects.Contains(name) => false,
+                                      "Samples.AspNetCoreRazorPages" => true,
+                                      _ when !string.IsNullOrWhiteSpace(SampleName) => x.project?.Name?.Contains(SampleName, StringComparison.OrdinalIgnoreCase) ?? false,
+                                      _ => x.project.TryGetTargetFrameworks().Contains(Framework),
+                                  })
                 .Select(x => x.path)
                 .ToArray();
 
@@ -1611,12 +1603,22 @@ partial class Build
                     .CombineWith(projectsToBuild, (c, project) => c
                         .SetProject(project)));
 
+            // We have to explicitly publish the trimming sample separately (written so we can add to this later if needs be)
             var projectsToPublish = sampleProjects
                .Select(x => Solution.GetProject(x))
-               .Where(x => x.Name switch
+               .Where(x => x?.Name switch
                 {
-                    "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
+                    "Samples.Trimming" => x.TryGetTargetFrameworks().Contains(Framework),
                     _ => false,
+                })
+               .Where(x => (IncludeTestsRequiringDocker, x) switch
+                {
+                    // filter out or to integration tests that have docker dependencies
+                    (null, _) => true,
+                    (_, null) => true,
+                    (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
+                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
             var rid = (IsLinux, IsArm64) switch
@@ -1635,6 +1637,7 @@ partial class Build
 
     Target CompileMultiApiPackageVersionSamples => _ => _
         .Unlisted()
+        .DependsOn(HackForMissingMsBuildLocation)
         .After(CompileManagedSrc)
         .After(CompileRegressionDependencyLibs)
         .After(CompileDependencyLibs)
@@ -1650,6 +1653,7 @@ partial class Build
 
             // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
             // /nowarn:NETSDK1138 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
+            var sampleName = string.IsNullOrWhiteSpace(SampleName) ? string.Empty : SampleName;
             foreach (var target in targets)
             {
                 // TODO: When IncludeTestsRequiringDocker is set, only build required samples
@@ -1661,6 +1665,8 @@ partial class Build
                     .SetProperty("TargetFramework", Framework.ToString())
                     .SetProperty("BuildInParallel", "true")
                     .SetProperty("CheckEolTargetFramework", "false")
+                    .SetProperty("SampleName", sampleName)
+                    .When(IncludeTestsRequiringDocker.HasValue, o => o.SetProperty("IncludeTestsRequiringDocker", IncludeTestsRequiringDocker!.Value ? "true" : "false"))
                     .When(IsArm64, o => o.SetProperty("IsArm64", "true"))
                     .When(IsAlpine, o => o.SetProperty("IsAlpine", "true"))
                     .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetProperty("RestorePackagesPath", NugetPackageDirectory))
@@ -1720,9 +1726,9 @@ partial class Build
 
             var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-            var filter = string.IsNullOrEmpty(Filter) switch
+            var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
-                false => Filter,
+                false => $"({Filter}){dockerFilter}{armFilter}",
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
             };
 
@@ -1801,7 +1807,7 @@ partial class Build
 
             var armFilter = IsArm64 ? "&(Category!=ArmUnsupported)" : string.Empty;
 
-            var filter = string.IsNullOrEmpty(Filter) switch
+            var filter = string.IsNullOrWhiteSpace(Filter) switch
             {
                 false => Filter,
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",

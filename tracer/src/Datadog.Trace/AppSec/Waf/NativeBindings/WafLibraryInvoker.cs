@@ -39,6 +39,7 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly FreeObjectDelegate _freeObjectield;
         private readonly IntPtr _freeObjectFuncField;
         private readonly FreeRulesetInfoDelegate _rulesetInfoFreeField;
+        private readonly SetupLoggingDelegate _setupLogging;
         private readonly SetupLogCallbackDelegate _setupLogCallbackField;
         private readonly UpdateDelegate _updateField;
         private string _version = null;
@@ -68,12 +69,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _rulesetInfoFreeField = GetDelegateForNativeFunction<FreeRulesetInfoDelegate>(libraryHandle, "ddwaf_ruleset_info_free");
             _getVersionField = GetDelegateForNativeFunction<GetVersionDelegate>(libraryHandle, "ddwaf_get_version");
             // setup logging
-            var setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
+            _setupLogging = GetDelegateForNativeFunction<SetupLoggingDelegate>(libraryHandle, "ddwaf_set_log_cb");
             // convert to a delegate and attempt to pin it by assigning it to  field
             _setupLogCallbackField = new SetupLogCallbackDelegate(LoggingCallback);
             // set the log level and setup the logger
-            var level = GlobalSettings.Instance.DebugEnabledInternal ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
-            setupLogging(_setupLogCallbackField, level);
+            SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
         }
 
         private delegate IntPtr GetVersionDelegate();
@@ -175,6 +175,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             }
 
             return LibraryInitializationResult.FromSuccess(wafLibraryInvoker);
+        }
+
+        internal void SetupLogging(bool instanceDebugEnabled)
+        {
+            var level = instanceDebugEnabled ? DDWAF_LOG_LEVEL.DDWAF_DEBUG : DDWAF_LOG_LEVEL.DDWAF_INFO;
+            _setupLogging(_setupLogCallbackField, level);
         }
 
         internal string GetVersion()

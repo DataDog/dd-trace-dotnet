@@ -5,7 +5,6 @@
 
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -14,6 +13,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectionsProfilerTest
     {
         private const string ScenarioGenerics = "--scenario 12";
+        private const string GcRootFrame = "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
 
         private readonly ITestOutputHelper _output;
 
@@ -58,6 +58,8 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
 
         private bool CheckSamplesAreGC(string directory)
         {
+            var rootFrame = new StackFrame(GcRootFrame);
+
             int profileCount = 0;
             foreach (var profile in SamplesHelper.GetProfiles(directory))
             {
@@ -65,6 +67,29 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
                 foreach (var sample in profile.Sample)
                 {
                     if (!sample.Labels(profile).Any(l => l.Name == "gc generation"))
+                    {
+                        return false;
+                    }
+
+                    // check fake call stack
+                    var frames = sample.StackTrace(profile);
+                    if (frames.FramesCount != 2)
+                    {
+                        return false;
+                    }
+
+                    if (!frames[0].Equals(rootFrame))
+                    {
+                        return false;
+                    }
+
+                    var generation = frames[1].Function;
+                    if (!generation.StartsWith("gen"))
+                    {
+                        return false;
+                    }
+
+                    if (!(generation.EndsWith("0") || generation.EndsWith("1") || generation.EndsWith("2")))
                     {
                         return false;
                     }

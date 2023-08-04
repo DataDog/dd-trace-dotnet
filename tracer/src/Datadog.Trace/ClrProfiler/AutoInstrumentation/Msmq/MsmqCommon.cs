@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
 
@@ -26,24 +27,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
 
             try
             {
-                var tags = new MsmqTags(spanKind)
-                {
-                    Command = command,
-                    IsTransactionalQueue = messageQueue.Transactional.ToString(),
-                    Path = messageQueue.Path,
-                };
+                string operationName = GetOperationName(tracer, spanKind);
+                string serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MsmqConstants.MessagingType);
+                MsmqTags tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateMsmqTags(spanKind);
+
+                tags.Command = command;
+                tags.IsTransactionalQueue = messageQueue.Transactional.ToString();
+                tags.Host = messageQueue.MachineName;
+                tags.Path = messageQueue.Path;
                 if (messagePartofTransaction.HasValue)
                 {
                     tags.MessageWithTransaction = messagePartofTransaction.ToString();
                 }
 
-                var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, MsmqConstants.ServiceName);
-
-                scope = tracer.StartActiveInternal(MsmqConstants.OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
 
                 var span = scope.Span;
                 span.Type = SpanTypes.Queue;
                 span.ResourceName = $"{command} {messageQueue.Path}";
+
+                // TODO: PBT: I think this span should be measured when span kind is consumer or producer
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(MsmqConstants.IntegrationId);
             }
             catch (Exception ex)
@@ -52,6 +56,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
             }
 
             return scope;
+        }
+
+        // internal for testing
+        internal static string GetOperationName(Tracer tracer, string spanKind)
+        {
+            if (tracer.CurrentTraceSettings.Schema.Version == SchemaVersion.V0)
+            {
+                return MsmqConstants.MsmqCommand;
+            }
+
+            return spanKind switch
+            {
+                SpanKinds.Producer => tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MsmqConstants.MessagingType),
+                SpanKinds.Consumer => tracer.CurrentTraceSettings.Schema.Messaging.GetInboundOperationName(MsmqConstants.MessagingType),
+                _ => MsmqConstants.MsmqCommand
+            };
         }
     }
 }

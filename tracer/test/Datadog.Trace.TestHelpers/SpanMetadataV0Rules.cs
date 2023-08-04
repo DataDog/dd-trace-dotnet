@@ -126,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
-        public static Result IsAwsSqsV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqs.request")
                 .Matches(Type, "http"))
@@ -134,9 +134,12 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("aws.agent", "dotnet-aws-sdk")
                 .IsPresent("aws.operation")
                 .IsOptional("aws.region")
+                .IsOptional("region")
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "SQS")
-                .IsOptional("aws.queue.name")
+                .Matches("aws_service", "SQS")
+                .IsPresent("aws.queue.name")
+                .IsPresent("queuename")
                 .IsOptional("aws.queue.url")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
@@ -144,7 +147,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
-        public static Result IsAwsSnsV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsAwsSnsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sns.request")
                 .Matches(Type, "http"))
@@ -152,9 +155,12 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("aws.agent", "dotnet-aws-sdk")
                 .IsPresent("aws.operation")
                 .IsOptional("aws.region")
+                .IsOptional("region")
                 .IsPresent("aws.requestId")
                 .Matches("aws.service", "SNS")
-                .IsOptional("aws.topic.name")
+                .Matches("aws_service", "SNS")
+                .IsPresent("aws.topic.name")
+                .IsPresent("topicname")
                 .IsOptional("aws.topic.arn")
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
@@ -179,6 +185,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Name, "couchbase.query")
                 .Matches(Type, "db"))
             .Tags(s => s
+                .IsPresent("db.couchbase.seed.nodes")
                 .IsOptional("couchbase.operation.bucket")
                 .IsPresent("couchbase.operation.code")
                 .IsPresent("couchbase.operation.key")
@@ -265,9 +272,10 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("component")
                 .Matches("span.kind", "client"));
 
-        public static Result IsKafkaV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsKafkaInboundV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Inbound")
             .Properties(s => s
-                .MatchesOneOf(Name, "kafka.consume", "kafka.produce")
+                .Matches(Name, "kafka.consume")
                 .Matches(Type, "queue"))
             .Metrics(s => s
                 .IsPresent("_dd.measured")
@@ -279,7 +287,24 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
                 .Matches("component", "kafka")
-                .IsPresent("span.kind"));
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsKafkaOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Kafka - Outbound")
+            .Properties(s => s
+                .Matches(Name, "kafka.produce")
+                .Matches(Type, "queue"))
+            .Metrics(s => s
+                .IsPresent("_dd.measured")
+                .IsOptional("message.queue_time_ms"))
+            .Tags(s => s
+                .IsOptional("kafka.group")
+                .IsOptional("kafka.offset")
+                .IsOptional("kafka.partition")
+                .IsOptional("kafka.tombstone")
+                .IsPresent("messaging.kafka.bootstrap.servers")
+                .Matches("component", "kafka")
+                .Matches("span.kind", "producer"));
 
         public static Result IsMongoDbV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -303,6 +328,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("msmq.message.transactional")
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
+                .IsPresent("out.host")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 
@@ -367,6 +393,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "queue"))
             .Tags(s => s
                 .IsPresent("amqp.command")
+                .IsOptional("out.host")
                 .IsOptional("amqp.delivery_mode")
                 .IsOptional("amqp.exchange")
                 .IsOptional("amqp.routing_key")
@@ -375,9 +402,10 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
 
-        public static Result IsServiceRemotingV0(this MockSpan span) => Result.FromSpan(span)
+        public static Result IsServiceRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Service Remoting - Client")
             .Properties(s => s
-                .MatchesOneOf(Name, "service_remoting.client", "service_remoting.server"))
+                .Matches(Name, "service_remoting.client"))
             .Tags(s => s
                 .IsOptional("service-fabric.application-id")
                 .IsOptional("service-fabric.application-name")
@@ -386,11 +414,31 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.node-name")
                 .IsOptional("service-fabric.service-name")
                 .IsPresent("service-fabric.service-remoting.uri")
+                .IsOptional("service-fabric.service-remoting.service")
                 .IsPresent("service-fabric.service-remoting.method-name")
                 .IsOptional("service-fabric.service-remoting.method-id")
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
-                .MatchesOneOf("span.kind", "client", "server"));
+                .Matches("span.kind", "client"));
+
+        public static Result IsServiceRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
+            .WithMarkdownSection("Service Remoting - Server")
+            .Properties(s => s
+                .Matches(Name, "service_remoting.server"))
+            .Tags(s => s
+                .IsOptional("service-fabric.application-id")
+                .IsOptional("service-fabric.application-name")
+                .IsOptional("service-fabric.partition-id")
+                .IsOptional("service-fabric.node-id")
+                .IsOptional("service-fabric.node-name")
+                .IsOptional("service-fabric.service-name")
+                .IsPresent("service-fabric.service-remoting.uri")
+                .IsOptional("service-fabric.service-remoting.service")
+                .IsPresent("service-fabric.service-remoting.method-name")
+                .IsOptional("service-fabric.service-remoting.method-id")
+                .IsOptional("service-fabric.service-remoting.interface-id")
+                .IsOptional("service-fabric.service-remoting.invocation-id")
+                .Matches("span.kind", "server"));
 
         public static Result IsServiceStackRedisV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

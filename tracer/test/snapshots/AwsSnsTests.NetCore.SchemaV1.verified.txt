@@ -60,7 +60,7 @@
   {
     TraceId: Id_5,
     SpanId: Id_6,
-    Name: sns.request,
+    Name: aws.sns.send,
     Resource: SNS.Publish,
     Service: Samples.AWS.SimpleNotificationService,
     Type: http,
@@ -70,14 +70,19 @@
       aws.requestId: Guid_2,
       aws.service: SNS,
       aws.topic.arn: arn:aws:sns:us-east-1:000000000000:MyTopic,
+      aws.topic.name: MyTopic,
+      aws_service: SNS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
+      peer.service: MyTopic,
       runtime-id: Guid_1,
-      span.kind: client,
-      _dd.p.dm: -0
+      span.kind: producer,
+      topicname: MyTopic,
+      _dd.p.dm: -0,
+      _dd.peer.service.source: topicname
     },
     Metrics: {
       process_id: 0,

@@ -42,7 +42,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => $"{messagingSystem}.process",
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.GetInboundOperationName(messagingSystem).Should().Be(expectedValue);
         }
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => $"{messagingSystem}.send",
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.GetOutboundOperationName(messagingSystem).Should().Be(expectedValue);
         }
 
@@ -67,12 +67,11 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void RetrievesMappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
 
             foreach (var kvp in _mappings)
             {
-                namingSchema.Messaging.GetInboundServiceName(kvp.Key).Should().Be(kvp.Value);
-                namingSchema.Messaging.GetOutboundServiceName(kvp.Key).Should().Be(kvp.Value);
+                namingSchema.Messaging.GetServiceName(kvp.Key).Should().Be(kvp.Value);
             }
         }
 
@@ -81,7 +80,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
         public void RetrievesUnmappedServiceNames(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
         {
             var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
 
             foreach (var key in _unmappedKeys)
             {
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                     _ => DefaultServiceName,
                 };
 
-                namingSchema.Messaging.GetInboundServiceName(key).Should().Be(expectedServiceName);
-                namingSchema.Messaging.GetOutboundServiceName(key).Should().Be(expectedServiceName);
+                namingSchema.Messaging.GetServiceName(key).Should().Be(expectedServiceName);
             }
         }
 
@@ -107,8 +105,53 @@ namespace Datadog.Trace.Tests.Configuration.Schema
                 _ => typeof(KafkaV1Tags),
             };
 
-            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings);
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Messaging.CreateKafkaTags("spanKind").Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateMsmqTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(MsmqTags),
+                _ => typeof(MsmqV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateMsmqTags("spanKind").Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAwsSqsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSqsTags),
+                _ => typeof(AwsSqsV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateAwsSqsTags("spanKind").Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAwsSnsTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AwsSnsTags),
+                _ => typeof(AwsSnsV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Messaging.CreateAwsSnsTags("spanKind").Should().BeOfType(expectedType);
         }
     }
 }

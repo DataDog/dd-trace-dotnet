@@ -2,6 +2,229 @@
 
 
 
+
+
+
+## [Release 2.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.35.0)
+
+## Summary
+
+This release mainly contains the last details of the preparatory work for the new service representation. It also disables the DBM and APM connection when executing a `StoredProcedure` command.
+
+## Changes
+
+### Tracer
+* [Tracer] v1 Schema: Update AWS SNS spans (#4427)
+* [Tracer] Add peer.service to RabbitMQ integration (#4341)
+* [Tracer] Avoid including peer.service in kafka inbound flow (#4428)
+* [Tracer] Separate inbound, outbound and client flows for msmq (#4432)
+* [Tracer] Add peer.service to Service Remoting integration (#4435)
+* [Tracer] Don't inject DBM data into stored procedures (#4466)
+* [Tracer] Ensure the configuration of the trace context propagator is included in our telemetry (#4460)
+
+### Miscellaneous
+* [RabbitMQ] Add tracing for basic.consume, and add queue name as tag to DSM data on consume (#4398)
+* Add known limitations from method_rewriter.cpp to docs (#4405)
+* Update duck typing docs (#4417)
+* [Test Package Versions Bump] Updating package versions (#4441)
+
+### Build / Test
+* Fix aspect definition order once and for all (#4438)
+* Various test improvements (#4439)
+* Fix `create_draft_release` when not specifying a specific commit (#4446)
+* Update the Rel Env docker-image workflow (#4448)
+* Change di backend repo to run dogfood pipelines (#4449)
+* [Release] Remove the extra CI variables (#4452)
+* Tweak GitLab jobs (#4453)
+* Fix flaky rabbitmq datastreams test (#4457)
+
+
+[Changes since 2.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.34.0...v2.35.0)
+
+## [Release 2.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.34.0)
+
+## Summary
+
+- Improved WCF support for being/end async operations and distributed tracing over TCP
+- Improvements to OpenTelemetry support
+- Add signature to methods in Profiler
+
+## Changes
+
+### Tracer
+* Replace the spinlock by a monitor in dogstatsd (#4328)
+* Log header warnings only once (#4369)
+* [Tracer] v1 Schema: Update AWS SQS spans  (#4386)
+* [Tracer] v1 Schema: Update Aerospike spans (#4333)
+* [Tracer] v1 Schema: Allow Peer.Service override (#4335)
+* [Tracer] v1 Schema: Update AWS SQS `inbound` spans (#4434)
+* [Tracer] Use ScopeContext instead of deprecated MDC for NLog 5.0.0 and higher (#4223)
+* Improve NativeCallTargetDefinition marshalling (#4326)
+* Fail gracefully when running with NetFx40_LegacySecurityPolicy (#4358)
+* [Tracer] [Kafka] Directly use SetMetric instead of SetTag (#4370)
+* [Tracer] WCF integration to read WCF message headers (#4387)
+* Default to `Activity.OperationName` for `Span.OperationName` (#4409)
+* Truncate mongodb query tag to 5K and Remove Generic Binary (#4421)
+* Add better support for begin/end async operations in WCF (#4423)
+
+### CI Visibility
+* [CI Visibility] - Fix ITR skipped test spans (#4352)
+* Add SetTag(string, double?) extension method (#4380)
+* Add TelemetryMetric to SetTag and remove GetTagObject (#4389)
+
+### ASM
+* [ASM] fix error: run the waf once outside of the loop (#4338)
+* [ASM] Check the path params count once list is finally built (#4365)
+* [ASM] Fix appsec status log message (#4397)
+* [ASM] Added 1 hour timer to vulnerability deduplication (#4411)
+
+### Continuous Profiler
+* [Profiler] Add signature to methods name (#4170)
+* [Profiler] Fix bug in GC threads reporting feature (#4351)
+* [Profiler] Bump libdatadog to 3.0.0 (#4356)
+* [Profiler] Fix a potential bug in libunwind-datadog (#4366)
+* [Profiler] Fix frame store for allocation recorder (#4382)
+* [Profiler] Fix flacky test (#4383)
+
+### Dynamic Instrumentation
+* [Dynamic Instrumentation] Fixed NRE in locals name mapping   (#4348)
+
+### Telemetry
+* Refactor `TelemetryControllerV2` to be a singleton (#4354)
+* Update Telemetry transport retry handling (#4371)
+* Include `app-closing` in final batch (#4375)
+* More telemetry fixes (#4359)
+* [Telemetry] Capture metrics on fixed 10s interval and avoid drift in timer (#4388)
+* Minor refactor of `BatchingSink` (#4402)
+
+### Miscellaneous
+* [BugFix] Break recursion in GetTypeInfo (#4415)
+* Fix IntegrationDefinitions generics and null parameter types (#4407)
+* [Test Package Versions Bump] Updating package versions (#4161)
+* Bump to Serilog v3 (#4294)
+* Ignore telemetry.sdk.* tags in OpenTelemetry 1.5.1 snapshots (#4330)
+* Enforced order in aspects generator (#4342)
+* [Diagnostic] Report process name  (#4353)
+* [Test Package Versions Bump] Updating package versions (#4363)
+* [Test Package Versions Bump] Updating package versions (#4400)
+* [Test Package Versions Bump] Updating package versions (#4404)
+* [Test Package Versions Bump] Updating package versions (#4414)
+* Swap to Datadog as default propagation style (#4420)
+* Revert "Swap to Datadog as default propagation style (#4420)" (#4442)
+* [ASM] Waf version upgrade to 1.11.0 (#4355)
+* Revert "[ASM] Waf version upgrade to 1.11.0 (#4355)" (#4430)
+
+### Build / Test
+* Remove AWS Lambda integration tests for <net6.0 (#4391)
+* Add version/license/description to .deb and .rpm packages (#4377)
+* Update test agent configuration (#4378)
+* [Release] Fix the onboarding pipeline (#4347)
+* Fix generated aspects order (#4379)
+* Bump .NET SDK to 7.0.306 (#4289)
+* [Release] Deploy AAS test apps twice a week to monitor memory leaks (#4322)
+* [CI] A try to reducing flakiness (#4336)
+* Add INTEGRATIONS system tests to Dotnet Tracer CI (#4345)
+* Fix system-tests lib-injection (#4349)
+* update CI parametric tests (#4350)
+* Update GitLab code-sign step (#4374)
+* Fix "obsolete warnings in NLog sample (#4384)
+* Download cppcheck from blob storage and check the hash (#4392)
+* Add AWS SNS integration automated tests, interation 1 (#4394)
+* Pin aerospike server to single version (#4396)
+* [Tests] Reintroduce retry on RuntimeMetricsTests with NamedPipes (#4406)
+* [Builds] Update Reports comments to be updates (#4425)
+
+
+[Changes since 2.33.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.33.0...v2.34.0)
+
+## [Release 2.33.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.33.0)
+
+## Summary
+
+- [Serverless] AWS SDK SNS context propagation (broken in 2.32.0) has been fixed.
+- [Tracer] Preparatory work for Dynamic Configuration and new service representation.
+- [Tracer] Telemetry about the tracer's health can now be collected. It is disabled for now but will be rolled out slowly in the coming weeks.
+- [Profiler] Report GC CPU time (disabled by default for now)
+
+## Changes
+
+### Tracer
+
+#### v1 Schema
+* [Tracer] v1 Schema: Update gRPC client spans (#4243)
+* [Tracer] v1 Schema: Update CosmosDb spans (#4247)
+* [Tracer] v1 Schema: Add peer.service tag to StackExchange and ServiceStack spans (#4261)
+* [Tracer] v1 Schema: Update Couchbase spans (#4278)
+* [Tracer] v1 Schema: Use existing tags for `_dd.peer.service.source` (#4306)
+* [Tracer] v1 Schema: Update MSMQ spans (#4309)
+
+#### Dynamic configuration
+* [Tracer] Implement dynamic configuration (#4235)
+* [Tracer] Move RCM state to the subscription manager (#4304)
+
+#### Telemetry
+* [Tracer] Send the telemetry app-started event only once (#4319)
+* [Tracer] Add more telemetry metrics (#4269)
+* [Tracer] Fixes for telemetry (#4291)
+* [Tracer] Fix integration_name tag name (#4334)
+
+#### Fixes
+* Extract OpenTelemetry exception attributes (#4273)
+* [Tracer] Fix Kafka span.kind tag regression (#4310)
+* [Tracer] Fix `DuckTypeException` in earlier CosmosDb versions (#4325)
+
+### CI Visibility
+* [CIVisibility] Improving client side commands for git metadata upload (#4312)
+
+### ASM
+* [ASM] Instrument all the string builder methods (#4276)
+* [ASM] Fix: avoid racing condition errors in IAST. (#4281)
+* [ASM] Change the server.request.uri.raw WAF address (#4283)
+* [ASM] path params: Dont run waf if no data (#4284)
+* [ASM] Add support for ASM metrics (#4293)
+* [ASM] Implement WAF metrics - part 1 (#4297)
+* [ASM]  User events auto instrumentation in .Net Core: extended mode (#4301)
+* [ASM] Insecure cookies vulnerability (#4317)
+
+### Continuous Profiler
+* [Profiler] Add CPU time for GC threads (#4256)
+* [Profiler] Adjust label value to make it cleaner to display (#4280)
+* [Profiler] Propagate git repository url and commit hash from tracer to profiler (#4298)
+* [Profiler] Remove Profiler Github Actions CI (#4300)
+* [Profiler] Enable new profiler and internal features for sanitizer jobs (#4318)
+* [Profiler] Avoid loading more than 1 profiler instance (#4321)
+* Fix compilation warnings (#4324)
+
+### Debugger
+* [Dynamic Instrumentation] Installing unbound probes upon module load (#4132)
+* [Dynamic Instrumentation] Enable mixed instrumentation types on the same method (#4231)
+* [Dynamic Instrumentation] Fixed update of probes (#4315)
+
+### Serverless
+* Fix SNS Context Propagation (#4305)
+
+### Miscellaneous
+* Use string create if net6.0 or greater (#4183)
+* Allow shared call targets instrumentation with flags  (#4271)
+* Revert removing IL2026 warning from customer trimming process. (#4295)
+* Add CorProfilerInfo7::ApplyMetadata call (#4296)
+* Handle new StyleCop errors (#4299)
+* [Release] Sign and upload our packages to the agent repository for libinjection (docker/bare metal) (#4303)
+* Fixup Datadog.Trace.sln file so it loads correctly on VS 2022 (#4314)
+
+### Build / Test
+* Add Windows support for -TestAllPackageVersions (#4277)
+* Fix more trim warnings (#4282)
+* [Tooling] Use pagination for code freeze (#4285)
+* [Release] Deploy AAS test apps twice a week to monitor memory leaks (#4286)
+* [Build] Remove the 3rd party pipeline (#4307)
+* Bump NuGet.CommandLine from 5.9.2 to 5.11.5 in /tracer/build/_build (#4323)
+* Fix the namedpipes runtime metrics tests (#4329)
+* [Release] Move git tag creation back to before creating the release (#4339)
+
+
+[Changes since 2.32.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.32.0...v2.33.0)
+
 ## [Release 2.32.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.32.0)
 
 ## Summary

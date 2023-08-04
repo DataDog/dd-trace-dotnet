@@ -4,7 +4,8 @@
     <DefineConstants Condition="'$(NLogVersion)'&lt;'4.0.0'">$(DefineConstants);NLOG_2</DefineConstants>
     <DefineConstants Condition="'$(NLogVersion)'&gt;='4.0.0' and '$(NLogVersion)'&lt;'4.3.0'">$(DefineConstants);NLOG_30</DefineConstants>
     <DefineConstants Condition="'$(NLogVersion)'&gt;='4.3.0' and '$(NLogVersion)'&lt;'4.5.0'">$(DefineConstants);NLOG_43</DefineConstants>
-    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.5.0'">$(DefineConstants);NLOG_45</DefineConstants>
+    <DefineConstants Condition="'$(NLogVersion)'&gt;='4.5.0' and '$(NLogVersion)'&lt;'5.0.0'">$(DefineConstants);NLOG_45</DefineConstants>
+    <DefineConstants Condition="'$(NLogVersion)'&gt;='5.0.0'">$(DefineConstants);NLOG_50</DefineConstants>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -14,8 +15,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.101.88" />
     <PackageReference Include="Confluent.Kafka" Version="1.4.3" />
     <PackageReference Include="log4net" Version="$(Log4NetVersion)" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="NLog" Version="$(NLogVersion)" Condition=" $(TargetFramework.StartsWith('net4'))" />
   </ItemGroup>
 

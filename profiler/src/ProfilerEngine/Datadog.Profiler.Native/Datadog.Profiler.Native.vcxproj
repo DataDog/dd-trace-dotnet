@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="..\..\..\..\packages\libdatadog.2.2.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.2.2.0\build\native\libdatadog.props')" />
+  <Import Project="..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
       <Configuration>Debug</Configuration>
@@ -340,7 +340,6 @@
     <ClCompile Include="AllocationsProvider.cpp" />
     <ClCompile Include="AllocationsRecorder.cpp" />
     <ClCompile Include="AppDomainStore.cpp" />
-    <ClCompile Include="ApplicationInfo.cpp" />
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="ClrEventsParser.cpp" />
     <ClCompile Include="cgroup.cpp" />
@@ -409,6 +408,6 @@
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.2.2.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.2.2.0\build\native\libdatadog.props'))" />
+    <Error Condition="!Exists('..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props')" Text="$([System.String]::Format('$(ErrorText)', '..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props'))" />
   </Target>
 </Project>

@@ -6,7 +6,6 @@
 using System;
 using System.IO;
 using System.IO.Pipes;
-using System.Threading;
 
 namespace Datadog.Trace.Vendors.StatsdClient.Transport
 {
@@ -16,12 +15,7 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
         private readonly TimeSpan _timeout;
         private byte[] _internalbuffer = new byte[0];
 
-        // `SpinLock` is a struct. A struct marked as `readonly` is copied each time a mutating function is called.
-        // When calling `_lock.Enter` and `_lock.Exit()` the `SpinLock` instance is copied. Calling `_lock.Exit()` raises an
-        // error as the instance does not hold the lock (System.Threading.SynchronizationLockException : The calling
-        // thread does not hold the lock.)
-        // For this reason, `_lock` is not marked as `readonly`
-        private SpinLock _lock = new SpinLock(enableThreadOwnerTracking: true);
+        private readonly object _lock = new();
 
         public NamedPipeTransport(string pipeName, TimeSpan? timeout = null)
         {
@@ -35,10 +29,8 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
 
         public bool Send(byte[] buffer, int length)
         {
-            var gotLock = false;
-            try
+            lock (_lock)
             {
-                _lock.Enter(ref gotLock);
                 if (_internalbuffer.Length < length + 1)
                 {
                     _internalbuffer = new byte[length + 1];
@@ -49,13 +41,6 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
                 _internalbuffer[length] = (byte)'\n';
 
                 return SendBuffer(_internalbuffer, length + 1, allowRetry: true);
-            }
-            finally
-            {
-                if (gotLock)
-                {
-                    _lock.Exit();
-                }
             }
         }
 
@@ -78,29 +63,27 @@ namespace Datadog.Trace.Vendors.StatsdClient.Transport
                 return false;
             }
 
-            var cts = new CancellationTokenSource(_timeout);
-
             try
             {
                 // WriteAsync overload with a CancellationToken instance seems to not work.
-                _namedPipe.WriteAsync(buffer, 0, length).Wait(cts.Token);
-                return true;
-            }
-            catch (OperationCanceledException)
-            {
-                return false;
+                return _namedPipe.WriteAsync(buffer, 0, length).Wait(_timeout);
             }
             catch (IOException)
             {
-                // When the server disconnects, IOException is raised with the message "Pipe is broken".
-                // In this case, we try to reconnect once.
-                if (allowRetry)
-                {
-                    return SendBuffer(buffer, length, allowRetry: false);
-                }
-
-                return false;
             }
+            catch (AggregateException e) when (e.InnerException is IOException)
+            {
+                // dotnet6.0 raises AggregateException when an IOException occurs.
+            }
+
+            // When the server disconnects, IOException is raised with the message "Pipe is broken".
+            // In this case, we try to reconnect once.
+            if (allowRetry)
+            {
+                return SendBuffer(buffer, length, allowRetry: false);
+            }
+
+            return false;
         }
     }
 }

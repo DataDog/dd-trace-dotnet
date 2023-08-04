@@ -213,7 +213,7 @@ bool CorProfilerCallback::InitializeServices()
             }
             else
             {
-                Log::Warn("Live Heap profiling requires .NET 7+ so it is disabled.");
+                Log::Warn("Live Heap profiling is disabled: .NET 7+ is required.");
             }
         }
 
@@ -314,7 +314,7 @@ bool CorProfilerCallback::InitializeServices()
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
-    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr);
+    _pEnabledProfilers = std::make_unique<EnabledProfilers>(_pConfiguration.get(), _pCorProfilerInfoEvents != nullptr, _pLiveObjectsProvider != nullptr);
 
     _pStackSamplerLoopManager = RegisterService<StackSamplerLoopManager>(
         _pCorProfilerInfo,
@@ -412,7 +412,7 @@ bool CorProfilerCallback::InitializeServices()
     auto started = StartServices();
     if (!started)
     {
-        Log::Warn("One or multiple services failed to start. Stopping all services.");
+        Log::Error("One or multiple services failed to start. Stopping all services.");
         StopServices();
     }
 
@@ -688,7 +688,7 @@ void CorProfilerCallback::InspectRuntimeCompatibility(IUnknown* corProfilerInfoU
     }
     else
     {
-        Log::Info("No ICorProfilerInfoXxx available.");
+        Log::Error("No ICorProfilerInfoXxx available.");
     }
 }
 
@@ -764,60 +764,56 @@ void CorProfilerCallback::InspectRuntimeVersion(ICorProfilerInfo5* pCorProfilerI
     if (FAILED(hr))
     {
         Log::Info("Initializing the Profiler: Exact runtime version could not be obtained (0x", std::hex, hr, std::dec, ")");
+        CorProfilerCallback::_runtimeDescription = "Unknown version of the .NET runtime";
     }
     else
     {
-        Log::Info("Initializing the Profiler: Reported runtime version : { clrInstanceId: ", clrInstanceId,
-                  ", runtimeType:",
-                  ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR"
-                   : (runtimeType == COR_PRF_CORE_CLR)
-                       ? "CORE_CLR"
-                       : (std::string("unknown(") + std::to_string(runtimeType) + std::string(")"))),
-                  ", majorVersion: ", major,
-                  ", minorVersion: ", minor,
-                  ", buildNumber: ", buildNumber,
-                  ", qfeVersion: ", qfeVersion,
-                  " }.");
+        std::stringstream buffer;
+        buffer << "{ "
+               << "clrInstanceId:" << clrInstanceId
+               << ", runtimeType:" <<
+                    ((runtimeType == COR_PRF_DESKTOP_CLR) ? "DESKTOP_CLR" :
+                    (runtimeType == COR_PRF_CORE_CLR) ? "CORE_CLR" :
+                    (std::string("unknown(") + std::to_string(runtimeType) + std::string(")")))
+                << ", majorVersion: " << major
+                << ", minorVersion: " << minor
+                << ", buildNumber: " << buildNumber
+                << ", qfeVersion: " << qfeVersion
+                << " }";
+
+        CorProfilerCallback::_runtimeDescription = buffer.str();
+        Log::Info("Initializing the Profiler: Reported runtime version :", CorProfilerCallback::_runtimeDescription);
     }
 }
 
 void CorProfilerCallback::ConfigureDebugLog()
 {
-    // For now we want debug log to be ON by default. In future releases, this may require explicit opt-in.
-    // For that, change 'IsLogDebugEnabledDefault' to be initialized to 'false' by default (@ToDo).
-
-    constexpr const bool IsLogDebugEnabledDefault = false;
-    bool isLogDebugEnabled;
-
     shared::WSTRING isLogDebugEnabledStr = shared::GetEnvironmentValue(EnvironmentVariables::DebugLogEnabled);
+    bool enabled = false;
 
     // no environment variable set
     if (isLogDebugEnabledStr.empty())
     {
         Log::Info("No \"", EnvironmentVariables::DebugLogEnabled, "\" environment variable has been found.",
-                  " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
-
-        isLogDebugEnabled = IsLogDebugEnabledDefault;
+                  " Enable debug log = ", enabled, " (default).");
     }
     else
     {
-        if (!shared::TryParseBooleanEnvironmentValue(isLogDebugEnabledStr, isLogDebugEnabled))
+        if (!shared::TryParseBooleanEnvironmentValue(isLogDebugEnabledStr, enabled))
         {
             // invalid value for environment variable
             Log::Info("Non boolean value \"", isLogDebugEnabledStr, "\" for \"",
                       EnvironmentVariables::DebugLogEnabled, "\" environment variable.",
-                      " Enable debug log = ", IsLogDebugEnabledDefault, " (default).");
-
-            isLogDebugEnabled = IsLogDebugEnabledDefault;
+                      " Enable debug log = ", enabled, " (default).");
         }
         else
         {
             // take environment variable into account
-            Log::Info("Enable debug log = ", isLogDebugEnabled, " from (", EnvironmentVariables::DebugLogEnabled, " environment variable)");
+            Log::Info("Enable debug log = ", enabled, " from (\"", EnvironmentVariables::DebugLogEnabled, "\" environment variable)");
         }
     }
 
-    if (isLogDebugEnabled)
+    if (enabled)
     {
         Log::EnableDebug();
     }
@@ -835,6 +831,7 @@ void CorProfilerCallback::ConfigureDebugLog()
 void CorProfilerCallback::PrintEnvironmentVariables()
 {
     // TODO: add more env vars values
+    // --> should we dump the important ones to ensure that we get them during support investigations?
 
     Log::Info("Environment variables:");
     PRINT_ENV_VAR_IF_SET(EnvironmentVariables::UseBacktrace2);
@@ -870,7 +867,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     // Initialize _pCorProfilerInfo:
     if (corProfilerInfoUnk == nullptr)
     {
-        Log::Info("No IUnknown is passed to CorProfilerCallback::Initialize(). The profiler will not run.");
+        Log::Error("No IUnknown is passed to CorProfilerCallback::Initialize(). The profiler will not run.");
         return E_FAIL;
     }
 

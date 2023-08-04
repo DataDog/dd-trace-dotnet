@@ -99,23 +99,26 @@ namespace Datadog.Trace.TestHelpers
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
         public TelemetryWrapper WaitForLatestTelemetry(
             Func<TelemetryWrapper, bool> hasExpectedValues,
-            int timeoutInMilliseconds = 5000,
-            int sleepTime = 200)
+            int timeoutInMilliseconds = 10_000,
+            int sleepTime = 500)
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            TelemetryWrapper latest = default;
             while (DateTime.UtcNow < deadline)
             {
-                if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
+                var current = Telemetry;
+                foreach (var telemetry in current)
                 {
-                    break;
+                    if (hasExpectedValues(telemetry))
+                    {
+                        return telemetry;
+                    }
                 }
 
                 Thread.Sleep(sleepTime);
             }
 
-            return latest;
+            return null;
         }
 
         public void Dispose()

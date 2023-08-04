@@ -8,22 +8,18 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
-using Datadog.Trace.Telemetry;
-using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 {
-    internal abstract class BatchingSink
+    internal abstract class BatchingSink<T>
     {
-        internal const int FailuresBeforeCircuitBreak = 10;
-
-        private readonly IDatadogLogger _log = DatadogLogging.GetLoggerFor<BatchingSink>();
+        private readonly IDatadogLogger _log;
         private readonly int _batchSizeLimit;
         private readonly TimeSpan _flushPeriod;
         private readonly TimeSpan _circuitBreakPeriod;
-        private readonly BoundedConcurrentQueue<DatadogLogEvent> _queue;
-        private readonly Queue<DatadogLogEvent> _waitingBatch = new();
+        private readonly BoundedConcurrentQueue<T> _queue;
+        private readonly Queue<T> _waitingBatch = new();
         private readonly CircuitBreaker _circuitBreaker;
         private readonly Task _flushTask;
         private readonly Action? _disableSinkAction;
@@ -32,7 +28,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         private readonly ConcurrentQueue<TaskCompletionSource<bool>> _flushCompletionSources = new();
         private volatile bool _enqueueLogEnabled = true;
 
-        protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction)
+        protected BatchingSink(BatchingSinkOptions sinkOptions, Action? disableSinkAction, IDatadogLogger? log = null)
         {
             if (sinkOptions == null)
             {
@@ -49,14 +45,15 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 ThrowHelper.ThrowArgumentOutOfRangeException(nameof(sinkOptions), "The period must be greater than zero.");
             }
 
+            _log = log ?? DatadogLogging.GetLoggerFor<BatchingSink<T>>();
             _disableSinkAction = disableSinkAction;
 
             _batchSizeLimit = sinkOptions.BatchSizeLimit;
             _flushPeriod = sinkOptions.Period;
             _circuitBreakPeriod = sinkOptions.CircuitBreakPeriod;
 
-            _queue = new BoundedConcurrentQueue<DatadogLogEvent>(sinkOptions.QueueLimit);
-            _circuitBreaker = new CircuitBreaker(FailuresBeforeCircuitBreak);
+            _queue = new BoundedConcurrentQueue<T>(sinkOptions.QueueLimit);
+            _circuitBreaker = new CircuitBreaker(sinkOptions.FailuresBeforeCircuitBreak);
 
             _flushTask = Task.Run(FlushBuffersTaskLoopAsync);
             _flushTask.ContinueWith(
@@ -74,7 +71,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         /// </summary>
         /// <param name="logEvent">Log event to emit.</param>
         /// <exception cref="ArgumentNullException">The event is null.</exception>
-        public void EnqueueLog(DatadogLogEvent logEvent)
+        public void EnqueueLog(T logEvent)
         {
             if (logEvent == null)
             {
@@ -113,11 +110,28 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
         }
 
         /// <summary>
+        /// Disables the sink entirely, drops any queued logs, and stops flushing
+        /// Does not attempt to flush any logs
+        /// </summary>
+        public void CloseImmediately()
+        {
+            _enqueueLogEnabled = false;
+            _disableSinkAction?.Invoke();
+            _processExit.TrySetResult(false);
+            // ditch all the remaining logs
+            while (_queue.TryDequeue(out _))
+            {
+            }
+        }
+
+        /// <summary>
         /// Emit a batch of log events, running to completion synchronously.
         /// </summary>
         /// <param name="events">The events to emit.</param>
         /// <returns><c>true</c> if the batch was emitted successfully. <c>false</c> if there was an error</returns>
-        protected abstract Task<bool> EmitBatch(Queue<DatadogLogEvent> events);
+        protected abstract Task<bool> EmitBatch(Queue<T> events);
+
+        protected abstract void FlushingEvents(int queueSizeBeforeFlush);
 
         private async Task FlushBuffersTaskLoopAsync()
         {
@@ -177,7 +191,7 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
                 var haveMultipleBatchesToSend = false;
                 do
                 {
-                    TelemetryFactory.Metrics.RecordGaugeDirectLogQueue(_queue.Count);
+                    FlushingEvents(_queue.Count);
 
                     while (_waitingBatch.Count < _batchSizeLimit &&
                            _queue.TryDequeue(out var next))

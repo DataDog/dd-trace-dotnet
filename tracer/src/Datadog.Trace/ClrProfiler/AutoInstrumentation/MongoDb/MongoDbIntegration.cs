@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerialization;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -73,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
 
                     resourceName = $"{mongoOperationName ?? "operation"} {databaseName ?? "database"}";
                     collectionName = firstElement.Value?.ToString();
-                    query = protocolWithCommand.Command.ToString();
+                    query = BsonSerializationHelper.ToShortString(((IDuckType)protocolWithCommand.Command).Instance);
                 }
                 catch (Exception ex)
                 {
@@ -95,9 +96,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 port = dnsEndPoint.Port.ToString();
             }
 
-            string operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
-            string serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
-            MongoDbTags tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
+            var operationName = tracer.CurrentTraceSettings.Schema.Database.GetOperationName(DatabaseType);
+            var serviceName = tracer.CurrentTraceSettings.Schema.Database.GetServiceName(DatabaseType);
+            var tags = tracer.CurrentTraceSettings.Schema.Database.CreateMongoDbTags();
 
             Scope scope = null;
 
@@ -114,6 +115,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
                 tags.Port = port;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
             }
             catch (Exception ex)

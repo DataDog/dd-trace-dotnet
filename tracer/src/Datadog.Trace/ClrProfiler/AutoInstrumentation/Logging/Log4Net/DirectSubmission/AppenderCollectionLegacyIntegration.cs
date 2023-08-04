@@ -21,7 +21,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
         TypeName = "log4net.Appender.AppenderCollection",
         MethodName = "ToArray",
         ReturnTypeName = "log4net.Appender.IAppender[]",
-        ParameterTypeNames = new string[0],
         MinimumVersion = "1.0.0",
         MaximumVersion = "1.*.*",
         IntegrationName = nameof(IntegrationId.Log4Net))]

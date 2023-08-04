@@ -110,7 +110,7 @@ namespace Datadog.Trace.ClrProfiler
                     Log.Debug("Enabling CallTarget integration definitions in native library.");
 
                     InstrumentationCategory enabledCategories = InstrumentationCategory.Tracing;
-                    if (Security.Instance.Enabled || Security.Instance.Settings.CanBeToggled)
+                    if (Security.Instance.Enabled)
                     {
                         Log.Debug("Enabling AppSec call target category");
                         enabledCategories |= InstrumentationCategory.AppSec;
@@ -228,6 +228,7 @@ namespace Datadog.Trace.ClrProfiler
         private static void RunShutdown()
         {
             InstrumentationDefinitions.Dispose();
+            NativeCallTargetUnmanagedMemoryHelper.Free();
         }
 
         internal static void InitializeNoNativeParts(Stopwatch sw = null)

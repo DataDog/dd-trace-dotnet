@@ -227,18 +227,21 @@ namespace Datadog.Trace.TestHelpers
         {
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
 
-            object latest = default;
             while (DateTime.UtcNow < deadline)
             {
-                if (Telemetry.TryPeek(out latest) && hasExpectedValues(latest))
+                var current = Telemetry;
+                foreach (var telemetry in current)
                 {
-                    break;
+                    if (hasExpectedValues(telemetry))
+                    {
+                        return telemetry;
+                    }
                 }
 
                 Thread.Sleep(sleepTime);
             }
 
-            return latest;
+            return null;
         }
 
         public IImmutableList<MockClientStatsPayload> WaitForStats(
@@ -861,23 +864,22 @@ namespace Datadog.Trace.TestHelpers
         {
             if (request.ContentLength is null)
             {
-                return new byte[0];
+                return Array.Empty<byte>();
             }
 
             var i = 0;
             var body = new byte[request.ContentLength.Value];
 
-            while (request.Body.Stream.CanRead && i < request.ContentLength)
+            while (i < request.ContentLength)
             {
-                var nextByte = request.Body.Stream.ReadByte();
+                var read = request.Body.Stream.Read(body, i, body.Length - i);
 
-                if (nextByte == -1)
+                i += read;
+
+                if (read == 0 || read == body.Length)
                 {
                     break;
                 }
-
-                body[i] = (byte)nextByte;
-                i++;
             }
 
             if (i < request.ContentLength)
@@ -1149,7 +1151,6 @@ namespace Datadog.Trace.TestHelpers
         {
             private readonly PipeServer _statsPipeServer;
             private readonly PipeServer _tracesPipeServer;
-            private readonly Task _statsdTask;
 
             public NamedPipeAgent(WindowsPipesConfig config)
                 : base(config.UseTelemetry, TestTransports.WindowsNamedPipe)
@@ -1174,7 +1175,7 @@ namespace Datadog.Trace.TestHelpers
                         ex => Exceptions.Add(ex),
                         x => Output?.WriteLine(x));
 
-                    _statsdTask = Task.Run(_statsPipeServer.Start);
+                    _statsPipeServer.Start();
                 }
 
                 if (File.Exists(config.Traces))
@@ -1208,21 +1209,13 @@ namespace Datadog.Trace.TestHelpers
 
             private async Task HandleNamedPipeStats(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)
             {
-                // A somewhat large, arbitrary amount, but Runtime metrics sends a lot
-                // Will throw if we exceed that but YOLO
-                var bytesReceived = new byte[0x10_000];
-                var byteCount = 0;
-                int bytesRead;
-                do
-                {
-                    bytesRead = await namedPipeServerStream.ReadAsync(bytesReceived, byteCount, count: 500, cancellationToken);
-                    byteCount += bytesRead;
-                }
-                while (bytesRead > 0);
+                using var reader = new StreamReader(namedPipeServerStream);
 
-                var stats = Encoding.UTF8.GetString(bytesReceived, 0, byteCount);
-                OnMetricsReceived(stats);
-                StatsdRequests.Enqueue(stats);
+                while (await reader.ReadLineAsync() is { } request)
+                {
+                    OnMetricsReceived(request);
+                    StatsdRequests.Enqueue(request);
+                }
             }
 
             private async Task HandleNamedPipeTraces(NamedPipeServerStream namedPipeServerStream, CancellationToken cancellationToken)

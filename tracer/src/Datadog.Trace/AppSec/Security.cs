@@ -76,7 +76,7 @@ namespace Datadog.Trace.AppSec
                 }
                 else
                 {
-                    Log.Information("AppSec remote enabling not allowed (DD_APPSEC_ENABLED=false).");
+                    Log.Information("AppSec was not activated, its status is enabled={AppSecEnabled}, AppSec can be remotely enabled={CanBeRcEnabled}.", Enabled, _settings.CanBeToggled);
                 }
 
                 var subscriptionsKeys = new List<string>();
@@ -331,6 +331,11 @@ namespace Datadog.Trace.AppSec
 
         /// <summary> Frees resources </summary>
         public void Dispose() => _waf?.Dispose();
+
+        internal void SetDebugEnabled(bool enabled)
+        {
+            _wafLibraryInvoker?.SetupLogging(enabled);
+        }
 
         private void SetRemoteConfigCapabilites()
         {

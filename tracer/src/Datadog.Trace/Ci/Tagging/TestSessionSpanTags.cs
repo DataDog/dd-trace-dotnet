@@ -101,8 +101,11 @@ internal partial class TestSessionSpanTags : Trace.Tagging.CommonTags
     [Tag(CommonTags.CiEnvVars)]
     public string CiEnvVars { get; set; }
 
-    [Tag(CommonTags.TestsSkipped)]
+    [Tag(IntelligentTestRunnerTags.TestsSkipped)]
     public string TestsSkipped { get; set; }
+
+    [Tag(IntelligentTestRunnerTags.SkippingType)]
+    public string IntelligentTestRunnerSkippingType { get; set; }
 
     public void SetCIEnvironmentValues(CIEnvironmentValues environmentValues)
     {

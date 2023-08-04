@@ -21,13 +21,14 @@ internal class TelemetryDataBuilderV2
         ApplicationTelemetryDataV2 application,
         HostTelemetryDataV2 host,
         in TelemetryInput input,
-        bool sendAppStarted,
-        string? namingSchemeVersion)
+        string? namingSchemeVersion,
+        bool sendAppClosing)
     {
         List<MessageBatchData>? data = null;
 
-        if (sendAppStarted)
+        if (input.SendAppStarted)
         {
+            Log.Debug("App started, sending app-started");
             data = new()
             {
                 new(TelemetryRequestTypes.AppStarted, new AppStartedPayloadV2()
@@ -107,18 +108,29 @@ internal class TelemetryDataBuilderV2
                 new DistributionsPayload(distributions)));
         }
 
-        if (data is null)
+        if (sendAppClosing)
         {
-            Log.Debug("No changes in telemetry, sending app-heartbeat");
-            return GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
+            Log.Debug("Final push, sending app-closing");
+            if (data is null)
+            {
+                return GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null, namingSchemeVersion);
+            }
+
+            data.Add(new(TelemetryRequestTypes.AppClosing, payload: null));
+        }
+        else
+        {
+            if (data is null)
+            {
+                Log.Debug("No changes in telemetry, sending app-heartbeat");
+                return GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
+            }
+
+            data.Add(new(TelemetryRequestTypes.AppHeartbeat, payload: null));
         }
 
-        data.Add(new(TelemetryRequestTypes.AppHeartbeat, payload: null));
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);
     }
-
-    public TelemetryDataV2 BuildAppClosingTelemetryData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
-        => GetRequest(application, host, TelemetryRequestTypes.AppClosing, payload: null, namingSchemeVersion);
 
     public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);

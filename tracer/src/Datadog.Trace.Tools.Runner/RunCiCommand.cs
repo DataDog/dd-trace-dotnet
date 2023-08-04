@@ -108,6 +108,15 @@ namespace Datadog.Trace.Tools.Runner
 
                 // Upload git metadata by default (unless is disabled explicitly) or if ITR is enabled (required).
                 Log.Debug("RunCiCommand: Uploading repository changes.");
+
+                // Change the .git search folder to the CurrentDirectory or WorkingFolder
+                CIEnvironmentValues.Instance.GitSearchFolder = Environment.CurrentDirectory;
+                if (string.IsNullOrEmpty(CIEnvironmentValues.Instance.WorkspacePath))
+                {
+                    // In case we cannot get the WorkspacePath we fallback to the default configuration.
+                    CIEnvironmentValues.Instance.GitSearchFolder = null;
+                }
+
                 var lazyItrClient = new Lazy<IntelligentTestRunnerClient>(() => new(CIEnvironmentValues.Instance.WorkspacePath, ciVisibilitySettings));
                 if (ciVisibilitySettings.GitUploadEnabled != false || ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
@@ -241,14 +250,14 @@ namespace Datadog.Trace.Tools.Runner
             if (createTestSession)
             {
                 session = TestSession.GetOrCreate(command, null, null, null, true);
-                session.SetTag(CommonTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
-                session.SetTag(CommonTags.TestCodeCoverageEnabled, codeCoverageEnabled ? "true" : "false");
+                session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
+                session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
 
                 // At session level we know if the ITR is disabled (meaning that no tests will be skipped)
                 // In that case we tell the backend no tests are going to be skipped.
                 if (!testSkippingEnabled)
                 {
-                    session.SetTag(CommonTags.TestsSkipped, "false");
+                    session.SetTag(IntelligentTestRunnerTags.TestsSkipped, "false");
                 }
             }
 
@@ -316,7 +325,7 @@ namespace Datadog.Trace.Tools.Runner
                             globalCoverage is not null)
                         {
                             // Adds the global code coverage percentage to the session
-                            session.SetTag(CommonTags.CodeCoverageTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
                         }
                     }
                     else
@@ -336,8 +345,8 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the OpenCover format.
 
                                     // Adds the global code coverage percentage to the session
-                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
-                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.Enabled, "true");
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
                                 else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
@@ -346,8 +355,8 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the Cobertura format.
 
                                     // Adds the global code coverage percentage to the session
-                                    session.SetTag(CommonTags.TestCodeCoverageEnabled, "true");
-                                    session.SetTag(CommonTags.CodeCoverageTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.Enabled, "true");
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                                 }
                                 else

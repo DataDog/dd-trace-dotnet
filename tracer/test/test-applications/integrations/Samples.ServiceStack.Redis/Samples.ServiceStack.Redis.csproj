@@ -12,7 +12,7 @@
     -->
     <ApiVersion Condition="'$(ApiVersion)' == ''">5.2.0</ApiVersion>
     <ApiVersion Condition="('$(TargetFramework)'=='netcoreapp2.1' OR '$(TargetFramework)'=='netcoreapp3.0') AND '$(ApiVersion)' == '6.2.0'">6.1.0</ApiVersion>
-    <RequiresDockerDependency>true</RequiresDockerDependency>
+    <RequiresDockerDependency>All</RequiresDockerDependency>
 
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>

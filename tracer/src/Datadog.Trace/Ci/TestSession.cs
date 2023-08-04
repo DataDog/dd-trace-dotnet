@@ -12,6 +12,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci;
@@ -43,6 +45,7 @@ public sealed class TestSession
         {
             Command = command ?? string.Empty,
             WorkingDirectory = WorkingDirectory,
+            IntelligentTestRunnerSkippingType = IntelligentTestRunnerTags.SkippingTypeTest,
         };
 
         tags.SetCIEnvironmentValues(environment);
@@ -51,6 +54,7 @@ public sealed class TestSession
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
             tags: tags,
             startTime: startDate);
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         span.Type = SpanTypes.TestSession;
         span.ResourceName = $"{span.OperationName}.{command}";

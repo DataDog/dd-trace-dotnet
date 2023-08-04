@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         TypeName = HttpContextExtensionsTypeName,
         ParameterTypeNames = new[] { "Microsoft.AspNetCore.Http.HttpContext", ClrNames.String, "System.Security.Claims.ClaimsPrincipal", "Microsoft.AspNetCore.Authentication.AuthenticationProperties" },
         MethodName = "SignInAsync",
-        ReturnTypeName = "System.Task",
+        ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
         MaximumVersion = Major7,
         IntegrationName = nameof(IntegrationId.AspNetCore))]

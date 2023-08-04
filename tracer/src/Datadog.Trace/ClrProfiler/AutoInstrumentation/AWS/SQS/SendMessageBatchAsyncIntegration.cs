@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         AssemblyName = "AWSSDK.SQS",
         TypeName = "Amazon.SQS.AmazonSQSClient",
         MethodName = "SendMessageBatchAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1<Amazon.SQS.Model.SendMessageBatchResponse>",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.SQS.Model.SendMessageBatchResponse]",
         ParameterTypeNames = new[] { "Amazon.SQS.Model.SendMessageBatchRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
@@ -48,8 +48,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
 
             var requestProxy = request.DuckCast<ISendMessageBatchRequest>();
 
-            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags);
+            var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out AwsSqsTags tags, spanKind: SpanKinds.Producer);
             tags.QueueUrl = requestProxy.QueueUrl;
+            tags.QueueName = AwsSqsCommon.GetQueueName(requestProxy.QueueUrl);
 
             if (scope?.Span?.Context != null && requestProxy.Entries.Count > 0)
             {

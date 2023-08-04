@@ -5,6 +5,7 @@
 #nullable enable
 using System;
 using System.Threading;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
@@ -18,16 +19,16 @@ namespace Datadog.Trace.Telemetry
         // need to start collecting these immediately
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
         private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
+        private readonly object _sync = new();
 
         // V1 integration only
         private ConfigurationTelemetryCollector? _configuration;
+        private IntegrationTelemetryCollector? _integrations;
 
         // v2 integration only
-        private ProductsTelemetryCollector? _products;
-        private ApplicationTelemetryCollectorV2? _application;
+        private TelemetryControllerV2? _controllerV2;
 
         // shared
-        private IntegrationTelemetryCollector? _integrations;
         private IDependencyTelemetryCollector? _dependencies;
 
         private TelemetryFactory()
@@ -57,10 +58,10 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public static TelemetryFactory CreateFactory() => new();
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config));
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config), discoveryService);
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings)
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService)
         {
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
@@ -70,7 +71,7 @@ namespace Datadog.Trace.Telemetry
                 {
                     var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.ExporterInternal);
 
-                    if (telemetryTransports.Length == 0)
+                    if (!telemetryTransports.HasTransports)
                     {
                         log.Debug("Telemetry collection disabled: no available transports");
                         return NullTelemetryController.Instance;
@@ -111,7 +112,7 @@ namespace Datadog.Trace.Telemetry
                     if (settings.V2Enabled)
                     {
                         log.Debug("Creating telemetry controller v2");
-                        return CreateV2Controller(telemetryTransports, settings);
+                        return CreateV2Controller(telemetryTransports, settings, discoveryService);
                     }
                     else
                     {
@@ -131,10 +132,16 @@ namespace Datadog.Trace.Telemetry
         }
 
         private ITelemetryController CreateV1Controller(
-            ITelemetryTransport[] telemetryTransports,
+            TelemetryTransports telemetryTransports,
             TelemetrySettings settings)
         {
-            var transportManager = new TelemetryTransportManager(telemetryTransports);
+            TelemetryTransportManager transportManager = telemetryTransports switch
+            {
+                { AgentTransport: { } a, AgentlessTransport: { } b } => new(new[] { a, b }),
+                { AgentTransport: { } a } => new(new[] { a }),
+                { AgentlessTransport: { } b } => new(new[] { b }),
+                _ => new(Array.Empty<ITelemetryTransport>()), // can't be reached, but for completeness
+            };
 
             // Initialized once so if we create a new controller from this factory we get the same collector instances
             var configuration = LazyInitializer.EnsureInitialized(ref _configuration)!;
@@ -150,24 +157,35 @@ namespace Datadog.Trace.Telemetry
         }
 
         private ITelemetryController CreateV2Controller(
-            ITelemetryTransport[] telemetryTransports,
-            TelemetrySettings settings)
+            TelemetryTransports telemetryTransports,
+            TelemetrySettings settings,
+            IDiscoveryService discoveryService)
         {
-            var transportManager = new TelemetryTransportManagerV2(telemetryTransports);
-            // Initialized once so if we create a new controller from this factory we get the same collector instances
-            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
-            var products = LazyInitializer.EnsureInitialized(ref _products)!;
-            var application = LazyInitializer.EnsureInitialized(ref _application)!;
+            var transportManager = new TelemetryTransportManagerV2(telemetryTransports, discoveryService);
+            // The telemetry controller must be a singleton, so we initialize once
+            // Note that any dependencies initialized inside the controller are also singletons (by design)
+            // Initialized once so if we create a new controller from this factory we get the same collector instances.
+            // (can't use LazyInitializer because that doesn't guarantee only a single instance is created,
+            // and we start the task immediately)
 
-            return new TelemetryControllerV2(
-                Config,
-                _dependencies!,
-                integrations,
-                Metrics,
-                products,
-                application,
-                transportManager,
-                settings.HeartbeatInterval);
+            if (_controllerV2 is null)
+            {
+                lock (_sync)
+                {
+                    _controllerV2 ??= new TelemetryControllerV2(
+                        Config,
+                        _dependencies!,
+                        Metrics,
+                        transportManager,
+                        settings.HeartbeatInterval);
+                }
+            }
+
+            _controllerV2.DisableSending(); // disable sending until fully configured
+            _controllerV2.SetTransportManager(transportManager);
+            _controllerV2.SetFlushInterval(settings.HeartbeatInterval);
+
+            return _controllerV2;
         }
     }
 }

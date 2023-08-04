@@ -70,6 +70,10 @@ internal static class MsTestIntegration
             test.ResetStartTime();
             return test;
         }
+        else
+        {
+            Log.Warning("There's no suite to create the Test instance.");
+        }
 
         return null;
     }

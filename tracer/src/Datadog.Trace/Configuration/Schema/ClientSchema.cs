@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -16,9 +17,9 @@ namespace Datadog.Trace.Configuration.Schema
         private readonly bool _peerServiceTagsEnabled;
         private readonly bool _removeClientServiceNamesEnabled;
         private readonly string _defaultServiceName;
-        private readonly IDictionary<string, string>? _serviceNameMappings;
+        private readonly IReadOnlyDictionary<string, string>? _serviceNameMappings;
 
-        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IDictionary<string, string>? serviceNameMappings)
+        public ClientSchema(SchemaVersion version, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled, string defaultServiceName, IReadOnlyDictionary<string, string>? serviceNameMappings)
         {
             _version = version;
             _peerServiceTagsEnabled = peerServiceTagsEnabled;
@@ -32,6 +33,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 => $"{protocol}.request",
                 _ => $"{protocol}.client.request",
+            };
+
+        public string GetOperationNameForRequestType(string requestType) =>
+            _version switch
+            {
+                SchemaVersion.V0 => $"{requestType}",
+                _ => $"{requestType}.request",
             };
 
         public string GetServiceName(string component)
@@ -60,6 +68,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
                 _ => new GrpcClientV1Tags(),
+            };
+
+        public ServiceRemotingClientTags CreateServiceRemotingClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
+                _ => new ServiceRemotingClientV1Tags(),
             };
     }
 }

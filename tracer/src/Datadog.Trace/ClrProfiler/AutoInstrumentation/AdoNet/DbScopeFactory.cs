@@ -53,6 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 tags.OutHost = tagsFromConnectionString.OutHost;
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 scope = tracer.StartActiveInternal(operationName, tags: tags, serviceName: serviceName);
                 scope.Span.ResourceName = commandText;
@@ -64,7 +65,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                     IastModule.OnSqlQuery(commandText, integrationId);
                 }
 
-                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled)
+                if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
+                    && command.CommandType != CommandType.StoredProcedure)
                 {
                     var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId);
 

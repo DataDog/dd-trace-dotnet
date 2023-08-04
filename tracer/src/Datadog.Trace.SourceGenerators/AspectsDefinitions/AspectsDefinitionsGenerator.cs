@@ -101,6 +101,8 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
 
         var results = new List<string>();
 
+        List<(string, INamedTypeSymbol)> classSymbols = new List<(string, INamedTypeSymbol)>();
+
         foreach (ClassDeclarationSyntax classDec in classes)
         {
             // stop if we're asked to
@@ -123,11 +125,15 @@ public class AspectsDefinitionsGenerator : IIncrementalGenerator
                 if (instance != null)
                 {
                     string className = GetFullName(classSymbol);
-                    results.Add(instance.ToString() + " " + className);
+                    classSymbols.Add((instance.ToString() + " " + className, classSymbol));
                 }
             }
+        }
 
-            foreach (var member in classSymbol.GetMembers())
+        foreach (var classSymbol in classSymbols.OrderBy(c => c.Item1, StringComparer.Ordinal))
+        {
+            results.Add(classSymbol.Item1);
+            foreach (var member in classSymbol.Item2.GetMembers())
             {
                 var memberAttributes = member.GetAttributes();
                 foreach (var memberAttribute in memberAttributes)

@@ -2,7 +2,7 @@
 #nullable enable
 
 namespace Datadog.Trace.Configuration;
-partial class ImmutableTracerSettings
+partial record ImmutableTracerSettings
 {
 
         /// <summary>
@@ -15,7 +15,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)140);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)144);
             return EnvironmentInternal;
         }
     }
@@ -30,7 +30,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)150);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)154);
             return ServiceNameInternal;
         }
     }
@@ -45,7 +45,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)151);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)155);
             return ServiceVersionInternal;
         }
     }
@@ -61,7 +61,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)154);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)158);
             return TraceEnabledInternal;
         }
     }
@@ -75,7 +75,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)141);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)145);
             return ExporterInternal;
         }
     }
@@ -96,7 +96,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)138);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)142);
             return AnalyticsEnabledInternal;
         }
     }
@@ -113,7 +113,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)148);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)152);
             return LogsInjectionEnabledInternal;
         }
     }
@@ -129,7 +129,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)149);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)153);
             return MaxTracesSubmittedPerSecondInternal;
         }
     }
@@ -144,7 +144,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)139);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)143);
             return CustomSamplingRulesInternal;
         }
     }
@@ -159,7 +159,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)142);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)146);
             return GlobalSamplingRateInternal;
         }
     }
@@ -173,7 +173,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)146);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)150);
             return IntegrationsInternal;
         }
     }
@@ -187,7 +187,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)143);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)147);
             return GlobalTagsInternal;
         }
     }
@@ -202,7 +202,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)145);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)149);
             return HeaderTagsInternal;
         }
     }
@@ -217,7 +217,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)144);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)148);
             return GrpcTagsInternal;
         }
     }
@@ -232,7 +232,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)155);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)159);
             return TracerMetricsEnabledInternal;
         }
     }
@@ -246,7 +246,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)153);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)157);
             return StatsComputationEnabledInternal;
         }
     }
@@ -262,7 +262,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)147);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)151);
             return KafkaCreateConsumerScopeEnabledInternal;
         }
     }
@@ -276,7 +276,7 @@ partial class ImmutableTracerSettings
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
-                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)152);
+                (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)156);
             return StartupDiagnosticLogEnabledInternal;
         }
     }

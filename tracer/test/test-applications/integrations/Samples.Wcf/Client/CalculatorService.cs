@@ -11,6 +11,9 @@
 
 
 using System;
+using System.ServiceModel;
+using System.ServiceModel.Channels;
+
 
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
 [System.ServiceModel.ServiceContractAttribute(Namespace = "WcfSample", ConfigurationName = "ICalculator")]
@@ -43,13 +46,13 @@ public interface ICalculator
     double End_ServerTaskAdd(IAsyncResult result);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    double Sync_ServerAsyncAdd(double n1, double n2);
+    double Sync_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2);
+    System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes);
 
     [System.ServiceModel.OperationContractAttribute(Name = "ServerAsyncAdd", AsyncPattern = true, Action = "WcfSample/ICalculator/ServerAsyncAdd", ReplyAction = "WcfSample/ICalculator/ServerAsyncAddResponse")]
-    IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state);
+    IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state);
     double End_ServerAsyncAdd(IAsyncResult result);
 }
 
@@ -62,7 +65,6 @@ public interface ICalculatorChannel : ICalculator, System.ServiceModel.IClientCh
 [System.CodeDom.Compiler.GeneratedCodeAttribute("System.ServiceModel", "4.0.0.0")]
 public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculator>, ICalculator
 {
-
     public CalculatorClient()
     {
     }
@@ -87,73 +89,137 @@ public partial class CalculatorClient : System.ServiceModel.ClientBase<ICalculat
     {
     }
 
+    public object DatadogScope { get; set; }
+
     public double ServerEmptyActionAdd(double n1, double n2)
     {
-        return base.Channel.ServerEmptyActionAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.ServerEmptyActionAdd(n1, n2);
+        }
     }
 
     public System.Threading.Tasks.Task<double> ServerEmptyActionAddAsync(double n1, double n2)
     {
-        return base.Channel.ServerEmptyActionAddAsync(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.ServerEmptyActionAddAsync(n1, n2);
+        }
     }
 
     public double Sync_ServerSyncAdd(double n1, double n2)
     {
-        return base.Channel.Sync_ServerSyncAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Sync_ServerSyncAdd(n1, n2);
+        }
     }
 
     public System.Threading.Tasks.Task<double> Task_ServerSyncAdd(double n1, double n2)
     {
-        return base.Channel.Task_ServerSyncAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Task_ServerSyncAdd(n1, n2);
+        }
     }
 
     public IAsyncResult Begin_ServerSyncAdd(double n1, double n2, AsyncCallback callback, object state)
     {
-        return base.Channel.Begin_ServerSyncAdd(n1, n2, callback, state);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Begin_ServerSyncAdd(n1, n2, callback, state);
+        }
     }
 
     public double End_ServerSyncAdd(IAsyncResult result)
     {
-        return base.Channel.End_ServerSyncAdd(result);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.End_ServerSyncAdd(result);
+        }
     }
 
     public double Sync_ServerTaskAdd(double n1, double n2)
     {
-        return base.Channel.Sync_ServerTaskAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Sync_ServerTaskAdd(n1, n2);
+        }
     }
 
     public System.Threading.Tasks.Task<double> Task_ServerTaskAdd(double n1, double n2)
     {
-        return base.Channel.Task_ServerTaskAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Task_ServerTaskAdd(n1, n2);
+        }
     }
 
     public IAsyncResult Begin_ServerTaskAdd(double n1, double n2, AsyncCallback callback, object state)
     {
-        return base.Channel.Begin_ServerTaskAdd(n1, n2, callback, state);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Begin_ServerTaskAdd(n1, n2, callback, state);
+        }
     }
 
     public double End_ServerTaskAdd(IAsyncResult result)
     {
-        return base.Channel.End_ServerTaskAdd(result);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.End_ServerTaskAdd(result);
+        }
     }
 
-    public double Sync_ServerAsyncAdd(double n1, double n2)
+    public double Sync_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes)
     {
-        return base.Channel.Sync_ServerAsyncAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Sync_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
+        }
     }
 
-    public System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2)
+    public System.Threading.Tasks.Task<double> Task_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes)
     {
-        return base.Channel.Task_ServerAsyncAdd(n1, n2);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Task_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes);
+        }
     }
 
-    public IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, AsyncCallback callback, object state)
+    public IAsyncResult Begin_ServerAsyncAdd(double n1, double n2, bool throwsException, bool synchronouslyCompletes, AsyncCallback callback, object state)
     {
-        return base.Channel.Begin_ServerAsyncAdd(n1, n2, callback, state);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.Begin_ServerAsyncAdd(n1, n2, throwsException, synchronouslyCompletes, callback, state);
+        }
     }
 
     public double End_ServerAsyncAdd(IAsyncResult result)
     {
-        return base.Channel.End_ServerAsyncAdd(result);
+        using (OperationContextScope ocs = new OperationContextScope(this.InnerChannel))
+        {
+            Samples.SampleHelpers.InjectScope(OperationContext.Current.OutgoingMessageHeaders, SetHeaderValues, Samples.SampleHelpers.GetActiveSpanContext());
+            return base.Channel.End_ServerAsyncAdd(result);
+        }
+    }
+
+    void SetHeaderValues(MessageHeaders headers, string name, string value)
+    {
+        MessageHeader header = MessageHeader.CreateHeader(name, "datadog", value);
+        headers.Add(header);
     }
 }

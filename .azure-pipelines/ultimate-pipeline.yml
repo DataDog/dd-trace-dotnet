@@ -91,17 +91,10 @@ schedules:
         - master
     always: true
 
-  - cron: "*/6 1 * * Sat"
-    displayName: Saturday CI, every 6 minutes from 1am
-    branches:
-      include:
-        - master
-    always: true
-
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 7.0.101
+  dotnetCoreSdkLatestVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -128,11 +121,14 @@ variables:
   DiffEngine_Disabled: true
   OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
   NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
   DefaultTimeout: 60
   DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
   NUKE_TELEMETRY_OPTOUT: 1
   # Include all test frameworks when (variable is set) OR ((running on master/release/hotfix) and (NOT scheduled build)),
   IncludeAllTestFrameworks: $[or(eq(variables['run_all_test_frameworks'], 'true'), and(or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hostfix/')), not(eq(variables['Build.Reason'], 'Schedule'))))]
+  IntegrationTestSampleName:  $(TEST_SAMPLE_NAME)
+  IntegrationTestFilter:  $(TEST_FILTER)
   # Logger variables
   DD_LOGGER_DD_API_KEY: $(DD_API_KEY)
   DD_LOGGER_DD_SERVICE: dd-trace-dotnet
@@ -1056,6 +1052,8 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1117,6 +1115,8 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1175,6 +1175,8 @@ stages:
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1233,6 +1235,8 @@ stages:
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1299,6 +1303,8 @@ stages:
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1531,7 +1537,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apikey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -1548,8 +1554,10 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           runCodeCoverage=$(runCodeCoverage)
+          Filter=$(IntegrationTestFilter)
+          SampleName=$(IntegrationTestSampleName)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests
+        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false  -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1611,7 +1619,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
-        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - task: DownloadPipelineArtifact@2
@@ -1621,11 +1629,13 @@ stages:
         path: $(monitoringHome)
 
     - script: |
-        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) IntegrationTests
+        docker-compose -p ddtrace_$(Build.BuildNumber) build --build-arg baseImage=$(baseImage) --build-arg framework=$(publishTargetFramework) --build-arg runCodeCoverage=$(runCodeCoverage) --build-arg Filter=$(IntegrationTestFilter) --build-arg SampleName=$(IntegrationTestSampleName) IntegrationTests
         docker-compose -p ddtrace_$(Build.BuildNumber) run --rm StartDependencies
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
+        Filter: $(IntegrationTestFilter)
+        SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
@@ -1638,8 +1648,10 @@ stages:
           baseImage=$(baseImage)
           runCodeCoverage=$(runCodeCoverage)
           framework=$(publishTargetFramework)
+          Filter=$(IntegrationTestFilter)
+          SampleName=$(IntegrationTestSampleName)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -1693,12 +1705,6 @@ stages:
 
     strategy:
       matrix:
-        netcoreapp3_1:
-          publishTargetFramework: "netcoreapp3.1"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:core3.1"
-        net5:
-          publishTargetFramework: "net5.0"
-          lambdaBaseImage: "public.ecr.aws/lambda/dotnet:5.0"
         net6:
           publishTargetFramework: "net6.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:6"
@@ -2274,7 +2280,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false"
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2290,9 +2296,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              Filter=$(IntegrationTestFilter)
+              SampleName=$(IntegrationTestSampleName)
               runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false IntegrationTests.ARM64
+            dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2350,7 +2358,7 @@ stages:
           parameters:
             build: true
             baseImage: $(baseImage)
-            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true"
+            command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
             apiKey: $(DD_LOGGER_DD_API_KEY)
 
         - task: DownloadPipelineArtifact@2
@@ -2365,6 +2373,8 @@ stages:
           env:
             baseImage: $(baseImage)
             framework: $(publishTargetFramework)
+            Filter: $(IntegrationTestFilter)
+            SampleName: $(IntegrationTestSampleName)
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
@@ -2376,9 +2386,11 @@ stages:
             dockerComposeFileArgs: |
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
+              Filter=$(IntegrationTestFilter)
+              SampleName=$(IntegrationTestSampleName)
               runCodeCoverage=$(runCodeCoverage)
               DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true IntegrationTests.ARM64
+            dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -3377,6 +3389,7 @@ stages:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
 
+# Only run these on merges to master etc
 - stage: upload_container_images
   condition: and(succeeded(), eq(variables['Build.Reason'], 'IndividualCI'), eq(variables.isMainRepository, true), eq(variables.isMainOrReleaseBranch, true))
   dependsOn: [upload_to_azure]
@@ -3401,15 +3414,16 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
       - bash: |
-          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_snapshot=$(isMainBranch)"
+          echo "Creating dispatch event for https://github.com/DataDog/dd-trace-dotnet/actions/workflows/create-rel-env-docker-base-images.yml with ref=$(Build.SourceBranch) and azdo_build_id=$(Build.BuildId) and is_release_version=False"
           curl \
             -X POST \
             -H "Accept: application/vnd.github+json" \
             -H "Authorization: token $GITHUB_TOKEN"\
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml/dispatches \
-            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_snapshot":"$(isMainBranch)"}}'
+            https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/create-rel-env-docker-base-images.yml/dispatches \
+            -d '{"ref":"$(Build.SourceBranch)","inputs":{"azdo_build_id":"$(Build.BuildId)","is_release_version":"False"}}'
         displayName: Start the generation of docker base images on GitHub Actions worfklow
+        condition: eq(variables['isMainBranch'], true)
         env:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
@@ -3897,16 +3911,24 @@ stages:
       jobs: [test]
 
   - job: test
-    timeoutInMinutes: 60 #default value
+    timeoutInMinutes: 120 # Expect this to take ~60
     pool:
       vmImage: ubuntu-20.04
 
     strategy:
       matrix:
-        poc:
+        parametric_poc:
           WEBLOG_VARIANT: "poc"
-        uds:
+          SCENARIO: PARAMETRIC
+        parametric_uds:
           WEBLOG_VARIANT: "uds"
+          SCENARIO: PARAMETRIC
+        system_tests_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: TRACER_RELEASE_SCENARIOS
+        system_tests_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: TRACER_RELEASE_SCENARIOS
 
     steps:
       - checkout: none
@@ -3936,17 +3958,12 @@ stages:
         workingDirectory: system-tests
         displayName: Build images
 
-      - script: ./run.sh
+      - script: ./run.sh $(SCENARIO)
         workingDirectory: system-tests
         displayName: Run tests
         env:
           DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-
-      - script: ./run.sh REMOTE_CONFIG_MOCKED_BACKEND_LIVE_DEBUGGING
-        workingDirectory: system-tests
-        displayName: Run RCM tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
+          TEST_LIBRARY: dotnet
 
       - script: |
           mkdir -p all_logs
@@ -3959,17 +3976,6 @@ stages:
         condition: always()
         displayName: System tests logs
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
-
-      - script: |
-          cd parametric
-          pip install wheel
-          pip install -r requirements.txt
-          ./run.sh
-        workingDirectory: system-tests
-        displayName: Run parametric tests
-        env:
-          DD_API_KEY: $(SYSTEM_TESTS_DD_API_KEY)
-          CLIENTS_ENABLED: dotnet
 
 - stage: installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))

@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.MsTestV2;
     TypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.Execution.UnitTestRunner",
     MethodName = "RunSingleTest",
     ReturnTypeName = "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.UnitTestResult[]",
-    ParameterTypeNames = new string[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" },
+    ParameterTypeNames = new[] { "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter.ObjectModel.TestMethod", "System.Collections.Generic.IDictionary`2[System.String,System.Object]" },
     MinimumVersion = "14.0.0",
     MaximumVersion = "14.*.*",
     IntegrationName = MsTestIntegration.IntegrationName)]
@@ -54,12 +54,14 @@ public static class UnitTestRunnerRunSingleTestIntegration
                 unitTestResultObject.TryDuckCast<UnitTestResultStruct>(out var unitTestResult) &&
                 objTestMethodInfo.TryDuckCast<ITestMethod>(out var testMethodInfo))
             {
-                var outcome = unitTestResult.Outcome;
-                if (outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
+                if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
-                    // This instrumentation catches all tests being ignored
-                    var test = MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType());
-                    test.Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    if (!MsTestIntegration.ShouldSkip(testMethodInfo))
+                    {
+                        // This instrumentation catches all tests being ignored
+                        MsTestIntegration.OnMethodBegin(testMethodInfo, instance.GetType())?
+                                         .Close(TestStatus.Skip, TimeSpan.Zero, unitTestResult.ErrorMessage);
+                    }
                 }
             }
         }

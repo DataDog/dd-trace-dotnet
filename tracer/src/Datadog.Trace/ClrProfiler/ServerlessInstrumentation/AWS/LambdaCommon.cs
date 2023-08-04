@@ -10,8 +10,11 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -117,6 +120,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 span.Context.TraceContext?.SetSamplingPriority(Convert.ToInt32(samplingPriority), notifyDistributedTracer: false);
             }
 
+            TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.AwsLambda);
             return tracer.TracerManager.ScopeManager.Activate(span, false);
         }
 

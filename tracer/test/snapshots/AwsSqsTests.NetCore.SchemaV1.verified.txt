@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -22,7 +22,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_3,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.CreateQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -34,18 +34,22 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_4,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.CreateQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -57,12 +61,16 @@
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
@@ -173,7 +181,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_10,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -181,21 +189,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_11,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -203,21 +216,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_12,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -225,21 +242,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_13,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -247,21 +269,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_14,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -269,21 +296,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_15,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -291,21 +322,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_16,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -313,21 +349,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_17,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -335,21 +376,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_18,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -357,21 +402,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_19,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -379,21 +429,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_20,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -401,21 +456,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_21,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -423,21 +482,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_22,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -445,21 +509,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_23,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -467,21 +536,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_24,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -489,21 +563,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_25,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -511,21 +589,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_26,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -533,21 +616,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_27,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -555,21 +642,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessage,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_28,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -577,21 +669,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_29,
-    Name: sqs.request,
+    Name: aws.sqs.send,
     Resource: SQS.SendMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -599,21 +696,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: SendMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: producer,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_30,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -621,21 +723,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_31,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -643,21 +749,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_32,
-    Name: sqs.request,
+    Name: aws.sqs.process,
     Resource: SQS.ReceiveMessage,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -665,21 +776,25 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: ReceiveMessage,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      language: dotnet,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: consumer
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_33,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteMessageBatch,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -687,21 +802,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteMessageBatch,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_34,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -709,21 +829,26 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
+      aws.queue.name: MyAsyncSQSQueue,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue,
+      queuename: MyAsyncSQSQueue,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   },
   {
     TraceId: Id_1,
     SpanId: Id_35,
-    Name: sqs.request,
+    Name: aws.sqs.request,
     Resource: SQS.DeleteQueue,
     Service: Samples.AWS.SQS,
     Type: http,
@@ -731,15 +856,20 @@
     Tags: {
       aws.agent: dotnet-aws-sdk,
       aws.operation: DeleteQueue,
+      aws.queue.name: MyAsyncSQSQueue2,
       aws.queue.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       aws.requestId: Guid_Empty,
       aws.service: SQS,
+      aws_service: SQS,
       component: aws-sdk,
       env: integration_tests,
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
-      span.kind: client
+      peer.service: MyAsyncSQSQueue2,
+      queuename: MyAsyncSQSQueue2,
+      span.kind: client,
+      _dd.peer.service.source: queuename
     }
   }
 ]

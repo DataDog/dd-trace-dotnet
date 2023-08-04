@@ -12,6 +12,8 @@ using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Ci;
 
@@ -39,6 +41,7 @@ public sealed class Test
         scope.Span.ResourceName = $"{suite.Name}.{name}";
         scope.Span.Context.TraceContext.SetSamplingPriority((int)SamplingPriority.AutoKeep, SamplingMechanism.Manual);
         scope.Span.Context.TraceContext.Origin = TestTags.CIAppTestOriginName;
+        TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.CiAppManual);
 
         _scope = scope;
 
@@ -344,6 +347,16 @@ public sealed class Test
             case TestStatus.Skip:
                 tags.Status = TestTags.StatusSkip;
                 tags.SkipReason = skipReason;
+                if (tags.SkipReason == IntelligentTestRunnerTags.SkippedByReason)
+                {
+                    tags.SkippedByIntelligentTestRunner = "true";
+                    Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
+                }
+                else
+                {
+                    tags.SkippedByIntelligentTestRunner = "false";
+                }
+
                 break;
         }
 

@@ -107,9 +107,14 @@
     <ClCompile Include="MetricsRegistryTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="OSpecificAPIHelper.cpp">
-      <Filter>Helpers</Filter>
+    <ClCompile Include="OsSpecificApiTest.cpp">
+      <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

@@ -67,10 +67,20 @@ internal readonly struct ConfigurationBuilder
         public string AsRedactedString(string defaultValue)
             => AsString(() => defaultValue, validator: null, recordValue: false);
 
+        /// <summary>
+        /// Beware, this function won't record telemetry if the config isn't explicitly set.
+        /// If you can, use <see cref="AsString(string)"/> instead or record telemetry manually.
+        /// </summary>
+        /// <returns>the string value of the configuration if set</returns>
         public string? AsString() => AsString(getDefaultValue: null, validator: null, recordValue: true);
 
         public string AsString(string defaultValue) => AsString(defaultValue, validator: null);
 
+        /// <summary>
+        /// Beware, this function won't record telemetry if the config isn't explicitly set.
+        /// If you can, use <see cref="AsString(string, Func&lt;string, bool&gt;?)" /> instead or record telemetry manually.
+        /// </summary>
+        /// <returns>the string value of the configuration if set and valid</returns>
         public string? AsString(Func<string, bool> validator) => AsString(getDefaultValue: null, validator, recordValue: true);
 
         public string AsString(string defaultValue, Func<string, bool>? validator)
@@ -106,7 +116,7 @@ internal readonly struct ConfigurationBuilder
         }
 
         [return: NotNullIfNotNull(nameof(getDefaultValue))]
-        public T? GetAs<T>(Func<T>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
+        public T? GetAs<T>(Func<DefaultResult<T>>? getDefaultValue, Func<T, bool>? validator, Func<string, ParsingResult<T>> converter)
         {
             var result = Source.GetAs<T>(Key, Telemetry, converter, validator, recordValue: true)
                       ?? (FallbackKey1 is null ? null : Source.GetAs<T>(FallbackKey1, Telemetry, converter, validator, recordValue: true))
@@ -126,8 +136,8 @@ internal readonly struct ConfigurationBuilder
             }
 
             var defaultValue = getDefaultValue();
-            Telemetry.Record(Key, defaultValue?.ToString(), recordValue: true, ConfigurationOrigins.Default);
-            return defaultValue!;
+            Telemetry.Record(Key, defaultValue.TelemetryValue, recordValue: true, ConfigurationOrigins.Default);
+            return defaultValue.Result!;
         }
 
         // ****************

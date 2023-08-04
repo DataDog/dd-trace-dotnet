@@ -5,7 +5,6 @@
 
 using System;
 using System.Runtime.InteropServices;
-using Datadog.Trace.Debugger.PInvoke;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
 namespace Datadog.Trace.ClrProfiler
@@ -233,6 +232,23 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void UpdateSettings(string[] keys, string[] values)
+        {
+            if (keys.Length != values.Length)
+            {
+                throw new ArgumentException("keys and values must have the same length");
+            }
+
+            if (IsWindows)
+            {
+                Windows.UpdateSettings(keys, values, keys.Length);
+            }
+            else
+            {
+                NonWindows.UpdateSettings(keys, values, keys.Length);
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -279,6 +295,12 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern int DisableCallTargetDefinitions(uint disabledCategories);
+
+            [DllImport("Datadog.Tracer.Native.dll")]
+            public static extern void UpdateSettings(
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
+                int length);
         }
 
         // assume .NET Core if not running on Windows
@@ -326,6 +348,12 @@ namespace Datadog.Trace.ClrProfiler
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern int DisableCallTargetDefinitions(uint disabledCategories);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void UpdateSettings(
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
+                [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
+                int length);
         }
     }
 }

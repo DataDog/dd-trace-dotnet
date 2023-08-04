@@ -84,5 +84,32 @@ namespace Datadog.Trace
                 RunBlockingCheck(spanClass, userDetails.Id);
             }
         }
+
+        /// <summary>
+        /// Add the specified tag to this span.
+        /// </summary>
+        /// <param name="span">The span to be tagged</param>
+        /// <param name="key">The tag's key.</param>
+        /// <param name="value">The tag's value.</param>
+        /// <returns>This span to allow method chaining.</returns>
+        [PublicApi]
+        public static ISpan SetTag(this ISpan span, string key, double? value)
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.SpanExtensions_SetTag);
+
+            if (span is null)
+            {
+                ThrowHelper.ThrowArgumentNullException(nameof(span));
+            }
+
+            if (span is Span internalSpan)
+            {
+                return internalSpan.SetMetric(key, value);
+            }
+
+            // If is not an internal span, we add the numeric value as string as a fallback only
+            // so it can be converted automatically by the backend (only if a measurement facet is created for this tag)
+            return span.SetTag(key, value?.ToString());
+        }
     }
 }

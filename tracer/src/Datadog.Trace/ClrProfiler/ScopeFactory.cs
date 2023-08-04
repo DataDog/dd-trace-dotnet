@@ -100,8 +100,8 @@ namespace Datadog.Trace.ClrProfiler
 
                 string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
 
-                string operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
-                string serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
+                var operationName = tracer.CurrentTraceSettings.Schema.Client.GetOperationNameForProtocol("http");
+                var serviceName = tracer.CurrentTraceSettings.Schema.Client.GetServiceName(component: "http-client");
                 tags = tracer.CurrentTraceSettings.Schema.Client.CreateHttpTags();
 
                 span = tracer.StartSpan(operationName, tags, serviceName: serviceName, traceId: traceId, spanId: spanId, startTime: startTime, addToTraceContext: addToTraceContext);
@@ -119,6 +119,7 @@ namespace Datadog.Trace.ClrProfiler
                 tags.InstrumentationName = IntegrationRegistry.GetName(integrationId);
 
                 tags.SetAnalyticsSampleRate(integrationId, tracer.Settings, enabledWithGlobalSetting: false);
+                tracer.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
                 if (!addToTraceContext && span.Context.TraceContext.SamplingPriority == null)
                 {

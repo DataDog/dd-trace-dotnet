@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedTestCount = 13;
+        private const int ExpectedTestCount = 14;
 
         public XUnitEvpTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -67,6 +67,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                 {
                     agent.EventPlatformProxyPayloadReceived += (sender, e) =>
                     {
+                        if (e.Value.PathAndQuery != "/evp_proxy/v2/api/v2/citestcycle")
+                        {
+                            return;
+                        }
+
                         var payload = JsonConvert.DeserializeObject<MockCIVisibilityProtocol>(e.Value.BodyInJson);
                         if (payload.Events?.Length > 0)
                         {
@@ -94,18 +99,28 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         Assert.Equal(ExpectedTestCount, tests.Count);
                         Assert.Single(testSuites);
                         Assert.Single(testModules);
+                        var testSuite = testSuites[0];
+                        var testModule = testModules[0];
 
                         // Check Suite
-                        Assert.True(tests.All(t => t.TestSuiteId == testSuites[0].TestSuiteId));
-                        Assert.True(testSuites[0].TestModuleId == testModules[0].TestModuleId);
+                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId));
+                        testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+
+                        // ITR tags inside the test suite
+                        testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
 
                         // Check Module
-                        Assert.True(tests.All(t => t.TestModuleId == testSuites[0].TestModuleId));
+                        Assert.True(tests.All(t => t.TestModuleId == testSuite.TestModuleId));
+
+                        // ITR tags inside the test module
+                        testModule.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
+                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.SkippingType, IntelligentTestRunnerTags.SkippingTypeTest);
+                        testModule.Meta.Should().Contain(IntelligentTestRunnerTags.TestsSkipped, "true");
 
                         // Check Session
-                        tests.Should().OnlyContain(t => t.TestSessionId == testSuites[0].TestSessionId);
-                        testSuites[0].TestSessionId.Should().Be(testModules[0].TestSessionId);
-                        testModules[0].TestSessionId.Should().Be(sessionId);
+                        tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
+                        testSuite.TestSessionId.Should().Be(testModule.TestSessionId);
+                        testModule.TestSessionId.Should().Be(sessionId);
 
                         // ***************************************************************************
 
@@ -140,9 +155,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // check the version
                             AssertTargetSpanEqual(targetTest, "version", "1.0.0");
 
-                            // remove ITR skippeable tags
-                            AssertTargetSpanExists(targetTest, CommonTags.TestsSkipped);
-
                             // checks the origin tag
                             CheckOriginTag(targetTest);
 
@@ -174,6 +186,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                                 case "SimpleSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetTest);
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
+                                    break;
+
+                                case "SkipByITRSimulation":
+                                    AssertTargetSpanEqual(targetTest, TestTags.Status, TestTags.StatusSkip);
+                                    AssertTargetSpanEqual(targetTest, TestTags.SkipReason, IntelligentTestRunnerTags.SkippedByReason);
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "true");
                                     break;
 
                                 case "SimpleErrorTest":
@@ -188,6 +207,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "TraitSkipFromAttributeTest":
                                     CheckSimpleSkipFromAttributeTest(targetTest);
                                     CheckTraitsValues(targetTest);
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "TraitErrorTest":
@@ -210,6 +230,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                                 case "SimpleSkipParameterizedTest":
                                     CheckSimpleSkipFromAttributeTest(targetTest);
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.SkippedBy, "false");
                                     break;
 
                                 case "SimpleErrorParameterizedTest":
