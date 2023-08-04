@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -87,6 +86,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             const int maxRetries = 3;
             int retries = 0;
+            int sleepDuration = 500;
 
             while (retries < maxRetries)
             {
@@ -102,9 +102,10 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 retries++;
 
-                if (ShouldRetry(response.StatusCode))
+                if (response.ShouldRetry())
                 {
-                    await Task.Delay(GetDelayTime(retries)).ConfigureAwait(false);
+                    sleepDuration *= (int)Math.Pow(2, retries);
+                    await Task.Delay(sleepDuration).ConfigureAwait(false);
                 }
                 else
                 {
@@ -115,23 +116,6 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             return false;
-        }
-
-        private static bool ShouldRetry(int statusCode)
-        {
-            int[] statusCodesToRetry = { 408, 425, 429, 503, 504 };
-            return statusCodesToRetry.Any(code => code == statusCode);
-        }
-
-        private static TimeSpan GetDelayTime(int retryAttempt)
-        {
-            const int baseDelayMs = 250;
-            int maxDelayMs = baseDelayMs * (int)Math.Pow(2, retryAttempt);
-
-            Random random = new Random();
-            int delayMs = random.Next(baseDelayMs, maxDelayMs);
-
-            return TimeSpan.FromMilliseconds(delayMs);
         }
     }
 }
