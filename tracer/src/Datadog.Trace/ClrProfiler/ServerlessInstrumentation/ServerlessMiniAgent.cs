@@ -18,6 +18,7 @@ internal static class ServerlessMiniAgent
 
     internal static string GetMiniAgentPath(PlatformID os, ImmutableTracerSettings settings)
     {
+        /*
         if (!settings.IsRunningInGCPFunctions && !settings.IsRunningInAzureFunctionsConsumptionPlan)
         {
             return null;
@@ -50,6 +51,8 @@ internal static class ServerlessMiniAgent
         string rustBinaryPathOsFolder = isWindows ? "datadog-serverless-agent-windows-amd64" : "datadog-serverless-agent-linux-amd64";
         string rustBinaryName = isWindows ? "datadog-serverless-trace-mini-agent.exe" : "datadog-serverless-trace-mini-agent";
         return Path.Combine(rustBinaryPathRoot, rustBinaryPathOsFolder, rustBinaryName);
+        */
+        return "sjldfjlsdlkfjklsdjklf";
     }
 
     internal static void StartServerlessMiniAgent(ImmutableTracerSettings settings)
