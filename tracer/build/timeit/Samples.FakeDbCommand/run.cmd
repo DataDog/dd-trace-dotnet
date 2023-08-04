@@ -6,7 +6,7 @@ IF EXIST results_Samples.FakeDbCommand.windows.net60.json DEL /F results_Samples
 echo *********************
 echo Installing timeitsharp
 echo *********************
-dotnet tool update -g timeitsharp --version 0.0.14
+dotnet tool update -g timeitsharp --version 0.0.15
 
 echo *********************
 echo .NET Framework 4.6.1
