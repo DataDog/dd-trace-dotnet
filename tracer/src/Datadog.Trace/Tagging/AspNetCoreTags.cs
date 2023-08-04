@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+using System.Collections.Generic;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -16,9 +18,12 @@ namespace Datadog.Trace.Tagging
         public string InstrumentationName { get; set; } = ComponentName;
 
         [Tag(Trace.Tags.AspNetCoreRoute)]
-        public string AspNetCoreRoute { get; set; }
+        public string? AspNetCoreRoute { get; set; }
 
         [Tag(Tags.HttpRoute)]
-        public string HttpRoute { get; set; }
+        public string? HttpRoute { get; set; }
+
+        // TODO: merge with AspNetCoreRoute?
+        public List<string>? SubsequentRoutes { get; set; }
     }
 }

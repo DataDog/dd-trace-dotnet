@@ -143,6 +143,45 @@ namespace Datadog.Trace.PlatformHelpers
             return scope;
         }
 
+        public Scope StartAspNetCorePipelineScope2(Tracer tracer, Security security, HttpContext httpContext)
+        {
+            var request = httpContext.Request;
+
+            SpanContext propagatedContext = ExtractPropagatedContext(request);
+
+            var originalPath = request.PathBase.HasValue ? request.PathBase.Add(request.Path) : request.Path;
+            httpContext.Features.Set(new RequestTrackingFeature(originalPath));
+            var tags = new AspNetCoreTags2();
+
+            var scope = tracer.StartActiveInternal(_requestInOperationName, propagatedContext, tags: tags);
+            scope.Span.DecorateWebServerSpan(
+                resourceName: null,
+                method: request.Method?.ToUpperInvariant() ?? "UNKNOWN",
+                host: request.Host.Value,
+                httpUrl: request.GetUrlForSpan(tracer.TracerManager.QueryStringManager),
+                userAgent: request.Headers[HttpHeaderNames.UserAgent],
+                tags: tags);
+            AddHeaderTagsToSpan(scope.Span, request, tracer);
+
+            if (tracer.Settings.IpHeaderEnabled || security.Enabled)
+            {
+                var peerIp = new Headers.Ip.IpInfo(httpContext.Connection.RemoteIpAddress?.ToString(), httpContext.Connection.RemotePort);
+                Func<string, string> getRequestHeaderFromKey = key => request.Headers.TryGetValue(key, out var value) ? value : string.Empty;
+                Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
+            }
+
+            if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+            {
+                // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
+                scope.Span.Context?.TraceContext?.EnableIastInRequest();
+            }
+
+            tags.SetAnalyticsSampleRate(_integrationId, tracer.Settings, enabledWithGlobalSetting: true);
+            tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(_integrationId);
+
+            return scope;
+        }
+
         public void StopAspNetCorePipelineScope(Tracer tracer, Security security, Scope scope, HttpContext httpContext)
         {
             if (scope != null)
@@ -153,17 +192,14 @@ namespace Datadog.Trace.PlatformHelpers
                 var span = scope.Span;
                 var isMissingHttpStatusCode = !span.HasHttpStatusCode();
 
-                if (string.IsNullOrEmpty(span.ResourceName) || isMissingHttpStatusCode)
+                if (string.IsNullOrEmpty(span.ResourceName))
                 {
-                    if (string.IsNullOrEmpty(span.ResourceName))
-                    {
-                        span.ResourceName = GetDefaultResourceName(httpContext.Request);
-                    }
+                    span.ResourceName = GetDefaultResourceName(httpContext.Request);
+                }
 
-                    if (isMissingHttpStatusCode)
-                    {
-                        span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
-                    }
+                if (isMissingHttpStatusCode)
+                {
+                    span.SetHttpStatusCode(httpContext.Response.StatusCode, isServer: true, tracer.Settings);
                 }
 
                 span.SetHeaderTags(new HeadersCollectionAdapter(httpContext.Response.Headers), tracer.Settings.HeaderTagsInternal, defaultTagPrefix: SpanContextPropagator.HttpResponseHeadersTagPrefix);

@@ -126,7 +126,7 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(path, new Source(SourceType.GetByte(SourceTypeName.RequestPath), null, path));
     }
 
-    private void AddRouteData(IDictionary<string, object> routeData)
+    private void AddRouteData(IDictionary<string, object>? routeData)
     {
         if (!_routedParametersAdded)
         {
@@ -217,7 +217,7 @@ internal class IastRequestContext
 
 #else
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
-    internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
+    internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object>? routeParameters)
     {
         AddRouteData(routeParameters);
 

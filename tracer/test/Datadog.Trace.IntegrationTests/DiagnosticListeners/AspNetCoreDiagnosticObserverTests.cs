@@ -440,7 +440,7 @@ namespace Datadog.Trace.IntegrationTests.DiagnosticListeners
             var tracer = GetTracer(writer, configSource);
 
             var security = new AppSec.Security();
-            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver(tracer, security) };
+            var observers = new List<DiagnosticObserver> { new AspNetCoreDiagnosticObserver2(tracer, security) };
 
             using (var diagnosticManager = new DiagnosticManager(observers))
             {
