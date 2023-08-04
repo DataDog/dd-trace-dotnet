@@ -85,8 +85,6 @@ namespace Datadog.Trace.Configuration
                     break;
             }
 
-            IsFunctionsAppConsumptionPlan = IsFunctionsAppConsumptionPlan ?? false;
-
             Runtime = FrameworkDescription.Instance.Name;
 
             DebugModeEnabled = config.WithKeys(Configuration.ConfigurationKeys.DebugEnabled).AsBool(false);
