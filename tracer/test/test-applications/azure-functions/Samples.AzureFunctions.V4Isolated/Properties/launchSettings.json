@@ -12,6 +12,7 @@
 
         // local.settings.json only applies to the function script, not the host, so this needs to exist here
         "FUNCTIONS_WORKER_RUNTIME": "dotnet-isolated",
+        // "WEBSITE_SKU": "Basic",
 
         "DD_AZURE_APP_SERVICES": "1",
         "DD_TRACE_AZURE_FUNCTIONS_ENABLED": "1",

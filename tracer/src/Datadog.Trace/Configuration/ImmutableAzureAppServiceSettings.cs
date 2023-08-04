@@ -57,7 +57,7 @@ namespace Datadog.Trace.Configuration
             FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
             FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
 
-            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic");
+            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
 
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
@@ -70,8 +70,7 @@ namespace Datadog.Trace.Configuration
                     SiteKind = "functionapp";
                     SiteType = "function";
                     IsFunctionsApp = true;
-                    IsFunctionsAppConsumptionPlan = WebsiteSKU == "Dynamic";
-
+                    IsFunctionsAppConsumptionPlan = WebsiteSKU is "Dynamic" or null;
                     IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
                     PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
                     break;
@@ -85,6 +84,8 @@ namespace Datadog.Trace.Configuration
                     SiteType = "unknown";
                     break;
             }
+
+            IsFunctionsAppConsumptionPlan = IsFunctionsAppConsumptionPlan ?? false;
 
             Runtime = FrameworkDescription.Instance.Name;
 

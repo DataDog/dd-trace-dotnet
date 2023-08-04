@@ -149,10 +149,10 @@ internal static class DatadogLoggingFactory
             }
         }
 
-        return GetDefaultLogDirectory(logDirectory);
+        return GetDefaultLogDirectory(source, logDirectory);
     }
 
-    private static string GetDefaultLogDirectory(string? logDirectory)
+    private static string GetDefaultLogDirectory(IConfigurationSource? source, string? logDirectory)
     {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
@@ -164,9 +164,8 @@ internal static class DatadogLoggingFactory
 #if NETFRAMEWORK
             logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
 #else
-            var isWindows = System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows);
+            var isWindows = FrameworkDescription.Instance.IsWindows();
 
-            /*
             ImmutableAzureAppServiceSettings? aasSettings = null;
             if (source != null)
             {
@@ -178,8 +177,6 @@ internal static class DatadogLoggingFactory
                 return isWindows ? "/home/LogFiles" : "/home/site/wwwroot";
             }
             else if (isWindows)
-            */
-            if (isWindows)
             {
                 logDirectory = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), @"Datadog .NET Tracer", "logs");
             }
