@@ -38,12 +38,5 @@ namespace Datadog.Trace.Configuration
         public bool IsDeprecatedFunction { get; }
 
         public bool IsNewerFunction { get; }
-
-        internal static bool GetIsGCPFunction()
-        {
-            bool isDeprecatedGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedFunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.DeprecatedProjectKey) != null;
-            bool isNewerGCPFunction = Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionNameKey) != null && Environment.GetEnvironmentVariable(ConfigurationKeys.GCPFunction.FunctionTargetKey) != null;
-            return isDeprecatedGCPFunction || isNewerGCPFunction;
-        }
     }
 }
