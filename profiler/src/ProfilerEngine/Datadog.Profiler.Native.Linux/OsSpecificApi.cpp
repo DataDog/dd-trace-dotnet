@@ -33,7 +33,7 @@
 
 namespace OsSpecificApi {
 
-std::pair<DWORD, std::string> OsSpecificApi::GetLastErrorMessage()
+std::pair<DWORD, std::string> GetLastErrorMessage()
 {
     DWORD errorCode = errno;
     std::stringstream builder;
@@ -235,3 +235,5 @@ std::string GetProcessStartTime()
     // TODO: implement for linux
     return "";
 }
+
+} // namespace OsSpecificApi

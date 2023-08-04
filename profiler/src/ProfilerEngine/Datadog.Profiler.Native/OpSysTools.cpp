@@ -477,8 +477,6 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
         return false;
     }
 
-    double cpuLimit;
-
     if (CGroup::GetCpuLimit(&cpuLimit))
     {
         Log::Info("CPU limit is ", cpuLimit, " with ", coresThreshold, " threshold");
