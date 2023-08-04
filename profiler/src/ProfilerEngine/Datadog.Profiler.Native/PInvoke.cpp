@@ -109,17 +109,27 @@ extern "C" void __stdcall SetEndpointForTrace(const char* runtimeId, uint64_t tr
         return;
     }
 
+    static bool firstEmptyRuntimeId = true;
     if (runtimeId == nullptr)
     {
-        Log::Error("SetEndpointForTrace was called with an empty runtime id");
+        if (firstEmptyRuntimeId)
+        {
+            Log::Error("SetEndpointForTrace was called with an empty runtime id");
+            firstEmptyRuntimeId = false;
+        }
         return;
     }
 
+    static bool firstEmptyEndpoint = true;
     if (endpoint == nullptr)
     {
-        // It could happen that the endpoint is empty, but the tracer should check before making the call,
-        // to avoid the cost of the p/invoke
-        Log::Warn("SetEndpointForTrace was called with an empty endpoint");
+        if (firstEmptyEndpoint)
+        {
+            // It could happen that the endpoint is empty, but the tracer should check before making the call,
+            // to avoid the cost of the p/invoke
+            Log::Warn("SetEndpointForTrace was called with an empty endpoint");
+            firstEmptyEndpoint = false;
+        }
         return;
     }
 
@@ -141,9 +151,14 @@ extern "C" void __stdcall SetGitMetadataForApplication(const char* runtimeId, co
         return;
     }
 
+    static bool firstEmptyRuntimeId = true;
     if (runtimeId == nullptr)
     {
-        Log::Error("SetGitMetadataForApplication was called with an empty runtime id");
+        if (firstEmptyRuntimeId)
+        {
+            Log::Error("SetGitMetadataForApplication was called with an empty runtime id");
+            firstEmptyRuntimeId = false;
+        }
         return;
     }
 
