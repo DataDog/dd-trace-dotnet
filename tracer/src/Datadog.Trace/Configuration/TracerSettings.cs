@@ -341,14 +341,13 @@ namespace Datadog.Trace.Configuration
 
             // we only want to instantiate ImmutableAzureAppServiceSettings if we are for sure running
             // in AAS, or if we might be running in a Consumption Plan function.
-            // var isMaybeAzureFunction = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
+            var isMaybeAzureFunction = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
             // consumption plan Azure functions will have WEBSITE_SKU=Dynamic, or will be missing the var altogether.
             // app service plan functions will always have a WEBSITE_SKU value, and it's never Dynamic.
-            // var websiteSKUDynamicOrMissing = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") is "Dynamic" or null;
-            // var isMaybeAzureFunctionConsumptionPlan = isMaybeAzureFunction && websiteSKUDynamicOrMissing;
+            var websiteSKUDynamicOrMissing = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") is "Dynamic" or null;
+            var isMaybeAzureFunctionConsumptionPlan = isMaybeAzureFunction && websiteSKUDynamicOrMissing;
 
-            // if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)
-            if (IsRunningInAzureAppService)
+            if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
@@ -356,17 +355,16 @@ namespace Datadog.Trace.Configuration
                     TraceEnabledInternal = false;
                 }
 
-                // IsRunningInAzureFunctionsConsumptionPlan = AzureAppServiceMetadata.IsFunctionsAppConsumptionPlan;
+                IsRunningInAzureFunctionsConsumptionPlan = AzureAppServiceMetadata.IsFunctionsAppConsumptionPlan;
             }
 
-            // GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
 
-            // IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(false);
-                                    // .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -837,6 +835,17 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in an Azure Function on a
+        /// consumption plan
+        /// </summary>
+        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
