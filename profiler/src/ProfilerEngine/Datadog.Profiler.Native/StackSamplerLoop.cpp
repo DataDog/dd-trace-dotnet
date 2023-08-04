@@ -476,8 +476,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
     UpdateStatistics(hrCollectStack, countCollectedStackFrames);
 
-    LogEncounteredStackSnapshotResultStatistics(thisSampleTimestampNanosecs);
-
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
 }
@@ -541,110 +539,6 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
         // this should never happen
         // count at least one sampling period
         return static_cast<int64_t>(_samplingPeriod.count());
-    }
-}
-
-void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog)
-{
-    // TODO: clean-up all this...
-    //
-
-    if ((_lastStackSnapshotResultsStats_LogTimestampNS != 0) && (thisSampleTimestampNanosecs - _lastStackSnapshotResultsStats_LogTimestampNS < StackSamplerLoop_StackSnapshotResultsStats_LogPeriodNS))
-    {
-        return;
-    }
-
-    if (!(useStdOutInsteadOfLog || Log::IsDebugEnabled()))
-    {
-        return;
-    }
-
-    // We avoid printing the '%' char because every time we pipe the string through a formatter, it gets reduced.
-    constexpr const char* PercentWord = "Percent";
-
-    // Log total stacks collected:
-    uint64_t timeSinceLastLogMS = (0 == _lastStackSnapshotResultsStats_LogTimestampNS)
-                                           ? 0
-                                           : (thisSampleTimestampNanosecs - _lastStackSnapshotResultsStats_LogTimestampNS) / 1000000;
-
-    _lastStackSnapshotResultsStats_LogTimestampNS = thisSampleTimestampNanosecs;
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Total Collected Stacks Count: " << _totalStacksCollectedCount << ". Time since last Stack Snapshot Result-Statistic Log: " << timeSinceLastLogMS << " ms.";
-    }
-    else
-    {
-        Log::Info("Total Collected Stacks Count: ", _totalStacksCollectedCount,
-                  ". Time since last Stack Snapshot Result-Statistic Log: ", timeSinceLastLogMS, " ms.");
-    }
-
-    // Order HResults by their frequency for easier-to-read output:
-    std::multimap<uint64_t, HRESULT> orderedStackSnapshotHRs;
-    uint64_t cumHrFreq = 0;
-    std::unordered_map<HRESULT, uint64_t>::iterator iterHRs = _encounteredStackSnapshotHRs.begin();
-    while (iterHRs != _encounteredStackSnapshotHRs.end())
-    {
-        orderedStackSnapshotHRs.insert(std::pair<uint64_t, HRESULT>(iterHRs->second, iterHRs->first));
-        cumHrFreq += iterHRs->second;
-        iterHRs++;
-    }
-
-    // Log Stack Collection HResult frequency distribution:
-    std::string outBuff;
-    auto iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
-    while (iterOrderedHRs != orderedStackSnapshotHRs.rend())
-    {
-        uint64_t freq = iterOrderedHRs->first;
-        HRESULT hr = iterOrderedHRs->second;
-        std::stringstream builder;
-        builder << "    " << HResultConverter::ToChars(hr) << " (0x" << std::hex << hr << "): " << std::dec << freq << " (" << std::setprecision(2) << (freq * 100.0 / cumHrFreq) << " %)\n";
-        outBuff.append(builder.str());
-        iterOrderedHRs++;
-    }
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Distribution of encountered stack snapshot collection HResults: \n"
-                  << outBuff.c_str();
-    }
-    else
-    {
-        Log::Info("Distribution of encountered stack snapshot collection HResults: \n", outBuff.c_str());
-    }
-
-    // Order stack depths by their frame counts for easier-to-read output:
-    decltype(_encounteredStackSnapshotDepths) orderedStackSnapshotDepths;
-    uint64_t cumDepthFreq = 0;
-    auto iterDepths = _encounteredStackSnapshotDepths.begin();
-    while (iterDepths != _encounteredStackSnapshotDepths.end())
-    {
-        orderedStackSnapshotDepths.insert(std::make_pair(iterDepths->first, iterDepths->second));
-        cumDepthFreq += iterDepths->second;
-        iterDepths++;
-    }
-
-    // Log Stack Depth frequency distribution:
-    outBuff.clear();
-    auto iterOrderedDepths = orderedStackSnapshotDepths.begin();
-    while (iterOrderedDepths != orderedStackSnapshotDepths.end())
-    {
-        auto freq = iterOrderedDepths->second;
-        auto depth = iterOrderedDepths->first;
-        std::stringstream builder;
-        builder << "    " << std::setw(4) << depth << " frames: " << freq << " \t\t(" << std::setw(5) << std::setprecision(2) << (freq * 100.0 / cumDepthFreq) << " " << PercentWord << ")\n";
-        outBuff.append(builder.str());
-        iterOrderedDepths++;
-    }
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Distribution of encountered stack snapshot frame counts: \n"
-                  << outBuff.c_str();
-    }
-    else
-    {
-        Log::Info("Distribution of encountered stack snapshot frame counts: \n", outBuff.c_str());
     }
 }
 
