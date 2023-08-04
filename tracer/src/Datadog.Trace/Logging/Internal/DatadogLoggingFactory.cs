@@ -169,7 +169,7 @@ internal static class DatadogLoggingFactory
             }
             else
             {
-                // Linux
+                // Linux ......
                 logDirectory = "/var/log/datadog/dotnet";
             }
 #endif
