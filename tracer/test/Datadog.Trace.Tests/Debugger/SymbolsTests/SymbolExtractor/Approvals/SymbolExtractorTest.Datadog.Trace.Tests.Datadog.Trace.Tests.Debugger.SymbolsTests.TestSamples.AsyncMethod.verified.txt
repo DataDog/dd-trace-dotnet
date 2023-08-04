@@ -12,9 +12,9 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithoutClosure",
-          "start_line": 13,
-          "end_line": 24,
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod",
+          "start_line": 14,
+          "end_line": 26,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -23,50 +23,36 @@
           "scopes": [
             {
               "scope_type": "method",
-              "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
-              "start_line": 13,
-              "end_line": 23,
+              "name": "GetTime",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+              "start_line": 14,
+              "end_line": 25,
               "language_specifics": {
-                "return_type": "System.Void",
+                "return_type": "System.Threading.Tasks.Task`1<System.Int32>",
                 "start_column": 9,
                 "end_column": 10
               },
-              "symbols": [
-                {
-                  "name": "rand",
-                  "type": "System.Int32",
-                  "symbol_type": "Local",
-                  "line": 13
-                },
-                {
-                  "name": "action",
-                  "type": "System.Action",
-                  "symbol_type": "Local",
-                  "line": 13
-                }
-              ],
               "scopes": [
                 {
                   "scope_type": "closure",
-                  "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithoutClosure.cs",
-                  "start_line": 17,
-                  "end_line": 20,
+                  "name": "GetTime",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                  "start_line": 19,
+                  "end_line": 22,
                   "language_specifics": {
                     "access_modifiers": [
                       "Assembly"
                     ],
-                    "return_type": "System.Void",
-                    "start_column": 13,
-                    "end_column": 14
+                    "return_type": "System.Int32",
+                    "start_column": 17,
+                    "end_column": 18
                   },
                   "symbols": [
                     {
-                      "name": "s",
+                      "name": "rand",
                       "type": "System.Int32",
                       "symbol_type": "Local",
-                      "line": 17
+                      "line": 19
                     }
                   ],
                   "scopes": []

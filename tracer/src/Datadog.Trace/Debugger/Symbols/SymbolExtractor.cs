@@ -251,7 +251,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 typeSymbols[j] = new Symbol
                 {
                     Name = field.Name,
-                    SymbolType = field.IsStatic ? SymbolType.Static_Field : SymbolType.Field,
+                    SymbolType = field.IsStatic ? SymbolType.StaticField : SymbolType.Field,
                     Type = field.FieldType.TypeName,
                     Line = -1
                 };

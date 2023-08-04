@@ -5,18 +5,18 @@
   "language": "dotnet",
   "scopes": [
     {
-      "scopeType": "Assembly",
+      "scope_type": "assembly",
       "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-      "startLine": 0,
-      "endLine": 0,
+      "start_line": 0,
+      "end_line": 0,
       "scopes": [
         {
-          "scopeType": "Class",
+          "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithFieldClosure",
-          "startLine": 14,
-          "endLine": 29,
-          "languageSpecifics": {
-            "superClasses": [
+          "start_line": 14,
+          "end_line": 29,
+          "language_specifics": {
+            "super_classes": [
               "System.Object"
             ]
           },
@@ -24,63 +24,63 @@
             {
               "name": "i",
               "type": "Int32",
-              "symbolType": "Field",
+              "symbol_type": "Field",
               "line": -1
             }
           ],
           "scopes": [
             {
-              "scopeType": "Method",
+              "scope_type": "method",
               "name": ".ctor",
-              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
-              "startLine": 14,
-              "endLine": 17,
-              "languageSpecifics": {
-                "returnType": "System.Void",
-                "startColumn": 9,
-                "endColumn": 10
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+              "start_line": 14,
+              "end_line": 17,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
               },
               "scopes": []
             },
             {
-              "scopeType": "Method",
+              "scope_type": "method",
               "name": "Foo",
-              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
-              "startLine": 20,
-              "endLine": 28,
-              "languageSpecifics": {
-                "returnType": "System.Void",
-                "startColumn": 9,
-                "endColumn": 10
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+              "start_line": 20,
+              "end_line": 28,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
               },
               "symbols": [
                 {
                   "name": "action",
                   "type": "System.Action",
-                  "symbolType": "Local",
+                  "symbol_type": "Local",
                   "line": 20
                 }
               ],
               "scopes": [
                 {
-                  "scopeType": "Closure",
+                  "scope_type": "closure",
                   "name": "Foo",
-                  "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
-                  "startLine": 22,
-                  "endLine": 25,
-                  "languageSpecifics": {
-                    "accessModifiers": [
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                  "start_line": 22,
+                  "end_line": 25,
+                  "language_specifics": {
+                    "access_modifiers": [
                       "Private"
                     ],
-                    "returnType": "System.Void",
-                    "startColumn": 13,
-                    "endColumn": 14
+                    "return_type": "System.Void",
+                    "start_column": 13,
+                    "end_column": 14
                   },
                   "symbols": [
                     {
                       "name": "s",
                       "type": "System.Int32",
-                      "symbolType": "Local",
+                      "symbol_type": "Local",
                       "line": 22
                     }
                   ],

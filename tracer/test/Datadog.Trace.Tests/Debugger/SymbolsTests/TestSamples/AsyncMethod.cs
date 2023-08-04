@@ -4,14 +4,24 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples
 {
     internal class AsyncMethod
     {
+        private async Task<int> GetTime()
+        {
+            await Task.Delay(500);
+
+            var result = await Task.Run(
+                () =>
+                {
+                    var rand = new Random().Next();
+                    return rand;
+                }).ConfigureAwait(false);
+
+            return result;
+        }
     }
 }
