@@ -6,28 +6,29 @@
 using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Debugger.Symbols.Model;
 
 internal record struct Scope
 {
-    [JsonProperty("scopeType")]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonProperty("scope_type")]
+    [JsonConverter(typeof(StringEnumConverter), converterParameters: typeof(SnakeCaseNamingStrategy))]
     internal SymbolType ScopeType { get; set; }
 
     [JsonProperty("name")]
     internal string Name { get; set; }
 
-    [JsonProperty("sourceFile")]
+    [JsonProperty("source_file")]
     internal string SourceFile { get; set; }
 
-    [JsonProperty("startLine")]
+    [JsonProperty("start_line")]
     internal int StartLine { get; set; }
 
-    [JsonProperty("endLine")]
+    [JsonProperty("end_line")]
     internal int EndLine { get; set; }
 
-    [JsonProperty("languageSpecifics")]
+    [JsonProperty("language_specifics")]
     internal LanguageSpecifics? LanguageSpecifics { get; set; }
 
     [JsonProperty("symbols")]

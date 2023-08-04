@@ -10,24 +10,24 @@ namespace Datadog.Trace.Debugger.Symbols.Model;
 
 internal record struct LanguageSpecifics
 {
-    [JsonProperty("accessModifiers")]
+    [JsonProperty("access_modifiers")]
     internal IReadOnlyList<string> AccessModifiers { get; set; }
 
     [JsonProperty("annotations")]
     internal IReadOnlyList<string> Annotations { get; set; }
 
-    [JsonProperty("superClasses")]
+    [JsonProperty("super_classes")]
     internal IReadOnlyList<string> SuperClasses { get; set; }
 
     [JsonProperty("interfaces")]
     internal IReadOnlyList<string> Interfaces { get; set; }
 
-    [JsonProperty("returnType")]
+    [JsonProperty("return_type")]
     internal string ReturnType { get; set; }
 
-    [JsonProperty("startColumn")]
+    [JsonProperty("start_column")]
     internal int? StartColumn { get; set; }
 
-    [JsonProperty("endColumn")]
+    [JsonProperty("end_column")]
     internal int? EndColumn { get; set; }
 }
