@@ -5,80 +5,81 @@
   "language": "dotnet",
   "scopes": [
     {
-      "scopeType": "Assembly",
+      "scope_type": "assembly",
       "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
-      "startLine": 0,
-      "endLine": 0,
+      "start_line": 0,
+      "end_line": 0,
       "scopes": [
         {
-          "scopeType": "Class",
+          "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithClosure",
-          "startLine": 13,
-          "endLine": 24,
-          "languageSpecifics": {
-            "superClasses": [
+          "start_line": 13,
+          "end_line": 24,
+          "language_specifics": {
+            "super_classes": [
               "System.Object"
             ]
           },
           "scopes": [
             {
-              "scopeType": "Method",
+              "scope_type": "method",
               "name": "Foo",
-              "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
-              "startLine": 13,
-              "endLine": 23,
-              "languageSpecifics": {
-                "returnType": "System.Void",
-                "startColumn": 9,
-                "endColumn": 10
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
+              "start_line": 13,
+              "end_line": 23,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
               },
               "symbols": [
                 {
                   "name": "action",
                   "type": "System.Action",
-                  "symbolType": "Local",
+                  "symbol_type": "Local",
                   "line": 16707566
                 }
               ],
               "scopes": [
                 {
-                  "scopeType": "Closure",
+                  "scope_type": "closure",
                   "name": "Foo",
-                  "sourceFile": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
-                  "startLine": 17,
-                  "endLine": 20,
-                  "languageSpecifics": {
-                    "accessModifiers": [
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
+                  "start_line": 17,
+                  "end_line": 20,
+                  "language_specifics": {
+                    "access_modifiers": [
                       "Assembly"
                     ],
-                    "returnType": "System.Void",
-                    "startColumn": 13,
-                    "endColumn": 14
+                    "return_type": "System.Void",
+                    "start_column": 13,
+                    "end_column": 14
                   },
                   "symbols": [
                     {
                       "name": "s",
                       "type": "System.Int32",
-                      "symbolType": "Local",
+                      "symbol_type": "Local",
                       "line": 17
                     },
                     {
                       "name": "rand",
                       "type": "System.Int32",
-                      "symbolType": "Local",
+                      "symbol_type": "Local",
                       "line": 17
                     }
-                  ]
+                  ],
+                  "scopes": []
                 }
               ]
             },
             {
-              "scopeType": "Method",
+              "scope_type": "method",
               "name": ".ctor",
-              "startLine": -1,
-              "endLine": 0,
-              "languageSpecifics": {
-                "returnType": "System.Void"
+              "start_line": -1,
+              "end_line": 0,
+              "language_specifics": {
+                "return_type": "System.Void"
               },
               "scopes": []
             }
