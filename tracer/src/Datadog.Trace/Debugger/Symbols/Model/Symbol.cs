@@ -16,7 +16,7 @@ internal record struct Symbol
     [JsonProperty("type")]
     internal string Type { get; set; }
 
-    [JsonProperty("symbolType")]
+    [JsonProperty("symbol_type")]
     [JsonConverter(typeof(StringEnumConverter))]
     internal SymbolType SymbolType { get; set; }
 
