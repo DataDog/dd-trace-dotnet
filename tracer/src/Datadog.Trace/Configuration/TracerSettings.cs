@@ -344,7 +344,7 @@ namespace Datadog.Trace.Configuration
             var isMaybeAzureFunction = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
             // consumption plan Azure functions will have WEBSITE_SKU=Dynamic, or will be missing the var altogether.
             // app service plan functions will always have a WEBSITE_SKU value, and it's never Dynamic.
-            var websiteSKUDynamicOrMissing = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") == "Dynamic";
+            var websiteSKUDynamicOrMissing = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") is "Dynamic" or null;
             var isMaybeAzureFunctionConsumptionPlan = isMaybeAzureFunction && websiteSKUDynamicOrMissing;
 
             if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)

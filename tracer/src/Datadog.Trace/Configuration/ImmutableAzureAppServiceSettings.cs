@@ -122,7 +122,7 @@ namespace Datadog.Trace.Configuration
 
         public bool IsFunctionsAppConsumptionPlan { get; }
 
-        public string WebsiteSKU { get; }
+        public string? WebsiteSKU { get; }
 
         public string? FunctionsExtensionVersion { get; }
 
