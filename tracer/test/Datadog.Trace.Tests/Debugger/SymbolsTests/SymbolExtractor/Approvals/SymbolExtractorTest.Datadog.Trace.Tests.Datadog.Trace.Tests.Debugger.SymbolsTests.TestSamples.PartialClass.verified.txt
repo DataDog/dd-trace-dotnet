@@ -1,0 +1,134 @@
+﻿{
+  "service": "test",
+  "env": "test",
+  "version": "0",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scope_type": "assembly",
+      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "start_line": 0,
+      "end_line": 0,
+      "scopes": [
+        {
+          "scope_type": "class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
+          "start_line": 14,
+          "end_line": 26,
+          "language_specifics": {
+            "super_classes": [
+              "System.Object"
+            ]
+          },
+          "symbols": [
+            {
+              "name": "_s",
+              "type": "String",
+              "symbol_type": "Field",
+              "line": -1
+            },
+            {
+              "name": "_s2",
+              "type": "String",
+              "symbol_type": "Field",
+              "line": -1
+            }
+          ],
+          "scopes": [
+            {
+              "scope_type": "method",
+              "name": ".ctor",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+              "start_line": 14,
+              "end_line": 18,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
+              },
+              "scopes": []
+            },
+            {
+              "scope_type": "method",
+              "name": "Foo",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+              "start_line": 21,
+              "end_line": 25,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
+              },
+              "symbols": [
+                {
+                  "name": "",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
+                  "symbol_type": "Arg",
+                  "line": -1
+                },
+                {
+                  "name": "i",
+                  "type": "System.Int32",
+                  "symbol_type": "Arg",
+                  "line": -1
+                },
+                {
+                  "name": "rand",
+                  "type": "System.Random",
+                  "symbol_type": "Local",
+                  "line": 21
+                },
+                {
+                  "name": "next",
+                  "type": "System.Int32",
+                  "symbol_type": "Local",
+                  "line": 21
+                }
+              ],
+              "scopes": []
+            },
+            {
+              "scope_type": "method",
+              "name": "Bar",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
+              "start_line": 15,
+              "end_line": 19,
+              "language_specifics": {
+                "return_type": "System.Void",
+                "start_column": 9,
+                "end_column": 10
+              },
+              "symbols": [
+                {
+                  "name": "",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
+                  "symbol_type": "Arg",
+                  "line": -1
+                },
+                {
+                  "name": "i",
+                  "type": "System.Int32",
+                  "symbol_type": "Arg",
+                  "line": -1
+                },
+                {
+                  "name": "rand",
+                  "type": "System.Random",
+                  "symbol_type": "Local",
+                  "line": 15
+                },
+                {
+                  "name": "next",
+                  "type": "System.Int32",
+                  "symbol_type": "Local",
+                  "line": 15
+                }
+              ],
+              "scopes": []
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
