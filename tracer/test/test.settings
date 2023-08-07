@@ -12,7 +12,7 @@
             <InProcDataCollector
                     friendlyName="datadoginproc"
                     uri="InProcDataCollector://Datadog/collector/1.0"
-                    assemblyQualifiedName="DatadogCollector.DatadogInProcCollector, Datadog.collector, Version=0.0.40.0, Culture=neutral, PublicKeyToken=null"
+                    assemblyQualifiedName="DatadogCollector.DatadogInProcCollector, Datadog.collector, Version=0.0.42.0, Culture=neutral, PublicKeyToken=null"
                     codebase="Datadog.collector.dll"
                     enabled="True">
                 <Configuration>
