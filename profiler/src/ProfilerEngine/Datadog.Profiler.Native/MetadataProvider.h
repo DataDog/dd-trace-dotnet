@@ -10,6 +10,7 @@
 class MetadataProvider : public IMetadataProvider
 {
 public:
+    static const std::string SectionEnvVars;
     static const std::string ExceptionSampleLimit;
     static const std::string AllocationSampleLimit;
     static const std::string ContentionSampleLimit;
@@ -22,6 +23,8 @@ public:
     static const std::string GcThreadsCpuTimeEnabled;
     static const std::string InternalMetricsEnabled;
     static const std::string CoreMinimumOverride;
+
+    static const std::string SectionRuntimeSettings;
     static const std::string NbCores;
     static const std::string CpuLimit;
     static const std::string ClrVersion;
@@ -33,9 +36,14 @@ public:
 
     // Inherited via IMetadataProvider
     virtual void Initialize(IConfiguration* configuration) override;
-    virtual void Add(std::string key, std::string value) override;
-    virtual std::vector<std::pair<std::string, std::string>>& Get() override;
+    virtual void Add(std::string section, std::string key, std::string value) override;
+    virtual std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& Get() override;
 
 private:
-    std::vector<std::pair<std::string, std::string>> _metadata;
+    std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& GetOrAdd(std::string section);
+    void AddEnvVar(std::string section, std::string name, shared::WSTRING var);
+    bool GetEnvVar(shared::WSTRING name, std::string& value);
+
+        private:
+    std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>> _metadata;
 };

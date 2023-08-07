@@ -838,23 +838,40 @@ std::string LibddprofExporter::GetMetadata() const
     {
         return "";
     }
-    auto count = metadata.size();
-    auto current = 0;
+    auto sectionCount = metadata.size();
+    auto currentSection = 0;
 
     std::stringstream builder;
     builder << "{";
-    for (auto const& pair : metadata)
+    for (auto const& section : metadata)
     {
-        current++;
+        currentSection++;
 
         builder << "\"";
-        builder << pair.first;
+        builder << section.first;
         builder << "\":";
-        builder << "\"";
-        builder << pair.second;
-        builder << "\"";
+        builder << "{";
 
-        if (current < count)
+        auto keyCount = section.second.size();
+        auto currentKey = 0;
+        for (auto const& key : section.second)
+        {
+            currentKey++;
+            builder << "\"";
+            builder << key.first;
+            builder << "\":";
+            builder << "\"";
+            builder << key.second;
+            builder << "\"";
+
+            if (currentKey < keyCount)
+            {
+                builder << ", ";
+            }
+        }
+        builder << "}";
+
+        if (currentSection < sectionCount)
         {
             builder << ", ";
         }

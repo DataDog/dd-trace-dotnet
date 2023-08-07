@@ -5,22 +5,29 @@
 #include "OsSpecificApi.h"
 #include "IConfiguration.h"
 
-const std::string MetadataProvider::ExceptionSampleLimit("ExceptionSampleLimit");
-const std::string MetadataProvider::AllocationSampleLimit("AllocationSampleLimit");
-const std::string MetadataProvider::ContentionSampleLimit("ContentionSampleLimit");
-const std::string MetadataProvider::CpuWallTimeSamplingRate("CpuWallTimeSamplingRate");
-const std::string MetadataProvider::WalltimeThreadsThreshold("WalltimeThreadsThreshold");
-const std::string MetadataProvider::CpuTimeThreadsThreshold("CpuTimeThreadsThreshold");
-const std::string MetadataProvider::CodeHotspotsThreadsThreshold("CodeHotspotsThreadsThreshold");
-const std::string MetadataProvider::UseBacktrace2("UseBacktrace2");
-const std::string MetadataProvider::DebugInfoEnabled("DebugInfoEnabled");
-const std::string MetadataProvider::GcThreadsCpuTimeEnabled("GcThreadsCpuTimeEnabled");
-const std::string MetadataProvider::InternalMetricsEnabled("InternalMetricsEnabled");
-const std::string MetadataProvider::CoreMinimumOverride("CoreMinimumOverride");
-const std::string MetadataProvider::NbCores("NbCores");
-const std::string MetadataProvider::CpuLimit("CpuLimit");
-const std::string MetadataProvider::ClrVersion("ClrVersion");
-const std::string MetadataProvider::StartTime("start_time");
+#include "EnvironmentVariables.h"
+#include "shared/src/native-src/util.h"
+
+
+const std::string MetadataProvider::SectionEnvVars("Environment Variables");
+const std::string MetadataProvider::ExceptionSampleLimit("DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT");
+const std::string MetadataProvider::AllocationSampleLimit("DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT");
+const std::string MetadataProvider::ContentionSampleLimit("DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT");
+const std::string MetadataProvider::CpuWallTimeSamplingRate("DD_INTERNAL_PROFILING_SAMPLING_RATE");
+const std::string MetadataProvider::WalltimeThreadsThreshold("DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD");
+const std::string MetadataProvider::CpuTimeThreadsThreshold("DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD");
+const std::string MetadataProvider::CodeHotspotsThreadsThreshold("DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD");
+const std::string MetadataProvider::UseBacktrace2("DD_INTERNAL_USE_BACKTRACE2");
+const std::string MetadataProvider::DebugInfoEnabled("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
+const std::string MetadataProvider::GcThreadsCpuTimeEnabled("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
+const std::string MetadataProvider::InternalMetricsEnabled("DD_INTERNAL_METRICS_ENABLED");
+const std::string MetadataProvider::CoreMinimumOverride("DD_PROFILING_MIN_CORES_THRESHOLD");
+
+const std::string MetadataProvider::SectionRuntimeSettings("Runtime Settings");
+const std::string MetadataProvider::StartTime("Start Time");
+const std::string MetadataProvider::NbCores("Number of Cores");
+const std::string MetadataProvider::CpuLimit("Cpu Limit");
+const std::string MetadataProvider::ClrVersion("Clr Version");
 
 
 MetadataProvider::MetadataProvider()
@@ -30,37 +37,68 @@ MetadataProvider::MetadataProvider()
 
 void MetadataProvider::Initialize(IConfiguration* configuration)
 {
-    Add(ExceptionSampleLimit, std::to_string(configuration->ExceptionSampleLimit()));
-    Add(AllocationSampleLimit, std::to_string(configuration->AllocationSampleLimit()));
-    Add(ContentionSampleLimit, std::to_string(configuration->ContentionSampleLimit()));
-
-    auto ms = configuration->CpuWallTimeSamplingRate().count() / 1000000;
-    Add(CpuWallTimeSamplingRate, std::to_string(ms));
-    Add(WalltimeThreadsThreshold, std::to_string(configuration->WalltimeThreadsThreshold()));
-    Add(CpuTimeThreadsThreshold, std::to_string(configuration->CpuThreadsThreshold()));
-    Add(CodeHotspotsThreadsThreshold, std::to_string(configuration->CodeHotspotsThreadsThreshold()));
-    auto boolValue = configuration->UseBacktrace2();
-    Add(UseBacktrace2, (boolValue ? "true" : "false"));
-    boolValue = configuration->IsDebugInfoEnabled();
-    Add(DebugInfoEnabled, (boolValue ? "true" : "false"));
-    boolValue = configuration->IsGcThreadsCpuTimeEnabled();
-    Add(GcThreadsCpuTimeEnabled, (boolValue ? "true" : "false"));
-    boolValue = configuration->IsInternalMetricsEnabled();
-    Add(InternalMetricsEnabled, (boolValue ? "true" : "false"));
+    AddEnvVar(SectionEnvVars, ExceptionSampleLimit, EnvironmentVariables::ExceptionSampleLimit);
+    AddEnvVar(SectionEnvVars, AllocationSampleLimit, EnvironmentVariables::AllocationSampleLimit);
+    AddEnvVar(SectionEnvVars, ContentionSampleLimit, EnvironmentVariables::ContentionSampleLimit);
+    AddEnvVar(SectionEnvVars, ContentionSampleLimit, EnvironmentVariables::ContentionSampleLimit);
+    AddEnvVar(SectionEnvVars, WalltimeThreadsThreshold, EnvironmentVariables::WalltimeThreadsThreshold);
+    AddEnvVar(SectionEnvVars, CpuTimeThreadsThreshold, EnvironmentVariables::CpuTimeThreadsThreshold);
+    AddEnvVar(SectionEnvVars, CodeHotspotsThreadsThreshold, EnvironmentVariables::CodeHotspotsThreadsThreshold);
+    AddEnvVar(SectionEnvVars, UseBacktrace2, EnvironmentVariables::UseBacktrace2);
+    AddEnvVar(SectionEnvVars, DebugInfoEnabled, EnvironmentVariables::DebugInfoEnabled);
+    AddEnvVar(SectionEnvVars, GcThreadsCpuTimeEnabled, EnvironmentVariables::GcThreadsCpuTimeEnabled);
+    AddEnvVar(SectionEnvVars, InternalMetricsEnabled, EnvironmentVariables::InternalMetricsEnabled);
+    AddEnvVar(SectionEnvVars, CpuWallTimeSamplingRate, EnvironmentVariables::CpuWallTimeSamplingRate);
 
     auto st = OsSpecificApi::GetProcessStartTime();
     if (!st.empty())
     {
-        Add(StartTime, st);
+        Add(SectionRuntimeSettings, StartTime, st);
     }
 }
 
-void MetadataProvider::Add(std::string key, std::string value)
+void MetadataProvider::Add(std::string section, std::string key, std::string value)
 {
-    _metadata.push_back(std::make_pair(key, value));
+    auto& element = GetOrAdd(section);
+    element.second.push_back(std::make_pair(key, value));
 }
 
-std::vector<std::pair<std::string, std::string>>& MetadataProvider::Get()
+std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& MetadataProvider::Get()
 {
     return _metadata;
+}
+
+std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& MetadataProvider::GetOrAdd(std::string section)
+{
+    for (std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& part : _metadata)
+    {
+        if (part.first == section)
+        {
+            return part;
+        }
+    }
+
+    _metadata.push_back(std::make_pair(section, std::vector<std::pair<std::string, std::string>>()));
+    return _metadata[_metadata.size()-1];
+}
+
+void MetadataProvider::AddEnvVar(std::string section, std::string name, shared::WSTRING var)
+{
+    std::string value;
+    if (GetEnvVar(var, value))
+    {
+        Add(section, name, value);
+    }
+}
+
+bool MetadataProvider::GetEnvVar(shared::WSTRING name, std::string& value)
+{
+    auto var = shared::GetEnvironmentValue(name);
+    if (var.empty())
+    {
+        return false;
+    }
+
+    value = shared::ToString(var);
+    return true;
 }

@@ -12,8 +12,8 @@ class IMetadataProvider
 {
 public:
     virtual void Initialize(IConfiguration* configuration) = 0;
-    virtual void Add(std::string key, std::string value) = 0;
-    virtual std::vector<std::pair<std::string, std::string>>& Get() = 0;
+    virtual void Add(std::string section, std::string key, std::string value) = 0;
+    virtual std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& Get() = 0;
 
     virtual ~IMetadataProvider() = default;
 };
