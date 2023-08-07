@@ -125,8 +125,8 @@ public class AspNetCoreResourceNameHelperTests
             routePattern: duckTypedPattern,
             routeValueDictionary: Values,
             areaName: null,
-            controllerName: Values["controller"] as string,
-            actionName: Values["action"] as string,
+            controllerName: (Values["controller"] as string)?.ToLowerInvariant(),
+            actionName: (Values["action"] as string)?.ToLowerInvariant(),
             expandRouteTemplates);
 
         resource.Should().Be(expected);
@@ -142,8 +142,8 @@ public class AspNetCoreResourceNameHelperTests
             routePattern: duckTypedPattern,
             routeValueDictionary: Values,
             areaName: null,
-            controllerName: Values["controller"] as string,
-            actionName: Values["action"] as string,
+            controllerName: (Values["controller"] as string)?.ToLowerInvariant(),
+            actionName: (Values["action"] as string)?.ToLowerInvariant(),
             expandRouteTemplates);
 
         resource.Should().Be(expected);
