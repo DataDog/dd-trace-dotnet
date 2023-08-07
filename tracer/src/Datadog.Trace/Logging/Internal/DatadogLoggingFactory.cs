@@ -149,10 +149,10 @@ internal static class DatadogLoggingFactory
             }
         }
 
-        return GetDefaultLogDirectory(source, logDirectory);
+        return GetDefaultLogDirectory(source, telemetry, logDirectory);
     }
 
-    private static string GetDefaultLogDirectory(IConfigurationSource? source, string? logDirectory)
+    private static string GetDefaultLogDirectory(IConfigurationSource? source, IConfigurationTelemetry? telemetry, string? logDirectory)
     {
         // This entire block may throw a SecurityException if not granted the System.Security.Permissions.FileIOPermission
         // because of the following API calls
@@ -166,13 +166,10 @@ internal static class DatadogLoggingFactory
 #else
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
-            ImmutableAzureAppServiceSettings? aasSettings = null;
-            if (source != null)
-            {
-                aasSettings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
-            }
-
-            if (aasSettings?.IsFunctionsAppConsumptionPlan == true)
+            if (
+                source is not null &&
+                telemetry is not null &&
+                ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry))
             {
                 return isWindows ? "/home/LogFiles" : "/home/site/wwwroot";
             }

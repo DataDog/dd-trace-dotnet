@@ -139,7 +139,7 @@ namespace Datadog.Trace.Configuration
                                          .AsInt32(defaultValue: 100);
 
             GlobalTagsInternal = config
-                         // backwards compatibility for names used in the past
+                        // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
                        // Filter out tags with empty keys or empty values, and trim whitespace
@@ -339,23 +339,15 @@ namespace Datadog.Trace.Configuration
                                         .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                                         .AsBool(false);
 
-            // we only want to instantiate ImmutableAzureAppServiceSettings if we are for sure running
-            // in AAS, or if we might be running in a Consumption Plan function.
-            var isMaybeAzureFunction = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString() is not null;
-            // consumption plan Azure functions will have WEBSITE_SKU=Dynamic, or will be missing the var altogether.
-            // app service plan functions will always have a WEBSITE_SKU value, and it's never Dynamic.
-            var websiteSKUDynamicOrMissing = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString("Dynamic") is "Dynamic" or null;
-            var isMaybeAzureFunctionConsumptionPlan = isMaybeAzureFunction && websiteSKUDynamicOrMissing;
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
 
-            if (IsRunningInAzureAppService || isMaybeAzureFunctionConsumptionPlan)
+            if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
                 if (AzureAppServiceMetadata.IsUnsafeToTrace)
                 {
                     TraceEnabledInternal = false;
                 }
-
-                IsRunningInAzureFunctionsConsumptionPlan = AzureAppServiceMetadata.IsFunctionsAppConsumptionPlan;
             }
 
             GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
@@ -759,7 +751,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
         [IgnoreForSnapshot] // Changes are recorded in SetHttpServerErrorStatusCodes
-        internal bool[] HttpServerErrorStatusCodes { get; private set;  }
+        internal bool[] HttpServerErrorStatusCodes { get; private set; }
 
         /// <summary>
         /// Gets the HTTP status code that should be marked as errors for client integrations.
@@ -819,7 +811,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
         /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get;  }
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
