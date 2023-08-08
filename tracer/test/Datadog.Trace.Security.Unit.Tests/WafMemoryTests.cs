@@ -32,6 +32,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             var baseline = GetMemory();
 
+            // Reduced from 1000 to 250 reduce impact in execution time
             for (int x = 0; x < 250; x++)
             {
                 Execute(AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120");
@@ -102,7 +103,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             GC.WaitForPendingFinalizers();
             var proc = Process.GetCurrentProcess();
             proc.Refresh();
-            return proc.WorkingSet64;
+            return proc.PrivateMemorySize64;
         }
 
         private void Execute(string address, object value, string flow, string rule)
