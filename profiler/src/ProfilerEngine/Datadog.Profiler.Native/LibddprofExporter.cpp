@@ -841,7 +841,9 @@ std::string LibddprofExporter::GetMetadata() const
     auto sectionCount = metadata.size();
     auto currentSection = 0;
 
+    // the json schema is supposed to send sections under the systemInfo element
     std::stringstream builder;
+    builder << "{ \"systemInfo\": ";
     builder << "{";
     for (auto const& section : metadata)
     {
@@ -876,7 +878,7 @@ std::string LibddprofExporter::GetMetadata() const
             builder << ", ";
         }
     }
-    builder << "}";
+    builder << "}}";
 
     return builder.str();
 }
