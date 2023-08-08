@@ -12,5 +12,7 @@ namespace Datadog.Trace.Activity.DuckTypes
         ActivityStatusCode Status { get; }
 
         string StatusDescription { get; }
+
+        IActivity6 SetStatus(ActivityStatusCode code, string? description);
     }
 }

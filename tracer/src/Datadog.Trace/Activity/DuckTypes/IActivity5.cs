@@ -12,7 +12,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 {
     internal interface IActivity5 : IW3CActivity
     {
-        string DisplayName { get; }
+        string DisplayName { get; set; }
 
         bool IsAllDataRequested { get; set; }
 

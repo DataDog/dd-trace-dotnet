@@ -23,6 +23,11 @@ public static class Program
 
         ActivitySource.AddActivityListener(activityListener);
 
+        using (var ddSpan = Datadog.Trace.Tracer.Instance.StartActive("me"))
+        {
+
+        }
+
         using (var rootSpan = _source.StartActivity("RootSpan")) // 1 span (total 1)
         {
             RunActivityAddTags(); // 1 span (total 2)
