@@ -3,34 +3,121 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Threading;
+using Avalonia.Media;
+using Avalonia.Media.Imaging;
+using Avalonia.Platform;
 using dnlib.DotNet;
 
 namespace Datadog.AutoInstrumentation.Generator.ViewModels;
 
 internal class Node
 {
-    public Node(IDnlibDef dnlibDef)
+    private static readonly IImage AssemblyIcon;
+    private static readonly IImage ModuleIcon;
+    private static readonly IImage NamespaceIcon;
+    private static readonly IImage ClassAbstractIcon;
+    private static readonly IImage ClassPrivateIcon;
+    private static readonly IImage ClassPublicIcon;
+    private static readonly IImage StructPrivateIcon;
+    private static readonly IImage StructPublicIcon;
+    private static readonly IImage InterfacePrivateIcon;
+    private static readonly IImage InterfacePublicIcon;
+    private static readonly IImage MethodInternalIcon;
+    private static readonly IImage MethodPrivateIcon;
+    private static readonly IImage MethodProtectedIcon;
+    private static readonly IImage MethodPublicIcon;
+
+    static Node()
     {
-        Definition = dnlibDef;
-        FullName = dnlibDef.FullName;
-        Children = GetChildren(Definition);
-        switch (dnlibDef)
+        AssemblyIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/Assembly.png")));
+        ModuleIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/Module.png")));
+        NamespaceIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/Namespace.png")));
+        // .
+        ClassAbstractIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/AbstractClass.png")));
+        ClassPrivateIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/ClassPrivate.png")));
+        ClassPublicIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/ClassPublic.png")));
+        // .
+        StructPrivateIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/StructurePrivate.png")));
+        StructPublicIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/StructurePublic.png")));
+        // .
+        InterfacePrivateIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/InterfacePrivate.png")));
+        InterfacePublicIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/InterfacePublic.png")));
+        // .
+        MethodInternalIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/MethodInternal.png")));
+        MethodPrivateIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/MethodPrivate.png")));
+        MethodProtectedIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/MethodProtected.png")));
+        MethodPublicIcon = new Bitmap(AssetLoader.Open(new Uri("avares://Datadog.AutoInstrumentation.Generator/Assets/MethodPublic.png")));
+    }
+
+    public Node(object definition)
+    {
+        Definition = definition;
+        Children = GetChildren(definition);
+        IconFile = null;
+        switch (definition)
         {
-            case AssemblyDef:
+            case AssemblyDef assemblyDef:
+                FullName = assemblyDef.FullName;
                 Expanded = true;
-                IsAssembly = true;
+                IconFile = AssemblyIcon;
                 break;
-            case ModuleDef:
+            case ModuleDef moduleDef:
+                FullName = moduleDef.FullName;
                 Expanded = true;
-                IsModule = true;
+                IconFile = ModuleIcon;
                 break;
-            case TypeDef:
-                IsType = true;
+            case TypeDef typeDef:
+                FullName = typeDef.Name;
+                var isTypeAbstract = typeDef.IsAbstract;
+                var isTypePublic = typeDef.IsPublic || typeDef.IsNestedPublic;
+                if (typeDef.IsInterface)
+                {
+                    IconFile = isTypePublic ? InterfacePublicIcon : InterfacePrivateIcon;
+                }
+                else if (typeDef.IsValueType)
+                {
+                    IconFile = isTypePublic ? StructPublicIcon : StructPrivateIcon;
+                }
+                else
+                {
+                    IconFile = isTypePublic ? ClassPublicIcon : isTypeAbstract ? ClassAbstractIcon : ClassPrivateIcon;
+                }
+
                 break;
-            case MethodDef:
-                IsMethod = true;
+            case MethodDef methodDef:
+                FullName = FullNameFactory.MethodFullName(null, methodDef.Name, methodDef.MethodSig);
+                var isPublic = methodDef.IsPublic;
+                var isInternal = methodDef is { IsPublic: false, IsAssembly: true };
+                var isProtected = methodDef is { IsPublic: false, IsFamily: true };
+                var isPrivate = methodDef is { IsPrivate: true, IsFamilyOrAssembly: false };
+                if (isPublic)
+                {
+                    IconFile = MethodPublicIcon;
+                }
+                else if (isPrivate)
+                {
+                    IconFile = MethodPrivateIcon;
+                }
+                else if (isInternal)
+                {
+                    IconFile = MethodInternalIcon;
+                }
+                else if (isProtected)
+                {
+                    IconFile = MethodProtectedIcon;
+                }
+
+                break;
+            case IGrouping<string, TypeDef> group:
+                FullName = group.Key;
+                IconFile = NamespaceIcon;
+                break;
+            default:
+                FullName = string.Empty;
                 break;
         }
     }
@@ -39,19 +126,13 @@ internal class Node
 
     public string FullName { get; }
 
-    public IDnlibDef Definition { get; }
+    public object? Definition { get; }
 
     public bool Expanded { get; }
 
-    public bool IsAssembly { get; }
+    public IImage? IconFile { get; }
 
-    public bool IsModule { get; }
-
-    public bool IsType { get; }
-
-    public bool IsMethod { get; }
-
-    private static ObservableCollection<Node>? GetChildren(IDnlibDef definition)
+    private static ObservableCollection<Node>? GetChildren(object definition)
     {
         ObservableCollection<Node>? children = null;
 
@@ -69,13 +150,34 @@ internal class Node
 
             case ModuleDef moduleDef:
             {
-                foreach (var typeDef in moduleDef.Types.OrderBy(t => t.FullName))
-                {
-                    if (typeDef.IsInterface)
-                    {
-                        continue;
-                    }
+                var typesByGroup = moduleDef.Types
+                                            .Where(t => !t.IsEnum)
+                                            .OrderBy(t => t.FullName)
+                                            .GroupBy(g => g.Namespace.String)
+                                            .ToArray();
 
+                foreach (var group in typesByGroup)
+                {
+                    if (string.IsNullOrEmpty(group.Key))
+                    {
+                        foreach (var typeDef in group)
+                        {
+                            FillChildren(ref children, typeDef);
+                        }
+                    }
+                    else
+                    {
+                        FillChildren(ref children, group);
+                    }
+                }
+
+                break;
+            }
+
+            case IGrouping<string, TypeDef> group:
+            {
+                foreach (var typeDef in group)
+                {
                     FillChildren(ref children, typeDef);
                 }
 
@@ -95,11 +197,10 @@ internal class Node
 
         return children;
 
-        static void FillChildren<T>(ref ObservableCollection<Node>? children, T item)
-            where T : IDnlibDef
+        static void FillChildren(ref ObservableCollection<Node>? children, object item)
         {
             var childrenOfNode = GetChildren(item);
-            if (typeof(T) != typeof(MethodDef) && (childrenOfNode is null || childrenOfNode.Count == 0))
+            if (item is not MethodDef && (childrenOfNode is null || childrenOfNode.Count == 0))
             {
                 return;
             }

@@ -27,10 +27,10 @@
 
         <DockPanel>
             <StackPanel DockPanel.Dock="Top">
-                <Grid ColumnDefinitions="35, *" Height="28" Background="#80000000">
-                    <Panel Grid.Column="0">
+                <Grid ColumnDefinitions="40, *" Height="34" Background="#2b2d30">
+                    <Panel Grid.Column="0" Margin="5 2">
                         <Button Background="Transparent" Command="{Binding OpenFileCommand}">
-                            <Image Source="/Assets/open-folder.png"/>
+                            <Image Source="/Assets/OpenFolder.png" ToolTip.Tip="Open Assembly" />
                         </Button>
                     </Panel>
                     <TextBlock Grid.Column="1"
@@ -45,7 +45,7 @@
 
             <Grid ColumnDefinitions="450, 4, *, 240">
                 <Panel Grid.Column="0" Background="#80000000">
-                    <TreeView
+                    <TreeView 
                         ItemsSource="{Binding Items}" SelectedItems="{Binding SelectedItems}"
                         FontFamily="Sans Serif"
                         FontSize="12"
@@ -58,11 +58,10 @@
                         </TreeView.Styles>
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate ItemsSource="{Binding Children}">
-                                <Panel HorizontalAlignment="Left" Margin="0 5">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBlock Text="{Binding FullName}" Foreground="LightGray" />
-                                    </StackPanel>
-                                </Panel>
+                                <Grid ColumnDefinitions="23, *">
+                                    <Image Grid.Column="0" Source="{Binding IconFile}" Width="16" Height="16" HorizontalAlignment="Left" />
+                                    <TextBlock Grid.Column="1" Text="{Binding FullName}" Foreground="LightGray" HorizontalAlignment="Left" />
+                                </Grid>
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>
                     </TreeView>
