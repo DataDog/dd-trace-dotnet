@@ -44,17 +44,26 @@
             </StackPanel>
 
             <Grid ColumnDefinitions="450, 4, *, 240">
-                <Panel Grid.Column="0" Background="#70000000">
+                <Panel Grid.Column="0" Background="#80000000">
                     <TreeView
                         ItemsSource="{Binding Items}" SelectedItems="{Binding SelectedItems}"
                         FontFamily="Sans Serif"
                         FontSize="12"
-                        FontWeight="Thin"
+                        FontWeight="Normal"
                         Margin="5">
+                        <TreeView.Resources>
+                        </TreeView.Resources>
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).Expanded}"></Setter>
+                            </Style>
+                        </TreeView.Styles>
                         <TreeView.ItemTemplate>
                             <TreeDataTemplate ItemsSource="{Binding Children}">
                                 <Panel HorizontalAlignment="Left" Margin="0 5">
-                                    <TextBlock Text="{Binding FullName}" Foreground="LightGray" />
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBlock Text="{Binding FullName}" Foreground="LightGray" />
+                                    </StackPanel>
                                 </Panel>
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>

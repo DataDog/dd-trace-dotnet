@@ -6,7 +6,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.IO;
-using System.Linq;
 using dnlib.DotNet;
 using ReactiveUI;
 
@@ -54,84 +53,5 @@ internal partial class MainViewModel
         SelectedItems.Clear();
         var assemblyDef = AssemblyDef.Load(assemblyStream);
         Items.Add(new Node(assemblyDef));
-    }
-
-    public class Node
-    {
-        public Node(IDnlibDef dnlibDef)
-        {
-            Definition = dnlibDef;
-            FullName = dnlibDef.FullName;
-            Children = GetChildren(Definition);
-        }
-
-        public ObservableCollection<Node>? Children { get; set; }
-
-        public string FullName { get; }
-
-        public IDnlibDef Definition { get; }
-
-        private static ObservableCollection<Node>? GetChildren(IDnlibDef definition)
-        {
-            ObservableCollection<Node>? children = null;
-
-            switch (definition)
-            {
-                case AssemblyDef assemblyDef:
-                {
-                    foreach (var moduleDef in assemblyDef.Modules.OrderBy(m => m.FullName))
-                    {
-                        FillChildren(ref children, moduleDef);
-                    }
-
-                    break;
-                }
-
-                case ModuleDef moduleDef:
-                {
-                    foreach (var typeDef in moduleDef.Types.OrderBy(t => t.FullName))
-                    {
-                        if (typeDef.IsInterface)
-                        {
-                            continue;
-                        }
-
-                        FillChildren(ref children, typeDef);
-                    }
-
-                    break;
-                }
-
-                case TypeDef typeDef:
-                {
-                    foreach (var methodDef in typeDef.Methods.OrderBy(m => m.Name))
-                    {
-                        FillChildren(ref children, methodDef);
-                    }
-
-                    break;
-                }
-            }
-
-            return children;
-
-            static void FillChildren<T>(ref ObservableCollection<Node>? children, T item)
-                where T : IDnlibDef
-            {
-                var childrenOfNode = GetChildren(item);
-                if (typeof(T) != typeof(MethodDef) && (childrenOfNode is null || childrenOfNode.Count == 0))
-                {
-                    return;
-                }
-
-                var node = new Node(item)
-                {
-                    Children = childrenOfNode
-                };
-
-                children ??= new ObservableCollection<Node>();
-                children.Add(node);
-            }
-        }
     }
 }
