@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodReplace(\"System.Uri::get_Authority()\",\"\",[0],[False],[None],Propagation,[])] GetAuthority(System.Uri)",
 "  [AspectMethodReplace(\"System.Uri::get_Query()\",\"\",[0],[False],[None],Propagation,[])] GetQuery(System.Uri)",
 "  [AspectMethodReplace(\"System.Object::ToString()\",\"System.Uri\",[0],[False],[None],Propagation,[])] ToString(System.Object)",
-"[AspectClass(\"System,netstandard,System.Runtime.Extensions,System.Runtime\",[None],Propagation,[])] Hdiv.AST.Aspects.System.UriBuilderAspect",
+"[AspectClass(\"System,netstandard,System.Runtime.Extensions,System.Runtime\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.System.UriBuilderAspect",
 "  [AspectCtorReplace(\"System.UriBuilder::.ctor(System.String)\",\"\",[0],[False],[StringLiteral_1],Propagation,[])] Init(System.String)",
 "  [AspectCtorReplace(\"System.UriBuilder::.ctor(System.Uri)\",\"\",[0],[False],[None],Propagation,[])] Init(System.Uri)",
 "  [AspectCtorReplace(\"System.UriBuilder::.ctor(System.String,System.String)\",\"\",[0],[False],[None],Propagation,[])] Init(System.String,System.String)",
