@@ -60,7 +60,11 @@
                             <TreeDataTemplate ItemsSource="{Binding Children}">
                                 <Grid ColumnDefinitions="23, *">
                                     <Image Grid.Column="0" Source="{Binding IconFile}" Width="16" Height="16" HorizontalAlignment="Left" />
-                                    <TextBlock Grid.Column="1" Text="{Binding FullName}" Foreground="LightGray" HorizontalAlignment="Left" />
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Left" Orientation="Horizontal">
+                                        <TextBlock Text="{Binding ReturnName}" Foreground="Gray" HorizontalAlignment="Left" FontWeight="Thin" />
+                                        <TextBlock Text="{Binding Name}" Foreground="LightGray" HorizontalAlignment="Left" />
+                                        <TextBlock Text="{Binding Arguments}" Foreground="Gray" HorizontalAlignment="Left" FontWeight="Thin" />
+                                    </StackPanel>
                                 </Grid>
                             </TreeDataTemplate>
                         </TreeView.ItemTemplate>

@@ -6,7 +6,6 @@
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
 using Avalonia.Media;
 using Avalonia.Media.Imaging;
 using Avalonia.Platform;
@@ -55,23 +54,25 @@ internal class Node
 
     public Node(object definition)
     {
+        ReturnName = null;
+        Arguments = null;
         Definition = definition;
         Children = GetChildren(definition);
         IconFile = null;
         switch (definition)
         {
             case AssemblyDef assemblyDef:
-                FullName = assemblyDef.FullName;
+                Name = assemblyDef.FullName;
                 Expanded = true;
                 IconFile = AssemblyIcon;
                 break;
             case ModuleDef moduleDef:
-                FullName = moduleDef.FullName;
+                Name = moduleDef.FullName;
                 Expanded = true;
                 IconFile = ModuleIcon;
                 break;
             case TypeDef typeDef:
-                FullName = typeDef.Name;
+                Name = typeDef.Name;
                 var isTypeAbstract = typeDef.IsAbstract;
                 var isTypePublic = typeDef.IsPublic || typeDef.IsNestedPublic;
                 if (typeDef.IsInterface)
@@ -89,7 +90,10 @@ internal class Node
 
                 break;
             case MethodDef methodDef:
-                FullName = FullNameFactory.MethodFullName(null, methodDef.Name, methodDef.MethodSig);
+                var sigString = methodDef.MethodSig.ToString() ?? "()";
+                ReturnName = methodDef.MethodSig.RetType.FullName + " ";
+                Name = methodDef.Name;
+                Arguments = sigString.Substring(sigString.IndexOf('('));
                 var isPublic = methodDef.IsPublic;
                 var isInternal = methodDef is { IsPublic: false, IsAssembly: true };
                 var isProtected = methodDef is { IsPublic: false, IsFamily: true };
@@ -113,18 +117,22 @@ internal class Node
 
                 break;
             case IGrouping<string, TypeDef> group:
-                FullName = group.Key;
+                Name = group.Key;
                 IconFile = NamespaceIcon;
                 break;
             default:
-                FullName = string.Empty;
+                Name = string.Empty;
                 break;
         }
     }
 
     public ObservableCollection<Node>? Children { get; set; }
 
-    public string FullName { get; }
+    public string? ReturnName { get; }
+
+    public string Name { get; }
+
+    public string? Arguments { get; }
 
     public object? Definition { get; }
 
