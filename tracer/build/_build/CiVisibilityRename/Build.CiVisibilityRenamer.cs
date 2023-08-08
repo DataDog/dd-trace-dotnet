@@ -63,35 +63,31 @@ partial class Build
         } while (toRename.Count > 0); // do the loop to catch cases where we moved stuff
 
         // Find files to rename and replace known strings
-        do
+        toRename.Clear();
+        var sb = new StringBuilder(5000);
+        foreach (var file in Directory.GetFiles(RootDirectory, "*", SearchOption.AllDirectories))
         {
-
-            toRename.Clear();
-            var sb = new StringBuilder(5000);
-            foreach (var file in Directory.EnumerateFiles(RootDirectory, "*", SearchOption.AllDirectories))
+            if (Path.GetExtension(file) is ".cs" or ".csproj" or ".vcxproj" or ".sln" or "props" or ".conf" or ".h" or ".cpp" or ".slnf" or ".snk" or ".yml" or ".json")
             {
-                if (Path.GetExtension(file) is ".cs" or ".csproj" or ".vcxproj" or ".sln" or "props" or ".conf" or ".h" or ".cpp" or ".slnf" or ".snk" or ".yml" or ".json")
+                var filename = Path.GetFileName(file);
+                if (filename.Contains(oldDatadogTraceName) || filename.Contains(oldNativeName) || filename.Contains(oldDdTraceName))
                 {
-                    var filename = Path.GetFileName(file);
-                    if (filename.Contains(oldDatadogTraceName) || filename.Contains(oldNativeName) || filename.Contains(oldDdTraceName))
-                    {
-                        toRename.Add(file);
-                    }
-
-                    ReplaceFile(sb, file);
+                    toRename.Add(file);
                 }
-            }
 
-            // rename files
-            foreach (var path in toRename)
-            {
-                var newName = Path.GetFileName(path)
-                    .Replace(oldNativeName, newNativeName)
-                    .Replace(oldDatadogTraceName, newDatadogTraceName)
-                    .Replace(oldDdTraceName, newDdTraceName);
-                FileSystemTasks.RenameFile(path, newName);
+                ReplaceFile(sb, file);
             }
-        } while (toRename.Count > 0); // do the loop to catch cases where we moved stuff
+        }
+
+        // rename files
+        foreach (var path in toRename)
+        {
+            var newName = Path.GetFileName(path)
+                .Replace(oldNativeName, newNativeName)
+                .Replace(oldDatadogTraceName, newDatadogTraceName)
+                .Replace(oldDdTraceName, newDdTraceName);
+            FileSystemTasks.RenameFile(path, newName);
+        }
 
         // Update new public key here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h#L122-L130
         return Task.CompletedTask;
