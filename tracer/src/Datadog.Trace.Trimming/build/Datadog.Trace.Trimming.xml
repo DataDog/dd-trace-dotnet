@@ -169,6 +169,7 @@
    </assembly>
    <assembly fullname="System.Data" />
    <assembly fullname="System.Data.Common">
+      <type fullname="System.Data.CommandType" />
       <type fullname="System.Data.Common.DbCommand" />
       <type fullname="System.Data.Common.DbConnectionStringBuilder" />
       <type fullname="System.Data.DataColumn" />
@@ -198,6 +199,8 @@
       <type fullname="System.Diagnostics.DiagnosticListener" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
+      <type fullname="System.Diagnostics.DataReceivedEventArgs" />
+      <type fullname="System.Diagnostics.DataReceivedEventHandler" />
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />

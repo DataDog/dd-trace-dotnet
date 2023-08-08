@@ -511,7 +511,10 @@ void LibddprofExporter::AddUpscalingRules(ddog_prof_Profile* profile, std::vecto
             if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
             {
                 auto errorMessage = ddog_Error_message(&upscalingRuleAdd.err);
-                Log::Info("Failed to add an upscaling rule: ", std::string_view(errorMessage.ptr, errorMessage.len));
+                Log::Warn(
+                    "Failed to add an upscaling rule (", group.Group, ", ", upscalingInfo.LabelName, ") - [",
+                    sampled, "/", real, "]:",
+                    std::string_view(errorMessage.ptr, errorMessage.len));
                 ddog_Error_drop(&upscalingRuleAdd.err);
             }
         }
@@ -546,10 +549,14 @@ bool LibddprofExporter::Export()
     {
         const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(""));
         auto filePath = GenerateFilePath(applicationInfo.ServiceName, idx, AllocationsExtension);
-
+        static bool firstFailure = true;
         if (!_allocationsRecorder->Serialize(filePath))
         {
-            Log::Warn("Failed to serialize allocations in ", filePath);
+            if (firstFailure)
+            {
+                firstFailure = false;
+                Log::Warn("Failed to serialize allocations in ", filePath);
+            }
         }
     }
 
@@ -632,7 +639,6 @@ bool LibddprofExporter::Export()
         }
 
         auto* exporter = CreateExporter(_exporterBaseTags.GetFfiTags(), _endpoint);
-
         if (exporter == nullptr)
         {
             Log::Error("Unable to create exporter for application ", runtimeId);

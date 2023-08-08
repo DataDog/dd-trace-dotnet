@@ -27,11 +27,17 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] OperationBytes = new byte[] { 173, 97, 119, 115, 46, 111, 112, 101, 114, 97, 116, 105, 111, 110 };
 #endif
-        // RegionBytes = MessagePack.Serialize("aws.region");
+        // AwsRegionBytes = MessagePack.Serialize("aws.region");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> RegionBytes => new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        private static ReadOnlySpan<byte> AwsRegionBytes => new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
 #else
-        private static readonly byte[] RegionBytes = new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+        private static readonly byte[] AwsRegionBytes = new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
+#endif
+        // RegionBytes = MessagePack.Serialize("region");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> RegionBytes => new byte[] { 166, 114, 101, 103, 105, 111, 110 };
+#else
+        private static readonly byte[] RegionBytes = new byte[] { 166, 114, 101, 103, 105, 111, 110 };
 #endif
         // RequestIdBytes = MessagePack.Serialize("aws.requestId");
 #if NETCOREAPP
@@ -39,11 +45,17 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] RequestIdBytes = new byte[] { 173, 97, 119, 115, 46, 114, 101, 113, 117, 101, 115, 116, 73, 100 };
 #endif
-        // ServiceBytes = MessagePack.Serialize("aws.service");
+        // AwsServiceBytes = MessagePack.Serialize("aws.service");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        private static ReadOnlySpan<byte> AwsServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
 #else
-        private static readonly byte[] ServiceBytes = new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+        private static readonly byte[] AwsServiceBytes = new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
+#endif
+        // ServiceBytes = MessagePack.Serialize("aws_service");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ServiceBytes => new byte[] { 171, 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
+#else
+        private static readonly byte[] ServiceBytes = new byte[] { 171, 97, 119, 115, 95, 115, 101, 114, 118, 105, 99, 101 };
 #endif
         // HttpMethodBytes = MessagePack.Serialize("http.method");
 #if NETCOREAPP
@@ -71,9 +83,11 @@ namespace Datadog.Trace.Tagging
                 "component" => InstrumentationName,
                 "aws.agent" => AgentName,
                 "aws.operation" => Operation,
-                "aws.region" => Region,
+                "aws.region" => AwsRegion,
+                "region" => Region,
                 "aws.requestId" => RequestId,
-                "aws.service" => Service,
+                "aws.service" => AwsService,
+                "aws_service" => Service,
                 "http.method" => HttpMethod,
                 "http.url" => HttpUrl,
                 "http.status_code" => HttpStatusCode,
@@ -88,13 +102,13 @@ namespace Datadog.Trace.Tagging
                 case "aws.operation": 
                     Operation = value;
                     break;
-                case "aws.region": 
+                case "region": 
                     Region = value;
                     break;
                 case "aws.requestId": 
                     RequestId = value;
                     break;
-                case "aws.service": 
+                case "aws_service": 
                     Service = value;
                     break;
                 case "http.method": 
@@ -108,6 +122,8 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "component": 
                 case "aws.agent": 
+                case "aws.region": 
+                case "aws.service": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSdkTags));
                     break;
                 default: 
@@ -133,9 +149,14 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aws.operation", Operation, OperationBytes));
             }
 
+            if (AwsRegion is not null)
+            {
+                processor.Process(new TagItem<string>("aws.region", AwsRegion, AwsRegionBytes));
+            }
+
             if (Region is not null)
             {
-                processor.Process(new TagItem<string>("aws.region", Region, RegionBytes));
+                processor.Process(new TagItem<string>("region", Region, RegionBytes));
             }
 
             if (RequestId is not null)
@@ -143,9 +164,14 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("aws.requestId", RequestId, RequestIdBytes));
             }
 
+            if (AwsService is not null)
+            {
+                processor.Process(new TagItem<string>("aws.service", AwsService, AwsServiceBytes));
+            }
+
             if (Service is not null)
             {
-                processor.Process(new TagItem<string>("aws.service", Service, ServiceBytes));
+                processor.Process(new TagItem<string>("aws_service", Service, ServiceBytes));
             }
 
             if (HttpMethod is not null)
@@ -189,9 +215,16 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (Region is not null)
+            if (AwsRegion is not null)
             {
                 sb.Append("aws.region (tag):")
+                  .Append(AwsRegion)
+                  .Append(',');
+            }
+
+            if (Region is not null)
+            {
+                sb.Append("region (tag):")
                   .Append(Region)
                   .Append(',');
             }
@@ -203,9 +236,16 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (Service is not null)
+            if (AwsService is not null)
             {
                 sb.Append("aws.service (tag):")
+                  .Append(AwsService)
+                  .Append(',');
+            }
+
+            if (Service is not null)
+            {
+                sb.Append("aws_service (tag):")
                   .Append(Service)
                   .Append(',');
             }

@@ -9,6 +9,12 @@ namespace Datadog.Trace.Ci.Tagging
 {
     partial class TestModuleSpanTags
     {
+        // IntelligentTestRunnerSkippingCountBytes = MessagePack.Serialize("test.itr.tests_skipping.count");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> IntelligentTestRunnerSkippingCountBytes => new byte[] { 189, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 99, 111, 117, 110, 116 };
+#else
+        private static readonly byte[] IntelligentTestRunnerSkippingCountBytes = new byte[] { 189, 116, 101, 115, 116, 46, 105, 116, 114, 46, 116, 101, 115, 116, 115, 95, 115, 107, 105, 112, 112, 105, 110, 103, 46, 99, 111, 117, 110, 116 };
+#endif
         // TypeBytes = MessagePack.Serialize("test.type");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> TypeBytes => new byte[] { 169, 116, 101, 115, 116, 46, 116, 121, 112, 101 };
@@ -278,6 +284,49 @@ namespace Datadog.Trace.Ci.Tagging
             }
 
             base.WriteAdditionalTags(sb);
+        }
+        public override double? GetMetric(string key)
+        {
+            return key switch
+            {
+                "test.itr.tests_skipping.count" => IntelligentTestRunnerSkippingCount,
+                _ => base.GetMetric(key),
+            };
+        }
+
+        public override void SetMetric(string key, double? value)
+        {
+            switch(key)
+            {
+                case "test.itr.tests_skipping.count": 
+                    Logger.Value.Warning("Attempted to set readonly metric {MetricName} on {TagType}. Ignoring.", key, nameof(TestModuleSpanTags));
+                    break;
+                default: 
+                    base.SetMetric(key, value);
+                    break;
+            }
+        }
+
+        public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
+        {
+            if (IntelligentTestRunnerSkippingCount is not null)
+            {
+                processor.Process(new TagItem<double>("test.itr.tests_skipping.count", IntelligentTestRunnerSkippingCount.Value, IntelligentTestRunnerSkippingCountBytes));
+            }
+
+            base.EnumerateMetrics(ref processor);
+        }
+
+        protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
+        {
+            if (IntelligentTestRunnerSkippingCount is not null)
+            {
+                sb.Append("test.itr.tests_skipping.count (metric):")
+                  .Append(IntelligentTestRunnerSkippingCount.Value)
+                  .Append(',');
+            }
+
+            base.WriteAdditionalMetrics(sb);
         }
     }
 }

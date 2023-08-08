@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
@@ -203,6 +204,9 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
+            // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
+            ServerlessMiniAgent.StartServerlessMiniAgent(Settings);
+
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
@@ -523,6 +527,9 @@ namespace Datadog.Trace
 
                     writer.WritePropertyName("stats_computation_enabled");
                     writer.WriteValue(instanceSettings.StatsComputationEnabledInternal);
+
+                    writer.WritePropertyName("dbm_propagation_mode");
+                    writer.WriteValue(instanceSettings.DbmPropagationMode.ToString());
 
                     writer.WritePropertyName("header_tags");
                     WriteDictionary(instanceSettings.HeaderTagsInternal);

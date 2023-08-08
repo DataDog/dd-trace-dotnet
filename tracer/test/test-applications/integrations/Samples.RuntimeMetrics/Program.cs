@@ -20,6 +20,15 @@ namespace Samples.RuntimeMetrics
 
             new Thread(GenerateEvents) { IsBackground = true }.Start();
 
+            /*
+             * We need runtime metrics to be refreshed at least twice to have the contention metrics
+             * (because it needs a previous value to compute the variation).
+             * Because of the asynchronous initialization of the performance counters, we sometimes
+             * miss the first refresh. 
+             * 
+             * We wait 30 seconds here to ensure that we'll have at least two refreshes.
+             */
+
             Thread.Sleep(30000);
 
             Console.WriteLine("Exiting");

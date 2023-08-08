@@ -20,6 +20,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set SHA
+        id: set_sha
+        run: |
+          if [ -z "${{ github.event.inputs.forced_commit_id }}" ]; then
+              commitsha="${GITHUB_SHA}"
+          else
+              commitsha="${{ github.event.inputs.forced_commit_id }}"
+          fi
+          echo "Using sha $commitsha"
+          echo "sha=${commitsha}" >> $GITHUB_OUTPUT
+
       - uses: actions/setup-dotnet@v1
         with:
           dotnet-version: '7.0.306'
@@ -38,7 +49,7 @@ jobs:
         run: ./tracer/build.sh DownloadReleaseArtifacts
         env:
           TargetBranch: ${{ github.event.ref }}
-          CommitSha: "${{ github.event.inputs.forced_commit_id }}"
+          CommitSha: "${{ steps.set_sha.outputs.sha }}"
 
       - name: "Generate release notes"
         id: release_notes
@@ -76,20 +87,6 @@ jobs:
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.msi
             ${{steps.assets.outputs.gitlab_artifacts_path}}/*.zip
             ${{steps.assets.outputs.sha_path}}
-
-      - name: "Trigger Docker Base Images Github Pipeline"
-        run: |
-          curl \
-          -X POST \
-          -H "Accept: application/vnd.github+json" \
-          -H "Authorization: token $GITHUB_TOKEN"\
-          -H "X-GitHub-Api-Version: 2022-11-28" \
-          https://api.github.com/repos/DataDog/dd-trace-dotnet/actions/workflows/docker-base-images.yml/dispatches \
-          -d '{"event_type": "Trigger Workflow","inputs":{"targetBranch":"$targetBranch","commitSha":"$commitSha"}}'
-        env:
-          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
-          targetBranch: ${{ github.event.ref }}
-          commitSha: "${{ github.event.inputs.forced_commit_id }}"
 
       - name: "Publish nuget packages to nuget.org"
         working-directory: ${{steps.assets.outputs.artifacts_path}}

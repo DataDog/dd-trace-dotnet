@@ -4,6 +4,43 @@
 
 
 
+
+## [Release 2.35.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.35.0)
+
+## Summary
+
+This release mainly contains the last details of the preparatory work for the new service representation. It also disables the DBM and APM connection when executing a `StoredProcedure` command.
+
+## Changes
+
+### Tracer
+* [Tracer] v1 Schema: Update AWS SNS spans (#4427)
+* [Tracer] Add peer.service to RabbitMQ integration (#4341)
+* [Tracer] Avoid including peer.service in kafka inbound flow (#4428)
+* [Tracer] Separate inbound, outbound and client flows for msmq (#4432)
+* [Tracer] Add peer.service to Service Remoting integration (#4435)
+* [Tracer] Don't inject DBM data into stored procedures (#4466)
+* [Tracer] Ensure the configuration of the trace context propagator is included in our telemetry (#4460)
+
+### Miscellaneous
+* [RabbitMQ] Add tracing for basic.consume, and add queue name as tag to DSM data on consume (#4398)
+* Add known limitations from method_rewriter.cpp to docs (#4405)
+* Update duck typing docs (#4417)
+* [Test Package Versions Bump] Updating package versions (#4441)
+
+### Build / Test
+* Fix aspect definition order once and for all (#4438)
+* Various test improvements (#4439)
+* Fix `create_draft_release` when not specifying a specific commit (#4446)
+* Update the Rel Env docker-image workflow (#4448)
+* Change di backend repo to run dogfood pipelines (#4449)
+* [Release] Remove the extra CI variables (#4452)
+* Tweak GitLab jobs (#4453)
+* Fix flaky rabbitmq datastreams test (#4457)
+
+
+[Changes since 2.34.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.34.0...v2.35.0)
+
 ## [Release 2.34.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.34.0)
 
 ## Summary

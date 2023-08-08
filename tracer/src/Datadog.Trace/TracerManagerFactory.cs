@@ -164,7 +164,15 @@ namespace Datadog.Trace
                 // Service Name must be lowercase, otherwise the agent will not be able to find the service
                 var serviceName = TraceUtil.NormalizeTag(settings.ServiceNameInternal ?? defaultServiceName);
 
-                remoteConfigurationManager = RemoteConfigurationManager.Create(discoveryService, rcmApi, rcmSettings, serviceName, settings, gitMetadataTagsProvider, RcmSubscriptionManager.Instance);
+                remoteConfigurationManager =
+                    RemoteConfigurationManager.Create(
+                        discoveryService,
+                        rcmApi,
+                        rcmSettings,
+                        serviceName,
+                        settings,
+                        gitMetadataTagsProvider,
+                        RcmSubscriptionManager.Instance);
 
                 TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
             }

@@ -77,7 +77,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
         auto dtTable = m->GetTableReader<PPDB::DocumentTableReader>();
         if (dtTable == nullptr)
         {
-            Log::Info("Unable to get the DocumentTable from the PDB file ", pdbFile, ".");
+            Log::Warn("Unable to get the DocumentTable from the PDB file ", pdbFile, ".");
             return;
         }
 
@@ -96,7 +96,7 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
         }
 
         auto mdiTable = m->GetTableReader<PPDB::MethodDebugInformationTableReader>();
-        Log::Debug("Reading MethodDebugInformationTabe: ", mdiTable->RowCount(), " row(s)");
+        Log::Debug("Reading MethodDebugInformationTable: ", mdiTable->RowCount(), " row(s)");
 
         moduleInfo.SymbolsDebugInfo.reserve(mdiTable->RowCount() + 1);
 
@@ -124,12 +124,12 @@ void DebugInfoStore::ParseModuleDebugInfo(ModuleID moduleId)
     }
     catch (PPDB::Exception const& ec)
     {
-        Log::Info("Failed to parse debug info from ", pdbFile,
+        Log::Warn("Failed to parse debug info from ", pdbFile,
                   ".(Error name: ", ec.Name, ", code: ", std::hex, static_cast<std::uint32_t>(ec.Error), ", metadata table: ", static_cast<std::uint32_t>(ec.Table), ")");
     }
     catch (...)
     {
-        Log::Info("Unexpected error happened while parsing the pdb file ", pdbFile);
+        Log::Warn("Unexpected error happened while parsing the pdb file: ", pdbFile);
     }
 }
 

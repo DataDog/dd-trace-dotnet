@@ -46,7 +46,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void IntegrationDisabled()
         {
-            const int totalSpanCount = 5;
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "false");
@@ -54,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var telemetry = this.ConfigureTelemetry();
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(totalSpanCount, returnAllOperations: true);
+            var spans = agent.Spans; // no spans expected
 
             Assert.Empty(spans.Where(s => s.Name.Equals(expectedOperationName)));
             telemetry.AssertIntegrationDisabled(IntegrationId.Process);
@@ -62,7 +61,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private async Task RunTest(string metadataSchemaVersion)
         {
-            const int expectedSpanCount = 5;
+            // 3 on non-windows because of SecureString
+            var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
+
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);

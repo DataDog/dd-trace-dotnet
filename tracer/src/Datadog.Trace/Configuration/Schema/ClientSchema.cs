@@ -6,6 +6,7 @@
 #nullable enable
 
 using System.Collections.Generic;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 
 namespace Datadog.Trace.Configuration.Schema
@@ -34,6 +35,13 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => $"{protocol}.client.request",
             };
 
+        public string GetOperationNameForRequestType(string requestType) =>
+            _version switch
+            {
+                SchemaVersion.V0 => $"{requestType}",
+                _ => $"{requestType}.request",
+            };
+
         public string GetServiceName(string component)
         {
             if (_serviceNameMappings is not null && _serviceNameMappings.TryGetValue(component, out var mappedServiceName))
@@ -60,6 +68,13 @@ namespace Datadog.Trace.Configuration.Schema
             {
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new GrpcClientTags(),
                 _ => new GrpcClientV1Tags(),
+            };
+
+        public ServiceRemotingClientTags CreateServiceRemotingClientTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
+                _ => new ServiceRemotingClientV1Tags(),
             };
     }
 }

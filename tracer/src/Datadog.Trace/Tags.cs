@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+
 namespace Datadog.Trace
 {
     /// <summary>
@@ -339,7 +341,13 @@ namespace Datadog.Trace
         /// <summary>
         /// The region associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsRegion is a duplicate. Use Region instead.")]
         internal const string AwsRegion = "aws.region";
+
+        /// <summary>
+        /// The region associated with the span.
+        /// </summary>
+        internal const string Region = "region";
 
         /// <summary>
         /// The request ID associated with the AWS SDK span.
@@ -349,17 +357,35 @@ namespace Datadog.Trace
         /// <summary>
         /// The service associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsServiceName is a duplicate. Use AwsService instead.")]
         internal const string AwsServiceName = "aws.service";
 
         /// <summary>
-        /// The queue name associated with the AWS SDK span.
+        /// The AWS service associated with the AWS SDK span.
         /// </summary>
-        internal const string AwsTopicName = "aws.topic.name";
+        internal const string AwsService = "aws_service";
 
         /// <summary>
         /// The queue name associated with the AWS SDK span.
         /// </summary>
+        [Obsolete("AwsTopicName is a duplicate. Use TopicName instead.")]
+        internal const string AwsTopicName = "aws.topic.name";
+
+        /// <summary>
+        /// The topic name associated with the AWS SDK SNS span.
+        /// </summary>
+        internal const string TopicName = "topicname";
+
+        /// <summary>
+        /// The queue name associated with the AWS SDK SQS span.
+        /// </summary>
+        [Obsolete("AwsQueueName is a duplicate. Use QueueName instead.")]
         internal const string AwsQueueName = "aws.queue.name";
+
+        /// <summary>
+        /// The queue name associated with the span.
+        /// </summary>
+        internal const string QueueName = "queuename";
 
         /// <summary>
         /// The topic arn associated with the AWS SDK span.
@@ -579,6 +605,22 @@ namespace Datadog.Trace
         internal const string GrpcMethodService = "grpc.method.service";
         internal const string GrpcMethodName = "grpc.method.name";
         internal const string GrpcStatusCode = "grpc.status.code";
+
+        // general Service Fabric
+        internal const string ServiceFabricApplicationId = "service-fabric.application-id";
+        internal const string ServiceFabricApplicationName = "service-fabric.application-name";
+        internal const string ServiceFabricPartitionId = "service-fabric.partition-id";
+        internal const string ServiceFabricNodeId = "service-fabric.node-id";
+        internal const string ServiceFabricNodeName = "service-fabric.node-name";
+        internal const string ServiceFabricServiceName = "service-fabric.service-name";
+
+        // Service Remoting
+        internal const string ServiceRemotingUri = "service-fabric.service-remoting.uri";
+        internal const string ServiceRemotingServiceName = "service-fabric.service-remoting.service";
+        internal const string ServiceRemotingMethodName = "service-fabric.service-remoting.method-name";
+        internal const string ServiceRemotingMethodId = "service-fabric.service-remoting.method-id";
+        internal const string ServiceRemotingInterfaceId = "service-fabric.service-remoting.interface-id";
+        internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
 

@@ -1,0 +1,63 @@
+name: 'Build Rel-Env base images'
+description: 'Builds the reliability-environment docker base images'
+
+inputs:
+  artifacts_path:
+    description: 'The location of the assets to use in the current workflow'
+    required: true
+
+  is_release_version:
+    description: 'Is this run generating release artifacts? Set to "True" to publish `:latest` tags, otherwise generates `:latest-snapshot` tags'
+    required: true
+    default: 'False'
+
+  package_version:
+    description: 'The package version of the assets being used'
+    required: true
+
+  github_token:
+    description: 'Github token for pushing images to ghcr.io Docker repository'
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    - name: Copy tooling files to artifacts path
+      shell: bash
+      run: |
+        echo "OUTPUT ARTIFACT PATH: ${{inputs.artifacts_path}}"
+        cp ./tracer/build/_build/docker/reliability-env/* ${{inputs.artifacts_path}}
+
+    - name: Set up QEMU
+      uses: docker/setup-qemu-action@v2
+
+    - name: Set up Docker Buildx
+      id: buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Generate image tags
+      id: docker-base-image-tags
+      shell: bash
+      run: |
+        if [ "$is_release_version" = "True" ]; then
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest" >> $GITHUB_OUTPUT
+        else
+          echo "tag-names=ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot" >> $GITHUB_OUTPUT
+        fi
+      env:
+        is_release_version: "${{ inputs.is_release_version}}"
+
+    - name: Login to Docker
+      shell: bash
+      run: docker login -u publisher -p ${{ inputs.github_token }} ghcr.io
+
+    - name: Docker Build linux-x64 image
+      uses: docker/build-push-action@v3
+      with:
+        push: true
+        tags: ${{ steps.docker-base-image-tags.outputs.tag-names }}
+        platforms: 'linux/amd64' 
+        context: ${{inputs.artifacts_path}}
+        build-args: |
+          LINUX_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.tar.gz
