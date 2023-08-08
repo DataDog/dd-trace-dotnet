@@ -23,7 +23,7 @@ partial class Build
 
         // Remove test projects from solution
         TestsDirectory
-            .GlobFiles("**/*.csproj")
+            .GlobFiles("**/*.csproj", "**/*.vcxproj", "**/*.vbproj", "**/*.shproj")
             .ForEach(path => DotNetTasks.DotNet(
                 $"sln {Solution.FileName} remove {path}",
                 workingDirectory: RootDirectory));
