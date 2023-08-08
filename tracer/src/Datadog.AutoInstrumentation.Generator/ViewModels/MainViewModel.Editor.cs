@@ -432,7 +432,7 @@ internal partial class MainViewModel
             return null;
         }
 
-        var proxyName = $"I{targetType.Name}Proxy";
+        var proxyName = $"I{ClearString(targetType.Name)}Proxy";
         var sb = new StringBuilder();
         sb.Append($@"
 /// <summary>
