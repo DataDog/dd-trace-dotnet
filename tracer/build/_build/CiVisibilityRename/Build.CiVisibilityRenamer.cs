@@ -67,7 +67,7 @@ partial class Build
         var sb = new StringBuilder(5000);
         foreach (var file in Directory.EnumerateFiles(RootDirectory, "*", SearchOption.AllDirectories))
         {
-            if (Path.GetExtension(file) is ".cs" or ".csproj" or ".vcxproj" or ".sln" or "props" or ".conf" or ".h" or ".cpp")
+            if (Path.GetExtension(file) is ".cs" or ".csproj" or ".vcxproj" or ".sln" or "props" or ".conf" or ".h" or ".cpp" or ".slnf" or ".snk" or ".yml" or ".json")
             {
                 var filename = Path.GetFileName(file);
                 if (filename.Contains(oldDatadogTraceName) || filename.Contains(oldNativeName) || filename.Contains(oldDdTraceName))
