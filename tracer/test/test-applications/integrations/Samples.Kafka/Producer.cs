@@ -11,12 +11,18 @@ namespace Samples.Kafka
     {
         // Flush every x messages
         private const int FlushInterval = 3;
-        private static readonly TimeSpan FlushTimeout = TimeSpan.FromSeconds(5);
+        private static readonly TimeSpan FlushTimeout = TimeSpan.FromSeconds(1);
         private static int _messageNumber = 0;
 
         public static async Task ProduceAsync(string topic, int numMessages, ClientConfig config, bool isTombstone)
         {
-            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = config.BootstrapServers,
+                MessageTimeoutMs = 3000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
+            };
+
+            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
             {
                 for (var i=0; i<numMessages; ++i)
                 {
@@ -60,7 +66,13 @@ namespace Samples.Kafka
 
         private static void Produce(string topic, int numMessages, ClientConfig config, Action<DeliveryReport<string, string>> deliveryHandler, bool isTombstone)
         {
-            using (var producer = new ProducerBuilder<string, string>(config).Build())
+            var producerConfig = new ProducerConfig
+            {
+                BootstrapServers = config.BootstrapServers,
+                MessageTimeoutMs = 3000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
+            };
+
+            using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
             {
                 for (var i=0; i<numMessages; ++i)
                 {

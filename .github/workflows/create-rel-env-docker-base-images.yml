@@ -1,0 +1,54 @@
+name: "Create Rel Env docker base images"
+on:
+  # This GitHub Action is invoked automatically from the main Azure DevOps
+  # build when building the main branch (a snapshot). It is launched from
+  # Azure DevOps instead of using a GitHub event, as it requires the assets
+  # that are created by the Azure DevOps build. The build only produces
+  # snapshots, not releases.
+  #
+  # The `auto_create_rel_env_release_images` workflow also invokes the
+  # `create-rel-env-docker-base-images` GitHub Action, which creates
+  # the release/latest (not snapshot) version of the images.
+  workflow_dispatch:
+    inputs:
+      azdo_build_id:
+        description: 'The specific AzDo build from which the release artifacts will be downloaded.'
+        required: true
+
+      is_release_version:
+        description: 'Is this run generating release artifacts? Set to "True" to publish `:latest` tags, otherwise generates `:latest-snapshot` tags'
+        required: true
+        default: 'False'
+
+jobs:
+  build-and-publish-base-image:
+    runs-on: ubuntu-latest
+    env:
+      AZURE_DEVOPS_TOKEN: "${{ secrets.AZURE_DEVOPS_TOKEN }}"
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    - uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: '7.0.306'
+
+    - name: "Get current version"
+      id: versions
+      run: ./tracer/build.sh OutputCurrentVersionToGitHub
+
+    - name: "Download build assets from Azure Pipelines"
+      id: assets
+      run: ./tracer/build.sh DownloadAzurePipelineFromBuild
+      env:
+        AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
+
+    - uses: ./.github/actions/create-rel-env-docker-base-images
+      name: 'Create rel-env docker images'
+      with:
+        artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        is_release_version: "${{ github.event.inputs.is_release_version}}"
+        package_version: "${{steps.versions.outputs.version}}"
+        github_token: ${{ secrets.GITHUB_TOKEN }}

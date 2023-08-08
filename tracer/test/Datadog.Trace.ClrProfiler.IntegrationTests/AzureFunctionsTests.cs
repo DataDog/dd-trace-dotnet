@@ -31,6 +31,7 @@ public abstract class AzureFunctionsTests : TestHelper
         : base(sampleAppName, samplePathOverrides: Path.Combine("test", "test-applications", "azure-functions"), output)
     {
         // Ensures we filter out the host span requests etc
+        SetEnvironmentVariable("WEBSITE_SKU", "Basic");
         SetEnvironmentVariable("DD_AZURE_APP_SERVICES", "1");
         SetEnvironmentVariable("DD_API_KEY", "NOT_SET"); // required for tracing to activate
         SetEnvironmentVariable("WEBSITE_SITE_NAME", "AzureFunctionsAllTriggers");

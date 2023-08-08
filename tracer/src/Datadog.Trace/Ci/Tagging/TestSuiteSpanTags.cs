@@ -31,7 +31,6 @@ internal partial class TestSuiteSpanTags : TestModuleSpanTags
         RuntimeName = moduleTags.RuntimeName;
         RuntimeVersion = moduleTags.RuntimeVersion;
         StageName = moduleTags.StageName;
-        TestsSkipped = moduleTags.TestsSkipped;
         BuildSourceRoot = moduleTags.BuildSourceRoot;
         CiEnvVars = moduleTags.CiEnvVars;
         CIProvider = moduleTags.CIProvider;

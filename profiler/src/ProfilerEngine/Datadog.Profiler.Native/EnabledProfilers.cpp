@@ -4,7 +4,7 @@
 #include "EnabledProfilers.h"
 #include "IConfiguration.h"
 
-EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents)
+EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListeningToClrEvents, bool isHeapProfilingEnabled)
 {
     _enabledProfilers = RuntimeProfiler::None;
 
@@ -39,9 +39,7 @@ EnabledProfilers::EnabledProfilers(IConfiguration* pConfiguration, bool isListen
             _enabledProfilers |= RuntimeProfiler::GC;
         }
 
-        // TODO: we also need to check if .NET version is >= 7
-        // --> pass .NET version to the constructor
-        if (pConfiguration->IsHeapProfilingEnabled())
+        if (isHeapProfilingEnabled)
         {
             _enabledProfilers |= RuntimeProfiler::Heap;
 

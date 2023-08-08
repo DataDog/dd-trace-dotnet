@@ -7,18 +7,16 @@
 
 #include <fstream>
 #include <string>
+#include <sstream>
 
-#ifdef LINUX
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
 #include <sys/stat.h>
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 #include <sys/syscall.h>
 #include <sys/sysinfo.h>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include "OpSysTools.h"
 #include "ScopeFinalizer.h"
@@ -34,6 +32,19 @@
 #include "shared/src/native-src/loader.h"
 
 namespace OsSpecificApi {
+
+std::pair<DWORD, std::string> OsSpecificApi::GetLastErrorMessage()
+{
+    DWORD errorCode = errno;
+    std::stringstream builder;
+    builder << "(error code = 0x" << std::dec << errorCode << ")";
+    builder << ": " << strerror(errorCode);
+
+    std::string message = builder.str();
+    return std::make_pair(errorCode, message);
+}
+
+
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
     return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);

@@ -648,7 +648,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleInject.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
             }
         }
 
@@ -672,7 +672,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 var settings = new TracerSettings(source);
 
-                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled ? expected.Concat("tracecontext") : expected);
+                settings.PropagationStyleExtract.Should().BeEquivalentTo(isActivityListenerEnabled && !expected.Contains("tracecontext") ? expected.Concat("tracecontext") : expected);
             }
         }
 

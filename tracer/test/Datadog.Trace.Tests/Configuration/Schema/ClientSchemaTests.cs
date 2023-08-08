@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
+using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Xunit;
@@ -44,6 +45,22 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Client.GetOperationNameForProtocol(protocol).Should().Be(expectedValue);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void GetOperationNameForRequestTypeIsCorrect(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var requestType = "some-remoting.client";
+            var expectedValue = schemaVersion switch
+            {
+                SchemaVersion.V0 => requestType,
+                _ => $"{requestType}.request",
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, new Dictionary<string, string>(), new Dictionary<string, string>());
+            namingSchema.Server.GetOperationNameForRequestType(requestType).Should().Be(expectedValue);
         }
 
         [Theory]
@@ -106,6 +123,21 @@ namespace Datadog.Trace.Tests.Configuration.Schema
 
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Client.CreateGrpcClientTags().Should().BeOfType(expectedType);
+        }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateServiceRemotingClientTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(ServiceRemotingClientTags),
+                _ => typeof(ServiceRemotingClientV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Client.CreateServiceRemotingClientTags().Should().BeOfType(expectedType);
         }
     }
 }
