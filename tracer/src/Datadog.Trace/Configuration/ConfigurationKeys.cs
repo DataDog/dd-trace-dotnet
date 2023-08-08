@@ -628,6 +628,12 @@ namespace Datadog.Trace.Configuration
             /// Default value is <c>false</c> (disabled).
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
+
+            /// <summary>
+            /// Sets the trace exporter. Supported values are 'agent' and 'console'.
+            /// Default value is 'Agent'.
+            /// </summary>
+            public const string TraceExporter = "DD_TRACE_EXPORTER";
         }
 
         internal static class Telemetry

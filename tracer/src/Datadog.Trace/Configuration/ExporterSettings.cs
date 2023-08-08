@@ -138,6 +138,10 @@ namespace Datadog.Trace.Configuration
             PartialFlushMinSpansInternal = config
                                   .WithKeys(ConfigurationKeys.PartialFlushMinSpans)
                                   .AsInt32(500, value => value > 0).Value;
+
+            TraceExporter = config
+                            .WithKeys(ConfigurationKeys.FeatureFlags.TraceExporter)
+                            .AsString("agent");
         }
 
         /// <summary>
@@ -177,6 +181,9 @@ namespace Datadog.Trace.Configuration
                 }
             }
         }
+
+        [IgnoreForSnapshot] // I think this is used to not record in telemetry, so let's not mark it for now since this is experimental
+        internal string TraceExporter { get; private set; }
 
 #pragma warning disable SA1624 // Documentation summary should begin with "Gets" - the documentation is primarily for public property
         /// <summary>

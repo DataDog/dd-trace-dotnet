@@ -62,6 +62,9 @@ namespace Datadog.Trace.Configuration
 
             PartialFlushEnabledInternal = settings.PartialFlushEnabledInternal;
             PartialFlushMinSpansInternal = settings.PartialFlushMinSpansInternal;
+
+            TraceExporter = settings.TraceExporter;
+
             ValidationWarnings = settings.ValidationWarnings.ToList();
         }
 
@@ -142,6 +145,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the transport used to connect to the DogStatsD.
         /// </summary>
         internal Vendors.StatsdClient.Transport.TransportType MetricsTransport { get; }
+
+        /// <summary>
+        /// Gets the specified trace exporter
+        /// </summary>
+        internal string TraceExporter { get; }
 
         internal List<string> ValidationWarnings { get; }
     }

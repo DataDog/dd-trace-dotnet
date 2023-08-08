@@ -16,6 +16,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DogStatsd;
+using Datadog.Trace.Exporters;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.DirectSubmission;
 using Datadog.Trace.Processors;
@@ -261,7 +262,11 @@ namespace Datadog.Trace
 
             var statsAggregator = StatsAggregator.Create(api, settings, discoveryService);
 
-            return new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize);
+            return settings.ExporterInternal.TraceExporter switch
+            {
+                "console" => new ConsoleExporter(),
+                _ => new AgentWriter(api, statsAggregator, statsd, maxBufferSize: settings.TraceBufferSize),
+            };
         }
 
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
