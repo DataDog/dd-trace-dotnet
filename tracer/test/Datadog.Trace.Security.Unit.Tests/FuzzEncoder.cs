@@ -20,7 +20,7 @@ using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-[Collection("SecuritySecuentialTests")]
+[Collection("SecuritySequentialTests")]
 public class FuzzEncoder : WafLibraryRequiredTest
 {
     private readonly ITestOutputHelper _outputHelper;

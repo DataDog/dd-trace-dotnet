@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("SecuritySecuentialTests")]
+    [Collection("SecuritySequentialTests")]
     public class SecurityTests
     {
         [Fact]

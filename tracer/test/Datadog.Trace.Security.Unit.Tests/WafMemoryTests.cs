@@ -21,7 +21,7 @@ using YamlDotNet.Core.Tokens;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("SecuritySecuentialTests")]
+    [Collection("SecuritySequentialTests")]
     public class WafMemoryTests : WafLibraryRequiredTest
     {
         public const int TimeoutMicroSeconds = 1_000_000;
