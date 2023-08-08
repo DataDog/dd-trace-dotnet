@@ -51,8 +51,6 @@
                         FontSize="12"
                         FontWeight="Normal"
                         Margin="5">
-                        <TreeView.Resources>
-                        </TreeView.Resources>
                         <TreeView.Styles>
                             <Style Selector="TreeViewItem">
                                 <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).Expanded}"></Setter>
