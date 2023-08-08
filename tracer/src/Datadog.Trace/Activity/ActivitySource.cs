@@ -48,8 +48,13 @@ namespace Datadog.Trace.Activity
         {
             if (_activitySourceProxy is null)
             {
-                Log.Error("why are you null ActivitySource");
-                return null;
+                // attempt to make it go
+                Activity.ActivityListener.Initialize();
+                if (_activitySourceProxy is null)
+                {
+                    Log.Error("why are you null ActivitySource");
+                    return null;
+                }
             }
 
             IActivity? activity = null;
@@ -70,8 +75,13 @@ namespace Datadog.Trace.Activity
         {
             if (_activitySourceProxy is null)
             {
-                Log.Error("why are you null ActivitySource");
-                return null;
+                // attempt to make it go
+                Activity.ActivityListener.Initialize();
+                if (_activitySourceProxy is null)
+                {
+                    Log.Error("why are you null ActivitySource");
+                    return null;
+                }
             }
 
             IActivity? activity = null;
