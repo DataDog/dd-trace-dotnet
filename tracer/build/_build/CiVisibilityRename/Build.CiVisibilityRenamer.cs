@@ -31,8 +31,28 @@ partial class Build
         // Delete test code
         FileSystemTasks.DeleteDirectory(TestsDirectory);
 
+        // rename directories
+        var toRename = new List<string>();
+        foreach (var path in Directory.EnumerateDirectories(RootDirectory, "*", SearchOption.AllDirectories))
+        {
+            if (path.Contains(oldDatadogTraceName) || path.Contains(oldNativeName) || path.Contains(oldDdTraceName))
+            {
+                toRename.Add(path);
+            }
+        }
+
+        foreach (var dir in toRename)
+        {
+            var newDir = dir
+                .Replace(oldNativeName, newNativeName)
+                .Replace(oldDatadogTraceName, newDatadogTraceName)
+                .Replace(oldDdTraceName, newDdTraceName);
+            FileSystemTasks.EnsureExistingParentDirectory(newDir);
+            FileSystemTasks.RenameDirectory(dir, newDir);
+        }
+
         // Find files to rename and replace known strings
-        var filesToRename = new List<string>();
+        toRename.Clear();
         var sb = new StringBuilder(5000);
         foreach (var file in Directory.EnumerateFiles(RootDirectory, "*", SearchOption.AllDirectories))
         {
@@ -41,7 +61,7 @@ partial class Build
                 var filename = Path.GetFileName(file);
                 if (filename.Contains(oldDatadogTraceName) || filename.Contains(oldNativeName) || filename.Contains(oldDdTraceName))
                 {
-                    filesToRename.Add(file);
+                    toRename.Add(file);
                 }
 
                 ReplaceFile(sb, file);
@@ -49,7 +69,7 @@ partial class Build
         }
 
         // rename files
-        foreach (var path in filesToRename)
+        foreach (var path in toRename)
         {
             var newName = Path.GetFileName(path)
                 .Replace(oldNativeName, newNativeName)
@@ -57,11 +77,6 @@ partial class Build
                 .Replace(oldDdTraceName, newDdTraceName);
             FileSystemTasks.RenameFile(path, newName);
         }
-
-        // rename directories
-        RenameDirectory(oldNativeName, newNativeName);
-        RenameDirectory(oldDatadogTraceName, newDatadogTraceName);
-        RenameDirectory(oldDdTraceName, newDdTraceName);
 
         // Update new public key here: https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/dd_profiler_constants.h#L122-L130
         return Task.CompletedTask;
@@ -99,16 +114,6 @@ partial class Build
 
             Log.Information("Replacing contents of {Filename}", filename);
             File.WriteAllText(filename, contents);
-        }
-
-        void RenameDirectory(string oldName, string newName)
-        {
-            foreach (var dir in Directory.GetDirectories(RootDirectory, $"*{oldName}*", SearchOption.AllDirectories))
-            {
-                var newDir = dir.Replace(oldName, newName);
-                FileSystemTasks.EnsureExistingParentDirectory(newDir);
-                FileSystemTasks.RenameDirectory(dir, newDir);
-            }
         }
     }
 }
