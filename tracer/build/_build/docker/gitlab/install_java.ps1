@@ -5,12 +5,10 @@ $TargetContainer = $true
 
 Write-Host -ForegroundColor Green "Installing Java $ENV:JAVA_VERSION"
 
-#$javazip= "https://download.java.net/java/early_access/jdk21/12/GPL/openjdk-21-ea+12_windows-x64_bin.zip"
 
-## this is a bit fragile, and assumes the version will always be 
-## NN-ea+VV.
-$subver = ($ENV:JAVA_VERSION -split '\+')[1]
-$javazip = "https://download.java.net/java/early_access/jdk21/$($subver)/GPL/openjdk-$($ENV:JAVA_VERSION)_windows-x64_bin.zip"
+## java now downloaded from microsoft site.  Has much more predictable download path
+## https://aka.ms/download-jdk/microsoft-jdk-17.0.8-windows-x64.zip
+$javazip = "https://aka.ms/download-jdk/microsoft-jdk-$($ENV:JAVA_VERSION)-windows-x64.zip"
 
 $out = 'java.zip'
 
@@ -23,14 +21,13 @@ mkdir c:\tmp\java
 
 Write-Host -ForegroundColor Green "Extracting $out to c:\tmp\java"
 
-# Start-Process "7z" -ArgumentList 'x -oc:\tmp\java java.zip' -Wait
-Expand-Archive -Path $out -DestinationPath C:\tmp\java
+Start-Process "7z" -ArgumentList 'x -oc:\tmp\java java.zip' -Wait
 
 Write-Host -ForegroundColor Green "Removing temporary file $out"
 
 Remove-Item $out
 
-Add-EnvironmentVariable -Variable JAVA_HOME -Value "c:\openjdk-21" -Global -Local
+Add-EnvironmentVariable -Variable JAVA_HOME -Value "c:\openjdk-17" -Global -Local
 
 ## move expanded file from tmp dir to final resting place
 ## note must be after env variable set above.
