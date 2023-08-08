@@ -57,7 +57,7 @@ partial class Build
                 }
                 catch (DirectoryNotFoundException)
                 {
-                    Log.Warning("Failed to move {Dir} - directory does not exist", dir);
+                    Log.Information("Failed to move {Dir} - directory does not exist", dir);
                 }
             }
         } while (toRename.Count > 0); // do the loop to catch cases where we moved stuff
