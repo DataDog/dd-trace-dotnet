@@ -65,6 +65,11 @@ partial class Build
         Projects.DatadogTraceAspNet
     };
 
+    Target RenameForCiApp => _ => _
+        .Description("Prepares the solution for building CI app")
+        .Unlisted()
+        .Executes(RenameRepositoryForCiApp);
+
     Target GacAdd => _ => _
         .Description("Adds the (already built) files to the Windows GAC **REQUIRES ELEVATED PERMISSIONS** ")
         .Requires(() => IsWin)
