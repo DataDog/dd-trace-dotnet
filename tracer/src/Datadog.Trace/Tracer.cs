@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -297,6 +298,8 @@ namespace Datadog.Trace
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
+            var activity = Datadog.Trace.Activity.ActivitySource.StartActivity(operationName, Activity.DuckTypes.ActivityKind.Internal);
+            activity.Stop();
             return StartActiveInternal(operationName);
         }
 
@@ -307,6 +310,8 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.ITracer_StartActive_Settings);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
+            var activity = Datadog.Trace.Activity.ActivitySource.StartActivity(operationName, Activity.DuckTypes.ActivityKind.Internal);
+            activity.Stop();
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 
@@ -320,6 +325,8 @@ namespace Datadog.Trace
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
+            var activity = Datadog.Trace.Activity.ActivitySource.StartActivity(operationName, Activity.DuckTypes.ActivityKind.Internal);
+            activity.Stop();
             return StartActiveInternal(operationName);
         }
 
@@ -335,6 +342,8 @@ namespace Datadog.Trace
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_StartActive_Settings);
             TelemetryFactory.Metrics.RecordCountSpanCreated(MetricTags.IntegrationName.Manual);
             var finishOnClose = settings.FinishOnClose ?? true;
+            var activity = Datadog.Trace.Activity.ActivitySource.StartActivity(operationName, Activity.DuckTypes.ActivityKind.Internal);
+            activity.Stop();
             return StartActiveInternal(operationName, settings.Parent, serviceName: null, settings.StartTime, finishOnClose);
         }
 

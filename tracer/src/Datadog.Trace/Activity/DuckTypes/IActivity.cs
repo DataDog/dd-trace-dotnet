@@ -50,5 +50,7 @@ namespace Datadog.Trace.Activity.DuckTypes
         object SetParentId(string parentId);
 
         object SetStartTime(DateTime startTimeUtc);
+
+        void Stop();
     }
 }

@@ -20,7 +20,7 @@ namespace Datadog.Trace.Activity.DuckTypes
 
         IEnumerable<KeyValuePair<string, object>> TagObjects { get; }
 
-        ActivitySource Source { get; }
+        ActivitySourceDuck Source { get; }
 
         IEnumerable Events { get; }
 

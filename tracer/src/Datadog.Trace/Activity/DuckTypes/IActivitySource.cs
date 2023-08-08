@@ -10,5 +10,9 @@ namespace Datadog.Trace.Activity.DuckTypes
     internal interface IActivitySource : ISource
     {
         string Version { get; }
+
+        IActivity? CreateActivity(string name, ActivityKind kind);
+
+        IActivity? StartActivity(string name, ActivityKind kind);
     }
 }

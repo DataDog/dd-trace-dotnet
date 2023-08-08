@@ -199,6 +199,10 @@ namespace Datadog.Trace.Activity
 
             Log.Information("Activity listener: {ActivityListenerType}", activityListenerType!.AssemblyQualifiedName ?? "(null)");
 
+            // Create the Datadog ActivitySource instance
+            ActivitySource.CreateActivitySourceInstance(activitySourceType);
+            Log.Information("Just created meself a nice ActivitySource");
+
             // Create the ActivityListener instance
             var activityListener = Activator.CreateInstance(activityListenerType);
             var activityListenerProxy = activityListener.DuckCast<IActivityListener>();

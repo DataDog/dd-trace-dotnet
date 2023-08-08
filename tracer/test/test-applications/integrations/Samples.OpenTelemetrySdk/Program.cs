@@ -40,6 +40,12 @@ public static class Program
         var _otherLibraryTracer = tracerProvider.GetTracer(otherLibraryName, version: otherLibraryVersion);
 
         TelemetrySpan span = null;
+
+        using (var ddScope = SampleHelpers.CreateScope("I AM THE SCOPE"))
+        {
+
+        }
+        
         using (span = _tracer.StartActiveSpan("SayHello"))
         {
             // Change tracestate before print statement so previous<->current comparison is accurate
