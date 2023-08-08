@@ -124,7 +124,7 @@ partial class Build
             }
 
             Log.Information("Replacing contents of {Filename}", filename);
-            File.WriteAllText(filename, contents);
+            File.WriteAllText(filename, final);
         }
     }
 }
