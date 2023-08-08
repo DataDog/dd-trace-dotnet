@@ -33,23 +33,34 @@ partial class Build
 
         // rename directories
         var toRename = new List<string>();
-        foreach (var path in Directory.EnumerateDirectories(RootDirectory, "*", SearchOption.AllDirectories))
+        do
         {
-            if (path.Contains(oldDatadogTraceName) || path.Contains(oldNativeName) || path.Contains(oldDdTraceName))
+            toRename.Clear();
+            foreach (var path in Directory.EnumerateDirectories(RootDirectory, "*", SearchOption.AllDirectories))
             {
-                toRename.Add(path);
+                if (path.Contains(oldDatadogTraceName) || path.Contains(oldNativeName) || path.Contains(oldDdTraceName))
+                {
+                    toRename.Add(path);
+                }
             }
-        }
 
-        foreach (var dir in toRename)
-        {
-            var newDir = dir
-                .Replace(oldNativeName, newNativeName)
-                .Replace(oldDatadogTraceName, newDatadogTraceName)
-                .Replace(oldDdTraceName, newDdTraceName);
-            FileSystemTasks.EnsureExistingParentDirectory(newDir);
-            FileSystemTasks.RenameDirectory(dir, newDir);
-        }
+            foreach (var dir in toRename)
+            {
+                var newDir = dir
+                    .Replace(oldNativeName, newNativeName)
+                    .Replace(oldDatadogTraceName, newDatadogTraceName)
+                    .Replace(oldDdTraceName, newDdTraceName);
+                FileSystemTasks.EnsureExistingParentDirectory(newDir);
+                try
+                {
+                    FileSystemTasks.RenameDirectory(dir, newDir, DirectoryExistsPolicy.Merge);
+                }
+                catch (DirectoryNotFoundException ex)
+                {
+                    Log.Warning("Failed to move {Dir} - directory does not exist", dir);
+                }
+            }
+        } while (toRename.Count > 0); // do the loop to catch cases where we moved stuff
 
         // Find files to rename and replace known strings
         toRename.Clear();
