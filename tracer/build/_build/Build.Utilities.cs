@@ -68,6 +68,7 @@ partial class Build
     Target RenameForCiApp => _ => _
         .Description("Prepares the solution for building CI app")
         .Unlisted()
+        .DependsOn(Clean)
         .Executes(RenameRepositoryForCiApp);
 
     Target GacAdd => _ => _
