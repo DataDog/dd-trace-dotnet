@@ -13,10 +13,13 @@ partial class Build
     private Task RenameRepositoryForCiApp()
     {
         const string oldNativeName = "Datadog.Tracer.Native";
-        const string newNativeName = "DatadogCiApp.Native";
+        const string newNativeName = "DatadogCiApp.Tracer.Native";
 
         const string oldDatadogTraceName = "Datadog.Trace";
-        const string newDatadogTraceName = "DatadogCiApp";
+        const string newDatadogTraceName = "DatadogCiApp.Trace";
+
+        const string oldUsing = "using Datadog;";
+        const string newUsing = "using DatadogCiApp;";
 
         const string oldDdTraceName = "dd-trace";
         const string newDdTraceName = "dd-trace-ciapp";
@@ -110,6 +113,9 @@ partial class Build
 
             // "Main" library
             sb.Replace(oldDatadogTraceName, newDatadogTraceName);
+
+            // using statements
+            sb.Replace(oldUsing, newUsing);
 
             // Environment variables
             sb.Replace("\"DD_", "\"DDCIAPP_");
