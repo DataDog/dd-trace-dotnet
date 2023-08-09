@@ -234,6 +234,7 @@ internal partial class MainViewModel
                 methodDef.ReturnType.FullName.StartsWith(typeof(ValueTask).FullName!, StringComparison.Ordinal))
             {
                 CreateOnMethodEnd = false;
+                CreateDucktypeReturnValue = false;
                 CreateOnAsyncMethodEndIsVisible = true;
                 CreateOnAsyncMethodEnd = true;
             }
@@ -242,6 +243,7 @@ internal partial class MainViewModel
                 CreateOnMethodEnd = true;
                 CreateOnAsyncMethodEndIsVisible = false;
                 CreateOnAsyncMethodEnd = false;
+                CreateDucktypeAsyncReturnValue = false;
             }
         });
     }

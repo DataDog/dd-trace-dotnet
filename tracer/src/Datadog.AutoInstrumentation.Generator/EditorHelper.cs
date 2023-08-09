@@ -351,7 +351,7 @@ internal static class EditorHelper
         duckTypeProxyDefinitions[targetType] = new DuckTypeProxyDefinition(targetType, proxyName, null);
 
         var proxyProperties = new List<(string ReturnValue, string PropertyName, string TargetName, string TargetFullName, bool Getter, bool Setter, bool IsField)>();
-        var proxyMethods = new List<(string ReturnType, string MethodName, string MethodTargetName, string MethodTargetFullName, List<string> ArgumentTypeNames, List<string> ArgumentTargetTypeNames)>();
+        var proxyMethods = new List<(string ReturnType, string MethodName, string MethodTargetName, string MethodTargetFullName, List<string> ArgumentNames, List<string> ArgumentTypeNames, List<string>? ArgumentTargetTypeNames)>();
 
         string GetTypeName(TypeSig typeSig)
         {
@@ -451,7 +451,17 @@ internal static class EditorHelper
                     methodName = CleanTypeName(methodName);
                 }
 
-                Console.WriteLine();
+                var lstArgumentsNames = new List<string>();
+                var lstArgumentsTypeNames = new List<string>();
+                List<string>? lstArgumentsTargetTypeNames = null;
+                var idx = 0;
+                var numberOfSimilarMethods = targetType.Methods.Count(m => m != method && m.Name == method.Name && m.Parameters.Count == method.Parameters.Count);
+                if (numberOfSimilarMethods > 0)
+                {
+                    lstArgumentsTargetTypeNames = new();
+                }
+
+                var allArgumentTypesAreFromBCL = true;
                 foreach (var param in method.Parameters)
                 {
                     if (param.IsHiddenThisParameter || param.IsReturnTypeParameter)
@@ -459,14 +469,24 @@ internal static class EditorHelper
                         continue;
                     }
 
-                    Console.WriteLine("\t{0} | {1}", param.Type, param.Name);
+                    var paramTypeName = GetTypeName(param.Type);
+                    lstArgumentsNames.Add(param.Name ?? $"arg{idx}");
+                    lstArgumentsTypeNames.Add(paramTypeName);
+                    lstArgumentsTargetTypeNames?.Add(param.Type.FullName);
+                    allArgumentTypesAreFromBCL = allArgumentTypesAreFromBCL && (param.Type.IsCorLibType || param.Type.DefinitionAssembly?.Name == "System.Runtime");
+                    idx++;
                 }
 
-                Console.WriteLine("{0} | {1} | {2}", retTypeValue, methodName, method);
+                if (allArgumentTypesAreFromBCL)
+                {
+                    lstArgumentsTargetTypeNames?.Clear();
+                }
+
+                proxyMethods.Add(new(retTypeValue, methodName, method.Name, method.FullName, lstArgumentsNames, lstArgumentsTypeNames, lstArgumentsTargetTypeNames));
             }
         }
 
-        if (proxyProperties.Count == 0)
+        if (proxyProperties.Count == 0 && proxyMethods.Count == 0)
         {
             return null;
         }
@@ -518,7 +538,35 @@ internal interface {proxyName} : IDuckType
             sb.AppendLine($"\t{property.ReturnValue} {property.PropertyName} {{ {getterSetter} }}");
         }
 
-        if (proxyProperties.Count == 0)
+        foreach (var method in proxyMethods)
+        {
+            var documentation = $"Calls method: {method.MethodTargetFullName}";
+            sb.AppendLine(string.Empty);
+            sb.AppendLine("\t///<summary>");
+            sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
+            sb.AppendLine("\t///</summary>");
+            var targetParameters = method.ArgumentTargetTypeNames is not null ? string.Join(", ", method.ArgumentTargetTypeNames.Select(i => "\"" + i + "\"")) : null;
+            if (method.MethodName != method.MethodTargetName)
+            {
+                if (string.IsNullOrEmpty(targetParameters))
+                {
+                    sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\")]");
+                }
+                else
+                {
+                    sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\", ParameterTypeNames = new string[] {{ {targetParameters} }})]");
+                }
+            }
+            else if (!string.IsNullOrEmpty(targetParameters))
+            {
+                sb.AppendLine($"\t[Duck(ParameterTypeNames = new string[] {{ {targetParameters} }})]");
+            }
+
+            var parameters = string.Join(", ", method.ArgumentTypeNames.Zip(method.ArgumentNames, (a, b) => $"{a} {b}"));
+            sb.AppendLine($"\t{method.ReturnType} {method.MethodName}({parameters});");
+        }
+
+        if (proxyProperties.Count == 0 && proxyMethods.Count == 0)
         {
             sb.AppendLine();
         }
