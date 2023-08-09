@@ -545,6 +545,7 @@ internal static class EditorHelper
 
         if (proxyProperties.Count == 0 && proxyMethods.Count == 0)
         {
+            duckTypeProxyDefinitions.Remove(targetType);
             return null;
         }
 
