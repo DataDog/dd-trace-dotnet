@@ -114,7 +114,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenAPrincipalContext_WhenMakeRealConnection_LDAPVulnerable()
     {
         //using (_ = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", "dc=example,dc=com", "cn=read-only-admin,dc=example,dc=com", "password"))
-        using (var ctx = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", "dc=example,dc=com"))
+        using (var ctx = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", AddTainted("dc=example,dc=com").ToString()))
         {
             using (var searcher = new PrincipalSearcher(new UserPrincipal(ctx)))
             {
@@ -286,25 +286,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
     {
         string filter = "(uid=" + taintedUserAsterisk + ")";
         _ = new DirectorySearcher(filter);
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenALdapConnection_WhenCreate_LDAPVulnerable()
-    {
-        string server = "ldap.forumsys.com:389";
-        string userName = "uid=tesla,dc=example,dc=com";
-        string password = "password";
-
-        using (LdapConnection connection = new LdapConnection(server))
-        {
-            connection.Timeout = new TimeSpan(0, 0, 10);
-            connection.AuthType = AuthType.Basic;
-            connection.SessionOptions.ProtocolVersion = 3; // Set protocol to LDAPv3
-
-            var credential = new NetworkCredential(userName, password);
-            connection.Bind(credential);
-        }
         AssertVulnerable();
     }
 

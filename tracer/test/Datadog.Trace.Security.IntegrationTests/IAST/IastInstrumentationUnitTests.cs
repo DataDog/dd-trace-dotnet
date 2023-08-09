@@ -6,6 +6,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.DirectoryServices;
+using System.DirectoryServices.AccountManagement;
+using System.DirectoryServices.Protocols;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -18,6 +21,7 @@ using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
 
 namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
@@ -74,6 +78,10 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(WebClient), null, null, true)]
     [InlineData(typeof(Uri), null, new string[] { "Boolean CheckSchemeName(System.String)", "Boolean IsHexEncoding(System.String, Int32)", "Char HexUnescape(System.String, Int32 ByRef)", "System.UriHostNameType CheckHostName(System.String)", "Boolean op_Equality(System.Uri, System.Uri)", "Boolean op_Inequality(System.Uri, System.Uri)", "Int32 Compare(System.Uri, System.Uri, System.UriComponents, System.UriFormat, System.StringComparison)", "Boolean IsWellFormedUriString(System.String, System.UriKind)", "Boolean IsBaseOf(System.Uri)" }, true)]
     [InlineData(typeof(UriBuilder), null, new string[] { "set_Fragment(System.String)", "get_Fragment(System.String)", "set_Scheme(System.String)", "get_Scheme(System.String)", "set_UserName(System.String)", "get_UserName(System.String)", "set_Password(System.String)", "get_Password(System.String)" }, true)]
+    [InlineData(typeof(DirectoryEntry), null)]
+    [InlineData(typeof(DirectorySearcher), null)]
+    [InlineData(typeof(PrincipalContext), null)]
+    [InlineData(typeof(SearchRequest), null)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
