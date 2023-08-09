@@ -1,0 +1,466 @@
+trigger:
+  branches:
+    include:
+      - master
+    exclude:
+      - refs/pull/*/head
+      - refs/tags/*
+  paths:
+    exclude:
+      - .azure-pipelines/noop-pipeline.yml
+      - .azure-pipelines/ultimate-pipeline.yml
+      - .github/
+      - docs/
+      - tracer/README.MD
+      - tracer/dependabot/
+      - tracer/test/
+      - tracer/tools/PipelineMonitor
+      - LICENSE
+      - LICENSE-3rdparty.csv
+      - NOTICE
+      - .vsconfig
+
+# Global variables
+variables:
+  buildConfiguration: Release
+  dotnetCoreSdkLatestVersion: 7.0.306
+  relativeArtifacts: /tracer/src/bin/artifacts
+  monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
+  artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
+  symbols: $(System.DefaultWorkingDirectory)/tracer/bin/symbols
+  relativeRunnerTool: tracer/src/bin/runnerTool
+  relativeRunnerStandalone: tracer/src/bin/runnerStandalone
+  isMainRepository: $[eq(variables['GITHUB_REPOSITORY_NAME'], 'dd-trace-ciapp-internalciapp')]
+  isMainBranch: $[in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main')]
+  isMainOrReleaseBranch: $[or(in(variables['Build.SourceBranch'], 'refs/heads/master', 'refs/heads/main'), startsWith(variables['Build.SourceBranch'], 'refs/heads/release/'), startsWith(variables['Build.SourceBranch'], 'refs/heads/hotfix/'))]
+  isPullRequest: $[eq(variables['Build.Reason'], 'PullRequest')]
+  DD_INTERNAL_TELEMETRY_V2_ENABLED: 0
+  DD_TELEMETRY_METRICS_ENABLED: 0
+  DD_DOTNET_TRACER_MSBUILD:
+  NugetPackageDirectory: $(System.DefaultWorkingDirectory)/packages
+  relativeNugetPackageDirectory: packages
+  Verify_DisableClipboard: true
+  DiffEngine_Disabled: true
+  OriginalCommitId: $[coalesce(variables['System.PullRequest.SourceCommitId'], variables['Build.SourceVersion'])]
+  NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY: true
+  NUGET_EXPERIMENTAL_CHAIN_BUILD_RETRY_POLICY: 3,1000
+  DefaultTimeout: 60
+  DD_INSTRUMENTATION_TELEMETRY_ENABLED: 0
+  NUKE_TELEMETRY_OPTOUT: 1
+
+# Stages
+stages:
+# This step grabs the current commit of master, and records it for subsequent stages
+# We use it to ensure that we are always running PRs against the same commit, even
+# if master is updated while the build is in progress. This guards against CI flakiness
+# where the first stages of the build execute against one merge commit, and later stages
+# run against another
+
+- stage: merge_commit_id
+  dependsOn: []
+  jobs:
+  - job: fetch
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-linux-task-scale-set
+
+    steps:
+    - checkout: none
+    - bash: |
+        TARGET_BRANCH=$SYSTEM_PULLREQUEST_TARGETBRANCH
+        echo "SYSTEM_PULLREQUEST_TARGETBRANCH=$TARGET_BRANCH"
+        if [[ "$TARGET_BRANCH" == refs/heads/hotfix/* ]]; then
+          TARGET_BRANCH=$(echo $TARGET_BRANCH| cut -c 11-)
+        else
+          TARGET_BRANCH=master
+        fi
+        echo "Using target branch $TARGET_BRANCH"
+
+        rm -rf ./s
+        git clone --quiet --no-checkout --depth 1 --branch $TARGET_BRANCH $BUILD_REPOSITORY_URI ./s
+        cd s
+        TARGET_SHA=$(git rev-parse origin/$TARGET_BRANCH)
+        rm -rf ./s
+        echo "Using master commit ID $TARGET_SHA"
+        echo "##vso[task.setvariable variable=sha;isOutput=true]$TARGET_SHA"
+        echo "##vso[task.setvariable variable=branch;isOutput=true]$TARGET_BRANCH"
+      failOnStderr: true
+      displayName: Fetch master id
+      name: set_sha
+
+- stage: build_windows_tracer
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: build
+    timeoutInMinutes: 60 #default value
+    pool:
+      name: azure-windows-scale-set-3
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd RenameForCiApp
+      displayName: Prepare libraries
+      retryCountOnTaskFailure: 1
+
+    - script: tracer\build.cmd BuildTracerHome BuildNativeLoader
+      displayName: Build tracer home
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Upload Windows tracer home directory
+      artifact: windows-tracer-home
+
+- stage: build_linux_tracer
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix:
+        centos7:
+          baseImage: centos7
+        alpine:
+          baseImage: alpine
+    pool:
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean RenameForCiApp"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home-$(baseImage)
+
+- stage: build_arm64_tracer
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    pool:
+      name: aws-arm64-auto-scaling
+    workspace:
+      clean: all
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "Clean RenameForCiApp"
+        retryCountForRunCommand: 1
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        retryCountForRunCommand: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading linux tracer home artifact
+      artifact: linux-tracer-home-arm64
+
+- stage: build_macos
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - job: build
+    timeoutInMinutes: 60 #default value
+    dependsOn: [ ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: ./tracer/build.sh Clean RenameForCiApp
+      displayName: Prepare libraries
+      retryCountOnTaskFailure: 1
+
+    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
+      displayName: Build tracer home
+      retryCountOnTaskFailure: 1
+
+    - publish: $(monitoringHome)
+      displayName: Uploading macos profiler artifact
+      artifact: macos-tracer-home
+
+- stage: dotnet_tool
+  dependsOn: [build_windows_tracer, build_linux_tracer, build_arm64_tracer, build_macos, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_internal_ciapp_tool]
+
+  - job: build_internal_ciapp_tool
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: tracer\build.cmd RenameForCiApp
+      displayName: Prepare libraries
+      retryCountOnTaskFailure: 1
+
+    # Download everything to monitoring home
+    # BuildBundleNuget moves everything to the required folders
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux tracer home
+      inputs:
+        artifact: linux-tracer-home-centos7
+        patterns: |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download alpine tracer home
+      inputs:
+        artifact: linux-tracer-home-alpine
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 tracer home
+      inputs:
+        artifact: linux-tracer-home-arm64
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download osx tracer home
+      inputs:
+        artifact: macos-tracer-home
+        patterns:  |
+          **/*.dylib
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        patterns: "**/*.dll"
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download linux profiler home
+      inputs:
+        artifact: linux-profiler-home-centos7
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download alpine profiler home
+      inputs:
+        artifact: linux-profiler-home-alpine
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download arm64 profiler home
+      inputs:
+        artifact: linux-profiler-home-arm64
+        patterns:  |
+          **/*.so
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
+      displayName: Build Bundle NuGet and runner tools
+
+    - publish: $(artifacts)/nuget/bundle
+      displayName: Uploading Bundle package
+      artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/dd-trace-ciapp
+      displayName: Uploading runner dotnet tool artifact
+      artifact: runner-dotnet-tool
+
+    - publish: $(artifacts)/dd-trace-ciapp-win-x64.zip
+      displayName: Uploading runner standalone win-x64 artifact
+      artifact: runner-standalone-win-x64
+
+    - publish: $(artifacts)/dd-trace-ciapp-win-x86.zip
+      displayName: Uploading runner standalone win-x86 artifact
+      artifact: runner-standalone-win-x86
+
+    - publish: $(artifacts)/dd-trace-ciapp-linux-x64.tar.gz
+      displayName: Uploading runner standalone linux-x64 artifact
+      artifact: runner-standalone-linux-x64
+
+    - publish: $(artifacts)/dd-trace-ciapp-linux-musl-x64.tar.gz
+      displayName: Uploading runner standalone linux-musl-x64 artifact
+      artifact: runner-standalone-linux-musl-x64
+
+    - publish: $(artifacts)/dd-trace-ciapp-linux-arm64.tar.gz
+      displayName: Uploading runner standalone linux-arm64 artifact
+      artifact: runner-standalone-linux-arm64
+
+    - publish: $(artifacts)/dd-trace-ciapp-osx-x64.tar.gz
+      displayName: Uploading runner standalone osx-x64 artifact
+      artifact: runner-standalone-osx-x64
+
+- stage: upload_to_azure
+  dependsOn: [dotnet_tool, merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+    - job: upload
+      timeoutInMinutes: 60 #default value
+      pool:
+        vmImage: ubuntu-20.04
+      steps:
+        - template: steps/clone-repo.yml
+          parameters:
+            targetShaId: $(targetShaId)
+            targetBranch: $(targetBranch)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download NuGet packages
+          inputs:
+            artifact: nuget-packages
+            path: $(Build.ArtifactStagingDirectory)
+
+        # set the version from the package name
+        - bash: |
+            NUGET_NAME=$(basename $(Build.ArtifactStagingDirectory)/dd-trace-ciapp.*.nupkg)
+            VERSION_NUMBER=${NUGET_NAME:15:-6}
+            echo "detected version: $VERSION_NUMBER"
+            echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
+          displayName: Extract version number
+
+        # runner tool
+        - task: DownloadPipelineArtifact@2
+          displayName: Download runner dotnet tool
+          inputs:
+            artifact: runner-dotnet-tool
+            patterns: "*.nupkg"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool win-x64
+          inputs:
+            artifact: runner-standalone-win-x64
+            patterns: "*.zip"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-x64
+          inputs:
+            artifact: runner-standalone-linux-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-musl-x64
+          inputs:
+            artifact: runner-standalone-linux-musl-x64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download standalone dotnet tool linux-arm64
+          inputs:
+            artifact: runner-standalone-linux-arm64
+            patterns: "*.tar.gz"
+            path: $(Build.ArtifactStagingDirectory)
+
+        - bash: |
+            az storage blob upload-batch \
+              --destination "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" \
+              --destination-path "$(Build.SourceVersion)" \
+              --source "$(Build.ArtifactStagingDirectory)"
+          displayName: Upload blobs to Azure
+          condition: >
+            and(
+              succeeded(),
+              ne(variables['push_artifacts_to_azure_storage'], 'false'),
+              or(
+                eq(variables['push_artifacts_to_azure_storage'], 'true'),
+                eq(variables.isMainBranch, true)
+              )
+            )
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
+
+        - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
+          displayName: Write file list to index.txt
+
+        - bash: echo "$(Build.SourceVersion)" > sha.txt
+          displayName: Write commit hash to sha.txt
+
+        - bash: echo "$(tracer_version)" > version.txt
+          displayName: Write tracer version number to version.txt
+
+        - bash: |
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "index.txt" --name "index.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "sha.txt" --name "sha.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true
+          displayName: Upload indexes to Azure
+          condition: and(succeeded(), eq(variables.isMainBranch, true))
+          env:
+            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
+            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)

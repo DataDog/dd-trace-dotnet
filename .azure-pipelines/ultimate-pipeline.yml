@@ -10,7 +10,7 @@ trigger:
   paths:
     exclude:
       - .azure-pipelines/noop-pipeline.yml
-      - .azure-pipelines/monitoring.yml
+      - .azure-pipelines/internal-ciapp-pipeline.yml
       - .github/
       - docs/
       - tracer/README.MD
