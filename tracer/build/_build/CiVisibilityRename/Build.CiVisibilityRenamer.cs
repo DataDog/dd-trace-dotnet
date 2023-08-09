@@ -78,7 +78,7 @@ partial class Build
                     toRename.Add(file);
                 }
 
-                if (file.Equals(Solution.Path / "tracer" / "build" / "_build" / "CiVisibilityRename" / "Build.CiVisibilityRenamer.cs", StringComparison.OrdinalIgnoreCase))
+                if (Path.GetFileName(file).Equals("Build.CiVisibilityRenamer.cs", StringComparison.OrdinalIgnoreCase))
                 {
                     // don't replace this file (things get too confusing)
                     continue;
