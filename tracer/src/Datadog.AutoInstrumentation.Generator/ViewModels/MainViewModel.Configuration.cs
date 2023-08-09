@@ -16,7 +16,6 @@ internal partial class MainViewModel
     private bool _createOnAsyncMethodEndIsVisible = false;
     private bool _createOnAsyncMethodEnd;
 
-    private bool _createDucktypeInstanceEnabled;
     private bool _createDucktypeInstance;
     private bool _ducktypeInstanceFields = false;
     private bool _ducktypeInstanceProperties = true;
@@ -44,33 +43,56 @@ internal partial class MainViewModel
     public bool CreateOnMethodBegin
     {
         get => _createOnMethodBegin;
-        set => this.RaiseAndSetIfChanged(ref _createOnMethodBegin, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createOnMethodBegin, value);
+            this.RaisePropertyChanged(nameof(CreateDucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeArgumentsEnabled));
+        }
     }
 
     public bool CreateOnMethodEnd
     {
         get => _createOnMethodEnd;
-        set => this.RaiseAndSetIfChanged(ref _createOnMethodEnd, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createOnMethodEnd, value);
+            this.RaisePropertyChanged(nameof(CreateDucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeReturnValueEnabled));
+        }
     }
 
     public bool CreateOnAsyncMethodEndIsVisible
     {
         get => _createOnAsyncMethodEndIsVisible;
-        set => this.RaiseAndSetIfChanged(ref _createOnAsyncMethodEndIsVisible, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createOnAsyncMethodEndIsVisible, value);
+            this.RaisePropertyChanged(nameof(CreateDucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeAsyncReturnValueEnabled));
+        }
     }
 
     public bool CreateOnAsyncMethodEnd
     {
         get => _createOnAsyncMethodEnd;
-        set => this.RaiseAndSetIfChanged(ref _createOnAsyncMethodEnd, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createOnAsyncMethodEnd, value);
+            this.RaisePropertyChanged(nameof(CreateDucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
+            this.RaisePropertyChanged(nameof(DucktypeAsyncReturnValueEnabled));
+        }
     }
 
     // ...
 
     public bool CreateDucktypeInstanceEnabled
     {
-        get => _createDucktypeInstanceEnabled;
-        set => this.RaiseAndSetIfChanged(ref _createDucktypeInstanceEnabled, value);
+        get => (CreateOnMethodBegin || CreateOnMethodEnd || CreateOnAsyncMethodEnd);
     }
 
     public bool CreateDucktypeInstance
@@ -86,7 +108,14 @@ internal partial class MainViewModel
             {
                 this.RaiseAndSetIfChanged(ref _createDucktypeInstance, value);
             }
+
+            this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
         }
+    }
+
+    public bool DucktypeInstanceEnabled
+    {
+        get => CreateDucktypeInstance && CreateDucktypeInstanceEnabled;
     }
 
     public bool DucktypeInstanceFields
@@ -118,7 +147,16 @@ internal partial class MainViewModel
     public bool CreateDucktypeArguments
     {
         get => _createDucktypeArguments;
-        set => this.RaiseAndSetIfChanged(ref _createDucktypeArguments, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createDucktypeArguments, value);
+            this.RaisePropertyChanged(nameof(DucktypeArgumentsEnabled));
+        }
+    }
+
+    public bool DucktypeArgumentsEnabled
+    {
+        get => CreateOnMethodBegin && CreateDucktypeArguments;
     }
 
     public bool DucktypeArgumentsFields
@@ -150,7 +188,16 @@ internal partial class MainViewModel
     public bool CreateDucktypeReturnValue
     {
         get => _createDucktypeReturnValue;
-        set => this.RaiseAndSetIfChanged(ref _createDucktypeReturnValue, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createDucktypeReturnValue, value);
+            this.RaisePropertyChanged(nameof(DucktypeReturnValueEnabled));
+        }
+    }
+
+    public bool DucktypeReturnValueEnabled
+    {
+        get => CreateOnMethodEnd && CreateDucktypeReturnValue;
     }
 
     public bool DucktypeReturnValueFields
@@ -182,7 +229,16 @@ internal partial class MainViewModel
     public bool CreateDucktypeAsyncReturnValue
     {
         get => _createDucktypeAsyncReturnValue;
-        set => this.RaiseAndSetIfChanged(ref _createDucktypeAsyncReturnValue, value);
+        set
+        {
+            this.RaiseAndSetIfChanged(ref _createDucktypeAsyncReturnValue, value);
+            this.RaisePropertyChanged(nameof(DucktypeAsyncReturnValueEnabled));
+        }
+    }
+
+    public bool DucktypeAsyncReturnValueEnabled
+    {
+        get => CreateDucktypeAsyncReturnValue && CreateOnAsyncMethodEnd && CreateOnAsyncMethodEndIsVisible;
     }
 
     public bool DucktypeAsyncReturnValueFields
@@ -222,12 +278,7 @@ internal partial class MainViewModel
 
             if (methodDef.IsStatic)
             {
-                CreateDucktypeInstanceEnabled = false;
                 CreateDucktypeInstance = false;
-            }
-            else
-            {
-                CreateDucktypeInstanceEnabled = true;
             }
 
             if (methodDef.ReturnType.FullName.StartsWith(typeof(Task).FullName!, StringComparison.Ordinal) ||
