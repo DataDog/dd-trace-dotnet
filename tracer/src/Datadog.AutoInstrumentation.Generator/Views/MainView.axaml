@@ -89,46 +89,98 @@
                     <StackPanel Margin="10">
                         <TextBlock FontWeight="DemiBold" FontSize="17" Margin="0 0 0 10">Configuration</TextBlock>
 
-                        <CheckBox IsChecked="{Binding CreateOnMethodBegin}">OnMethodBegin</CheckBox>
+                        <TextBlock Margin="0 10">Integration</TextBlock>
                         <StackPanel Margin="20 0">
-                            <CheckBox IsEnabled="{Binding CreateOnMethodBegin}"
-                                      IsChecked="{Binding CreateOnMethodBeginDucktypeInstance}">
-                                Ducktype instance type
-                            </CheckBox>
-                            <CheckBox IsEnabled="{Binding CreateOnMethodBegin}"
-                                      IsChecked="{Binding CreateOnMethodBeginDucktypeArguments}">
-                                Ducktype arguments
+                            <CheckBox IsChecked="{Binding CreateOnMethodBegin}">OnMethodBegin</CheckBox>
+                            <CheckBox IsChecked="{Binding CreateOnMethodEnd}">OnMethodEnd</CheckBox>
+                            <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}"
+                                      IsChecked="{Binding CreateOnAsyncMethodEnd}">
+                                OnAsyncMethodEnd
                             </CheckBox>
                         </StackPanel>
 
-                        <CheckBox IsChecked="{Binding CreateOnMethodEnd}">OnMethodEnd</CheckBox>
+                        <TextBlock Margin="0 10">DuckTypes</TextBlock>
                         <StackPanel Margin="20 0">
-                            <CheckBox IsEnabled="{Binding CreateOnMethodEnd}"
-                                      IsChecked="{Binding CreateOnMethodEndDucktypeInstance}">
-                                Ducktype instance type
+                            <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
+                                      IsChecked="{Binding CreateDucktypeInstance}">
+                                Target instance
                             </CheckBox>
-                            <CheckBox IsEnabled="{Binding CreateOnMethodEnd}"
-                                      IsChecked="{Binding CreateOnMethodEndDucktypeReturnValue}">
-                                Ducktype return value
+                            <StackPanel Margin="20 0" IsEnabled="{Binding CreateDucktypeInstance}">
+                                <CheckBox IsChecked="{Binding DucktypeInstanceFields}">
+                                    Fields
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeInstanceProperties}">
+                                    Properties
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeInstanceMethods}">
+                                    Methods
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeInstanceDuckChaining}">
+                                    Duckchaining
+                                </CheckBox>
+                            </StackPanel>
+                            
+                            <CheckBox IsEnabled="{Binding CreateOnMethodBegin}"
+                                      IsChecked="{Binding CreateDucktypeArguments}">
+                                Arguments
                             </CheckBox>
+                            <StackPanel Margin="20 0" IsEnabled="{Binding CreateDucktypeArguments}">
+                                <CheckBox IsChecked="{Binding DucktypeArgumentsFields}">
+                                    Fields
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeArgumentsProperties}">
+                                    Properties
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeArgumentsMethods}">
+                                    Methods
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeArgumentsDuckChaining}">
+                                    Duckchaining
+                                </CheckBox>
+                            </StackPanel>
+
+                            <CheckBox IsEnabled="{Binding CreateOnMethodEnd}"
+                                      IsChecked="{Binding CreateDucktypeReturnValue}">
+                                Return value
+                            </CheckBox>
+                            <StackPanel Margin="20 0" IsEnabled="{Binding CreateDucktypeReturnValue}">
+                                <CheckBox IsChecked="{Binding DucktypeReturnValueFields}">
+                                    Fields
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeReturnValueProperties}">
+                                    Properties
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeReturnValueMethods}">
+                                    Methods
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeReturnValueDuckChaining}">
+                                    Duckchaining
+                                </CheckBox>
+                            </StackPanel>
+
+                            <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}" 
+                                      IsEnabled="{Binding CreateOnAsyncMethodEnd}"
+                                      IsChecked="{Binding CreateDucktypeAsyncReturnValue}">
+                                Async return value
+                            </CheckBox>
+                            <StackPanel Margin="20 0" IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}" IsEnabled="{Binding CreateDucktypeAsyncReturnValue}">
+                                <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueFields}">
+                                    Fields
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueProperties}">
+                                    Properties
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueMethods}">
+                                    Methods
+                                </CheckBox>
+                                <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueDuckChaining}">
+                                    Duckchaining
+                                </CheckBox>
+                            </StackPanel>
+                            
+
                         </StackPanel>
 
-                        <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}"
-                                  IsChecked="{Binding CreateOnAsyncMethodEnd}">
-                            OnAsyncMethodEnd
-                        </CheckBox>
-                        <StackPanel Margin="20 0">
-                            <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}"
-                                      IsEnabled="{Binding CreateOnAsyncMethodEnd}"
-                                      IsChecked="{Binding CreateOnAsyncMethodEndDucktypeInstance}">
-                                Ducktype instance type
-                            </CheckBox>
-                            <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}"
-                                      IsEnabled="{Binding CreateOnAsyncMethodEnd}"
-                                      IsChecked="{Binding CreateOnAsyncMethodEndDucktypeReturnValue}">
-                                Ducktype return value
-                            </CheckBox>
-                        </StackPanel>
                     </StackPanel>
                 </Panel>
             </Grid>
