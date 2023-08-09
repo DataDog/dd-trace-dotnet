@@ -362,11 +362,41 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void ServiceOverride_HasBaseService()
+        public void ServiceOverride_WhenSet_HasBaseService()
         {
             var origName = "MyServiceA";
             var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
             span.ServiceName = "MyServiceB";
+
+            span.GetTag(Tags.BaseService).Should().Be(origName);
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenNotSet_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetSame_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = origName;
+
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetTwice_HasBaseService()
+        {
+            var origName = "MyServiceA";
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = "MyServiceB";
+            span.ServiceName = "MyServiceC";
 
             span.GetTag(Tags.BaseService).Should().Be(origName);
         }
