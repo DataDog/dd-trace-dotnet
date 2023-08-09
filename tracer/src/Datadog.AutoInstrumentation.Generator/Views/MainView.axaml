@@ -100,7 +100,12 @@
                         </StackPanel>
 
                         <TextBlock Margin="0 10">DuckTypes</TextBlock>
+
                         <StackPanel Margin="20 0">
+                            <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
+                                      IsChecked="{Binding UseDuckCopyStruct}">
+                                Use DuckCopy struct
+                            </CheckBox>
                             <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
                                       IsChecked="{Binding CreateDucktypeInstance}">
                                 Target instance

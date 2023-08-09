@@ -35,6 +35,7 @@ internal partial class MainViewModel
         this.WhenAnyValue(o => o.CreateOnMethodBegin).Subscribe(subscribeAction);
         this.WhenAnyValue(o => o.CreateOnMethodEnd).Subscribe(subscribeAction);
         this.WhenAnyValue(o => o.CreateOnAsyncMethodEnd).Subscribe(subscribeAction);
+        this.WhenAnyValue(o => o.UseDuckCopyStruct).Subscribe(subscribeAction);
 
         this.WhenAnyValue(o => o.CreateDucktypeInstance).Subscribe(subscribeAction);
         this.WhenAnyValue(o => o.DucktypeInstanceFields).Subscribe(subscribeAction);
@@ -98,9 +99,9 @@ internal partial class MainViewModel
             var isVoid = !methodDef.HasReturnType;
 
             Dictionary<TypeDef, EditorHelper.DuckTypeProxyDefinition>? duckTypeProxyDefinitions = null;
-            if (!isStatic && CreateDucktypeInstance)
+            if (!isStatic && (CreateDucktypeInstance && CreateDucktypeInstanceEnabled))
             {
-                duckTypeProxyDefinitions = EditorHelper.GetDuckTypeProxies(methodDef.DeclaringType, DucktypeInstanceFields, DucktypeInstanceProperties, DucktypeInstanceMethods, DucktypeInstanceDuckChaining);
+                duckTypeProxyDefinitions = EditorHelper.GetDuckTypeProxies(methodDef.DeclaringType, DucktypeInstanceFields, DucktypeInstanceProperties, DucktypeInstanceMethods, DucktypeInstanceDuckChaining, UseDuckCopyStruct);
             }
 
             duckTypeProxyDefinitions ??= new Dictionary<TypeDef, EditorHelper.DuckTypeProxyDefinition>();
@@ -187,7 +188,7 @@ internal partial class MainViewModel
                 var withConstraint = false;
                 if (CreateDucktypeArguments && parameter.Type.TryGetTypeDef() is { } paramTypeDef)
                 {
-                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(paramTypeDef, DucktypeArgumentsFields, DucktypeArgumentsProperties, DucktypeArgumentsMethods, DucktypeArgumentsDuckChaining, duckTypeProxyDefinitions);
+                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(paramTypeDef, DucktypeArgumentsFields, DucktypeArgumentsProperties, DucktypeArgumentsMethods, DucktypeArgumentsDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
                     if (proxyDefinition is not null)
                     {
                         argsConstraint.Add($"        where TArg{i} : {proxyDefinition.Value.ProxyName}");
@@ -258,7 +259,7 @@ internal partial class MainViewModel
                 returnTypeParameter = "TReturn";
                 if (CreateDucktypeReturnValue && methodDef.ReturnType.TryGetTypeDef() is { } returnTypeDef)
                 {
-                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeReturnValueFields, DucktypeReturnValueProperties, DucktypeReturnValueMethods, DucktypeReturnValueDuckChaining, duckTypeProxyDefinitions);
+                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeReturnValueFields, DucktypeReturnValueProperties, DucktypeReturnValueMethods, DucktypeReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
                     if (proxyDefinition is not null)
                     {
                         argsConstraint.Add($"        where TReturn : {proxyDefinition.Value.ProxyName}");
@@ -329,7 +330,7 @@ internal partial class MainViewModel
                 returnTypeParameter = "TReturn";
                 if (CreateDucktypeAsyncReturnValue && genericReturnValue.TryGetTypeDef() is { } returnTypeDef)
                 {
-                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeAsyncReturnValueFields, DucktypeAsyncReturnValueProperties, DucktypeAsyncReturnValueMethods, DucktypeAsyncReturnValueDuckChaining, duckTypeProxyDefinitions);
+                    var proxyDefinition = EditorHelper.GetDuckTypeProxies(returnTypeDef, DucktypeAsyncReturnValueFields, DucktypeAsyncReturnValueProperties, DucktypeAsyncReturnValueMethods, DucktypeAsyncReturnValueDuckChaining, UseDuckCopyStruct, duckTypeProxyDefinitions);
                     if (proxyDefinition is not null)
                     {
                         argsConstraint.Add($"        where TReturn : {proxyDefinition.Value.ProxyName}");

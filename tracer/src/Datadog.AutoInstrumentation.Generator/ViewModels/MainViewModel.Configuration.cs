@@ -16,6 +16,8 @@ internal partial class MainViewModel
     private bool _createOnAsyncMethodEndIsVisible = false;
     private bool _createOnAsyncMethodEnd;
 
+    private bool _useDuckCopyStruct;
+
     private bool _createDucktypeInstance;
     private bool _ducktypeInstanceFields = false;
     private bool _ducktypeInstanceProperties = true;
@@ -86,6 +88,12 @@ internal partial class MainViewModel
             this.RaisePropertyChanged(nameof(DucktypeInstanceEnabled));
             this.RaisePropertyChanged(nameof(DucktypeAsyncReturnValueEnabled));
         }
+    }
+
+    public bool UseDuckCopyStruct
+    {
+        get => _useDuckCopyStruct;
+        set => this.RaiseAndSetIfChanged(ref _useDuckCopyStruct, value);
     }
 
     // ...
@@ -276,11 +284,6 @@ internal partial class MainViewModel
                 return;
             }
 
-            if (methodDef.IsStatic)
-            {
-                CreateDucktypeInstance = false;
-            }
-
             if (methodDef.ReturnType.FullName.StartsWith(typeof(Task).FullName!, StringComparison.Ordinal) ||
                 methodDef.ReturnType.FullName.StartsWith(typeof(ValueTask).FullName!, StringComparison.Ordinal))
             {
@@ -295,6 +298,11 @@ internal partial class MainViewModel
                 CreateOnAsyncMethodEndIsVisible = false;
                 CreateOnAsyncMethodEnd = false;
                 CreateDucktypeAsyncReturnValue = false;
+            }
+
+            if (methodDef.IsStatic || (!CreateOnMethodBegin && !CreateOnMethodEnd && !CreateOnAsyncMethodEnd))
+            {
+                CreateDucktypeInstance = false;
             }
         });
     }

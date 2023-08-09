@@ -375,14 +375,22 @@ internal static class EditorHelper
         };
     }
 
-    public static Dictionary<TypeDef, DuckTypeProxyDefinition> GetDuckTypeProxies(TypeDef targetType, bool includeFields, bool includeProperties, bool includeMethods, bool includeDuckChaining)
+    public static Dictionary<TypeDef, DuckTypeProxyDefinition> GetDuckTypeProxies(TypeDef targetType, bool includeFields, bool includeProperties, bool includeMethods, bool includeDuckChaining, bool useDuckCopyStruct)
     {
         var duckTypeProxyDefinitions = new Dictionary<TypeDef, DuckTypeProxyDefinition>();
-        GetDuckTypeProxies(targetType, includeFields, includeProperties, includeMethods, includeDuckChaining, duckTypeProxyDefinitions);
+        GetDuckTypeProxies(targetType, includeFields, includeProperties, includeMethods, includeDuckChaining, useDuckCopyStruct, duckTypeProxyDefinitions);
         return duckTypeProxyDefinitions;
     }
 
-    public static DuckTypeProxyDefinition? GetDuckTypeProxies(TypeDef targetType, bool includeFields, bool includeProperties, bool includeMethods, bool includeDuckChaining, Dictionary<TypeDef, DuckTypeProxyDefinition> duckTypeProxyDefinitions)
+    public static DuckTypeProxyDefinition? GetDuckTypeProxies(
+        TypeDef targetType,
+        bool includeFields,
+        bool includeProperties,
+        bool includeMethods,
+        bool includeDuckChaining,
+        bool useDuckCopyStruct,
+        Dictionary<TypeDef, DuckTypeProxyDefinition> duckTypeProxyDefinitions,
+        bool generateDuckCopyStruct = false)
     {
         if (targetType is null)
         {
@@ -394,7 +402,9 @@ internal static class EditorHelper
             return response;
         }
 
-        var proxyName = $"I{CleanTypeName(targetType.Name)}Proxy";
+        generateDuckCopyStruct = useDuckCopyStruct && generateDuckCopyStruct && !includeMethods;
+
+        var proxyName = generateDuckCopyStruct ? $"DuckType{CleanTypeName(targetType.Name)}Proxy" : $"I{CleanTypeName(targetType.Name)}Proxy";
         duckTypeProxyDefinitions[targetType] = new DuckTypeProxyDefinition(targetType, proxyName, null);
 
         var proxyProperties = new List<(string ReturnValue, string PropertyName, string TargetName, string TargetFullName, bool Getter, bool Setter, bool IsField)>();
@@ -412,7 +422,7 @@ internal static class EditorHelper
                 }
                 else if (includeDuckChaining && typeSig.TryGetTypeDef() is { } typeDef && typeDef != targetType)
                 {
-                    var proxyDefinition = GetDuckTypeProxies(typeDef, includeFields, includeProperties, includeMethods, includeDuckChaining, duckTypeProxyDefinitions);
+                    var proxyDefinition = GetDuckTypeProxies(typeDef, includeFields, includeProperties, includeMethods, includeDuckChaining, useDuckCopyStruct, duckTypeProxyDefinitions, true);
                     type = proxyDefinition?.ProxyName;
                 }
             }
@@ -538,87 +548,136 @@ internal static class EditorHelper
             return null;
         }
 
+        // Create Proxy
         var sb = new StringBuilder();
-        sb.Append($@"
+        if (!generateDuckCopyStruct)
+        {
+            sb.Append(
+                $@"
 /// <summary>
 /// DuckTyping interface for {targetType.FullName}
 /// </summary>
 internal interface {proxyName} : IDuckType
 {{");
 
-        foreach (var property in proxyProperties)
-        {
-            var getterSetter = string.Empty;
-            var documentation = string.Empty;
-            if (property is { Getter: true, Setter: true })
+            foreach (var property in proxyProperties)
             {
-                documentation = $"Gets or sets a value of {property.TargetFullName}";
-                getterSetter = "get; set;";
-            }
-            else if (property.Getter)
-            {
-                documentation = $"Gets a value of {property.TargetFullName}";
-                getterSetter = "get;";
-            }
-            else if (property.Setter)
-            {
-                documentation = $"Sets a value of {property.TargetFullName}";
-                getterSetter = "set;";
+                var getterSetter = string.Empty;
+                var documentation = string.Empty;
+                if (property is { Getter: true, Setter: true })
+                {
+                    documentation = $"Gets or sets a value of {property.TargetFullName}";
+                    getterSetter = "get; set;";
+                }
+                else if (property.Getter)
+                {
+                    documentation = $"Gets a value of {property.TargetFullName}";
+                    getterSetter = "get;";
+                }
+                else if (property.Setter)
+                {
+                    documentation = $"Sets a value of {property.TargetFullName}";
+                    getterSetter = "set;";
+                }
+
+                sb.AppendLine(string.Empty);
+                sb.AppendLine("\t///<summary>");
+                sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
+                sb.AppendLine("\t///</summary>");
+                if (property.PropertyName != property.TargetName)
+                {
+                    if (property.IsField)
+                    {
+                        sb.AppendLine($"\t[DuckField(Name = \"{property.TargetName}\")]");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"\t[Duck(Name = \"{property.TargetName}\")]");
+                    }
+                }
+
+                sb.AppendLine($"\t{property.ReturnValue} {property.PropertyName} {{ {getterSetter} }}");
             }
 
-            sb.AppendLine(string.Empty);
-            sb.AppendLine("\t///<summary>");
-            sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
-            sb.AppendLine("\t///</summary>");
-            if (property.PropertyName != property.TargetName)
+            foreach (var method in proxyMethods)
             {
-                if (property.IsField)
+                var documentation = $"Calls method: {method.MethodTargetFullName}";
+                sb.AppendLine(string.Empty);
+                sb.AppendLine("\t///<summary>");
+                sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
+                sb.AppendLine("\t///</summary>");
+                var targetParameters = method.ArgumentTargetTypeNames is not null ? string.Join(", ", method.ArgumentTargetTypeNames.Select(i => "\"" + i + "\"")) : null;
+                if (method.MethodName != method.MethodTargetName)
                 {
-                    sb.AppendLine($"\t[DuckField(Name = \"{property.TargetName}\")]");
+                    if (string.IsNullOrEmpty(targetParameters))
+                    {
+                        sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\")]");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\", ParameterTypeNames = new string[] {{ {targetParameters} }})]");
+                    }
                 }
-                else
+                else if (!string.IsNullOrEmpty(targetParameters))
                 {
-                    sb.AppendLine($"\t[Duck(Name = \"{property.TargetName}\")]");
+                    sb.AppendLine($"\t[Duck(ParameterTypeNames = new string[] {{ {targetParameters} }})]");
                 }
+
+                var parameters = string.Join(", ", method.ArgumentTypeNames.Zip(method.ArgumentNames, (a, b) => $"{a} {b}"));
+                sb.AppendLine($"\t{method.ReturnType} {method.MethodName}({parameters});");
             }
 
-            sb.AppendLine($"\t{property.ReturnValue} {property.PropertyName} {{ {getterSetter} }}");
+            if (proxyProperties.Count == 0 && proxyMethods.Count == 0)
+            {
+                sb.AppendLine();
+            }
+
+            sb.Append($@"}}");
         }
-
-        foreach (var method in proxyMethods)
+        else
         {
-            var documentation = $"Calls method: {method.MethodTargetFullName}";
-            sb.AppendLine(string.Empty);
-            sb.AppendLine("\t///<summary>");
-            sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
-            sb.AppendLine("\t///</summary>");
-            var targetParameters = method.ArgumentTargetTypeNames is not null ? string.Join(", ", method.ArgumentTargetTypeNames.Select(i => "\"" + i + "\"")) : null;
-            if (method.MethodName != method.MethodTargetName)
+            sb.Append(
+                $@"
+/// <summary>
+/// DuckTyping struct for {targetType.FullName}
+/// </summary>
+[DuckCopy]
+internal struct {proxyName}
+{{");
+            foreach (var property in proxyProperties)
             {
-                if (string.IsNullOrEmpty(targetParameters))
+                if (!property.Getter)
                 {
-                    sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\")]");
+                    continue;
                 }
-                else
+
+                var documentation = $"Gets a value of {property.TargetFullName}";
+                sb.AppendLine(string.Empty);
+                sb.AppendLine("\t///<summary>");
+                sb.AppendLine($"\t/// {documentation.Replace("<", "[").Replace(">", "]").Replace("&", "&amp;")}");
+                sb.AppendLine("\t///</summary>");
+                if (property.PropertyName != property.TargetName)
                 {
-                    sb.AppendLine($"\t[Duck(Name = \"{method.MethodTargetName}\", ParameterTypeNames = new string[] {{ {targetParameters} }})]");
+                    if (property.IsField)
+                    {
+                        sb.AppendLine($"\t[DuckField(Name = \"{property.TargetName}\")]");
+                    }
+                    else
+                    {
+                        sb.AppendLine($"\t[Duck(Name = \"{property.TargetName}\")]");
+                    }
                 }
+
+                sb.AppendLine($"\t{property.ReturnValue} {property.PropertyName};");
             }
-            else if (!string.IsNullOrEmpty(targetParameters))
+
+            if (proxyProperties.Count == 0)
             {
-                sb.AppendLine($"\t[Duck(ParameterTypeNames = new string[] {{ {targetParameters} }})]");
+                sb.AppendLine();
             }
 
-            var parameters = string.Join(", ", method.ArgumentTypeNames.Zip(method.ArgumentNames, (a, b) => $"{a} {b}"));
-            sb.AppendLine($"\t{method.ReturnType} {method.MethodName}({parameters});");
+            sb.Append($@"}}");
         }
-
-        if (proxyProperties.Count == 0 && proxyMethods.Count == 0)
-        {
-            sb.AppendLine();
-        }
-
-        sb.Append($@"}}");
 
         var ret = new DuckTypeProxyDefinition(targetType, proxyName, sb.ToString());
         duckTypeProxyDefinitions[targetType] = ret;
