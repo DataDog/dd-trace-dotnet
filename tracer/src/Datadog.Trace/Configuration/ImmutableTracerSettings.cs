@@ -152,6 +152,10 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = settings.IsRunningInAzureAppService;
             AzureAppServiceMetadata = settings.AzureAppServiceMetadata;
 
+            IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
+
+            IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
+
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
 
@@ -493,6 +497,17 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInAzureAppService { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer is running in Azure Functions
+        /// on a consumption plan
+        /// </summary>
+        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; }
@@ -514,6 +529,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
+
+        /// <summary>
+        /// Gets the GCP Function settings
+        /// </summary>
+        internal ImmutableGCPFunctionSettings? GCPFunctionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.
