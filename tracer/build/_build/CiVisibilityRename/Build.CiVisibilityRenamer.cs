@@ -120,8 +120,13 @@ partial class Build
             // Environment variables
             sb.Replace("\"DD_", "\"DDCIAPP_");
 
-            // Profiler guid
+            // Native profiler guid
             sb.Replace("846F5F1C-F9AE-4B07-969E-05C26BC060D8", "0DB16C43-C20F-4677-BE66-D430D19F8DD3");
+            sb.Replace("{0x846f5f1c, 0xf9ae, 0x4b07, {0x96, 0x9e, 0x5, 0xc2, 0x6b, 0xc0, 0x60, 0xd8}}", "{0x0db16c43, 0xc20f, 0x4677, {0xbe, 0x66, 0xd4, 0x30, 0xd1, 0x9f, 0x8d, 0xd3}};");
+
+            // Native tracer guid
+            sb.Replace("50DA5EED-F1ED-B00B-1055-5AFE55A1ADE5", "74988B26-836B-4D6E-87DD-96AD50DD5053");
+            sb.Replace("{0x50da5eed, 0xf1ed, 0xb00b, {0x10, 0x55, 0x5a, 0xfe, 0x55, 0xa1, 0xad, 0xe5}}", "{0x74988b26, 0x836b, 0x4d6e, {0x87, 0xdd, 0x96, 0xad, 0x50, 0xdd, 0x50, 0x53}};");
 
             // repo references (for safety)
             sb.Replace("dd-trace-dotnet", "dd-trace-internalciapp");
