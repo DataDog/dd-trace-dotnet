@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
 {
-    [Collection("SecuritySequentialTests")]
+    [Collection(nameof(SecuritySequentialTests))]
     public class WafCompatibilityTests
     {
         [SkippableFact]

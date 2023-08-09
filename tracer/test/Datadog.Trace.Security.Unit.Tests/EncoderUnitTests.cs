@@ -12,7 +12,6 @@ using Encoder = Datadog.Trace.AppSec.Waf.Encoder;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-[Collection("SecuritySequentialTests")]
 public class EncoderUnitTests : WafLibraryRequiredTest
 {
     [SkippableTheory]
