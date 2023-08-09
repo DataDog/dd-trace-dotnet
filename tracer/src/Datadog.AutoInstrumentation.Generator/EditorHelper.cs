@@ -202,6 +202,7 @@ internal static class EditorHelper
 
         return fullTypeName switch
         {
+            "System.Void" => "void",
             "System.Object" => "object",
             "System.Action" => "Action",
             "System.Boolean" => "bool",
@@ -349,7 +350,28 @@ internal static class EditorHelper
         var proxyName = $"I{CleanTypeName(targetType.Name)}Proxy";
         duckTypeProxyDefinitions[targetType] = new DuckTypeProxyDefinition(targetType, proxyName, null);
 
-        var proxyMembers = new List<(string ReturnValue, string PropertyName, string TargetName, string TargetFullName, bool Getter, bool Setter, bool IsField)>();
+        var proxyProperties = new List<(string ReturnValue, string PropertyName, string TargetName, string TargetFullName, bool Getter, bool Setter, bool IsField)>();
+        var proxyMethods = new List<(string ReturnType, string MethodName, string MethodTargetName, string MethodTargetFullName, List<string> ArgumentTypeNames, List<string> ArgumentTargetTypeNames)>();
+
+        string GetTypeName(TypeSig typeSig)
+        {
+            var typeValue = typeSig.ToString() ?? string.Empty;
+            var type = GetIfBasicTypeOrDefault(typeValue);
+            if (type is null)
+            {
+                if (typeSig.IsCorLibType)
+                {
+                    type = typeValue;
+                }
+                else if (includeDuckChaining && typeSig.TryGetTypeDef() is { } typeDef && typeDef != targetType)
+                {
+                    var proxyDefinition = GetDuckTypeProxies(typeDef, includeFields, includeProperties, includeMethods, includeDuckChaining, duckTypeProxyDefinitions);
+                    type = proxyDefinition?.ProxyName;
+                }
+            }
+
+            return type ?? "object";
+        }
 
         if (includeFields)
         {
@@ -370,15 +392,7 @@ internal static class EditorHelper
                     }
                     else if (field.ResolveFieldDef()?.FieldType is { } fieldType)
                     {
-                        if (fieldType.IsCorLibType)
-                        {
-                            returnType = fieldType.FullName;
-                        }
-                        else if (includeDuckChaining && fieldType.TryGetTypeDef() is { } fieldTypeDef && fieldTypeDef != targetType)
-                        {
-                            var proxyDefinition = GetDuckTypeProxies(fieldTypeDef, includeFields, includeProperties, includeMethods, includeDuckChaining, duckTypeProxyDefinitions);
-                            returnType = proxyDefinition?.ProxyName;
-                        }
+                        returnType = GetTypeName(fieldType);
                     }
                 }
 
@@ -389,7 +403,7 @@ internal static class EditorHelper
                     fieldName = char.ToUpperInvariant(fieldName[1]) + fieldName.Substring(2);
                 }
 
-                proxyMembers.Add(new(returnType, $"{fieldName}Field", field.Name, field.FieldType.FullName, true, initOnly, true));
+                proxyProperties.Add(new(returnType, $"{fieldName}Field", field.Name, field.FieldType.FullName, true, initOnly, true));
             }
         }
 
@@ -404,29 +418,14 @@ internal static class EditorHelper
 
                 if (property.Type is PropertySig propertySig)
                 {
-                    var retTypeValue = propertySig.RetType.ToString() ?? string.Empty;
-                    var returnType = GetIfBasicTypeOrDefault(retTypeValue);
-                    if (returnType is null)
-                    {
-                        if (propertySig.RetType.IsCorLibType)
-                        {
-                            returnType = retTypeValue;
-                        }
-                        else if (includeDuckChaining && propertySig.RetType.TryGetTypeDef() is { } propertyTypeDef && propertyTypeDef != targetType)
-                        {
-                            var proxyDefinition = GetDuckTypeProxies(propertyTypeDef, includeFields, includeProperties, includeMethods, includeDuckChaining, duckTypeProxyDefinitions);
-                            returnType = proxyDefinition?.ProxyName;
-                        }
-                    }
-
-                    returnType ??= "object";
+                    var returnType = GetTypeName(propertySig.RetType);
                     var propertyName = property.Name.String;
                     if (propertyName.IndexOf('.') != -1)
                     {
                         propertyName = CleanTypeName(propertyName);
                     }
 
-                    proxyMembers.Add(new(returnType, propertyName, property.Name, retTypeValue, property.GetMethod is not null, property.SetMethod is not null, false));
+                    proxyProperties.Add(new(returnType, propertyName, property.Name, propertySig.RetType.FullName, property.GetMethod is not null, property.SetMethod is not null, false));
                 }
             }
         }
@@ -445,11 +444,29 @@ internal static class EditorHelper
                     continue;
                 }
 
-                Console.WriteLine(method.ToString());
+                var retTypeValue = GetTypeName(method.ReturnType);
+                var methodName = method.Name.String;
+                if (methodName.IndexOf('.') != -1)
+                {
+                    methodName = CleanTypeName(methodName);
+                }
+
+                Console.WriteLine();
+                foreach (var param in method.Parameters)
+                {
+                    if (param.IsHiddenThisParameter || param.IsReturnTypeParameter)
+                    {
+                        continue;
+                    }
+
+                    Console.WriteLine("\t{0} | {1}", param.Type, param.Name);
+                }
+
+                Console.WriteLine("{0} | {1} | {2}", retTypeValue, methodName, method);
             }
         }
 
-        if (proxyMembers.Count == 0)
+        if (proxyProperties.Count == 0)
         {
             return null;
         }
@@ -462,7 +479,7 @@ internal static class EditorHelper
 internal interface {proxyName} : IDuckType
 {{");
 
-        foreach (var property in proxyMembers)
+        foreach (var property in proxyProperties)
         {
             var getterSetter = string.Empty;
             var documentation = string.Empty;
@@ -501,7 +518,7 @@ internal interface {proxyName} : IDuckType
             sb.AppendLine($"\t{property.ReturnValue} {property.PropertyName} {{ {getterSetter} }}");
         }
 
-        if (proxyMembers.Count == 0)
+        if (proxyProperties.Count == 0)
         {
             sb.AppendLine();
         }
