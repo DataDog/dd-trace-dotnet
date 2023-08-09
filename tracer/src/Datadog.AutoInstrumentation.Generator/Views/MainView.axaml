@@ -107,6 +107,8 @@
                                               IsChecked="{Binding UseDuckCopyStruct}">
                                         Use DuckCopy struct
                                     </CheckBox>
+
+
                                     <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
                                               IsChecked="{Binding CreateDucktypeInstance}">
                                         Target instance
@@ -125,6 +127,7 @@
                                             Duckchaining
                                         </CheckBox>
                                     </StackPanel>
+                                    
                                     
                                     <CheckBox IsEnabled="{Binding CreateOnMethodBegin}"
                                               IsChecked="{Binding CreateDucktypeArguments}">
@@ -145,6 +148,7 @@
                                         </CheckBox>
                                     </StackPanel>
 
+                                    
                                     <CheckBox IsEnabled="{Binding CreateOnMethodEnd}"
                                               IsChecked="{Binding CreateDucktypeReturnValue}">
                                         Return value

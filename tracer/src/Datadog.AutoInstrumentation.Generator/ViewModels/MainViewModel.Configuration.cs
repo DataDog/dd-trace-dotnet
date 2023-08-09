@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 using ReactiveUI;
 
@@ -157,7 +158,15 @@ internal partial class MainViewModel
         get => _createDucktypeArguments;
         set
         {
-            this.RaiseAndSetIfChanged(ref _createDucktypeArguments, value);
+            if (value && SelectedMethod?.Parameters.Count(p => !p.IsHiddenThisParameter) == 0)
+            {
+                this.RaiseAndSetIfChanged(ref _createDucktypeArguments, false);
+            }
+            else
+            {
+                this.RaiseAndSetIfChanged(ref _createDucktypeArguments, value);
+            }
+
             this.RaisePropertyChanged(nameof(DucktypeArgumentsEnabled));
         }
     }
@@ -198,7 +207,15 @@ internal partial class MainViewModel
         get => _createDucktypeReturnValue;
         set
         {
-            this.RaiseAndSetIfChanged(ref _createDucktypeReturnValue, value);
+            if (value && SelectedMethod?.ReturnType.FullName == "System.Void")
+            {
+                this.RaiseAndSetIfChanged(ref _createDucktypeReturnValue, false);
+            }
+            else
+            {
+                this.RaiseAndSetIfChanged(ref _createDucktypeReturnValue, value);
+            }
+
             this.RaisePropertyChanged(nameof(DucktypeReturnValueEnabled));
         }
     }
