@@ -70,8 +70,13 @@ public class StringBuilderAspects
     {
         // We want the null reference exception to be launched here if target is null
         var result = target!.ToString();
-        PropagationModuleImpl.PropagateTaint(target, result);
-        PropagationModuleImpl.FixRangesIfNeeded(result);
+
+        if (target is StringBuilder)
+        {
+            PropagationModuleImpl.PropagateTaint(target, result);
+            PropagationModuleImpl.FixRangesIfNeeded(result);
+        }
+
         return result;
     }
 
