@@ -115,17 +115,17 @@ namespace Datadog.Trace.Coverage.Collector
                 var coverageSettings = new CoverageSettings(_configurationElement);
                 foreach (var item in coverageSettings.ExcludeFilters)
                 {
-                    _logger?.Warning($"Exclude filter: {item}");
+                    _logger?.Debug($"Exclude filter: {item}");
                 }
 
                 foreach (var item in coverageSettings.ExcludeByAttribute)
                 {
-                    _logger?.Warning($"Exclude attribute: {item}");
+                    _logger?.Debug($"Exclude attribute: {item}");
                 }
 
                 foreach (var item in coverageSettings.ExcludeSourceFiles)
                 {
-                    _logger?.Warning($"Exclude source: {item}");
+                    _logger?.Debug($"Exclude source: {item}");
                 }
 
                 // Read the DD_DOTNET_TRACER_HOME environment variable

@@ -18,6 +18,7 @@ namespace Datadog.Trace.Coverage.Collector;
 internal static class FiltersHelper
 {
     private static readonly ConcurrentDictionary<IReadOnlyList<string>, IReadOnlyList<Regex>> AttributesRegexes = new();
+    // https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing.matcher?view=dotnet-plat-ext-6.0
     private static readonly ConcurrentDictionary<IReadOnlyList<string>, Tuple<Matcher, IReadOnlyList<Regex>>> Matchers = new();
 
     public static bool FilteredByAttribute(string attributeFullName, IReadOnlyList<string> filters)
@@ -90,6 +91,7 @@ internal static class FiltersHelper
             });
 
         var matcher = value.Item1;
+        // https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing.matcher?view=dotnet-plat-ext-6.0
         var globbingResult = matcher.Match(Path.IsPathRooted(sourcePath) ? sourcePath.Substring(Path.GetPathRoot(sourcePath).Length) : sourcePath).HasMatches;
         if (globbingResult)
         {
