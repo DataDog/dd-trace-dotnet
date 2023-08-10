@@ -108,11 +108,12 @@ partial class Build
             sb.Clear();
             sb.Append(contents);
 
-            // strip out the tests from the cmakelists
+            // strip out the tests + profiler from the cmakelists (we don't need the continuous profiler currently)
             if (Path.GetFileName(filename).Equals("CMakeLists.txt", StringComparison.OrdinalIgnoreCase))
             {
                 sb.Replace("add_subdirectory(test)", string.Empty);
                 sb.Replace("Datadog.Tracer.Native.Tests", string.Empty);
+                sb.Replace("add_subdirectory(profiler)", string.Empty);
             }
 
             // Native library
