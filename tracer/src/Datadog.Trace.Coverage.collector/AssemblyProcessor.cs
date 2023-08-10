@@ -183,6 +183,11 @@ namespace Datadog.Trace.Coverage.Collector
                 // Process all modules in the assembly
                 var module = assemblyDefinition.MainModule;
                 _logger.Debug($"Processing module: {module.Name}");
+                if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, null, _settings.ExcludeFilters))
+                {
+                    _logger.Debug($"Module: {module.FileName}, ignored by settings filter");
+                    return;
+                }
 
                 // Process all types defined in the module
                 var moduleTypes = module.GetTypes().ToList();
@@ -267,7 +272,7 @@ namespace Datadog.Trace.Coverage.Collector
                         continue;
                     }
 
-                    if (FiltersHelper.FilteredByAssemblyAndType(moduleType.FullName, _settings.ExcludeFilters))
+                    if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, moduleType.FullName, _settings.ExcludeFilters))
                     {
                         _logger.Debug($"Type: {moduleType.FullName}, ignored by settings filter");
                         continue;

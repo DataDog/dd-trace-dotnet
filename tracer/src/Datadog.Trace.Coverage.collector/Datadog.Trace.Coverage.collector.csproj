@@ -9,6 +9,7 @@
     <ItemGroup>
       <PackageReference Include="Microsoft.TestPlatform.ObjectModel" Version="16.4.0" />
       <PackageReference Include="Mono.Cecil" Version="0.11.5" />
+      <PackageReference Include="Microsoft.Extensions.FileSystemGlobbing" Version="7.0.0" />
     </ItemGroup>
 
     <ItemGroup>
