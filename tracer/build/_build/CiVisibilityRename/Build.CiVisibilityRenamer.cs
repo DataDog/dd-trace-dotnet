@@ -108,6 +108,13 @@ partial class Build
             sb.Clear();
             sb.Append(contents);
 
+            // strip out the tests from the cmakelists
+            if (Path.GetFileName(filename).Equals("CMakeLists.txt", StringComparison.OrdinalIgnoreCase))
+            {
+                sb.Replace("add_subdirectory(test)", string.Empty);
+                sb.Replace("Datadog.Tracer.Native.Tests", string.Empty);
+            }
+
             // Native library
             sb.Replace(oldNativeName, newNativeName);
 
