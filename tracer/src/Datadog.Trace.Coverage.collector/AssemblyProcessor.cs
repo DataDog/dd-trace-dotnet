@@ -115,6 +115,11 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
+                    if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, ignored by settings attribute filter.");
+                    }
+
                     hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
 
                     // Enable Jit Optimizations
@@ -248,10 +253,23 @@ namespace Datadog.Trace.Coverage.Collector
                             skipType = true;
                             break;
                         }
+
+                        if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                        {
+                            _logger.Debug($"Type: {moduleType.FullName}, ignored by settings attribute filter");
+                            skipType = true;
+                            break;
+                        }
                     }
 
                     if (skipType)
                     {
+                        continue;
+                    }
+
+                    if (FiltersHelper.FilteredByAssemblyAndType(moduleType.FullName, _settings.ExcludeFilters))
+                    {
+                        _logger.Debug($"Type: {moduleType.FullName}, ignored by settings filter");
                         continue;
                     }
 
@@ -263,9 +281,26 @@ namespace Datadog.Trace.Coverage.Collector
                     for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
                     {
                         var moduleTypeMethod = moduleTypeMethods[methodIndex];
+                        var skipMethod = false;
                         if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
                         {
                             _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
+                            continue;
+                        }
+
+                        foreach (var cAttr in moduleTypeMethod.CustomAttributes)
+                        {
+                            var attrFullName = cAttr.Constructor.DeclaringType.FullName;
+                            if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings attribute filter");
+                                skipMethod = true;
+                                break;
+                            }
+                        }
+
+                        if (skipMethod)
+                        {
                             continue;
                         }
 
