@@ -384,9 +384,10 @@ namespace Samples.Security.AspNetCore5.Controllers
             var result = search.FindAll();
 
             string resultString = string.Empty;
-            foreach(var item in result)
+
+            for(int i = 0; i < result.Count; i++)
             {
-                resultString += item.ToString() + Environment.NewLine;
+                resultString += result[i].Path + Environment.NewLine;
             }
 
             return Content($"Result: " + resultString);
