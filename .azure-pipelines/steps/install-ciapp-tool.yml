@@ -1,0 +1,12 @@
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: Download ciapp internal tool
+  inputs:
+    artifact: dd-trace-ciapp
+    path: $(Agent.TempDirectory)
+
+- script: |
+    dotnet tool update -g dd-integrations-generator --version $(ToolVersion) --add-source $(Agent.TempDirectory)
+  displayName: Install ciapp internal tool
+  env:
+    ToolVersion: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]

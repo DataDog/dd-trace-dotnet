@@ -210,7 +210,7 @@ stages:
 - stage: download_internal_ciapp_tool
   dependsOn: []
   jobs:
-    - job: download-from-azure
+    - job: fetch
       timeoutInMinutes: 60 #default value
       pool:
         name: azure-linux-task-scale-set
@@ -227,9 +227,10 @@ stages:
             # download the tool
             curl -s $TOOL_URL -o $(Build.ArtifactStagingDirectory)/dd-trace-ciapp.$VERSION.nupkg
             
-            echo "##vso[task.setvariable variable=tool_version;isOutput=true]VERSION"
-            echo "##vso[task.setvariable variable=tool_name;isOutput=true]TOOL_NAME"
+            echo "##vso[task.setvariable variable=version;isOutput=true]VERSION"
+            echo "##vso[task.setvariable variable=name;isOutput=true]TOOL_NAME"
           displayName: Download tool
+          name: tool
 
         # release artifacts
         - publish: "$(Build.ArtifactStagingDirectory)"
@@ -792,7 +793,7 @@ stages:
 
 - stage: unit_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -813,6 +814,7 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/install-ciapp-tool.yml
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test

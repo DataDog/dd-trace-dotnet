@@ -23,6 +23,7 @@ using static Nuke.Common.IO.FileSystemTasks;
 using static Nuke.Common.IO.PathConstruction;
 using static Nuke.Common.Tools.DotNet.DotNetTasks;
 using static Nuke.Common.Tools.MSBuild.MSBuildTasks;
+using static InternalCiAppToolExtensions;
 using Logger = Serilog.Log;
 
 // #pragma warning disable SA1306
@@ -897,7 +898,7 @@ partial class Build
                 {
                     try
                     {
-                        DotNetTest(x => x
+                        DotNetTestWithCiApp(x => x
                             .EnableNoRestore()
                             .EnableNoBuild()
                             .SetFilter(filter)
