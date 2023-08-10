@@ -912,7 +912,6 @@ partial class Build
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
                                 .SetProjectFile(project)));
                     }
                     catch (Exception ex)

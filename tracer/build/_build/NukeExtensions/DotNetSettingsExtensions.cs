@@ -69,13 +69,17 @@ internal static partial class DotNetSettingsExtensions
     public static T SetDDEnvironmentVariables<T>(this T settings, string serviceName)
         where T: ToolSettings
     {
-        return settings.SetProcessEnvironmentVariable("DD_SERVICE_NAME", serviceName);
+        return settings
+            .SetProcessEnvironmentVariable("DD_SERVICE_NAME", serviceName)
+            .SetProcessEnvironmentVariable("DDCIAPP_SERVICE_NAME", serviceName);
     }
 
     public static T SetLogsDirectory<T>(this T settings, AbsolutePath logsDirectory)
         where T: ToolSettings
     {
-        return settings.SetProcessEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logsDirectory);
+        return settings
+            .SetProcessEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logsDirectory)
+            .SetProcessEnvironmentVariable("DDCIAPP_TRACE_LOG_DIRECTORY", logsDirectory);
     }
 
     public static T SetProcessEnvironmentVariables<T>(this T settings, IEnumerable<KeyValuePair<string, string>> variables)
