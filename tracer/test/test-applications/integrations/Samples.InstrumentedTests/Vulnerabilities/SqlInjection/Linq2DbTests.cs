@@ -91,83 +91,83 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
     public void GivenLinq2DbOperation_WhenCallingQueryWithTainted_VulnerabilityIsReported()
     {
         dataConnection.Query<TestDb.Person>(querySafe);
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.Close();
         dataConnection.Query<TestDb.Person>(queryUnsafe);
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingQueryMultipleWithTainted_VulnerabilityIsReported()
     {
         dataConnection.QueryMultiple<TestDb.Person>(querySafe);
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.QueryMultiple<TestDb.Person>(queryUnsafe);
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingQueryMultipleAsyncWithTainted_VulnerabilityIsReported()
     {
         dataConnection.QueryMultipleAsync<TestDb.Person>(querySafe).Wait();
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.QueryMultipleAsync<TestDb.Person>(queryUnsafe).Wait();
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingQueryMultipleAsyncWithTaintedCancellation_VulnerabilityIsReported()
     {
         dataConnection.QueryMultipleAsync<TestDb.Person>(querySafe, CancellationToken.None).Wait();
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.QueryMultipleAsync<TestDb.Person>(queryUnsafe, CancellationToken.None).Wait();
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingQueryToListAsyncWithTaintedCancellation_VulnerabilityIsReported()
     {
         dataConnection.QueryToListAsync<TestDb.Person>(querySafe, CancellationToken.None).Wait();
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.QueryToListAsync<TestDb.Person>(queryUnsafe, CancellationToken.None).Wait();
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingQueryToArrayAsyncWithTaintedCancellation_VulnerabilityIsReported()
     {
         dataConnection.QueryToArrayAsync<TestDb.Person>(querySafe, CancellationToken.None).Wait();
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.QueryToArrayAsync<TestDb.Person>(queryUnsafe, CancellationToken.None).Wait();
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteWithTainted_VulnerabilityIsReported()
     {
         dataConnection.Execute<TestDb.Person>(querySafe);
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.Execute<TestDb.Person>(queryUnsafe);
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteAsyncWithTainted_VulnerabilityIsReported()
     {
         dataConnection.ExecuteAsync<TestDb.Person>(querySafe, CancellationToken.None).Wait();
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.ExecuteAsync<TestDb.Person>(queryUnsafe, CancellationToken.None).Wait();
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 
     [Fact]
     public void GivenLinq2DbOperation_WhenCallingExecuteReaderWithTainted_VulnerabilityIsReported()
     {
         dataConnection.ExecuteReader(querySafe, CommandBehavior.Default);
-        AssertVulnerable(0);
+        AssertNotVulnerable();
         dataConnection.Close();
         dataConnection.ExecuteReader(queryUnsafe, CommandBehavior.Default);
-        AssertVulnerable(1);
+        AssertVulnerable();
     }
 }
 

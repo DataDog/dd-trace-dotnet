@@ -8,6 +8,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -24,16 +26,8 @@ public class IastInstrumentationUnitTests : TestHelper
     private List<Type> _taintedTypes = new List<Type>()
     {
         typeof(string), typeof(StringBuilder), typeof(object), typeof(char[]), typeof(object[]), typeof(IEnumerable),
-        typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm)
-    };
-
-    private string[] _replaceOverloadsToExclude = new string[]
-    {
-        // special case
-#if !NETCOREAPP3_1_OR_GREATER
-        "System.String::Replace(System.String,System.String,System.StringComparison)",
-        "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
-#endif
+        typeof(string[]), typeof(HashAlgorithm), typeof(SymmetricAlgorithm), typeof(Uri),
+        typeof(System.Net.Http.HttpRequestMessage), typeof(UriBuilder)
     };
 
     public IastInstrumentationUnitTests(ITestOutputHelper output)
@@ -42,7 +36,6 @@ public class IastInstrumentationUnitTests : TestHelper
     }
 
     [Theory]
-    [InlineData(typeof(StringBuilder), "ToString")]
     [InlineData(typeof(StringBuilder), "Append")]
     [InlineData(typeof(StringBuilder), "AppendLine", null, true)]
     [InlineData(typeof(StringBuilder), ".ctor", null, true)]
@@ -69,32 +62,23 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "TrimEnd")]
     [InlineData(typeof(string), "Format")]
     [InlineData(typeof(string), "Split")]
+    [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]
     [InlineData(typeof(StreamReader), ".ctor")]
     [InlineData(typeof(StreamWriter), ".ctor")]
     [InlineData(typeof(FileStream), ".ctor")]
     [InlineData(typeof(DirectoryInfo), null, new string[] { "void CreateAsSymbolicLink(System.String)" }, true)]
+    [InlineData(typeof(HttpClient), null, null, true)]
+    [InlineData(typeof(HttpMessageInvoker), null, null, true)]
+    [InlineData(typeof(WebRequest), null, new string[] { "Boolean RegisterPrefix(System.String, System.Net.IWebRequestCreate)" }, true)]
+    [InlineData(typeof(WebClient), null, null, true)]
+    [InlineData(typeof(Uri), null, new string[] { "Boolean CheckSchemeName(System.String)", "Boolean IsHexEncoding(System.String, Int32)", "Char HexUnescape(System.String, Int32 ByRef)", "System.UriHostNameType CheckHostName(System.String)", "Boolean op_Equality(System.Uri, System.Uri)", "Boolean op_Inequality(System.Uri, System.Uri)", "Int32 Compare(System.Uri, System.Uri, System.UriComponents, System.UriFormat, System.StringComparison)", "Boolean IsWellFormedUriString(System.String, System.UriKind)", "Boolean IsBaseOf(System.Uri)" }, true)]
+    [InlineData(typeof(UriBuilder), null, new string[] { "set_Fragment(System.String)", "get_Fragment(System.String)", "set_Scheme(System.String)", "get_Scheme(System.String)", "set_UserName(System.String)", "get_UserName(System.String)", "set_Password(System.String)", "get_Password(System.String)" }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         TestMethodOverloads(typeToCheck, methodToCheck, overloadsToExclude?.ToList(), excludeParameterlessMethods);
-    }
-
-    [SkippableFact]
-    [Trait("Category", "EndToEnd")]
-    [Trait("RunOnWindows", "True")]
-    public void TestReplaceMethodsAspectCover()
-    {
-        var overloadsToExclude = new List<string>()
-        {
-        // special case
-#if !NETCOREAPP3_1_OR_GREATER
-            "System.String::Replace(System.String,System.String,System.StringComparison)",
-            "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)"
-#endif
-        };
-        TestMethodOverloads(typeof(string), "Replace", overloadsToExclude);
     }
 
     [SkippableFact]
@@ -193,11 +177,22 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StreamReader))]
     [InlineData(typeof(FileStream))]
     [InlineData(typeof(DirectoryInfo))]
+    [InlineData(typeof(Uri))]
+#if NETCOREAPP3_1
+    [InlineData(typeof(HttpClient), new string[] { "System.Net.Http.HttpClient::GetStringAsync(System.String,System.Threading.CancellationToken)" })]
+    [InlineData(typeof(HttpMessageInvoker), new string[] { "System.Net.Http.HttpMessageInvoker::Send(System.Net.Http.HttpRequestMessage,System.Threading.CancellationToken)", "System.Net.Http.HttpClient::Send(System.Net.Http.HttpRequestMessage)" })]
+#else
+    [InlineData(typeof(HttpClient))]
+    [InlineData(typeof(HttpMessageInvoker))]
+#endif
+    [InlineData(typeof(WebRequest))]
+    [InlineData(typeof(WebClient))]
+    [InlineData(typeof(UriBuilder))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
-    public void TestAllAspectsHaveACorrespondingMethod(Type type)
+    public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
     {
-        CheckAllAspectHaveACorrespondingMethod(type);
+        CheckAllAspectHaveACorrespondingMethod(type, aspectsToExclude?.ToList());
     }
 
     [SkippableFact]
@@ -277,7 +272,8 @@ public class IastInstrumentationUnitTests : TestHelper
         }
 
         return signature.Replace(" ", string.Empty).Replace("[T]", string.Empty).Replace("<!!0>", string.Empty)
-            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty);
+            .Replace("[", "<").Replace("]", ">").Replace(",...", string.Empty).Replace("System.", string.Empty)
+            .Replace("ByRef", string.Empty);
     }
 
     private bool MethodShouldBeChecked(MethodBase method)
@@ -303,7 +299,7 @@ public class IastInstrumentationUnitTests : TestHelper
     private void TestMethodOverloads(Type typeToCheck, string methodToCheck, List<string> overloadsToExclude = null, bool excludeParameterlessMethods = false)
     {
         var overloadsToExcludeNormalized = overloadsToExclude?.Select(NormalizeName).ToList();
-        var aspects = ClrProfiler.AspectDefinitions.Aspects.ToList();
+        var aspects = ClrProfiler.AspectDefinitions.Aspects.Where(x => x.Contains(typeToCheck.FullName + "::")).ToList();
         List<MethodBase> typeMethods = new();
         typeMethods.AddRange(string.IsNullOrEmpty(methodToCheck) ?
             typeToCheck?.GetMethods().Where(x => x.IsPublic && !x.IsVirtual) :

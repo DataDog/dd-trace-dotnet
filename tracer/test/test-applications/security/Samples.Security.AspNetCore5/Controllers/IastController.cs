@@ -4,6 +4,8 @@ using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -325,6 +327,30 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.Secure = false;
             Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
+        }
+
+        [HttpGet("SSRF")]
+        [Route("SSRF")]
+        public ActionResult Ssrf(string url, string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    result = new HttpClient().GetStringAsync(url).Result;
+                }
+                else
+                {
+                    result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
         }
 
         private ActionResult ExecuteQuery(string query)
