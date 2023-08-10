@@ -292,40 +292,6 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - task: DownloadPipelineArtifact@2
-      displayName: Download windows profiler home
-      inputs:
-        artifact: windows-profiler-home
-        patterns: "**/*.dll"
-        path: $(monitoringHome)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux profiler home
-      inputs:
-        artifact: linux-profiler-home-centos7
-        patterns:  |
-          **/*.so
-          **/loader.conf
-        path: $(monitoringHome)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download alpine profiler home
-      inputs:
-        artifact: linux-profiler-home-alpine
-        patterns:  |
-          **/*.so
-          **/loader.conf
-        path: $(monitoringHome)
-
-    - task: DownloadPipelineArtifact@2
-      displayName: Download arm64 profiler home
-      inputs:
-        artifact: linux-profiler-home-arm64
-        patterns:  |
-          **/*.so
-          **/loader.conf
-        path: $(monitoringHome)
-
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
       displayName: Build Bundle NuGet and runner tools
 
