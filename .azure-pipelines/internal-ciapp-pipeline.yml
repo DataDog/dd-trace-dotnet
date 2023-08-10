@@ -292,7 +292,7 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd Restore CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
+    - script: tracer\build.cmd Restore CompileManagedSrc CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
       displayName: Build Bundle NuGet and runner tools
 
     - publish: $(artifacts)/nuget/bundle
