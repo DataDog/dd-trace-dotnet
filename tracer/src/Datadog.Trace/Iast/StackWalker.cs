@@ -29,16 +29,17 @@ internal static class StackWalker
         "Npgsql",
         "Oracle.DataAccess",
         "Oracle.ManagedDataAccess",
-        "System.Data",
+        "RestSharp",
         "System",
         "System.Configuration.ConfigurationManager",
         "System.Core",
+        "System.Data",
         "System.Data.Common",
-        "System.Linq",
-        "System.Net.Security",
         "System.Data.SqlClient",
         "System.Data.SQLite",
         "System.Diagnostics.Process",
+        "System.Linq",
+        "System.Net.Security",
         "System.Net.WebSockets",
         "System.Private.CoreLib",
         "System.Security.Cryptography",
@@ -47,8 +48,7 @@ internal static class StackWalker
         "System.Security.Cryptography.Primitives",
         "System.Security.Cryptography.X509Certificates",
         "xunit.runner.visualstudio.dotnetcore.testadapter",
-        "xunit.runner.visualstudio.testadapter",
-        "RestSharp"
+        "xunit.runner.visualstudio.testadapter"
     };
 
     private const int DefaultSkipFrames = 2;
