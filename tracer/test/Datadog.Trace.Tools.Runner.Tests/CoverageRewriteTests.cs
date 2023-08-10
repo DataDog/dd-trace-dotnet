@@ -44,7 +44,8 @@ namespace Datadog.Trace.Tools.Runner.Tests
             await Verifier.Verify(originalCode, originalVerifySettings);
 
             // Apply rewriter process
-            var asmProcessor = new AssemblyProcessor(temporalFileName, string.Empty);
+            var covSettings = new CoverageSettings(null, string.Empty, null);
+            var asmProcessor = new AssemblyProcessor(temporalFileName, covSettings);
             asmProcessor.Process();
 
             // Decompile rewritten code

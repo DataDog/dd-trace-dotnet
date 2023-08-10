@@ -42,21 +42,19 @@ namespace Datadog.Trace.Coverage.Collector
             "Xunit.SkippableFact.dll",
         };
 
-        private readonly CIVisibilitySettings? _ciVisibilitySettings;
+        private readonly CoverageSettings _settings;
         private readonly ICollectorLogger _logger;
-        private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
         private readonly bool _enableJitOptimizations;
 
         private byte[]? _strongNameKeyBlob;
 
-        public AssemblyProcessor(string filePath, string tracerHome, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
+        public AssemblyProcessor(string filePath, CoverageSettings settings, ICollectorLogger? logger = null)
         {
-            _tracerHome = tracerHome;
+            _settings = settings;
             _logger = logger ?? new ConsoleCollectorLogger();
-            _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _enableJitOptimizations = ciVisibilitySettings?.CodeCoverageEnableJitOptimizations ?? true;
+            _enableJitOptimizations = settings.CIVisibility?.CodeCoverageEnableJitOptimizations ?? true;
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -151,7 +149,7 @@ namespace Datadog.Trace.Coverage.Collector
                 {
                     _logger.Debug($"Assembly: {FilePath} is signed.");
 
-                    var snkFilePath = _ciVisibilitySettings?.CodeCoverageSnkFilePath;
+                    var snkFilePath = _settings.CIVisibility?.CodeCoverageSnkFilePath;
                     _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
                     if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
                     {
@@ -530,7 +528,7 @@ namespace Datadog.Trace.Coverage.Collector
         {
             // Get the Datadog.Trace path
 
-            if (string.IsNullOrEmpty(_tracerHome))
+            if (string.IsNullOrEmpty(_settings.TracerHome))
             {
                 // If tracer home is empty then we try to load the Datadog.Trace.dll in the current folder.
                 return "Datadog.Trace.dll";
@@ -553,7 +551,7 @@ namespace Datadog.Trace.Coverage.Collector
                     break;
             }
 
-            return Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
+            return Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
         }
 
         private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
@@ -578,8 +576,8 @@ namespace Datadog.Trace.Coverage.Collector
                         break;
                 }
 
-                var datadogTraceDllPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
-                var datadogTracePdbPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.pdb");
+                var datadogTraceDllPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
+                var datadogTracePdbPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
 
                 // Global lock for copying the Datadog.Trace assembly to the output folder
                 lock (PadLock)
