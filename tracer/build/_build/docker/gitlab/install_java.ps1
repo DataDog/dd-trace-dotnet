@@ -21,7 +21,9 @@ mkdir c:\tmp\java
 
 Write-Host -ForegroundColor Green "Extracting $out to c:\tmp\java"
 
-Start-Process "7z" -ArgumentList 'x -oc:\tmp\java java.zip' -Wait
+# 7z is not installed
+# Start-Process "7z" -ArgumentList 'x -oc:\tmp\java java.zip' -Wait
+Expand-Archive -Path $out -DestinationPath C:\tmp\java
 
 Write-Host -ForegroundColor Green "Removing temporary file $out"
 
