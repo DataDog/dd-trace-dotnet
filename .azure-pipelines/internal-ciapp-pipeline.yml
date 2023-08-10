@@ -292,40 +292,12 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd Restore CompileManagedSrc CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
+    - script: tracer\build.cmd Restore CompileManagedSrc CreateBundleHome BuildRunnerTool PackRunnerToolNuget
       displayName: Build Bundle NuGet and runner tools
-
-    - publish: $(artifacts)/nuget/bundle
-      displayName: Uploading Bundle package
-      artifact: bundle-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace-ciapp
       displayName: Uploading runner dotnet tool artifact
       artifact: runner-dotnet-tool
-
-    - publish: $(artifacts)/dd-trace-ciapp-win-x64.zip
-      displayName: Uploading runner standalone win-x64 artifact
-      artifact: runner-standalone-win-x64
-
-    - publish: $(artifacts)/dd-trace-ciapp-win-x86.zip
-      displayName: Uploading runner standalone win-x86 artifact
-      artifact: runner-standalone-win-x86
-
-    - publish: $(artifacts)/dd-trace-ciapp-linux-x64.tar.gz
-      displayName: Uploading runner standalone linux-x64 artifact
-      artifact: runner-standalone-linux-x64
-
-    - publish: $(artifacts)/dd-trace-ciapp-linux-musl-x64.tar.gz
-      displayName: Uploading runner standalone linux-musl-x64 artifact
-      artifact: runner-standalone-linux-musl-x64
-
-    - publish: $(artifacts)/dd-trace-ciapp-linux-arm64.tar.gz
-      displayName: Uploading runner standalone linux-arm64 artifact
-      artifact: runner-standalone-linux-arm64
-
-    - publish: $(artifacts)/dd-trace-ciapp-osx-x64.tar.gz
-      displayName: Uploading runner standalone osx-x64 artifact
-      artifact: runner-standalone-osx-x64
 
 - stage: upload_to_azure
   dependsOn: [dotnet_tool, merge_commit_id]
@@ -343,10 +315,12 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
+        # runner tool
         - task: DownloadPipelineArtifact@2
-          displayName: Download NuGet packages
+          displayName: Download runner dotnet tool
           inputs:
-            artifact: nuget-packages
+            artifact: runner-dotnet-tool
+            patterns: "*.nupkg"
             path: $(Build.ArtifactStagingDirectory)
 
         # set the version from the package name
@@ -356,42 +330,6 @@ stages:
             echo "detected version: $VERSION_NUMBER"
             echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
           displayName: Extract version number
-
-        # runner tool
-        - task: DownloadPipelineArtifact@2
-          displayName: Download runner dotnet tool
-          inputs:
-            artifact: runner-dotnet-tool
-            patterns: "*.nupkg"
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool win-x64
-          inputs:
-            artifact: runner-standalone-win-x64
-            patterns: "*.zip"
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-x64
-          inputs:
-            artifact: runner-standalone-linux-x64
-            patterns: "*.tar.gz"
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-musl-x64
-          inputs:
-            artifact: runner-standalone-linux-musl-x64
-            patterns: "*.tar.gz"
-            path: $(Build.ArtifactStagingDirectory)
-
-        - task: DownloadPipelineArtifact@2
-          displayName: Download standalone dotnet tool linux-arm64
-          inputs:
-            artifact: runner-standalone-linux-arm64
-            patterns: "*.tar.gz"
-            path: $(Build.ArtifactStagingDirectory)
 
         - bash: |
             az storage blob upload-batch \
