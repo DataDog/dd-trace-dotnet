@@ -1,0 +1,6 @@
+steps:
+- task: DownloadPipelineArtifact@2
+  displayName: Download ciapp internal tool
+  inputs:
+    artifact: dd-trace-ciapp
+    path: $(CIAPPINTERNALTOOL_DIR)

@@ -45,4 +45,8 @@
     <None Remove="Honeypot\Datadog.Dependabot.Honeypot.template" />
     <EmbeddedResource Include="Honeypot\Datadog.Dependabot.Honeypot.template" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="ci\steps\" />
+  </ItemGroup>
 </Project>

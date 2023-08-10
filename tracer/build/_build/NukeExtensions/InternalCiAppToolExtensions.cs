@@ -1,12 +1,27 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using Nuke.Common;
 using Nuke.Common.Tooling;
 using Nuke.Common.Tools.DotNet;
 
-public class InternalCiAppToolExtensions
+partial class Build
 {
-    public static IReadOnlyCollection<Output> DotNetTestWithCiApp(DotNetTestSettings toolSettings)
+    public IReadOnlyCollection<Output> DotNetTestWithCiApp(DotNetTestSettings toolSettings)
     {
-        var ciappToolPath = "dd-trace-ciapp";
+        // install the tool
+        // dotnet tool update -g dd-trace-ciapp --version $(ToolVersion) --add-source $(Agent.TempDirectory)
+        var internalCiAppToolVersion = Environment.GetEnvironmentVariable("CIAPPINTERNALTOOL_VERSION");
+        var internalCiAppToolDir = Environment.GetEnvironmentVariable("CIAPPINTERNALTOOL_DIR");
+
+        var installPath = TemporaryDirectory / "dd-trace-ciapp";
+        DotNetTasks.DotNetToolUpdate(x => x
+            .SetVersion(internalCiAppToolVersion)
+            .SetSources(internalCiAppToolDir)
+            .SetPackageName("dd-trace-ciapp")
+            .SetToolInstallationPath(installPath));
+
+        var extension = EnvironmentInfo.IsWin ? ".exe" : string.Empty;
+        var ciappToolPath = installPath / $"dd-trace-ciapp{extension}";
 
         // Add dd-trace-ciapp arguments to wrap the execution
         var arguments = new Arguments();
@@ -33,9 +48,9 @@ public class InternalCiAppToolExtensions
         return process.Output;
     }
 
-    public static IReadOnlyCollection<Output> DotNetTestWithCiApp(Configure<DotNetTestSettings> configurator)
+    public IReadOnlyCollection<Output> DotNetTestWithCiApp(Configure<DotNetTestSettings> configurator)
         => DotNetTestWithCiApp(configurator(new DotNetTestSettings()));
 
-    public static IEnumerable<(DotNetTestSettings Settings, IReadOnlyCollection<Output> Output)> DotNetTestWithCiApp(CombinatorialConfigure<DotNetTestSettings> configurator, int degreeOfParallelism = 1, bool completeOnFailure = false)
+    public IEnumerable<(DotNetTestSettings Settings, IReadOnlyCollection<Output> Output)> DotNetTestWithCiApp(CombinatorialConfigure<DotNetTestSettings> configurator, int degreeOfParallelism = 1, bool completeOnFailure = false)
         => configurator.Invoke(DotNetTestWithCiApp, DotNetTasks.DotNetLogger, degreeOfParallelism, completeOnFailure);
 }

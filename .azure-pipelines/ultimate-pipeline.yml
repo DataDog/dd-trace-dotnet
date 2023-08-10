@@ -155,6 +155,33 @@ variables:
   DD_LOGGER_API_KEY_CHECKER_ENABLED: false
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
+  CIAPPINTERNALTOOL_DIR: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts/dd-trace-ciapp
+  DDCIAPP_API_KEY: $(DD_API_KEY)
+  DDCIAPP_TF_BUILD: True
+  DDCIAPP_BUILD_BUILDID: $(Build.BuildId)
+  DDCIAPP_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
+  DDCIAPP_BUILD_SOURCESDIRECTORY: $(Build.SourcesDirectory)
+  DDCIAPP_BUILD_REPOSITORY_URI: $(Build.Repository.Uri)
+  DDCIAPP_BUILD_SOURCEVERSION: $(Build.SourceVersion)
+  DDCIAPP_BUILD_SOURCEBRANCH: $(Build.SourceBranch)
+  DDCIAPP_BUILD_SOURCEBRANCHNAME: $(Build.SourceBranchName)
+  DDCIAPP_BUILD_SOURCEVERSIONMESSAGE: $(Build.SourceVersionMessage)
+  DDCIAPP_BUILD_REQUESTEDFORID: $(Build.RequestedForId)
+  DDCIAPP_BUILD_REQUESTEDFOREMAIL: $(Build.RequestedForEmail)
+  DDCIAPP_SYSTEM_TEAMFOUNDATIONSERVERURI: $(System.TeamFoundationServerUri)
+  DDCIAPP_SYSTEM_TEAMPROJECTID: $(System.TeamProjectId)
+  DDCIAPP_SYSTEM_STAGEDISPLAYNAME: $(System.StageDisplayName)
+  DDCIAPP_SYSTEM_JOBDISPLAYNAME: $(System.JobDisplayName)
+  DDCIAPP_SYSTEM_JOBID: $(System.JobId)
+  DDCIAPP_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI: $[variables['System.PullRequest.SourceRepositoryURI']]
+  DDCIAPP_SYSTEM_PULLREQUEST_SOURCECOMMITID: $[variables['System.PullRequest.SourceCommitId']]
+  DDCIAPP_SYSTEM_PULLREQUEST_SOURCEBRANCH: $[variables['System.PullRequest.SourceBranch']]
+  DDCIAPP_API_KEY_CHECKER_ENABLED: false
+  DDCIAPP_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
+  DDCIAPP_CIVISIBILITY_ENABLED: true
+  DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED: true
+  DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH: $(System.DefaultWorkingDirectory)/Datadog.Trace.snk
+  
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
@@ -797,6 +824,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   pool:
     name: azure-windows-scale-set-3
 
@@ -814,12 +842,13 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
-      - template: steps/install-ciapp-tool.yml
+      - template: steps/download-ciapp-tool.yml
 
       - script: tracer\build.cmd BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          DDCIAPP_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
