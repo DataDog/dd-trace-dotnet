@@ -350,6 +350,19 @@ namespace Datadog.Trace.Coverage.Collector
                              *  }
                              */
 
+                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
+
+                            var file = sequencePoints
+                                      .Where(s => s.IsHidden! && !string.IsNullOrWhiteSpace(s.Document?.Url))
+                                      .Select(s => s.Document.Url)
+                                      .FirstOrDefault();
+
+                            if (file is not null && FiltersHelper.FilteredBySourceFile(file, _settings.ExcludeSourceFiles))
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
+                                continue;
+                            }
+
                             totalMethods++;
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
@@ -358,8 +371,6 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 instructions.Capacity = instructionsOriginalLength * 2;
                             }
-
-                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
                             // Step 1 - Remove Short OpCodes
                             foreach (var instruction in instructions)

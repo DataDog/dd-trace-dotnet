@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 namespace Datadog.Trace.Coverage.Collector;
 
@@ -12,8 +14,30 @@ namespace Datadog.Trace.Coverage.Collector;
 /// </summary>
 internal static class FiltersHelper
 {
+    private static readonly ConcurrentDictionary<IReadOnlyList<string>, IReadOnlyList<Regex>> AttributesRegexes = new();
+
     public static bool FilteredByAttribute(string attributeFullName, IReadOnlyList<string> filters)
     {
+        var regexes = AttributesRegexes.GetOrAdd(
+            filters,
+            list =>
+            {
+                var lstRegex = new List<Regex>(list.Count);
+                foreach (var item in list)
+                {
+                    lstRegex.Add(new Regex(item, RegexOptions.Compiled));
+                }
+
+                return lstRegex;
+            });
+        foreach (var regex in regexes)
+        {
+            if (regex.IsMatch(attributeFullName))
+            {
+                return true;
+            }
+        }
+
         return false;
     }
 
