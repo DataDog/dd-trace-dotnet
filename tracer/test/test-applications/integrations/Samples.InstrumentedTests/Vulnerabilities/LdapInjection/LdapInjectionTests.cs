@@ -49,14 +49,28 @@ public class LdapInjectionTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable2()
+    {
+        _ = new DirectoryEntry((object) taintedLdap);
+        AssertVulnerable();
+    }
+
+    [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable2()
+    {
+        _ = new DirectoryEntry((object) taintedIIS);
+        AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable3()
     {
         _ = new DirectoryEntry(string.Empty);
         AssertNotVulnerable();
     }
 
     [Fact]
-    public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable3()
+    public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable4()
     {
         _ = new DirectoryEntry(null);
         AssertNotVulnerable();
@@ -113,7 +127,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenAPrincipalContext_WhenMakeRealConnection_LDAPVulnerable()
     {
-        //using (_ = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", "dc=example,dc=com", "cn=read-only-admin,dc=example,dc=com", "password"))
         using (var ctx = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", AddTainted("dc=example,dc=com").ToString()))
         {
             using (var searcher = new PrincipalSearcher(new UserPrincipal(ctx)))
@@ -130,154 +143,77 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap, "dc=example,dc=com");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "dc=example,dc=com"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable2()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, "ldap:\\myserver", taintedContainer);
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "ldap:\\myserver", taintedContainer));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable3()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap);
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable4()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate);
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable5()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate);
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable6()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap, "container", "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable7()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "password"));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable8()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap, "container", "user", "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", "user", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable9()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "user", "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "user", "password"));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable10()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate, "user", "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate, "user", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable11()
     {
-        try
-        {
-            _ = new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate, "user", "password");
-        }
-        catch
-        {
-            //Cannot connect to non existing server
-        }
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate, "user", "password"));
         AssertVulnerable();
     }
 
@@ -295,6 +231,14 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenASearchRequest_WhenCreate_LDAPVulnerable()
     {
         _ = new SearchRequest("name", "user=" + taintedUserInjection, System.DirectoryServices.Protocols.SearchScope.Subtree, null);
+        AssertVulnerable();
+    }
+
+    [Fact]
+    public void GivenASearchRequest_WhenCreate_LDAPVulnerable2()
+    {
+        var request = new SearchRequest("name", string.Empty, System.DirectoryServices.Protocols.SearchScope.Subtree, null);
+        request.Filter = "user=" + taintedUserInjection;
         AssertVulnerable();
     }
 

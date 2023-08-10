@@ -31,4 +31,20 @@ public partial class DirectoryEntryAspect
 
         return path;
     }
+
+    /// <summary>
+    /// DirectoryEntry instrumentated method .ctor with object parameter
+    /// </summary>
+    /// <param name="path"> sensitive string to analyze </param>
+    /// <returns> the string parameter </returns>
+    [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::.ctor(System.Object)")]
+    public static object Init(object path)
+    {
+        if (path is string pathAsString)
+        {
+            Init(pathAsString);
+        }
+
+        return path;
+    }
 }

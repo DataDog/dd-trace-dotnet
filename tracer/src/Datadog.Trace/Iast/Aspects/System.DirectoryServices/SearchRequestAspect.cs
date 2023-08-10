@@ -20,9 +20,14 @@ public partial class SearchRequestAspect
     /// <param name="path"> sensitive string to analyze </param>
     /// <returns> the string parameter </returns>
     [AspectMethodInsertBefore("System.DirectoryServices.Protocols.SearchRequest::.ctor(System.String,System.String,System.DirectoryServices.Protocols.SearchScope,System.String[])", 2)]
-    public static object Init(string path)
+    [AspectMethodInsertBefore("System.DirectoryServices.Protocols.SearchRequest::set_Filter(System.Object)")]
+    public static object Init(object path)
     {
-        IastModule.OnLdapInjection(path);
+        if (path is string pathString)
+        {
+            IastModule.OnLdapInjection(pathString);
+        }
+
         return path;
     }
 }
