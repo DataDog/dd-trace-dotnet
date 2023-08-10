@@ -10,6 +10,7 @@ using System.Net;
 using System.Web;
 using Microsoft.Ajax.Utilities;
 using System.Net.Http;
+using System.DirectoryServices;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -236,6 +237,24 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content(result, "text/html");
+        }
+
+        [Route("LDAP")]
+        public ActionResult Ldap(string path)
+        {
+            // "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
+            DirectoryEntry entry = new DirectoryEntry(path, string.Empty, string.Empty, AuthenticationTypes.None);
+            DirectorySearcher search = new DirectorySearcher(entry);
+            var result = search.FindAll();
+
+            string resultString = string.Empty;
+
+            for (int i = 0; i < result.Count; i++)
+            {
+                resultString += result[i].Path + Environment.NewLine;
+            }
+
+            return Content($"Result: " + resultString);
         }
     }
 }
