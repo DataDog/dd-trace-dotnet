@@ -46,7 +46,8 @@ internal static class StackWalker
         "System.Security.Cryptography.Primitives",
         "System.Security.Cryptography.X509Certificates",
         "xunit.runner.visualstudio.dotnetcore.testadapter",
-        "xunit.runner.visualstudio.testadapter"
+        "xunit.runner.visualstudio.testadapter",
+        "RestSharp"
     };
 
     private const int DefaultSkipFrames = 2;

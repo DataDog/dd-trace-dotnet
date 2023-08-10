@@ -24,7 +24,7 @@ internal class HashBasedDeduplication
     /// </summary>
     internal HashBasedDeduplication(DateTime? currentTime = null)
     {
-        _cacheClearedTime = currentTime ?? DateTime.Now;
+        _cacheClearedTime = currentTime ?? DateTime.UtcNow;
     }
 
     public static HashBasedDeduplication Instance { get; } = new();
@@ -32,7 +32,7 @@ internal class HashBasedDeduplication
     public bool Add(Vulnerability vulnerability, DateTime? addTime = null)
     {
         var hashCode = vulnerability.GetHashCode();
-        var currentTime = addTime ?? DateTime.Now;
+        var currentTime = addTime ?? DateTime.UtcNow;
 
         bool newVulnerability;
         lock (_vulnerabilityHashes)

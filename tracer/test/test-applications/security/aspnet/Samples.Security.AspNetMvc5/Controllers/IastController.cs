@@ -9,6 +9,7 @@ using System.Diagnostics;
 using System.Net;
 using System.Web;
 using Microsoft.Ajax.Utilities;
+using System.Net.Http;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -212,6 +213,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookie.HttpOnly = true;
             cookie.Secure = true;
             return cookie;
+        }
+
+        [Route("SSRF")]
+        public ActionResult Ssrf(string url, string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    result = new HttpClient().GetStringAsync(url).Result;
+                }
+                else
+                {
+                    result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
         }
     }
 }

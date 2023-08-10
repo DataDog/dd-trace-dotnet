@@ -199,6 +199,8 @@
       <type fullname="System.Diagnostics.DiagnosticListener" />
    </assembly>
    <assembly fullname="System.Diagnostics.Process">
+      <type fullname="System.Diagnostics.DataReceivedEventArgs" />
+      <type fullname="System.Diagnostics.DataReceivedEventHandler" />
       <type fullname="System.Diagnostics.Process" />
       <type fullname="System.Diagnostics.ProcessStartInfo" />
       <type fullname="System.Diagnostics.ProcessThreadCollection" />
@@ -776,6 +778,7 @@
       <type fullname="System.Uri" />
       <type fullname="System.UriBuilder" />
       <type fullname="System.UriComponents" />
+      <type fullname="System.UriCreationOptions" />
       <type fullname="System.UriFormat" />
       <type fullname="System.UriKind" />
       <type fullname="System.ValueTuple`1" />

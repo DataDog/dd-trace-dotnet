@@ -1080,6 +1080,11 @@ namespace Datadog.Trace.TestHelpers
 
                             var mockTracerResponse = HandleHttpRequest(MockHttpParser.MockHttpRequest.Create(ctx.Request));
 
+                            if (!mockTracerResponse.SendResponse)
+                            {
+                                ctx.Response.Abort(); // close without sending to avoid getting blocked for 15 seconds
+                            }
+
                             if (mockTracerResponse.SendResponse)
                             {
                                 var buffer = Encoding.UTF8.GetBytes(mockTracerResponse.Response);
