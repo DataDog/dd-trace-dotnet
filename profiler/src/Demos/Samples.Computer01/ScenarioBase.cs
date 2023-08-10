@@ -84,7 +84,7 @@ namespace Samples.Computer01
         {
             var result = new List<Task>(_nbThreads);
 
-            for (var i = 0; i < _nbThreads; i++)
+            for (var i = 0; i < 1; i++)
             {
                 result.Add(
                     Task.Factory.StartNew(
@@ -93,6 +93,20 @@ namespace Samples.Computer01
                             while (!IsEventSet())
                             {
                                 Process();
+                            }
+                        },
+                        TaskCreationOptions.LongRunning));
+            }
+
+            for (var i = 0; i < _nbThreads; i++)
+            {
+                result.Add(
+                    Task.Factory.StartNew(
+                        () =>
+                        {
+                            while (!IsEventSet())
+                            {
+                                Thread.Sleep(TimeSpan.FromMilliseconds(100));
                             }
                         },
                         TaskCreationOptions.LongRunning));

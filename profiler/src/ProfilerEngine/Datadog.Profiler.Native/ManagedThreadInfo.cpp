@@ -42,6 +42,8 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _isThreadDestroyed{false},
     _traceContextTrackingInfo{},
     _cpuConsumptionMilliseconds{0},
-    _timestamp{0}
+    _timestamp{0},
+    _resultBuffer{nullptr},
+    _lastCpuCycleTime{0}
 {
 }

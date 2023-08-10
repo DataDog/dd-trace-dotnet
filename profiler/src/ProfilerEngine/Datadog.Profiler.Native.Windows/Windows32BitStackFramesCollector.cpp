@@ -26,8 +26,15 @@ Windows32BitStackFramesCollector::~Windows32BitStackFramesCollector()
 
 StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                               uint32_t* pHR,
-                                                                                              bool selfCollect)
+                                                                                              bool selfCollect,
+                                                                                              StackSnapshotResultBuffer* buffer)
 {
+    auto* snapshotBuffer = GetStackSnapshotResult();
+    if (buffer != nullptr)
+    {
+        snapshotBuffer = buffer;
+    }
+
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
@@ -42,31 +49,32 @@ StackSnapshotResultBuffer* Windows32BitStackFramesCollector::CollectStackSampleI
         {
             // Looks like the thread got destroyed, or we don't have its information yet
             *pHR = E_ABORT;
-            return GetStackSnapshotResult();
+            return snapshotBuffer;
         }
 
         // Sometimes, we could hit an access violation, so catch it and just return.
         // This can happen if we are in a deadlock situation and resume the target thread
         // while walking its stack.
 
+        auto clientObj = std::make_pair(snapshotBuffer, this);
         hr = _pCorProfilerInfo->DoStackSnapshot(
             selfCollect ? NULL : pThreadInfo->GetClrThreadId(),
             StackSnapshotCallbackHandlerImpl,
             _COR_PRF_SNAPSHOT_INFO::COR_PRF_SNAPSHOT_DEFAULT,
-            this,
+            &clientObj,
             nullptr, // BYTE* context
             0);      // ULONG32 contextSize
 
         *pHR = hr;
 
-        return GetStackSnapshotResult();
+        return snapshotBuffer;
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
-        AddFakeFrame();
+        snapshotBuffer->AddFakeFrame();
 
         *pHR = E_ABORT;
-        return GetStackSnapshotResult();
+        return snapshotBuffer;
     }
 }
 
@@ -84,7 +92,9 @@ HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(
         return S_OK;
     }
 
-    auto const pStackFramesCollector = static_cast<Windows32BitStackFramesCollector*>(clientData);
+    auto* snapshotAndCollector = static_cast<std::pair<StackSnapshotResultBuffer*, Windows32BitStackFramesCollector*>*>(clientData);
+    StackSnapshotResultBuffer* snapshotBuffer = snapshotAndCollector->first;
+    Windows32BitStackFramesCollector* pStackFramesCollector = snapshotAndCollector->second;
 
     if (pStackFramesCollector == nullptr)
     {
@@ -94,11 +104,11 @@ HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(
     // If the StackSamplerLoopManager requested this walk to abort, do so now.
     if (pStackFramesCollector->IsCurrentCollectionAbortRequested())
     {
-        pStackFramesCollector->AddFakeFrame();
+        snapshotBuffer->AddFakeFrame();
         return S_FALSE; //  @ToDo: Should we be returning E_ABORT ?
     }
 
-    if (pStackFramesCollector->AddFrame(ip))
+    if (snapshotBuffer->AddFrame(ip))
     {
         return S_OK;
     }

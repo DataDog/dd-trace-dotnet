@@ -82,7 +82,8 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequiredImplementation(Manage
 
 StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                       uint32_t* pHR,
-                                                                                      bool selfCollect)
+                                                                                      bool selfCollect,
+                                                                                      StackSnapshotResultBuffer* buffer)
 {
     // The actual business logic provided by a subclass goes into the XxxImplementation(..) methods.
     // This is a fallback implementation, so that the implementing sub-class does not need to overwrite this method if it is a no-op.
@@ -159,7 +160,7 @@ void StackFramesCollectorBase::ResumeTargetThreadIfRequired(ManagedThreadInfo* p
     ResumeTargetThreadIfRequiredImplementation(pThreadInfo, isTargetThreadSuspended, pErrorCodeHR);
 }
 
-StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR)
+StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, StackSnapshotResultBuffer* buffer)
 {
     // Update state with the info for the thread that we are collecting:
     _pCurrentCollectionThreadInfo = pThreadInfo;
@@ -167,7 +168,7 @@ StackSnapshotResultBuffer* StackFramesCollectorBase::CollectStackSample(ManagedT
     const auto currentThreadId = OpSysTools::GetThreadId();
 
     // Execute the actual collection:
-    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId);
+    StackSnapshotResultBuffer* result = CollectStackSampleImplementation(pThreadInfo, pHR, pThreadInfo->GetOsThreadId() == currentThreadId, buffer);
 
     // No longer collecting the specified thread:
     _pCurrentCollectionThreadInfo = nullptr;

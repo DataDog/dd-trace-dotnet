@@ -68,7 +68,8 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime{0},
     _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
-    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
+    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
+    _cachingEnabled{pConfiguration->IsWalltimeCachingEnabled()}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -224,7 +225,28 @@ void StackSamplerLoop::WalltimeProfilingIteration()
         int64_t prevSampleTimestampNanosecs = _targetThread->SetLastSampleHighPrecisionTimestampNanoseconds(thisSampleTimestampNanosecs);
         int64_t duration = ComputeWallTime(thisSampleTimestampNanosecs, prevSampleTimestampNanosecs);
 
-        CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime);
+        StackSnapshotResultBuffer* snapshot = nullptr;
+        bool shouldCollect = true;
+        if (_cachingEnabled)
+        {
+            snapshot = _targetThread->GetResultBuffer();
+            shouldCollect = _targetThread->RunOnCpuSinceLastCall();
+
+        }
+
+        if (shouldCollect)
+        {
+            // TODO metric about collected callstack ? (but we just bailed in the middle ?)
+            if (snapshot != nullptr)
+                snapshot->Reset();
+            CollectOneThreadStackSample(_targetThread, thisSampleTimestampNanosecs, duration, PROFILING_TYPE::WallTime, snapshot);
+        }
+        else
+        {
+            // TODO metric about reused collection
+            UpdateSnapshotInfos(snapshot, duration, thisSampleTimestampNanosecs);
+            PersistStackSnapshotResults(snapshot, _targetThread, PROFILING_TYPE::WallTime);
+        }
 
         _targetThread.reset();
         i++;
@@ -356,7 +378,8 @@ void StackSamplerLoop::CollectOneThreadStackSample(
     std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
     int64_t thisSampleTimestampNanosecs,
     int64_t duration,
-    PROFILING_TYPE profilingType)
+    PROFILING_TYPE profilingType,
+    StackSnapshotResultBuffer* snapshot)
 {
     HANDLE osThreadHandle = pThreadInfo->GetOsThreadHandle();
     if (osThreadHandle == static_cast<HANDLE>(0))
@@ -433,7 +456,7 @@ void StackSamplerLoop::CollectOneThreadStackSample(
                 on_leave { _pManager->NotifyCollectionEnd(); };
 
                 _pManager->NotifyCollectionStart();
-                pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack);
+                pStackSnapshotResult = _pStackFramesCollector->CollectStackSample(pThreadInfo.get(), &hrCollectStack, snapshot);
             }
 
             // DoStackSnapshot may return a non-S_OK result even if a part of the stack was walked successfully.
