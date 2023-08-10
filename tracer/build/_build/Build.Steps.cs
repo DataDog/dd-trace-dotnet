@@ -651,6 +651,7 @@ partial class Build
 
     Target CreateBundleHome => _ => _
         .Unlisted()
+        .After(Restore)
         .After(BuildTracerHome)
         .Executes(() =>
         {
