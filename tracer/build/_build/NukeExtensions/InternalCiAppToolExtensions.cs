@@ -4,11 +4,9 @@ using Nuke.Common.Tools.DotNet;
 
 public class InternalCiAppToolExtensions
 {
-    public static IReadOnlyCollection<Output> DotNetTestWithCiApp(Configure<DotNetTestSettings> configurator)
+    public static IReadOnlyCollection<Output> DotNetTestWithCiApp(DotNetTestSettings toolSettings)
     {
-        // TODO: update this as required
-        var ciappToolPath = "dd-trace";
-        var toolSettings = configurator(new DotNetTestSettings());
+        var ciappToolPath = "dd-trace-ciapp";
 
         // Add dd-trace-ciapp arguments to wrap the execution
         var arguments = new Arguments();
@@ -34,5 +32,10 @@ public class InternalCiAppToolExtensions
         process.AssertZeroExitCode();
         return process.Output;
     }
-    
+
+    public static IReadOnlyCollection<Output> DotNetTestWithCiApp(Configure<DotNetTestSettings> configurator)
+        => DotNetTestWithCiApp(configurator(new DotNetTestSettings()));
+
+    public static IEnumerable<(DotNetTestSettings Settings, IReadOnlyCollection<Output> Output)> DotNetTestWithCiApp(CombinatorialConfigure<DotNetTestSettings> configurator, int degreeOfParallelism = 1, bool completeOnFailure = false)
+        => configurator.Invoke(DotNetTestWithCiApp, DotNetTasks.DotNetLogger, degreeOfParallelism, completeOnFailure);
 }
