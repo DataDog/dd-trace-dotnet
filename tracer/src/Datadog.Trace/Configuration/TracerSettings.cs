@@ -139,7 +139,7 @@ namespace Datadog.Trace.Configuration
                                          .AsInt32(defaultValue: 100);
 
             GlobalTagsInternal = config
-                         // backwards compatibility for names used in the past
+                        // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
                        // Filter out tags with empty keys or empty values, and trim whitespace
@@ -182,10 +182,6 @@ namespace Datadog.Trace.Configuration
             TracerMetricsEnabledInternal = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
-
-            StatsComputationEnabledInternal = config
-                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: false);
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
@@ -342,6 +338,9 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureAppService = config
                                         .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
                                         .AsBool(false);
+
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
+
             if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
@@ -350,6 +349,14 @@ namespace Datadog.Trace.Configuration
                     TraceEnabledInternal = false;
                 }
             }
+
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+
+            StatsComputationEnabledInternal = config
+                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
 
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
@@ -744,7 +751,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
         [IgnoreForSnapshot] // Changes are recorded in SetHttpServerErrorStatusCodes
-        internal bool[] HttpServerErrorStatusCodes { get; private set;  }
+        internal bool[] HttpServerErrorStatusCodes { get; private set; }
 
         /// <summary>
         /// Gets the HTTP status code that should be marked as errors for client integrations.
@@ -804,7 +811,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
         /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get;  }
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
@@ -820,6 +827,17 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in an Azure Function on a
+        /// consumption plan
+        /// </summary>
+        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
@@ -843,6 +861,11 @@ namespace Datadog.Trace.Configuration
         /// Gets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
+
+        /// <summary>
+        /// Gets the GCP Function settings
+        /// </summary>
+        internal ImmutableGCPFunctionSettings? GCPFunctionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.

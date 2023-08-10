@@ -21,7 +21,12 @@ namespace Datadog.Trace.Tagging
             SpanKind = spanKind;
         }
 
+#pragma warning disable CS0618 // Duplicate of QueueName
         [Tag(Trace.Tags.AwsQueueName)]
+#pragma warning restore CS0618
+        public string AwsQueueName => QueueName;
+
+        [Tag(Trace.Tags.QueueName)]
         public string QueueName { get; set; }
 
         [Tag(Trace.Tags.AwsQueueUrl)]
@@ -81,7 +86,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                            ? "peer.service"
-                           : Trace.Tags.AwsQueueName;
+                           : Trace.Tags.QueueName;
             }
         }
     }

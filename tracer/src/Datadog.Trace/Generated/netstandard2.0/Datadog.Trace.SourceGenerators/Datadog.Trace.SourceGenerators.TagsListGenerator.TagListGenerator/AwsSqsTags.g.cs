@@ -9,11 +9,17 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsSqsTags
     {
-        // QueueNameBytes = MessagePack.Serialize("aws.queue.name");
+        // AwsQueueNameBytes = MessagePack.Serialize("aws.queue.name");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> QueueNameBytes => new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+        private static ReadOnlySpan<byte> AwsQueueNameBytes => new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
 #else
-        private static readonly byte[] QueueNameBytes = new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+        private static readonly byte[] AwsQueueNameBytes = new byte[] { 174, 97, 119, 115, 46, 113, 117, 101, 117, 101, 46, 110, 97, 109, 101 };
+#endif
+        // QueueNameBytes = MessagePack.Serialize("queuename");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> QueueNameBytes => new byte[] { 169, 113, 117, 101, 117, 101, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] QueueNameBytes = new byte[] { 169, 113, 117, 101, 117, 101, 110, 97, 109, 101 };
 #endif
         // QueueUrlBytes = MessagePack.Serialize("aws.queue.url");
 #if NETCOREAPP
@@ -32,7 +38,8 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "aws.queue.name" => QueueName,
+                "aws.queue.name" => AwsQueueName,
+                "queuename" => QueueName,
                 "aws.queue.url" => QueueUrl,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
@@ -43,12 +50,13 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "aws.queue.name": 
+                case "queuename": 
                     QueueName = value;
                     break;
                 case "aws.queue.url": 
                     QueueUrl = value;
                     break;
+                case "aws.queue.name": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsSqsTags));
                     break;
@@ -60,9 +68,14 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (AwsQueueName is not null)
+            {
+                processor.Process(new TagItem<string>("aws.queue.name", AwsQueueName, AwsQueueNameBytes));
+            }
+
             if (QueueName is not null)
             {
-                processor.Process(new TagItem<string>("aws.queue.name", QueueName, QueueNameBytes));
+                processor.Process(new TagItem<string>("queuename", QueueName, QueueNameBytes));
             }
 
             if (QueueUrl is not null)
@@ -80,9 +93,16 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (QueueName is not null)
+            if (AwsQueueName is not null)
             {
                 sb.Append("aws.queue.name (tag):")
+                  .Append(AwsQueueName)
+                  .Append(',');
+            }
+
+            if (QueueName is not null)
+            {
+                sb.Append("queuename (tag):")
                   .Append(QueueName)
                   .Append(',');
             }
