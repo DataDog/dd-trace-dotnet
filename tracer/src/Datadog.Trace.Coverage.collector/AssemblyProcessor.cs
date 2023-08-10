@@ -358,7 +358,7 @@ namespace Datadog.Trace.Coverage.Collector
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
                             var file = sequencePoints
-                                      .Where(s => s.IsHidden! && !string.IsNullOrWhiteSpace(s.Document?.Url))
+                                      .Where(s => !s.IsHidden && !string.IsNullOrWhiteSpace(s.Document?.Url))
                                       .Select(s => s.Document.Url)
                                       .FirstOrDefault();
 
