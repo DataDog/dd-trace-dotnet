@@ -207,6 +207,35 @@ stages:
       displayName: Fetch master id
       name: set_sha
 
+- stage: download_internal_ciapp_tool
+  dependsOn: []
+  jobs:
+    - job: download-from-azure
+      timeoutInMinutes: 60 #default value
+      pool:
+        name: azure-linux-task-scale-set
+      
+      steps:
+        - checkout: none
+        - bash: |
+            # find out which version is available
+            VERSION=$(curl -sL https://$AZURE_STORAGE_ACCOUNT_NAME.blob.core.windows.net/$AZURE_STORAGE_CONTAINER_NAME_CIAPP/version.txt)
+            SHA=$(curl -sL https://$AZURE_STORAGE_ACCOUNT_NAME.blob.core.windows.net/$AZURE_STORAGE_CONTAINER_NAME_CIAPP/sha.txt)
+            TOOL_NAME=dd-trace-ciapp.$VERSION.nupkg
+            TOOL_URL=https://$AZURE_STORAGE_ACCOUNT_NAME.blob.core.windows.net/$AZURE_STORAGE_CONTAINER_NAME_CIAPP/$SHA/$TOOL_NAME
+
+            # download the tool
+            curl -s $TOOL_URL -o $(Build.ArtifactStagingDirectory)/dd-trace-ciapp.$VERSION.nupkg
+            
+            echo "##vso[task.setvariable variable=tool_version;isOutput=true]VERSION"
+            echo "##vso[task.setvariable variable=tool_name;isOutput=true]TOOL_NAME"
+          displayName: Download tool
+
+        # release artifacts
+        - publish: "$(Build.ArtifactStagingDirectory)"
+          displayName: Publish tool
+          artifact: dd-trace-ciapp
+
 - stage: generate_variables
   dependsOn: [merge_commit_id]
   variables:
