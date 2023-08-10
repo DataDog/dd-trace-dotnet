@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -367,6 +369,27 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.Secure = true;
 
             return cookieOptions;
+        }
+
+#if NET5_0_OR_GREATER
+        [SupportedOSPlatform("windows")]
+#endif
+        [HttpGet("LDAP")]
+        [Route("LDAP")]
+        public ActionResult Ldap(string path)
+        {
+            // "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
+            DirectoryEntry entry = new DirectoryEntry(path, string.Empty, string.Empty, AuthenticationTypes.None);
+            DirectorySearcher search = new DirectorySearcher(entry);
+            var result = search.FindAll();
+
+            string resultString = string.Empty;
+            foreach(var item in result)
+            {
+                resultString += item.ToString() + Environment.NewLine;
+            }
+
+            return Content($"Result: " + resultString);
         }
     }
 }
