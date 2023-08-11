@@ -256,6 +256,15 @@ stages:
     # Download everything to monitoring home
     # BuildBundleNuget moves everything to the required folders
     - task: DownloadPipelineArtifact@2
+      displayName: Download windows tracer home
+      inputs:
+        artifact: windows-tracer-home
+        patterns: |
+          "**/*.dll"
+          **/loader.conf
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
         artifact: linux-tracer-home-centos7
