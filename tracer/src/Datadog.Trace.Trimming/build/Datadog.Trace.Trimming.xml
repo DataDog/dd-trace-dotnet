@@ -778,6 +778,7 @@
       <type fullname="System.Uri" />
       <type fullname="System.UriBuilder" />
       <type fullname="System.UriComponents" />
+      <type fullname="System.UriCreationOptions" />
       <type fullname="System.UriFormat" />
       <type fullname="System.UriKind" />
       <type fullname="System.ValueTuple`1" />

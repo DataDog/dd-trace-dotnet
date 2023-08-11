@@ -79,6 +79,12 @@ public class StringBuilderAppendTests : InstrumentationTestsBase
     }
 
     [Fact]
+    public void GivenATaintedString_WhenCallingStringEmptyBuilderAppendAppendAppendToString_ResultIsTainted2()
+    {
+        AssertTainted(new StringBuilder().Append("pre").Append(taintedValue).Append("post").ToString().ToString());
+    }
+
+    [Fact]
     public void GivenATaintedString_WhenCallingStringEmptyBuilderAppendAppendAppendToString_ResultIsTainted()
     {
         AssertTaintedFormatWithOriginalCallCheck("pre:+-tainted-+:post", new StringBuilder().Append("pre").Append(taintedValue).Append("post").ToString().ToString(), () => new StringBuilder().Append("pre").Append(taintedValue).Append("post").ToString().ToString());

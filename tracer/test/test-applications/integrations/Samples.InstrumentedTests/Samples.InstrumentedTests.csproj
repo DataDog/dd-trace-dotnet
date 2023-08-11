@@ -52,6 +52,7 @@
     <PackageReference Include="Dapper.StrongName" Version="1.60.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
+    <PackageReference Include="RestSharp" Version="110.2.0" />
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('netcoreapp')) ">
@@ -60,8 +61,17 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="2.1.8" />
     <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
+    <PackageReference Include="RestSharp" Version="108.0.0" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="RestSharp" Version="108.0.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
+    <PackageReference Include="RestSharp" Version="110.2.0" />
+  </ItemGroup>  
+  
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
