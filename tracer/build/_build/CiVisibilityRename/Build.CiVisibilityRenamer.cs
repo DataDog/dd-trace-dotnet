@@ -142,6 +142,11 @@ partial class Build
             // dd-trace tool
             sb.Replace(oldDdTraceName, newDdTraceName);
 
+            // Replace log prefixes
+            sb.Replace("dotnet-tracer-managed-", "dd-trace-ciapp-tracer-managed-");
+            sb.Replace("dotnet-native-loader-", "dd-trace-ciapp-native-loader-");
+            sb.Replace("dotnet-tracer-native-", "dd-trace-ciapp-tracer-native-");
+
             var final = sb.ToString();
             if (final.Equals(contents, StringComparison.Ordinal))
             {
