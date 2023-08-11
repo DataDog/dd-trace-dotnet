@@ -930,7 +930,7 @@ partial class Build
                             .SetFilter(filter)
                             .SetConfiguration(BuildConfiguration)
                             .SetTargetPlatformAnyCPU()
-                            .SetDDEnvironmentVariables("dd-tracer-dotnet")
+                            .SetDDEnvironmentVariables("dd-trace-dotnet")
                             .SetFramework(targetFramework)
                             .EnableCrashDumps()
                             .SetLogsDirectory(TestLogsDirectory)
