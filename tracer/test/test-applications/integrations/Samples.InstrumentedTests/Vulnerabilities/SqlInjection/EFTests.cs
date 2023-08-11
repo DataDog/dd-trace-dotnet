@@ -1,5 +1,6 @@
 #if !NETCOREAPP2_1
 using System.Data;
+using System.Data.Entity;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
@@ -39,6 +40,17 @@ public class EFTests : EFBaseTests
         var data = (db as ApplicationDbContext).Books.SqlQuery(@"Select * from dbo.Books where title =@title", titleParam).ToList();
         data.Count.Should().Be(1);
         AssertNotVulnerable();
+    }
+
+    [Fact]
+    public void TestConcatEF()
+    {
+        var data = (db as ApplicationDbContext).Books.Where(x => ConcatForTests() != "eeef").ToList();
+    }
+
+    private string ConcatForTests()
+    {
+        return string.Concat(taintedTitle, "eee");
     }
 
     protected override EntityCommand GetEntityCommand(string title)

@@ -34,7 +34,6 @@
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
     <PackageReference Include="System.Data.SQLite.Core" Version="1.0.115.5" />
-    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
     <PackageReference Include="linq2db" Version="3.1.5" />
     <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
     <PackageReference Include="MySql.Data" Version="8.0.28" />
@@ -48,7 +47,8 @@
   </ItemGroup>
 
   <ItemGroup Condition=" $(TargetFramework.StartsWith('net4')) ">
-    <PackageReference Include="EntityFramework" Version="6.4.4" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.101" />
+    <PackageReference Include="EntityFramework" Version="6.0.0" />
     <PackageReference Include="Dapper.StrongName" Version="1.60.1" />
     <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.5" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
@@ -62,6 +62,7 @@
     <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
     <PackageReference Include="Npgsql" Version="4.0.11" />
     <PackageReference Include="RestSharp" Version="108.0.0" />
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
@@ -73,6 +74,7 @@
   </ItemGroup>  
   
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0' OR '$(TargetFramework)'=='net5.0'">
+    <PackageReference Include="System.Data.SQLite" Version="1.0.115.5" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.8" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
