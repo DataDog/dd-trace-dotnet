@@ -17,48 +17,42 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.LdapInjection;
 //[Trait("Category", "LinuxUnsupported")]
 public class LdapInjectionTests : InstrumentationTestsBase
 {
-    protected string taintedUser = "user";
-    protected string taintedUserAsterisk = "*";
-    protected string taintedUserInjection = "*)(uid=*))(|(uid=*";
-    protected string taintedLdap = @"LDAP://MCBcorp, DC=com";
-    protected string taintedIIS = @"IIS://LocalHost/W3SVC/1/ROOT/testbedweb";
-    protected string taintedContainer = "CN=johndoe,OU=Users,OU=VSMGUI,DC=yourfirm,DC=com";
+    private string _taintedUser = "user";
+    private string _taintedUserAsterisk = "*";
+    private string _taintedUserInjection = "*)(uid=*))(|(uid=*";
+    private string _taintedLdap = @"LDAP://fakeorg, DC=com";
+    private string _untaintedLdap = @"LDAP://fakeorgUntainted, DC=com";
+    private string _taintedIIS = @"IIS://LocalHost/W3SVC/1/ROOT/testbedweb";
+    private string _taintedContainer = "CN=johndoe,OU=Users,OU=VSMGUI,DC=yourfirm,DC=com";
 
     public LdapInjectionTests()
     {
-        AddTainted(taintedLdap);
-        AddTainted(taintedUser);
-        AddTainted(taintedUserAsterisk);
-        AddTainted(taintedUserInjection);
-        AddTainted(taintedIIS);
-        AddTainted(taintedContainer);
+        AddTainted(_taintedLdap);
+        AddTainted(_taintedUser);
+        AddTainted(_taintedUserAsterisk);
+        AddTainted(_taintedUserInjection);
+        AddTainted(_taintedIIS);
+        AddTainted(_taintedContainer);
     }
 
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable()
     {
-        _ = new DirectoryEntry(taintedLdap, "user", "pass");
+        _ = new DirectoryEntry(_taintedLdap, "user", "pass");
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable()
     {
-        _ = new DirectoryEntry(taintedIIS);
+        _ = new DirectoryEntry(_taintedIIS);
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable2()
     {
-        _ = new DirectoryEntry((object) taintedLdap);
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable2()
-    {
-        _ = new DirectoryEntry((object) taintedIIS);
+        Assert.Throws<ArgumentException>(() => new DirectoryEntry((object)_taintedLdap));
         AssertNotVulnerable();
     }
 
@@ -77,150 +71,86 @@ public class LdapInjectionTests : InstrumentationTestsBase
     }
 
     [Fact]
-    public void GivenADirectoryEntry_WhenMakeRealConnection_LDAPVulnerable()
-    {
-        DirectoryEntry entry = new DirectoryEntry("LDAP://ldap.forumsys.com:389/dc=example,dc=com", "", "", AuthenticationTypes.None);
-        DirectorySearcher search = new DirectorySearcher(entry);
-        search.Filter = "(uid=" + taintedUserAsterisk + ")";
-        search.PropertiesToLoad.Add("*");
-        var result = search.FindAll();
-        result.Count.Should().BeGreaterThan(0);
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenADirectoryEntry_WhenMakeRealConnection_LDAPVulnerable2()
-    {
-        string ldapServer = "LDAP://ldap.forumsys.com:389/dc=example,dc=com";
-        string userName = "cn=read-only-admin,dc=example,dc=com";
-        string password = "password";
-        var directoryEntry = new DirectoryEntry(ldapServer, userName, password, AuthenticationTypes.ServerBind); // Bind to server with admin. Real life should use a service user. 
-        object obj = directoryEntry.NativeObject;
-        if (obj == null)
-        {
-            Console.WriteLine("Bind with admin failed!.");
-            Environment.Exit(1);
-        }
-        else
-        {
-            Console.WriteLine("Bind with admin succeeded!");
-        }
-        // Search for the user first. 
-        DirectorySearcher searcher = new DirectorySearcher(directoryEntry);
-        searcher.Filter = "(uid=" + taintedUserAsterisk + ")";
-        searcher.PropertiesToLoad.Add("*");
-        _ = searcher.FindOne();
-        // First we should handle user not found. 
-        // To simplify, skip it and try to bind to the user. 
-        DirectoryEntry validator = new DirectoryEntry(ldapServer, "uid=riemann,dc=example,dc=com", password, AuthenticationTypes.ServerBind);
-        if (validator.NativeObject.Equals(null))
-        {
-            Console.WriteLine("Cannot bind to user!");
-        }
-        else
-        {
-            Console.WriteLine("Bind with user succeeded!");
-        }
-        AssertVulnerable();
-    }
-
-    [Fact]
-    public void GivenAPrincipalContext_WhenMakeRealConnection_LDAPVulnerable()
-    {
-        using (var ctx = new PrincipalContext(ContextType.Domain, "ldap.forumsys.com:389", AddTainted("dc=example,dc=com").ToString()))
-        {
-            using (var searcher = new PrincipalSearcher(new UserPrincipal(ctx)))
-            {
-                foreach (var result in searcher.FindAll().Take(1))
-                {
-                    _ = result.GetUnderlyingObject() as DirectoryEntry;
-                }
-            }
-        }
-        AssertVulnerable();
-    }
-
-    [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "dc=example,dc=com"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap, "dc=example,dc=com"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable2()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "ldap:\\myserver", taintedContainer));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "ldap:\\myserver", _taintedContainer));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable3()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable4()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap, "container", ContextOptions.Negotiate));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable5()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _untaintedLdap, _taintedContainer, ContextOptions.Negotiate));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable6()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap, "container", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable7()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _untaintedLdap, _taintedContainer, "password"));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable8()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", "user", "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap, "container", "user", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable9()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, "user", "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _untaintedLdap, _taintedContainer, "user", "password"));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable10()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, taintedLdap, "container", ContextOptions.Negotiate, "user", "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _taintedLdap, "container", ContextOptions.Negotiate, "user", "password"));
         AssertNotVulnerable();
     }
 
     [Fact]
     public void GivenAPrincipalContext_WhenCreate_LDAPVulnerable11()
     {
-        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, "taintedLdap", taintedContainer, ContextOptions.Negotiate, "user", "password"));
+        ExecuteFunc(() => new PrincipalContext(ContextType.Domain, _untaintedLdap, _taintedContainer, ContextOptions.Negotiate, "user", "password"));
         AssertVulnerable();
     }
 
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable()
     {
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(filter);
         AssertVulnerable();
     }
@@ -230,7 +160,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenASearchRequest_WhenCreate_LDAPVulnerable()
     {
-        _ = new SearchRequest("name", "user=" + taintedUserInjection, System.DirectoryServices.Protocols.SearchScope.Subtree, null);
+        _ = new SearchRequest("name", "user=" + _taintedUserInjection, System.DirectoryServices.Protocols.SearchScope.Subtree, null);
         AssertVulnerable();
     }
 
@@ -238,7 +168,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenASearchRequest_WhenCreate_LDAPVulnerable2()
     {
         var request = new SearchRequest("name", string.Empty, System.DirectoryServices.Protocols.SearchScope.Subtree, null);
-        request.Filter = "user=" + taintedUserInjection;
+        request.Filter = "user=" + _taintedUserInjection;
         AssertVulnerable();
     }
 
@@ -248,7 +178,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable2()
     {
         var directoryEntry = new DirectoryEntry();
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(directoryEntry, filter);
         AssertVulnerable();
     }
@@ -257,7 +187,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable3()
     {
         var directoryEntry = new DirectoryEntry();
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(directoryEntry, filter, null);
         AssertVulnerable();
     }
@@ -265,7 +195,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable4()
     {
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(filter, null);
         AssertVulnerable();
     }
@@ -273,7 +203,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable5()
     {
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(filter, null, SearchScope.Base);
         AssertVulnerable();
     }
@@ -282,7 +212,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable6()
     {
         var directoryEntry = new DirectoryEntry();
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         _ = new DirectorySearcher(directoryEntry, filter, null, SearchScope.Base);
         AssertVulnerable();
     }
@@ -290,7 +220,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable8()
     {
-        string filter = "(uid=" + taintedUserAsterisk + ")";
+        string filter = "(uid=" + _taintedUserAsterisk + ")";
         var searcher = new DirectorySearcher();
         searcher.Filter = filter;
         AssertVulnerable();
@@ -303,7 +233,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable()
     {
-        string ldapServer = taintedLdap;
+        string ldapServer = _taintedLdap;
         var entry = new DirectoryEntry();
         entry.Path = ldapServer;
         AssertVulnerable();
@@ -312,7 +242,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable2()
     {
-        string ldapServer = taintedLdap;
+        string ldapServer = _taintedLdap;
         string userName = "cn=read-only-admin,dc=example,dc=com";
         string password = "password";
         _ = new DirectoryEntry(ldapServer, userName, password, AuthenticationTypes.ServerBind);
@@ -322,7 +252,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable3()
     {
-        string ldapServer = taintedLdap;
+        string ldapServer = _taintedLdap;
         _ = new DirectoryEntry(ldapServer);
         AssertVulnerable();
     }
@@ -330,7 +260,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable4()
     {
-        string ldapServer = taintedLdap;
+        string ldapServer = _taintedLdap;
         string userName = "cn=read-only-admin,dc=example,dc=com";
         string password = "password";
         _ = new DirectoryEntry(ldapServer, userName, password);

@@ -69,7 +69,6 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectoryEntry::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Init(System.String)",
 "  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectoryEntry::.ctor(System.String,System.String,System.String)\",\"\",[2],[False],[None],Propagation,[])] Init(System.String)",
 "  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectoryEntry::.ctor(System.String,System.String,System.String,System.DirectoryServices.AuthenticationTypes)\",\"\",[3],[False],[None],Propagation,[])] Init(System.String)",
-"  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectoryEntry::.ctor(System.Object)\",\"\",[0],[False],[None],Propagation,[])] Init(System.Object)",
 "[AspectClass(\"System.DirectoryServices\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.DirectoryServices.DirectorySearcherAspect",
 "  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectorySearcher::set_Filter(System.String)\",\"\",[0],[False],[None],Propagation,[])] Init(System.String)",
 "  [AspectMethodInsertBefore(\"System.DirectoryServices.DirectorySearcher::.ctor(System.String)\",\"\",[0],[False],[None],Propagation,[])] Init(System.String)",
