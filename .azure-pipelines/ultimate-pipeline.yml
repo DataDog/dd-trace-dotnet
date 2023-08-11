@@ -156,6 +156,7 @@ variables:
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
   CIAPPINTERNALTOOL_DIR: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts/dd-trace-ciapp
+  relativeCIAPPINTERNALTOOL_DIR: tracer/src/bin/artifacts/dd-trace-ciapp
   DDCIAPP_API_KEY: $(DD_API_KEY)
   DDCIAPP_TRACE_DEBUG: true
   DDCIAPP_TF_BUILD: True
@@ -872,11 +873,13 @@ stages:
           targetBranch: $(targetBranch)
       - template: steps/install-dotnet.yml
       - template: steps/restore-working-directory.yml
+      - template: steps/download-ciapp-tool.yml
 
       - script: tracer\build.cmd BuildAndRunNativeUnitTests
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          DDCIAPP_API_KEY: $(ddApiKey)
 
       - task: PublishTestResults@2
         displayName: publish test results
@@ -888,10 +891,11 @@ stages:
 
 - stage: unit_tests_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_macos, merge_commit_id]
+  dependsOn: [build_windows_tracer, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -910,11 +914,13 @@ stages:
       - template: steps/restore-working-directory.yml
         parameters:
           artifact: build-macos-working-directory
+      - template: steps/download-ciapp-tool.yml
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
+          DDCIAPP_API_KEY: $(ddApiKey)
 
       - publish: tracer/build_data
         artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -930,10 +936,11 @@ stages:
 
 - stage: unit_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id]
+  dependsOn: [build_linux_tracer, build_linux_profiler, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -965,7 +972,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -1011,7 +1018,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildAndRunNativeUnitTests"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish profiler test results
@@ -1021,10 +1028,11 @@ stages:
 
 - stage: unit_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_arm64_tracer, merge_commit_id]
+  dependsOn: [build_arm64_tracer, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
     - template: steps/update-github-status-jobs.yml
       parameters:
@@ -1050,7 +1058,7 @@ stages:
             build: true
             baseImage: debian
             command: "BuildAndRunManagedUnitTests"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -1066,10 +1074,11 @@ stages:
 
 - stage: integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1091,6 +1100,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
 # Cosmos is _way_ to flaky at the moment. Try enabling again at a later time
 #    - powershell: |
@@ -1112,6 +1122,7 @@ stages:
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
         enable_crash_dumps: true
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
@@ -1145,10 +1156,11 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1171,11 +1183,13 @@ stages:
         includeX86: true
 
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - script: tracer\build.cmd BuildAndRunDebuggerIntegrationTests -Framework $(framework) --TargetPlatform $(targetPlatform) --DebugType $(debugType) --Optimize $(optimize) --code-coverage $(runCodeCoverage)
       displayName: Run integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
@@ -1203,10 +1217,11 @@ stages:
 
 - stage: integration_tests_windows_iis
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1231,11 +1246,13 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsTracerIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisTracerIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
@@ -1263,10 +1280,11 @@ stages:
 
 - stage: integration_tests_windows_iis_security
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1291,11 +1309,13 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - script: tracer\build.cmd BuildAspNetIntegrationTests RunWindowsSecurityIisIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisSecurityIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
@@ -1322,10 +1342,11 @@ stages:
       displayName: Check logs for errors
 
 - stage: integration_tests_azure_functions
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1346,6 +1367,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - script: |
         $(runtimeInstall)
@@ -1364,6 +1386,7 @@ stages:
       displayName: Run Azure Functions tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
 
@@ -1475,10 +1498,11 @@ stages:
 
 - stage: msi_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, package_windows, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -1503,6 +1527,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download MSI
@@ -1521,11 +1546,13 @@ stages:
       retryCountOnTaskFailure: 5
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunWindowsMsiIntegrationTests -Framework $(framework) --code-coverage $(runCodeCoverage)
       displayName: RunWindowsIisIntegrationTests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -1542,6 +1569,7 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - publish: tracer/build_data
@@ -1561,10 +1589,11 @@ stages:
 
 - stage: integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1591,6 +1620,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1599,7 +1629,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-        apikey: $(DD_LOGGER_DD_API_KEY)
+        apikey: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1617,11 +1647,13 @@ stages:
           runCodeCoverage=$(runCodeCoverage)
           Filter=$(IntegrationTestFilter)
           SampleName=$(IntegrationTestSampleName)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+          DD_LOGGER_DD_API_KEY=$(ddApiKey)
+          DDCIAPP_API_KEY=$(ddApiKey)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false  -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -1650,7 +1682,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
   - job: DockerTest
     timeoutInMinutes: 60 #default value
@@ -1673,6 +1705,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1681,7 +1714,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1698,6 +1731,7 @@ stages:
         Filter: $(IntegrationTestFilter)
         SampleName: $(IntegrationTestSampleName)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests and run StartDependencies
       retryCountOnTaskFailure: 5
 
@@ -1711,11 +1745,13 @@ stages:
           framework=$(publishTargetFramework)
           Filter=$(IntegrationTestFilter)
           SampleName=$(IntegrationTestSampleName)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+          DD_LOGGER_DD_API_KEY=$(ddApiKey)
+          DDCIAPP_API_KEY=$(ddApiKey)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose stop services
@@ -1725,6 +1761,7 @@ stages:
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |
@@ -1754,7 +1791,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
   - job: Serverless
     timeoutInMinutes: 60
@@ -1784,6 +1821,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1796,7 +1834,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - script: |
         # Include the serverless dockerfile
@@ -1825,6 +1863,7 @@ stages:
         framework: $(publishTargetFramework)
         lambdaBaseImage: $(lambdaBaseImage)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       displayName: docker-compose build IntegrationTests.Serverless and run StartDependencies.Serverless
       retryCountOnTaskFailure: 5
 
@@ -1837,13 +1876,15 @@ stages:
           framework=$(publishTargetFramework)
           lambdaBaseImage=$(lambdaBaseImage)
           runCodeCoverage=$(runCodeCoverage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+          DD_LOGGER_DD_API_KEY=$(ddApiKey)
+          DDCIAPP_API_KEY=$(ddApiKey)
         dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Serverless
         additionalDockerComposeFiles: |
           docker-compose.serverless.yml
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - script: |
         mkdir -p tracer/build_data/docker
@@ -1887,7 +1928,8 @@ stages:
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
-        DD_LOGGER_DD_API_KEY: $(DD_LOGGER_DD_API_KEY)
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       displayName: docker-compose logs for serverless services
       condition: succeededOrFailed()
       retryCountOnTaskFailure: 5
@@ -1902,6 +1944,7 @@ stages:
           docker-compose.serverless.yml
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
 
     - script: |
@@ -1931,7 +1974,7 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
 - stage: integration_tests_linux_debugger
   condition: >
@@ -1940,10 +1983,11 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1970,6 +2014,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1978,7 +2023,7 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
-        apikey: $(DD_LOGGER_DD_API_KEY)
+        apikey: $(ddApiKey)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -1994,11 +2039,13 @@ stages:
           baseImage=$(baseImage)
           framework=$(publishTargetFramework)
           runCodeCoverage=$(runCodeCoverage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+          DD_LOGGER_DD_API_KEY=$(ddApiKey)
+          DDCIAPP_API_KEY=$(ddApiKey)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.Debugger
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -2027,14 +2074,15 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "CheckBuildLogsForErrors"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
 - stage: profiler_integration_tests_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_windows, generate_variables, merge_commit_id]
+  dependsOn: [package_windows, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2064,6 +2112,7 @@ stages:
     - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
+    - template: steps/download-ciapp-tool.yml
 
     # windows-tracer-home.zip file contains profiler, tracer...
     - task: DownloadPipelineArtifact@2
@@ -2082,6 +2131,7 @@ stages:
       displayName: Run Profiler Integration tests
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2097,10 +2147,11 @@ stages:
 
 - stage: profiler_integration_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2130,6 +2181,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
@@ -2144,21 +2196,21 @@ stages:
         build: true
         baseImage: $(baseImage)
         command: "BuildProfilerSamples"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose run --no-deps ProfilerIntegrationTests
@@ -2166,11 +2218,13 @@ stages:
         containerregistrytype: Container Registry
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
-          DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+          DD_LOGGER_DD_API_KEY=$(ddApiKey)
+          DDCIAPP_API_KEY=$(ddApiKey)
         dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - publish: profiler/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2220,7 +2274,7 @@ stages:
         build: true
         target: builder
         command: "RunProfilerAsanTest -Framework net7.0"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - publish: profiler/build_data
       displayName: Uploading Address sanitizer test results
@@ -2289,7 +2343,7 @@ stages:
         build: true
         target: builder
         command: "RunProfilerUbsanTest -Framework net7.0"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - publish: profiler/build_data
       displayName: Uploading test results
@@ -2299,10 +2353,11 @@ stages:
 
 - stage: integration_tests_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [package_arm64, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
     TestAllPackageVersions: true
     IncludeMinorPackageVersions: $[eq(variables.perform_comprehensive_testing, 'true')]
     baseImage: debian
@@ -2336,13 +2391,14 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
+        - template: steps/download-ciapp-tool.yml
 
         - template: steps/run-in-docker.yml
           parameters:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker false --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
@@ -2360,11 +2416,13 @@ stages:
               Filter=$(IntegrationTestFilter)
               SampleName=$(IntegrationTestSampleName)
               runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+              DD_LOGGER_DD_API_KEY=$(ddApiKey)
+              DDCIAPP_API_KEY=$(ddApiKey)
             dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=false -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            DDCIAPP_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2388,7 +2446,7 @@ stages:
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
     - job: DockerTest
       timeoutInMinutes: 60 #default value
@@ -2414,13 +2472,14 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
+        - template: steps/download-ciapp-tool.yml
 
         - template: steps/run-in-docker.yml
           parameters:
             build: true
             baseImage: $(baseImage)
             command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --IncludeTestsRequiringDocker true --Filter $(IntegrationTestFilter) --SampleName $(IntegrationTestSampleName)"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
@@ -2437,6 +2496,7 @@ stages:
             Filter: $(IntegrationTestFilter)
             SampleName: $(IntegrationTestSampleName)
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            DDCIAPP_API_KEY: $(ddApiKey)
           displayName: docker-compose build IntegrationTests and run StartDependencies
           retryCountOnTaskFailure: 5
 
@@ -2450,11 +2510,13 @@ stages:
               Filter=$(IntegrationTestFilter)
               SampleName=$(IntegrationTestSampleName)
               runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+              DD_LOGGER_DD_API_KEY=$(ddApiKey)
+              DDCIAPP_API_KEY=$(ddApiKey)
             dockerComposeCommand: run --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) -e IncludeTestsRequiringDocker=true -e Filter=$(IntegrationTestFilter) -e SampleName=$(IntegrationTestSampleName) IntegrationTests.ARM64
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            DDCIAPP_API_KEY: $(ddApiKey)
 
         - task: DockerCompose@0
           displayName: docker-compose stop services
@@ -2464,6 +2526,7 @@ stages:
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            DDCIAPP_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
 
         - publish: tracer/build_data
@@ -2488,7 +2551,7 @@ stages:
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
 - stage: integration_tests_arm64_debugger
   condition: >
@@ -2497,10 +2560,11 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
     )
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [package_arm64, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -2526,13 +2590,14 @@ stages:
         - template: steps/restore-working-directory.yml
           parameters:
             artifact: build-linux-arm64-working-directory
+        - template: steps/download-ciapp-tool.yml
 
         - template: steps/run-in-docker.yml
           parameters:
             build: true
             baseImage: $(baseImage)
             command: "BuildDebuggerIntegrationTests --framework $(publishTargetFramework) --targetplatform x64 --debugtype portable --optimize $(optimize)"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
@@ -2548,11 +2613,13 @@ stages:
               baseImage=$(baseImage)
               framework=$(publishTargetFramework)
               runCodeCoverage=$(runCodeCoverage)
-              DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
+              DD_LOGGER_DD_API_KEY=$(ddApiKey)
+              DDCIAPP_API_KEY=$(ddApiKey)
             dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e framework=$(publishTargetFramework) -e runCodeCoverage=$(runCodeCoverage) IntegrationTests.ARM64.Debugger
             projectName: ddtrace_$(Build.BuildNumber)
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
+            DDCIAPP_API_KEY: $(ddApiKey)
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2576,7 +2643,7 @@ stages:
           parameters:
             baseImage: $(baseImage)
             command: "CheckBuildLogsForErrors"
-            apiKey: $(DD_LOGGER_DD_API_KEY)
+            apiKey: $(ddApiKey)
 
 - stage: exploration_tests_windows
   condition: >
@@ -2589,10 +2656,11 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id]
+  dependsOn: [build_windows_tracer, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
 
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -2619,6 +2687,7 @@ stages:
     - template: steps/install-dotnet-sdks.yml
 
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - script: tracer\build.cmd SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) -ExplorationTestName $(explorationTestName)
       displayName: SetupExplorationTest $(explorationTestUseCase) $(explorationTestName)
@@ -2627,6 +2696,7 @@ stages:
       displayName: RunExplorationTest
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data
       displayName: Uploading exploration_tests_windows tracer logs
@@ -2648,10 +2718,11 @@ stages:
         eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsDebuggerChanged'], 'True')
       )
     )
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [package_linux, generate_variables, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -2687,13 +2758,14 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(baseImage)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     - template: steps/run-in-docker.yml
       parameters:
         build: false
         baseImage: $(baseImage)
         command: "SetupExplorationTests -ExplorationTestUseCase $(explorationTestUseCase) --explorationTestName $(explorationTestName) --framework $(publishTargetFramework)"
-        apiKey: $(DD_LOGGER_DD_API_KEY)
+        apiKey: $(ddApiKey)
 
     - task: DockerCompose@0
       displayName: docker-compose build ExplorationTests
@@ -2701,6 +2773,7 @@ stages:
         baseImage: $(baseImage)
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -2711,6 +2784,7 @@ stages:
       env:
         azdo_network: $(agent.containernetwork)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       inputs:
         containerregistrytype: Container Registry
         additionalDockerComposeFiles: docker-compose.ci.azdo.yml
@@ -2992,10 +3066,11 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: tool_artifacts_tests_windows
-  dependsOn: [dotnet_tool, merge_commit_id]
+  dependsOn: [dotnet_tool, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -3024,6 +3099,7 @@ stages:
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+    - template: steps/download-ciapp-tool.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -3047,11 +3123,13 @@ stages:
       displayName: Build and Test tool
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -3061,10 +3139,11 @@ stages:
       condition: succeededOrFailed()
 
 - stage: tool_artifacts_tests_linux
-  dependsOn: [dotnet_tool, merge_commit_id]
+  dependsOn: [dotnet_tool, merge_commit_id, download_internal_ciapp_tool]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
     runnerTool: $(System.DefaultWorkingDirectory)/$(relativeRunnerTool)
     runnerStandalone: $(System.DefaultWorkingDirectory)/$(relativeRunnerStandalone)
   jobs:
@@ -3103,6 +3182,7 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(name)-working-directory
+    - template: steps/download-ciapp-tool.yml
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -4084,6 +4164,7 @@ stages:
       env:
         dockerTag: $(dockerTag)
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
+        DDCIAPP_API_KEY: $(ddApiKey)
       displayName: docker-compose build smoke-tests
       retryCountOnTaskFailure: 3
 
@@ -4102,7 +4183,7 @@ stages:
         build: true
         baseImage: alpine
         command: "CheckSmokeTestsForErrors"
-        apikey: $(DD_LOGGER_DD_API_KEY)
+        apikey: $(ddApiKey)
 
 - stage: nuget_installer_smoke_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), or(eq(variables.isMainOrReleaseBranch, 'true'), eq(variables.run_all_installer_tests, 'true')))

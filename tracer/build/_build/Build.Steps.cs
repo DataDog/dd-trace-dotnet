@@ -1350,6 +1350,7 @@ partial class Build
         .After(BuildWindowsIntegrationTests)
         .Requires(() => IsWin)
         .Requires(() => Framework)
+        .DependsOn(InstallInternalCiAppTool)
         .Triggers(PrintSnapshotsDiff)
         .Executes(async () =>
         {
@@ -1360,7 +1361,7 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
@@ -1375,7 +1376,6 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(project))
-                    .WithDatadogLogger()
                     .SetProjectFile(project));
             }
             finally
@@ -1391,6 +1391,7 @@ partial class Build
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
         .After(BuildNativeLoader)
+        .DependsOn(InstallInternalCiAppTool)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Executes(async () =>
@@ -1401,7 +1402,7 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
@@ -1417,7 +1418,6 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
                         .SetProjectFile(project)));
             }
             finally
@@ -1443,6 +1443,7 @@ partial class Build
         .After(CompileFrameworkReproductions)
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
+        .DependsOn(InstallInternalCiAppTool)
         .Requires(() => Framework)
         .Executes(async () => await RunWindowsIisIntegrationTests(
                       Solution.GetProject(Projects.AppSecIntegrationTests)));
@@ -1454,7 +1455,7 @@ partial class Build
         try
         {
             // Different filter from RunWindowsIntegrationTests
-            DotNetTest(config => config
+            DotNetTestWithCiApp(config => config
                                 .SetDotnetPath(TargetPlatform)
                                 .SetConfiguration(BuildConfiguration)
                                 .SetTargetPlatformAnyCPU()
@@ -1468,7 +1469,6 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
                                 .SetProjectFile(project));
         }
         finally
@@ -1484,6 +1484,7 @@ partial class Build
         .After(PublishIisSamples)
         .Triggers(PrintSnapshotsDiff)
         .Requires(() => Framework)
+        .DependsOn(InstallInternalCiAppTool)
         .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
@@ -1493,7 +1494,7 @@ partial class Build
             try
             {
                 // Different filter from RunWindowsIntegrationTests
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
@@ -1507,7 +1508,6 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
-                    .WithDatadogLogger()
                     .SetProjectFile(project));
             }
             finally
@@ -1736,6 +1736,7 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => !IsWin)
         .Triggers(PrintSnapshotsDiff)
+        .DependsOn(InstallInternalCiAppTool)
         .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
@@ -1761,7 +1762,7 @@ partial class Build
             try
             {
                 // Run these ones in parallel
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                         .SetConfiguration(BuildConfiguration)
                         .EnableNoRestore()
                         .EnableNoBuild()
@@ -1779,12 +1780,11 @@ partial class Build
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .WithDatadogLogger()
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
                 // Run this one separately so we can tail output
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetConfiguration(BuildConfiguration)
                     .EnableNoRestore()
                     .EnableNoBuild()
@@ -1801,7 +1801,6 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
                         .SetProjectFile(project))
                 );
             }
@@ -1817,6 +1816,7 @@ partial class Build
         .Requires(() => Framework)
         .Requires(() => IsOsx)
         .Triggers(PrintSnapshotsDiff)
+        .DependsOn(InstallInternalCiAppTool)
         .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
@@ -1844,7 +1844,7 @@ partial class Build
             try
             {
                 // Run these ones in parallel
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                         .SetConfiguration(BuildConfiguration)
                         .EnableNoRestore()
                         .EnableNoBuild()
@@ -1863,12 +1863,11 @@ partial class Build
                         .When(CodeCoverage, ConfigureCodeCoverage)
                         .CombineWith(ParallelIntegrationTests, (s, project) => s
                             .EnableTrxLogOutput(GetResultsDirectory(project))
-                            .WithDatadogLogger()
                             .SetProjectFile(project)),
                     degreeOfParallelism: 2);
 
                 // Run this one separately so we can tail output
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetConfiguration(BuildConfiguration)
                     .EnableNoRestore()
                     .EnableNoBuild()
@@ -1886,7 +1885,6 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
                         .SetProjectFile(project))
                 );
             }
@@ -1933,12 +1931,13 @@ partial class Build
     Target RunToolArtifactTests => _ => _
        .Description("Runs the tool artifacts tests")
        .After(BuildToolArtifactTests)
+       .DependsOn(InstallInternalCiAppTool)
        .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
             var project = Solution.GetProject(Projects.ToolArtifactsTests);
 
-            DotNetTest(config => config
+            DotNetTestWithCiApp(config => config
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
                 .EnableNoRestore()
@@ -1947,8 +1946,7 @@ partial class Build
                 .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                 .SetProcessEnvironmentVariable("ToolInstallDirectory", ToolInstallDirectory)
                 .SetLogsDirectory(TestLogsDirectory)
-                .EnableTrxLogOutput(GetResultsDirectory(project))
-                .WithDatadogLogger());
+                .EnableTrxLogOutput(GetResultsDirectory(project)));
         });
 
     Target CopyServerlessArtifacts => _ => _

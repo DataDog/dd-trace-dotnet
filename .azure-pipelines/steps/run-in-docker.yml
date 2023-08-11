@@ -79,6 +79,33 @@ steps:
         --env DD_LOGGER_DD_TAGS \
         --env DD_INTERNAL_TELEMETRY_V2_ENABLED \
         --env DD_TELEMETRY_METRICS_ENABLED \
+        --env CIAPPINTERNALTOOL_DIR=/project/$(relativeCIAPPINTERNALTOOL_DIR) \
+        --env DDCIAPP_API_KEY="$(DDCIAPP_API_KEY)" \
+        --env DDCIAPP_TRACE_DEBUG \
+        --env DDCIAPP_TF_BUILD \
+        --env DDCIAPP_BUILD_BUILDID \
+        --env DDCIAPP_BUILD_DEFINITIONNAME \
+        --env DDCIAPP_BUILD_SOURCESDIRECTORY \
+        --env DDCIAPP_BUILD_REPOSITORY_URI \
+        --env DDCIAPP_BUILD_SOURCEVERSION \
+        --env DDCIAPP_BUILD_SOURCEBRANCH \
+        --env DDCIAPP_BUILD_SOURCEBRANCHNAME \
+        --env DDCIAPP_BUILD_SOURCEVERSIONMESSAGE \
+        --env DDCIAPP_BUILD_REQUESTEDFORID \
+        --env DDCIAPP_BUILD_REQUESTEDFOREMAIL \
+        --env DDCIAPP_SYSTEM_TEAMFOUNDATIONSERVERURI \
+        --env DDCIAPP_SYSTEM_TEAMPROJECTID \
+        --env DDCIAPP_SYSTEM_STAGEDISPLAYNAME \
+        --env DDCIAPP_SYSTEM_JOBDISPLAYNAME \
+        --env DDCIAPP_SYSTEM_JOBID \
+        --env DDCIAPP_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
+        --env DDCIAPP_SYSTEM_PULLREQUEST_SOURCECOMMITID \
+        --env DDCIAPP_SYSTEM_PULLREQUEST_SOURCEBRANCH \
+        --env DDCIAPP_API_KEY_CHECKER_ENABLED \
+        --env DDCIAPP_DD_TAGS \
+        --env DDCIAPP_CIVISIBILITY_ENABLED \
+        --env DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED \
+        --env DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
@@ -86,3 +113,4 @@ steps:
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
     DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
+    DDCIAPP_API_KEY: ${{ parameters.apiKey }}
