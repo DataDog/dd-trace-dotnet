@@ -260,7 +260,7 @@ stages:
       inputs:
         artifact: windows-tracer-home
         patterns: |
-          "**/*.dll"
+          **/*.dll
           **/loader.conf
         path: $(monitoringHome)
 
