@@ -1255,6 +1255,7 @@ partial class Build
         .After(CompileSamplesWindows)
         .After(CompileFrameworkReproductions)
         .After(BuildWindowsIntegrationTests)
+        .DependsOn(InstallInternalCiAppTool)
         .Requires(() => IsWin)
         .Requires(() => Framework)
         .Triggers(PrintSnapshotsDiff)
@@ -1267,7 +1268,7 @@ partial class Build
 
             try
             {
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
@@ -1285,13 +1286,12 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
                 // TODO: I think we should change this filter to run on Windows by default
                 // (RunOnWindows!=False|Category=Smoke)&LoadFromGAC!=True&IIS!=True
-                DotNetTest(config => config
+                DotNetTestWithCiApp(config => config
                     .SetDotnetPath(TargetPlatform)
                     .SetConfiguration(BuildConfiguration)
                     .SetTargetPlatformAnyCPU()
@@ -1308,7 +1308,6 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
                         .SetProjectFile(project)));
             }
             finally
