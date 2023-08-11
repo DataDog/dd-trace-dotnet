@@ -265,38 +265,6 @@ stages:
           displayName: Publish tool
           artifact: dd-trace-ciapp
 
-- stage: TEMP_INSTALL
-  dependsOn: [merge_commit_id, download_internal_ciapp_tool]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    CIAPPINTERNALTOOL_VERSION: $[ stageDependencies.download_internal_ciapp_tool.fetch.outputs['tool.version']]
-  pool:
-    name: azure-windows-scale-set-3
-
-  jobs:
-    - template: steps/update-github-status-jobs.yml
-      parameters:
-        jobs: [managed]
-
-    - job: managed
-      timeoutInMinutes: 60 #default value
-      steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-        - template: steps/install-dotnet.yml
-        - template: steps/download-ciapp-tool.yml
-
-        - script: tracer\build.cmd InstallInternalCiAppTool
-          displayName: Test install
-          env:
-            DDCIAPP_API_KEY: $(ddApiKey)
-
-        - script: |
-            dd-trace-ciapp --help
-
 - stage: generate_variables
   dependsOn: [merge_commit_id]
   variables:
