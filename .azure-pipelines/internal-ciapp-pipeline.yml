@@ -100,6 +100,7 @@ stages:
         - bash: |
             # az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "index.txt" --name "index.txt" --overwrite true
             # az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "sha.txt" --name "sha.txt" --overwrite true
+            echo 'az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true'
             az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true
           displayName: Upload indexes to Azure
           env:
