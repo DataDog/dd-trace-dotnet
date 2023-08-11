@@ -80,6 +80,10 @@
     <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="5.0.8" />
     <PackageReference Include="Dapper.StrongName" Version="2.0.78" />
     <PackageReference Include="Npgsql" Version="7.0.4" />
+  </ItemGroup>  
+  
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Datadog.Trace\Datadog.Trace.csproj" />
   </ItemGroup>
 
 </Project>
