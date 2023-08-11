@@ -157,6 +157,7 @@ variables:
   DD_LOGGER_ENABLED: true
   CIAPPINTERNALTOOL_DIR: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts/dd-trace-ciapp
   DDCIAPP_API_KEY: $(DD_API_KEY)
+  DDCIAPP_TRACE_DEBUG: true
   DDCIAPP_TF_BUILD: True
   DDCIAPP_BUILD_BUILDID: $(Build.BuildId)
   DDCIAPP_BUILD_DEFINITIONNAME: $(Build.DefinitionName)
