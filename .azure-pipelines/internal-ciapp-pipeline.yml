@@ -55,59 +55,6 @@ stages:
 # if master is updated while the build is in progress. This guards against CI flakiness
 # where the first stages of the build execute against one merge commit, and later stages
 # run against another
-
-- stage: TEMP_upload_to_azure
-  jobs:
-    - job: upload
-      timeoutInMinutes: 60 #default value
-      pool:
-        vmImage: ubuntu-20.04
-      steps:
-        - checkout: none
-        - bash: |
-            VERSION_NUMBER='2.36.0'
-            echo "detected version: $VERSION_NUMBER"
-            echo "##vso[task.setvariable variable=tracer_version]$VERSION_NUMBER"
-          displayName: Extract version number
-
-#          - bash: |
-#              az storage blob upload-batch \
-#                --destination "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" \
-#                --destination-path "$(Build.SourceVersion)" \
-#                --source "$(Build.ArtifactStagingDirectory)"
-#            displayName: Upload blobs to Azure
-#            condition: >
-#              and(
-#                succeeded(),
-#                ne(variables['push_artifacts_to_azure_storage'], 'false'),
-#                or(
-#                  eq(variables['push_artifacts_to_azure_storage'], 'true'),
-#                  eq(variables.isMainBranch, true)
-#                )
-#              )
-#            env:
-#              AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
-#              AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
-#
-#          - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
-#            displayName: Write file list to index.txt
-#
-#          - bash: echo "$(Build.SourceVersion)" > sha.txt
-#            displayName: Write commit hash to sha.txt
-
-        - bash: echo "$(tracer_version)" > version.txt
-          displayName: Write tracer version number to version.txt
-
-        - bash: |
-            # az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "index.txt" --name "index.txt" --overwrite true
-            # az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "sha.txt" --name "sha.txt" --overwrite true
-            echo "$AZURE_STORAGE_ACCOUNT"
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true
-          displayName: Upload indexes to Azure
-          env:
-            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
-            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
-
 - stage: merge_commit_id
   dependsOn: []
   jobs:
@@ -352,21 +299,14 @@ stages:
       artifact: runner-dotnet-tool
 
 - stage: upload_to_azure
-  dependsOn: [dotnet_tool, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  dependsOn: [dotnet_tool]
   jobs:
     - job: upload
       timeoutInMinutes: 60 #default value
       pool:
         vmImage: ubuntu-20.04
       steps:
-        - template: steps/clone-repo.yml
-          parameters:
-            targetShaId: $(targetShaId)
-            targetBranch: $(targetBranch)
-
+        - checkout: none
         # runner tool
         - task: DownloadPipelineArtifact@2
           displayName: Download runner dotnet tool
@@ -384,10 +324,21 @@ stages:
           displayName: Extract version number
 
         - bash: |
+            # Upload contents
             az storage blob upload-batch \
               --destination "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" \
               --destination-path "$(Build.SourceVersion)" \
               --source "$(Build.ArtifactStagingDirectory)"
+
+            # Write summaries
+            ls "$(Build.ArtifactStagingDirectory)" > index.txt
+            echo "$(Build.SourceVersion)" > sha.txt
+            echo "$(tracer_version)" > version.txt
+
+            # Upload files
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "index.txt" --name "index.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "sha.txt" --name "sha.txt" --overwrite true
+            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true
           displayName: Upload blobs to Azure
           condition: >
             and(
@@ -398,25 +349,6 @@ stages:
                 eq(variables.isMainBranch, true)
               )
             )
-          env:
-            AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
-            AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
-
-        - bash: ls "$(Build.ArtifactStagingDirectory)" > index.txt
-          displayName: Write file list to index.txt
-
-        - bash: echo "$(Build.SourceVersion)" > sha.txt
-          displayName: Write commit hash to sha.txt
-
-        - bash: echo "$(tracer_version)" > version.txt
-          displayName: Write tracer version number to version.txt
-
-        - bash: |
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "index.txt" --name "index.txt" --overwrite true
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "sha.txt" --name "sha.txt" --overwrite true
-            az storage blob upload --container-name "$(AZURE_STORAGE_CONTAINER_NAME_CIAPP)" --file "version.txt" --name "version.txt" --overwrite true
-          displayName: Upload indexes to Azure
-          condition: and(succeeded(), eq(variables.isMainBranch, true))
           env:
             AZURE_STORAGE_ACCOUNT: $(AZURE_STORAGE_ACCOUNT_NAME)
             AZURE_STORAGE_SAS_TOKEN: $(AZURE_STORAGE_SHARED_ACCESS_TOKEN)
