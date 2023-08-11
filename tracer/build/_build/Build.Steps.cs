@@ -79,6 +79,16 @@ partial class Build
 
     AbsolutePath TempDirectory => (AbsolutePath)(IsWin ? Path.GetTempPath() : "/tmp/");
 
+    [Parameter("Enable dd-trace-ciapp reporting", List = false, Name = "DDCIAPP_CIVISIBILITY_ENABLED")]
+    readonly bool InternalCiAppToolEnabled = false;
+    [Parameter("The version of the dd-trace-ciapp to install", List = false, Name = "CIAPPINTERNALTOOL_VERSION")]
+    readonly string InternalCiAppToolVersion;
+    [Parameter("The directory from which to install the dd-trace-ciapp NuGet", List = false, Name = "CIAPPINTERNALTOOL_DIR")]
+    readonly string InternalCiAppToolNugetSource;
+
+    AbsolutePath InternalCiAppToolDir => TemporaryDirectory / "dd-trace-ciapp";
+    AbsolutePath InternalCiAppToolPath => InternalCiAppToolDir / $"dd-trace-ciapp{(IsWin ? ".exe" : string.Empty)}";
+
     readonly string[] WafWindowsArchitectureFolders = { "win-x86", "win-x64" };
     Project NativeTracerProject => Solution.GetProject(Projects.ClrProfilerNative);
     Project NativeLoaderProject => Solution.GetProject(Projects.NativeLoader);
@@ -877,8 +887,25 @@ partial class Build
             DotnetBuild(TracerDirectory.GlobFiles("test/**/*.Tests.csproj"));
         });
 
+    Target InstallInternalCiAppTool => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => InternalCiAppToolEnabled)
+        .Requires(() => InternalCiAppToolVersion)
+        .Executes(() =>
+        {
+            // install the tool
+            // dotnet tool update -g dd-trace-ciapp --version $(ToolVersion) --add-source $(Agent.TempDirectory)
+            var installPath = Path.GetDirectoryName(InternalCiAppToolPath) ;
+            DotNetToolUpdate(x => x
+                .SetVersion(InternalCiAppToolVersion)
+                .SetSources(InternalCiAppToolNugetSource)
+                .SetPackageName("dd-trace-ciapp")
+                .SetToolInstallationPath(installPath));
+        });
+
     Target RunManagedUnitTests => _ => _
         .Unlisted()
+        .DependsOn(InstallInternalCiAppTool)
         .After(CompileManagedUnitTests)
         .Executes(() =>
         {
