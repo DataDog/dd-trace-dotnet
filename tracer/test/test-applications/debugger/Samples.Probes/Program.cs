@@ -1,6 +1,7 @@
 using System;
 using System.Reflection;
 using System.Threading.Tasks;
+using Billing;
 using Samples.Probes;
 using Samples.Probes.TestRuns;
 
@@ -12,19 +13,22 @@ public static class Program
     public static async Task Main(string[] args)
     {
         var testName = GetArg("--test-name", args);
-        var instance = GetInstance(testName);
+     //   var instance = GetInstance(testName);
 
         var listenUrl = GetArg("--listen-url", args);
         if (listenUrl == null)
         {
-            await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitSetProbes));
-            await RunTest(instance, testName);
-            await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitForSendSnapshots));
+            while (true)
+            {
+                await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitSetProbes));
+                SalesOperations.Run();
+                await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitForSendSnapshots));
+            }
         }
         else
         {
-            var listener = new SimpleHttpListener(listenUrl, () => RunTest(instance, testName));
-            await listener.HandleIncomingConnections();
+  //          var listener = new SimpleHttpListener(listenUrl, () => RunTest(instance, testName));
+    //        await listener.HandleIncomingConnections();
         }
     }
 
