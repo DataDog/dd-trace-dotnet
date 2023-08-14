@@ -52,31 +52,6 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
-        --env DD_LOGGER_DD_API_KEY="$(DD_LOGGER_DD_API_KEY)" \
-        --env DD_LOGGER_DD_SERVICE \
-        --env DD_LOGGER_DD_ENV \
-        --env DD_LOGGER_ENABLED \
-        --env DD_LOGGER_TF_BUILD=True \
-        --env DD_LOGGER_BUILD_BUILDID \
-        --env DD_LOGGER_BUILD_DEFINITIONNAME \
-        --env DD_LOGGER_BUILD_SOURCESDIRECTORY \
-        --env DD_LOGGER_BUILD_REPOSITORY_URI \
-        --env DD_LOGGER_BUILD_SOURCEVERSION \
-        --env DD_LOGGER_BUILD_SOURCEBRANCH \
-        --env DD_LOGGER_BUILD_SOURCEBRANCHNAME \
-        --env DD_LOGGER_BUILD_SOURCEVERSIONMESSAGE \
-        --env DD_LOGGER_BUILD_REQUESTEDFORID \
-        --env DD_LOGGER_BUILD_REQUESTEDFOREMAIL \
-        --env DD_LOGGER_SYSTEM_TEAMFOUNDATIONSERVERURI \
-        --env DD_LOGGER_SYSTEM_TEAMPROJECTID \
-        --env DD_LOGGER_SYSTEM_STAGEDISPLAYNAME \
-        --env DD_LOGGER_SYSTEM_JOBDISPLAYNAME \
-        --env DD_LOGGER_SYSTEM_JOBID \
-        --env DD_LOGGER_SYSTEM_TASKINSTANCEID="$SYSTEM_TASKINSTANCEID" \
-        --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI \
-        --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID \
-        --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH \
-        --env DD_LOGGER_DD_TAGS \
         --env DD_INTERNAL_TELEMETRY_V2_ENABLED \
         --env DD_TELEMETRY_METRICS_ENABLED \
         --env CIAPPINTERNALTOOL_DIR=/project/$(relativeCIAPPINTERNALTOOL_DIR) \
@@ -113,5 +88,4 @@ steps:
   displayName: Run '${{ parameters.command }}' in Docker
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
   env:
-    DD_LOGGER_DD_API_KEY: ${{ parameters.apiKey }}
     DDCIAPP_API_KEY: ${{ parameters.apiKey }}
