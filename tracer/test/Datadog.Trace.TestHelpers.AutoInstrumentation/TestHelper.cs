@@ -30,7 +30,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        private HttpClient _client = new();
+        private readonly bool _reportMetrics = false;
+        private readonly HttpClient _client = new();
 
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
@@ -59,7 +60,13 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
 
-            _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
+            var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
+            if (!string.IsNullOrEmpty(envKey))
+            {
+                // We're probably in CI
+                _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
+                _reportMetrics = true;
+            }
         }
 
         public bool SecurityEnabled { get; private set; }
@@ -643,6 +650,11 @@ namespace Datadog.Trace.TestHelpers
 
         protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Type testType, Exception ex = null)
         {
+            if (!_reportMetrics)
+            {
+                return;
+            }
+
             var type = outputHelper.GetType();
             var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
             var test = (ITest)testMember?.GetValue(outputHelper);
