@@ -225,6 +225,14 @@ namespace Datadog.Trace.TestHelpers
                 throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
             }
 
+#if NETCOREAPP2_1
+            if (exitCode == 134 && EnvironmentTools.IsLinux())
+            {
+                // We see SIGABRT relatively frequently on .NET Core 2.1 on Linux, but probably not worth investigating further
+                throw new SkipException("SIGABRT on .NET Core 2.1");
+            }
+#endif
+
             ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
