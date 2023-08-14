@@ -175,6 +175,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                           .DisableRequireUniquePrefix();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]

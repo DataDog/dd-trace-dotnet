@@ -222,6 +222,7 @@ public abstract class AspNetCore2IastTestsFullSampling : AspNetCore2IastTests
                             .DisableRequireUniquePrefix();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [SkippableFact]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastLdapRequest()
