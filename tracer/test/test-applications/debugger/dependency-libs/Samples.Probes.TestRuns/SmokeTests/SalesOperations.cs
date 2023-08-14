@@ -20,12 +20,13 @@ namespace Billing
 
             foreach (var customer in customers)
             {
-                ShipOrder(customer, productPrice, customer.Coupon);
+                ShipOrder(customer, productPrice);
             }
         }
 
-        private static void ShipOrder(Customer customer, double productPrice, Coupon coupon)
+        private static void ShipOrder(Customer customer, double productPrice)
         {
+            var coupon = customer.GetCoupon();
             double billAmount = CalculateBill(productPrice, coupon);
             string couponName = coupon?.FancyName ?? "No Coupon";
             bool wasSuccessful = PaymentProcessor.BillCustomer(customer, couponName, billAmount);
@@ -40,9 +41,20 @@ namespace Billing
 
     public class Customer
     {
+        private Coupon _coupon;
         public int Id { get; set; }
         public string Name { get; set; }
-        public Coupon Coupon { get; set; }
+
+        public Coupon Coupon
+        {
+            set => _coupon = value;
+        }
+
+        public Coupon GetCoupon()
+        {
+            return _coupon;
+        }
+
         public string BranchName { get; set; }
     }
 }
