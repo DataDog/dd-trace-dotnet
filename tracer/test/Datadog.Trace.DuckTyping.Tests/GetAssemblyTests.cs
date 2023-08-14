@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
@@ -16,16 +17,16 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void GetAssemblyTest()
         {
-            var asmDuckTypes = 0;
             var lstExceptions = new List<Exception>();
             var assemblies = System.AppDomain.CurrentDomain.GetAssemblies();
+            var duckTypeAssemblies = new List<Assembly>();
             foreach (var assembly in assemblies)
             {
                 if (assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeGenericTypeAssemblyPrefix) ||
                     assembly.FullName!.StartsWith(DuckTypeConstants.DuckTypeNotVisibleAssemblyPrefix))
                 {
-                    asmDuckTypes++;
+                    duckTypeAssemblies.Add(assembly);
 
                     try
                     {
@@ -43,17 +44,21 @@ namespace Datadog.Trace.DuckTyping.Tests
                 throw new AggregateException(lstExceptions.ToArray());
             }
 
+            bool isUsingCiApp = Environment.GetEnvironmentVariable("DDCIAPP_CIVISIBILITY_ENABLED") is { Length: > 0 } envVar
+                             && (envVar == "1" || (bool.TryParse(envVar, out var isEnabled) && isEnabled));
             /*****
              * WARNING: This number is expected to change if you add
              * a another test to the ducktype assembly.
              */
+            // when we're instrumenting CIapp we run into this issue
 #if NETFRAMEWORK
-            Assert.Equal(1131, asmDuckTypes);
+            var expectedCount = isUsingCiApp ? 1143 : 1131;
 #elif NETCOREAPP2_1
-            Assert.Equal(1134, asmDuckTypes);
+            var expectedCount = isUsingCiApp ? 1148 : 1134;
 #else
-            Assert.Equal(1135, asmDuckTypes);
+            var expectedCount = isUsingCiApp ? 1149 : 1135;
 #endif
+            duckTypeAssemblies.Should().HaveCount(expectedCount);
         }
     }
 }
