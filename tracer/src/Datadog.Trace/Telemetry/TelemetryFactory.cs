@@ -91,12 +91,6 @@ namespace Datadog.Trace.Telemetry
                               ? new DependencyTelemetryCollector()
                               : NullDependencyTelemetryCollector.Instance);
 
-                // we assume we never flip between v1 and v2
-                if (!settings.V2Enabled)
-                {
-                    DisableConfigCollector();
-                }
-
                 // if this changes, we will "lose" startup metrics, but unlikely to happen
                 if (!settings.MetricsEnabled)
                 {
@@ -114,6 +108,7 @@ namespace Datadog.Trace.Telemetry
                 }
                 else
                 {
+                    DisableConfigCollector();
                     log.Debug("Creating telemetry controller v1");
                     return CreateV1Controller(telemetryTransports, settings);
                 }
