@@ -161,6 +161,8 @@ namespace Datadog.Trace.TestHelpers
                 "COR_ENABLE_PROFILING",
                 "COR_PROFILER",
                 "COR_PROFILER_PATH",
+                "COR_PROFILER_PATH_32",
+                "COR_PROFILER_PATH_64",
 
                 // Datadog
                 "DD_PROFILER_PROCESSES",
