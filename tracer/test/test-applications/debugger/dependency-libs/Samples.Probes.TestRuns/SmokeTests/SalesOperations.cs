@@ -26,9 +26,8 @@ namespace Billing
 
         private static void ShipOrder(Customer customer, double productPrice)
         {
-            var coupon = customer.GetCoupon();
-            double billAmount = CalculateBill(productPrice, coupon);
-            string couponName = coupon?.FancyName ?? "No Coupon";
+            double billAmount = CalculateBill(productPrice,  customer.GetCoupon());
+            string couponName = customer.GetCoupon().FancyName ?? "No Coupon";
             bool wasSuccessful = PaymentProcessor.BillCustomer(customer, couponName, billAmount);
         }
     }
@@ -36,23 +35,23 @@ namespace Billing
     public class Coupon
     {
         public string FancyName { get; set; }
-        public double DiscountRatio { get; set; } // 0.1 means 10% discount. The bug happens when it's 1.
+        public double DiscountRatio { get; set; } // 0.1 means 10% discount.
     }
 
     public class Customer
     {
-        private Coupon _coupon;
+        private Coupon _;
         public int Id { get; set; }
         public string Name { get; set; }
 
         public Coupon Coupon
         {
-            set => _coupon = value;
+            set => _ = value;
         }
 
         public Coupon GetCoupon()
         {
-            return _coupon;
+            return _;
         }
 
         public string BranchName { get; set; }
