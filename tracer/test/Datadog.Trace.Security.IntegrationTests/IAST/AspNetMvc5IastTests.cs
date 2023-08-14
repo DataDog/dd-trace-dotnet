@@ -7,6 +7,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Security.IntegrationTests.IAST;
@@ -166,6 +167,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var filename = _enableIast ? "Iast.SSRF.AspNetMvc5.IastEnabled" : "Iast.SSRF.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://fakeorg, DC=com&userName=Babs Jensen", null)]
+    public async Task TestIastLdapRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.Ldap.AspNetMvc5.IastEnabled" : "Iast.Ldap.AspNetMvc5.IastDisabled";
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)

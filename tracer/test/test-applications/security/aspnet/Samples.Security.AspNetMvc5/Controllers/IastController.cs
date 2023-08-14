@@ -11,6 +11,7 @@ using System.Web;
 using Microsoft.Ajax.Utilities;
 using System.Net.Http;
 using System.DirectoryServices;
+using System.Net.PeerToPeer;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -240,21 +241,40 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Route("LDAP")]
-        public ActionResult Ldap(string path)
+        public ActionResult Ldap(string path, string userName)
         {
-            // "LDAP://ldap.forumsys.com:389/dc=example,dc=com"
-            DirectoryEntry entry = new DirectoryEntry(path, string.Empty, string.Empty, AuthenticationTypes.None);
-            DirectorySearcher search = new DirectorySearcher(entry);
-            var result = search.FindAll();
-
-            string resultString = string.Empty;
-
-            for (int i = 0; i < result.Count; i++)
+            try
             {
-                resultString += result[i].Path + Environment.NewLine;
-            }
+                DirectoryEntry entry = null;
+                try
+                {
+                    var directoryEntryPath = !string.IsNullOrEmpty(path) ? path : "LDAP://fakeorg";
+                    entry = new DirectoryEntry(directoryEntryPath, string.Empty, string.Empty, AuthenticationTypes.None);
+                }
+                catch
+                {
+                    entry = new DirectoryEntry();
+                }
+                DirectorySearcher search = new DirectorySearcher(entry);
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    search.Filter = "(uid=" + userName + ")";
+                }
+                var result = search.FindAll();
 
-            return Content($"Result: " + resultString);
+                string resultString = string.Empty;
+
+                for (int i = 0; i < result.Count; i++)
+                {
+                    resultString += result[i].Path + Environment.NewLine;
+                }
+
+                return Content($"Result: " + resultString);
+            }
+            catch
+            {
+                return Content($"Result: Not connected");
+            }
         }
     }
 }
