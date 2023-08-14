@@ -578,6 +578,9 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
+
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -677,6 +680,8 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
     hostname: integrationtests
 
   IntegrationTests.Serverless:
@@ -760,6 +765,8 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
     hostname: integrationtests
 
   ExplorationTests:
@@ -839,6 +846,8 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -961,6 +970,8 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -1069,6 +1080,8 @@ services:
       - DDCIAPP_CIVISIBILITY_ENABLED
       - DDCIAPP_CIVISIBILITY_AGENTLESS_ENABLED
       - DDCIAPP_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH=/project/Datadog.Trace.snk
+      - CIAPPINTERNALTOOL_DIR=/project{relativeCIAPPINTERNALTOOL_DIR}
+      - CIAPPINTERNALTOOL_VERSION
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies

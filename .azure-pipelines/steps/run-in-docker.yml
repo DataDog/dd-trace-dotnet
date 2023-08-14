@@ -80,6 +80,7 @@ steps:
         --env DD_INTERNAL_TELEMETRY_V2_ENABLED \
         --env DD_TELEMETRY_METRICS_ENABLED \
         --env CIAPPINTERNALTOOL_DIR=/project/$(relativeCIAPPINTERNALTOOL_DIR) \
+        --env CIAPPINTERNALTOOL_VERSION \
         --env DDCIAPP_API_KEY="$(DDCIAPP_API_KEY)" \
         --env DDCIAPP_TRACE_DEBUG \
         --env DDCIAPP_TF_BUILD \
