@@ -2,10 +2,7 @@ using System;
 using System.DirectoryServices;
 using System.DirectoryServices.AccountManagement;
 using System.DirectoryServices.Protocols;
-using System.Linq;
-using System.Net;
 using System.Runtime.Versioning;
-using FluentAssertions;
 using Xunit;
 using SearchScope = System.DirectoryServices.SearchScope;
 
@@ -14,7 +11,6 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.LdapInjection;
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
-//[Trait("Category", "LinuxUnsupported")]
 public class LdapInjectionTests : InstrumentationTestsBase
 {
     private string _taintedUser = "user";
@@ -35,6 +31,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AddTainted(_taintedContainer);
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable()
     {
@@ -42,6 +39,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable()
     {
@@ -49,6 +47,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable2()
     {
@@ -56,6 +55,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable3()
     {
@@ -63,6 +63,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable4()
     {
@@ -147,6 +148,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable()
     {
@@ -174,6 +176,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     //DirectorySearcher LDAPVulnerable: https://docs.microsoft.com/en-us/dotnet/fundamentals/code-analysis/quality-rules/ca3005
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable2()
     {
@@ -183,6 +186,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable3()
     {
@@ -208,6 +212,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable6()
     {
@@ -230,6 +235,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
     //https://security.stackexchange.com/questions/101997/c-ldap-injection
     //https://stackoverflow.com/questions/59178153/ldap-injection-vulnerability-with-directoryentry-username-and-password
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable()
     {
@@ -239,6 +245,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable2()
     {
@@ -249,6 +256,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable3()
     {
@@ -257,6 +265,7 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
+    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable4()
     {
