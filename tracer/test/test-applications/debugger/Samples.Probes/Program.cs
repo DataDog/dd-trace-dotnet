@@ -10,7 +10,7 @@ public static class Program
     private const int millisecondsToWaitSetProbes = 1000 * 4;
     private const int millisecondsToWaitForSendSnapshots = 1000 * 10;
 
-    public static async Task Main(string[] args)
+    public static void Main(string[] args)
     {
         var testName = GetArg("--test-name", args);
      //   var instance = GetInstance(testName);
@@ -20,9 +20,9 @@ public static class Program
         {
             while (true)
             {
-                await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitSetProbes));
+                //await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitSetProbes));
                 SalesOperations.Run();
-                await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitForSendSnapshots));
+                //await Task.Delay(TimeSpan.FromMilliseconds(millisecondsToWaitForSendSnapshots));
             }
         }
         else
