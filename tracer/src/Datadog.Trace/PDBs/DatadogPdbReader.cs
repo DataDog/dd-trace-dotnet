@@ -11,6 +11,7 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Text;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -37,12 +38,12 @@ namespace Datadog.Trace.Pdb
         {
             _symbolReader = symbolReader;
             Module = moduleDefMd;
-            // PdbFullPath = pdbFullPath;
+            PdbFullPath = pdbFullPath;
         }
 
         ~DatadogPdbReader() => Dispose(false);
 
-        // internal string PdbFullPath { get; }
+        internal string PdbFullPath { get; }
 
         internal ModuleDefMD Module { get; }
 
@@ -111,6 +112,12 @@ namespace Datadog.Trace.Pdb
 
             pdbFullPath = null;
             return false;
+        }
+
+        public string? GetSourceLinkJsonDocument()
+        {
+            var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
+            return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
         public SymbolMethod? GetMethodSymbolInfoOrDefault(int methodMetadataToken)
