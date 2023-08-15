@@ -503,7 +503,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "MySql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsNpgsqlV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -517,7 +518,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "Npgsql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsOpenTelemetryV1(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => { })
@@ -706,8 +708,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("peer.service.remapped_from")
                 .MatchesOneOf("_dd.peer.service.source", "db.name", "out.host", "peer.service")
                 .Matches("component", "SqlClient")
-                .Matches("span.kind", "client")
-                .IsOptional("_dd.dbm_trace_injected"));
+                .Matches("span.kind", "client"));
 
         public static Result IsWcfV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s

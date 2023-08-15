@@ -45,11 +45,11 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] OutHostBytes = new byte[] { 168, 111, 117, 116, 46, 104, 111, 115, 116 };
 #endif
-        // DbmDataPropagatedBytes = MessagePack.Serialize("_dd.dbm_trace_injected");
+        // DbmTraceInjectedBytes = MessagePack.Serialize("_dd.dbm_trace_injected");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> DbmDataPropagatedBytes => new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+        private static ReadOnlySpan<byte> DbmTraceInjectedBytes => new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
 #else
-        private static readonly byte[] DbmDataPropagatedBytes = new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
+        private static readonly byte[] DbmTraceInjectedBytes = new byte[] { 182, 95, 100, 100, 46, 100, 98, 109, 95, 116, 114, 97, 99, 101, 95, 105, 110, 106, 101, 99, 116, 101, 100 };
 #endif
 
         public override string? GetTag(string key)
@@ -62,7 +62,7 @@ namespace Datadog.Trace.Tagging
                 "db.name" => DbName,
                 "db.user" => DbUser,
                 "out.host" => OutHost,
-                "_dd.dbm_trace_injected" => DbmDataPropagated,
+                "_dd.dbm_trace_injected" => DbmTraceInjected,
                 _ => base.GetTag(key),
             };
         }
@@ -87,7 +87,7 @@ namespace Datadog.Trace.Tagging
                     OutHost = value;
                     break;
                 case "_dd.dbm_trace_injected": 
-                    DbmDataPropagated = value;
+                    DbmTraceInjected = value;
                     break;
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(SqlTags));
@@ -130,9 +130,9 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("out.host", OutHost, OutHostBytes));
             }
 
-            if (DbmDataPropagated is not null)
+            if (DbmTraceInjected is not null)
             {
-                processor.Process(new TagItem<string>("_dd.dbm_trace_injected", DbmDataPropagated, DbmDataPropagatedBytes));
+                processor.Process(new TagItem<string>("_dd.dbm_trace_injected", DbmTraceInjected, DbmTraceInjectedBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -182,10 +182,10 @@ namespace Datadog.Trace.Tagging
                   .Append(',');
             }
 
-            if (DbmDataPropagated is not null)
+            if (DbmTraceInjected is not null)
             {
                 sb.Append("_dd.dbm_trace_injected (tag):")
-                  .Append(DbmDataPropagated)
+                  .Append(DbmTraceInjected)
                   .Append(',');
             }
 
