@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -12,11 +12,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -33,11 +34,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -54,11 +56,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -75,11 +78,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -96,11 +100,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -117,11 +122,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -138,11 +144,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -159,11 +166,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -180,11 +188,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -201,11 +210,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -222,11 +232,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -243,11 +254,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -264,11 +276,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -285,11 +298,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -306,11 +320,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -327,11 +342,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -348,11 +364,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -369,11 +386,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -390,11 +408,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -411,11 +430,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -432,11 +452,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -453,11 +474,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -474,11 +496,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -495,11 +518,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -516,11 +540,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -537,11 +562,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -558,11 +584,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -579,11 +606,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -600,11 +628,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -621,11 +650,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -642,11 +672,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -663,11 +694,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -684,11 +716,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -705,11 +738,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -726,11 +760,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -747,11 +782,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -768,11 +804,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -789,11 +826,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -810,11 +848,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -831,11 +870,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -852,11 +892,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -873,11 +914,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -894,11 +936,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -915,11 +958,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -936,11 +980,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -957,11 +1002,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -978,11 +1024,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -999,11 +1046,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1020,11 +1068,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1041,11 +1090,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1062,11 +1112,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1083,11 +1134,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1104,11 +1156,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1125,11 +1178,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1146,11 +1200,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1167,11 +1222,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1188,11 +1244,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1209,11 +1266,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1230,11 +1288,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1251,11 +1310,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1272,11 +1332,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1293,11 +1354,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1314,11 +1376,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1335,11 +1398,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1356,11 +1420,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1377,11 +1442,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1398,11 +1464,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1419,11 +1486,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1440,11 +1508,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1461,11 +1530,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1482,11 +1552,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1503,11 +1574,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1524,11 +1596,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1545,11 +1618,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1566,11 +1640,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1587,11 +1662,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1608,11 +1684,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1629,11 +1706,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1650,11 +1728,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1671,11 +1750,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1692,11 +1772,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1713,11 +1794,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1734,11 +1816,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1755,11 +1838,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1776,11 +1860,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1797,11 +1882,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1818,11 +1904,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1839,11 +1926,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1860,11 +1948,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1881,11 +1970,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1902,11 +1992,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1923,11 +2014,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1944,11 +2036,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1965,11 +2058,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -1986,11 +2080,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2007,11 +2102,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2028,11 +2124,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2049,11 +2146,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2070,11 +2168,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2091,11 +2190,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2112,11 +2212,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2133,11 +2234,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2154,11 +2256,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2175,11 +2278,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2196,11 +2300,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2217,11 +2322,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2238,11 +2344,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2259,11 +2366,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2280,11 +2388,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2301,11 +2410,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2322,11 +2432,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2343,11 +2454,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2364,11 +2476,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2385,11 +2498,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2406,11 +2520,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2427,11 +2542,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2448,11 +2564,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2469,11 +2586,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2490,11 +2608,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2511,11 +2630,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2532,11 +2652,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2553,11 +2674,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2574,11 +2696,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2595,11 +2718,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2616,11 +2740,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2637,11 +2762,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2658,11 +2784,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2679,11 +2806,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2700,11 +2828,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2721,11 +2850,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2742,11 +2872,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2763,11 +2894,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2784,11 +2916,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2805,11 +2938,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2826,11 +2960,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2847,11 +2982,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2868,11 +3004,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2889,11 +3026,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2910,11 +3048,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2931,11 +3070,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2952,11 +3092,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2973,11 +3114,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -2994,11 +3136,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3015,11 +3158,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3036,11 +3180,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3057,11 +3202,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   },
@@ -3078,11 +3224,12 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       peer.service: world,
       span.kind: client,
       version: 1.0.0,
+      _dd.dbm_trace_injected: true,
       _dd.peer.service.source: db.name
     }
   }

@@ -3,8 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Originally Based on https://github.com/fluentassertions/fluentassertions.json
+// License: https://github.com/fluentassertions/fluentassertions.json/blob/master/LICENSE
+// Modified to do static initialization in a module initializer
+
 using System;
 using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json.Common;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -22,10 +27,11 @@ namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 [DebuggerNonUserCode]
 internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertions>
 {
-    static JTokenAssertions()
-    {
-        Formatter.AddFormatter(new JTokenFormatter());
-    }
+    // Doing this in a module initializer instead to avoid race conditions
+    // static JTokenAssertions()
+    // {
+    //     Formatter.AddFormatter(new JTokenFormatter());
+    // }
 
     /// <summary>
     /// Initializes a new instance of the <see cref="JTokenAssertions" /> class.
@@ -43,6 +49,12 @@ internal class JTokenAssertions : ReferenceTypeAssertions<JToken, JTokenAssertio
     protected override string Identifier => nameof(JToken);
 
     private GenericCollectionAssertions<JToken> EnumerableSubject { get; }
+
+    [ModuleInitializer]
+    public static void Initialize()
+    {
+        Formatter.AddFormatter(new JTokenFormatter());
+    }
 
     /// <summary>
     ///     Asserts that the current <see cref="JToken" /> is equivalent to the parsed <paramref name="expected" /> JSON,

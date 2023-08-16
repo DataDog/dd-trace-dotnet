@@ -9,6 +9,8 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
+using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
@@ -16,11 +18,25 @@ namespace Datadog.Trace.Telemetry;
 
 internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 {
+    private readonly TimeSpan _aggregationInterval;
     private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly AggregatedMetrics _aggregated = new();
+    private readonly Task _aggregateTask;
+    private readonly TaskCompletionSource<bool> _processExit = new();
     private MetricBuffer _buffer = new();
     private MetricBuffer _reserveBuffer = new();
     private string[]? _wafVersionTags;
+
+    public MetricsTelemetryCollector()
+        : this(TimeSpan.FromSeconds(10))
+    {
+    }
+
+    internal MetricsTelemetryCollector(TimeSpan aggregationInterval)
+    {
+        _aggregationInterval = aggregationInterval;
+        _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
+    }
 
     public void Record(PublicApiUsage publicApi)
     {
@@ -29,25 +45,22 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         Interlocked.Increment(ref _buffer.PublicApiCounts[(int)publicApi]);
     }
 
-    public void AggregateMetrics()
+    public Task DisposeAsync()
     {
-        var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
-
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        AggregateMetric(buffer.PublicApiCounts, timestamp, _aggregated.PublicApiCounts);
-        AggregateMetric(buffer.Counts, timestamp, _aggregated.Counts);
-        AggregateMetric(buffer.Gauges, timestamp, _aggregated.Gauges);
-        AggregateDistribution(buffer.Distributions, _aggregated.Distributions);
-
-        // prepare the buffer for next time
-        buffer.Clear();
-        Interlocked.Exchange(ref _reserveBuffer, buffer);
+        _processExit.TrySetResult(true);
+        return _aggregateTask;
     }
 
     public MetricResults GetMetrics()
     {
-        var metricData = GetMetricData(_aggregated.PublicApiCounts, _aggregated.Counts, _aggregated.Gauges);
-        var distributionData = GetDistributionData(_aggregated.Distributions);
+        List<MetricData>? metricData;
+        List<DistributionMetricData>? distributionData;
+
+        lock (_aggregated)
+        {
+            metricData = GetMetricData(_aggregated.PublicApiCounts, _aggregated.Counts, _aggregated.Gauges);
+            distributionData = GetDistributionData(_aggregated.Distributions);
+        }
 
         return new(metricData, distributionData);
     }
@@ -63,6 +76,29 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         _reserveBuffer.Clear();
         var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
         buffer.Clear();
+    }
+
+    /// <summary>
+    /// Internal for testing
+    /// </summary>
+    internal void AggregateMetrics()
+    {
+        var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
+
+        // _aggregated, containing the aggregated metrics, is not thread-safe
+        // and is also used when getting the metrics for serialization.
+        lock (_aggregated)
+        {
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            AggregateMetric(buffer.PublicApiCounts, timestamp, _aggregated.PublicApiCounts);
+            AggregateMetric(buffer.Counts, timestamp, _aggregated.Counts);
+            AggregateMetric(buffer.Gauges, timestamp, _aggregated.Gauges);
+            AggregateDistribution(buffer.Distributions, _aggregated.Distributions);
+        }
+
+        // prepare the buffer for next time
+        buffer.Clear();
+        Interlocked.Exchange(ref _reserveBuffer, buffer);
     }
 
     private void AggregateMetric(int[] metricValues, long timestamp, AggregatedMetric[] aggregatedMetrics)
@@ -246,6 +282,25 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         }
 
         return data;
+    }
+
+    private async Task AggregateMetricsLoopAsync()
+    {
+        var tasks = new Task[2];
+        tasks[0] = _processExit.Task;
+        while (true)
+        {
+            // The process may have exited, but we want to do a final aggregation before process end anyway
+            AggregateMetrics();
+
+            if (_processExit.Task.IsCompleted)
+            {
+                return;
+            }
+
+            tasks[1] = Task.Delay(_aggregationInterval);
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+        }
     }
 
     private string[]? GetTags(string? ns, string[]? metricKeyTags)

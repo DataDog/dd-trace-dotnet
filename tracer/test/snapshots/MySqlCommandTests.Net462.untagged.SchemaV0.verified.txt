@@ -12,7 +12,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -34,7 +34,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -56,7 +56,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -78,7 +78,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -100,7 +100,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -122,7 +122,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -144,7 +144,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -166,7 +166,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -188,7 +188,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -210,7 +210,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -232,7 +232,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -254,7 +254,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -276,7 +276,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -298,7 +298,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -320,7 +320,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -342,7 +342,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -364,7 +364,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -386,7 +386,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -408,7 +408,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -430,7 +430,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -452,7 +452,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -474,7 +474,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -496,7 +496,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -518,7 +518,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -540,7 +540,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -562,7 +562,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -584,7 +584,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -606,7 +606,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -628,7 +628,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -650,7 +650,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -672,7 +672,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -694,7 +694,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -716,7 +716,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -738,7 +738,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -760,7 +760,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -782,7 +782,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -804,7 +804,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -826,7 +826,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -848,7 +848,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -870,7 +870,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -892,7 +892,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -914,7 +914,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -936,7 +936,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -958,7 +958,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -980,7 +980,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1002,7 +1002,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1024,7 +1024,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1046,7 +1046,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1068,7 +1068,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1090,7 +1090,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1112,7 +1112,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1134,7 +1134,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1156,7 +1156,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1178,7 +1178,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1200,7 +1200,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1222,7 +1222,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1244,7 +1244,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1266,7 +1266,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1288,7 +1288,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1310,7 +1310,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1332,7 +1332,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1354,7 +1354,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1376,7 +1376,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1398,7 +1398,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1420,7 +1420,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1442,7 +1442,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1464,7 +1464,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1486,7 +1486,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1508,7 +1508,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1530,7 +1530,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1552,7 +1552,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1574,7 +1574,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1596,7 +1596,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1618,7 +1618,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1640,7 +1640,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1662,7 +1662,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1684,7 +1684,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1706,7 +1706,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1728,7 +1728,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1750,7 +1750,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1772,7 +1772,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1794,7 +1794,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1816,7 +1816,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1838,7 +1838,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1860,7 +1860,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1882,7 +1882,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1904,7 +1904,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1926,7 +1926,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1948,7 +1948,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1970,7 +1970,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -1992,7 +1992,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2014,7 +2014,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2036,7 +2036,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2058,7 +2058,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2080,7 +2080,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2102,7 +2102,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2124,7 +2124,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2146,7 +2146,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2168,7 +2168,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2190,7 +2190,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2212,7 +2212,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2234,7 +2234,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2256,7 +2256,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2278,7 +2278,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2300,7 +2300,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2322,7 +2322,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2344,7 +2344,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2366,7 +2366,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2388,7 +2388,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2410,7 +2410,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2432,7 +2432,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2454,7 +2454,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2476,7 +2476,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2498,7 +2498,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2520,7 +2520,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2542,7 +2542,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2564,7 +2564,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2586,7 +2586,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2608,7 +2608,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2630,7 +2630,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2652,7 +2652,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2674,7 +2674,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2696,7 +2696,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2718,7 +2718,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2740,7 +2740,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2762,7 +2762,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2784,7 +2784,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2806,7 +2806,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2828,7 +2828,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2850,7 +2850,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2872,7 +2872,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2894,7 +2894,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2916,7 +2916,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2938,7 +2938,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2960,7 +2960,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -2982,7 +2982,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3004,7 +3004,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3026,7 +3026,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3048,7 +3048,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3070,7 +3070,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3092,7 +3092,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3114,7 +3114,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3136,7 +3136,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3158,7 +3158,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3180,7 +3180,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3202,7 +3202,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
@@ -3224,7 +3224,7 @@
       db.name: world,
       db.type: mysql,
       db.user: mysqldb,
-      env: testing,
+      env: integration_tests,
       out.host: mysql,
       runtime-id: Guid_1,
       span.kind: client
