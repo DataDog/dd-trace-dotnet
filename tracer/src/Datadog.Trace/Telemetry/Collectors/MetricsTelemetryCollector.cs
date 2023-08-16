@@ -290,6 +290,9 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         tasks[0] = _processExit.Task;
         while (true)
         {
+            tasks[1] = Task.Delay(_aggregationInterval);
+            await Task.WhenAny(tasks).ConfigureAwait(false);
+
             // The process may have exited, but we want to do a final aggregation before process end anyway
             AggregateMetrics();
 
@@ -297,9 +300,6 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
             {
                 return;
             }
-
-            tasks[1] = Task.Delay(_aggregationInterval);
-            await Task.WhenAny(tasks).ConfigureAwait(false);
         }
     }
 
