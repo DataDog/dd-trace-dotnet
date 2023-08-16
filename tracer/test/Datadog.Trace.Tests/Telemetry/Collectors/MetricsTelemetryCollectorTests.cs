@@ -5,6 +5,8 @@
 
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
@@ -21,7 +23,7 @@ public class MetricsTelemetryCollectorTests
     [InlineData("1.2.3")]
     public void AllMetricsAreReturned(string wafVersion)
     {
-        var collector = new MetricsTelemetryCollector();
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Ctor);
@@ -215,5 +217,27 @@ public class MetricsTelemetryCollectorTests
                 Namespace = NS.General,
             },
         });
+    }
+
+    [Fact]
+    public void ShouldAggregateMetricsAutomatically()
+    {
+        var aggregationPeriod = TimeSpan.FromMilliseconds(500);
+
+        var collector = new MetricsTelemetryCollector(aggregationPeriod);
+        // theoretically ~10 aggregations in this time period
+        var count = 0;
+        while (count < 50)
+        {
+            collector.RecordCountSpanFinished(1);
+            Thread.Sleep(100);
+            count++;
+        }
+
+        var metrics = collector.GetMetrics();
+        metrics.Metrics.Should()
+               .ContainSingle(x => x.Metric == Count.SpanFinished.GetName())
+               .Which.Points.Should()
+               .NotBeEmpty(); // we expect ~10 points, but don't assert that number to avoid flakiness
     }
 }

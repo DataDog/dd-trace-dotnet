@@ -52,7 +52,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
-        _scheduler = new(flushInterval, metricsAggregationInterval: TimeSpan.FromSeconds(10), _processExit);
+        _scheduler = new(flushInterval, _processExit);
 
         try
         {
@@ -202,13 +202,13 @@ internal class TelemetryControllerV2 : ITelemetryController
                 }
             }
 
-            if (_scheduler.ShouldAggregateMetrics)
+            var isFinalPush = _processExit.Task.IsCompleted;
+            if (isFinalPush)
             {
-                // aggregate metrics if the timer has expired or if we're about to exit
-                _metrics.AggregateMetrics();
+                // wait for the final aggregation
+                await _metrics.DisposeAsync().ConfigureAwait(false);
             }
 
-            var isFinalPush = _processExit.Task.IsCompleted;
             if (_isStarted && _sendTelemetry && _scheduler.ShouldFlushTelemetry)
             {
                 await PushTelemetry(sendAppClosing: isFinalPush).ConfigureAwait(false);
@@ -303,30 +303,26 @@ internal class TelemetryControllerV2 : ITelemetryController
         private readonly TaskCompletionSource<bool> _tracerInitialized = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _processExitSource;
         private readonly Task[] _tasks;
-        private readonly TimeSpan _metricsAggregationInterval;
         private readonly IClock _clock;
         private readonly IDelayFactory _delayFactory;
         private TimeSpan _flushInterval;
         private DateTime _lastFlush;
-        private DateTime _lastAggregation;
         private bool _initializationFlushExecuted = false;
 
-        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource)
-        : this(flushInterval, metricsAggregationInterval, processExitSource, new Clock(), new DelayFactory())
+        public Scheduler(TimeSpan flushInterval, TaskCompletionSource<bool> processExitSource)
+        : this(flushInterval, processExitSource, new Clock(), new DelayFactory())
         {
         }
 
         // For testing only
-        public Scheduler(TimeSpan flushInterval, TimeSpan metricsAggregationInterval, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
+        public Scheduler(TimeSpan flushInterval, TaskCompletionSource<bool> processExitSource, IClock clock, IDelayFactory delayFactory)
         {
             _clock = clock;
             _delayFactory = delayFactory;
             _processExitSource = processExitSource;
             _flushInterval = flushInterval;
-            _metricsAggregationInterval = metricsAggregationInterval;
-            ShouldAggregateMetrics = false; // wait for first interval before aggregating metrics
             ShouldFlushTelemetry = false; // wait for initialization before flushing metrics
-            _lastFlush = _lastAggregation = _clock.UtcNow;
+            _lastFlush = _clock.UtcNow;
 
             // Using a task array instead of overloads to avoid allocating the array every loop
             _tasks = new Task[3];
@@ -339,8 +335,6 @@ internal class TelemetryControllerV2 : ITelemetryController
         {
             Task Delay(TimeSpan delay);
         }
-
-        public bool ShouldAggregateMetrics { get; private set; }
 
         public bool ShouldFlushTelemetry { get; private set; }
 
@@ -358,40 +352,35 @@ internal class TelemetryControllerV2 : ITelemetryController
         {
             // Calculate how long before the next flush. Accounts for the fact that it might
             // take a long time to push telemetry if the network is slow or faulty
-            var nextAggregation = _lastAggregation.Add(_metricsAggregationInterval);
 
-            // Note that we don't start flushing until initialized
             var nextFlush = _lastFlush.Add(_flushInterval);
-            var nextAction = !_initializationFlushExecuted || nextAggregation < nextFlush ? nextAggregation : nextFlush;
-            var waitPeriod = nextAction - _clock.UtcNow;
+
+            // Note that we don't start flushing until initialized, so using infinite delay initially
+            TimeSpan? waitPeriod = _initializationFlushExecuted
+                                 ? nextFlush - _clock.UtcNow
+                                 : null;
 
             Task? completedTask = null;
-            if (waitPeriod <= TimeSpan.Zero)
+            if (waitPeriod.HasValue && waitPeriod.Value <= TimeSpan.Zero)
             {
                 Log.Debug(
                     "Time to push telemetry exceeded the flush interval, triggering the next iteration immediately");
             }
             else
             {
-                _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod);
+                // if we don't have a wait period, it's because we're waiting for initialization
+                _tasks[DelayTaskIndex] = _delayFactory.Delay(waitPeriod ?? Timeout.InfiniteTimeSpan);
                 completedTask = await Task.WhenAny(_tasks).ConfigureAwait(false);
             }
 
             if (_processExitSource.Task.IsCompleted)
             {
                 // end of the line, flush everything, don't bother recalculating;
-                ShouldAggregateMetrics = true;
                 ShouldFlushTelemetry = true;
                 return;
             }
 
-            // Should we aggregate metrics?
             var now = _clock.UtcNow;
-            ShouldAggregateMetrics = nextAggregation <= now;
-            if (ShouldAggregateMetrics)
-            {
-                _lastAggregation = now;
-            }
 
             // Should we flush telemetry?
             if (completedTask == _tracerInitialized.Task)
