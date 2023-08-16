@@ -135,7 +135,6 @@ namespace Datadog.Trace.Tests.Telemetry
         [Fact]
         public async Task TelemetryControllerAddsAllAssembliesToCollector()
         {
-            JTokenAssertions.Initialize();
             var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
             var transportManager = new TelemetryTransportManager(new ITelemetryTransport[] { transport });
 
