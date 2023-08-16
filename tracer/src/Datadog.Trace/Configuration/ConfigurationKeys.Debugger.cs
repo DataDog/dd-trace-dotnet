@@ -40,11 +40,11 @@ namespace Datadog.Trace.Configuration
             public const string UploadBatchSize = "DD_DEBUGGER_UPLOAD_BATCH_SIZE";
 
             /// <summary>
-            /// Configuration key for the maximum symbol size to upload (in mb).
+            /// Configuration key for the maximum symbol size to upload (in bytes).
             /// Default value is 1 mb.
             /// </summary>
-            /// <seealso cref="DebuggerSettings.SymbolBatchSizeInMb"/>
-            public const string SymbolBatchSizeInMb = "DD_DEBUGGER_SYMBOL_BATCH_SIZE_MB";
+            /// <seealso cref="DebuggerSettings.SymbolBatchSizeInBytes"/>
+            public const string SymbolBatchSizeInBytes = "DD_DEBUGGER_SYMBOL_BATCH_SIZE_BYTES";
 
             /// <summary>
             /// Configuration key for allowing uploading symbol database for internal use.
