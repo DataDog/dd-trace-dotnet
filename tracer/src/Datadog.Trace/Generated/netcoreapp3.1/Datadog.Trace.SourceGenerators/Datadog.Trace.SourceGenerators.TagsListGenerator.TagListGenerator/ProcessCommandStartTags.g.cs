@@ -9,6 +9,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class ProcessCommandStartTags
     {
+        // ComponentBytes = MessagePack.Serialize("cmd.component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] ComponentBytes = new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
@@ -20,12 +26,6 @@ namespace Datadog.Trace.Tagging
         private static ReadOnlySpan<byte> EnvironmentVariablesBytes => new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
 #else
         private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
-#endif
-        // ComponentBytes = MessagePack.Serialize("cmd.component");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
-#else
-        private static readonly byte[] ComponentBytes = new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
 #endif
         // CommandExecBytes = MessagePack.Serialize("cmd.exec");
 #if NETCOREAPP
@@ -50,9 +50,9 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
+                "cmd.component" => Component,
                 "span.kind" => SpanKind,
                 "cmd.environment_variables" => EnvironmentVariables,
-                "cmd.component" => Component,
                 "cmd.exec" => CommandExec,
                 "cmd.shell" => CommandShell,
                 "cmd.truncated" => Truncated,
@@ -67,9 +67,6 @@ namespace Datadog.Trace.Tagging
                 case "cmd.environment_variables": 
                     EnvironmentVariables = value;
                     break;
-                case "cmd.component": 
-                    Component = value;
-                    break;
                 case "cmd.exec": 
                     CommandExec = value;
                     break;
@@ -79,6 +76,7 @@ namespace Datadog.Trace.Tagging
                 case "cmd.truncated": 
                     Truncated = value;
                     break;
+                case "cmd.component": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ProcessCommandStartTags));
                     break;
@@ -90,6 +88,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (Component is not null)
+            {
+                processor.Process(new TagItem<string>("cmd.component", Component, ComponentBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -98,11 +101,6 @@ namespace Datadog.Trace.Tagging
             if (EnvironmentVariables is not null)
             {
                 processor.Process(new TagItem<string>("cmd.environment_variables", EnvironmentVariables, EnvironmentVariablesBytes));
-            }
-
-            if (Component is not null)
-            {
-                processor.Process(new TagItem<string>("cmd.component", Component, ComponentBytes));
             }
 
             if (CommandExec is not null)
@@ -125,6 +123,13 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (Component is not null)
+            {
+                sb.Append("cmd.component (tag):")
+                  .Append(Component)
+                  .Append(',');
+            }
+
             if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
@@ -136,13 +141,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("cmd.environment_variables (tag):")
                   .Append(EnvironmentVariables)
-                  .Append(',');
-            }
-
-            if (Component is not null)
-            {
-                sb.Append("cmd.component (tag):")
-                  .Append(Component)
                   .Append(',');
             }
 
