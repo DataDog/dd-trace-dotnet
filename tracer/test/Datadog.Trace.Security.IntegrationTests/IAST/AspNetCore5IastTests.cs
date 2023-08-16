@@ -285,6 +285,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     }
 
     [SkippableFact]
+    [Trait("Category", "LinuxUnsupported")]
     [Trait("RunOnWindows", "True")]
     public async Task TestIastLdapRequest()
     {
