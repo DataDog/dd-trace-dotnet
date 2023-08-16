@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
         private const IntegrationId IntegrationId = Configuration.IntegrationId.Process;
         private const string OperationName = "command_execution";
         private const string ServiceName = "command";
-        private const int MaxCommandLineLength = 4096;
+        internal const int MaxCommandLineLength = 4096;
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ProcessStartCommon));
 
@@ -188,6 +188,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     // Serialized as JSON array string because tracer only supports string values
                     tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
                 }
+                else
+                {
+                    tags.CommandExec = JsonConvert.SerializeObject(new[] { filename });
+                }
 
                 tags.Truncated = truncated ? "true" : null;
             }
@@ -207,7 +211,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             return value.Substring(0, maxLength);
         }
 
-        private static Collection<string> SplitStringIntoArguments(string input, int maxLength, out bool truncated)
+        internal static Collection<string> SplitStringIntoArguments(string input, int maxLength, out bool truncated)
         {
             var result = new Collection<string>();
             var currentArgument = StringBuilderCache.Acquire(0);
@@ -256,30 +260,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 else if (currentChar == '"' && !inSingleQuotes)
                 {
                     inDoubleQuotes = !inDoubleQuotes;
-                    if (!inDoubleQuotes)
-                    {
-                        if (AddArgument(currentArgument))
-                        {
-                            truncated = true;
-                            return result;
-                        }
-
-                        currentArgument.Clear();
-                    }
                 }
                 else if (currentChar == '\'' && !inDoubleQuotes)
                 {
                     inSingleQuotes = !inSingleQuotes;
-                    if (!inSingleQuotes)
-                    {
-                        if (AddArgument(currentArgument))
-                        {
-                            truncated = true;
-                            return result;
-                        }
-
-                        currentArgument.Clear();
-                    }
                 }
                 else if (currentChar == ' ' && !inSingleQuotes && !inDoubleQuotes)
                 {
