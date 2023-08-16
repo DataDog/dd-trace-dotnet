@@ -32,7 +32,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected void IntegrationDisabledMethod()
         {
-            const int totalSpanCount = 5;
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.Process)}_ENABLED", "false");
@@ -49,8 +48,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         protected async Task RunTest(string metadataSchemaVersion, string testName, int expectedSpanCount, bool collectCommands = false)
         {
             // 3 on non-windows because of SecureString
-            var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
-            
+            expectedSpanCount = EnvironmentTools.IsWindows() ? expectedSpanCount : expectedSpanCount - 2;
+
             const string expectedOperationName = "command_execution";
 
             if (collectCommands)
