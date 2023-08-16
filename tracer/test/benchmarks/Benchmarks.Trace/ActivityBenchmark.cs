@@ -23,7 +23,7 @@ namespace Benchmarks.Trace;
 public class ActivityBenchmark
 {
     private const string SourceName = "BenchmarkSource";
-    private static Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
+    private static readonly Datadog.Trace.Activity.DuckTypes.ActivitySource _duckSource;
     private static readonly DateTime _startTime = DateTimeOffset.FromUnixTimeSeconds(0).UtcDateTime;
     private static readonly DateTime _endTime = DateTimeOffset.FromUnixTimeSeconds(5).UtcDateTime;
 
@@ -47,6 +47,7 @@ public class ActivityBenchmark
     [Benchmark]
     public void StartStopWithChild()
     {
+        // unfortunately this tests some creation/setup for activity themselves
         using var parent = CreateActivity();
         using var child = CreateActivity(parent);
         var parentMock = new MockActivity6(parent, null, _duckSource);
@@ -71,13 +72,11 @@ public class ActivityBenchmark
             throw new Exception("Failed to create an activity");
         }
 
-        // give them some duration (as we aren't actually "ending" them)
         activity.SetStartTime(_startTime);
         activity.SetIdFormat(ActivityIdFormat.W3C); // we have more logic for TraceId/SpanId activities
 
         activity.Start(); // creates necessary TraceId/SpanId that we need
 
-        // give them some duration (as we aren't actually "ending" them)
         activity.SetEndTime(_endTime);
 
         activity.AddTag("tag", "value");
