@@ -60,17 +60,6 @@ public class ActivityBenchmark
         handler.ActivityStopped(SourceName, parentMock);
     }
 
-    [Benchmark]
-    public void StopStart()
-    {
-        using var activity = CreateActivity();
-        var mock = new MockActivity6(activity, null, _duckSource);
-        var handler = new DefaultActivityHandler();
-        handler.ActivityStarted(SourceName, mock);
-        activity.Stop();
-        handler.ActivityStopped(SourceName, mock);
-    }
-
     private static Activity CreateActivity(Activity? parent = null)
     {
         var activity = parent is null
