@@ -124,8 +124,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             batches.Should().ContainSingle();
         }
 
-        [Fact]
-        public void AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
+        [SkippableFact]
+        public async Task AfterInitialSuccessThenMultipleFailures_SinkIsTemporarilyDisabled()
         {
             var emitResults = new[] { true }
                .Concat(Enumerable.Repeat(false, FailuresBeforeCircuitBreak));
@@ -142,21 +142,43 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
             var batches = WaitForBatches(sink, batchCount: 1);
             _output.WriteLine($"Found {batches.Count} batches");
 
-            // Put the sink in a broken status (temporary)
-            for (var i = 0; i < FailuresBeforeCircuitBreak; i++)
+            // There's a race condition here which is tricky to avoid - after the batch is emitted,
+            // there's a short delay before the result is processed and logging is disabled. By
+            // hooking into the sink DelayEvents, we can make sure the result is processed _before_
+            // we add the next event
+            var mutex = new ManualResetEventSlim();
+            sink.DelayEventAction = x =>
             {
-                _output.WriteLine($"Queueing broken event {i + 1}");
+                _output.WriteLine($"Flushing delayed for {x} seconds");
+                mutex.Set();
+            };
+
+            // Put the sink in a broken status (temporary)
+            for (var i = 1; i < FailuresBeforeCircuitBreak; i++)
+            {
+                _output.WriteLine($"Queueing broken event {i}");
+                mutex.Reset();
                 sink.EnqueueLog(evt);
-                batches = WaitForBatches(sink, batchCount: i + 2);
+                mutex.Wait(TimeSpan.FromSeconds(1));
+                batches = WaitForBatches(sink, batchCount: i + 1); // +1 because of initial success event
                 _output.WriteLine($"Found {batches.Count} batches");
             }
 
-            // initial enqueue should be ignored
-            _output.WriteLine($"Queueing event when broken circuit");
+            _output.WriteLine($"Queueing broken event {FailuresBeforeCircuitBreak} to break the circuit");
+            mutex.Reset();
             sink.EnqueueLog(evt);
-            Thread.Sleep(CircuitBreakPeriod);
-            Thread.Sleep(CircuitBreakPeriod);
-            // ensure we _don't_ have any more batches
+            mutex.Wait(TimeSpan.FromSeconds(1));
+            batches = WaitForBatches(sink, batchCount: FailuresBeforeCircuitBreak + 1);
+            _output.WriteLine($"Found {batches.Count} batches (should now be broken)");
+
+            // This should be ignored if the circuit breaker is still broken
+            sink.EnqueueLog(evt);
+
+            // wait for 2 flushes to be sure
+            await sink.FlushAsync();
+            await sink.FlushAsync();
+
+            // ensure we still _don't_ have any more batches
             sink.Batches.Count.Should().Be(FailuresBeforeCircuitBreak + 1);
 
             // queue another log now circuit is partially open
@@ -258,6 +280,8 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             public ConcurrentStack<IList<DirectSubmissionLogEvent>> Batches { get; } = new();
 
+            public Action<TimeSpan> DelayEventAction { get; set; } = _ => { };
+
             protected override Task<bool> EmitBatch(Queue<DirectSubmissionLogEvent> events)
             {
                 Batches.Push(events.ToList());
@@ -271,6 +295,11 @@ namespace Datadog.Trace.Tests.Logging.DirectSubmission.Sink.PeriodicBatching
 
             protected override void FlushingEvents(int queueSizeBeforeFlush)
             {
+            }
+
+            protected override void DelayEvents(TimeSpan delayUntilNextFlush)
+            {
+                DelayEventAction(delayUntilNextFlush);
             }
         }
     }
