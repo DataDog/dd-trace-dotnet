@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
 
         private const int DefaultUploadBatchSize = 100;
-        public const int DefaultSymbolBatchSizeInMb = 1;
+        public const int DefaultSymbolBatchSizeInBytes = 100000;
         private const int DefaultDiagnosticsIntervalSeconds = 5;
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
@@ -47,9 +47,9 @@ namespace Datadog.Trace.Debugger
                              .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
                              .Value;
 
-            SymbolBatchSizeInMb = config
-                                         .WithKeys(ConfigurationKeys.Debugger.SymbolBatchSizeInMb)
-                                         .AsInt32(DefaultSymbolBatchSizeInMb, maxDepth => maxDepth > 0)
+            SymbolBatchSizeInBytes = config
+                                         .WithKeys(ConfigurationKeys.Debugger.SymbolBatchSizeInBytes)
+                                         .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
             SymbolDatabaseUploadEnabled = config.WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled).AsBool(false);
@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger
 
         public int UploadBatchSize { get; }
 
-        public int SymbolBatchSizeInMb { get; }
+        public int SymbolBatchSizeInBytes { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 
