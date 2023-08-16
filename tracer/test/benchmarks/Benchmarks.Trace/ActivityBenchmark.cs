@@ -85,12 +85,6 @@ public class ActivityBenchmark
 
         return activity;
     }
-
-    private Span CreateSpan()
-    {
-        var span = new Span(new SpanContext(1, 1), DateTimeOffset.FromUnixTimeSeconds(0).UtcDateTime);
-        return span;
-    }
 }
 
 #region MockActivity Implementations
