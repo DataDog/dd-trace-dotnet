@@ -31,7 +31,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private readonly SemaphoreSlim _assemblySemaphore;
         private readonly SemaphoreSlim _discoveryServiceSemaphore;
         private readonly HashSet<string> _alreadyProcessed;
-        private readonly long _sizeLimit;
+        private readonly long _thresholdInBytes;
         private readonly CancellationTokenSource _cancellationToken;
         private readonly IBatchUploadApi _api;
         private IDiscoveryService? _discoveryService;
@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
-            _sizeLimit = settings.SymbolBatchSizeInMb * 1024 * 1024;
+            _thresholdInBytes = settings.SymbolBatchSizeInMb * 1024 * 1024;
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
@@ -156,8 +156,8 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private async Task UploadClasses(Root root, IEnumerable<Model.Scope?> classes)
         {
-            var count = 0;
-            var builder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+            var accumulatedBytes = 0;
+            var builder = StringBuilderCache.Acquire((int)_thresholdInBytes);
 
             try
             {
@@ -168,22 +168,23 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    count += SerializeClass(classSymbol.Value, builder);
-                    if (count < _sizeLimit)
+                    accumulatedBytes += SerializeClass(classSymbol.Value, builder);
+                    if (accumulatedBytes < _thresholdInBytes)
                     {
                         continue;
                     }
 
                     await Upload(root, builder).ConfigureAwait(false);
-                    count = 0;
+                    builder.Clear();
+                    accumulatedBytes = 0;
                 }
 
-                if (count > 0)
+                if (accumulatedBytes > 0)
                 {
                     await Upload(root, builder).ConfigureAwait(false);
                 }
             }
-            catch (Exception)
+            finally
             {
                 if (builder != null)
                 {
@@ -195,7 +196,7 @@ namespace Datadog.Trace.Debugger.Symbols
         private async Task Upload(Root root, StringBuilder builder)
         {
             FinalizeSymbolForSend(root, builder);
-            await SendSymbol(StringBuilderCache.GetStringAndRelease(builder)).ConfigureAwait(false);
+            await SendSymbol(builder.ToString()).ConfigureAwait(false);
             ResetPayload();
         }
 
