@@ -361,21 +361,21 @@ namespace Datadog.Trace.Agent
                 {
                     _log.Error(ex, "Traces sent successfully to the Agent at {AgentEndpoint}, but an error occurred deserializing the response.", _apiRequestFactory.Info(_tracesEndpoint));
                 }
+
+                if (response.StatusCode == 429 || response.StatusCode == 413 || response.StatusCode == 408)
+                {
+                    var retryAfter = response.GetHeader("Retry-After");
+                    _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
+                    return SendResult.Failed_DontRetry;
+                }
+                else
+                {
+                    _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
+                }
             }
             finally
             {
                 response?.Dispose();
-            }
-
-            if (response.StatusCode == 429 || response.StatusCode == 413 || response.StatusCode == 408)
-            {
-                var retryAfter = response.GetHeader("Retry-After");
-                _log.Debug<int, string>("Failed to submit {Count} traces. Agent responded with 429 Too Many Requests, retry after {RetryAfter}", numberOfTraces, retryAfter ?? "unspecified");
-                return SendResult.Failed_DontRetry;
-            }
-            else
-            {
-                _log.Debug<int>("Successfully sent {Count} traces to the Datadog Agent.", numberOfTraces);
             }
 
             return SendResult.Success;
