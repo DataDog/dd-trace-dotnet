@@ -96,6 +96,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             {
                 // cmd.shell
                 string commandLine;
+                var truncated = false;
 
                 // Append the arguments to the command line
                 if (!string.IsNullOrWhiteSpace(arguments))
@@ -104,11 +105,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 }
                 else if (argumentList is { Count: > 0 })
                 {
+                    var maxCommandLineLength = MaxCommandLineLength - filename.Length;
+
                     var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
                     sb.Append(filename);
                     foreach (var arg in argumentList)
                     {
+                        if (maxCommandLineLength - arg.Length - 1 < 0)
+                        {
+                            // Truncate the argument if needed
+                            var truncatedArg = $" {arg}".Substring(0, maxCommandLineLength);
+                            sb.Append(truncatedArg);
+                            truncated = true;
+
+                            break;
+                        }
+
                         sb.Append(' ').Append(arg);
+                        maxCommandLineLength -= arg.Length + 1;
                     }
 
                     commandLine = StringBuilderCache.GetStringAndRelease(sb);
@@ -118,11 +132,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     commandLine = filename;
                 }
 
-                // Truncate the command line if needed
-                var commandLineResult = Truncate(commandLine, MaxCommandLineLength, out var truncated);
                 tags.Truncated = truncated ? "true" : null;
-
-                tags.CommandShell = commandLineResult;
+                tags.CommandShell = commandLine;
             }
             else
             {
