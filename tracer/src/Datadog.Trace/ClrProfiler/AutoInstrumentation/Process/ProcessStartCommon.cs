@@ -95,21 +95,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             if (useShellExecute)
             {
                 // cmd.shell
-                var commandLine = StringBuilderCache.Acquire(filename.Length);
-                commandLine.Append(filename);
+                string commandLine;
 
                 // Append the arguments to the command line
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
-                    commandLine.Append($" {arguments}");
+                    commandLine = $"{filename} {arguments}";
                 }
                 else if (argumentList is { Count: > 0 })
                 {
-                    commandLine.Append($" {string.Join(" ", argumentList)}");
+                    var sb = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb.Append(filename);
+                    foreach (var arg in argumentList)
+                    {
+                        sb.Append(' ').Append(arg);
+                    }
+
+                    commandLine = StringBuilderCache.GetStringAndRelease(sb);
+                }
+                else
+                {
+                    commandLine = filename;
                 }
 
                 // Truncate the command line if needed
-                var commandLineResult = Truncate(StringBuilderCache.GetStringAndRelease(commandLine), MaxCommandLineLength, out var truncated);
+                var commandLineResult = Truncate(commandLine, MaxCommandLineLength, out var truncated);
                 tags.Truncated = truncated ? "true" : null;
 
                 tags.CommandShell = commandLineResult;
@@ -122,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 filename = Truncate(filename, MaxCommandLineLength, out var truncated);
                 var maxCommandLineLength = MaxCommandLineLength - filename.Length;
 
-                var finalCommandExec = new Collection<string> { filename };
+                Collection<string> finalCommandExec;
 
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
@@ -137,12 +147,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     }
 
                     // Add the filename at the beginning of the array
-                    // (re-add it because the original collection was overwritten)
                     finalCommandExec.Insert(0, filename);
+
+                    // Serialized as JSON array string because tracer only supports string values
+                    tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
                 }
                 else if (argumentList is not null && argumentList.Count > 0)
                 {
                     // The cumulated size of the strings in the array shall not exceed 4kB
+                    finalCommandExec = new Collection<string> { filename };
                     foreach (var arg in argumentList)
                     {
                         if (truncated)
@@ -160,10 +173,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                             truncated = true;
                         }
                     }
+
+                    // Serialized as JSON array string because tracer only supports string values
+                    tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
                 }
 
-                // Serialized as JSON array string because tracer only supports string values
-                tags.CommandExec = JsonConvert.SerializeObject(finalCommandExec);
                 tags.Truncated = truncated ? "true" : null;
             }
 
