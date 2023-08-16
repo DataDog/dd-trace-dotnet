@@ -10,14 +10,14 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class ProcessCommandStartTags : InstrumentationTags
     {
+        [Tag(Trace.Tags.ProcessComponent)]
+        public static string Component => "process";
+
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind => SpanKinds.Internal;
 
         [Tag(Trace.Tags.ProcessEnvironmentVariables)]
         public string EnvironmentVariables { get; set; }
-
-        [Tag(Trace.Tags.ProcessComponent)]
-        public string Component { get; set; }
 
         [Tag(Trace.Tags.ProcessCommandExec)]
         public string CommandExec { get; set; }

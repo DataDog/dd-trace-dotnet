@@ -84,7 +84,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             var tags = new ProcessCommandStartTags
             {
                 EnvironmentVariables = variablesTruncated,
-                Component = "process",
             };
 
             // Don't populate further with command line information if shell collection is disabled
