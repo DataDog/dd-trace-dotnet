@@ -103,7 +103,7 @@ internal sealed class GraphQLSecurityCommon
     public static bool IsEnabled()
     {
         // Check if ASM is Enabled
-        if (!Security.Instance.Settings.Enabled)
+        if (!Security.Instance.Enabled)
         {
             return false;
         }
