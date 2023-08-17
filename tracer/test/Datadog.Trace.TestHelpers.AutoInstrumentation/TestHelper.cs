@@ -656,46 +656,51 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Type testType, Exception ex = null)
+        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Exception ex = null)
         {
+            outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
+
             if (!_reportMetrics)
             {
                 return;
             }
 
+            await SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries");
+        }
+
+        private async Task SendMetric(ITestOutputHelper outputHelper, string metricName)
+        {
             var type = outputHelper.GetType();
             var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
             var test = (ITest)testMember?.GetValue(outputHelper);
             var testFullName = type.FullName + test?.TestCase.DisplayName;
 
-            outputHelper.WriteLine($"Error executing test: {testFullName}. {attemptsRemaining} attempts remaining. {ex}");
-
             // In addition to logging, send a metric that will help us get more information through tags
             var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
 
             var tags = $$"""
-                "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
-                "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
-                "test.name:{{SanitizeTagValue(testFullName)}}",
-                "git.branch:{{SanitizeTagValue(srcBranch)}}"
-            """;
+                             "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
+                             "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
+                             "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
+                             "test.name:{{SanitizeTagValue(testFullName)}}",
+                             "git.branch:{{SanitizeTagValue(srcBranch)}}"
+                         """;
 
             var payload = $$"""
-                {
-                    "series": [{
-                        "metric": "dd_trace_dotnet.ci.tests.retries",
-                        "type": 1,
-                        "points": [{
-                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
-                            "value": 1
-                            }],
-                        "tags": [
-                            {{tags}}
-                        ]
-                    }]
-                }
-            """;
+                                {
+                                    "series": [{
+                                        "metric": "{{metricName}}",
+                                        "type": 1,
+                                        "points": [{
+                                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
+                                            "value": 1
+                                            }],
+                                        "tags": [
+                                            {{tags}}
+                                        ]
+                                    }]
+                                }
+                            """;
 
             var content = new StringContent(payload, Encoding.UTF8, "application/json");
             var response = await _client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
@@ -703,7 +708,7 @@ namespace Datadog.Trace.TestHelpers
 
             if (response.StatusCode != HttpStatusCode.Accepted)
             {
-                outputHelper.WriteLine($"Failed to submit metric to monitor retry. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
+                outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
             }
         }
 
