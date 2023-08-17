@@ -30,9 +30,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        private readonly bool _reportMetrics = false;
-        private readonly HttpClient _client = new();
-
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -59,14 +56,6 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
-
-            var envKey = Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY");
-            if (!string.IsNullOrEmpty(envKey))
-            {
-                // We're probably in CI
-                _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
-                _reportMetrics = true;
-            }
         }
 
         public bool SecurityEnabled { get; private set; }
@@ -210,36 +199,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"ProcessId: " + process.Id);
             Output.WriteLine($"Exit Code: " + exitCode);
 
-#if NETCOREAPP2_1
-            if (exitCode == 139)
-            {
-                // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
-                throw new SkipException("Segmentation fault on .NET Core 2.1");
-            }
-#endif
-            if (exitCode == 134
-             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
-             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
-            {
-                // Coverlet occasionally throws AbandonedMutexException during clean up
-                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
-            }
-
-#if NETCOREAPP2_1
-            if (exitCode == 134 && EnvironmentTools.IsLinux())
-            {
-                // We see SIGABRT relatively frequently on .NET Core 2.1 on Linux, but probably not worth investigating further
-                throw new SkipException("SIGABRT on .NET Core 2.1");
-            }
-#endif
-
-            if (exitCode == 13)
-            {
-                // This is an "expected" issue, e.g. timeout talking to a required service
-                // strictly a failure, but skipping to avoid flake in CI etc
-                SendMetric(Output, "dd_trace_dotnet.ci.tests.skipped_due_to_flake").ConfigureAwait(false).GetAwaiter().GetResult();
-                throw new SkipException("Exit code (13) - anticipated flake");
-            }
+            ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
 
             ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
@@ -668,73 +628,10 @@ namespace Datadog.Trace.TestHelpers
         {
             outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
 
-            if (!_reportMetrics)
-            {
-                return;
-            }
-
-            await SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries");
-        }
-
-        private async Task SendMetric(ITestOutputHelper outputHelper, string metricName)
-        {
-            var type = outputHelper.GetType();
-            var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
-            var test = (ITest)testMember?.GetValue(outputHelper);
-            var testFullName = type.FullName + test?.TestCase.DisplayName;
-
-            // In addition to logging, send a metric that will help us get more information through tags
-            var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
-
-            var tags = $$"""
-                             "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
-                             "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                             "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
-                             "test.name:{{SanitizeTagValue(testFullName)}}",
-                             "git.branch:{{SanitizeTagValue(srcBranch)}}"
-                         """;
-
-            var payload = $$"""
-                                {
-                                    "series": [{
-                                        "metric": "{{metricName}}",
-                                        "type": 1,
-                                        "points": [{
-                                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
-                                            "value": 1
-                                            }],
-                                        "tags": [
-                                            {{tags}}
-                                        ]
-                                    }]
-                                }
-                            """;
-
-            var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.StatusCode != HttpStatusCode.Accepted)
-            {
-                outputHelper.WriteLine($"Failed to submit metric {metricName}. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
-            }
-        }
-
-        private string SanitizeTagValue(string tag)
-        {
-            tag.TryConvertToNormalizedTagName(true, out var normalizedTag);
-            return normalizedTag;
+            await ErrorHelpers.SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
         }
 
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
-
-        protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
-        {
-            public void Add(T1 item, T2 item2)
-            {
-                Add(new Tuple<T1, T2>(item, item2));
-            }
-        }
     }
 }
