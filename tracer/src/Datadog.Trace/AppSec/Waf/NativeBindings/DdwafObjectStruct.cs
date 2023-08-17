@@ -35,6 +35,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(16)]
         public long IntValue;
+
+        [FieldOffset(16)]
+        public double DoubleValue;
+
+        [FieldOffset(16)]
+        public bool BoolValue;
         // };
 
         [FieldOffset(24)]

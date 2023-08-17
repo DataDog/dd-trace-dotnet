@@ -29,6 +29,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private readonly ObjectInvalidDelegate _objectInvalidField;
         private readonly ObjectStringLengthDelegate _objectStringLengthField;
         private readonly ObjectBoolDelegate _objectBoolField;
+        private readonly ObjectUlongDelegate _objectUlongField;
+        private readonly ObjectLongDelegate _objectLongField;
+        private readonly ObjectDoubleDelegate _objectDoubleField;
+        private readonly ObjectNullDelegate _objectNullField;
         private readonly ObjectArrayDelegate _objectArrayField;
         private readonly ObjectMapDelegate _objectMapField;
         private readonly ObjectArrayAddDelegate _objectArrayAddField;
@@ -55,6 +59,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
             _objectInvalidField = GetDelegateForNativeFunction<ObjectInvalidDelegate>(libraryHandle, "ddwaf_object_invalid");
             _objectStringLengthField = GetDelegateForNativeFunction<ObjectStringLengthDelegate>(libraryHandle, "ddwaf_object_stringl");
             _objectBoolField = GetDelegateForNativeFunction<ObjectBoolDelegate>(libraryHandle, "ddwaf_object_bool");
+            _objectLongField = GetDelegateForNativeFunction<ObjectLongDelegate>(libraryHandle, "ddwaf_object_signed");
+            _objectUlongField = GetDelegateForNativeFunction<ObjectUlongDelegate>(libraryHandle, "ddwaf_object_unsigned");
+            _objectDoubleField = GetDelegateForNativeFunction<ObjectDoubleDelegate>(libraryHandle, "ddwaf_object_float");
+            _objectNullField = GetDelegateForNativeFunction<ObjectNullDelegate>(libraryHandle, "ddwaf_object_null");
             _objectArrayField = GetDelegateForNativeFunction<ObjectArrayDelegate>(libraryHandle, "ddwaf_object_array");
             _objectMapField = GetDelegateForNativeFunction<ObjectMapDelegate>(libraryHandle, "ddwaf_object_map");
             _objectArrayAddField = GetDelegateForNativeFunction<ObjectArrayAddDelegate>(libraryHandle, "ddwaf_object_array_add");
@@ -93,6 +101,14 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         private delegate IntPtr ObjectStringLengthDelegate(IntPtr emptyObjPtr, string s, ulong length);
 
         private delegate IntPtr ObjectBoolDelegate(IntPtr emptyObjPtr, bool b);
+
+        private delegate IntPtr ObjectDoubleDelegate(IntPtr emptyObjPtr, double value);
+
+        private delegate IntPtr ObjectNullDelegate(IntPtr emptyObjPtr);
+
+        private delegate IntPtr ObjectUlongDelegate(IntPtr emptyObjPtr, ulong value);
+
+        private delegate IntPtr ObjectLongDelegate(IntPtr emptyObjPtr, long value);
 
         private delegate IntPtr ObjectArrayDelegate(IntPtr emptyObjPtr);
 
@@ -227,6 +243,34 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         {
             var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
             _objectBoolField(ptr, b);
+            return ptr;
+        }
+
+        internal IntPtr ObjectLong(long l)
+        {
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            _objectLongField(ptr, l);
+            return ptr;
+        }
+
+        internal IntPtr ObjectUlong(ulong l)
+        {
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            _objectUlongField(ptr, l);
+            return ptr;
+        }
+
+        internal IntPtr ObjectDouble(double b)
+        {
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            _objectDoubleField(ptr, b);
+            return ptr;
+        }
+
+        internal IntPtr ObjectNull()
+        {
+            var ptr = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(DdwafObjectStruct)));
+            _objectNullField(ptr);
             return ptr;
         }
 
