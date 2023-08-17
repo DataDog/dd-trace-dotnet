@@ -70,6 +70,20 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
+    /// <summary>
+    /// Run the WAF on addresses with arguments and return the result without blocking
+    /// </summary>
+    internal IResult? Check(Dictionary<string, object> args)
+    {
+        var result = RunWaf(args);
+        if (result?.ShouldBeReported is true)
+        {
+            Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, result.ShouldBlock);
+        }
+
+        return result;
+    }
+
     private Dictionary<string, object> GetBasicRequestArgsForWaf()
     {
         var request = _context.Request;
