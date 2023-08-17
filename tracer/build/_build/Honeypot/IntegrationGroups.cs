@@ -36,6 +36,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Http", new string[] { });
             NugetPackages.Add("System.Web.Mvc", new [] { "Microsoft.AspNet.Mvc" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
+            NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("Microsoft.Azure.Cosmos.Client", new [] { "Microsoft.Azure.Cosmos" });
