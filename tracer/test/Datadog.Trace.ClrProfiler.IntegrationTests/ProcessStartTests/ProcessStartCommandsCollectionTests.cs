@@ -1,4 +1,4 @@
-// <copyright file="ProcessStartTests.cs" company="Datadog">
+// <copyright file="ProcessStartCommandsCollectionTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -18,9 +18,9 @@ using Xunit.Abstractions;
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [UsesVerify]
-    public class ProcessStartTests : ProcessStartCommonTests
+    public class ProcessStartCommandsCollectionTests : ProcessStartCommonTests
     {
-        public ProcessStartTests(ITestOutputHelper output)
+        public ProcessStartCommandsCollectionTests(ITestOutputHelper output)
             : base(output)
         {
         }
@@ -28,17 +28,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesV0() => await RunTest("v0", nameof(ProcessStartTests), 5);
+        public async Task SubmitsTracesV0() => await RunTest("v0", nameof(ProcessStartCommandsCollectionTests), 10, true);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task SubmitsTracesV1() => await RunTest("v1", nameof(ProcessStartTests), 5);
+        public async Task SubmitsTracesV1() => await RunTest("v1", nameof(ProcessStartCommandsCollectionTests), 10, true);
 
         [SkippableFact]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-
         public void IntegrationDisabled() => IntegrationDisabledMethod();
     }
 }
