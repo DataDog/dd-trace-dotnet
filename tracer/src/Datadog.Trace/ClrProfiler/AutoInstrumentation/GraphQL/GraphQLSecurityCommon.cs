@@ -13,25 +13,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
 
 internal sealed class GraphQLSecurityCommon
 {
-    private static GraphQLSecurityCommon _instance;
+    private static readonly Lazy<GraphQLSecurityCommon> LazyInstance
+        = new Lazy<GraphQLSecurityCommon>(() => new GraphQLSecurityCommon());
 
     private readonly Dictionary<IScope, Dictionary<string, object>> _scopeResolvers;
 
     private GraphQLSecurityCommon()
     {
-        _scopeResolvers = new();
+        _scopeResolvers = new Dictionary<IScope, Dictionary<string, object>>();
     }
 
-    private static GraphQLSecurityCommon GetInstance()
-    {
-        return _instance ??= new GraphQLSecurityCommon();
-    }
+    private static GraphQLSecurityCommon Instance
+        => LazyInstance.Value;
 
     private Dictionary<string, object> GetScopeResolvers(IScope scope)
     {
         if (!_scopeResolvers.TryGetValue(scope, out var resolvers))
         {
-            resolvers = new();
+            resolvers = new Dictionary<string, object>();
             _scopeResolvers.Add(scope, resolvers);
         }
 
@@ -45,7 +44,7 @@ internal sealed class GraphQLSecurityCommon
 
     internal static void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object> arguments)
     {
-        var resolvers = GetInstance().GetScopeResolvers(scope);
+        var resolvers = Instance.GetScopeResolvers(scope);
 
         if (!resolvers.TryGetValue(resolverName, out var resolverCalls))
         {
@@ -86,8 +85,8 @@ internal sealed class GraphQLSecurityCommon
 
     private static Dictionary<string, object> PopScope(IScope scope)
     {
-        var resolvers = GetInstance().GetScopeResolvers(scope);
-        GetInstance().RemoveScopeResolvers(scope);
+        var resolvers = Instance.GetScopeResolvers(scope);
+        Instance.RemoveScopeResolvers(scope);
         return resolvers;
     }
 
