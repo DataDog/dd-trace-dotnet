@@ -9,6 +9,12 @@ namespace Datadog.Trace.Tagging
 {
     partial class ProcessCommandStartTags
     {
+        // ComponentBytes = MessagePack.Serialize("cmd.component");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ComponentBytes => new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#else
+        private static readonly byte[] ComponentBytes = new byte[] { 173, 99, 109, 100, 46, 99, 111, 109, 112, 111, 110, 101, 110, 116 };
+#endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
@@ -21,13 +27,35 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] EnvironmentVariablesBytes = new byte[] { 185, 99, 109, 100, 46, 101, 110, 118, 105, 114, 111, 110, 109, 101, 110, 116, 95, 118, 97, 114, 105, 97, 98, 108, 101, 115 };
 #endif
+        // CommandExecBytes = MessagePack.Serialize("cmd.exec");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CommandExecBytes => new byte[] { 168, 99, 109, 100, 46, 101, 120, 101, 99 };
+#else
+        private static readonly byte[] CommandExecBytes = new byte[] { 168, 99, 109, 100, 46, 101, 120, 101, 99 };
+#endif
+        // CommandShellBytes = MessagePack.Serialize("cmd.shell");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> CommandShellBytes => new byte[] { 169, 99, 109, 100, 46, 115, 104, 101, 108, 108 };
+#else
+        private static readonly byte[] CommandShellBytes = new byte[] { 169, 99, 109, 100, 46, 115, 104, 101, 108, 108 };
+#endif
+        // TruncatedBytes = MessagePack.Serialize("cmd.truncated");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> TruncatedBytes => new byte[] { 173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
+#else
+        private static readonly byte[] TruncatedBytes = new byte[] { 173, 99, 109, 100, 46, 116, 114, 117, 110, 99, 97, 116, 101, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
             return key switch
             {
+                "cmd.component" => Component,
                 "span.kind" => SpanKind,
                 "cmd.environment_variables" => EnvironmentVariables,
+                "cmd.exec" => CommandExec,
+                "cmd.shell" => CommandShell,
+                "cmd.truncated" => Truncated,
                 _ => base.GetTag(key),
             };
         }
@@ -39,6 +67,16 @@ namespace Datadog.Trace.Tagging
                 case "cmd.environment_variables": 
                     EnvironmentVariables = value;
                     break;
+                case "cmd.exec": 
+                    CommandExec = value;
+                    break;
+                case "cmd.shell": 
+                    CommandShell = value;
+                    break;
+                case "cmd.truncated": 
+                    Truncated = value;
+                    break;
+                case "cmd.component": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(ProcessCommandStartTags));
                     break;
@@ -50,6 +88,11 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
+            if (Component is not null)
+            {
+                processor.Process(new TagItem<string>("cmd.component", Component, ComponentBytes));
+            }
+
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
@@ -60,11 +103,33 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("cmd.environment_variables", EnvironmentVariables, EnvironmentVariablesBytes));
             }
 
+            if (CommandExec is not null)
+            {
+                processor.Process(new TagItem<string>("cmd.exec", CommandExec, CommandExecBytes));
+            }
+
+            if (CommandShell is not null)
+            {
+                processor.Process(new TagItem<string>("cmd.shell", CommandShell, CommandShellBytes));
+            }
+
+            if (Truncated is not null)
+            {
+                processor.Process(new TagItem<string>("cmd.truncated", Truncated, TruncatedBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
+            if (Component is not null)
+            {
+                sb.Append("cmd.component (tag):")
+                  .Append(Component)
+                  .Append(',');
+            }
+
             if (SpanKind is not null)
             {
                 sb.Append("span.kind (tag):")
@@ -76,6 +141,27 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("cmd.environment_variables (tag):")
                   .Append(EnvironmentVariables)
+                  .Append(',');
+            }
+
+            if (CommandExec is not null)
+            {
+                sb.Append("cmd.exec (tag):")
+                  .Append(CommandExec)
+                  .Append(',');
+            }
+
+            if (CommandShell is not null)
+            {
+                sb.Append("cmd.shell (tag):")
+                  .Append(CommandShell)
+                  .Append(',');
+            }
+
+            if (Truncated is not null)
+            {
+                sb.Append("cmd.truncated (tag):")
+                  .Append(Truncated)
                   .Append(',');
             }
 

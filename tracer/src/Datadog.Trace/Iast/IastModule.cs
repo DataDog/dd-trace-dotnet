@@ -23,6 +23,7 @@ internal static class IastModule
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
+    private const string OperationNameSsrf = "ssrf";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -30,6 +31,19 @@ internal static class IastModule
     static IastModule()
     {
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
+
+    internal static Scope? OnSSRF(string evidence)
+    {
+        try
+        {
+            return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for SSRF.");
+            return null;
+        }
     }
 
     public static Scope? OnPathTraversal(string evidence)

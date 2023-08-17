@@ -8,6 +8,7 @@ using System.Runtime.CompilerServices;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 
 namespace Datadog.Trace.Tests.Util
 {
@@ -24,6 +25,9 @@ namespace Datadog.Trace.Tests.Util
 
             // disable metrics by default
             TelemetryFactory.SetMetricsForTesting(NullMetricsTelemetryCollector.Instance);
+
+            // Avoid race condition with modifying the formatters collection
+            JTokenAssertions.Initialize();
         }
     }
 }

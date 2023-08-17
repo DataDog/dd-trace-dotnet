@@ -207,6 +207,8 @@ internal static class MetricTags
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
+        [Description("integration_name:ssrf")]Ssrf,
+        [Description("integration_name:awskinesis")]AwsKinesis,
     }
 
     public enum InstrumentationError

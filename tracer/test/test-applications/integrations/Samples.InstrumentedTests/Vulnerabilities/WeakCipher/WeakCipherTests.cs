@@ -17,42 +17,42 @@ public class WeakCipherTests : InstrumentationTestsBase
     public void GivenADes_WhenCreating_VulnerabilityIsLogged()
     {
         DES.Create();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
     public void GivenADESCryptoServiceProvider_WhenCreating_VulnerabilityIsLogged()
     {
         new DESCryptoServiceProvider();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
     public void GivenARC2_WhenCreating_VulnerabilityIsLogged()
     {
         RC2.Create();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
     public void GivenARC2CryptoServiceProvider_WhenCreating_VulnerabilityIsLogged()
     {
         new RC2CryptoServiceProvider();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
     public void GivenATripleDES_WhenCreating_VulnerabilityIsLogged()
     {
         TripleDES.Create();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
     public void GivenATripleDESCryptoServiceProvider_WhenCreating_VulnerabilityIsLogged()
     {
         new TripleDESCryptoServiceProvider();
-        AssertVulnerable();
+        AssertVulnerable(evidenceTainted: false);
     }
 
     [Fact]
