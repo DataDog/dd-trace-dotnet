@@ -77,20 +77,11 @@ internal sealed class GraphQLSecurityCommon
         var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
 #if NETFRAMEWORK
         var httpContext = HttpContext.Current;
-        var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
-        securityCoordinator.CheckAndBlock(args);
 #else
         var httpContext = CoreHttpContextStore.Instance.Get();
-        var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
-        var result = securityCoordinator.RunWaf(args);
-        securityCoordinator.CheckAndBlock(result);
-
-        // TODO: Aggregate triggers
-        // if (result is { ReturnCode: ReturnCode.Match or ReturnCode.Block })
-        // {
-        //     scope.Span.SetTag(Tags.AppSecJson, "{\"triggers\":" + result.Data + "}");
-        // }
 #endif
+        var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
+        securityCoordinator.Check(args);
     }
 
     private static Dictionary<string, object> PopScope(IScope scope)

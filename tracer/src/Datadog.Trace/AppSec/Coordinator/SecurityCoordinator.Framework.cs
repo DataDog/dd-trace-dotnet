@@ -231,6 +231,21 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
+    /// <summary>
+    /// Run the WAF on addresses with arguments and return the result without blocking
+    /// </summary>
+    internal IResult? Check(Dictionary<string, object> args)
+    {
+        var result = RunWaf(args);
+        if (result?.ShouldBeReported is true)
+        {
+            var reporting = MakeReportingFunction(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings);
+            reporting(null, result.ShouldBlock);
+        }
+
+        return result;
+    }
+
     private Action<int?, bool> MakeReportingFunction(string triggerData, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
     {
         var securityCoordinator = this;
