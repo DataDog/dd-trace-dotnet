@@ -60,6 +60,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreMvcV0(),
             };
 
+        public static Result IsAwsKinesisOutbound(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsKinesisOutboundV1(),
+                _ => span.IsAwsKinesisOutboundV0(),
+            };
+
         public static Result IsAwsSqsInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
