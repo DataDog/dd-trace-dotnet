@@ -102,10 +102,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return size;
             }
 
-            if (message.Key != null)
-            {
-                
-            }
+            // TODO:
 
             return size;
         }
