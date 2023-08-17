@@ -101,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                 // Append the arguments to the command line
                 if (!string.IsNullOrWhiteSpace(arguments))
                 {
-                    commandLine = $"{filename} {arguments}";
+                    commandLine = Truncate($"{filename} {arguments}", MaxCommandLineLength, out truncated);
                 }
                 else if (argumentList is { Count: > 0 })
                 {
@@ -171,8 +171,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
                     {
                         if (truncated)
                         {
-                            finalCommandExec.Add(string.Empty);
-                            continue;
+                            // finalCommandExec.Add(string.Empty);
+                            // continue;
+                            break;
                         }
 
                         var truncatedArg = Truncate(arg, maxCommandLineLength, out truncated);
