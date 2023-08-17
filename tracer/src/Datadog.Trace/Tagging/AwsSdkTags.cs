@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tagging
 #pragma warning disable CS0618
         [Tag(Trace.Tags.AwsRegion)]
 #pragma warning restore CS0618
-        public string AwsRegion => Region;
+        public virtual string AwsRegion => Region;
 
         [Tag(Trace.Tags.Region)]
         public string Region { get; set; }
@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tagging
 #pragma warning disable CS0618
         [Tag(Trace.Tags.AwsServiceName)]
 #pragma warning restore CS0618
-        public string AwsService => Service;
+        public virtual string AwsService => Service;
 
         [Tag(Trace.Tags.AwsService)]
         public string Service { get; set; }
