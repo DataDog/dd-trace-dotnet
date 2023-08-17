@@ -63,10 +63,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         {
             if (state.Scope != null)
             {
+                Tracer tracer = Tracer.Instance;
                 if (returnValue is HttpWebResponse response)
                 {
-                    Tracer tracer = Tracer.Instance;
                     state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, tracer.Settings);
+                }
+                else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
+                {
+                    state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, tracer.Settings);
                 }
 
                 state.Scope.DisposeWithException(exception);
