@@ -37,10 +37,6 @@ public class ActivityBenchmark
 
         ActivitySource.AddActivityListener(activityListener);
 
-        var settings = new TracerSettings { StartupDiagnosticLogEnabled = false, TraceEnabled = false};
-
-        Tracer.UnsafeSetTracerInstance(new Tracer(settings, new DummyAgentWriter(), null, null, null));
-
         _duckSource = new Datadog.Trace.Activity.DuckTypes.ActivitySource { Name = _source.Name, Version = _source.Version ?? string.Empty };
     }
 
