@@ -1,10 +1,10 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL3,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
@@ -19,8 +19,6 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },

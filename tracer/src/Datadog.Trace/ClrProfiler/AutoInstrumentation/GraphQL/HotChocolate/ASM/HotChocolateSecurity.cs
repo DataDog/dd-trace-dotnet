@@ -10,11 +10,14 @@ using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM;
 
 internal abstract class HotChocolateSecurity
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateSecurity));
+
     public static void ScanQuery(IQueryRequest request)
     {
         if (Tracer.Instance.ActiveScope is null)
@@ -41,9 +44,9 @@ internal abstract class HotChocolateSecurity
             {
                 DepthSearchOperationNode(node, request.VariableValues);
             }
-            catch
+            catch (Exception ex)
             {
-                // Failed to search for resolvers with arguments
+                Log.Error(ex, "DepthSearchOperationNode failed");
             }
         }
     }
@@ -86,9 +89,9 @@ internal abstract class HotChocolateSecurity
                         GraphQLSecurityCommon.RegisterResolverCall(Tracer.Instance.ActiveScope, resolverName, resolverArguments);
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // Failed to get argument value and register the resolver
+                    Log.Error(ex, "Resolving resolvers failed");
                 }
 
                 DepthSearchOperationNode(fieldNode.SelectionSet, variables);

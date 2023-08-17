@@ -3,15 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 
 internal abstract class GraphQLSecurity
 {
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(GraphQLSecurity));
+
     public static void RegisterResolver<TNode>(object context, TNode node, bool v5V7 = false)
         where TNode : IExecutionNode
     {
@@ -116,9 +120,9 @@ internal abstract class GraphQLSecurity
 
                 resolverArguments.Add(name, value);
             }
-            catch
+            catch (Exception ex)
             {
-                // Failed to add the argument to the resolver args list
+                Log.Error(ex, "Failed to add the argument to the resolver args list");
             }
         }
 

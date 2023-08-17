@@ -407,6 +407,92 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if DEFAULT_SAMPLES
                 new object[] { string.Empty },
 #else
+#if NETCOREAPP2_1
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#if NET5_0
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#if NET6_0
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#if NET7_0
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#if NET8_0
+                new object[] { "2.1.0" },
+                new object[] { "2.2.0" },
+                new object[] { "2.3.0" },
+                new object[] { "2.4.0" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> GraphQL3 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NETCOREAPP2_1
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#if NET5_0
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#if NET6_0
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#if NET7_0
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#if NET8_0
+                new object[] { "3.1.6" },
+                new object[] { "3.2.0" },
+                new object[] { "3.3.2" },
+#endif
+#endif
+            };
+
+      public static IEnumerable<object[]> GraphQL4 =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
 #if NETCOREAPP3_1
                 new object[] { "4.1.0" },
                 new object[] { "4.3.0" },

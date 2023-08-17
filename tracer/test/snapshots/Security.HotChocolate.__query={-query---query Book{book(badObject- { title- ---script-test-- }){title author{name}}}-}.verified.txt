@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -31,6 +31,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-941-110","name":"XSS Filter - Category 1: Script Tag Vector","tags":{"category":"attack_attempt","type":"xss"}},"rule_matches":[{"operator":"match_regex","operator_value":"<script[^>]*>[\\s\\S]*?","parameters":[{"address":"graphql.server.all_resolvers","highlight":["<script>"],"key_path":["book","0","badObject","title"],"value":"<script>test"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

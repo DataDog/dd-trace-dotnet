@@ -93,7 +93,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static IEnumerable<object[]> TestData =>
             EnvironmentTools.IsWindows()
                 ? new[] { new object[] { string.Empty } }
-                : PackageVersions.GraphQL;
+                : PackageVersions.GraphQL4;
 
         [SkippableTheory]
         [MemberData(nameof(TestData))]
@@ -127,12 +127,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact]
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL3;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces()
-            => await RunSubmitsTraces();
+        public async Task SubmitsTraces(string packageVersion)
+            => await RunSubmitsTraces(packageVersion: packageVersion);
     }
 
     public class GraphQL2SchemaV0Tests : GraphQL2Tests
@@ -158,11 +165,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
         }
 
-        [SkippableFact]
+        // Can't currently run multi-api on Windows
+        public static IEnumerable<object[]> TestData =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : PackageVersions.GraphQL;
+
+        [SkippableTheory]
+        [MemberData(nameof(TestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public async Task SubmitsTraces()
+        public async Task SubmitsTraces(string packageVersion)
         {
             if (EnvironmentTools.IsWindows()
              && !EnvironmentHelper.IsCoreClr()
@@ -174,7 +188,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     "which we don't do any more");
             }
 
-            await RunSubmitsTraces();
+            await RunSubmitsTraces(packageVersion: packageVersion);
         }
     }
 

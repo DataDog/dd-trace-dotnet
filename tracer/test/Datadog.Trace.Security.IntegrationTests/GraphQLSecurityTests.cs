@@ -5,9 +5,13 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests;
 using Datadog.Trace.TestHelpers;
+using VerifyTests;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -23,17 +27,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL7);
+
         [SkippableTheory]
-        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
-        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
-        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
-        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
-        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQL4SecurityTests : GraphQLSecurityTestsBase
@@ -43,17 +43,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL4);
+
         [SkippableTheory]
-        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
-        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
-        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
-        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
-        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQL3SecurityTests : GraphQLSecurityTestsBase
@@ -63,17 +59,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL3);
+
         [SkippableTheory]
-        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
-        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
-        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
-        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
-        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQL2SecurityTests : GraphQLSecurityTestsBase
@@ -83,21 +75,28 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL);
+
         [SkippableTheory]
-        [InlineData(@"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}")]
-        [InlineData(@"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}")]
-        [InlineData(@"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}")]
-        [InlineData(@"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}")]
-        [InlineData(@"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}")]
-        [InlineData(@"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}")]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQLSecurityTestsBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
+        private static readonly string[] _garphQlQueries =
+            {
+                @"{""query"":""mutation objectNameNormal{createHuman(human: { name: \""Alice\"" }){id name}}""}",
+                @"{""query"":""mutation objectName{createHuman(human: { name: \""<script>test\"" }){id name}}""}",
+                @"{""query"":""mutation objectVarName($humanName:String!){createHuman(human: { name: $humanName }){id name}}"",""variables"":{""humanName"": ""<script>test""}}",
+                @"{""query"":""mutation objectVar($human:HumanInput!){createHuman(human: $human){id name}}"",""variables"":{""human"":{""name"": ""<script>test""}}}",
+                @"{""query"":""mutation createArray{createHumans(names: [\""Alice\"", \""<script>test\""]){name}}""}",
+                @"{""query"":""mutation createArrayVar($humanNames:[String!]!){createHumans(names: $humanNames){name}}"",""variables"":{""humanNames"": [""Alice"", ""<script>test""]}}",
+                @"{""query"":""mutation createVarInArray($bobName:String!){createHumans(names: [\""Alice\"", $bobName]){name}}"",""variables"":{""bobName"": ""<script>test""}}",
+            };
+
         private readonly AspNetCoreTestFixture _fixture;
 
         protected GraphQLSecurityTestsBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, string sampleName)
@@ -113,15 +112,30 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(null);
         }
 
-        protected async Task Test(string query)
+        protected static IEnumerable<object[]> GetTestData(IEnumerable<object[]> packageVersions) =>
+            from packageVersionArray in GetSafePackageVersion(packageVersions)
+            from query in _garphQlQueries
+            select new[] { packageVersionArray[0], query };
+
+        protected async Task Test(string packageVersion, string query)
         {
-            await _fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
+            await _fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile, packageVersion: packageVersion);
             SetHttpPort(_fixture.HttpPort);
 
-            var settings = VerifyHelper.GetSpanVerifierSettings(query);
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddSimpleScrubber("\"human\",\"0\"", "\"human\",\"xxxx\"");
+            settings.AddSimpleScrubber("\"human\",\"name\"", "\"human\",\"xxxx\"");
 
-            await TestAppSecRequestWithVerifyAsync(_fixture.Agent, "/graphql", query, 1, 1, settings);
+            var spans = await SendRequestsAsync(_fixture.Agent, "/graphql", query, 1, 1, string.Empty);
+            await VerifySpansNoMethodNameSettings(spans, settings)
+                 .UseFileName($"{GetTestName()}.__query={VerifyHelper.SanitisePathsForVerifyWithDash(query)}")
+                 .DisableRequireUniquePrefix(); // all package versions should be the same
         }
+
+        private static IEnumerable<object[]> GetSafePackageVersion(IEnumerable<object[]> packageVersions) =>
+            EnvironmentTools.IsWindows()
+                ? new[] { new object[] { string.Empty } }
+                : packageVersions;
     }
 }
 #endif
