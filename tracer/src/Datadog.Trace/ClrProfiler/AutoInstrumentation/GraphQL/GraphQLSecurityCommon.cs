@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.AppSec;
@@ -16,11 +17,11 @@ internal sealed class GraphQLSecurityCommon
     private static readonly Lazy<GraphQLSecurityCommon> LazyInstance
         = new Lazy<GraphQLSecurityCommon>(() => new GraphQLSecurityCommon());
 
-    private readonly Dictionary<IScope, Dictionary<string, object>> _scopeResolvers;
+    private readonly ConcurrentDictionary<IScope, Dictionary<string, object>> _scopeResolvers;
 
     private GraphQLSecurityCommon()
     {
-        _scopeResolvers = new Dictionary<IScope, Dictionary<string, object>>();
+        _scopeResolvers = new ConcurrentDictionary<IScope, Dictionary<string, object>>();
     }
 
     private static GraphQLSecurityCommon Instance
@@ -31,7 +32,7 @@ internal sealed class GraphQLSecurityCommon
         if (!_scopeResolvers.TryGetValue(scope, out var resolvers))
         {
             resolvers = new Dictionary<string, object>();
-            _scopeResolvers.Add(scope, resolvers);
+            _scopeResolvers.TryAdd(scope, resolvers);
         }
 
         return resolvers;
@@ -39,7 +40,7 @@ internal sealed class GraphQLSecurityCommon
 
     private void RemoveScopeResolvers(IScope scope)
     {
-        _scopeResolvers.Remove(scope);
+        _scopeResolvers.TryRemove(scope, out _);
     }
 
     internal static void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object> arguments)
@@ -51,13 +52,7 @@ internal sealed class GraphQLSecurityCommon
             resolverCalls = new List<object>();
         }
 
-        try
-        {
-            resolvers.Add(resolverName, resolverCalls);
-        }
-        catch (ArgumentException)
-        {
-        }
+        resolvers.Add(resolverName, resolverCalls);
 
         // Add the current resolver call with arguments
         ((List<object>)resolverCalls).Add(arguments);
