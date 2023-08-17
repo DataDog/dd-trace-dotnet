@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Logging;
@@ -94,7 +95,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        internal static long GetMessageSize(IMessage message)
+        private static long TryGetSize(object obj)
+        {
+            if (obj == null)
+            {
+                return 0;
+            }
+
+            if (obj is byte[] bytes)
+            {
+                return bytes.Length;
+            }
+
+            if (obj is string str)
+            {
+                return Encoding.UTF8.GetByteCount(str);
+            }
+
+            return 0;
+        }
+
+        private static long GetMessageSize(IMessage message)
         {
             long size = 0;
             if (message == null)
@@ -102,7 +123,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return size;
             }
 
-            // TODO:
+            size += TryGetSize(message.Key);
+            size += TryGetSize(message.Value);
+
+            if (message.Headers != null)
+            {
+                foreach (var header in message.Headers.BackingList)
+                {
+                    size += Encoding.UTF8.GetByteCount(header.Key);
+                    size += header.GetValueBytes().Length;
+                }
+            }
 
             return size;
         }

@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Collections.Generic;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 {
     /// <summary>
@@ -10,6 +12,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// </summary>
     internal interface IHeaders
     {
+        /// <summary>
+        ///  Gets of headers
+        /// </summary>
+        IReadOnlyList<IHeader> BackingList { get; }
+
         /// <summary>
         /// Adds a header to the collection
         /// </summary>
