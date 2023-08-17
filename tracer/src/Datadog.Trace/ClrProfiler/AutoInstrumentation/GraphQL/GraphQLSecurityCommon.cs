@@ -14,8 +14,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
 
 internal sealed class GraphQLSecurityCommon
 {
-    private static readonly Lazy<GraphQLSecurityCommon> LazyInstance
-        = new Lazy<GraphQLSecurityCommon>(() => new GraphQLSecurityCommon());
+    private static readonly Lazy<GraphQLSecurityCommon> LazyInstance = new(() => new GraphQLSecurityCommon());
 
     private readonly ConcurrentDictionary<IScope, Dictionary<string, object>> _scopeResolvers;
 
@@ -26,6 +25,13 @@ internal sealed class GraphQLSecurityCommon
 
     private static GraphQLSecurityCommon Instance
         => LazyInstance.Value;
+
+    private static Dictionary<string, object> PopScope(IScope scope)
+    {
+        var resolvers = Instance.GetScopeResolvers(scope);
+        Instance.RemoveScopeResolvers(scope);
+        return resolvers;
+    }
 
     private Dictionary<string, object> GetScopeResolvers(IScope scope)
     {
@@ -43,21 +49,28 @@ internal sealed class GraphQLSecurityCommon
         _scopeResolvers.TryRemove(scope, out _);
     }
 
+    /// <summary>
+    /// Register a called resolver with its arguments for a given scope into the <see cref="_scopeResolvers"/> dictionary.
+    /// </summary>
     internal static void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object> arguments)
     {
         var resolvers = Instance.GetScopeResolvers(scope);
 
         if (!resolvers.TryGetValue(resolverName, out var resolverCalls))
         {
-            resolverCalls = new List<object>();
+            resolverCalls = new List<object> { arguments };
+            resolvers.Add(resolverName, resolverCalls);
         }
-
-        resolvers.Add(resolverName, resolverCalls);
-
-        // Add the current resolver call with arguments
-        ((List<object>)resolverCalls).Add(arguments);
+        else
+        {
+            // Add the current resolver call with arguments
+            ((List<object>)resolverCalls).Add(arguments);
+        }
     }
 
+    /// <summary>
+    /// Run the WAF for the given scope of the GraphQL request.
+    /// </summary>
     public static void RunSecurity(Scope scope)
     {
         if (!IsEnabled())
@@ -78,13 +91,10 @@ internal sealed class GraphQLSecurityCommon
         securityCoordinator.Check(args);
     }
 
-    private static Dictionary<string, object> PopScope(IScope scope)
-    {
-        var resolvers = Instance.GetScopeResolvers(scope);
-        Instance.RemoveScopeResolvers(scope);
-        return resolvers;
-    }
-
+    /// <summary>
+    /// Check if we need to perform an analysis for the GraphQL request.
+    /// </summary>
+    /// <returns>True if ASM is enabled and the current request is not a WebSocket connection.</returns>
     public static bool IsEnabled()
     {
         // Check if ASM is Enabled
