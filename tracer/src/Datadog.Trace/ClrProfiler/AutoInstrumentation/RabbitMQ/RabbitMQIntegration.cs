@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
@@ -88,22 +89,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             };
         }
 
-        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IBody body, IBasicProperties basicProperties)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            if (dataStreamsManager == null || basicProperties == null || !dataStreamsManager.IsEnabled || basicProperties.Headers == null)
             {
                 return;
             }
 
             try
             {
-                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
                 var edgeTags = string.IsNullOrEmpty(tags.Exchange) ?
                                    // exchange can be empty for "direct"
                                    new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                    new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                // size of headers is ignored for now
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, body?.Length ?? 0, 0);
                 dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
@@ -112,21 +114,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
-        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IBody body, IBasicProperties basicProperties)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            if (dataStreamsManager == null || basicProperties == null || !dataStreamsManager.IsEnabled || basicProperties.Headers == null)
             {
                 return;
             }
 
             try
             {
-                var headersAdapter = new RabbitMQHeadersCollectionAdapter(headers);
+                var headersAdapter = new RabbitMQHeadersCollectionAdapter(basicProperties.Headers);
                 var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.Context.MergePathwayContext(pathwayContext);
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+                // size of headers is ignored for now
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, body?.Length ?? 0, basicProperties.Timestamp?.UnixTime ?? 0);
             }
             catch (Exception ex)
             {
@@ -174,7 +177,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.MessageSize = body?.Length.ToString() ?? "0";
             }
 
-            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, basicProperties?.Headers);
+            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, body, basicProperties);
             return new CallTargetState(scope);
         }
 

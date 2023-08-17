@@ -94,6 +94,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
+        internal static long GetMessageSize(IMessage message)
+        {
+            long size = 0;
+            if (message == null)
+            {
+                return size;
+            }
+
+            if (message.Key != null)
+            {
+                
+            }
+
+            return size;
+        }
+
         internal static Scope CreateConsumerScope(
             Tracer tracer,
             DataStreamsManager dataStreamsManager,
@@ -234,7 +250,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                                            ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                            : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+                        span.SetDataStreamsCheckpoint(
+                            dataStreamsManager,
+                            CheckpointKind.Consume,
+                            edgeTags,
+                            GetMessageSize(message),
+                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs);
                     }
                 }
             }
@@ -311,7 +332,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                    // produce is always the start of the edge, so defaultEdgeStartMs is always 0
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }

@@ -108,8 +108,15 @@ internal class DataStreamsManager
     /// <param name="parentPathway">The current pathway</param>
     /// <param name="checkpointKind">Is this a Produce or Consume operation?</param>
     /// <param name="edgeTags">Edge tags to set for the new pathway. MUST be sorted in alphabetical order</param>
+    /// <param name="payloadSizeBytes">Payload size in bytes</param>
+    /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
     /// <returns>If disabled, returns <c>null</c>. Otherwise returns a new <see cref="PathwayContext"/></returns>
-    public PathwayContext? SetCheckpoint(in PathwayContext? parentPathway, CheckpointKind checkpointKind, string[] edgeTags)
+    public PathwayContext? SetCheckpoint(
+        in PathwayContext? parentPathway,
+        CheckpointKind checkpointKind,
+        string[] edgeTags,
+        long payloadSizeBytes,
+        long timeInQueueMs)
     {
         if (!IsEnabled)
         {
@@ -139,7 +146,8 @@ internal class DataStreamsManager
                     parentHash: parentHash,
                     timestampNs: edgeStartNs,
                     pathwayLatencyNs: edgeStartNs - pathwayStartNs,
-                    edgeLatencyNs: edgeStartNs - (previousContext?.EdgeStart ?? edgeStartNs)));
+                    edgeLatencyNs: edgeStartNs - (previousContext?.EdgeStart ?? edgeStartNs),
+                    payloadSizeBytes));
 
             var pathway = new PathwayContext(
                 hash: pathwayHash,
