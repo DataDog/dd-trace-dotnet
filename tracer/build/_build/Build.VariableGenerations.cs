@@ -1052,7 +1052,7 @@ partial class Build : NukeBuild
 
            List<string> GetTracerStagesThatWillNotRun(string[] gitChanges)
            {
-               var tracerConfig = GetTracerPipelineDefinition();
+               var tracerConfig = PipelineParser.GetPipelineDefinition(RootDirectory);
 
                var tracerExcludePaths = tracerConfig.Pr?.Paths?.Exclude ?? Array.Empty<string>();
                Logger.Information($"Found {tracerExcludePaths.Length} exclude paths for the tracer");
@@ -1063,19 +1063,6 @@ partial class Build : NukeBuild
                return willTracerPipelineRun
                           ? new List<string>()
                           : tracerConfig.Stages.Select(x => x.Stage).ToList();
-           }
-
-           PipelineDefinition GetTracerPipelineDefinition()
-           {
-               var consolidatedPipelineYaml = RootDirectory / ".azure-pipelines" / "ultimate-pipeline.yml";
-               Logger.Information($"Reading {consolidatedPipelineYaml} YAML file");
-               var deserializer = new YamlDotNet.Serialization.DeserializerBuilder()
-                                 .WithNamingConvention(CamelCaseNamingConvention.Instance)
-                                 .IgnoreUnmatchedProperties()
-                                 .Build();
-
-               using var sr = new StreamReader(consolidatedPipelineYaml);
-               return deserializer.Deserialize<PipelineDefinition>(sr);
            }
        });
 
@@ -1092,57 +1079,5 @@ partial class Build : NukeBuild
               .Git($"diff --name-only \"{baseCommit}\"")
               .Select(output => output.Text)
               .ToArray();
-    }
-
-    class PipelineDefinition
-    {
-        public TriggerDefinition Trigger { get; set; }
-        public TriggerDefinition Pr { get; set; }
-        public StageDefinition[] Stages { get; set; } = Array.Empty<StageDefinition>();
-
-        public class TriggerDefinition
-        {
-            public PathDefinition Paths { get; set; }
-        }
-
-        public class PathDefinition
-        {
-            public string[] Exclude { get; set; } = Array.Empty<string>();
-        }
-
-        public class StageDefinition
-        {
-            public string Stage { get; set; }
-        }
-    }
-
-    class ProfilerPipelineDefinition
-    {
-        public TriggerDefinition On { get; set; }
-
-        public Dictionary<string, JobDefinition> Jobs { get; set; } = new();
-
-        public class TriggerDefinition
-        {
-            [YamlDotNet.Serialization.YamlMember(Alias = "pull_request", ApplyNamingConventions = false)]
-            public PrDefinition PullRequest { get; set; }
-        }
-
-        public class PrDefinition
-        {
-            [YamlDotNet.Serialization.YamlMember(Alias = "paths-ignore", ApplyNamingConventions = false)]
-            public string[] PathsIgnore { get; set; } = Array.Empty<string>();
-        }
-
-        public class JobDefinition
-        {
-            public string Name { get; set; }
-            public StrategyDefinition Strategy { get; set; }
-        }
-
-        public class StrategyDefinition
-        {
-            public Dictionary<string, List<object>> Matrix { get; set; }
-        }
     }
 }
