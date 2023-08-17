@@ -233,6 +233,14 @@ namespace Datadog.Trace.TestHelpers
             }
 #endif
 
+            if (exitCode == 13)
+            {
+                // This is an "expected" issue, e.g. timeout talking to a required service
+                // strictly a failure, but skipping to avoid flake in CI etc
+                SendMetric(Output, "dd_trace_dotnet.ci.tests.skipped_due_to_flake").ConfigureAwait(false).GetAwaiter().GetResult();
+                throw new SkipException("Exit code (13) - anticipated flake");
+            }
+
             ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
             return new ProcessResult(process, standardOutput, standardError, exitCode);
