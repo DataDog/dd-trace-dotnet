@@ -14,6 +14,7 @@ namespace Samples.InstrumentedTests.Iast.Vulnerabilities.LdapInjection;
 #if NET5_0_OR_GREATER
 [SupportedOSPlatform("windows")]
 #endif
+[Trait("Category", "LinuxUnsupported")]
 public class LdapInjectionTests : InstrumentationTestsBase
 {
     private string _taintedUser = "user";
@@ -36,7 +37,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Not Vulnerable overloads
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable2()
     {
@@ -53,8 +53,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::set_Path(System.String)")]
 
-
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable()
     {
@@ -65,7 +63,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::.ctor(System.String)")]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable3()
     {
@@ -73,7 +70,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertVulnerable();
     }
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable()
     {
@@ -81,7 +77,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable3()
     {
@@ -89,7 +84,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
         AssertNotVulnerable();
     }
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_NotLDAPVulnerable4()
     {
@@ -99,7 +93,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::.ctor(System.String,System.String,System.String)", 2)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenCreate_LDAPVulnerable()
     {
@@ -109,7 +102,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectoryEntry::.ctor(System.String,System.String,System.String,System.DirectoryServices.AuthenticationTypes)", 3)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectoryEntry_WhenConnectToTaintedServer_LDAPVulnerable2()
     {
@@ -121,7 +113,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::set_Filter(System.String)")]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable8()
     {
@@ -133,7 +124,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.String)")]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable()
     {
@@ -144,7 +134,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.String,System.String[])", 1)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable4()
     {
@@ -155,7 +144,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.String,System.String[],System.DirectoryServices.SearchScope)", 2)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable5()
     {
@@ -166,7 +154,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.DirectoryServices.DirectoryEntry,System.String)")]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable2()
     {
@@ -178,7 +165,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.DirectoryServices.DirectoryEntry,System.String,System.String[])", 1)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable3()
     {
@@ -190,7 +176,6 @@ public class LdapInjectionTests : InstrumentationTestsBase
 
     // Testing [AspectMethodInsertBefore("System.DirectoryServices.DirectorySearcher::.ctor(System.DirectoryServices.DirectoryEntry,System.String,System.String[],System.DirectoryServices.SearchScope)", 2)]
 
-    [Trait("Category", "LinuxUnsupported")]
     [Fact]
     public void GivenADirectorySearcher_WhenCreate_LDAPVulnerable6()
     {
