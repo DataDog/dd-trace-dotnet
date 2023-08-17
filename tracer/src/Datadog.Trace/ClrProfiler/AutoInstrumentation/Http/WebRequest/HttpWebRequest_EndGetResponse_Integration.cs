@@ -94,13 +94,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         if (returnValue is HttpWebResponse response)
                         {
                             scope.Span.SetHttpStatusCode((int)response.StatusCode, isServer: false, Tracer.Instance.Settings);
+                            scope.Dispose();
                         }
                         else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
                         {
                             scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, isServer: false, Tracer.Instance.Settings);
-                        }
 
-                        scope.DisposeWithException(exception);
+                            // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
+                            // Add the remaining error attributes
+                            scope.Span.SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                            scope.Span.SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                            scope.Span.SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                            scope.Dispose();
+                        }
+                        else
+                        {
+                            scope.DisposeWithException(exception);
+                        }
                     }
                 }
                 catch

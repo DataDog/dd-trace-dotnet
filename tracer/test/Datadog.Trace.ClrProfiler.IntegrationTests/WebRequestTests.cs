@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
+            SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "410-499");
             SetServiceVersion("1.0.0");
         }
 
@@ -95,7 +96,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 (okSpans.Count + notFoundSpans.Count + teapotSpans.Count).Should().Be(expectedSpanCount);
                 okSpans.Should().OnlyContain(s => s.Error == 0);
-                notFoundSpans.Should().OnlyContain(s => s.Error == 1);
+                notFoundSpans.Should().OnlyContain(s => s.Error == 0);
                 teapotSpans.Should().OnlyContain(s => s.Error == 1);
 
                 var firstSpan = spans.First();

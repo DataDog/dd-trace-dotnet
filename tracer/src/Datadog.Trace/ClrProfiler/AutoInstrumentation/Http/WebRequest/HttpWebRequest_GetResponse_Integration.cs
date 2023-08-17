@@ -64,13 +64,23 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 if (returnValue is HttpWebResponse response)
                 {
                     state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
+                    state.Scope.Dispose();
                 }
                 else if (exception is WebException { Status: WebExceptionStatus.ProtocolError, Response: HttpWebResponse exceptionResponse })
                 {
                     state.Scope.Span.SetHttpStatusCode((int)exceptionResponse.StatusCode, false, Tracer.Instance.Settings);
-                }
 
-                state.Scope.DisposeWithException(exception);
+                    // SetHttpStatusCode will mark the span with an error if the StatusCode is within the configured range
+                    // Add the remaining error attributes
+                    state.Scope.Span.SetTag(Trace.Tags.ErrorMsg, exception.Message);
+                    state.Scope.Span.SetTag(Trace.Tags.ErrorStack, exception.ToString());
+                    state.Scope.Span.SetTag(Trace.Tags.ErrorType, exception.GetType().ToString());
+                    state.Scope.Dispose();
+                }
+                else
+                {
+                    state.Scope.DisposeWithException(exception);
+                }
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
