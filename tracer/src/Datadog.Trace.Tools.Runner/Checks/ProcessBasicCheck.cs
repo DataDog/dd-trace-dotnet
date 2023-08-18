@@ -382,9 +382,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 var fileName = Path.GetFileName(module);
 
-                AnsiConsole.WriteLine("fileName:" + fileName);
-                AnsiConsole.WriteLine("module:" + module);
-
                 if (fileName.Equals("Datadog.Trace.ClrProfiler.Native.dll", StringComparison.OrdinalIgnoreCase)
                  || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.Ordinal))
                 {
