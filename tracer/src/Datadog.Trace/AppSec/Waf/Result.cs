@@ -17,6 +17,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             _returnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
+            Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             var events = returnStruct.Events.DecodeObjectArray();
             if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
@@ -39,6 +40,8 @@ namespace Datadog.Trace.AppSec.Waf
         public List<string> Actions { get; }
 
         public List<object> Events { get; }
+
+        public Dictionary<string, object> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds

@@ -37,10 +37,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public long IntValue;
 
         [FieldOffset(16)]
-        public double DoubleValue;
+        public bool BoolValue;
 
         [FieldOffset(16)]
-        public bool BoolValue;
+        public double DoubleValue;
         // };
 
         [FieldOffset(24)]
@@ -57,6 +57,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => Marshal.PtrToStringAnsi(Array, (int)NbEntries),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => IntValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => UintValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL => BoolValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE => DoubleValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => DecodeArray<object>(),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => DecodeMap(),
                 _ => null
