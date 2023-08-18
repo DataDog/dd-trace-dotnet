@@ -315,7 +315,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     expectedGraphQlExecuteSpanCount++;
                 }
 
-                expectedAspNetcoreRequestSpanCount++;
+                if (EnvironmentHelper.IsCoreClr())
+                {
+                    expectedAspNetcoreRequestSpanCount++;
+                }
+
                 GraphQLCommon.SubmitRequest(
                     Output,
                     aspNetCorePort,

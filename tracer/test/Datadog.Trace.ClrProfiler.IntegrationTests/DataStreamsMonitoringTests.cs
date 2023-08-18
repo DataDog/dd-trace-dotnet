@@ -163,7 +163,8 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.WaitForDataStreams(2);
+        // We don't expect any streams here, so no point waiting for ages
+        var dataStreams = agent.WaitForDataStreams(2, timeoutInMilliseconds: 2_000);
         dataStreams.Should().BeEmpty();
     }
 
