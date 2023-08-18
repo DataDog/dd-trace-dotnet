@@ -51,7 +51,7 @@ internal static class StackWalker
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !GetOrCacheExcludedAssembly(assembly))
+            if (assembly != null && !AssemblyExcluded(assembly))
             {
                 return new StackFrameInfo(frame, true);
             }
@@ -60,7 +60,7 @@ internal static class StackWalker
         return new StackFrameInfo(null, true);
     }
 
-    private static bool GetOrCacheExcludedAssembly(string assembly)
+    public static bool AssemblyExcluded(string assembly)
     {
         if (ExcludedAssemblyCache.TryGetValue(assembly, out bool excluded))
         {
