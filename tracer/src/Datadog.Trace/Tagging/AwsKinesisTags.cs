@@ -3,14 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.SourceGenerators;
 
+#pragma warning disable SA1402 // File must contain single type
 namespace Datadog.Trace.Tagging
 {
     internal partial class AwsKinesisTags : AwsSdkTags
     {
-        private string _peerServiceOverride = null;
-
         public AwsKinesisTags(string spanKind)
         {
             SpanKind = spanKind;
@@ -31,6 +31,25 @@ namespace Datadog.Trace.Tagging
 
         [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind { get; }
+    }
+
+    internal partial class AwsKinesisV1Tags : AwsKinesisTags
+    {
+        private string _peerServiceOverride = null;
+
+        // For the sake of unit tests, define a default constructor
+        // though the AWS SQS integration should use the constructor that takes a spanKind
+        // so the setter is only invoked once
+        [Obsolete("Use constructor that takes a SpanKind")]
+        public AwsKinesisV1Tags()
+            : this(SpanKinds.Client)
+        {
+        }
+
+        public AwsKinesisV1Tags(string spanKind)
+            : base(spanKind)
+        {
+        }
 
         // Use a private setter for setting the "peer.service" tag so we avoid
         // accidentally setting the value ourselves and instead calculate the

@@ -90,7 +90,9 @@ namespace Datadog.Trace.Configuration.Schema
 
         public AwsKinesisTags CreateAwsKinesisTags(string spanKind) => _version switch
         {
-            _ => new AwsKinesisTags(spanKind),
+            SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),
+            _ => new AwsKinesisV1Tags(spanKind),
+
         };
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)

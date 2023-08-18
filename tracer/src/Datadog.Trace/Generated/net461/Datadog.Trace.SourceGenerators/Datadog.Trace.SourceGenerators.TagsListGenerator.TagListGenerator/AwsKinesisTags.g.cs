@@ -33,18 +33,6 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
 #endif
-        // PeerServiceBytes = MessagePack.Serialize("peer.service");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> PeerServiceBytes => new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
-#else
-        private static readonly byte[] PeerServiceBytes = new byte[] { 172, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101 };
-#endif
-        // PeerServiceSourceBytes = MessagePack.Serialize("_dd.peer.service.source");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> PeerServiceSourceBytes => new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
-#else
-        private static readonly byte[] PeerServiceSourceBytes = new byte[] { 183, 95, 100, 100, 46, 112, 101, 101, 114, 46, 115, 101, 114, 118, 105, 99, 101, 46, 115, 111, 117, 114, 99, 101 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -54,8 +42,6 @@ namespace Datadog.Trace.Tagging
                 "aws.region" => AwsRegion,
                 "streamname" => StreamName,
                 "span.kind" => SpanKind,
-                "peer.service" => PeerService,
-                "_dd.peer.service.source" => PeerServiceSource,
                 _ => base.GetTag(key),
             };
         }
@@ -67,13 +53,9 @@ namespace Datadog.Trace.Tagging
                 case "streamname": 
                     StreamName = value;
                     break;
-                case "peer.service": 
-                    PeerService = value;
-                    break;
                 case "aws.service": 
                 case "aws.region": 
                 case "span.kind": 
-                case "_dd.peer.service.source": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsKinesisTags));
                     break;
                 default: 
@@ -102,16 +84,6 @@ namespace Datadog.Trace.Tagging
             if (SpanKind is not null)
             {
                 processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
-            if (PeerService is not null)
-            {
-                processor.Process(new TagItem<string>("peer.service", PeerService, PeerServiceBytes));
-            }
-
-            if (PeerServiceSource is not null)
-            {
-                processor.Process(new TagItem<string>("_dd.peer.service.source", PeerServiceSource, PeerServiceSourceBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -144,20 +116,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("span.kind (tag):")
                   .Append(SpanKind)
-                  .Append(',');
-            }
-
-            if (PeerService is not null)
-            {
-                sb.Append("peer.service (tag):")
-                  .Append(PeerService)
-                  .Append(',');
-            }
-
-            if (PeerServiceSource is not null)
-            {
-                sb.Append("_dd.peer.service.source (tag):")
-                  .Append(PeerServiceSource)
                   .Append(',');
             }
 
