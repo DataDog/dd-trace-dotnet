@@ -365,9 +365,11 @@ namespace Datadog.Trace.Tests
         public void ServiceOverride_WhenSet_HasBaseService()
         {
             var origName = "MyServiceA";
+            var newName = "MyServiceB";
             var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
-            span.ServiceName = "MyServiceB";
+            span.ServiceName = newName;
 
+            span.ServiceName.Should().Be(newName);
             span.GetTag(Tags.BaseService).Should().Be(origName);
         }
 
@@ -377,6 +379,7 @@ namespace Datadog.Trace.Tests
             var origName = "MyServiceA";
             var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
 
+            span.ServiceName.Should().Be(origName);
             span.GetTag(Tags.BaseService).Should().BeNull();
         }
 
@@ -387,6 +390,19 @@ namespace Datadog.Trace.Tests
             var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
             span.ServiceName = origName;
 
+            span.ServiceName.Should().Be(origName);
+            span.GetTag(Tags.BaseService).Should().BeNull();
+        }
+
+        [Fact]
+        public void ServiceOverride_WhenSetSameWithDifferentCase_HasNoBaseService()
+        {
+            var origName = "MyServiceA";
+            var newName = origName.ToUpper();
+            var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
+            span.ServiceName = newName;
+
+            span.ServiceName.Should().Be(newName); // ServiceName should change although _dd.base_service has not been added
             span.GetTag(Tags.BaseService).Should().BeNull();
         }
 
@@ -394,10 +410,12 @@ namespace Datadog.Trace.Tests
         public void ServiceOverride_WhenSetTwice_HasBaseService()
         {
             var origName = "MyServiceA";
+            var newName = "MyServiceC";
             var span = _tracer.StartSpan(nameof(SetTag_Double), serviceName: origName);
             span.ServiceName = "MyServiceB";
-            span.ServiceName = "MyServiceC";
+            span.ServiceName = newName;
 
+            span.ServiceName.Should().Be(newName);
             span.GetTag(Tags.BaseService).Should().Be(origName);
         }
     }

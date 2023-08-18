@@ -80,7 +80,8 @@ namespace Datadog.Trace
             get => Context.ServiceNameInternal;
             set
             {
-                if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal))
+                // Ignore case because service name and _dd.base_service are normalized in the agent and backend
+                if (!_baseServiceTagSet && !string.Equals(value, Context.ServiceNameInternal, StringComparison.OrdinalIgnoreCase))
                 {
                     Tags.SetTag(Trace.Tags.BaseService, Context.ServiceNameInternal);
                     _baseServiceTagSet = true;
