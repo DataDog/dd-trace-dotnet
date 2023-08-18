@@ -26,6 +26,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             bool ok = true;
             var runtime = process.DotnetRuntime;
             Version? nativeTracerVersion = null;
+            bool isTracingUsingBundle = false;
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -41,33 +42,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            bool isContinuousProfilerEnabled;
-
-            if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
-            {
-                if (ParseBooleanConfigurationValue(profilingEnabled))
-                {
-                    AnsiConsole.WriteLine(ContinuousProfilerEnabled);
-                    isContinuousProfilerEnabled = true;
-                }
-                else
-                {
-                    AnsiConsole.WriteLine(ContinuousProfilerDisabled);
-                    isContinuousProfilerEnabled = false;
-                }
-            }
-            else
-            {
-                AnsiConsole.WriteLine(ContinuousProfilerNotSet);
-                isContinuousProfilerEnabled = false;
-            }
-
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
 
             if (loaderModule == null)
             {
                 AnsiConsole.WriteLine(LoaderNotLoaded);
+            }
+            else
+            {
+                // Checking if the user is using the Datadog.Trace.Bundle to trace their service
+                isTracingUsingBundle = TracingWithBundle(loaderModule);
             }
 
             if (nativeTracerModule == null)
@@ -88,11 +73,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                     AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
-            }
-
-            if (isContinuousProfilerEnabled)
-            {
-                ok &= CheckContinuousProfiler(process, loaderModule);
             }
 
             var tracerModules = FindTracerModules(process).ToArray();
@@ -169,14 +149,18 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            if (!isTracingUsingBundle)
             {
-                if (!CheckRegistry(registryService, nativeTracerVersion))
+                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
+                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ok = false;
+                    if (!CheckRegistry(registryService, nativeTracerVersion))
+                    {
+                        ok = false;
+                    }
                 }
             }
 
@@ -186,6 +170,32 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     Utils.WriteError(TracerNotEnabled(traceEnabledValue));
                 }
+            }
+
+            bool isContinuousProfilerEnabled;
+
+            if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
+            {
+                if (ParseBooleanConfigurationValue(profilingEnabled))
+                {
+                    AnsiConsole.WriteLine(ContinuousProfilerEnabled);
+                    isContinuousProfilerEnabled = true;
+                }
+                else
+                {
+                    AnsiConsole.WriteLine(ContinuousProfilerDisabled);
+                    isContinuousProfilerEnabled = false;
+                }
+            }
+            else
+            {
+                AnsiConsole.WriteLine(ContinuousProfilerNotSet);
+                isContinuousProfilerEnabled = false;
+            }
+
+            if (isContinuousProfilerEnabled)
+            {
+                ok &= CheckContinuousProfiler(process, loaderModule);
             }
 
             return ok;
@@ -372,6 +382,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 var fileName = Path.GetFileName(module);
 
+                AnsiConsole.WriteLine("fileName:" + fileName);
+                AnsiConsole.WriteLine("module:" + module);
+
                 if (fileName.Equals("Datadog.Trace.ClrProfiler.Native.dll", StringComparison.OrdinalIgnoreCase)
                  || fileName.Equals("Datadog.Trace.ClrProfiler.Native.so", StringComparison.Ordinal))
                 {
@@ -459,6 +472,29 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 or "Y"
                 or "y"
                 or "1";
+        }
+
+        private static bool TracingWithBundle(string nativeModuleLocation)
+        {
+            var isBundlePath = false;
+            string[] expectedEndingsForBundleSetup =
+            {
+                "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+                "/datadog/linux-arm64/Datadog.Trace.ClrProfiler.Native.so",
+                "\\datadog\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
+                "\\datadog\\win-x86\\Datadog.Trace.ClrProfiler.Native.dll"
+            };
+
+            foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
+            {
+                if (nativeModuleLocation.EndsWith(bundleSetupEnding))
+                {
+                    return true;
+                }
+            }
+
+            return isBundlePath;
         }
     }
 }
