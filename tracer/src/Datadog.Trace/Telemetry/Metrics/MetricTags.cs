@@ -208,6 +208,7 @@ internal static class MetricTags
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
         [Description("integration_name:ssrf")] Ssrf,
+        [Description("integration_name:ldap")] Ldap,
     }
 
     public enum InstrumentationError
