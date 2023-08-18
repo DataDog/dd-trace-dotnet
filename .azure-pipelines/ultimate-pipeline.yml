@@ -4921,7 +4921,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(variables['isMainBranch'], true)
     )
-  dependsOn: trace_pipeline # so it runs last
+  dependsOn: [trace_pipeline] # so it runs last
   jobs:
   - job: notify
     timeoutInMinutes: 10
