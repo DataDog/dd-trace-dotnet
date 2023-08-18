@@ -58,6 +58,7 @@ public static class ErrorHelpers
         if (string.IsNullOrEmpty(envKey))
         {
             // We're probably not in CI
+            return;
         }
 
         var client = new HttpClient();
