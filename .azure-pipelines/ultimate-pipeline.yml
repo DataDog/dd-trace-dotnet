@@ -3911,7 +3911,7 @@ stages:
       jobs: [test]
 
   - job: test
-    timeoutInMinutes: 120 # Expect this to take ~60
+    timeoutInMinutes: 60
     pool:
       vmImage: ubuntu-20.04
 
@@ -3923,12 +3923,37 @@ stages:
         parametric_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: PARAMETRIC
-        system_tests_poc:
+        appsec_poc:
           WEBLOG_VARIANT: "poc"
-          SCENARIO: TRACER_RELEASE_SCENARIOS
-        system_tests_uds:
+          SCENARIO: APPSEC_SCENARIOS
+        appsec_uds:
           WEBLOG_VARIANT: "uds"
-          SCENARIO: TRACER_RELEASE_SCENARIOS
+          SCENARIO: APPSEC_SCENARIOS
+        rcm_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: REMOTE_CONFIG_SCENARIOS
+        rcm_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: REMOTE_CONFIG_SCENARIOS
+        telemetry_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: TELEMETRY_SCENARIOS
+        telemetry_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: TELEMETRY_SCENARIOS
+        default_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: DEFAULT
+        default_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: DEFAULT
+        # All the other scenarios that aren't in a secenario group
+        remainder_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+        remainder_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
 
     steps:
       - checkout: none
