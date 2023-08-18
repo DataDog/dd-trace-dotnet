@@ -36,6 +36,7 @@ public class DataStreamsMessagePackFormatterTests
 
         var pathwaySketch = CreateSketch(5);
         var edgeSketch = CreateSketch(2);
+        var payloadSizeSketch = CreateSketch(2);
 
         var hash1 = new PathwayHash(2);
         var hash2 = new PathwayHash(3);
@@ -53,7 +54,8 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash1,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
             new SerializableStatsBucket(
@@ -67,7 +69,8 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash2,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
         };
