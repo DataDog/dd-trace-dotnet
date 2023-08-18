@@ -117,16 +117,15 @@ public static class CriticalPathAnalyzer
     static void UpdateLatestValues(List<PipelineStage> stages)
     {
         // we bootstrap the last stage by setting LatestEnd = EarliestEnd and calculating the corresponding start
-        var lastStage = stages[stages.Count - 1];
-        lastStage.Latest = lastStage.Earliest with { Start = lastStage.Earliest.End - lastStage.Duration };
+        var pipelineEnds = stages.Select(x => x.Earliest.End).Max();
 
-        // Now walk backwards, skipping the one stage we already updated 
-        foreach (var stage in stages.SkipLast(1).Reverse())
+        // Now walk backwards 
+        foreach (var stage in stages.AsEnumerable().Reverse())
         {
-            var latestEnd = stage.Latest.End;
+            var latestEnd = pipelineEnds;
             foreach (var successor in stage.Successors)
             {
-                if (latestEnd == 0 || latestEnd > successor.Latest.Start)
+                if (latestEnd > successor.Latest.Start)
                 {
                     latestEnd = successor.Latest.Start;
                 }
