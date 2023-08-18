@@ -61,6 +61,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.OpenTelemetry => MetricTags.IntegrationName.OpenTelemetry,
             IntegrationId.PathTraversal => MetricTags.IntegrationName.PathTraversal,
             IntegrationId.Ssrf => MetricTags.IntegrationName.Ssrf,
+            IntegrationId.Ldap => MetricTags.IntegrationName.Ldap,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
