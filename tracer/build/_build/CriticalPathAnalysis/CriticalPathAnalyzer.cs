@@ -13,6 +13,30 @@ namespace CriticalPathAnalysis;
 
 public static class CriticalPathAnalyzer
 {
+    // These checks are required for merging
+    // Copied from https://github.com/DataDog/dd-trace-dotnet/settings/branch_protection_rules
+    private static readonly string[] RequiredStagesForMerging =
+    {
+        "unit_tests_arm64",
+        "unit_tests_linux",
+        "unit_tests_windows",
+        "integration_tests_arm64",
+        "integration_tests_linux",
+        "integration_tests_windows",
+        "integration_tests_windows_iis",
+        "dotnet_tool",
+        "tool_artifacts_tests_linux",
+        "tool_artifacts_tests_windows",
+        "msi_integration_tests_windows",
+        "installer_smoke_tests",
+        "installer_smoke_tests_arm64",
+        "code_freeze",
+        "profiler_integration_tests_linux",
+        "tracer_home_smoke_tests",
+        "verify_source_generators",
+        "verify_app_trimming_descriptor_generator",
+    };
+
     public static Task AnalyzeCriticalPath(AbsolutePath rootDirectory)
     {
         var pipeline = PipelineParser.GetPipelineDefinition(rootDirectory);
@@ -47,8 +71,9 @@ public static class CriticalPathAnalyzer
             var stageName = row[0].ToString();
             var durationInNanosecond = row[1].Parse<decimal>();
             var durationInMilliSeconds = (long)(durationInNanosecond / 1_000_000m);
+            var requiredForMerging = RequiredStagesForMerging.Contains(stageName);
 
-            var stage = new PipelineStage(new(stageName), durationInMilliSeconds);
+            var stage = new PipelineStage(new(stageName), durationInMilliSeconds, requiredForMerging);
             stages.Add(stage);
         }
 
@@ -169,6 +194,11 @@ public static class CriticalPathAnalyzer
                .Append(duration)
                .Append(")  : ");
 
+            if (!stage.RequiredForMerging)
+            {
+                sb.Append("done, ");
+            }
+
             if (stage.IsOnCriticalPath)
             {
                 sb.Append("crit, ");
@@ -200,7 +230,7 @@ public static class CriticalPathAnalyzer
         return sb.ToString();
     }
 
-    record PipelineStage(string Id, long Duration)
+    record PipelineStage(string Id, long Duration, bool RequiredForMerging)
     {
         public List<PipelineStage> Predecessors { get; } = new();
         public List<PipelineStage> Successors { get; } = new();
