@@ -23,6 +23,7 @@ internal static class IastModule
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
+    private const string OperationNameLdapInjection = "ldap_injection";
     private const string OperationNameSsrf = "ssrf";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -31,6 +32,19 @@ internal static class IastModule
     static IastModule()
     {
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
+
+    internal static Scope? OnLdapInjection(string evidence)
+    {
+        try
+        {
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for ldap injection.");
+            return null;
+        }
     }
 
     internal static Scope? OnSSRF(string evidence)

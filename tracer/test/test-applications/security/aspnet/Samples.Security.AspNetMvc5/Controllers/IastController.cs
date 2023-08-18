@@ -10,6 +10,8 @@ using System.Net;
 using System.Web;
 using Microsoft.Ajax.Utilities;
 using System.Net.Http;
+using System.DirectoryServices;
+using System.Net.PeerToPeer;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
@@ -236,6 +238,43 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content(result, "text/html");
+        }
+
+        [Route("LDAP")]
+        public ActionResult Ldap(string path, string userName)
+        {
+            try
+            {
+                DirectoryEntry entry = null;
+                try
+                {
+                    var directoryEntryPath = !string.IsNullOrEmpty(path) ? path : "LDAP://fakeorg";
+                    entry = new DirectoryEntry(directoryEntryPath, string.Empty, string.Empty, AuthenticationTypes.None);
+                }
+                catch
+                {
+                    entry = new DirectoryEntry();
+                }
+                DirectorySearcher search = new DirectorySearcher(entry);
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    search.Filter = "(uid=" + userName + ")";
+                }
+                var result = search.FindAll();
+
+                string resultString = string.Empty;
+
+                for (int i = 0; i < result.Count; i++)
+                {
+                    resultString += result[i].Path + Environment.NewLine;
+                }
+
+                return Content($"Result: " + resultString);
+            }
+            catch
+            {
+                return Content($"Result: Not connected");
+            }
         }
     }
 }

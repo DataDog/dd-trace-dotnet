@@ -359,9 +359,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:ssrf", "error_type:duck_typing" }),
             new(new[] { "integration_name:ssrf", "error_type:invoker" }),
             new(new[] { "integration_name:ssrf", "error_type:execution" }),
-            new(new[] { "integration_name:awskinesis", "error_type:duck_typing" }),
-            new(new[] { "integration_name:awskinesis", "error_type:invoker" }),
-            new(new[] { "integration_name:awskinesis", "error_type:execution" }),
+            new(new[] { "integration_name:ldap", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ldap", "error_type:invoker" }),
+            new(new[] { "integration_name:ldap", "error_type:execution" }),
             // spans_created, index = 169
             new(new[] { "integration_name:datadog" }),
             new(new[] { "integration_name:opentracing" }),
@@ -417,7 +417,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:opentelemetry" }),
             new(new[] { "integration_name:pathtraversal" }),
             new(new[] { "integration_name:ssrf" }),
-            new(new[] { "integration_name:awskinesis" }),
+            new(new[] { "integration_name:ldap" }),
             // spans_finished, index = 224
             new(null),
             // spans_enqueued_for_serialization, index = 225
@@ -627,7 +627,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:opentelemetry" }),
             new(new[] { "integration_name:pathtraversal" }),
             new(new[] { "integration_name:ssrf" }),
-            new(new[] { "integration_name:awskinesis" }),
+            new(new[] { "integration_name:ldap" }),
             // direct_log_api.requests, index = 412
             new(null),
             // direct_log_api.responses, index = 413

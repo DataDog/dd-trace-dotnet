@@ -13,7 +13,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 49;
+    public const int Length = 50;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -73,6 +73,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm => nameof(Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm),
             Datadog.Trace.Configuration.IntegrationId.OpenTelemetry => nameof(Datadog.Trace.Configuration.IntegrationId.OpenTelemetry),
             Datadog.Trace.Configuration.IntegrationId.PathTraversal => nameof(Datadog.Trace.Configuration.IntegrationId.PathTraversal),
+            Datadog.Trace.Configuration.IntegrationId.Ldap => nameof(Datadog.Trace.Configuration.IntegrationId.Ldap),
             Datadog.Trace.Configuration.IntegrationId.Ssrf => nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis => nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             _ => value.ToString(),
@@ -135,6 +136,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm,
             Datadog.Trace.Configuration.IntegrationId.OpenTelemetry,
             Datadog.Trace.Configuration.IntegrationId.PathTraversal,
+            Datadog.Trace.Configuration.IntegrationId.Ldap,
             Datadog.Trace.Configuration.IntegrationId.Ssrf,
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
         };
@@ -197,6 +199,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.SymmetricAlgorithm),
             nameof(Datadog.Trace.Configuration.IntegrationId.OpenTelemetry),
             nameof(Datadog.Trace.Configuration.IntegrationId.PathTraversal),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Ldap),
             nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
         };
