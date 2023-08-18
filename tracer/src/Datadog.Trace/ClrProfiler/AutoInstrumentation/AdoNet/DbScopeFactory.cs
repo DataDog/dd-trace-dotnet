@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
 
                 if (parent is { Type: SpanTypes.Sql } &&
                     HasDbType(parent, dbType) &&
-                    (parent.ResourceName == commandText || parent.GetTag(Tags.DbmDataPropagated) != null))
+                    (parent.ResourceName == commandText || commandText.StartsWith(DatabaseMonitoringPropagator.DbmPrefix)))
                 {
                     // we are already instrumenting this,
                     // don't instrument nested methods that belong to the same stacktrace
@@ -68,12 +68,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
                 if (tracer.Settings.DbmPropagationMode != DbmPropagationLevel.Disabled
                     && command.CommandType != CommandType.StoredProcedure)
                 {
-                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId);
+                    var propagatedCommand = DatabaseMonitoringPropagator.PropagateSpanData(tracer.Settings.DbmPropagationMode, tracer.DefaultServiceName, scope.Span.Context, integrationId, out var traceParentInjected);
 
                     if (propagatedCommand != string.Empty)
                     {
                         command.CommandText = $"{propagatedCommand} {commandText}";
-                        tags.DbmDataPropagated = "true";
+                        if (traceParentInjected)
+                        {
+                            tags.DbmTraceInjected = "true";
+                        }
                     }
                 }
             }
