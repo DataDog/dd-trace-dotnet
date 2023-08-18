@@ -628,6 +628,13 @@ namespace Datadog.Trace.Configuration
             /// Default value is <c>false</c> (disabled).
             /// </summary>
             public const string TraceId128BitLoggingEnabled = "DD_TRACE_128_BIT_TRACEID_LOGGING_ENABLED";
+
+            /// <summary>
+            /// Configuration key to enabling or disabling the collection of shell commands executions.
+            /// Default value is <c>false</c> (disabled). Will change in the future to <c>true</c>
+            /// when an obfuscation mechanism will be implemented in the agent.
+            /// </summary>
+            internal const string CommandsCollectionEnabled = "DD_TRACE_COMMANDS_COLLECTION_ENABLED";
         }
 
         internal static class Telemetry

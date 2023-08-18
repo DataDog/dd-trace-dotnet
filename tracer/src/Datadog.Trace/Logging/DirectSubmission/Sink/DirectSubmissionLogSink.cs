@@ -172,6 +172,10 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink
             TelemetryFactory.Metrics.RecordGaugeDirectLogQueue(queueSizeBeforeFlush);
         }
 
+        protected override void DelayEvents(TimeSpan delayUntilNextFlush)
+        {
+        }
+
         public override async Task DisposeAsync()
         {
             await DisposeAsync(true).ConfigureAwait(false);

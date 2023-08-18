@@ -5,14 +5,19 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
+using FluentAssertions;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class NpgsqlCommandTests : TracingIntegrationTest
     {
         public NpgsqlCommandTests(ITestOutputHelper output)
@@ -24,15 +29,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         public static IEnumerable<object[]> GetEnabledConfig()
             => from packageVersionArray in PackageVersions.Npgsql
                from metadataSchemaVersion in new[] { "v0", "v1" }
-               select new[] { packageVersionArray[0], metadataSchemaVersion };
+               from propagation in new[] { string.Empty, "100", "randomValue", "disabled", "service", "full" }
+               select new[] { packageVersionArray[0], metadataSchemaVersion, propagation };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsNpgsql(metadataSchemaVersion);
 
         [SkippableTheory]
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
-        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion, string dbmPropagation)
         {
+            SetEnvironmentVariable("DD_DBM_PROPAGATION_MODE", dbmPropagation);
+
             // ALWAYS: 77 spans
             // - NpgsqlCommand: 21 spans (3 groups * 7 spans)
             // - DbCommand:  42 spans (6 groups * 7 spans)
@@ -60,11 +68,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             using var process = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
             var spans = agent.WaitForSpans(expectedSpanCount, operationName: expectedOperationName);
             int actualSpanCount = spans.Count(s => s.ParentId.HasValue); // Remove unexpected DB spans from the calculation
+            var filteredSpans = spans.Where(s => s.ParentId.HasValue).ToList();
 
-            // Assert.Equal(expectedSpanCount, spans.Count); // Assert an exact match once we can correctly instrument the generic constraint case
-            Assert.Equal(expectedSpanCount, actualSpanCount);
+            // Assert an exact match once we can correctly instrument the generic constraint case
+            actualSpanCount.Should().Be(expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
             telemetry.AssertIntegrationEnabled(IntegrationId.Npgsql);
+
+            var settings = VerifyHelper.GetSpanVerifierSettings();
+            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddSimpleScrubber("out.host: localhost", "out.host: postgres");
+            settings.AddSimpleScrubber("out.host: postgres_arm64", "out.host: postgres");
+
+            var fileName = nameof(NpgsqlCommandTests);
+#if NET462
+            fileName = fileName + ".Net462";
+#endif
+            fileName = fileName + (dbmPropagation switch
+            {
+                "full" => ".tagged",
+                _ => ".untagged",
+            });
+
+            await VerifyHelper.VerifySpans(filteredSpans, settings)
+                              .DisableRequireUniquePrefix()
+                              .UseFileName($"{fileName}.Schema{metadataSchemaVersion.ToUpper()}");
         }
 
         [SkippableFact]
