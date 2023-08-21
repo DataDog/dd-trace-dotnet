@@ -215,12 +215,18 @@ namespace Datadog.Trace.Agent.MessagePack
             offset = tagWriter.Offset;
             count += tagWriter.Count;
 
-            // TODO: for each trace tag, determine if it should be added to the local root,
-            // to the first span in the chunk, or to all orphan spans.
-            // For now, we add them to the local root which is correct in most cases.
-            if (model is { IsLocalRoot: true, TraceChunk.Tags: { Count: > 0 } traceTags })
+            // Write trace tags
+            if (model is { TraceChunk.Tags: { Count: > 0 } traceTags })
             {
-                var traceTagWriter = new TraceTagWriter(this, tagProcessors, bytes, offset);
+                var traceTagWriter = new TraceTagWriter(
+                    this,
+                    tagProcessors,
+                    isLocalRoot: model.IsLocalRoot,
+                    isChunkOrphan: model.IsChunkOrphan,
+                    isFirstSpanInChunk: model.IsFirstSpanInChunk,
+                    bytes,
+                    offset);
+
                 traceTags.Enumerate(ref traceTagWriter);
                 bytes = traceTagWriter.Bytes;
                 offset = traceTagWriter.Offset;
@@ -621,16 +627,29 @@ namespace Datadog.Trace.Agent.MessagePack
         {
             private readonly SpanMessagePackFormatter _formatter;
             private readonly ITagProcessor[] _tagProcessors;
+            private readonly bool _isLocalRoot;
+            private readonly bool _isChunkOrphan;
+            private readonly bool _isFirstSpanInChunk;
 
             public byte[] Bytes;
             public int Offset;
             public int Count;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            internal TraceTagWriter(SpanMessagePackFormatter formatter, ITagProcessor[] tagProcessors, byte[] bytes, int offset)
+            internal TraceTagWriter(
+                SpanMessagePackFormatter formatter,
+                ITagProcessor[] tagProcessors,
+                bool isLocalRoot,
+                bool isChunkOrphan,
+                bool isFirstSpanInChunk,
+                byte[] bytes,
+                int offset)
             {
                 _formatter = formatter;
                 _tagProcessors = tagProcessors;
+                _isLocalRoot = isLocalRoot;
+                _isChunkOrphan = isChunkOrphan;
+                _isFirstSpanInChunk = isFirstSpanInChunk;
                 Bytes = bytes;
                 Offset = offset;
                 Count = 0;
@@ -639,8 +658,15 @@ namespace Datadog.Trace.Agent.MessagePack
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Next(KeyValuePair<string, string> item)
             {
-                _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
-                Count++;
+                var isPropagatedTag = item.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal);
+
+                // add propagated trace tags to the first span in every chunk,
+                // add non-propagated trace tags to the root span
+                if ((isPropagatedTag && _isFirstSpanInChunk) || (!isPropagatedTag && _isLocalRoot))
+                {
+                    _formatter.WriteTag(ref Bytes, ref Offset, item.Key, item.Value, _tagProcessors);
+                    Count++;
+                }
             }
         }
     }
