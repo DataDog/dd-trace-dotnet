@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
@@ -85,6 +84,7 @@ public class DataStreamsMonitoringTests : TestHelper
             {
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
             });
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
@@ -145,6 +145,7 @@ public class DataStreamsMonitoringTests : TestHelper
             {
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
             });
 
         await Verifier.Verify(payload, settings)

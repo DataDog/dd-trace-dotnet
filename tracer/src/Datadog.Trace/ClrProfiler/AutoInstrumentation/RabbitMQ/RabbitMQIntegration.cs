@@ -129,7 +129,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.Context.MergePathwayContext(pathwayContext);
                 // size of headers is ignored for now
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags, body?.Length ?? 0, basicProperties.Timestamp?.UnixTime ?? 0);
+                span.SetDataStreamsCheckpoint(
+                    dataStreamsManager,
+                    CheckpointKind.Consume,
+                    edgeTags,
+                    body?.Length ?? 0,
+                    basicProperties.Timestamp == null ? 0 : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime);
             }
             catch (Exception ex)
             {

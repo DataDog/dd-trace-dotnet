@@ -131,7 +131,8 @@ internal class DataStreamsManager
                 previousContext = PreviousCheckpoint.Value.Context;
             }
 
-            var edgeStartNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
             var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);
@@ -144,9 +145,9 @@ internal class DataStreamsManager
                     edgeTags: edgeTags,
                     hash: pathwayHash,
                     parentHash: parentHash,
-                    timestampNs: edgeStartNs,
-                    pathwayLatencyNs: edgeStartNs - pathwayStartNs,
-                    edgeLatencyNs: edgeStartNs - (previousContext?.EdgeStart ?? edgeStartNs),
+                    timestampNs: nowNs,
+                    pathwayLatencyNs: nowNs - pathwayStartNs,
+                    edgeLatencyNs: nowNs - (previousContext?.EdgeStart ?? edgeStartNs),
                     payloadSizeBytes));
 
             var pathway = new PathwayContext(
