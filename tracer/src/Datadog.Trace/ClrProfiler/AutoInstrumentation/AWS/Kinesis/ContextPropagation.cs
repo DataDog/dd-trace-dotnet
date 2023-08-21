@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Text;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -28,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            var record = request.Records[0];
+            var record = request.Records[0].DuckCast<IContainsData>();
             InjectTraceIntoData<TRecordsRequest>(record, context);
         }
 
