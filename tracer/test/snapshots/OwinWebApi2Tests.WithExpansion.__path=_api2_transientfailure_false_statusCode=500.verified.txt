@@ -41,7 +41,7 @@ at Samples.AspNetMvc5.Controllers.ConventionsController.TransientFailure(String 
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: CustomTracingExceptionHandler.internal,
+    Name: CustomTracingExceptionHandler.handle-async,
     Resource: CustomTracingExceptionHandler.handle-async,
     Service: Samples.Owin.WebApi2,
     Type: custom,

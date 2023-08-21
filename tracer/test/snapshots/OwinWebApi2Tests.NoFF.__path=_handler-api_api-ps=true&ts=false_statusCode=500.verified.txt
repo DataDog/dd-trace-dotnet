@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: CustomTracingExceptionHandler.internal,
+    Name: CustomTracingExceptionHandler.handle-async,
     Resource: CustomTracingExceptionHandler.handle-async,
     Service: Samples.Owin.WebApi2,
     Type: custom,
