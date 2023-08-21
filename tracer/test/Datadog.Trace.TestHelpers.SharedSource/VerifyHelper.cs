@@ -42,9 +42,24 @@ namespace Datadog.Trace.TestHelpers
         {
             // TODO: Make this more robust
             return path
+                  .Replace(":", "_")
+                  .Replace("\"", "_")
                   .Replace(@"\", "_")
                   .Replace("/", "_")
                   .Replace("?", "-");
+        }
+
+        // seems verify internals use dash
+        public static string SanitisePathsForVerifyWithDash(string path)
+        {
+            return path
+                  .Replace(":", "-")
+                  .Replace("\"", "-")
+                  .Replace(@"\", "-")
+                  .Replace("/", "-")
+                  .Replace("?", "-")
+                  .Replace("<", "-")
+                  .Replace(">", "-");
         }
 
         public static void InitializeGlobalSettings()

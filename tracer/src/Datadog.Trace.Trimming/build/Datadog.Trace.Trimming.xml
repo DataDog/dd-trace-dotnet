@@ -27,6 +27,7 @@
       <type fullname="Microsoft.AspNetCore.Http.PathString" />
       <type fullname="Microsoft.AspNetCore.Http.QueryString" />
       <type fullname="Microsoft.AspNetCore.Http.RequestDelegate" />
+      <type fullname="Microsoft.AspNetCore.Http.WebSocketManager" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Http.Extensions">
       <type fullname="Microsoft.AspNetCore.Http.ResponseExtensions" />

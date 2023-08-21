@@ -88,4 +88,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersions.g.cs" Link="PackageVersions.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestMajors.g.cs" Link="PackageVersionsLatestMajors.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestMinors.g.cs" Link="PackageVersionsLatestMinors.g.cs" />
+    <Compile Include="..\Datadog.Trace.ClrProfiler.IntegrationTests\PackageVersionsLatestSpecific.g.cs" Link="PackageVersionsLatestSpecific.g.cs" />
+  </ItemGroup>
 </Project>
