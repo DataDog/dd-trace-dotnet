@@ -26,7 +26,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             bool ok = true;
             var runtime = process.DotnetRuntime;
             Version? nativeTracerVersion = null;
-            bool isTracingUsingBundle = false;
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -48,11 +47,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (loaderModule == null)
             {
                 AnsiConsole.WriteLine(LoaderNotLoaded);
-            }
-            else
-            {
-                // Checking if the user is using the Datadog.Trace.Bundle to trace their service
-                isTracingUsingBundle = TracingWithBundle(loaderModule);
             }
 
             if (nativeTracerModule == null)
@@ -128,6 +122,35 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
+            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
+
+            bool isTracingUsingBundle = TracingWithBundle(corProfilerPathValue);
+
+            if (isTracingUsingBundle)
+            {
+                AnsiConsole.WriteLine(TracingWithBundle);
+                AnsiConsole.WriteLine(d);
+            }
+            else
+            {
+                AnsiConsole.WriteLine(TracingWithInstaller);
+
+                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
+                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    if (!CheckRegistry(registryService, nativeTracerVersion))
+                    {
+                        ok = false;
+                    }
+                }
+            }
+
+            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
+
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
@@ -146,22 +169,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
-            }
-
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
-
-            if (!isTracingUsingBundle)
-            {
-                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    if (!CheckRegistry(registryService, nativeTracerVersion))
-                    {
-                        ok = false;
-                    }
-                }
             }
 
             if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
@@ -471,9 +478,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string nativeModuleLocation)
+        private static bool TracingWithBundle(string? profilerPathValue)
         {
-            var isBundlePath = false;
+            if (profilerPathValue is null)
+            {
+                return false;
+            }
+
             string[] expectedEndingsForBundleSetup =
             {
                 "/datadog/linux-musl-x64/Datadog.Trace.ClrProfiler.Native.so",
@@ -485,13 +496,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
-                if (nativeModuleLocation.EndsWith(bundleSetupEnding))
+                if (profilerPathValue.EndsWith(bundleSetupEnding))
                 {
                     return true;
                 }
             }
 
-            return isBundlePath;
+            return false;
         }
     }
 }
