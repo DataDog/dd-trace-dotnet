@@ -12,7 +12,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 
-namespace Benchmarks.Trace;
+namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkAgent7]
