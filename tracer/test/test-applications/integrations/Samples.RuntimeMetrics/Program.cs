@@ -56,7 +56,8 @@ namespace Samples.RuntimeMetrics
         {
             while (true)
             {
-                // Do some big allocating etc
+                // Do some big allocating etc to ensure committed memory increases
+                // over time
                 var bigBuffer = new byte[100_000_000];
                 new Random().NextBytes(bigBuffer);
 
