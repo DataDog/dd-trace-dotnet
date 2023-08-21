@@ -26,6 +26,7 @@ namespace Samples.AWS.Kinesis
                 // Ready status.
                 Thread.Sleep(1000);
                 await PutRecordAsync(kinesisClient);
+                await PutRecordsAsync(kinesisClient);
 
                 await DeleteStreamAsync(kinesisClient);
             }
@@ -56,12 +57,20 @@ namespace Samples.AWS.Kinesis
             };
 
             var data = new Dictionary<string, object> { { "name", "Jordan" }, { "lastname", "González Bustamante" }, { "age", 24 } };
-            var jsonString = JsonConvert.SerializeObject(data);
-            var bytes = Encoding.UTF8.GetBytes(jsonString);
-            putRecordRequest.Data = new MemoryStream(bytes);
+            putRecordRequest.Data = Common.DictionaryToMemoryStream(data);
 
             var response = await kinesisClient.PutRecordAsync(putRecordRequest);
             Console.WriteLine($"PutRecordAsync(PutRecordRequest) HTTP status code: {response.HttpStatusCode}");
+        }
+
+        public static async Task PutRecordsAsync(AmazonKinesisClient kinesisClient)
+        {
+            var person = new Dictionary<string, object> { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" } };
+            var pokemon = new Dictionary<string, object> { { "id", "393" }, { "name", "Piplup" }, { "type", "water" } };
+            var putRecordsRequest = new PutRecordsRequest { StreamName = StreamName, Records = new List<PutRecordsRequestEntry> { new PutRecordsRequestEntry { Data = Common.DictionaryToMemoryStream(person), PartitionKey = Guid.NewGuid().ToString() }, new PutRecordsRequestEntry { Data = Common.DictionaryToMemoryStream(pokemon), PartitionKey = Guid.NewGuid().ToString()} } };
+
+            var response = await kinesisClient.PutRecordsAsync(putRecordsRequest);
+            Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) HTTP status code: {response.HttpStatusCode}");
         }
     }
 }
