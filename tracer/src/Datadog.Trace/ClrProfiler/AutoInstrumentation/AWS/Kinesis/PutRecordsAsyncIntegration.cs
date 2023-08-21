@@ -1,4 +1,4 @@
-// <copyright file="PutRecordAsyncIntegration.cs" company="Datadog">
+// <copyright file="PutRecordsAsyncIntegration.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -13,34 +13,34 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 {
     /// <summary>
-    /// AWSSDK.Kinesis PutRecordAsync CallTarget instrumentation
+    /// AWSSDK.Kinesis PutRecordsAsync CallTarget instrumentation
     /// </summary>
     [InstrumentMethod(
         AssemblyName = "AWSSDK.Kinesis",
         TypeName = "Amazon.Kinesis.AmazonKinesisClient",
-        MethodName = "PutRecordAsync",
-        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordResponse]",
-        ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordRequest", ClrNames.CancellationToken },
+        MethodName = "PutRecordsAsync",
+        ReturnTypeName = "System.Threading.Tasks.Task`1[Amazon.Kinesis.Model.PutRecordsResponse]",
+        ParameterTypeNames = new[] { "Amazon.Kinesis.Model.PutRecordsRequest", ClrNames.CancellationToken },
         MinimumVersion = "3.0.0",
         MaximumVersion = "3.*.*",
         IntegrationName = AwsKinesisCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public class PutRecordAsyncIntegration
+    public class PutRecordsAsyncIntegration
     {
-        private const string Operation = "PutRecord";
+        private const string Operation = "PutRecords";
 
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
         /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TPutRecordRequest">Type of the request object</typeparam>
+        /// <typeparam name="TPutRecordsRequest">Type of the request object</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
         /// <param name="request">The request for the Kinesis operation</param>
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TPutRecordRequest>(TTarget instance, TPutRecordRequest request, CancellationToken cancellationToken)
-            where TPutRecordRequest : IPutRecordRequest, IDuckType
+        internal static CallTargetState OnMethodBegin<TTarget, TPutRecordsRequest>(TTarget instance, TPutRecordsRequest request, CancellationToken cancellationToken)
+            where TPutRecordsRequest : IPutRecordsRequest, IDuckType
         {
             if (request.Instance is null)
             {
@@ -52,7 +52,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             if (scope?.Span.Context != null)
             {
-                ContextPropagation.InjectTraceIntoData<TPutRecordRequest>(request, scope.Span.Context);
+                ContextPropagation.InjectTraceIntoRecords<TPutRecordsRequest>(request, scope.Span.Context);
             }
 
             return new CallTargetState(scope);
