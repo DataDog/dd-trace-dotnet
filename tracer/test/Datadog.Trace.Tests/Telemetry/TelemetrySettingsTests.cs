@@ -309,12 +309,32 @@ namespace Datadog.Trace.Tests.Telemetry
 
         [Theory]
         [InlineData("0", false)]
-        [InlineData(null, false)]
-        [InlineData("", false)]
+        [InlineData(null, true)]
+        [InlineData("", true)]
         [InlineData("1", true)]
-        public void MetricsEnabled_DisabledByDefault(string value, bool expected)
+        public void V2Enabled_DisabledByDefaultInAas(string value, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, value), (ConfigurationKeys.Telemetry.V2Enabled, "1"));
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
+                (ConfigurationKeys.Telemetry.V2Enabled, value));
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
+
+            settings.V2Enabled.Should().Be(expected);
+        }
+
+        [Theory]
+        [InlineData("0", false, false)]
+        [InlineData(null, false, false)]
+        [InlineData("", false, false)]
+        [InlineData("0", true, false)]
+        [InlineData(null, true, true)] // enabled by default if v2 enabled
+        [InlineData("", true, true)]
+        [InlineData("1", true, true)]
+        public void MetricsEnabled_HasCorrectDefaultValue(string metricSettingValue, bool v2Enabled, bool expected)
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.Telemetry.MetricsEnabled, metricSettingValue),
+                (ConfigurationKeys.Telemetry.V2Enabled, v2Enabled ? "1" : "0"));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
 
             settings.MetricsEnabled.Should().Be(expected);
@@ -322,14 +342,12 @@ namespace Datadog.Trace.Tests.Telemetry
         }
 
         [Fact]
-        public void MetricsEnabled_CannotEnableIfV2Disabled()
+        public void MetricsEnabled_TryingToEnableWhenV2DisabledIsConfigError()
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.Telemetry.MetricsEnabled, "1"),
-                (ConfigurationKeys.Telemetry.V2Enabled, "0"));
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, "1"), (ConfigurationKeys.Telemetry.V2Enabled, "0"));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true);
 
-            settings.MetricsEnabled.Should().BeFalse();
+            settings.MetricsEnabled.Should().Be(false);
             settings.ConfigurationError.Should().NotBeNullOrEmpty();
         }
     }
