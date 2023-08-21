@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -45,6 +46,15 @@ internal static class StackWalker
         foreach (var frame in stackTrace.GetFrames())
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
+
+            foreach (var excludeType in ExcludeSpanGenerationTypes)
+            {
+                if (excludeType == declaringType?.FullName)
+                {
+                    return new StackFrameInfo(null, false);
+                }
+            }
+
             if (ExcludeSpanGenerationTypes.Contains(declaringType?.FullName))
             {
                 return new StackFrameInfo(null, false);
@@ -81,14 +91,14 @@ internal static class StackWalker
         {
             if (assemblyToSkip.EndsWith("*"))
             {
-                if (assembly.StartsWith(assemblyToSkip.Substring(0, assemblyToSkip.Length - 1)))
+                if (assembly.StartsWith(assemblyToSkip.Substring(0, assemblyToSkip.Length - 1), StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
             else
             {
-                if (assemblyToSkip == assembly)
+                if (assemblyToSkip.Equals(assembly, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
