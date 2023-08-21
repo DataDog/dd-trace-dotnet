@@ -40,6 +40,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             Inject<TRecordRequest>(record, context);
         }
 
+        private static void Inject<TRecord>(IContainsData record, SpanContext context)
+        {
+            var jsonData = ParseDataObject(record.Data);
+            if (jsonData is null || jsonData.Count == 0)
+            {
+                return;
+            }
+
+            var propagatedContext = new Dictionary<string, string>();
+            SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+            jsonData[KinesisKey] = propagatedContext;
+
+            try
+            {
+                record.Data = DictionaryToMemoryStream(jsonData);
+            }
+            catch (Exception)
+            {
+                Log.Debug("Unable to inject trace context to Kinesis data.");
+            }
+        }
+
+        private static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
+        {
+            try
+            {
+                return MemoryStreamToDictionary(dataStream);
+            }
+            catch (Exception)
+            {
+                Log.Debug("Unable to parse Kinesis data. Trace context will not be injected.");
+            }
+
+            return null;
+        }
+
         public static Dictionary<string, object> MemoryStreamToDictionary(MemoryStream stream)
         {
             // Convert the MemoryStream to a string
@@ -64,43 +100,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             // Reset the stream position before using it
             memoryStream.Position = 0;
             return memoryStream;
-        }
-
-        private static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
-        {
-            try
-            {
-                return MemoryStreamToDictionary(dataStream);
-            }
-            catch (Exception)
-            {
-                Log.Debug("Unable to parse Kinesis data. Trace context will not be injected.");
-            }
-
-            return null;
-        }
-
-        private static void Inject<TRecord>(IContainsData record, SpanContext context)
-        {
-            var jsonData = ParseDataObject(record.Data);
-            if (jsonData is null || jsonData.Count == 0)
-            {
-                return;
-            }
-
-            var propagatedContext = new Dictionary<string, string>();
-            SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
-            jsonData[KinesisKey] = propagatedContext;
-
-            try
-            {
-                record.Data = DictionaryToMemoryStream(jsonData);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine(e);
-                throw;
-            }
         }
     }
 }
