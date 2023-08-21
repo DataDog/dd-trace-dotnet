@@ -128,10 +128,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
             if (message.Headers != null)
             {
-                foreach (var header in message.Headers)
+                for (var i = 0; i < message.Headers.Count; i++)
                 {
+                    var header = message.Headers[i];
                     size += Encoding.UTF8.GetByteCount(header.Key);
-                    size += header.GetValueBytes().Length;
+                    var value = header.GetValueBytes();
+                    if (value != null)
+                    {
+                        size += value.Length;
+                    }
                 }
             }
 

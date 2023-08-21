@@ -10,8 +10,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     /// <summary>
     /// Headers interface for duck-typing
     /// </summary>
-    internal interface IHeaders : IEnumerable<IHeader>
+    internal interface IHeaders
     {
+        /// <summary>
+        /// Gets number of headers
+        /// </summary>
+        public int Count { get; }
+
+        /// <summary>
+        /// Gets the header at the specified index
+        /// </summary>
+        public IHeader this[int index] { get;  }
+
         /// <summary>
         /// Adds a header to the collection
         /// </summary>
