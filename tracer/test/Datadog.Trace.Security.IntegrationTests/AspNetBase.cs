@@ -130,9 +130,49 @@ namespace Datadog.Trace.Security.IntegrationTests
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
-            await Verifier.Verify(spans, settings)
-                          .UseMethodName(methodNameOverride ?? "_")
-                          .UseTypeName(testName ?? GetTestName());
+            await VerifySpansNoMethodNameSettings(spans, settings, testInit)
+                 .UseMethodName(methodNameOverride ?? "_")
+                 .UseTypeName(testName ?? GetTestName());
+        }
+
+        public SettingsTask VerifySpansNoMethodNameSettings(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
+        {
+            settings.ModifySerialization(
+                serializationSettings =>
+                {
+                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
+                        sp => sp.Tags,
+                        (target, value) =>
+                        {
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            {
+                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                            }
+
+                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
+                        });
+                });
+            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
+            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
+            if (!testInit)
+            {
+                settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
+                settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
+
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            if (appsecSpans.Any())
+            {
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
+            }
+
+            // Overriding the type name here as we have multiple test classes in the file
+            // Ensures that we get nice file nesting in Solution Explorer
+            return Verifier.Verify(spans, settings);
         }
 
         protected void SetClientIp(string ip)

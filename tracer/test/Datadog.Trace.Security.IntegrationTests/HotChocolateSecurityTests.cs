@@ -5,8 +5,12 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.IntegrationTests;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -15,34 +19,47 @@ namespace Datadog.Trace.Security.IntegrationTests
 {
     public class HotChocolateSecurityTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
     {
-        private readonly AspNetCoreTestFixture fixture;
+        private static readonly string[] _garphQlQueries =
+        {
+            @"{""query"":""query Book{book{title author{name}}}""}",
+            @"{""query"":""query Book{book(name: \""<script>test\""){title author{name}}}""}",
+            @"{""query"":""query Book{book{title author{name}}} query Book{book(name: \""<script>test\""){title author{name}}}""}",
+            @"{""query"":""query Book{book(badArray: [\""hello world\"", true, 5, \""<script>test\""]){title author{name}}}""}",
+            @"{""query"":""query Book{book(badObject: { title: \""<script>test\"" }){title author{name}}}""}",
+            @"{""query"":""query Book{testAlias: book(name: \""<script>test\""){title author{name}}}""}",
+            @"{""query"":""query Book($name: String!){book(name: $name){title author{name}}}"", ""variables"": { ""name"": ""<script>test""}}",
+        };
+
+        private readonly AspNetCoreTestFixture _fixture;
 
         public HotChocolateSecurityTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
             : base("HotChocolate", outputHelper, "/shutdown", samplesDir: "test/test-applications/integrations", changeDefaults: true)
         {
-            this.fixture = fixture;
-            this.fixture.SetOutput(outputHelper);
+            _fixture = fixture;
+            _fixture.SetOutput(outputHelper);
         }
+
+        public static IEnumerable<object[]> TestData =>
+            from packageVersionArray in
+                EnvironmentTools.IsWindows()
+                    ? new[] { new object[] { string.Empty } }
+                    : PackageVersions.HotChocolate
+            from query in _garphQlQueries
+            select new[] { packageVersionArray[0], query };
 
         public override void Dispose()
         {
             base.Dispose();
-            fixture.SetOutput(null);
+            _fixture.SetOutput(null);
         }
 
         [SkippableTheory]
-        [InlineData(@"{""query"":""query Book{book{title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book{book(name: \""<script>test\""){title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book{book{title author{name}}} query Book{book(name: \""<script>test\""){title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book{book(badArray: [\""hello world\"", true, 5, \""<script>test\""]){title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book{book(badObject: { title: \""<script>test\"" }){title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book{testAlias: book(name: \""<script>test\""){title author{name}}}""}")]
-        [InlineData(@"{""query"":""query Book($name: String!){book(name: $name){title author{name}}}"", ""variables"": { ""name"": ""<script>test""}}")]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
+        public async Task TestQuerySecurity(string packageVersion, string query)
         {
-            await fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile);
-            SetHttpPort(fixture.HttpPort);
+            await _fixture.TryStartApp(this, enableSecurity: true, externalRulesFile: DefaultRuleFile, packageVersion: packageVersion);
+            SetHttpPort(_fixture.HttpPort);
 
             var settings = VerifyHelper.GetSpanVerifierSettings(query);
 
@@ -50,7 +67,10 @@ namespace Datadog.Trace.Security.IntegrationTests
             // So we change it to application/graphql-response+json to match the newer version
             settings.AddSimpleScrubber("http.response.headers.content-type: application/json; charset=utf-8", "http.response.headers.content-type: application/graphql-response+json; charset=utf-8");
 
-            await TestAppSecRequestWithVerifyAsync(fixture.Agent, "/graphql", query, 1, 1, settings);
+            var spans = await SendRequestsAsync(_fixture.Agent, "/graphql", query, 1, 1, string.Empty);
+            await VerifySpansNoMethodNameSettings(spans, settings)
+                 .UseFileName($"{GetTestName()}.__query={VerifyHelper.SanitisePathsForVerifyWithDash(query)}")
+                 .DisableRequireUniquePrefix(); // all package versions should be the same
         }
     }
 }
