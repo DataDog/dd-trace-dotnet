@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -124,6 +125,30 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var contentionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.threads.contention_count"));
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+            // these values shouldn't stay the same
+            var memoryRequests = requests
+                                .Where(r => r.Contains(MetricsNames.CommittedMemory))
+                                .Select(
+                                     r =>
+                                     {
+                                         // parse to find the memory
+                                         var startIndex = r.IndexOf(MetricsNames.CommittedMemory, StringComparison.Ordinal);
+                                         var separator = r.IndexOf(':', startIndex + 1);
+                                         var endIndex = r.IndexOf('|', separator + 1);
+                                         var name = r.Substring(startIndex, separator - startIndex);
+                                         name.Should().Be(MetricsNames.CommittedMemory);
+                                         var value = long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
+                                         value.Should().BeGreaterThan(0);
+                                         return value;
+                                     })
+                                .ToList();
+
+            if (memoryRequests.Count >= 2)
+            {
+                // skip the case where we only get one metric for some reason
+                memoryRequests.Distinct().Should().HaveCount(memoryRequests.Count);
             }
 
             Assert.Empty(agent.Exceptions);
