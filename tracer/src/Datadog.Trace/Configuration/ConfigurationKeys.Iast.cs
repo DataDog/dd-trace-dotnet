@@ -79,6 +79,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="IastSettings.RedactionRegexTimeout"/>
             public const string RedactionRegexTimeout = "DD_IAST_REDACTION_REGEXP_TIMEOUT";
+
+            /// <summary>
+            /// Configuration key for IAST verbosity.
+            /// Default value is INFORMATION
+            /// </summary>
+            public const string IastVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
         }
     }
 }
