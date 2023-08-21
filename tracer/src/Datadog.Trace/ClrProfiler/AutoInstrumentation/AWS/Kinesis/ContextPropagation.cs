@@ -4,11 +4,8 @@
 // </copyright>
 
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.IO;
-using System.Runtime.Serialization.Formatters.Binary;
-using System.Text;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -46,12 +43,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         public static Dictionary<string, object> MemoryStreamToDictionary(MemoryStream stream)
         {
             // Convert the MemoryStream to a string
-            var reader = new StreamReader(stream);
+            var streamReader = new StreamReader(stream);
+            var reader = new JsonTextReader(streamReader);
+            var serializer = new JsonSerializer();
 
             // Deserialize the JSON string into a Dictionary<string, object>
-            var dataDict = JsonConvert.DeserializeObject<Dictionary<string, object>>(reader.ReadToEnd());
+            // JSON size doesn't matter because only a small piece is read
+            // at a time from the stream.
+            return serializer.Deserialize<Dictionary<string, object>>(reader);
+        }
 
-            return dataDict;
+        public static MemoryStream DictionaryToMemoryStream(Dictionary<string, object> dictionary)
+        {
+            var memoryStream = new MemoryStream();
+            var writer = new StreamWriter(memoryStream);
+            var serializer = new JsonSerializer();
+            serializer.Serialize(writer, dictionary);
+            writer.Flush();
+
+            // Reset the stream position before using it
+            memoryStream.Position = 0;
+            return memoryStream;
         }
 
         private static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
@@ -82,10 +94,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                // TODO: serializer to write bytes directly to new memory stream
-                var jsonString = JsonConvert.SerializeObject(jsonData);
-                var bytes = Encoding.UTF8.GetBytes(jsonString);
-                record.Data = new MemoryStream(bytes);
+                record.Data = DictionaryToMemoryStream(jsonData);
             }
             catch (Exception e)
             {
