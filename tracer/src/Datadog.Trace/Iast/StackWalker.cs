@@ -20,21 +20,21 @@ internal static class StackWalker
     {
         "Datadog.Trace",
         "Dapper",
-        "Dapper.*",
+        "Dapper.",
         "EntityFramework",
-        "EntityFramework.*",
+        "EntityFramework.",
         "linq2db",
-        "Microsoft.*",
-        "MySql.*",
+        "Microsoft.",
+        "MySql.",
         "MySqlConnector",
         "mscorlib",
         "netstandard",
         "Npgsql",
-        "Oracle.*",
+        "Oracle.",
         "RestSharp",
         "System",
-        "System.*",
-        "xunit.*",
+        "System.",
+        "xunit.",
     };
 
     private static readonly Dictionary<string, bool> ExcludedAssemblyCache = new Dictionary<string, bool>();
@@ -83,22 +83,26 @@ internal static class StackWalker
         return excluded;
     }
 
-    // For performance reasons, we are not supporting wildcards fully. We just need to use '*' at the end for now. We can use regular expressions
+    // For performance reasons, we are not supporting wildcards fully. We just need to use '.' at the end for now. We can use regular expressions
     // if in the future we need a more sophisticated wildcard support
     private static bool IsExcluded(string assembly)
     {
         foreach (var assemblyToSkip in AssemblyNamesToSkip)
         {
-            if (assemblyToSkip.EndsWith("*"))
+#if NETCOREAPP3_1_OR_GREATER
+            if (assemblyToSkip.EndsWith('.'))
+#else
+            if (assemblyToSkip.EndsWith("."))
+#endif
             {
-                if (assembly.StartsWith(assemblyToSkip.Substring(0, assemblyToSkip.Length - 1), StringComparison.OrdinalIgnoreCase))
+                if (assembly.StartsWith(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
             else
             {
-                if (assemblyToSkip.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                if (assembly.Equals(assemblyToSkip, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
