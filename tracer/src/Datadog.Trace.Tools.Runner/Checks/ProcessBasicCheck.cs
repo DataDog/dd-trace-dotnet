@@ -130,8 +130,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (isTracingUsingBundle)
             {
-                AnsiConsole.WriteLine(TracingWithBundle);
-                AnsiConsole.WriteLine(d);
+                AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
             }
             else
             {
