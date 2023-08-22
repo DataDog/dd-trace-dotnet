@@ -133,6 +133,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                 .Select(
                                      r =>
                                      {
+                                         _output.WriteLine($"Parsing metrics from {r}");
                                          // parse to find the memory
                                          var startIndex = r.IndexOf(MetricsNames.CommittedMemory, StringComparison.Ordinal);
                                          var separator = r.IndexOf(':', startIndex + 1);
