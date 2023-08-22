@@ -103,6 +103,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
+            // dumping the metrics for debugging purposes
+            _output.WriteLine("Received requests:");
+            foreach (var request in requests)
+            {
+                _output.WriteLine(request);
+            }
 
             // Check if we receive 2 kinds of metrics:
             // - exception count is gathered using common .NET APIs
