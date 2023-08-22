@@ -139,7 +139,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 var nestedClassScopes = GetNestedNotCompileGeneratedClassScope(type);
 
-                var overallCount = (methodScopes?.Length ?? 0 + nestedClassScopes?.Length ?? 0);
+                var overallCount = (methodScopes?.Length ?? 0) + (nestedClassScopes?.Length ?? 0);
 
                 var allScopes = overallCount == 0 ? null : new Model.Scope[overallCount];
 
@@ -150,7 +150,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 if (nestedClassScopes?.Length > 0)
                 {
-                    Array.Copy(nestedClassScopes, 0, allScopes!, methodScopes?.Length ?? 0, nestedClassScopes.Length);
+                    Array.Copy(nestedClassScopes, 0, allScopes!, (methodScopes?.Length - 1) ?? 0, nestedClassScopes.Length);
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
