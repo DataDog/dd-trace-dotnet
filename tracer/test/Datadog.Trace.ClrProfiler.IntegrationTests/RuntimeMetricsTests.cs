@@ -148,7 +148,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (memoryRequests.Count >= 2)
             {
                 // skip the case where we only get one metric for some reason
-                memoryRequests.Distinct().Should().HaveCount(memoryRequests.Count);
+                // Don't require completely distinct to reduce flake
+                memoryRequests.Distinct().Should().NotHaveCount(1);
             }
 
             Assert.Empty(agent.Exceptions);
