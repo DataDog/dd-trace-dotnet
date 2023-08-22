@@ -127,28 +127,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
 
-            // these values shouldn't stay the same
-            var memoryRequests = requests
-                                .Where(r => r.Contains(MetricsNames.CommittedMemory))
-                                .Select(
-                                     r =>
-                                     {
-                                         _output.WriteLine($"Parsing metrics from {r}");
-                                         // parse to find the memory
-                                         var startIndex = r.IndexOf(MetricsNames.CommittedMemory, StringComparison.Ordinal);
-                                         var separator = r.IndexOf(':', startIndex + 1);
-                                         var endIndex = r.IndexOf('|', separator + 1);
-                                         var name = r.Substring(startIndex, separator - startIndex);
-                                         name.Should().Be(MetricsNames.CommittedMemory);
-                                         return long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
-                                     })
-                                .ToList();
+            // https://github.com/dotnet/runtime/issues/23284
+            var runtimeIsBuggy = !EnvironmentTools.IsWindows()
+                              && (Environment.Version is { Major: 3, Minor: 0 } || Environment.Version.Major < 3);
 
-            if (memoryRequests.Count >= 2)
+            if (!runtimeIsBuggy)
             {
-                // skip the case where we only get one metric for some reason
-                // Don't require completely distinct to reduce flake
-                memoryRequests.Distinct().Should().NotHaveCount(1);
+                // these values shouldn't stay the same
+                var memoryRequests = requests
+                                    .Where(r => r.Contains(MetricsNames.CommittedMemory))
+                                    .Select(
+                                         r =>
+                                         {
+                                             _output.WriteLine($"Parsing metrics from {r}");
+                                             // parse to find the memory
+                                             var startIndex = r.IndexOf(MetricsNames.CommittedMemory, StringComparison.Ordinal);
+                                             var separator = r.IndexOf(':', startIndex + 1);
+                                             var endIndex = r.IndexOf('|', separator + 1);
+                                             var name = r.Substring(startIndex, separator - startIndex);
+                                             name.Should().Be(MetricsNames.CommittedMemory);
+                                             return long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
+                                         })
+                                    .ToList();
+
+                if (memoryRequests.Count >= 2)
+                {
+                    // skip the case where we only get one metric for some reason
+                    // Don't require completely distinct to reduce flake
+                    memoryRequests.Distinct().Should().NotHaveCount(1);
+                }
             }
 
             Assert.Empty(agent.Exceptions);
