@@ -170,38 +170,47 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
-            if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
+            // Running non-blocker checks after confirming setup was done correctly
+            if (ok)
             {
-                if (!ParseBooleanConfigurationValue(traceEnabledValue))
+                if (runtime == ProcessInfo.Runtime.NetCore)
                 {
-                    Utils.WriteError(TracerNotEnabled(traceEnabledValue));
+                    NoManageCodeClrVersionIis(process);
                 }
-            }
 
-            bool isContinuousProfilerEnabled;
-
-            if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
-            {
-                if (ParseBooleanConfigurationValue(profilingEnabled))
+                if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
-                    AnsiConsole.WriteLine(ContinuousProfilerEnabled);
-                    isContinuousProfilerEnabled = true;
+                    if (!ParseBooleanConfigurationValue(traceEnabledValue))
+                    {
+                        Utils.WriteError(TracerNotEnabled(traceEnabledValue));
+                    }
+                }
+
+                bool isContinuousProfilerEnabled;
+
+                if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
+                {
+                    if (ParseBooleanConfigurationValue(profilingEnabled))
+                    {
+                        AnsiConsole.WriteLine(ContinuousProfilerEnabled);
+                        isContinuousProfilerEnabled = true;
+                    }
+                    else
+                    {
+                        AnsiConsole.WriteLine(ContinuousProfilerDisabled);
+                        isContinuousProfilerEnabled = false;
+                    }
                 }
                 else
                 {
-                    AnsiConsole.WriteLine(ContinuousProfilerDisabled);
+                    AnsiConsole.WriteLine(ContinuousProfilerNotSet);
                     isContinuousProfilerEnabled = false;
                 }
-            }
-            else
-            {
-                AnsiConsole.WriteLine(ContinuousProfilerNotSet);
-                isContinuousProfilerEnabled = false;
-            }
 
-            if (isContinuousProfilerEnabled)
-            {
-                ok &= CheckContinuousProfiler(process, loaderModule);
+                if (isContinuousProfilerEnabled)
+                {
+                    ok &= CheckContinuousProfiler(process, loaderModule);
+                }
             }
 
             return ok;
@@ -495,13 +504,39 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
-                if (profilerPathValue.EndsWith(bundleSetupEnding))
+                if (profilerPathValue.EndsWith(bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
                 {
                     return true;
                 }
             }
 
             return false;
+        }
+
+        private static void NoManageCodeClrVersionIis(ProcessInfo process)
+        {
+            var runningDotnetOnIis = false;
+            var clrDllInModules = false;
+
+            foreach (var module in process.Modules)
+            {
+                var fileName = Path.GetFileName(module);
+
+                if (fileName.Equals("Microsoft.AspNetCore.Server.IIS.dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    AnsiConsole.WriteLine(TracingDotnetOnIis);
+                    runningDotnetOnIis = true;
+                }
+                else if (fileName.Equals("clr.dll", StringComparison.OrdinalIgnoreCase))
+                {
+                    clrDllInModules = true;
+                }
+            }
+
+            if (runningDotnetOnIis & clrDllInModules)
+            {
+                Utils.WriteWarning(TracingDotnetOnIisWithClr);
+            }
         }
     }
 }
