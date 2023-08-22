@@ -48,12 +48,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
                 return;
             }
 
-            var propagatedContext = new Dictionary<string, string>();
-            SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
-            jsonData[KinesisKey] = propagatedContext;
-
             try
             {
+                var propagatedContext = new Dictionary<string, string>();
+                SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
+                jsonData[KinesisKey] = propagatedContext;
                 record.Data = DictionaryToMemoryStream(jsonData);
             }
             catch (Exception)
@@ -62,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
         }
 
-        private static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
+        internal static Dictionary<string, object> ParseDataObject(MemoryStream dataStream)
         {
             try
             {
