@@ -131,7 +131,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var runtimeIsBuggy = !EnvironmentTools.IsWindows()
                               && (Environment.Version is { Major: 3, Minor: 0 } || Environment.Version.Major < 3);
 
-            if (!runtimeIsBuggy)
+            if (runtimeIsBuggy)
+            {
+                requests.Should().NotContain(s => s.Contains(MetricsNames.CommittedMemory));
+            }
+            else
             {
                 // these values shouldn't stay the same
                 var memoryRequests = requests
