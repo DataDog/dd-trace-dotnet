@@ -127,10 +127,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }
 
+// using #if so it's a different test to the one we use in RuntimeMetricsWriter
+#if NETFRAMEWORK || NETCOREAPP3_1_OR_GREATER
+            var runtimeIsBuggy = false;
+#else
             // https://github.com/dotnet/runtime/issues/23284
-            var runtimeIsBuggy = !EnvironmentTools.IsWindows()
-                              && (Environment.Version is { Major: 3, Minor: 0 } || Environment.Version.Major < 3);
-
+            var runtimeIsBuggy = !EnvironmentTools.IsWindows();
+#endif
             if (runtimeIsBuggy)
             {
                 requests.Should().NotContain(s => s.Contains(MetricsNames.CommittedMemory));

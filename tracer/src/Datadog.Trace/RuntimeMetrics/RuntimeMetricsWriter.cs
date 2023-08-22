@@ -35,10 +35,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private readonly bool _enableProcessMetrics;
 #if NETSTANDARD
-        // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0
+        // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
         // https://github.com/dotnet/runtime/issues/23284
-        private readonly bool _enableProcessMemory = FrameworkDescription.Instance.IsWindows()
-                                                  || Environment.Version is not { Major: 3, Minor: 0 } and not { Major: < 3 };
+        private readonly bool _enableProcessMemory = false;
 #endif
 
         private readonly ConcurrentDictionary<string, int> _exceptionCounts = new ConcurrentDictionary<string, int>();
@@ -74,6 +73,19 @@ namespace Datadog.Trace.RuntimeMetrics
                 _previousSystemCpu = systemCpu;
 
                 _enableProcessMetrics = true;
+#if NETSTANDARD
+                // In .NET Core <3.1 on non-Windows, Process.PrivateMemorySize64 returns 0, so we disable this.
+                // https://github.com/dotnet/runtime/issues/23284
+                _enableProcessMemory = FrameworkDescription.Instance switch
+                {
+                    { } x when x.IsWindows() => true, // Works on Windows
+                    { } x when !x.IsCoreClr() => true, // Works on .NET Framework
+                    _ when Environment.Version is { Major: >= 5 } => true, // Works on .NET 5 and above
+                    _ when Environment.Version is { Major: 3, Minor: > 0 } => true, // 3.1 works
+                    _ when Environment.Version is { Major: 3, Minor: 0 } => false, // 3.0 is broken on linux
+                    _ => false, // everything else (i.e. <.NET Core 3.0) is broken
+                };
+#endif
             }
             catch (Exception ex)
             {
