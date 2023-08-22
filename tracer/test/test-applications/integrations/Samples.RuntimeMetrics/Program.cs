@@ -18,6 +18,7 @@ namespace Samples.RuntimeMetrics
 
             Monitor.Enter(SyncRoot);
 
+            new Thread(GenerateMemoryPressure) { IsBackground = true }.Start();
             new Thread(GenerateEvents) { IsBackground = true }.Start();
 
             /*
@@ -47,7 +48,20 @@ namespace Samples.RuntimeMetrics
                 }
 
                 // Sleep for 500ms while creating contention
-                Monitor.TryEnter(SyncRoot, 500);                
+                Monitor.TryEnter(SyncRoot, 500);
+            }
+        }
+
+        private static void GenerateMemoryPressure()
+        {
+            while (true)
+            {
+                // Do some big allocating etc to ensure committed memory increases
+                // over time
+                var bigBuffer = new byte[100_000_000];
+                new Random().NextBytes(bigBuffer);
+
+                Thread.Sleep(5_000);
             }
         }
     }
