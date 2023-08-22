@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 
@@ -12,46 +14,30 @@ namespace Datadog.Trace.Iast;
 
 internal static class StackWalker
 {
-    public static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument", "System.Security.IdentityHelper" };
-    public static readonly string[] AssemblyNamesToSkip =
+    private const int DefaultSkipFrames = 2;
+    private static readonly string[] ExcludeSpanGenerationTypes = { "Datadog.Trace.Debugger.Helpers.StringExtensions", "Microsoft.AspNetCore.Razor.Language.StreamSourceDocument", "System.Security.IdentityHelper" };
+    private static readonly string[] AssemblyNamesToSkip =
     {
         "Datadog.Trace",
         "Dapper",
-        "Dapper.StrongName",
+        "Dapper.*",
         "EntityFramework",
-        "EntityFramework.SqlServer",
+        "EntityFramework.*",
         "linq2db",
-        "Microsoft.Data.SqlClient",
-        "Microsoft.Data.Sqlite",
-        "MySql.Data",
+        "Microsoft.*",
+        "MySql.*",
         "MySqlConnector",
         "mscorlib",
+        "netstandard",
         "Npgsql",
-        "Oracle.DataAccess",
-        "Oracle.ManagedDataAccess",
+        "Oracle.*",
         "RestSharp",
         "System",
-        "System.Configuration.ConfigurationManager",
-        "System.Core",
-        "System.Data",
-        "System.Data.Common",
-        "System.Data.SqlClient",
-        "System.Data.SQLite",
-        "System.Diagnostics.Process",
-        "System.Linq",
-        "System.Net.Security",
-        "System.Net.WebSockets",
-        "System.Private.CoreLib",
-        "System.Security.Cryptography",
-        "System.Security.Cryptography.Algorithms",
-        "System.Security.Cryptography.Csp",
-        "System.Security.Cryptography.Primitives",
-        "System.Security.Cryptography.X509Certificates",
-        "xunit.runner.visualstudio.dotnetcore.testadapter",
-        "xunit.runner.visualstudio.testadapter"
+        "System.*",
+        "xunit.*",
     };
 
-    private const int DefaultSkipFrames = 2;
+    private static readonly Dictionary<string, bool> ExcludedAssemblyCache = new Dictionary<string, bool>();
 
     public static StackFrameInfo GetFrame()
     {
@@ -60,18 +46,65 @@ internal static class StackWalker
         foreach (var frame in stackTrace.GetFrames())
         {
             var declaringType = frame?.GetMethod()?.DeclaringType;
+
+            foreach (var excludeType in ExcludeSpanGenerationTypes)
+            {
+                if (excludeType == declaringType?.FullName)
+                {
+                    return new StackFrameInfo(null, false);
+                }
+            }
+
             if (ExcludeSpanGenerationTypes.Contains(declaringType?.FullName))
             {
                 return new StackFrameInfo(null, false);
             }
 
             var assembly = declaringType?.Assembly.GetName().Name;
-            if (assembly != null && !AssemblyNamesToSkip.Contains(assembly))
+            if (assembly != null && !AssemblyExcluded(assembly))
             {
                 return new StackFrameInfo(frame, true);
             }
         }
 
         return new StackFrameInfo(null, true);
+    }
+
+    public static bool AssemblyExcluded(string assembly)
+    {
+        if (ExcludedAssemblyCache.TryGetValue(assembly, out bool excluded))
+        {
+            return excluded;
+        }
+
+        excluded = IsExcluded(assembly);
+        ExcludedAssemblyCache[assembly] = excluded;
+
+        return excluded;
+    }
+
+    // For performance reasons, we are not supporting wildcards fully. We just need to use '*' at the end for now. We can use regular expressions
+    // if in the future we need a more sophisticated wildcard support
+    private static bool IsExcluded(string assembly)
+    {
+        foreach (var assemblyToSkip in AssemblyNamesToSkip)
+        {
+            if (assemblyToSkip.EndsWith("*"))
+            {
+                if (assembly.StartsWith(assemblyToSkip.Substring(0, assemblyToSkip.Length - 1), StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+            else
+            {
+                if (assemblyToSkip.Equals(assembly, StringComparison.OrdinalIgnoreCase))
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 }
