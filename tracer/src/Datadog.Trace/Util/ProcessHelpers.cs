@@ -70,8 +70,12 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
+#if  NETSTANDARD
+            var process = Process.GetCurrentProcess();
+#else
             var process = CurrentProcess.Instance;
             process.Refresh();
+#endif
             userProcessorTime = process.UserProcessorTime;
             systemCpuTime = process.PrivilegedProcessorTime;
             threadCount = process.Threads.Count;
