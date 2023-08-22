@@ -23,16 +23,16 @@ namespace UpdateVendors
         {
             Add(
                 libraryName: "Serilog",
-                version: "2.10.0",
-                downloadUrl: "https://github.com/serilog/serilog/archive/v2.10.0.zip",
-                pathToSrc: new[] { "serilog-2.10.0", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+                version: "3.0.1",
+                downloadUrl: "https://github.com/serilog/serilog/archive/v3.0.1.zip",
+                pathToSrc: new[] { "serilog-3.0.1", "src", "Serilog" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform));
 
             Add(
                 libraryName: "Serilog.Sinks.File",
-                version: "4.1.0",
-                downloadUrl: "https://github.com/serilog/serilog-sinks-file/archive/v4.1.0.zip",
-                pathToSrc: new[] { "serilog-sinks-file-4.1.0", "src", "Serilog.Sinks.File" },
+                version: "5.0.0",
+                downloadUrl: "https://github.com/serilog/serilog-sinks-file/archive/v5.0.0.zip",
+                pathToSrc: new[] { "serilog-sinks-file-5.0.0", "src", "Serilog.Sinks.File" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
 
             Add(
