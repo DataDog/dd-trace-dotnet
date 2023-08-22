@@ -32,9 +32,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
-
-        public const string TracingWithBundleProfilerPath = "Tracing with Datadog.Trace.Bundle nuget, configuration(CORECLR_PROFILER_PATH or COR_PROFILER_PATH) was found for this service: https://github.com/DataDog/dd-trace-dotnet/blob/master/docs/Datadog.Trace.Bundle/README.md#getting-started";
-        public const string TracingWithInstaller = "Configuration expected when tracing with Datadog.Trace.Bundle nuget not found, running installer tracer check.";
+        https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer
+        public const string TracingWithBundleProfilerPath = "Tracing with Datadog.Trace.Bundle nuget, configuration(CORECLR_PROFILER_PATH or COR_PROFILER_PATH) was found for this service: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
+        public const string TracingWithInstaller = "Tracing with Installer/MSI, nuget configuration not found: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=containers#install-the-tracer";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
