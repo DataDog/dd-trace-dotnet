@@ -125,12 +125,12 @@ public class ContextPropagationTests
     [Fact]
     public void MemoryStreamToDictionary_WithJsonString_ReturnsDictionary()
     {
-        // JsonString
+        // JSON string
         var personMemoryStream = new MemoryStream(PersonJsonStringBytes);
         var personDictionary = ContextPropagation.MemoryStreamToDictionary(personMemoryStream);
         personDictionary.Should().BeEquivalentTo(PersonDictionary);
 
-        // Base64 JsonString
+        // Base64 JSON string
         var encodedPersonMemoryStream = new MemoryStream(PersonBase64StringBytes);
         personDictionary = ContextPropagation.MemoryStreamToDictionary(encodedPersonMemoryStream);
         personDictionary.Should().BeEquivalentTo(PersonDictionary);
@@ -139,7 +139,17 @@ public class ContextPropagationTests
     [Fact]
     public void MemoryStreamToDictionary_WithNonJsonString_ThrowsException()
     {
+        // Anything that is not a JSON string, will throw an error
         var streamNameMemoryStream = new MemoryStream(StreamNameBytes);
         Assert.ThrowsAny<Exception>(() => ContextPropagation.MemoryStreamToDictionary(streamNameMemoryStream));
+    }
+
+    [Fact]
+    public void DictionaryToMemoryStream_ReturnsMemoryStream()
+    {
+        var personMemoryStream = ContextPropagation.DictionaryToMemoryStream(PersonDictionary);
+        personMemoryStream.Should().NotBeNull();
+
+        ContextPropagation.MemoryStreamToDictionary(personMemoryStream).Should().BeEquivalentTo(PersonDictionary);
     }
 }
