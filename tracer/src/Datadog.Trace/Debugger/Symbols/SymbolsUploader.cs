@@ -73,7 +73,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             if (api is not NoOpSymbolBatchUploadApi &&
                (settings.SymbolDatabaseUploadEnabled ||
-                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false").ToBoolean() ?? false)))
+                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false)))
             {
                 return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceName);
             }
@@ -235,14 +235,14 @@ namespace Datadog.Trace.Debugger.Symbols
 
         private void FinalizeSymbolForSend(Root root, StringBuilder sb)
         {
-            const string classScopeString = "\"scopes\":[]";
+            const string classScopeString = "\"scopes\":null";
 
-            var rootAsString = JsonConvert.SerializeObject(root, _jsonSerializerSettings);
+            var rootAsString = JsonConvert.SerializeObject(root);
 
             var classesIndex = rootAsString.IndexOf(classScopeString, StringComparison.Ordinal);
 
-            sb.Insert(0, rootAsString.Substring(0, classesIndex + classScopeString.Length - 1));
-            sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length - 1));
+            sb.Insert(0, rootAsString.Substring(0, classesIndex + classScopeString.Length - "null".Length));
+            sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length));
         }
 
         public async Task StartExtractingAssemblySymbolsAsync()
