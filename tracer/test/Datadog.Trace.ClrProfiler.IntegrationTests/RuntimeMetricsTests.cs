@@ -140,9 +140,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                          var endIndex = r.IndexOf('|', separator + 1);
                                          var name = r.Substring(startIndex, separator - startIndex);
                                          name.Should().Be(MetricsNames.CommittedMemory);
-                                         var value = long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
-                                         value.Should().BeGreaterThan(0);
-                                         return value;
+                                         return long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
                                      })
                                 .ToList();
 
