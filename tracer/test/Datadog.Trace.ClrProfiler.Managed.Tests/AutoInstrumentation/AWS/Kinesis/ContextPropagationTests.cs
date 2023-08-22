@@ -22,13 +22,11 @@ public class ContextPropagationTests
     private const string DatadogKey = "_datadog";
     private const string StreamName = "MyStreamName";
 
-    private static readonly Dictionary<string, object> PersonDictionary = new() { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" } };
+    private static readonly Dictionary<string, object> PersonDictionary = new() { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" }, { "age", 24 } };
     private static readonly Dictionary<string, object> PokemonDictionary = new() { { "id", 393 }, { "name", "Piplup" }, { "type", "water" } };
     private static readonly byte[] PersonJsonStringBytes = Encoding.UTF8.GetBytes(Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(PersonDictionary));
-    private static readonly string PersonBase64String = Convert.ToBase64String(PersonJsonStringBytes);
-    private static readonly MemoryStream PersonMemoryStream = new(PersonJsonStringBytes);
-    private static readonly MemoryStream EncodedPersonMemoryStream = new(Convert.FromBase64String(PersonBase64String));
-    private static readonly MemoryStream StreamNameMemoryStream = new(Encoding.UTF8.GetBytes(StreamName));
+    private static readonly byte[] PersonBase64StringBytes = Convert.FromBase64String(Convert.ToBase64String(PersonJsonStringBytes));
+    private static readonly byte[] StreamNameBytes = Encoding.UTF8.GetBytes(StreamName);
 
     private readonly SpanContext spanContext;
 
@@ -45,9 +43,9 @@ public class ContextPropagationTests
     public static IEnumerable<object[]> MemoryStreamToDictionaryExpectedData
         => new List<object[]>
         {
-            new object[] { EncodedPersonMemoryStream, PersonDictionary },
-            new object[] { PersonMemoryStream, PersonDictionary },
-            new object[] { StreamNameMemoryStream, null },
+            new object[] { PersonBase64StringBytes, PersonDictionary },
+            new object[] { PersonJsonStringBytes, PersonDictionary },
+            new object[] { StreamNameBytes, null },
         };
 
     [Fact]
@@ -117,8 +115,9 @@ public class ContextPropagationTests
 
     [Theory]
     [MemberData(nameof(MemoryStreamToDictionaryExpectedData))]
-    public void ParseDataObject_ReturnsExpectedValue(MemoryStream memoryStream, Dictionary<string, object> expected)
+    public void ParseDataObject_ReturnsExpectedValue(byte[] bytes, Dictionary<string, object> expected)
     {
+        var memoryStream = new MemoryStream(bytes);
         var result = ContextPropagation.ParseDataObject(memoryStream);
         result.Should().BeEquivalentTo(expected);
     }
@@ -127,17 +126,20 @@ public class ContextPropagationTests
     public void MemoryStreamToDictionary_WithJsonString_ReturnsDictionary()
     {
         // JsonString
-        var personDictionary = ContextPropagation.MemoryStreamToDictionary(PersonMemoryStream);
+        var personMemoryStream = new MemoryStream(PersonJsonStringBytes);
+        var personDictionary = ContextPropagation.MemoryStreamToDictionary(personMemoryStream);
         personDictionary.Should().BeEquivalentTo(PersonDictionary);
 
         // Base64 JsonString
-        personDictionary = ContextPropagation.MemoryStreamToDictionary(EncodedPersonMemoryStream);
+        var encodedPersonMemoryStream = new MemoryStream(PersonBase64StringBytes);
+        personDictionary = ContextPropagation.MemoryStreamToDictionary(encodedPersonMemoryStream);
         personDictionary.Should().BeEquivalentTo(PersonDictionary);
     }
 
     [Fact]
     public void MemoryStreamToDictionary_WithNonJsonString_ThrowsException()
     {
-        Assert.ThrowsAny<Exception>(() => ContextPropagation.MemoryStreamToDictionary(StreamNameMemoryStream));
+        var streamNameMemoryStream = new MemoryStream(StreamNameBytes);
+        Assert.ThrowsAny<Exception>(() => ContextPropagation.MemoryStreamToDictionary(streamNameMemoryStream));
     }
 }
