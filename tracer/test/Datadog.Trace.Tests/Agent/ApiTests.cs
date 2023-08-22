@@ -45,6 +45,91 @@ namespace Datadog.Trace.Tests.Agent
             requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
         }
 
+        [Theory]
+        [InlineData(429)]
+        [InlineData(413)]
+        [InlineData(408)]
+        public async Task SendTracesAsync_ShouldNotRetry_ForSpecificResponses(int statusCode)
+        {
+            // these came from the following Agent PR: https://github.com/DataDog/datadog-agent/pull/17917
+            // 429 Too Many Requests used to be sent as a 200 OK, we don't want to retry this request when the agent is already overwhelmed
+            // 413 Content Too Large -> no sense in retrying something that will fail again
+            // 408 Request Timeout -> sent when agent times out and closes the connection - distinct from the connection timing out
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(statusCode);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
+
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+
+            var responseResult = await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
+
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Once());
+            responseResult.Should().Be(false);
+        }
+
+        [Theory] // covering some additional response codes that we check for in SendTracesAsync
+        [InlineData(199)]
+        [InlineData(300)]
+        [InlineData(404)]
+        public async Task SendTracesAsync_ShouldSendFiveTimes_ForFailedResponses(int statusCode)
+        {
+            var responseMock = new Mock<IApiResponse>();
+            responseMock.Setup(x => x.StatusCode).Returns(statusCode);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.Setup(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack)).ReturnsAsync(responseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
+
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+
+            var responseResult = await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
+
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(5));
+            responseResult.Should().Be(false);
+        }
+
+        [Theory] // covering some additional response codes that we check for in SendTracesAsync
+        [InlineData(199)]
+        [InlineData(300)]
+        [InlineData(402)]
+        public async Task SendTracesAsync_ShouldSendThreeTimes_ForFailedResponseThenSuccess(int statusCode)
+        {
+            // since "StatusCode" can be called whenever we can't use SetupSequence for this one easily
+            var successResponseMock = new Mock<IApiResponse>();
+            var failResponseMock = new Mock<IApiResponse>();
+            successResponseMock.Setup(x => x.StatusCode).Returns(200);
+            failResponseMock.Setup(x => x.StatusCode).Returns(statusCode);
+
+            var requestMock = new Mock<IApiRequest>();
+            requestMock.SetupSequence(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack))
+                       .ReturnsAsync(failResponseMock.Object)
+                       .ReturnsAsync(failResponseMock.Object)
+                       .ReturnsAsync(successResponseMock.Object);
+
+            var factoryMock = new Mock<IApiRequestFactory>();
+            factoryMock.Setup(x => x.Create(It.IsAny<Uri>())).Returns(requestMock.Object);
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == TracesPath))).Returns(new Uri("http://localhost/traces"));
+            factoryMock.Setup(x => x.GetEndpoint(It.Is<string>(s => s == StatsPath))).Returns(new Uri("http://localhost/stats"));
+
+            var api = new Api(apiRequestFactory: factoryMock.Object, statsd: null, updateSampleRates: null, partialFlushEnabled: false);
+
+            var responseResult = await api.SendTracesAsync(new ArraySegment<byte>(new byte[64]), 1, false, 0, 0);
+
+            requestMock.Verify(x => x.PostAsync(It.IsAny<ArraySegment<byte>>(), MimeTypes.MsgPack), Times.Exactly(3));
+            responseResult.Should().Be(true);
+        }
+
         [Fact]
         public async Task SendTracesAsync_500_ErrorIsCaught()
         {

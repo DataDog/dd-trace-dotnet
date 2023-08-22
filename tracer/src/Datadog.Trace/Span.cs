@@ -393,7 +393,16 @@ namespace Datadog.Trace
         internal void SetException(Exception exception)
         {
             Error = true;
+            SetExceptionTags(exception);
+        }
 
+        /// <summary>
+        /// Add the StackTrace and other exception metadata to the span,
+        /// but does not mark the span as an error.
+        /// </summary>
+        /// <param name="exception">The exception.</param>
+        internal void SetExceptionTags(Exception exception)
+        {
             if (exception != null)
             {
                 // for AggregateException, use the first inner exception until we can support multiple errors.
