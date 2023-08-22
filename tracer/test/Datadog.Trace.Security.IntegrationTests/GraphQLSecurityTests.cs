@@ -28,7 +28,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(TestData7))]
+        [MemberData(nameof(TestData7xPackages))]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string packageVersion, string query)
             => await Test(packageVersion, query);
@@ -42,7 +42,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(TestData))]
+        [MemberData(nameof(TestDataxPackages))]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string packageVersion, string query)
             => await Test(packageVersion, query);
@@ -58,8 +58,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string packageVersion, string query)
-            => await Test(packageVersion, query);
+        public async Task TestQuerySecurity(string query)
+            => await Test(string.Empty, query);
     }
 
     public class GraphQL2SecurityTests : GraphQLSecurityTestsBase
@@ -72,8 +72,8 @@ namespace Datadog.Trace.Security.IntegrationTests
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string packageVersion, string query)
-            => await Test(packageVersion, query);
+        public async Task TestQuerySecurity(string query)
+            => await Test(string.Empty, query);
     }
 
     public class GraphQLSecurityTestsBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
@@ -98,9 +98,11 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(outputHelper);
         }
 
-        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL);
+        public static IEnumerable<object[]> TestData => _garphQlQueries.Select(x => new object[] { x }).ToArray();
 
-        public static IEnumerable<object[]> TestData7 => GetTestData(PackageVersions.GraphQL7);
+        public static IEnumerable<object[]> TestDataxPackages => GetTestData(PackageVersions.GraphQL);
+
+        public static IEnumerable<object[]> TestData7xPackages => GetTestData(PackageVersions.GraphQL7);
 
         public override void Dispose()
         {
