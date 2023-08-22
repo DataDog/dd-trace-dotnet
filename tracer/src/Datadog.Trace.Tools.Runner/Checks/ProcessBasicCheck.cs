@@ -173,10 +173,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
-                if (runtime == ProcessInfo.Runtime.NetCore)
-                {
-                    NoManageCodeClrVersionIis(process);
-                }
+                NoManageCodeClrVersionIis(process);
 
                 if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
@@ -515,9 +512,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         private static void NoManageCodeClrVersionIis(ProcessInfo process)
         {
-            var runningDotnetOnIis = false;
-            var clrDllInModules = false;
-
             foreach (var module in process.Modules)
             {
                 var fileName = Path.GetFileName(module);
@@ -525,17 +519,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 if (fileName.Equals("Microsoft.AspNetCore.Server.IIS.dll", StringComparison.OrdinalIgnoreCase))
                 {
                     AnsiConsole.WriteLine(TracingDotnetOnIis);
-                    runningDotnetOnIis = true;
                 }
-                else if (fileName.Equals("clr.dll", StringComparison.OrdinalIgnoreCase))
-                {
-                    clrDllInModules = true;
-                }
-            }
-
-            if (runningDotnetOnIis & clrDllInModules)
-            {
-                Utils.WriteWarning(TracingDotnetOnIisWithClr);
             }
         }
     }
