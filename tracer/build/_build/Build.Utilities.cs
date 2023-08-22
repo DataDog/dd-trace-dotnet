@@ -117,7 +117,7 @@ partial class Build
                        .Where(IsTestApplication)
                        .ForEach(x =>
                         {
-                            Logger.Info($"Removing project '{x.Name}'");
+                            Logger.Information($"Removing project '{x.Name}'");
                             sln.RemoveProject(x);
                         });
                     
