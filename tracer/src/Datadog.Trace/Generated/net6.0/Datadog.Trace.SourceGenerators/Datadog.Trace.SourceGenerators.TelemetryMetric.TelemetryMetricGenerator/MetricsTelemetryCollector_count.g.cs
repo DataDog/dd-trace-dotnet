@@ -185,6 +185,21 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
+    public void RecordCountIastInstrumentedSources(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[445], increment);
+    }
+
+    public void RecordCountIastInstrumentedPropagations(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[446], increment);
+    }
+
+    public void RecordCountIastInstrumentedSinks(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[447], increment);
+    }
+
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
     /// </summary>
@@ -667,6 +682,12 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
+            // dd.instrumentation_telemetry_data.iast.instrumented.source, index = 445
+            new(null),
+            // dd.instrumentation_telemetry_data.iast.instrumented.propagation, index = 446
+            new(null),
+            // dd.instrumentation_telemetry_data.iast.instrumented.sink, index = 447
+            new(null),
         };
 
     /// <summary>
@@ -675,7 +696,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, };
+        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, 1, 1, 1, };
 
-    private const int _countsLength = 445;
+    private const int _countsLength = 448;
 }

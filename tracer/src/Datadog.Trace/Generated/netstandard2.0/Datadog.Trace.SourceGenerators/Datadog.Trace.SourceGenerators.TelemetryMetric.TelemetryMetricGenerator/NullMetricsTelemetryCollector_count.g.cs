@@ -127,4 +127,16 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1)
     {
     }
+
+    public void RecordCountIastInstrumentedSources(int increment = 1)
+    {
+    }
+
+    public void RecordCountIastInstrumentedPropagations(int increment = 1)
+    {
+    }
+
+    public void RecordCountIastInstrumentedSinks(int increment = 1)
+    {
+    }
 }

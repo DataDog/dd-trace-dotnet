@@ -1,4 +1,4 @@
-﻿// <copyright file="Count.cs" company="Datadog">
+// <copyright file="Count.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -181,6 +181,24 @@ internal enum Count
     /// Requests analyzed by ddwaf
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
+
+#endregion
+#region Iast Namespace
+
+    /// <summary>
+    /// The number of times the waf is initialized
+    /// </summary>
+    [TelemetryMetric("dd.instrumentation_telemetry_data.iast.instrumented.source", isCommon: true, NS.Iast)] IastInstrumentedSources,
+
+    /// <summary>
+    /// The number of times we reload the rules (startup + Remote Configuration)
+    /// </summary>
+    [TelemetryMetric("dd.instrumentation_telemetry_data.iast.instrumented.propagation", isCommon: true, NS.Iast)] IastInstrumentedPropagations,
+
+    /// <summary>
+    /// Requests analyzed by ddwaf
+    /// </summary>
+    [TelemetryMetric("dd.instrumentation_telemetry_data.iast.instrumented.sink", isCommon: true, NS.Iast)] IastInstrumentedSinks,
 
 #endregion
 }
