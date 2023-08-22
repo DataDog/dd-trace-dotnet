@@ -236,6 +236,13 @@ partial class Build
             new SetAllVersions.Source(TracerDirectory, NewVersion, NewIsPrerelease.Value!).Run();
         });
 
+    Target AnalyzePipelineCriticalPath => _ => _
+       .Description("Perform critical path analysis on the consolidated pipeline stages")
+       .Executes(async () =>
+        {
+            await CriticalPathAnalysis.CriticalPathAnalyzer.AnalyzeCriticalPath(RootDirectory);
+        });
+
     Target UpdateSnapshots => _ => _
         .Description("Updates verified snapshots files with received ones")
         .Executes(ReplaceReceivedFilesInSnapshots);
