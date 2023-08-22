@@ -84,7 +84,7 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for IAST verbosity.
             /// Default value is INFORMATION
             /// </summary>
-            public const string IastVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
+            public const string IastTelemetryVerbosity = "DD_IAST_TELEMETRY_VERBOSITY";
         }
     }
 }

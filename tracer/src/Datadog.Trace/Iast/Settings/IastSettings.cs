@@ -63,9 +63,9 @@ internal class IastSettings
         RedactionRegexTimeout = config
                                 .WithKeys(ConfigurationKeys.Iast.RedactionRegexTimeout)
                                 .AsDouble(200, val1 => val1 is > 0).Value;
-        IastVerbosity = IastMetricsLogLevelExtensions.Parse(config
-                             .WithKeys(ConfigurationKeys.Iast.IastVerbosity)
-                             .AsString(IastMetricsLogLevelExtensions.Information));
+        IastTelemetryVerbosity = IastMetricsVerbosityLevelExtensions.Parse(config
+                             .WithKeys(ConfigurationKeys.Iast.IastTelemetryVerbosity)
+                             .AsString(IastMetricsVerbosityLevelExtensions.Information));
     }
 
     public bool Enabled { get; set; }
@@ -94,7 +94,7 @@ internal class IastSettings
 
     public double RedactionRegexTimeout { get; }
 
-    public IastMetricsLogLevel IastVerbosity { get; }
+    public IastMetricsVerbosityLevel IastTelemetryVerbosity { get; }
 
     public static IastSettings FromDefaultSources()
     {
