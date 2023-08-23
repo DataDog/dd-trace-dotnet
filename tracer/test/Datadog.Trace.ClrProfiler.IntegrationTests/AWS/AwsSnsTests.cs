@@ -73,7 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sns");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sns");
                 settings.AddSimpleScrubber("peer.service: localhost", "peer.service: aws_sns");
-                settings.AddSimpleScrubber("peer.service: localstack", "out.host: aws_sns");
+                settings.AddSimpleScrubber("peer.service: localstack", "peer.service: aws_sns");
                 settings.AddSimpleScrubber("peer.service: localstack_arm64", "peer.service: aws_sns");
                 if (!string.IsNullOrWhiteSpace(host))
                 {
