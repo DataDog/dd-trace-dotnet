@@ -21,25 +21,55 @@
     <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.1.0 -->
     <PackageReference Include="Aerospike.Client" Version="6.1.0" />
 
-    <!-- Integration: System.Web.Mvc -->
-    <!-- Assembly: System.Web.Mvc -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
+    <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Abstractions/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.Abstractions" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.AspNetCore.Identity -->
+    <!-- Assembly: Microsoft.AspNetCore.Identity -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
+    <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.2.5 -->
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
+
+    <!-- Integration: Microsoft.AspNetCore.Server.IIS -->
+    <!-- Assembly: Microsoft.AspNetCore.Server.IIS -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.IIS/2.2.6 -->
+    <PackageReference Include="Microsoft.AspNetCore.Server.IIS" Version="2.2.6" />
+
+    <!-- Integration: Microsoft.AspNetCore.Server.Kestrel.Core -->
+    <!-- Assembly: Microsoft.AspNetCore.Server.Kestrel.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.Kestrel.Core/2.2.0 -->
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Core" Version="2.2.0" />
+
+    <!-- Integration: Microsoft.Extensions.Identity.Core -->
+    <!-- Assembly: Microsoft.Extensions.Identity.Core -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.10 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.10" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.2 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.201.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.4 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.201.4" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.22 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.24 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.24" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.23 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.23" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.25 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.25" />
+
+    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
+    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.37 -->
+    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -66,15 +96,25 @@
     <!-- Latest package https://www.nuget.org/packages/GraphQL.SystemReactive/4.8.0 -->
     <PackageReference Include="GraphQL.SystemReactive" Version="4.8.0" />
 
+    <!-- Integration: Grpc.AspNetCore.Server -->
+    <!-- Assembly: Grpc.AspNetCore.Server -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+
     <!-- Integration: Grpc.Core -->
     <!-- Assembly: Grpc.Core -->
     <!-- Latest package https://www.nuget.org/packages/Grpc/2.46.6 -->
     <PackageReference Include="Grpc" Version="2.46.6" />
 
+    <!-- Integration: Grpc.Net.Client -->
+    <!-- Assembly: Grpc.Net.Client -->
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.5.0 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.5.0" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.5.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.5.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -211,11 +251,6 @@
     <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis.StrongName/1.2.6 -->
     <PackageReference Include="StackExchange.Redis.StrongName" Version="1.2.6" />
 
-    <!-- Integration: System.ServiceModel -->
-    <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.0.0 -->
-    <PackageReference Include="System.ServiceModel.Http" Version="4.10.2" />
-
     <!-- Integration: System.Net.Requests -->
     <!-- Assembly: System.Net.Requests -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Requests/4.3.0 -->
@@ -230,51 +265,6 @@
     <!-- Assembly: xunit.execution.dotnet -->
     <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.5.0 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.5.0" />
-
-    <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
-    <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Authentication.Abstractions/2.2.0 -->
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.Abstractions" Version="2.2.0" />
-
-    <!-- Integration: Microsoft.AspNetCore.Identity -->
-    <!-- Assembly: Microsoft.AspNetCore.Identity -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Identity/2.2.0 -->
-    <PackageReference Include="Microsoft.AspNetCore.Identity" Version="2.2.0" />
-
-    <!-- Integration: Microsoft.AspNetCore.Mvc.Core -->
-    <!-- Assembly: Microsoft.AspNetCore.Mvc.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Mvc.Core/2.2.5 -->
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.5" />
-
-    <!-- Integration: Microsoft.AspNetCore.Server.IIS -->
-    <!-- Assembly: Microsoft.AspNetCore.Server.IIS -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.IIS/2.2.6 -->
-    <PackageReference Include="Microsoft.AspNetCore.Server.IIS" Version="2.2.6" />
-
-    <!-- Integration: Microsoft.AspNetCore.Server.Kestrel.Core -->
-    <!-- Assembly: Microsoft.AspNetCore.Server.Kestrel.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNetCore.Server.Kestrel.Core/2.2.0 -->
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel.Core" Version="2.2.0" />
-
-    <!-- Integration: Microsoft.Extensions.Identity.Core -->
-    <!-- Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.10 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.10" />
-
-    <!-- Integration: Microsoft.Azure.WebJobs.Host -->
-    <!-- Assembly: Microsoft.Azure.WebJobs.Host -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.WebJobs/3.0.37 -->
-    <PackageReference Include="Microsoft.Azure.WebJobs" Version="3.0.37" />
-
-    <!-- Integration: Grpc.AspNetCore.Server -->
-    <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
-
-    <!-- Integration: Grpc.Net.Client -->
-    <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
 
   </ItemGroup>
 

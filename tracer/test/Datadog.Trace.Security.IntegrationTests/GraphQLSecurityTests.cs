@@ -27,8 +27,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL7);
+
         [SkippableTheory]
-        [MemberData(nameof(TestData7xPackages))]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string packageVersion, string query)
             => await Test(packageVersion, query);
@@ -41,8 +43,10 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL4);
+
         [SkippableTheory]
-        [MemberData(nameof(TestDataxPackages))]
+        [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
         public async Task TestQuerySecurity(string packageVersion, string query)
             => await Test(packageVersion, query);
@@ -55,11 +59,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL3);
+
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(string.Empty, query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQL2SecurityTests : GraphQLSecurityTestsBase
@@ -69,11 +75,13 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
         }
 
+        public static IEnumerable<object[]> TestData => GetTestData(PackageVersions.GraphQL);
+
         [SkippableTheory]
         [MemberData(nameof(TestData))]
         [Trait("RunOnWindows", "True")]
-        public async Task TestQuerySecurity(string query)
-            => await Test(string.Empty, query);
+        public async Task TestQuerySecurity(string packageVersion, string query)
+            => await Test(packageVersion, query);
     }
 
     public class GraphQLSecurityTestsBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
@@ -98,17 +106,16 @@ namespace Datadog.Trace.Security.IntegrationTests
             _fixture.SetOutput(outputHelper);
         }
 
-        public static IEnumerable<object[]> TestData => _garphQlQueries.Select(x => new object[] { x }).ToArray();
-
-        public static IEnumerable<object[]> TestDataxPackages => GetTestData(PackageVersions.GraphQL);
-
-        public static IEnumerable<object[]> TestData7xPackages => GetTestData(PackageVersions.GraphQL7);
-
         public override void Dispose()
         {
             base.Dispose();
             _fixture.SetOutput(null);
         }
+
+        protected static IEnumerable<object[]> GetTestData(IEnumerable<object[]> packageVersions) =>
+            from packageVersionArray in GetSafePackageVersion(packageVersions)
+            from query in _garphQlQueries
+            select new[] { packageVersionArray[0], query };
 
         protected async Task Test(string packageVersion, string query)
         {
@@ -122,11 +129,6 @@ namespace Datadog.Trace.Security.IntegrationTests
                  .UseFileName($"{GetTestName()}.__query={VerifyHelper.SanitisePathsForVerifyWithDash(query)}")
                  .DisableRequireUniquePrefix(); // all package versions should be the same
         }
-
-        private static IEnumerable<object[]> GetTestData(IEnumerable<object[]> packageVersions) =>
-            from packageVersionArray in GetSafePackageVersion(packageVersions)
-            from query in _garphQlQueries
-            select new[] { packageVersionArray[0], query };
 
         private static IEnumerable<object[]> GetSafePackageVersion(IEnumerable<object[]> packageVersions) =>
             EnvironmentTools.IsWindows()
