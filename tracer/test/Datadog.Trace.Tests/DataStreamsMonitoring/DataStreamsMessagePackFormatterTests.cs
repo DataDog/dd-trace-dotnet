@@ -88,6 +88,9 @@ public class DataStreamsMessagePackFormatterTests
         var edgeBytes = new byte[edgeSketch.ComputeSerializedSize()];
         using var ms2 = new MemoryStream(edgeBytes);
         edgeSketch.Serialize(ms2);
+        var payloadSizeBytes = new byte[payloadSizeSketch.ComputeSerializedSize()];
+        using var ms3 = new MemoryStream(payloadSizeBytes);
+        payloadSizeSketch.Serialize(ms3);
 
         var expected = new MockDataStreamsPayload
         {
@@ -110,6 +113,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "current",
                         }
                     }
@@ -127,6 +131,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "origin",
                         }
                     }
