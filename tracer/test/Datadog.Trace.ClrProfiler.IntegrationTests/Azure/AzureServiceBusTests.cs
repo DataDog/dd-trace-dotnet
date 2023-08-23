@@ -70,6 +70,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.AddRegexScrubber(new Regex(@"net.peer.name: [a-zA-Z0-9-]+.servicebus.windows.net"), "net.peer.name: localhost");
+                settings.AddRegexScrubber(new Regex(@"peer.service: [a-zA-Z0-9-]+.servicebus.windows.net"), "peer.service: localhost");
 
                 await VerifyHelper.VerifySpans(spans, settings, OrderSpans)
                                   .UseFileName(filename)

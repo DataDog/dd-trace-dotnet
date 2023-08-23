@@ -583,6 +583,8 @@ namespace Datadog.Trace
         /// </summary>
         internal const string NetworkClientIp = "network.client.ip";
 
+        internal const string NetworkPeerName = "net.peer.name";
+
         internal const string ElasticsearchAction = "elasticsearch.action";
 
         internal const string ElasticsearchMethod = "elasticsearch.method";

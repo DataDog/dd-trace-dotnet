@@ -504,6 +504,47 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromNetworkPeerName()
+        {
+            var peerName = "127.0.0.1";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("net.peer.name", peerName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().Be(peerName);
+            tags.PeerServiceSource.Should().Be("net.peer.name");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var peerName = "127.0.0.1";
+            var customService = "client-service";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.SetTag("net.peer.name", peerName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
         public void RedisV1Tags_PeerService_PopulatesFromOutHost()
         {
             var host = "localhost";
