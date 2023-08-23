@@ -216,6 +216,13 @@ EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int 
     return trace::profiler->UpdateSettings(keys, values, length);
 }
 
+EXTERN_C VOID STDAPICALLTYPE GetIastMetrics(uint32_t* metric1, uint32_t* metric2, uint32_t* metric3)
+{
+    *metric1 = 42;
+    *metric2 = 87;
+    *metric3 = 123;
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

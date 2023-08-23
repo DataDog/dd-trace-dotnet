@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerV2.cs" company="Datadog">
+// <copyright file="TelemetryControllerV2.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,6 +14,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ContinuousProfiler;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.Metrics;
@@ -229,6 +230,18 @@ internal class TelemetryControllerV2 : ITelemetryController
     {
         try
         {
+            if (Iast.Iast.Instance.Settings.Enabled && Iast.Iast.Instance.Settings.IastTelemetryVerbosity != IastMetricsVerbosityLevel.Off)
+            {
+                try
+                {
+                    IastInstrumentationMetricsHelper.ReportMetrics();
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "Error pushing IAST telemetry");
+                }
+            }
+
             // Always retrieve the metrics data, regardless of whether it's consumed, because we
             // need to make sure we clear the buffers. If we don't we could get overflows.
             // We will lose these metrics if the endpoint errors, but better than growing too much.

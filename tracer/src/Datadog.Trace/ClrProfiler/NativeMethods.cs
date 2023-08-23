@@ -249,6 +249,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static void GetIastMetrics(out uint metric1, out uint metric2, out uint metric3)
+        {
+            if (IsWindows)
+            {
+                Windows.GetIastMetrics(out metric1, out metric2, out metric3);
+            }
+            else
+            {
+                NonWindows.GetIastMetrics(out metric1, out metric2, out metric3);
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -301,6 +313,9 @@ namespace Datadog.Trace.ClrProfiler
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
                 int length);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void GetIastMetrics(out uint metric1, out uint metric2, out uint metric3);
         }
 
         // assume .NET Core if not running on Windows
@@ -354,6 +369,9 @@ namespace Datadog.Trace.ClrProfiler
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
                 int length);
+
+            [DllImport("Datadog.Tracer.Native")]
+            public static extern void GetIastMetrics(out uint instrumentedSources, out uint instrumentedPropagations, out uint instrumentedSinks);
         }
     }
 }

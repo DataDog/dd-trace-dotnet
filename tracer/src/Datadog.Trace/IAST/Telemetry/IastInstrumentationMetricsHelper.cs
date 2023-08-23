@@ -1,85 +1,70 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using Datadog.Trace.Iast.Telemetry;
+// <copyright file="IastInstrumentationMetricsHelper.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+#nullable enable
+
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry;
 
-namespace Datadog.Trace.IAST.Telemetry
+namespace Datadog.Trace.Iast.Telemetry;
+
+internal static class IastInstrumentationMetricsHelper
 {
-    internal static class IastInstrumentationMetricsHelper
+    private static int instrumentedSources = 0;
+    private static int instrumentedPropagations = 0;
+    private static int instrumentedSinks = 0;
+    private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
+    private static bool _iastEnabled = Iast.Instance.Settings.Enabled;
+
+    public static void OnInstrumentedSource()
     {
-        private static int instrumentedSources = 0;
-        private static int instrumentedPropagations = 0;
-        private static int instrumentedSinks = 0;
-        private static IastMetricsVerbosityLevel verbosityLevel = Iast.Iast.Instance.Settings.IastTelemetryVerbosity;
-        private static bool _iastEnabled = Iast.Iast.Instance.Settings.Enabled;
-
-        public static void OnInstrumentedSource()
+        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            if (_iastEnabled && verbosityLevel != IastMetricsVerbosityLevel.Off)
+            instrumentedSources++;
+        }
+    }
+
+    public static void OnInstrumentedPropagation()
+    {
+        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
+        {
+            instrumentedPropagations++;
+        }
+    }
+
+    public static void OnInstrumentedSink()
+    {
+        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
+        {
+            instrumentedSinks++;
+        }
+    }
+
+    public static void ReportMetrics()
+    {
+        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
+        {
+            NativeMethods.GetIastMetrics(out var callsiteSources, out var callsitePropagations, out var callsiteSinks);
+
+            if (instrumentedSinks + callsiteSinks > 0)
             {
-                instrumentedSources++;
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(instrumentedSinks + (int)callsiteSinks);
+                instrumentedSinks = 0;
             }
-        }
 
-        public static void OnInstrumentedPropagation()
-        {
-            if (_iastEnabled && verbosityLevel != IastMetricsVerbosityLevel.Off)
+            if (instrumentedSources + callsiteSources > 0)
             {
-                instrumentedPropagations++;
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(instrumentedSources + (int)callsiteSources);
+                instrumentedSources = 0;
             }
-        }
 
-        public static void OnInstrumentedSink()
-        {
-            if (_iastEnabled && verbosityLevel != IastMetricsVerbosityLevel.Off)
+            if (instrumentedPropagations + callsitePropagations > 0)
             {
-                instrumentedSinks++;
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(instrumentedPropagations + (int)callsitePropagations);
+                instrumentedPropagations = 0;
             }
-        }
-
-        public static void ReportMetrics()
-        {
-            if (_iastEnabled && verbosityLevel != IastMetricsVerbosityLevel.Off)
-            {
-                var callsiteSinks = GetCallsiteInstrumentedSinks();
-                if (instrumentedSinks + callsiteSinks > 0)
-                {
-                    TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(instrumentedSinks + callsiteSinks);
-                    instrumentedSinks = 0;
-                }
-
-                var callsiteSources = GetCallsiteInstrumentedSources();
-                if (instrumentedSources + callsiteSources > 0)
-                {
-                    TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(instrumentedSources + callsiteSources);
-                    instrumentedSources = 0;
-                }
-
-                var callsitePropagations = GetCallsiteInstrumentedPropagations();
-                if (instrumentedPropagations + callsitePropagations > 0)
-                {
-                    TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(instrumentedPropagations + callsitePropagations);
-                    instrumentedPropagations = 0;
-                }
-            }
-        }
-
-        private static int GetCallsiteInstrumentedPropagations()
-        {
-            return 0;
-        }
-
-        private static int GetCallsiteInstrumentedSources()
-        {
-            return 0;
-        }
-
-        private static int GetCallsiteInstrumentedSinks()
-        {
-            return 0;
         }
     }
 }

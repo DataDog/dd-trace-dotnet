@@ -21,3 +21,4 @@ EXPORTS
     EnableCallTargetDefinitions
     DisableCallTargetDefinitions
     UpdateSettings
+    GetIastMetrics
