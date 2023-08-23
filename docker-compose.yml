@@ -976,7 +976,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns
+      - SERVICES=sns,sqs,kinesis
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
