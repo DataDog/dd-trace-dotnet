@@ -17,7 +17,7 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System.Web;
 
 /// <summary> HttpCookieAspect class aspects </summary>
-[AspectClass("System.Web")]
+[AspectClass("System.Web", AspectType.Source)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HttpCookieAspect

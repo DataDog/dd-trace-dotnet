@@ -17,7 +17,7 @@ using Datadog.Trace.Logging;
 namespace Datadog.Trace.Iast.Aspects;
 
 /// <summary> HashAlgorithm class aspects </summary>
-[AspectClass("mscorlib")]
+[AspectClass("mscorlib", AspectType.Sink, VulnerabilityType.WeakHash)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class HashAlgorithmAspect

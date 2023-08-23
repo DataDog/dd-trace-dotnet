@@ -12,7 +12,7 @@ using Datadog.Trace.Iast.Propagation;
 namespace Datadog.Trace.Iast.Aspects.System;
 
 /// <summary> UriBuilder class aspects </summary>
-[AspectClass("System,netstandard,System.Runtime.Extensions,System.Runtime")]
+[AspectClass("System,netstandard,System.Runtime.Extensions,System.Runtime"), AspectType.Propagation]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class UriBuilderAspect

@@ -18,7 +18,7 @@ using Datadog.Trace.Telemetry.Metrics;
 namespace Datadog.Trace.Iast.Aspects.System.Text;
 
 /// <summary> StringBuilder class aspects </summary>
-[AspectClass("mscorlib,netstandard,System.Runtime")]
+[AspectClass("mscorlib,netstandard,System.Runtime", AspectType.Propagation)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class StringBuilderAspects

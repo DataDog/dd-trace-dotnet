@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Iast.Aspects;
 
@@ -101,6 +102,7 @@ public class FileAspect
     [AspectMethodInsertBefore("System.IO.File::Replace(System.String,System.String,System.String,System.Boolean)", new int[] { 1, 2, 3 })]
     public static string ReviewPath(string path)
     {
+        TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks();
         IastModule.OnPathTraversal(path);
         return path;
     }

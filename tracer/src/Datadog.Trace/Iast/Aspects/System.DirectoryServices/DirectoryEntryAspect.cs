@@ -10,7 +10,7 @@ using Datadog.Trace.Iast.Dataflow;
 namespace Datadog.Trace.Iast.Aspects.System.DirectoryServices;
 
 /// <summary> DirectoryEntry class aspects </summary>
-[AspectClass("System.DirectoryServices", AspectFilter.StringOptimization)]
+[AspectClass("System.DirectoryServices", AspectFilter.StringOptimization, AspectType.Sink, VulnerabilityType.LdapInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public partial class DirectoryEntryAspect
