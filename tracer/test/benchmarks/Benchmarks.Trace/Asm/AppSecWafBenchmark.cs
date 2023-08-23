@@ -16,8 +16,6 @@ namespace Benchmarks.Trace.Asm;
 
 [MemoryDiagnoser]
 [BenchmarkAgent7]
-[MaxIterationCount(30)]
-[MaxWarmupCount(10)]
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
@@ -75,7 +73,9 @@ public class AppSecWafBenchmark
 
     public IEnumerable<Dictionary<string, object>> Source()
     {
-        yield return MakeNestedMap(400);
+        yield return MakeNestedMap(10);
+        yield return MakeNestedMap(100);
+        yield return MakeNestedMap(1000);
     }
 
     private static Dictionary<string, object> MakeNestedMap(int nestingDepth)
