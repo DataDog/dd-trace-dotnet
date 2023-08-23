@@ -140,8 +140,10 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .Matches("aws.agent", "dotnet-aws-sdk")
                 .IsPresent("aws.operation")
+                .IsOptional("aws.region")
                 .IsOptional("region")
                 .IsPresent("aws.requestId")
+                .Matches("aws.service", "Kinesis")
                 .Matches("aws_service", "Kinesis")
                 .IsPresent("streamname")
                 .IsOptional("aws.stream.url")
