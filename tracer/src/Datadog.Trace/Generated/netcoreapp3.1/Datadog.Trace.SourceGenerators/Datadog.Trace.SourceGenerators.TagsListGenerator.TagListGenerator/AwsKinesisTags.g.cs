@@ -9,18 +9,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class AwsKinesisTags
     {
-        // AwsServiceBytes = MessagePack.Serialize("aws.service");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AwsServiceBytes => new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
-#else
-        private static readonly byte[] AwsServiceBytes = new byte[] { 171, 97, 119, 115, 46, 115, 101, 114, 118, 105, 99, 101 };
-#endif
-        // AwsRegionBytes = MessagePack.Serialize("aws.region");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AwsRegionBytes => new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
-#else
-        private static readonly byte[] AwsRegionBytes = new byte[] { 170, 97, 119, 115, 46, 114, 101, 103, 105, 111, 110 };
-#endif
         // StreamNameBytes = MessagePack.Serialize("streamname");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> StreamNameBytes => new byte[] { 170, 115, 116, 114, 101, 97, 109, 110, 97, 109, 101 };
@@ -38,8 +26,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "aws.service" => AwsService,
-                "aws.region" => AwsRegion,
                 "streamname" => StreamName,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
@@ -53,8 +39,6 @@ namespace Datadog.Trace.Tagging
                 case "streamname": 
                     StreamName = value;
                     break;
-                case "aws.service": 
-                case "aws.region": 
                 case "span.kind": 
                     Logger.Value.Warning("Attempted to set readonly tag {TagName} on {TagType}. Ignoring.", key, nameof(AwsKinesisTags));
                     break;
@@ -66,16 +50,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (AwsService is not null)
-            {
-                processor.Process(new TagItem<string>("aws.service", AwsService, AwsServiceBytes));
-            }
-
-            if (AwsRegion is not null)
-            {
-                processor.Process(new TagItem<string>("aws.region", AwsRegion, AwsRegionBytes));
-            }
-
             if (StreamName is not null)
             {
                 processor.Process(new TagItem<string>("streamname", StreamName, StreamNameBytes));
@@ -91,20 +65,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (AwsService is not null)
-            {
-                sb.Append("aws.service (tag):")
-                  .Append(AwsService)
-                  .Append(',');
-            }
-
-            if (AwsRegion is not null)
-            {
-                sb.Append("aws.region (tag):")
-                  .Append(AwsRegion)
-                  .Append(',');
-            }
-
             if (StreamName is not null)
             {
                 sb.Append("streamname (tag):")
