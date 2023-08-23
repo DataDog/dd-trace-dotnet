@@ -119,13 +119,10 @@ public class AppSecWafBenchmark
         return root;
     }
 
-    [GlobalSetup]
-    public void Setup()
-    {
-        _context = Waf.CreateContext() as Context;
-    }
+    [IterationSetup]
+    public void Setup() => _context = Waf.CreateContext() as Context;
 
-    [GlobalCleanup]
+    [IterationCleanup]
     public void Cleanup() => _context.Dispose();
 
     [Benchmark]
