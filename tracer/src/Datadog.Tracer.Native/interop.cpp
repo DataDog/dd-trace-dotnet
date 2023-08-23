@@ -218,9 +218,7 @@ EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int 
 
 EXTERN_C VOID STDAPICALLTYPE GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks)
 {
-    *callsiteInstrumentedSources = 42;
-    *callsiteInstrumentedPropagations = 87;
-    *callsiteInstrumentedSinks = 123;
+    trace::profiler->GetIastMetrics(callsiteInstrumentedSources, callsiteInstrumentedPropagations, callsiteInstrumentedSinks);
 }
 
 #ifndef _WIN32

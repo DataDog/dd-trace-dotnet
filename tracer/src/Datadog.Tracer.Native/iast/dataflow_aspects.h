@@ -19,6 +19,7 @@ namespace iast
     {
         ILInstr* instruction;
         bool written;
+        AspectType aspectType;
     };
 
     enum class DataflowAspectFilterValue

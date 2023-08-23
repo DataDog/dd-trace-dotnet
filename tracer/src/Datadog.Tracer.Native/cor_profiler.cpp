@@ -1981,7 +1981,7 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 
     if (_dataflow != nullptr)
     {
-        Logger::Info("Registerubg IAST Aspects.");
+        Logger::Info("Registering IAST Aspects.");
         _dataflow->LoadAspects(aspects, aspectsLength);
         return aspectsLength;
     }
@@ -1992,6 +1992,10 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     return 0;
 }
 
+void CorProfiler::GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks)
+{
+    _dataflow->GetIastMetrics(callsiteInstrumentedSources, callsiteInstrumentedPropagations, callsiteInstrumentedSinks);
+}
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
                                                    WCHAR* integration_type_name_ptr)

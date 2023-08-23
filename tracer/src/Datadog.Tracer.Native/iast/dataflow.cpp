@@ -649,6 +649,7 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
                         auto result = InstrumentInstruction(rewriter, pInstr, moduleAspectRefs);
                         pInstr = result.instruction;
                         written |= result.written;
+                        ProcessIastMetric(result);
                     }
                 }
                 hr = method->CommitILRewriter();
@@ -660,6 +661,25 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
         trace::Logger::Error("ERROR: ", err.what());
     }
     return hr;
+}
+
+void Dataflow::ProcessIastMetric(iast::InstrumentResult& result)
+{
+    if (result.written)
+    {
+        switch (result.aspectType)
+        {
+            case AspectType::Propagation:
+                _callsiteInstrumentedPropagations++;
+                break;
+            case AspectType::Sink:
+                _callsiteInstrumentedSinks++;
+                break;
+            case AspectType::Source:
+                _callsiteInstrumentedSources++;
+                break;
+        }
+    }
 }
 
 std::vector<DataflowAspectReference*> Dataflow::GetAspects(ModuleInfo* module)
@@ -683,10 +703,23 @@ InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* 
         res = aspect->Apply(rewriter, instruction);
         if (res.written)
         {
+            res.aspectType = aspect->GetAspectType();
             return res;
         }
     }
     return res;
+}
+
+void Dataflow::GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks)
+{
+    *callsiteInstrumentedSources = _callsiteInstrumentedSources;
+    *callsiteInstrumentedPropagations = _callsiteInstrumentedPropagations;
+    *callsiteInstrumentedSinks = _callsiteInstrumentedSinks;
+
+    // After reporting the metrics, we set them to 0 for the next heartbeat
+    _callsiteInstrumentedSources = 0;
+    _callsiteInstrumentedPropagations = 0;
+    _callsiteInstrumentedSinks = 0;
 }
 
 } // namespace iast

@@ -195,7 +195,7 @@ public:
     // Register Aspects into Dataflow
     //
     int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
-
+    void GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks);
 
     //
     // Live Debugger Integration methods
