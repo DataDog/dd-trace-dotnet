@@ -249,15 +249,15 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void GetIastMetrics(out uint metric1, out uint metric2, out uint metric3)
+        public static void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks)
         {
             if (IsWindows)
             {
-                Windows.GetIastMetrics(out metric1, out metric2, out metric3);
+                Windows.GetIastMetrics(out callsiteSources, out callsitePropagations, out callsiteSinks);
             }
             else
             {
-                NonWindows.GetIastMetrics(out metric1, out metric2, out metric3);
+                NonWindows.GetIastMetrics(out callsiteSources, out callsitePropagations, out callsiteSinks);
             }
         }
 
@@ -315,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler
                 int length);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void GetIastMetrics(out uint metric1, out uint metric2, out uint metric3);
+            public static extern void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks);
         }
 
         // assume .NET Core if not running on Windows
@@ -371,7 +371,7 @@ namespace Datadog.Trace.ClrProfiler
                 int length);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void GetIastMetrics(out uint instrumentedSources, out uint instrumentedPropagations, out uint instrumentedSinks);
+            public static extern void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks);
         }
     }
 }

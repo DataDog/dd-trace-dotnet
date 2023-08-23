@@ -46,23 +46,23 @@ internal static class IastInstrumentationMetricsHelper
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            NativeMethods.GetIastMetrics(out var callsiteSources, out var callsitePropagations, out var callsiteSinks);
+            NativeMethods.GetIastMetrics(out var callsiteInstrumentedSources, out var callsiteInstrumentedPropagations, out var callsiteInstrumentedSinks);
 
-            if (instrumentedSinks + callsiteSinks > 0)
+            if (instrumentedSinks + callsiteInstrumentedSinks > 0)
             {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(instrumentedSinks + (int)callsiteSinks);
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(instrumentedSinks + callsiteInstrumentedSinks);
                 instrumentedSinks = 0;
             }
 
-            if (instrumentedSources + callsiteSources > 0)
+            if (instrumentedSources + callsiteInstrumentedSources > 0)
             {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(instrumentedSources + (int)callsiteSources);
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(instrumentedSources + callsiteInstrumentedSources);
                 instrumentedSources = 0;
             }
 
-            if (instrumentedPropagations + callsitePropagations > 0)
+            if (instrumentedPropagations + callsiteInstrumentedPropagations > 0)
             {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(instrumentedPropagations + (int)callsitePropagations);
+                TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(instrumentedPropagations + callsiteInstrumentedPropagations);
                 instrumentedPropagations = 0;
             }
         }
