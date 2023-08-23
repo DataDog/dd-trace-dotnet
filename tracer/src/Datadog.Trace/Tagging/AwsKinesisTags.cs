@@ -11,20 +11,16 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class AwsKinesisTags : AwsSdkTags
     {
+        [Obsolete("Use constructor that takes a SpanKind")]
+        public AwsKinesisTags()
+            : this(SpanKinds.Client)
+        {
+        }
+
         public AwsKinesisTags(string spanKind)
         {
             SpanKind = spanKind;
         }
-
-#pragma warning disable CS0618 // Remove duplicate tag
-        [Tag(Trace.Tags.AwsServiceName)]
-#pragma warning restore CS0618
-        public override string AwsService => null;
-
-#pragma warning disable CS0618 // Remove duplicate tag
-        [Tag(Trace.Tags.AwsRegion)]
-#pragma warning restore CS0618
-        public override string AwsRegion => null;
 
         [Tag(Trace.Tags.StreamName)]
         public string StreamName { get; set; }
