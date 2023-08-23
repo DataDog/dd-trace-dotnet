@@ -1,5 +1,4 @@
-
-  {
+[
     EdgeTags: [
       direction:in,
       topic:TopicQueue2,
