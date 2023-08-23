@@ -135,6 +135,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else
             {
                 AnsiConsole.WriteLine(TracingWithInstaller);
+                NoManageCodeClrVersionIis(process);
 
                 ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
                 ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
@@ -173,8 +174,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
-                NoManageCodeClrVersionIis(process);
-
                 if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
                     if (!ParseBooleanConfigurationValue(traceEnabledValue))
