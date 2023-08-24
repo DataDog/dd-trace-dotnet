@@ -20,6 +20,30 @@ public class ConfigurationTests
 {
     private static readonly string[] ExcludedKeys =
     {
+        // Lambda handler extracts these directly from env var, and no reason to think that will change
+        "_DD_EXTENSION_ENDPOINT",
+        "_DD_EXTENSION_PATH",
+        // mini agent uses this directly from env var, and no reason to think that will change
+        "DD_MINI_AGENT_PATH",
+        "DD_ENTITY_ID", // Datadog.Trace.Vendors.StatsdClient.StatsdConfig.EntityIdEnvVar (we don't use this, it was just vendored in)
+        // CIapp extracts  directly from env var, and no reason to think that will change
+        "DD_CUSTOM_TRACE_ID",
+        "DD_GIT_BRANCH",
+        "DD_GIT_TAG",
+        "DD_GIT_REPOSITORY_URL",
+        "DD_GIT_COMMIT_SHA",
+        "DD_GIT_COMMIT_MESSAGE",
+        "DD_GIT_COMMIT_AUTHOR_NAME",
+        "DD_GIT_COMMIT_AUTHOR_EMAIL",
+        "DD_GIT_COMMIT_AUTHOR_DATE",
+        "DD_GIT_COMMIT_COMMITTER_NAME",
+        "DD_GIT_COMMIT_COMMITTER_EMAIL",
+        "DD_GIT_COMMIT_COMMITTER_DATE",
+        "DD_TESTSESSION_COMMAND",
+        "DD_TESTSESSION_WORKINGDIRECTORY",
+        // Internal env vars that we only ever read from environment
+        "DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH",
+        "DD_DOTNET_TRACER_HOME",
     };
 
     [Fact]
