@@ -123,7 +123,7 @@ namespace Datadog.Trace.Security.IntegrationTests
             SetHttpPort(_fixture.HttpPort);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddSimpleScrubber("\"human\",\"0\"", "\"human\",\"name\"")
+            settings.AddSimpleScrubber("\"human\",\"0\"", "\"human\",\"name\"");
 
             var spans = await SendRequestsAsync(_fixture.Agent, "/graphql", query, 1, 1, string.Empty);
             await VerifySpansNoMethodNameSettings(spans, settings)
