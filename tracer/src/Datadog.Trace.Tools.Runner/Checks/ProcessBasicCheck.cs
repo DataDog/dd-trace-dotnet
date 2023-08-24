@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Win32;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
@@ -142,7 +143,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (!CheckRegistry(registryService, nativeTracerVersion))
+                    if (!CheckRegistry(CheckWindowsInstallation(), registryService))
                     {
                         ok = false;
                     }
@@ -257,7 +258,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return ok;
         }
 
-        internal static bool CheckRegistry(IRegistryService? registry = null, Version? tracerVersion = null)
+        internal static bool CheckRegistry(string? tracerProgramVersion, IRegistryService? registry = null)
         {
             registry ??= new Windows.RegistryService();
 
@@ -266,9 +267,17 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 bool ok = true;
 
                 // Check that the profiler is properly registered
-                if (tracerVersion == null || tracerVersion < new Version("2.14.0.0"))
+                if (tracerProgramVersion is null)
                 {
                     ok &= CheckClsid(registry, ClsidKey);
+                    ok &= CheckClsid(registry, Clsid32Key);
+                }
+                else if (RuntimeInformation.OSArchitecture is Architecture.X64)
+                {
+                    ok &= CheckClsid(registry, ClsidKey);
+                }
+                else if (new Version(tracerProgramVersion) < new Version("2.14.0.0") || RuntimeInformation.OSArchitecture is Architecture.X86)
+                {
                     ok &= CheckClsid(registry, Clsid32Key);
                 }
 
@@ -520,6 +529,62 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     AnsiConsole.WriteLine(TracingDotnetOnIis);
                 }
             }
+        }
+
+        private static string? CheckWindowsInstallation()
+        {
+            string? tracerVersion = null;
+            string? displayName = null;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                const string datadog64BitProgram = "Datadog .NET Tracer 64-bit";
+                const string datadog32BitProgram = "Datadog .NET Tracer 32-bit";
+
+                var registrySubKeys = new[] { @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" };
+
+                foreach (var registryKey in registrySubKeys)
+                {
+                    using (var key = Registry.LocalMachine.OpenSubKey(registryKey))
+                    {
+                        if (key is not null)
+                        {
+                            foreach (var subKeyName in key.GetSubKeyNames())
+                            {
+                                var subKey = key.OpenSubKey(subKeyName);
+
+                                if (subKey?.GetValue("DisplayName") is datadog64BitProgram or datadog32BitProgram && displayName is null)
+                                {
+                                    displayName = (string?)subKey?.GetValue("DisplayName");
+                                    tracerVersion = subKey?.GetValue("VersionMajor") + "." + subKey?.GetValue("VersionMinor");
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+
+                if (displayName is null)
+                {
+                    Utils.WriteError(TraceProgramNotFound);
+                }
+                else if (displayName is datadog64BitProgram)
+                {
+                    Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
+                }
+                else if (displayName is datadog32BitProgram)
+                {
+                    if (RuntimeInformation.OSArchitecture is Architecture.X64)
+                    {
+                        Utils.WriteError(WrongTracerArchitecture(datadog32BitProgram));
+                        return tracerVersion;
+                    }
+
+                    Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
+                }
+            }
+
+            return tracerVersion;
         }
     }
 }

@@ -33,9 +33,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
-        public const string TracingWithBundleProfilerPath = "Tracing with Datadog.Trace.Bundle nuget, configuration(CORECLR_PROFILER_PATH or COR_PROFILER_PATH) was found for this service: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithInstaller = "Tracing with Installer/MSI, nuget configuration not found: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=containers#install-the-tracer";
-        public const string TracingDotnetOnIis = "This service is .NET running on IIS, based on the module found: Microsoft.AspNetCore.Server.IIS.dll";
+        public const string TracingWithBundleProfilerPath = "Assuming process is traced with Datadog.Trace.Bundle Nuget, configuration(CORECLR_PROFILER_PATH or COR_PROFILER_PATH) was found for this service: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
+        public const string TracingWithInstaller = "Assuming process is traced with Installer/MSI, Nuget configuration not found: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=containers#install-the-tracer";
+        public const string TracingDotnetOnIis = "This service is .NET/.NET Core running on IIS, based on the module found: Microsoft.AspNetCore.Server.IIS.dll";
+        public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
@@ -140,5 +141,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
         }
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
+
+        public static string TracerProgramFound(string tracerProgramName) => $"{tracerProgramName} found in the installed programs.";
+
+        public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current machine is X64 Bit, make sure to install the 64-bit tracer instead.";
     }
 }
