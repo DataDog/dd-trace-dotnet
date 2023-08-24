@@ -54,5 +54,7 @@
   <ItemGroup>
     <None Remove="Telemetry\telemetry_*.json" />
     <EmbeddedResource Include="Telemetry\telemetry_*.json" />
+    <None Remove="Telemetry\Metrics\*.json" />
+    <EmbeddedResource Include="Telemetry\Metrics\*.json" />
   </ItemGroup>
 </Project>
