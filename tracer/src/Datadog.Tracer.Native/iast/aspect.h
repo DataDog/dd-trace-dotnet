@@ -17,11 +17,14 @@ namespace iast
     };
     enum class VulnerabilityType
     {
-        None,
-        SqlInjection,
-        Xss,
-        WeakCipher,
-        WeakHash
+        WeakCipher = 0,
+        WeakHash = 1,
+        SqlInjection = 2,
+        CommandInjection = 3,
+        PathTraversal = 4,
+        LdapInjection = 5,
+        Ssrf = 6,
+        None = 7
     };
     enum class SpotInfoStatus
     {

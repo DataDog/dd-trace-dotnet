@@ -68,7 +68,7 @@ namespace iast
 
         int _callsiteInstrumentedSources = 0;
         int _callsiteInstrumentedPropagations = 0;
-        int _callsiteInstrumentedSinks = 0;
+        int _callsiteInstrumentedSinks[(int) VulnerabilityType::None] = {}; // Initialize all values to 0
 
         bool _traceJitMethods = false;
 
@@ -125,7 +125,8 @@ namespace iast
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);
-        void GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations,
-                            int* callsiteInstrumentedSinks);
+        void GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinksWeakCipher, 
+            int* instrumentedSinksWeakHash, int* instrumentedSinksSqlI, int* iInstrumentedSinksCmdI,
+            int* instrumentedSinksPathTraversal, int* iInstrumentedSinksLdapI, int* instrumentedSinksSsrf);
     };
 }

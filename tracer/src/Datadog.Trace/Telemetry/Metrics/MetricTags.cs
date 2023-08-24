@@ -230,4 +230,34 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
+
+    public enum IastInstrumentedSources
+    {
+        [Description("source_type:http.request.parameter")] RequestParameterValue,
+        [Description("source_type:http.request.parameter.name")] RequestParameterName,
+        [Description("source_type:http.request.header")] RequestHeader,
+        [Description("source_type:http.request.header.name")] RequestHeaderName,
+        [Description("source_type:http.request.path")] RequestPath,
+        [Description("source_type:http.request.body")] RequestBody,
+        [Description("source_type:http.request.query")] RequestQuery,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
+        [Description("source_type:http.http.request.matrix.parameter")] MatrixParameter,
+        [Description("source_type:http.http.cookie.name")] CookieName,
+        [Description("source_type:http.cookie.value")] CookieValue,
+    }
+
+    public enum IastInstrumentedSinks
+    {
+        [Description("vulnerability_type:weak_cipher")] WeakCipher,
+        [Description("vulnerability_type:weak_hash")] WeakHash,
+        [Description("vulnerability_type:sql_injection")] SqlInjection,
+        [Description("vulnerability_type:command_injection")] CommandInjection,
+        [Description("vulnerability_type:path_traversal")] PathTraversal,
+        [Description("vulnerability_type:ldap_injection")] LdapInjection,
+        [Description("vulnerability_type:ssrf")] Ssrf,
+        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect,
+        [Description("vulnerability_type:insecure_cookie")] InsecureCookie,
+        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie,
+        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie,
+    }
 }

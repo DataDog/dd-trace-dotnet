@@ -66,9 +66,9 @@ internal partial interface IMetricsTelemetryCollector
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1);
 
-    public void RecordCountIastInstrumentedSources(int increment = 1);
+    public void RecordCountIastInstrumentedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1);
 
     public void RecordCountIastInstrumentedPropagations(int increment = 1);
 
-    public void RecordCountIastInstrumentedSinks(int increment = 1);
+    public void RecordCountIastInstrumentedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1);
 }

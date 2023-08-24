@@ -1992,9 +1992,16 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
     return 0;
 }
 
-void CorProfiler::GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks)
+void CorProfiler::GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations,
+                                 int* instrumentedSinksWeakCipher, int* instrumentedSinksWeakHash,
+                                 int* instrumentedSinksSqlI, int* instrumentedSinksCmdI,
+                                 int* instrumentedSinksPathTraversal, int* instrumentedSinksLdapI,
+                                 int* instrumentedSinksSsrf)
 {
-    _dataflow->GetIastMetrics(callsiteInstrumentedSources, callsiteInstrumentedPropagations, callsiteInstrumentedSinks);
+    _dataflow->GetIastMetrics(instrumentedSources, instrumentedPropagations, instrumentedSinksWeakCipher,
+                              instrumentedSinksWeakHash, instrumentedSinksSqlI, instrumentedSinksCmdI,
+                              instrumentedSinksPathTraversal, instrumentedSinksLdapI,
+                              instrumentedSinksSsrf);
 }
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,

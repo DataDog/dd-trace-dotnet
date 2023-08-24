@@ -185,19 +185,21 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
-    public void RecordCountIastInstrumentedSources(int increment = 1)
+    public void RecordCountIastInstrumentedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[445], increment);
+        var index = 445 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountIastInstrumentedPropagations(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[446], increment);
+        Interlocked.Add(ref _buffer.Counts[456], increment);
     }
 
-    public void RecordCountIastInstrumentedSinks(int increment = 1)
+    public void RecordCountIastInstrumentedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[447], increment);
+        var index = 457 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     /// <summary>
@@ -683,11 +685,31 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
             // dd.instrumentation_telemetry_data.iast.instrumented.source, index = 445
+            new(new[] { "source_type:http.request.parameter" }),
+            new(new[] { "source_type:http.request.parameter.name" }),
+            new(new[] { "source_type:http.request.header" }),
+            new(new[] { "source_type:http.request.header.name" }),
+            new(new[] { "source_type:http.request.path" }),
+            new(new[] { "source_type:http.request.body" }),
+            new(new[] { "source_type:http.request.query" }),
+            new(new[] { "source_type:http.request.path.parameter" }),
+            new(new[] { "source_type:http.http.request.matrix.parameter" }),
+            new(new[] { "source_type:http.http.cookie.name" }),
+            new(new[] { "source_type:http.cookie.value" }),
+            // dd.instrumentation_telemetry_data.iast.instrumented.propagation, index = 456
             new(null),
-            // dd.instrumentation_telemetry_data.iast.instrumented.propagation, index = 446
-            new(null),
-            // dd.instrumentation_telemetry_data.iast.instrumented.sink, index = 447
-            new(null),
+            // dd.instrumentation_telemetry_data.iast.instrumented.sink, index = 457
+            new(new[] { "vulnerability_type:weak_cipher" }),
+            new(new[] { "vulnerability_type:weak_hash" }),
+            new(new[] { "vulnerability_type:sql_injection" }),
+            new(new[] { "vulnerability_type:command_injection" }),
+            new(new[] { "vulnerability_type:path_traversal" }),
+            new(new[] { "vulnerability_type:ldap_injection" }),
+            new(new[] { "vulnerability_type:ssrf" }),
+            new(new[] { "vulnerability_type:unvalidated_redirect" }),
+            new(new[] { "vulnerability_type:insecure_cookie" }),
+            new(new[] { "vulnerability_type:no_httponly_cookie" }),
+            new(new[] { "vulnerability_type:no_samesite_cookie" }),
         };
 
     /// <summary>
@@ -696,7 +718,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, 1, 1, 1, };
+        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, 11, 1, 11, };
 
-    private const int _countsLength = 448;
+    private const int _countsLength = 468;
 }

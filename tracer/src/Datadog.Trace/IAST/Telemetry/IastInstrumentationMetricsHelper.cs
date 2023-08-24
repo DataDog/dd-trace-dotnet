@@ -5,24 +5,28 @@
 
 #nullable enable
 
+using System;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast.Telemetry;
 
 internal static class IastInstrumentationMetricsHelper
 {
-    private static int instrumentedSources = 0;
     private static int instrumentedPropagations = 0;
-    private static int instrumentedSinks = 0;
+    private static int vulnerabilityTypesCount = Enum.GetValues(typeof(IastInstrumentedSinks)).Length;
+    private static int sourceTypesCount = Enum.GetValues(typeof(IastInstrumentedSources)).Length;
+    private static int[] instrumentedSources = new int[sourceTypesCount];
+    private static int[] instrumentedSinks = new int[vulnerabilityTypesCount];
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private static bool _iastEnabled = Iast.Instance.Settings.Enabled;
 
-    public static void OnInstrumentedSource()
+    public static void OnInstrumentedSource(SourceTypeName type)
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            instrumentedSources++;
+            instrumentedSources[(int)type]++;
         }
     }
 
@@ -34,11 +38,11 @@ internal static class IastInstrumentationMetricsHelper
         }
     }
 
-    public static void OnInstrumentedSink()
+    public static void OnInstrumentedSink(VulnerabilityType type)
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            instrumentedSinks++;
+            instrumentedSinks[(int)type]++;
         }
     }
 
@@ -46,18 +50,53 @@ internal static class IastInstrumentationMetricsHelper
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            NativeMethods.GetIastMetrics(out var callsiteInstrumentedSources, out var callsiteInstrumentedPropagations, out var callsiteInstrumentedSinks);
+            NativeMethods.GetIastMetrics(out int callsiteInstrumentedSources, out int callsiteInstrumentedPropagations, out int instrumentedSinksWeakCipher, out int instrumentedSinksWeakHash, out int instrumentedSinksSqlI, out int instrumentedSinksCmdI, out int instrumentedSinksPathTraversal, out int instrumentedSinksLdapI, out int instrumentedSinksSsrf);
 
-            if (instrumentedSinks + callsiteInstrumentedSinks > 0)
+            for (int i = 0; i < vulnerabilityTypesCount; i++)
             {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(instrumentedSinks + callsiteInstrumentedSinks);
-                instrumentedSinks = 0;
+                switch ((IastInstrumentedSinks)i)
+                {
+                    case IastInstrumentedSinks.SqlInjection:
+                        ReportSink(IastInstrumentedSinks.SqlInjection, instrumentedSinksSqlI);
+                        break;
+                    case IastInstrumentedSinks.LdapInjection:
+                        ReportSink(IastInstrumentedSinks.LdapInjection, instrumentedSinksLdapI);
+                        break;
+                    case IastInstrumentedSinks.PathTraversal:
+                        ReportSink(IastInstrumentedSinks.PathTraversal, instrumentedSinksPathTraversal);
+                        break;
+                    case IastInstrumentedSinks.CommandInjection:
+                        ReportSink(IastInstrumentedSinks.CommandInjection, instrumentedSinksCmdI);
+                        break;
+                    case IastInstrumentedSinks.WeakCipher:
+                        ReportSink(IastInstrumentedSinks.WeakCipher, instrumentedSinksWeakCipher);
+                        break;
+                    case IastInstrumentedSinks.WeakHash:
+                        ReportSink(IastInstrumentedSinks.WeakHash, instrumentedSinksWeakHash);
+                        break;
+                    case IastInstrumentedSinks.Ssrf:
+                        ReportSink(IastInstrumentedSinks.Ssrf, instrumentedSinksSsrf);
+                        break;
+                    default:
+                        ReportSink((IastInstrumentedSinks)i);
+                        break;
+                }
+
+                instrumentedSinks[i] = 0;
             }
 
-            if (instrumentedSources + callsiteInstrumentedSources > 0)
+            for (int i = 0; i < sourceTypesCount; i++)
             {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(instrumentedSources + callsiteInstrumentedSources);
-                instrumentedSources = 0;
+                if (((IastInstrumentedSources)i) == IastInstrumentedSources.CookieValue)
+                {
+                    ReportSource(IastInstrumentedSources.CookieValue, callsiteInstrumentedSources);
+                }
+                else
+                {
+                    ReportSource(((IastInstrumentedSources)i));
+                }
+
+                instrumentedSinks[i] = 0;
             }
 
             if (instrumentedPropagations + callsiteInstrumentedPropagations > 0)
@@ -65,6 +104,24 @@ internal static class IastInstrumentationMetricsHelper
                 TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(instrumentedPropagations + callsiteInstrumentedPropagations);
                 instrumentedPropagations = 0;
             }
+        }
+    }
+
+    private static void ReportSink(IastInstrumentedSinks tag, int callsiteHits = 0)
+    {
+        var totalHits = instrumentedSinks[(int)tag] + callsiteHits;
+        if (totalHits > 0)
+        {
+            TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(tag, totalHits);
+        }
+    }
+
+    private static void ReportSource(IastInstrumentedSources tag, int callsiteHits = 0)
+    {
+        var totalHits = instrumentedSinks[(int)tag] + callsiteHits;
+        if (totalHits > 0)
+        {
+            TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(tag, totalHits);
         }
     }
 }

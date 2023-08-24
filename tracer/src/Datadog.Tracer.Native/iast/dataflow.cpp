@@ -673,7 +673,7 @@ void Dataflow::ProcessIastMetric(iast::InstrumentResult& result)
                 _callsiteInstrumentedPropagations++;
                 break;
             case AspectType::Sink:
-                _callsiteInstrumentedSinks++;
+                _callsiteInstrumentedSinks[(int)result.vulnerabilityType]++;
                 break;
             case AspectType::Source:
                 _callsiteInstrumentedSources++;
@@ -704,22 +704,40 @@ InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* 
         if (res.written)
         {
             res.aspectType = aspect->GetAspectType();
+            auto types = aspect->GetVulnerabilityTypes();
+            //We don't have any sink with multiple vulnerabilities.
+            res.vulnerabilityType = types.empty() ? VulnerabilityType::None : types.front();
             return res;
         }
     }
     return res;
 }
 
-void Dataflow::GetIastMetrics(int* callsiteInstrumentedSources, int* callsiteInstrumentedPropagations, int* callsiteInstrumentedSinks)
-{
-    *callsiteInstrumentedSources = _callsiteInstrumentedSources;
-    *callsiteInstrumentedPropagations = _callsiteInstrumentedPropagations;
-    *callsiteInstrumentedSinks = _callsiteInstrumentedSinks;
+// Declaring each vulnerability type instead of sending an array involes many parameters, but it is also a way to avoid enum errors between the native and managed part
 
-    // After reporting the metrics, we set them to 0 for the next heartbeat
+void Dataflow::GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinksWeakCipher,
+                              int* instrumentedSinksWeakHash, int* instrumentedSinksSqlI, int* iInstrumentedSinksCmdI,
+                              int* instrumentedSinksPathTraversal, int* iInstrumentedSinksLdapI, int* instrumentedSinksSsrf)
+{
+    *instrumentedSources = _callsiteInstrumentedSources;
+    *instrumentedPropagations = _callsiteInstrumentedPropagations;
+
+    // After reporting the metrics, we set them to 0, ready for the next heartbeat
     _callsiteInstrumentedSources = 0;
     _callsiteInstrumentedPropagations = 0;
-    _callsiteInstrumentedSinks = 0;
+
+    *instrumentedSinksWeakCipher = _callsiteInstrumentedSinks[(int)VulnerabilityType::WeakCipher];
+    *instrumentedSinksWeakHash = _callsiteInstrumentedSinks[(int) VulnerabilityType::WeakHash];
+    *instrumentedSinksSqlI = _callsiteInstrumentedSinks[(int) VulnerabilityType::SqlInjection];
+    *iInstrumentedSinksCmdI = _callsiteInstrumentedSinks[(int) VulnerabilityType::CommandInjection];
+    *instrumentedSinksPathTraversal = _callsiteInstrumentedSinks[(int) VulnerabilityType::PathTraversal];
+    *iInstrumentedSinksLdapI = _callsiteInstrumentedSinks[(int) VulnerabilityType::LdapInjection];
+    *instrumentedSinksSsrf = _callsiteInstrumentedSinks[(int) VulnerabilityType::Ssrf];
+
+    for(int i = 0; i < (int) (VulnerabilityType::None); i++)
+    {
+        _callsiteInstrumentedSinks[i] = 0;
+    }
 }
 
 } // namespace iast

@@ -249,15 +249,15 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        public static void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks)
+        public static void GetIastMetrics(out int instrumentedSources, out int instrumentedPropagations, out int instrumentedSinksWeakCipher, out int instrumentedSinksWeakHash, out int instrumentedSinksSqlI, out int instrumentedSinksCmdI, out int instrumentedSinksPathTraversal, out int instrumentedSinksLdapI, out int instrumentedSinksSsrf)
         {
             if (IsWindows)
             {
-                Windows.GetIastMetrics(out callsiteSources, out callsitePropagations, out callsiteSinks);
+                Windows.GetIastMetrics(out instrumentedSources, out instrumentedPropagations, out instrumentedSinksWeakCipher, out instrumentedSinksWeakHash, out instrumentedSinksSqlI, out instrumentedSinksCmdI, out instrumentedSinksPathTraversal, out instrumentedSinksLdapI, out instrumentedSinksSsrf);
             }
             else
             {
-                NonWindows.GetIastMetrics(out callsiteSources, out callsitePropagations, out callsiteSinks);
+                NonWindows.GetIastMetrics(out instrumentedSources, out instrumentedPropagations, out instrumentedSinksWeakCipher, out instrumentedSinksWeakHash, out instrumentedSinksSqlI, out instrumentedSinksCmdI, out instrumentedSinksPathTraversal, out instrumentedSinksLdapI, out instrumentedSinksSsrf);
             }
         }
 
@@ -315,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler
                 int length);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks);
+            public static extern void GetIastMetrics(out int instrumentedSources, out int instrumentedPropagations, out int instrumentedSinksWeakCipher, out int instrumentedSinksWeakHash, out int instrumentedSinksSqlI, out int instrumentedSinksCmdI, out int instrumentedSinksPathTraversal, out int instrumentedSinksLdapI, out int instrumentedSinksSsrf);
         }
 
         // assume .NET Core if not running on Windows
@@ -371,7 +371,7 @@ namespace Datadog.Trace.ClrProfiler
                 int length);
 
             [DllImport("Datadog.Tracer.Native")]
-            public static extern void GetIastMetrics(out int callsiteSources, out int callsitePropagations, out int callsiteSinks);
+            public static extern void GetIastMetrics(out int instrumentedSources, out int instrumentedPropagations, out int instrumentedSinksWeakCipher, out int instrumentedSinksWeakHash, out int instrumentedSinksSqlI, out int instrumentedSinksCmdI, out int instrumentedSinksPathTraversal, out int instrumentedSinksLdapI, out int instrumentedSinksSsrf);
         }
     }
 }

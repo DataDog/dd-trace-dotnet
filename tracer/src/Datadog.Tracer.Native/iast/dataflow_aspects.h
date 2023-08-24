@@ -20,6 +20,7 @@ namespace iast
         ILInstr* instruction;
         bool written;
         AspectType aspectType;
+        VulnerabilityType vulnerabilityType;
     };
 
     enum class DataflowAspectFilterValue
