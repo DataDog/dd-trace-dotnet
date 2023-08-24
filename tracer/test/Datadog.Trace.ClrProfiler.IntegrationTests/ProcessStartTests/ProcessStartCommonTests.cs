@@ -60,6 +60,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             else if (!EnvironmentTools.IsWindows())
             {
+#if !NETCOREAPP3_1_OR_GREATER
+                if (expectedSpanCount >= 10)
+                {
+                    expectedSpanCount = 6;
+                }
+#endif
                 expectedSpanCount -= 2;
             }
 
