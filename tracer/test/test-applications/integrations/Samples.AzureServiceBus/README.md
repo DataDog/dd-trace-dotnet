@@ -164,3 +164,23 @@ Traces #3-21
 - 3x `ServiceBusReceiver.Defer`
 - `ServiceBusReceiver.ReceiveDeferred`
 - 3x `ServiceBusReceiver.Complete`
+
+### TestServiceBusSubscriptionProcessorAsync
+
+Trace #1
+
+```plaintext
+SendMessageToTopicAsync
+---------------------------------
+|          |
+Message    ServiceBusSender.Send
+-------
+|                                     |                                     |
+ServiceBusProcessor.ProcessMessage    ServiceBusProcessor.ProcessMessage    ServiceBusProcessor.ProcessMessage
+|                                     |                                     |
+ServiceBusReceiver.Complete           ServiceBusReceiver.Complete           ServiceBusReceiver.Complete
+```
+
+Traces #2-4
+
+- 3x `ServiceBusReceiver.Receive`

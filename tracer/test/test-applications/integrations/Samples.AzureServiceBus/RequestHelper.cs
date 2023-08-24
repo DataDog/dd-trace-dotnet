@@ -61,7 +61,7 @@ namespace Samples.AzureServiceBus
 
             using var span = tracer.StartActiveSpan(nameof(TestSenderSchedulingAsync));
 
-            var sender = Client.CreateSender(queueName);
+            await using var sender = Client.CreateSender(queueName);
             var sequenceNumber = await sender.ScheduleMessageAsync(CreateMessage("ScheduleMessagesAndCancelAsync"), DateTimeOffset.Now.AddMinutes(10));
             await sender.CancelScheduledMessageAsync(sequenceNumber);
 
@@ -79,11 +79,11 @@ namespace Samples.AzureServiceBus
         {
             using (var span = tracer.StartActiveSpan("SendIndividualMessageAsync"))
             {
-                var sender = Client.CreateSender(queueName);
+                await using var sender = Client.CreateSender(queueName);
                 await sender.SendMessageAsync(CreateMessage("HandleIndividualMessageAsync"));
             }
 
-            var receiver = Client.CreateReceiver(queueName, new ServiceBusReceiverOptions()
+            await using var receiver = Client.CreateReceiver(queueName, new ServiceBusReceiverOptions()
             {
                 ReceiveMode = ServiceBusReceiveMode.PeekLock
             });
@@ -117,14 +117,14 @@ namespace Samples.AzureServiceBus
             // With the now-deadlettered message:
             // - Receive
             // - Complete
-            var deadLetterReceiver = Client.CreateReceiver(GetDeadLetterQueueName(queueName), new ServiceBusReceiverOptions());
+            await using var deadLetterReceiver = Client.CreateReceiver(GetDeadLetterQueueName(queueName), new ServiceBusReceiverOptions());
             message = await deadLetterReceiver.ReceiveMessageAsync();
             await deadLetterReceiver.CompleteMessageAsync(message);
         }
 
         public async Task TestServiceBusReceiverBatchMessagesAsync(Tracer tracer, string queueName)
         {
-            var sender = Client.CreateSender(queueName);
+            await using var sender = Client.CreateSender(queueName);
 
             using (tracer.StartActiveSpan("SendBatchMessagesAsync - IEnumerable_ServiceBusMessage"))
             {
@@ -147,7 +147,7 @@ namespace Samples.AzureServiceBus
                 await sender.SendMessagesAsync(serviceBusMessageBatch);
             }
 
-            var receiver = Client.CreateReceiver(queueName, new ServiceBusReceiverOptions()
+            await using var receiver = Client.CreateReceiver(queueName, new ServiceBusReceiverOptions()
             {
                 ReceiveMode = ServiceBusReceiveMode.PeekLock
             });

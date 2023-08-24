@@ -10,9 +10,13 @@ namespace Samples.AzureServiceBus
 {
     public class Program
     {
+        // Before executing the program, ensure the sessions, topics, and subscriptions exist
         private static readonly RequestHelper _requestHelper = new();
         private static readonly string _sessionDisabledQueueName = "samples-azureservicebus-queue";
         private static readonly string _sessionEnabledQueueName = "samples-azureservicebus-queue-session";
+        private static readonly string _topicName = "samples-azureservicebus-topic";
+        private static readonly string _subscriptionPrefix = "subscription";
+        private static readonly int _numSubscribers = 3;
 
         private static async Task Main(string[] args)
         {
@@ -46,6 +50,9 @@ namespace Samples.AzureServiceBus
 
             // Test the ServiceBusSender and ServiceBusReceiver API's: Batch messages
             await _requestHelper.TestServiceBusReceiverBatchMessagesAsync(tracer, _sessionDisabledQueueName);
+
+            // Test sending to topics and receiving from subscriptions, instead of operating directly with queues
+            await _requestHelper.TestServiceBusSubscriptionProcessorAsync(tracer, _topicName, _subscriptionPrefix, _numSubscribers);
 
             await _requestHelper.DisposeAsync();
         }

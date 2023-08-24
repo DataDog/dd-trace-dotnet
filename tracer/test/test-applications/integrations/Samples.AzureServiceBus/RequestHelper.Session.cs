@@ -28,8 +28,8 @@ namespace Samples.AzureServiceBus
             await SendSessionMessagesAsync(tracer, queueName);
 
             // Create a session receiver for both sessions
-            ServiceBusSessionReceiver firstSessionReceiver = await Client.AcceptSessionAsync(queueName, "FirstSessionId");
-            ServiceBusSessionReceiver secondSessionReceiver = await Client.AcceptSessionAsync(queueName, "SecondSessionId");
+            await using ServiceBusSessionReceiver firstSessionReceiver = await Client.AcceptSessionAsync(queueName, "FirstSessionId");
+            await using ServiceBusSessionReceiver secondSessionReceiver = await Client.AcceptSessionAsync(queueName, "SecondSessionId");
 
             // Receive messages for first session
             var firstSessionMessages = await firstSessionReceiver.ReceiveMessagesAsync(maxMessages: 2);
@@ -54,9 +54,9 @@ namespace Samples.AzureServiceBus
             var sessionProcessOptions = new ServiceBusSessionProcessorOptions();
             sessionProcessOptions.SessionIds.Add("ProcessorSessionId");
 
-            var processor = Client.CreateSessionProcessor(queueName, sessionProcessOptions);
+            await using var processor = Client.CreateSessionProcessor(queueName, sessionProcessOptions);
             processor.ProcessMessageAsync += ProcessMessageHandler;
-            processor.ProcessErrorAsync += ProcessErrorHandler;
+            processor.ProcessErrorAsync += ProcessErrorHandler("QueueSessionProcessor");
             await processor.StartProcessingAsync();
 
             await _sessionProcessorTcs.Task;
@@ -65,7 +65,7 @@ namespace Samples.AzureServiceBus
 
         private async Task SendSessionMessagesAsync(Tracer tracer, string queueName)
         {
-            ServiceBusSender sender = Client.CreateSender(queueName);
+            await using ServiceBusSender sender = Client.CreateSender(queueName);
 
             // Create and send messages for one session
             using (var span = tracer.StartActiveSpan("FirstSessionId - Producer"))

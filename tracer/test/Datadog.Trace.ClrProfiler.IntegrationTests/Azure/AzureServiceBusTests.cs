@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedProcessorSpanCount = 79;
+                const int expectedProcessorSpanCount = 91;
                 var spans = agent.WaitForSpans(expectedProcessorSpanCount);
 
                 using var s = new AssertionScope();

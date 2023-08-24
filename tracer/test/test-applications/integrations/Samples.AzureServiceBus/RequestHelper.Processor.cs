@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
 using OpenTelemetry.Trace;
@@ -18,45 +20,72 @@ namespace Samples.AzureServiceBus
     // - processor.UpdatePrefetchCount
     partial class RequestHelper
     {
-        private readonly TaskCompletionSource<bool> _processorTcs = new();
-
         public async Task TestServiceBusProcessorAsync(Tracer tracer, string queueName)
         {
-            await SendMessageToProcessorAsync(tracer, queueName);
+            await SendMessageToProcessorAsync(tracer, queueName, resourceName: "SendMessageToProcessorAsync");
 
-            var processor = Client.CreateProcessor(queueName);
-            processor.ProcessMessageAsync += ProcessMessageHandler;
-            processor.ProcessErrorAsync += ProcessErrorHandler;
+            await using var processor = Client.CreateProcessor(queueName);
+            var processorTcs = new TaskCompletionSource<bool>();
+
+            processor.ProcessMessageAsync += ProcessMessageHandler("QueueProcessor", processorTcs);
+            processor.ProcessErrorAsync += ProcessErrorHandler("QueueProcessor");
             await processor.StartProcessingAsync();
 
-            await _processorTcs.Task;
+            await processorTcs.Task;
             await processor.StopProcessingAsync();
+            await processor.DisposeAsync();
         }
 
-        private async Task ProcessMessageHandler(ProcessMessageEventArgs args)
+        public async Task TestServiceBusSubscriptionProcessorAsync(Tracer tracer, string topicName, string subscriptionPrefix, int numSubscribers)
         {
-            string body = args.Message.Body.ToString();
-            Console.WriteLine($"Received: {body}");
+            await SendMessageToProcessorAsync(tracer, topicName, resourceName: "SendMessageToTopicAsync");
 
-            // complete the message. message is deleted from the queue.
-            await args.CompleteMessageAsync(args.Message);
+            List<ServiceBusProcessor> processorList = new();
 
-            // We only wait for one send span, so immediately set the Result of the processing TaskCompletionSource
-            _processorTcs.SetResult(true);
+            for (int i = 1; i <= numSubscribers; i++)
+            {
+                var processor = Client.CreateProcessor(topicName, $"{subscriptionPrefix}{i}");
+                var processorTcs = new TaskCompletionSource<bool>();
+
+                processorList.Add(processor);
+
+                processor.ProcessMessageAsync += ProcessMessageHandler($"TopicSubscriber{i}", processorTcs);
+                processor.ProcessErrorAsync += ProcessErrorHandler($"TopicSubscriber{i}");
+                await processor.StartProcessingAsync();
+
+                // To ensure stable ordering, we'll await one message from the newly established subscriber before starting the next
+                await processorTcs.Task;
+                await processor.StopProcessingAsync();
+                await processor.DisposeAsync();
+            }
         }
 
-        private Task ProcessErrorHandler(ProcessErrorEventArgs args)
-        {
-            Console.WriteLine(args.Exception.ToString());
-            return Task.CompletedTask;
-        }
+        private Func<ProcessMessageEventArgs, Task> ProcessMessageHandler(string processorName, TaskCompletionSource<bool> processOneTcs)
+            => async (args) =>
+            {
+                string body = args.Message.Body.ToString();
+                Console.WriteLine($"[{processorName}] Received: {body}");
 
-        private async Task SendMessageToProcessorAsync(Tracer tracer, string queueName)
-        {
-            using var span = tracer.StartActiveSpan("SendMessageToProcessorAsync");
+                // complete the message. message is deleted from the queue.
+                await args.CompleteMessageAsync(args.Message);
 
-            var sender = Client.CreateSender(queueName);
-            await sender.SendMessageAsync(CreateMessage("SendMessageToProcessorAsync"));
+                // We only wait for one send span, so immediately set the Result of the processing TaskCompletionSource
+                processOneTcs.SetResult(true);
+            };
+
+        private Func<ProcessErrorEventArgs, Task> ProcessErrorHandler(string processorName)
+            => (args) =>
+            {
+                Console.WriteLine($"[{processorName}] {args.Exception}");
+                return Task.CompletedTask;
+            };
+
+        private async Task SendMessageToProcessorAsync(Tracer tracer, string queueOrTopicName, string resourceName)
+        {
+            using var span = tracer.StartActiveSpan(resourceName);
+
+            await using var sender = Client.CreateSender(queueOrTopicName);
+            await sender.SendMessageAsync(CreateMessage(resourceName));
         }
     }
 }
