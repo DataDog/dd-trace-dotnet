@@ -51,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
 #if !NETCOREAPP3_1_OR_GREATER
                 // e.g. .NET 4.6.2
-                expectedSpanCount -= 4; // we expect 6 spans only
+                expectedSpanCount = 6;
 #endif
             }
 
