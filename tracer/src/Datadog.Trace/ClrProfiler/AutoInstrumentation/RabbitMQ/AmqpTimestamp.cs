@@ -1,12 +1,15 @@
-// <copyright file="IAmqpTimestamp.cs" company="Datadog">
+// <copyright file="AmqpTimestamp.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.DuckTyping;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 {
-    internal interface IAmqpTimestamp
+    [DuckCopy]
+    internal struct AmqpTimestamp
     {
-        long UnixTime { get; }
+        public long UnixTime;
     }
 }

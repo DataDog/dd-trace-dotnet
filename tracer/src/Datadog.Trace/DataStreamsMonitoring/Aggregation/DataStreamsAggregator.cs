@@ -127,6 +127,7 @@ internal class DataStreamsAggregator
             {
                 _sketchPool.Release(bucket.Value.EdgeLatency);
                 _sketchPool.Release(bucket.Value.PathwayLatency);
+                _sketchPool.Release(bucket.Value.PayloadSize);
             }
         }
     }

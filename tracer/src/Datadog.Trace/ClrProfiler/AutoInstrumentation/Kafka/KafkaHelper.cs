@@ -9,6 +9,7 @@ using System.Text;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -96,47 +97,38 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         }
 
         private static long TryGetSize(object obj)
+            => obj switch
+            {
+                null => 0,
+                byte[] bytes => bytes.Length,
+                string str => Encoding.UTF8.GetByteCount(str),
+                _ => 0,
+            };
+
+        private static long GetMessageSize<T>(T message)
+            where T : IMessage
         {
-            if (obj == null)
+            if (((IDuckType)message).Instance is null)
             {
                 return 0;
             }
 
-            if (obj is byte[] bytes)
-            {
-                return bytes.Length;
-            }
+            var size = TryGetSize(message.Key);
+            size += TryGetSize(message.Value);
 
-            if (obj is string str)
-            {
-                return Encoding.UTF8.GetByteCount(str);
-            }
-
-            return 0;
-        }
-
-        private static long GetMessageSize(IMessage message)
-        {
-            long size = 0;
-            if (message == null)
+            if (message.Headers == null)
             {
                 return size;
             }
 
-            size += TryGetSize(message.Key);
-            size += TryGetSize(message.Value);
-
-            if (message.Headers != null)
+            for (var i = 0; i < message.Headers.Count; i++)
             {
-                for (var i = 0; i < message.Headers.Count; i++)
+                var header = message.Headers[i];
+                size += Encoding.UTF8.GetByteCount(header.Key);
+                var value = header.GetValueBytes();
+                if (value != null)
                 {
-                    var header = message.Headers[i];
-                    size += Encoding.UTF8.GetByteCount(header.Key);
-                    var value = header.GetValueBytes();
-                    if (value != null)
-                    {
-                        size += value.Length;
-                    }
+                    size += value.Length;
                 }
             }
 

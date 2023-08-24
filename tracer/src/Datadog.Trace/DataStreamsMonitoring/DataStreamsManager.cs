@@ -132,7 +132,7 @@ internal class DataStreamsManager
             }
 
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-            var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1000_000) : nowNs;
+            var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
             var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);

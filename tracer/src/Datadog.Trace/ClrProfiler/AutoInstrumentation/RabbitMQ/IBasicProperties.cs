@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         /// <summary>
         /// Gets timestamp at which the message was produced
         /// </summary>
-        IAmqpTimestamp Timestamp { get; }
+        AmqpTimestamp Timestamp { get; }
 
         /// <summary>
         /// Returns true if the DeliveryMode property is present
