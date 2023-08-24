@@ -71,14 +71,14 @@ public class AppSecWafBenchmark
         Waf = initResult.Waf;
     }
 
-    public IEnumerable<Dictionary<string, object>> Source()
+    public IEnumerable<NestedMap> Source()
     {
         yield return MakeNestedMap(10);
         yield return MakeNestedMap(100);
         yield return MakeNestedMap(1000);
     }
 
-    private static Dictionary<string, object> MakeNestedMap(int nestingDepth)
+    private static NestedMap MakeNestedMap(int nestingDepth)
     {
         var root = new Dictionary<string, object>();
         var map = root;
@@ -116,7 +116,7 @@ public class AppSecWafBenchmark
             map = nextMap;
         }
 
-        return root;
+        return new NestedMap(root, nestingDepth);
     }
 
     [IterationSetup]
@@ -127,5 +127,10 @@ public class AppSecWafBenchmark
 
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
-    public void RunWaf(Dictionary<string, object> args) => _context.Run(args, TimeoutMicroSeconds);
+    public void RunWaf(NestedMap args) => _context.Run(args.Map, TimeoutMicroSeconds);
+
+    public record NestedMap(Dictionary<string, object> Map, int NestingDepth)
+    {
+        public override string ToString() => $"NestedMap ({NestingDepth})";
+    }
 }
