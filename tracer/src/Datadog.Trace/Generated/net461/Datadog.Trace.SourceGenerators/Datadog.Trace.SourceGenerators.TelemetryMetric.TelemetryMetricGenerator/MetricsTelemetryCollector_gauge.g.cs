@@ -37,7 +37,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "component_name:iast" }),
             new(new[] { "component_name:iast_derived" }),
             new(new[] { "component_name:iast_aspects" }),
-            // direct_log_queue, index = 7
+            // direct_log_queue.length, index = 7
             new(null),
         };
 
