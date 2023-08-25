@@ -147,5 +147,7 @@ namespace iast
         void ReJITCompilationFinished();
 
         void DumpIL(std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = nullptr);
+
+        std::vector<WSTRING> GetCustomAttributes();
     };
 }

@@ -4,6 +4,7 @@ using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
+using DelegateDecompiler;
 using FluentAssertions;
 using Xunit;
 
@@ -51,5 +52,21 @@ public class EFTests : EFBaseTests
         var query = new EntityCommand(queryString, conn);
         return query;
     }
+
+    [Fact]
+    public void TestDelegateDecompileLibBug()
+    {
+        var book = new Book { Id = "id", Title = "title", Author = "author" };
+        var ft = book.FullTitle;
+        var books = (db as ApplicationDbContext).Books;
+        var decompiled = books.Decompile();
+        var any = decompiled.Any(x => x.FullTitle != ft);
+        //var data = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullTitle != "eeef").ToList();
+        if (any)
+        {
+
+        }
+    }
+
 }
 #endif

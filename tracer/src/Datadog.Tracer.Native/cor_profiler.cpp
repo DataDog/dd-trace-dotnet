@@ -1035,14 +1035,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                     const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
                     DWORD data_size = 0;
 
-                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token,
-                                                                  &attribute_data, &data_size);
+                    hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token, &attribute_ctor_token, &attribute_data, &data_size);
 
                     // We are only concerned with the trace attribute on method definitions
                     if (TypeFromToken(parent_token) == mdtMethodDef)
                     {
                         mdTypeDef attribute_type_token = mdTypeDefNil;
-                        WCHAR function_name[kNameMaxSize]{};
+                        WCHAR function_name[1024]{};
                         DWORD function_name_len = 0;
 
                         // Get the type name from the constructor

@@ -30,10 +30,12 @@ namespace iast
         friend class Dataflow;
         friend class ILRewriter;
         friend class TypeInfo;
+        friend class MemberInfo;
         friend class MemberRefInfo;
         friend class MethodSpec;
         friend class MethodInfo;
         friend class FieldInfo;
+        friend class PropertyInfo;
         friend class DataflowAspectClass;
         friend class DataflowAspect;
         friend class DataflowAspectReference;
@@ -142,5 +144,7 @@ namespace iast
 
         HRESULT FindMemberRefsByName(mdTypeRef typeRef, const WSTRING& memberName, std::vector<mdMemberRef>& members);
         HRESULT GetAssemblyTypeRef(const WSTRING& assemblyName, const WSTRING& typeName, mdTypeRef* typeRef);
+
+        std::vector<WSTRING> GetCustomAttributes(mdToken token);
     };
 }

@@ -255,6 +255,18 @@ namespace iast
         if (_isExcluded < 0)
         {
             _isExcluded = _module->_dataflow->IsMethodExcluded(GetFullName());
+            if (!_isExcluded && _module->_dataflow->HasMethodAttributeExclusions())
+            {
+                for (auto methodAttribute : GetCustomAttributes())
+                {
+                    if (_module->_dataflow->IsMethodAttributeExcluded(methodAttribute))
+                    {
+                        _isExcluded = true;
+                        break;
+                    }
+                }
+            
+            }
         }
         return _isExcluded;
     }
@@ -526,4 +538,10 @@ namespace iast
         _nMethodIL = 0;
         DEL_ARR(_pMethodIL);
     }
+
+    std::vector<WSTRING> MethodInfo::GetCustomAttributes()
+    {
+        return _module->GetCustomAttributes(_id);
+    }
+
 }
