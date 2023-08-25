@@ -51,17 +51,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Windows .NET Framework/.NET Core 3.0 and lower: 6 spans
             // Windows .NET Core 3.1+: 10 spans
             // Linux/OSX .NET Core 3.0 and lower: 6 spans
-            // Linux/OSX .NET Core 3.1+: 8 spans
+            // Linux/OSX .NET Core 3.1+: 10 spans
 #if !NETCOREAPP3_1_OR_GREATER
             // Windows/Linux/Mac all expect 6 for .NET Framework or .NET Core 3.0 and below
             if (expectedSpanCount >= 10)
             {
                 expectedSpanCount = 6;
-            }
-#else
-            if (!EnvironmentTools.IsWindows())
-            {
-                expectedSpanCount = 8;
             }
 #endif
 
