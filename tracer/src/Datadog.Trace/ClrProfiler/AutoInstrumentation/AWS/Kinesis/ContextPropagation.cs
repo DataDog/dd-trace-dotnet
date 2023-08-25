@@ -16,6 +16,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
     internal static class ContextPropagation
     {
         private const string KinesisKey = "_datadog";
+        private const int MaxKinesisDataSize = 1024 * 1024; // 1MB
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
         public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, SpanContext context)
@@ -53,10 +54,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
 
             try
             {
-                var propagatedContext = new Dictionary<string, string>();
+                var propagatedContext = new Dictionary<string, object>();
                 SpanContextPropagator.Instance.Inject(context, propagatedContext, default(DictionaryGetterAndSetter));
                 jsonData[KinesisKey] = propagatedContext;
-                record.Data = DictionaryToMemoryStream(jsonData);
+
+                var memoryStreamData = DictionaryToMemoryStream(jsonData);
+                if (memoryStreamData.Length > MaxKinesisDataSize)
+                {
+                    return;
+                }
+
+                record.Data = memoryStreamData;
             }
             catch (Exception)
             {

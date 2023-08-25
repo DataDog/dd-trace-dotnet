@@ -141,6 +141,31 @@ public class ContextPropagationTests
         extractedTraceContext["x-datadog-trace-id"].Should().Be(spanContext.TraceId.ToString());
     }
 
+    [Fact]
+    public void InjectTraceIntoData_WithLargeJsonString_SkipsAddingTraceContext()
+    {
+        var largeDictionary = new Dictionary<string, object>
+        {
+            { "person", PersonDictionary },
+            { "blob", new string('x', 1024 * 1024) }
+        };
+        var request = new PutRecordRequest
+        {
+            StreamName = StreamName,
+            Data = ContextPropagation.DictionaryToMemoryStream(largeDictionary)
+        };
+
+        var proxy = request.DuckCast<IPutRecordRequest>();
+
+        ContextPropagation.InjectTraceIntoData(proxy, spanContext);
+
+        var data = proxy.Data;
+
+        // Length has not changed, therefore, no trace was injected.
+        data.Length.Should().Be(request.Data.Length);
+        data.Should().BeSameAs(request.Data);
+    }
+
     [Theory]
     [MemberData(nameof(MemoryStreamToDictionaryExpectedData))]
     public void ParseDataObject_ReturnsExpectedValue(byte[] bytes, Dictionary<string, object> expected)
