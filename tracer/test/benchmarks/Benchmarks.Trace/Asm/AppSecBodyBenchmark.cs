@@ -20,7 +20,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
 #endif
 
-namespace Benchmarks.Trace
+namespace Benchmarks.Trace.Asm
 {
     [MemoryDiagnoser]
     [BenchmarkAgent2]

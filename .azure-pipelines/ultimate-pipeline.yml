@@ -2707,6 +2707,8 @@ stages:
           agent: "BenchmarkAgent5"
         BenchmarkAgent6:
           agent: "BenchmarkAgent6"
+        BenchmarkAgent7:
+          agent: "BenchmarkAgent7"
 
     timeoutInMinutes: 30
     pool:
@@ -2778,6 +2780,12 @@ stages:
       displayName: Download results BenchmarkAgent6
       inputs:
         artifact: benchmarks_results_BenchmarkAgent6
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent7
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent7
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
 
     # upload the combined results for simplicity in other pipelines

@@ -22,6 +22,7 @@
 AspectsDefinitions.g.cs 				@DataDog/asm-dotnet
 /tracer/test/test-applications/integrations/Samples.InstrumentedTests/ @DataDog/asm-dotnet
 /tracer/src/Datadog.Trace/Tags.AppSec.cs @DataDog/asm-dotnet
+/tracer/test/benchmarks/Benchmarks.Trace/Asm/   @DataDog/asm-dotnet
 
 # Profiler
 /profiler/                                @DataDog/profiling-dotnet
