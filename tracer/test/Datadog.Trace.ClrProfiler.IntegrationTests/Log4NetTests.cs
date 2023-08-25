@@ -160,8 +160,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 
-            var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = MockTracerAgent.Create(Output, agentPort);
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion);
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
@@ -195,6 +195,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             VerifyInstrumentation(processResult.Process);
+            telemetry.AssertIntegrationEnabled(IntegrationId.Log4Net);
         }
 
         private static bool PackageSupportsLogsInjection(string packageVersion)
