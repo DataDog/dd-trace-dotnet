@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
@@ -96,28 +97,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             NLogPre43,
         }
 
-        public static void AddDatadogTarget(object loggingConfiguration)
+        public static bool AddDatadogTarget(object loggingConfiguration)
         {
             if (_targetProxy is null)
             {
-                return;
+                return false;
             }
 
-            switch (_nLogVersion)
+            return _nLogVersion switch
             {
-                case NLogVersion.NLog50:
-                    AddDatadogTargetNLog50(loggingConfiguration, _targetProxy);
-                    break;
-                case NLogVersion.NLog45:
-                    AddDatadogTargetNLog45(loggingConfiguration, _targetProxy);
-                    break;
-                case NLogVersion.NLog43To45:
-                    AddDatadogTargetNLog43To45(loggingConfiguration, _targetProxy);
-                    break;
-                default:
-                    AddDatadogTargetNLogPre43(loggingConfiguration, _targetProxy);
-                    break;
-            }
+                NLogVersion.NLog50 => AddDatadogTargetNLog50(loggingConfiguration, _targetProxy),
+                NLogVersion.NLog45 => AddDatadogTargetNLog45(loggingConfiguration, _targetProxy),
+                NLogVersion.NLog43To45 => AddDatadogTargetNLog43To45(loggingConfiguration, _targetProxy),
+                _ => AddDatadogTargetNLogPre43(loggingConfiguration, _targetProxy)
+            };
         }
 
         public static IDictionary<string, object?>? GetContextProperties()
@@ -185,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         }
 
         // internal for testing
-        internal static void AddDatadogTargetNLog50(object loggingConfiguration, object targetProxy)
+        internal static bool AddDatadogTargetNLog50(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
             // if not enabled.
@@ -197,7 +190,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     if (target is IDuckType { Instance: DirectSubmissionNLogV5Target })
                     {
                         // already added
-                        return;
+                        return false;
                     }
                 }
             }
@@ -207,10 +200,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
 
             Log.Information("Direct log submission via NLog 5.0+ enabled");
+            return true;
         }
 
         // internal for testing
-        internal static void AddDatadogTargetNLog45(object loggingConfiguration, object targetProxy)
+        internal static bool AddDatadogTargetNLog45(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
             // if not enabled.
@@ -222,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     if (target is IDuckType { Instance: DirectSubmissionNLogTarget })
                     {
                         // already added
-                        return;
+                        return false;
                     }
                 }
             }
@@ -232,10 +226,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**", final: true);
 
             Log.Information("Direct log submission via NLog 4.5+ enabled");
+            return true;
         }
 
         // internal for testing
-        internal static void AddDatadogTargetNLog43To45(object loggingConfiguration, object targetProxy)
+        internal static bool AddDatadogTargetNLog43To45(object loggingConfiguration, object targetProxy)
         {
             // Could also do the duck cast in the method signature, but this avoids the allocation in the instrumentation
             // if not enabled.
@@ -247,7 +242,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     if (target is IDuckType { Instance: DirectSubmissionNLogLegacyTarget })
                     {
                         // already added
-                        return;
+                        return false;
                     }
                 }
             }
@@ -257,10 +252,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.AddRuleForAllLevels(targetProxy, "**");
 
             Log.Information("Direct log submission via NLog 4.3-4.5 enabled");
+            return true;
         }
 
         // internal for testing
-        internal static void AddDatadogTargetNLogPre43(object loggingConfiguration, object targetProxy)
+        internal static bool AddDatadogTargetNLogPre43(object loggingConfiguration, object targetProxy)
         {
             var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationPre43Proxy>();
 
@@ -271,7 +267,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     if (target is IDuckType { Instance: DirectSubmissionNLogTarget })
                     {
                         // already added
-                        return;
+                        return false;
                     }
                 }
             }
@@ -279,7 +275,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             if (_createLoggingRuleFunc is null)
             {
                 // we failed on startup, so should never get to this point
-                return;
+                return false;
             }
 
             // need to create and add the new target
@@ -300,6 +296,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             loggingConfigurationProxy.LoggingRules.Add(instance);
 
             Log.Information("Direct log submission via NLog <4.3 enabled");
+            return true;
         }
 
         // internal for testing
