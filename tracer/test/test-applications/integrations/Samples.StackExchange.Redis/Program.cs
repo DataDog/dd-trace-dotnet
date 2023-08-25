@@ -43,7 +43,7 @@ namespace Samples.StackExchangeRedis
 
                 RunCommands(new TupleList<string, Func<object>>
                 {
-                    { "PING", () => db.PingAsync().Result },
+                    { "PING", () => db.PingAsync(CommandFlags.DemandMaster).Result },
                     { "PING_SLAVE", () => db.PingAsync(CommandFlags.DemandSlave).Result },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR") },
                     { "INCR", () => db.StringIncrement($"{prefix}INCR", 1.25) },
@@ -163,7 +163,7 @@ namespace Samples.StackExchangeRedis
                 { "LockRelease", () => db.LockRelease($"{prefix}Lock", "value1") },
                 { "LockTake", () => db.LockTake($"{prefix}Lock", "value1", new TimeSpan(0, 0, 10)) },
 
-                { "Ping", () => db.Ping() },
+                { "Ping", () => db.Ping(CommandFlags.DemandMaster) },
 #if (STACKEXCHANGEREDIS_1_0_245)
                 { "Publish", () => db.Publish(ApiSafeCreateRedisChannel("value"), "message") },
 #endif
