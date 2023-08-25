@@ -13,7 +13,7 @@ namespace Samples.StackExchangeRedis
         // was occasionally EXPIRE.
         private static readonly TimeSpan ExpireTimeSpan = TimeSpan.FromMilliseconds(1500);
 
-        static void Main(string[] args)
+        static int Main(string[] args)
         {
             string prefix = "";
             if (args.Length > 0)
@@ -21,7 +21,25 @@ namespace Samples.StackExchangeRedis
                 prefix = args[0];
             }
 
-            RunStackExchange(prefix);
+            try
+            {
+                RunStackExchange(prefix);
+                return 0;
+            }
+            catch (Exception ex)
+                when (ex.GetType().Name == "RedisConnectionException"
+                   && ex.Message.Contains("No connection is available to service this operation"))
+            {
+                // If the redis server is being too slow in responding, we can end up with timeouts
+                // We could do retries, but then we risk butting up against timeout limits etc
+                // As a workaround, we use the specific exit code 13 to indicate a faulty program,
+                // and skip the test.
+                // We need to keep the catch very specific here, so that we don't accidentally
+                // start skipping tests when we shouldn't be
+                Console.WriteLine("Unexpected exception during execution " + ex);
+                Console.WriteLine("Exiting with skip code (13)");
+                return 13;
+            }
         }
 
         private static string Host()
