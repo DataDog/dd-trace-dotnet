@@ -17,6 +17,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 {
@@ -26,6 +27,16 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
+        private static readonly MemoryStreamJsonConverter MemoryStreamConverter = new();
+        private static readonly ConverterContractResolver ContractResolver = new();
+        private static readonly JsonSerializerSettings SerializerSettings = new()
+        {
+            ContractResolver = ContractResolver,
+            Converters = new List<JsonConverter>
+            {
+                MemoryStreamConverter
+            }
+        };
 
         internal static CallTargetState StartInvocation<TArg>(ILambdaExtensionRequest requestBuilder, TArg payload, IDictionary<string, string> context)
         {
@@ -208,12 +219,47 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             try
             {
-                return JsonConvert.SerializeObject(obj);
+                return JsonConvert.SerializeObject(obj, SerializerSettings);
             }
             catch (Exception ex)
             {
                 Serverless.Debug("Failed to serialize object with the following error: " + ex.ToString());
                 return DefaultJson;
+            }
+        }
+
+        private class ConverterContractResolver : DefaultContractResolver
+        {
+            protected override JsonContract CreateContract(Type objectType)
+            {
+                // Create a contract with custom settings
+                var contract = base.CreateContract(objectType);
+
+                if (objectType == typeof(MemoryStream))
+                {
+                    contract.Converter = new MemoryStreamJsonConverter();
+                }
+
+                return contract;
+            }
+        }
+
+        private class MemoryStreamJsonConverter : JsonConverter<MemoryStream>
+        {
+            public override void WriteJson(JsonWriter writer, MemoryStream value, JsonSerializer serializer)
+            {
+                if (value == null)
+                {
+                    writer.WriteNull();
+                    return;
+                }
+
+                // TODO: implement properly
+            }
+
+            public override MemoryStream ReadJson(JsonReader reader, Type objectType, MemoryStream existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
             }
         }
 
