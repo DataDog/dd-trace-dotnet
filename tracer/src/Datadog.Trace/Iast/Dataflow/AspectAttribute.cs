@@ -40,17 +40,17 @@ internal abstract class AspectAttribute : Attribute
     {
     }
 
-    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
+    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
         : this(targetMethod, targetType, new int[] { paramShift }, new bool[] { boxParam }, new AspectFilter[] { }, aspectType, vulnerabilityTypes)
     {
     }
 
-    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
+    public AspectAttribute(string targetMethod, string targetType, int paramShift, bool boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
         : this(targetMethod, targetType, new int[] { paramShift }, new bool[] { boxParam }, filters, aspectType, vulnerabilityTypes)
     {
     }
 
-    public AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Propagation, params VulnerabilityType[] vulnerabilityTypes)
+    public AspectAttribute(string targetMethod, string targetType, int[] paramShift, bool[] boxParam, AspectFilter[] filters, AspectType aspectType = AspectType.Default, params VulnerabilityType[] vulnerabilityTypes)
     {
         if (paramShift == null || paramShift.Length == 0) { paramShift = new int[] { 0 }; }
         if (boxParam == null || boxParam.Length == 0) { boxParam = new bool[] { false }; }
