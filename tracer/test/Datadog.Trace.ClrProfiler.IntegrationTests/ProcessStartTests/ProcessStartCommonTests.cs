@@ -47,27 +47,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected async Task RunTest(string metadataSchemaVersion, string testName, int expectedSpanCount, bool collectCommands = false)
         {
-            // TODO slightly hacky with expected span count at the moment
-            if (EnvironmentTools.IsWindows())
-            {
+            // expectedSpanCount (10 is passed into this function but varies depending on OS and .NET version):
+            // Windows .NET Framework/.NET Core 3.0 and lower: 6 spans
+            // Windows .NET Core 3.1+: 10 spans
+            // Linux/OSX .NET Core 3.0 and lower: 6 spans
+            // Linux/OSX .NET Core 3.1+: 8 spans
 #if !NETCOREAPP3_1_OR_GREATER
-                // e.g. .NET 4.6.2
-                if (expectedSpanCount >= 10)
-                {
-                    expectedSpanCount = 6;
-                }
-#endif
-            }
-            else if (!EnvironmentTools.IsWindows())
+            // Windows/Linux/Mac all expect 6 for .NET Framework or .NET Core 3.0 and below
+            if (expectedSpanCount >= 10)
             {
-#if !NETCOREAPP3_1_OR_GREATER
-                if (expectedSpanCount >= 10)
-                {
-                    expectedSpanCount = 6;
-                }
-#endif
-                expectedSpanCount -= 2;
+                expectedSpanCount = 6;
             }
+#else
+            if (!EnvironmentTools.IsWindows())
+            {
+                expectedSpanCount = 8;
+            }
+#endif
 
             const string expectedOperationName = "command_execution";
 
