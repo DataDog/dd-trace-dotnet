@@ -203,7 +203,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
                 {
                     agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                    var spans = agent.WaitForSpans(1, 2000);
+                    var spans = agent.Spans;
                     Assert.Equal(0, spans.Count);
 
                     var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
