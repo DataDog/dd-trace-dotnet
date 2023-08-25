@@ -19,7 +19,7 @@ namespace Datadog.Trace.Ci.Configuration
         public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool(false);
+            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
             Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
             Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
@@ -54,9 +54,9 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         /// <summary>
-        /// Gets a value indicating whether the CI Visibility mode was enabled by configuration
+        /// Gets a value indicating whether the CI Visibility mode was explicitly enabled by configuration
         /// </summary>
-        public bool Enabled { get; }
+        public bool? Enabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Agentless writer is going to be used.
