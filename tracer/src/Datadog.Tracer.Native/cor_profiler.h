@@ -195,9 +195,7 @@ public:
     // Register Aspects into Dataflow
     //
     int RegisterIastAspects(WCHAR** aspects, int aspectsLength);
-    void GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinksWeakCipher,
-                        int* instrumentedSinksWeakHash, int* instrumentedSinksSqlI, int* instrumentedSinksCmdI,
-                        int* instrumentedSinksPathTraversal, int* instrumentedSinksLdapI, int* instrumentedSinksSsrf);
+    void GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinks);
 
     //
     // Live Debugger Integration methods

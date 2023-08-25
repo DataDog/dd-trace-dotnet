@@ -15,6 +15,8 @@ namespace iast
         Sink,
         Propagation
     };
+
+    // Keep this enum syncronized with Iast/VulnerabilityType.cs in managed code
     enum class VulnerabilityType
     {
         WeakCipher = 0,
@@ -24,7 +26,11 @@ namespace iast
         PathTraversal = 4,
         LdapInjection = 5,
         Ssrf = 6,
-        None = 7
+        UnvalidatedRedirect = 7,
+        InsecureCookie = 8,
+        NoHttpOnlyCookie = 9,
+        NoSameSiteCookie = 10,
+        None = 11,
     };
     enum class SpotInfoStatus
     {

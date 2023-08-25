@@ -125,8 +125,6 @@ namespace iast
 
         bool IsInlineEnabled(ModuleID calleeModuleId, mdToken calleeMethodId);
         bool JITCompilationStarted(ModuleID moduleId, mdToken methodId);
-        void GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinksWeakCipher, 
-            int* instrumentedSinksWeakHash, int* instrumentedSinksSqlI, int* iInstrumentedSinksCmdI,
-            int* instrumentedSinksPathTraversal, int* iInstrumentedSinksLdapI, int* instrumentedSinksSsrf);
+        void GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinks);
     };
 }

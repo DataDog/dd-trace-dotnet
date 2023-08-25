@@ -216,13 +216,9 @@ EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int 
     return trace::profiler->UpdateSettings(keys, values, length);
 }
 
-EXTERN_C VOID STDAPICALLTYPE GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations,
-                                            int* instrumentedSinksWeakCipher, int* instrumentedSinksWeakHash,
-                                            int* instrumentedSinksSqlI, int* instrumentedSinksCmdI,
-                                            int* instrumentedSinksPathTraversal, int* instrumentedSinksLdapI,
-                                            int* instrumentedSinksSsrf)
+EXTERN_C VOID STDAPICALLTYPE GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinks)
 {
-    trace::profiler->GetIastMetrics(instrumentedSources, instrumentedPropagations, instrumentedSinksWeakCipher, instrumentedSinksWeakHash, instrumentedSinksSqlI, instrumentedSinksCmdI, instrumentedSinksPathTraversal, instrumentedSinksLdapI, instrumentedSinksSsrf);
+    trace::profiler->GetIastMetrics(instrumentedSources, instrumentedPropagations, instrumentedSinks);
 }
 
 #ifndef _WIN32

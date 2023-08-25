@@ -50,38 +50,11 @@ internal static class IastInstrumentationMetricsHelper
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            NativeMethods.GetIastMetrics(out int callsiteInstrumentedSources, out int callsiteInstrumentedPropagations, out int instrumentedSinksWeakCipher, out int instrumentedSinksWeakHash, out int instrumentedSinksSqlI, out int instrumentedSinksCmdI, out int instrumentedSinksPathTraversal, out int instrumentedSinksLdapI, out int instrumentedSinksSsrf);
+            int[] instrumentedSinks = new int[vulnerabilityTypesCount];
+            NativeMethods.GetIastMetrics(out int callsiteInstrumentedSources, out int callsiteInstrumentedPropagations, instrumentedSinks);
 
             for (int i = 0; i < vulnerabilityTypesCount; i++)
             {
-                switch ((IastInstrumentedSinks)i)
-                {
-                    case IastInstrumentedSinks.SqlInjection:
-                        ReportSink(IastInstrumentedSinks.SqlInjection, instrumentedSinksSqlI);
-                        break;
-                    case IastInstrumentedSinks.LdapInjection:
-                        ReportSink(IastInstrumentedSinks.LdapInjection, instrumentedSinksLdapI);
-                        break;
-                    case IastInstrumentedSinks.PathTraversal:
-                        ReportSink(IastInstrumentedSinks.PathTraversal, instrumentedSinksPathTraversal);
-                        break;
-                    case IastInstrumentedSinks.CommandInjection:
-                        ReportSink(IastInstrumentedSinks.CommandInjection, instrumentedSinksCmdI);
-                        break;
-                    case IastInstrumentedSinks.WeakCipher:
-                        ReportSink(IastInstrumentedSinks.WeakCipher, instrumentedSinksWeakCipher);
-                        break;
-                    case IastInstrumentedSinks.WeakHash:
-                        ReportSink(IastInstrumentedSinks.WeakHash, instrumentedSinksWeakHash);
-                        break;
-                    case IastInstrumentedSinks.Ssrf:
-                        ReportSink(IastInstrumentedSinks.Ssrf, instrumentedSinksSsrf);
-                        break;
-                    default:
-                        ReportSink((IastInstrumentedSinks)i);
-                        break;
-                }
-
                 instrumentedSinks[i] = 0;
             }
 
