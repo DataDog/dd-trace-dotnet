@@ -155,6 +155,11 @@ namespace iast
         return ELEMENT_TYPE_VOID;
     }
 
+    std::vector<WSTRING> MemberRefInfo::GetCustomAttributes()
+    {
+        return _module->GetCustomAttributes(_id);
+    }
+
     //----------------------------
 
     FieldInfo::FieldInfo(ModuleInfo* pModuleInfo, mdFieldDef fieldDef) :
@@ -171,6 +176,22 @@ namespace iast
         return _id;
     }
 
+
+    //----------------------------
+
+    PropertyInfo::PropertyInfo(ModuleInfo* pModuleInfo, mdProperty propId) :
+        MemberRefInfo(pModuleInfo, propId)
+    {
+        WCHAR methodName[1024];
+        ULONG methodNameLength;
+        DWORD attrs;
+
+        HRESULT hr = pModuleInfo->_metadataImport->GetPropertyProps(
+            propId, &_typeDef, methodName, 1024, &methodNameLength, &_methodAttributes, &_pSig, &_nSig, nullptr,
+            nullptr, nullptr, &_setter, &_getter, nullptr, 0, nullptr);
+
+        _name = methodName;
+    }
 
     //----------------------------
 
@@ -539,9 +560,30 @@ namespace iast
         DEL_ARR(_pMethodIL);
     }
 
+    bool MethodInfo::IsPropertyAccessor()
+    {
+        auto name = shared::ToString(_name);
+        return StartsWith(name, "get_") || StartsWith(name, "set_");
+    }
+
     std::vector<WSTRING> MethodInfo::GetCustomAttributes()
     {
-        return _module->GetCustomAttributes(_id);
+        auto res = MemberRefInfo::GetCustomAttributes();
+        if (IsPropertyAccessor())
+        {
+            // Retrieve property Attributes
+            auto properties = _module->GetProperties(_typeDef);
+            for (auto property : properties)
+            {
+                if (property->GetGetterId() != _id && property->GetSetterId() != _id)
+                {
+                    continue;
+                }
+                auto propAttrs = _module->GetCustomAttributes(property->GetPropertyId());
+                return propAttrs;
+            }
+        }
+        return res;
     }
 
 }

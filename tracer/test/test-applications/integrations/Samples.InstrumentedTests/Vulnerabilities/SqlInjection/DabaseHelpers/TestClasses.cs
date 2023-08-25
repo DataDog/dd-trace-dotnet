@@ -9,7 +9,7 @@ public class Book
     [DelegateDecompiler.Computed]
     public string FullTitle
     {
-        [DelegateDecompiler.Computed]
+        // [DelegateDecompiler.Computed]
         get => Title + "_";
     }
 }

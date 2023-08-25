@@ -40,6 +40,7 @@ ModuleInfo::~ModuleInfo()
     DEL_MAP_VALUES(_specs);
     DEL_MAP_VALUES(_methods);
     DEL_MAP_VALUES(_fields);
+    DEL_MAP_VALUES(_properties);
     DEL_MAP_VALUES(_signatures);
 }
 
@@ -159,6 +160,10 @@ MemberRefInfo* ModuleInfo::GetMemberRefInfo(mdMemberRef token)
     {
         return GetFieldInfo(token);
     }
+    else if (typeFromToken == mdtProperty)
+    {
+        return GetPropertyInfo(token);
+    }
     else if (typeFromToken == mdtMethodSpec)
     {
         return GetMethodSpec(token);
@@ -180,6 +185,12 @@ FieldInfo* ModuleInfo::GetFieldInfo(mdFieldDef fieldDef)
 {
     CSGUARD(_cs);
     return Get<mdFieldDef, FieldInfo>(_fields, fieldDef, [this, fieldDef]() { return new iast::FieldInfo(this, fieldDef); });
+}
+
+PropertyInfo* ModuleInfo::GetPropertyInfo(mdProperty propId)
+{
+    CSGUARD(_cs);
+    return Get<mdProperty, PropertyInfo>(_properties, propId, [this, propId]() { return new iast::PropertyInfo(this, propId); });
 }
 
 MethodSpec* ModuleInfo::GetMethodSpec(mdMethodSpec methodSpec)
@@ -260,6 +271,34 @@ std::vector<MethodInfo*> ModuleInfo::GetMethods(mdTypeDef typeDef)
     this->_metadataImport->CloseEnum(hCorEnum);
     return methods;
 }
+
+std::vector<PropertyInfo*> ModuleInfo::GetProperties(mdTypeDef typeDef)
+{
+    HCORENUM hCorEnum = nullptr;
+    std::vector<PropertyInfo*> res;
+    mdProperty elements[64];
+    ULONG elementCount;
+
+    HRESULT hr = this->_metadataImport->EnumProperties(&hCorEnum, typeDef, elements,
+                                                            sizeof(elements) / sizeof(elements[0]),
+                                                            &elementCount);
+    if (SUCCEEDED(hr) && elementCount > 0)
+    {
+        res.reserve(elementCount);
+        for (ULONG i = 0; i < elementCount; i++)
+        {
+            auto element = GetPropertyInfo(elements[i]);
+            if (element)
+            {
+                res.push_back(element);
+            }
+        }
+    }
+
+    this->_metadataImport->CloseEnum(hCorEnum);
+    return res;
+}
+
 std::vector<MethodInfo*> ModuleInfo::GetMethods(mdTypeDef typeDef, const WSTRING& name)
 {
     HCORENUM hCorEnum = nullptr;
@@ -867,89 +906,6 @@ std::vector<WSTRING> ModuleInfo::GetCustomAttributes(mdToken token)
 
     _metadataImport->CloseEnum(hCorEnum);
     return res;
-
-    /*
-
-            // Now we enumerate all custom attributes in this method
-            auto metadata_import = _module->_metadataImport;
-            auto enumCustomAttributes = Enumerator<mdCustomAttribute>(
-                [&metadata_import](HCORENUM* ptr, mdCustomAttribute arr[], ULONG max, ULONG* cnt) -> HRESULT {
-                    return metadata_import->EnumCustomAttributes(ptr, mdTokenNil, mdTokenNil, arr, max, cnt);
-                },
-                [&metadata_import](HCORENUM ptr) -> void { metadata_import->CloseEnum(ptr); });
-            auto customAttributesIterator = enumCustomAttributes.begin();
-
-            while (customAttributesIterator != enumCustomAttributes.end())
-            {
-                mdCustomAttribute customAttribute = *customAttributesIterator;
-
-                // Check if the typeref matches
-                mdToken parent_token = mdTokenNil;
-                mdToken attribute_ctor_token = mdTokenNil;
-                const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our
-       purposes DWORD data_size = 0;
-
-                HRESULT hr = metadata_import->GetCustomAttributeProps(customAttribute, &parent_token,
-       &attribute_ctor_token, &attribute_data, &data_size);
-
-                // We are only concerned with the trace attribute on method definitions
-                if (TypeFromToken(parent_token) == mdtMethodDef)
-                {
-                    mdTypeDef attribute_type_token = mdTypeDefNil;
-                    WCHAR function_name[1024]{};
-                    DWORD function_name_len = 0;
-
-                    // Get the type name from the constructor
-                    const auto attribute_ctor_token_type = TypeFromToken(attribute_ctor_token);
-                    if (attribute_ctor_token_type == mdtMemberRef)
-                    {
-                        hr = metadata_import->GetMemberRefProps(attribute_ctor_token, &attribute_type_token,
-       function_name, 1024, &function_name_len, nullptr, nullptr);
-                    }
-                    else if (attribute_ctor_token_type == mdtMethodDef)
-                    {
-                        hr = metadata_import->GetMemberProps(attribute_ctor_token, &attribute_type_token, function_name,
-       1024, &function_name_len, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
-                    }
-                    else
-                    {
-                        hr = E_FAIL;
-                    }
-
-                    if (SUCCEEDED(hr))
-                    {
-                        mdToken resolution_token = mdTokenNil;
-                        WCHAR type_name[1024]{};
-                        DWORD type_name_len = 0;
-
-                        const auto token_type = TypeFromToken(attribute_type_token);
-                        if (token_type == mdtTypeDef)
-                        {
-                            DWORD type_flags;
-                            mdToken type_extends = mdTokenNil;
-                            hr = metadata_import->GetTypeDefProps(attribute_type_token, type_name, 1024, &type_name_len,
-       &type_flags, &type_extends);
-                        }
-                        else if (token_type == mdtTypeRef)
-                        {
-                            hr = metadata_import->GetTypeRefProps(attribute_type_token, &resolution_token, type_name,
-       1024, &type_name_len);
-                        }
-                        else
-                        {
-                            type_name_len = 0;
-                        }
-
-                        WSTRING attributeName = type_name;
-                        res.push_back(attributeName);
-                    }
-                }
-
-                customAttributesIterator = ++customAttributesIterator;
-            }
-
-            return res;
-    */
 }
 
 

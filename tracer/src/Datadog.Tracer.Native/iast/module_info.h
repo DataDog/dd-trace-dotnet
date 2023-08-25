@@ -53,6 +53,7 @@ namespace iast
         std::unordered_map<mdMemberRef, MemberRefInfo*> _members;
         std::unordered_map<mdMethodDef, MethodInfo*> _methods;
         std::unordered_map<mdMethodDef, FieldInfo*> _fields;
+        std::unordered_map<mdProperty, PropertyInfo*> _properties;
         std::unordered_map<mdMethodSpec, MethodSpec*> _specs;
         std::unordered_map<mdSignature, SignatureInfo*> _signatures;
 
@@ -119,6 +120,7 @@ namespace iast
         MemberRefInfo* GetMemberRefInfo(mdMemberRef token);
         MethodInfo* GetMethodInfo(mdMethodDef methodDef);
         FieldInfo* GetFieldInfo(mdFieldDef fieldDef);
+        PropertyInfo* GetPropertyInfo(mdProperty propId);
         MethodSpec* GetMethodSpec(mdMethodSpec methodSpec);
         SignatureInfo* GetSignature(mdSignature sigToken);
         WSTRING GetUserString(mdString token);
@@ -127,6 +129,8 @@ namespace iast
         std::vector<MethodInfo*> GetMethods(mdTypeDef typeDef, const WSTRING& name);
         std::vector<MethodInfo*> GetMethods(mdTypeDef typeDef, const WSTRING& methodName, ULONG paramCount);
         std::vector<MethodInfo*> GetMethods(const WSTRING& typeName, const WSTRING& methodName);
+
+        std::vector<PropertyInfo*> GetProperties(mdTypeDef typeDef);
 
         MethodInfo* GetMethod(const WSTRING& typeName, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature);
         MethodInfo* GetMethod(mdTypeDef typeDef, const WSTRING& methodName, PCCOR_SIGNATURE pSignature, ULONG nSignature);
