@@ -233,17 +233,17 @@ internal static class MetricTags
 
     public enum IastInstrumentedSources
     {
-        [Description("source_type:http.request.parameter")] RequestParameterValue,
+        [Description("source_type:http.request.body")] RequestBody,
+        [Description("source_type:http.request.path")] RequestPath,
         [Description("source_type:http.request.parameter.name")] RequestParameterName,
+        [Description("source_type:http.request.parameter")] RequestParameterValue,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
         [Description("source_type:http.request.header")] RequestHeader,
         [Description("source_type:http.request.header.name")] RequestHeaderName,
-        [Description("source_type:http.request.path")] RequestPath,
-        [Description("source_type:http.request.body")] RequestBody,
         [Description("source_type:http.request.query")] RequestQuery,
-        [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
-        [Description("source_type:http.http.request.matrix.parameter")] MatrixParameter,
         [Description("source_type:http.http.cookie.name")] CookieName,
         [Description("source_type:http.cookie.value")] CookieValue,
+        [Description("source_type:http.http.request.matrix.parameter")] MatrixParameter,
     }
 
     public enum IastInstrumentedSinks

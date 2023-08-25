@@ -22,6 +22,7 @@ public class InstrumentationTestsBase
     private object _iastRequestContext;
     private object _traceContext;
     private object _taintedObjects;
+    private static readonly Type _NativeMethodsType = Type.GetType("Datadog.Trace.ClrProfiler.NativeMethods, Datadog.Trace");
     private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
     private static readonly Type _taintedObjectType = Type.GetType("Datadog.Trace.Iast.TaintedObject, Datadog.Trace");
     private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
@@ -57,6 +58,7 @@ public class InstrumentationTestsBase
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
+    private static MethodInfo _GetIastMetricsMethod = _NativeMethodsType.GetMethod("GetIastMetrics", BindingFlags.Public | BindingFlags.Static);
     private static FieldInfo _taintedObjectsField = _iastRequestContextType.GetField("_taintedObjects", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -417,5 +419,14 @@ public class InstrumentationTestsBase
         {
             AssertNotTainted(item);
         }
+    }
+
+    protected void ReadNativeTelemetry(out int sources, out int propagations, int[] sinks)
+    {
+        object[] parameters = new object[] { null, null, sinks };
+        _GetIastMetricsMethod.Invoke(null, parameters);
+
+        sources = (int)parameters[0];
+        propagations = (int)parameters[1];
     }
 }
