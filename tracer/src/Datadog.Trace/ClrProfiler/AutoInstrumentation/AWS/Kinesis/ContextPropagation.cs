@@ -18,7 +18,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
         private const string KinesisKey = "_datadog";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ContextPropagation));
 
-        public static void InjectTraceIntoRecords<TRecordsRequest>(IPutRecordsRequest request, SpanContext context)
+        public static void InjectTraceIntoRecords<TRecordsRequest>(TRecordsRequest request, SpanContext context)
+            where TRecordsRequest : IPutRecordsRequest
         {
             // request.Records is not null and has at least one element
             if (request.Records is not { Count: > 0 })
@@ -27,20 +28,22 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Kinesis
             }
 
             var record = request.Records[0].DuckCast<IContainsData>();
-            InjectTraceIntoData<TRecordsRequest>(record, context);
+            InjectTraceIntoData(record, context);
         }
 
-        public static void InjectTraceIntoData<TRecordRequest>(IContainsData record, SpanContext context)
+        public static void InjectTraceIntoData<TRecordRequest>(TRecordRequest record, SpanContext context)
+            where TRecordRequest : IContainsData
         {
             if (record.Data is null)
             {
                 return;
             }
 
-            Inject<TRecordRequest>(record, context);
+            Inject(record, context);
         }
 
-        private static void Inject<TRecord>(IContainsData record, SpanContext context)
+        private static void Inject<TRecordRequest>(TRecordRequest record, SpanContext context)
+            where TRecordRequest : IContainsData
         {
             var jsonData = ParseDataObject(record.Data);
             if (jsonData is null || jsonData.Count == 0)
