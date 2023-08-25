@@ -90,5 +90,38 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Actions.Should().Contain("block");
             result.ShouldBlock.Should().BeTrue();
         }
+
+        [Fact]
+        public void Bug_NormalAsmDataUpdateFalselyReportsError()
+        {
+            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
+
+            using var waf = initResult.Waf;
+            waf.Should().NotBeNull();
+
+            var jsonBlockedIps = """
+            {
+                    "rules_data": [
+                    {
+                        "data": [
+                        {
+                            "value": "172.31.95.141"
+                        },
+                        {
+                            "value": "162.243.132.16"
+                        }
+                        ],
+                        "id": "blocked_ips",
+                        "type": "ip_with_expiration"
+                    }
+                    ]
+            }
+            """;
+
+            var rulesData = JsonConvert.DeserializeObject<Payload>(jsonBlockedIps);
+            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["blocked_ips"] = rulesData!.RulesData!.ToArray() } };
+            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
+            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+        }
     }
 }
