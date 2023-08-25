@@ -169,7 +169,7 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent.");
+            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
 
             foreach (var headers in TraceRequestHeaders)
             {
