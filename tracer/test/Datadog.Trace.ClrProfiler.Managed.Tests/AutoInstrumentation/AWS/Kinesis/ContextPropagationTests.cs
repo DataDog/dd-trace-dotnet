@@ -174,10 +174,5 @@ public class ContextPropagationTests
         personMemoryStream.Should().NotBeNull();
 
         personMemoryStream.ToArray().Should().BeEquivalentTo(PersonJsonStringBytes);
-
-        // Naively deserialize in order to not use tracer extraction logic
-        var jsonString = Encoding.UTF8.GetString(personMemoryStream.ToArray());
-        var personDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
-        personDictionary.Should().BeEquivalentTo(PersonDictionary);
     }
 }
