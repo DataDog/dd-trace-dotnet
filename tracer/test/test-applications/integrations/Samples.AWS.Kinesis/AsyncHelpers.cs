@@ -72,17 +72,17 @@ namespace Samples.AWS.Kinesis
             var pokemon = new Dictionary<string, object> { { "id", "393" }, { "name", "Piplup" }, { "type", "water" } };
             var putRecordsRequest = new PutRecordsRequest
             {
-                StreamName = StreamName, 
+                StreamName = StreamName,
                 Records = new List<PutRecordsRequestEntry>
                 {
                     new PutRecordsRequestEntry
                     {
-                        Data = Common.DictionaryToMemoryStream(person), 
+                        Data = Common.DictionaryToMemoryStream(person),
                         PartitionKey = Guid.NewGuid().ToString()
                     }, 
                     new PutRecordsRequestEntry
                     {
-                        Data = Common.DictionaryToMemoryStream(pokemon), 
+                        Data = Common.DictionaryToMemoryStream(pokemon),
                         PartitionKey = Guid.NewGuid().ToString()
                     }
                 }

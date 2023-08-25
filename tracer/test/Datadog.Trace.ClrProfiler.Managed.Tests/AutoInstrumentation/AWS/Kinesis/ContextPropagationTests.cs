@@ -13,6 +13,7 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 using FluentAssertions;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Xunit;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS;
@@ -24,8 +25,7 @@ public class ContextPropagationTests
 
     private static readonly Dictionary<string, object> PersonDictionary = new() { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" }, { "age", 24 } };
     private static readonly Dictionary<string, object> PokemonDictionary = new() { { "id", 393 }, { "name", "Piplup" }, { "type", "water" } };
-    private static readonly byte[] PersonJsonStringBytes = Encoding.UTF8.GetBytes(Vendors.Newtonsoft.Json.JsonConvert.SerializeObject(PersonDictionary));
-    private static readonly byte[] PersonBase64StringBytes = Convert.FromBase64String(Convert.ToBase64String(PersonJsonStringBytes));
+    private static readonly byte[] PersonJsonStringBytes = Encoding.UTF8.GetBytes(JsonConvert.SerializeObject(PersonDictionary));
     private static readonly byte[] StreamNameBytes = Encoding.UTF8.GetBytes(StreamName);
 
     private readonly SpanContext spanContext;
@@ -43,34 +43,54 @@ public class ContextPropagationTests
     public static IEnumerable<object[]> MemoryStreamToDictionaryExpectedData
         => new List<object[]>
         {
-            new object[] { PersonBase64StringBytes, PersonDictionary },
             new object[] { PersonJsonStringBytes, PersonDictionary },
             new object[] { StreamNameBytes, null },
         };
 
+    public PutRecordsRequest GeneratePutRecordsRequest(List<MemoryStream> records)
+    {
+        var request = new PutRecordsRequest
+        {
+            StreamName = StreamName,
+            Records = new List<PutRecordsRequestEntry>()
+        };
+
+        foreach (var record in records)
+        {
+            var entry = new PutRecordsRequestEntry { Data = record, PartitionKey = Guid.NewGuid().ToString() };
+            request.Records.Add(entry);
+        }
+
+        return request;
+    }
+
     [Fact]
     public void InjectTraceIntoRecords_WithJsonString_AddsTraceContext()
     {
-        var request = new PutRecordsRequest { StreamName = StreamName, Records = new List<PutRecordsRequestEntry> { new PutRecordsRequestEntry { Data = ContextPropagation.DictionaryToMemoryStream(PersonDictionary), PartitionKey = Guid.NewGuid().ToString() }, new PutRecordsRequestEntry { Data = ContextPropagation.DictionaryToMemoryStream(PokemonDictionary), PartitionKey = Guid.NewGuid().ToString() } } };
+        var request = GeneratePutRecordsRequest(
+            new List<MemoryStream>
+            {
+                ContextPropagation.DictionaryToMemoryStream(PersonDictionary),
+                ContextPropagation.DictionaryToMemoryStream(PokemonDictionary)
+            });
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords<PutRecordsRequest>(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, spanContext);
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
-        // MemoryStreamToDictionary returns a Dictionary<string, object>
-        var dataDictionary = ContextPropagation.MemoryStreamToDictionary(firstRecord.Data);
+        // Naively deserialize in order to not use tracer extraction logic
+        var jsonString = Encoding.UTF8.GetString(firstRecord.Data.ToArray());
+        var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can extract it properly
-        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, string> so we can read it properly
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        var extractedSpanContext = SpanContextPropagator.Instance.Extract(dictionary);
-        extractedSpanContext.Should().NotBeNull();
-        extractedSpanContext.TraceId.Should().Be(spanContext.TraceId);
-        extractedSpanContext.SpanId.Should().Be(spanContext.SpanId);
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(spanContext.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(spanContext.TraceId.ToString());
     }
 
     [Fact]
@@ -78,11 +98,16 @@ public class ContextPropagationTests
     {
         const string person = "Jordan Gonzalez";
         const string pokemon = "Piplup";
-        var request = new PutRecordsRequest { StreamName = StreamName, Records = new List<PutRecordsRequestEntry> { new PutRecordsRequestEntry { Data = new MemoryStream(Encoding.UTF8.GetBytes(person)), PartitionKey = Guid.NewGuid().ToString() }, new PutRecordsRequestEntry { Data = new MemoryStream(Encoding.UTF8.GetBytes(pokemon)), PartitionKey = Guid.NewGuid().ToString() } } };
+        var request = GeneratePutRecordsRequest(
+            new List<MemoryStream>
+            {
+                new(Encoding.UTF8.GetBytes(person)),
+                new(Encoding.UTF8.GetBytes(pokemon))
+            });
 
         var proxy = request.DuckCast<IPutRecordsRequest>();
 
-        ContextPropagation.InjectTraceIntoRecords<PutRecordsRequest>(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoRecords(proxy, spanContext);
 
         var firstRecord = proxy.Records[0].DuckCast<IContainsData>();
 
@@ -93,24 +118,27 @@ public class ContextPropagationTests
     [Fact]
     public void InjectTraceIntoData_WithJsonString_AddsTraceContext()
     {
-        var request = new PutRecordRequest { StreamName = StreamName, Data = ContextPropagation.DictionaryToMemoryStream(PersonDictionary) };
+        var request = new PutRecordRequest
+        {
+            StreamName = StreamName,
+            Data = ContextPropagation.DictionaryToMemoryStream(PersonDictionary)
+        };
 
         var proxy = request.DuckCast<IPutRecordRequest>();
 
-        ContextPropagation.InjectTraceIntoData<PutRecordsRequest>(proxy, spanContext);
+        ContextPropagation.InjectTraceIntoData(proxy, spanContext);
 
-        // MemoryStreamToDictionary returns a Dictionary<string, object>
-        var dataDictionary = ContextPropagation.MemoryStreamToDictionary(proxy.Data);
+        // Naively deserialize in order to not use tracer extraction logic
+        var jsonString = Encoding.UTF8.GetString(proxy.Data.ToArray());
+        var dataDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
         var extracted = dataDictionary.TryGetValue(DatadogKey, out var datadogDictionary);
         extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can extract it properly
-        var dictionary = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
+        // Cast into a Dictionary<string, string> so we can read it properly
+        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(datadogDictionary.ToString());
 
-        var extractedSpanContext = SpanContextPropagator.Instance.Extract(dictionary);
-        extractedSpanContext.Should().NotBeNull();
-        extractedSpanContext.TraceId.Should().Be(spanContext.TraceId);
-        extractedSpanContext.SpanId.Should().Be(spanContext.SpanId);
+        extractedTraceContext["x-datadog-parent-id"].Should().Be(spanContext.SpanId.ToString());
+        extractedTraceContext["x-datadog-trace-id"].Should().Be(spanContext.TraceId.ToString());
     }
 
     [Theory]
@@ -129,11 +157,6 @@ public class ContextPropagationTests
         var personMemoryStream = new MemoryStream(PersonJsonStringBytes);
         var personDictionary = ContextPropagation.MemoryStreamToDictionary(personMemoryStream);
         personDictionary.Should().BeEquivalentTo(PersonDictionary);
-
-        // Base64 JSON string
-        var encodedPersonMemoryStream = new MemoryStream(PersonBase64StringBytes);
-        personDictionary = ContextPropagation.MemoryStreamToDictionary(encodedPersonMemoryStream);
-        personDictionary.Should().BeEquivalentTo(PersonDictionary);
     }
 
     [Fact]
@@ -150,6 +173,11 @@ public class ContextPropagationTests
         var personMemoryStream = ContextPropagation.DictionaryToMemoryStream(PersonDictionary);
         personMemoryStream.Should().NotBeNull();
 
-        ContextPropagation.MemoryStreamToDictionary(personMemoryStream).Should().BeEquivalentTo(PersonDictionary);
+        personMemoryStream.ToArray().Should().BeEquivalentTo(PersonJsonStringBytes);
+
+        // Naively deserialize in order to not use tracer extraction logic
+        var jsonString = Encoding.UTF8.GetString(personMemoryStream.ToArray());
+        var personDictionary = JsonConvert.DeserializeObject<Dictionary<string, object>>(jsonString);
+        personDictionary.Should().BeEquivalentTo(PersonDictionary);
     }
 }
