@@ -67,7 +67,23 @@ namespace Samples.AWS.Kinesis
         {
             var person = new Dictionary<string, object> { { "name", "Jordan" }, { "lastname", "Gonzalez" }, { "city", "NYC" } };
             var pokemon = new Dictionary<string, object> { { "id", "393" }, { "name", "Piplup" }, { "type", "water" } };
-            var putRecordsRequest = new PutRecordsRequest { StreamName = StreamName, Records = new List<PutRecordsRequestEntry> { new PutRecordsRequestEntry { Data = Common.DictionaryToMemoryStream(person), PartitionKey = Guid.NewGuid().ToString() }, new PutRecordsRequestEntry { Data = Common.DictionaryToMemoryStream(pokemon), PartitionKey = Guid.NewGuid().ToString()} } };
+            var putRecordsRequest = new PutRecordsRequest
+            {
+                StreamName = StreamName, 
+                Records = new List<PutRecordsRequestEntry>
+                {
+                    new PutRecordsRequestEntry
+                    {
+                        Data = Common.DictionaryToMemoryStream(person), 
+                        PartitionKey = Guid.NewGuid().ToString()
+                    }, 
+                    new PutRecordsRequestEntry
+                    {
+                        Data = Common.DictionaryToMemoryStream(pokemon), 
+                        PartitionKey = Guid.NewGuid().ToString()
+                    }
+                }
+            };
 
             var response = await kinesisClient.PutRecordsAsync(putRecordsRequest);
             Console.WriteLine($"PutRecordsAsync(PutRecordsRequest) HTTP status code: {response.HttpStatusCode}");
