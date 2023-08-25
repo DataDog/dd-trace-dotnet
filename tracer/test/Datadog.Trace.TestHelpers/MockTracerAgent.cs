@@ -171,11 +171,6 @@ namespace Datadog.Trace.TestHelpers
                 Thread.Sleep(500);
             }
 
-            if (count == 1 && timedOut)
-            {
-                timedOut = false; // just marking this as maybe we aren't expecting any
-            }
-
             timedOut.Should().BeFalse($"TIMED OUT: Expected spans: {count}; Received spans: {relevantSpans.Count}");
 
             foreach (var headers in TraceRequestHeaders)
