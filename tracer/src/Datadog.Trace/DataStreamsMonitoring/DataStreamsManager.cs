@@ -132,6 +132,9 @@ internal class DataStreamsManager
             }
 
             var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            // We should use timeInQueue to offset the edge / pathway start if this is a beginning of a pathway
+            // This allows tracking edge / pathway latency for pipelines starting with a queue (no producer instrumented upstream)
+            // by relying on the message timestamp.
             var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 

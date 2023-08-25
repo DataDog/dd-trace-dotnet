@@ -5,11 +5,13 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
+using Datadog.Trace.ExtensionMethods;
 using FluentAssertions;
 using Xunit;
 
@@ -83,6 +85,56 @@ public class DataStreamsManagerTests
 
         var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, 100);
         context.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void WhenEnabled_TimeInQueueIsUsedForPipelineStart()
+    {
+        long latencyMs = 100;
+        var latencyNs = latencyMs * 1_000_000;
+
+        var dsm = GetDataStreamManager(true, out var writer);
+        var context = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+
+        context.Should().NotBeNull();
+        context?.EdgeStart.Should().Be(context.Value.PathwayStart);
+        (DateTimeOffset.UtcNow.ToUnixTimeNanoseconds() - context?.EdgeStart).Should().BeGreaterOrEqualTo(latencyNs);
+
+        writer.Points.Should().ContainSingle();
+        writer.Points.TryPeek(out var point).Should().BeTrue();
+
+        point.EdgeLatencyNs.Should().Be(latencyNs);
+        point.PathwayLatencyNs.Should().Be(latencyNs);
+    }
+
+    [Fact]
+    public void WhenEnabled_TimeInQueueIsNotUsedForSecondCheckpoint()
+    {
+        long latencyMs = 100;
+        var latencyNs = latencyMs * 1_000_000;
+
+        var dsm = GetDataStreamManager(true, out var writer);
+        var parent = dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+        Thread.Sleep(1);
+        dsm.SetCheckpoint(parentPathway: parent, CheckpointKind.Consume, new[] { "some-tags" }, 100, latencyMs);
+
+        writer.Points.Should().HaveCount(2);
+        writer.Points.TryDequeue(out var _).Should().BeTrue();
+        writer.Points.TryDequeue(out var point).Should().BeTrue();
+
+        point.EdgeLatencyNs.Should().BeGreaterThan(latencyNs);
+        point.PathwayLatencyNs.Should().BeGreaterThan(latencyNs);
+    }
+
+    [Fact]
+    public void WhenEnabled_PayloadSizeIsUsed()
+    {
+        var dsm = GetDataStreamManager(true, out var writer);
+        dsm.SetCheckpoint(parentPathway: null, CheckpointKind.Consume, new[] { "some-tags" }, 100, 0);
+
+        writer.Points.Should().ContainSingle();
+        writer.Points.TryPeek(out var point).Should().BeTrue();
+        point.PayloadSizeBytes.Should().Be(100);
     }
 
     [Fact]

@@ -130,7 +130,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                                    // exchange can be empty for "direct"
                                    new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                    new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
-                // size of headers is ignored for now
                 span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetHeadersSize(headers) + messageSize, 0);
                 dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
             }
@@ -154,14 +153,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.Context.MergePathwayContext(pathwayContext);
-                // size of headers is ignored for now
                 span.SetDataStreamsCheckpoint(
                     dataStreamsManager,
                     CheckpointKind.Consume,
                     edgeTags,
                     GetHeadersSize(headers) + messageSize,
                     messageTimestamp);
-                // basicProperties.Timestamp == null ? 0 : DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime
             }
             catch (Exception ex)
             {
