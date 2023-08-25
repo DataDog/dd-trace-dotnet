@@ -130,7 +130,6 @@ namespace Datadog.Trace.TestHelpers
             DateTimeOffset? minDateTime = null,
             bool returnAllOperations = false)
         {
-            var timedOut = true;
             var deadline = DateTime.UtcNow.AddMilliseconds(timeoutInMilliseconds);
             var minimumOffset = (minDateTime ?? DateTimeOffset.MinValue).ToUnixTimeNanoseconds();
 
@@ -164,14 +163,13 @@ namespace Datadog.Trace.TestHelpers
 
                 if (relevantSpans.Count(s => operationName == null || s.Name == operationName) >= count)
                 {
-                    timedOut = false;
                     break;
                 }
 
                 Thread.Sleep(500);
             }
 
-            timedOut.Should().BeFalse($"TIMED OUT: Expected spans: {count}; Received spans: {relevantSpans.Count}");
+            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent.");
 
             foreach (var headers in TraceRequestHeaders)
             {
