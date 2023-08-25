@@ -92,7 +92,6 @@ namespace Datadog.Trace.Configuration.Schema
         {
             SchemaVersion.V0 when !_peerServiceTagsEnabled => new AwsKinesisTags(spanKind),
             _ => new AwsKinesisV1Tags(spanKind),
-
         };
 
         public RabbitMQTags CreateRabbitMqTags(string spanKind)
