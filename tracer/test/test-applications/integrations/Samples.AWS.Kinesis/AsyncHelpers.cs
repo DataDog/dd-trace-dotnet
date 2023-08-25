@@ -29,6 +29,9 @@ namespace Samples.AWS.Kinesis
                 await PutRecordsAsync(kinesisClient);
 
                 await DeleteStreamAsync(kinesisClient);
+
+                // Needed in order to allow Kineses Stream to be deleted
+                Thread.Sleep(1000);
             }
         }
 

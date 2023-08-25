@@ -15,8 +15,8 @@ namespace Samples.AWS.Kinesis
 
         public static void StartKinesisTasks(AmazonKinesisClient kinesisClient)
         {
-            Console.WriteLine("Beginning Async methods");
-            using (var scope = SampleHelpers.CreateScope("async-methods"))
+            Console.WriteLine("Beginning Synchronous methods");
+            using (var scope = SampleHelpers.CreateScope("sync-methods"))
             {
                 CreateStream(kinesisClient);
                 
@@ -27,6 +27,9 @@ namespace Samples.AWS.Kinesis
                 PutRecords(kinesisClient);
 
                 DeleteStream(kinesisClient);
+
+                // Needed in order to allow Kineses Stream to be deleted
+                Thread.Sleep(1000);
             }
         }
 
@@ -37,7 +40,7 @@ namespace Samples.AWS.Kinesis
             var response = kinesisClient.CreateStream(createStreamRequest);
             Console.WriteLine($"CreateStream(CreateStreamRequest) HTTP status code: {response.HttpStatusCode}");
         }
-        
+
         public static void DeleteStream(AmazonKinesisClient kinesisClient)
         {
             var deleteStreamRequest = new DeleteStreamRequest { StreamName = StreamName };

@@ -14,7 +14,7 @@ namespace Samples.AWS.Kinesis
             var kinesisClient = GetAmazonKinesisClient();
 
 #if NETFRAMEWORK
-            SyncHelpers.SendKinesisTasks(kinesisClient);
+            SyncHelpers.StartKinesisTasks(kinesisClient);
 #endif
             await AsyncHelpers.StartKinesisTasks(kinesisClient);
         }
