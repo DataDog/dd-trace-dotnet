@@ -53,9 +53,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.Spans;
-                Assert.Equal(0, spans.Count);
+                var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
+                Assert.Empty(spans);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);
