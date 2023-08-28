@@ -13,6 +13,9 @@
     <Filter Include="Helpers">
       <UniqueIdentifier>{300fa0f9-3712-4092-bb4a-382f97cb0c58}</UniqueIdentifier>
     </Filter>
+    <Filter Include="External Sources">
+      <UniqueIdentifier>{ecc1aba4-974c-43eb-99cb-8a79be4132ea}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -110,13 +113,23 @@
     <ClCompile Include="OsSpecificApiTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp" />
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp" />
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp" />
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp" />
-    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp" />
     <ClCompile Include="SampleValueTypeProviderTest.cpp">
       <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\OsSpecificApi.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\SystemTime.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows32BitStackFramesCollector.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\Windows64BitStackFramesCollector.cpp">
+      <Filter>External Sources</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native.Windows\WindowsThreadInfo.cpp">
+      <Filter>External Sources</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

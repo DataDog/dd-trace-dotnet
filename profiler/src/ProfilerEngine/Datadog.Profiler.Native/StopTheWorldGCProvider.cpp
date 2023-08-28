@@ -27,7 +27,7 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.Register(GarbageCollectionProvider::SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(GarbageCollectionProvider::SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }
 

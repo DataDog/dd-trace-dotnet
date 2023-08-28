@@ -35,7 +35,7 @@ TEST(SampleValueTypeProvider, RegisterValueTypes)
     SampleValueTypeProvider provider;
     auto const valueTypes = std::vector<SampleValueType>{CpuValueType, WallTimeValueType};
 
-    auto offsets = provider.Register(valueTypes);
+    auto offsets = provider.GetOrRegister(valueTypes);
 
     ASSERT_OFFSETS((ValueOffsets{0, 1}), offsets);
     //              cpu offset --^  ^-- walltime offset
@@ -48,7 +48,7 @@ TEST(SampleValueTypeProvider, RegisterTwiceSameValueType)
     SampleValueTypeProvider provider;
     auto valueTypes = std::vector<SampleValueType>{CpuValueType, WallTimeValueType};
 
-    auto offsets = provider.Register(valueTypes);
+    auto offsets = provider.GetOrRegister(valueTypes);
 
     ASSERT_OFFSETS((ValueOffsets{0, 1}), offsets);
     //              cpu offset --^  ^-- walltime offset
@@ -58,7 +58,7 @@ TEST(SampleValueTypeProvider, RegisterTwiceSameValueType)
     // Register walltime a second time
 
     auto alreadyRegisteredValueType = std::vector<SampleValueType>{WallTimeValueType};
-    auto offsets2 = provider.Register(alreadyRegisteredValueType);
+    auto offsets2 = provider.GetOrRegister(alreadyRegisteredValueType);
 
     ASSERT_OFFSETS((ValueOffsets{1}), offsets2); // walltime offset did not changed
 
@@ -70,13 +70,13 @@ TEST(SampleValueTypeProvider, CheckSequentialRegistration)
     SampleValueTypeProvider provider;
     auto valueTypes = std::vector<SampleValueType>{CpuValueType, WallTimeValueType};
 
-    auto offsets = provider.Register(valueTypes);
+    auto offsets = provider.GetOrRegister(valueTypes);
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 
     // Register ExceptionValueType
     auto anotherValuetype = std::vector<SampleValueType>{ExceptionValueType};
 
-    auto offsets2 = provider.Register(anotherValuetype);
+    auto offsets2 = provider.GetOrRegister(anotherValuetype);
     ASSERT_OFFSETS((ValueOffsets{2}), offsets2);
 
     ASSERT_DEFINITIONS((std::vector<SampleValueType>{CpuValueType, WallTimeValueType, ExceptionValueType}), provider.GetValueTypes());
@@ -87,11 +87,11 @@ TEST(SampleValueTypeProvider, EnsureThrowIfAddValueTypeSameNameButDifferentUnit)
     SampleValueTypeProvider provider;
     auto valueTypes = std::vector<SampleValueType>{CpuValueType};
 
-    auto offsets = provider.Register(valueTypes);
+    auto offsets = provider.GetOrRegister(valueTypes);
     ASSERT_DEFINITIONS(valueTypes, provider.GetValueTypes());
 
     // Register a cpu value but with different unit
     auto anotherValuetype = std::vector<SampleValueType>{{"cpu", "non-sense-unit"}};
 
-    EXPECT_THROW(provider.Register(anotherValuetype), std::runtime_error);
+    EXPECT_THROW(provider.GetOrRegister(anotherValuetype), std::runtime_error);
 }

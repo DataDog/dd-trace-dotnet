@@ -12,7 +12,7 @@ SampleValueTypeProvider::SampleValueTypeProvider()
     _sampleTypeDefinitions.reserve(16);
 }
 
-std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::Register(std::vector<SampleValueType> const& valueTypes)
+std::vector<SampleValueTypeProvider::Offset> SampleValueTypeProvider::GetOrRegister(std::vector<SampleValueType> const& valueTypes)
 {
     std::vector<Offset> offsets;
     offsets.reserve(valueTypes.size());

@@ -19,7 +19,7 @@ public:
 
     SampleValueTypeProvider();
 
-    std::vector<Offset> Register(std::vector<SampleValueType> const& valueType);
+    std::vector<Offset> GetOrRegister(std::vector<SampleValueType> const& valueType);
     std::vector<SampleValueType> const& GetValueTypes();
 
 private:

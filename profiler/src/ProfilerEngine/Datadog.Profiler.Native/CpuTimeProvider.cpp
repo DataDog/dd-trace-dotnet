@@ -25,6 +25,6 @@ CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.Register(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }

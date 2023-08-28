@@ -38,7 +38,7 @@ AllocationsProvider::AllocationsProvider(
     MetricsRegistry& metricsRegistry)
     :
     AllocationsProvider(
-        valueTypeProvider.Register(SampleTypeDefinitions),
+        valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         pCorProfilerInfo, pManagedThreadList, pFrameStore,
         pThreadsCpuManager, pAppDomainStore, pRuntimeIdStore,
         pConfiguration,

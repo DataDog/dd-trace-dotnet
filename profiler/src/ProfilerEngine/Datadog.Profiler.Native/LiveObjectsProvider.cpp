@@ -41,7 +41,7 @@ LiveObjectsProvider::LiveObjectsProvider(
     _isTimestampsAsLabelEnabled(pConfiguration->IsTimestampsAsLabelEnabled())
 {
     _pAllocationsProvider = std::make_unique<AllocationsProvider>(
-        valueTypeProvider.Register(SampleTypeDefinitions),
+        valueTypeProvider.GetOrRegister(SampleTypeDefinitions),
         pCorProfilerInfo,
         pManagedThreadList,
         pFrameStore,

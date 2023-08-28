@@ -31,7 +31,7 @@ ExceptionsProvider::ExceptionsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.Register(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),
