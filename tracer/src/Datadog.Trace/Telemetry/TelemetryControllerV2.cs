@@ -230,17 +230,7 @@ internal class TelemetryControllerV2 : ITelemetryController
     {
         try
         {
-            if (Iast.Iast.Instance.Settings.Enabled && Iast.Iast.Instance.Settings.IastTelemetryVerbosity != IastMetricsVerbosityLevel.Off)
-            {
-                try
-                {
-                    IastInstrumentationMetricsHelper.ReportMetrics();
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "Error pushing IAST telemetry");
-                }
-            }
+            CollectIastMetrics();
 
             // Always retrieve the metrics data, regardless of whether it's consumed, because we
             // need to make sure we clear the buffers. If we don't we could get overflows.
@@ -279,6 +269,21 @@ internal class TelemetryControllerV2 : ITelemetryController
         catch (Exception ex)
         {
             Log.Warning(ex, "Error pushing telemetry");
+        }
+    }
+
+    private void CollectIastMetrics()
+    {
+        if (Iast.Iast.Instance.Settings.Enabled && Iast.Iast.Instance.Settings.IastTelemetryVerbosity != IastMetricsVerbosityLevel.Off)
+        {
+            try
+            {
+                IastInstrumentationMetricsHelper.ReportMetrics();
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "Error pushing IAST telemetry");
+            }
         }
     }
 
