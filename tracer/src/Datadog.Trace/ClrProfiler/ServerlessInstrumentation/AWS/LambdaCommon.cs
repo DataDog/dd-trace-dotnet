@@ -17,6 +17,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
@@ -27,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
+        private static readonly DateTimeJsonConverter DateTimeConverter = new();
         private static readonly MemoryStreamJsonConverter MemoryStreamConverter = new();
         private static readonly ConverterContractResolver ContractResolver = new();
         private static readonly JsonSerializerSettings SerializerSettings = new()
@@ -34,7 +36,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             ContractResolver = ContractResolver,
             Converters = new List<JsonConverter>
             {
-                MemoryStreamConverter
+                MemoryStreamConverter,
+                DateTimeConverter
             }
         };
 
@@ -228,41 +231,6 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        private class ConverterContractResolver : DefaultContractResolver
-        {
-            protected override JsonContract CreateContract(Type objectType)
-            {
-                // Create a contract with custom settings
-                var contract = base.CreateContract(objectType);
-
-                if (objectType == typeof(MemoryStream))
-                {
-                    contract.Converter = new MemoryStreamJsonConverter();
-                }
-
-                return contract;
-            }
-        }
-
-        private class MemoryStreamJsonConverter : JsonConverter<MemoryStream>
-        {
-            public override void WriteJson(JsonWriter writer, MemoryStream value, JsonSerializer serializer)
-            {
-                if (value == null)
-                {
-                    writer.WriteNull();
-                    return;
-                }
-
-                // TODO: implement properly
-            }
-
-            public override MemoryStream ReadJson(JsonReader reader, Type objectType, MemoryStream existingValue, bool hasExistingValue, JsonSerializer serializer)
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         private static void WriteRequestPayload(WebRequest request, string data)
         {
             var byteArray = Encoding.UTF8.GetBytes(data);
@@ -288,6 +256,69 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             // Datadog duck typing library
             var proxyInstance = obj.DuckAs<ILambdaContext>();
             return proxyInstance?.ClientContext?.Custom;
+        }
+
+        private class ConverterContractResolver : DefaultContractResolver
+        {
+            protected override JsonContract CreateContract(Type objectType)
+            {
+                // Create a contract with custom settings
+                var contract = base.CreateContract(objectType);
+
+                if (objectType == typeof(MemoryStream))
+                {
+                    contract.Converter = new MemoryStreamJsonConverter();
+                }
+                else if (objectType == typeof(DateTime))
+                {
+                    contract.Converter = new DateTimeJsonConverter();
+                }
+
+                return contract;
+            }
+        }
+
+        private class MemoryStreamJsonConverter : JsonConverter<MemoryStream>
+        {
+            public override void WriteJson(JsonWriter writer, MemoryStream value, JsonSerializer serializer)
+            {
+                if (value == null)
+                {
+                    writer.WriteNull();
+                    return;
+                }
+
+                try
+                {
+                    var base64String = Convert.ToBase64String(value.ToArray());
+                    writer.WriteValue(base64String);
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Debug($"Failed to serialize MemoryStream with the following error: {ex}");
+                    writer.WriteNull();
+                }
+            }
+
+            public override MemoryStream ReadJson(JsonReader reader, Type objectType, MemoryStream existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private class DateTimeJsonConverter : JsonConverter<DateTime>
+        {
+            public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer)
+            {
+                var elapsedTime = value - DateTime.UnixEpoch;
+                var timestamp = elapsedTime.TotalSeconds;
+                writer.WriteValue(timestamp);
+            }
+
+            public override DateTime ReadJson(JsonReader reader, Type objectType, DateTime existingValue, bool hasExistingValue, JsonSerializer serializer)
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
