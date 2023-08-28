@@ -35,7 +35,7 @@ internal static class DiagnosticResultUtils
             {
                 if (noRuleDiagnoticsIsError)
                 {
-                    errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules in the correct format" } };
+                    errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or diagnostic format is incorrect" } };
                 }
 
                 return new ReportedDiagnostics { FailedCount = failedCount, LoadedCount = loadedCount, RulesetVersion = rulesetVersion, Errors = errors };
