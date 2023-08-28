@@ -7,20 +7,16 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Specialized;
+using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Ci.Agent;
-using Datadog.Trace.Ci.Sampling;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.HttpOverStreams;
 using Datadog.Trace.Util;
 using Spectre.Console;
 
@@ -30,60 +26,80 @@ namespace Datadog.Trace.Tools.Runner
     {
         public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(string runnerFolder, Platform platform, CommonTracerSettings options)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHome);
+            var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            if (!string.IsNullOrWhiteSpace(options.Environment))
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder);
+
+            var environment = options.Environment.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(environment))
             {
-                envVars[ConfigurationKeys.Environment] = options.Environment;
+                envVars[ConfigurationKeys.Environment] = environment;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Service))
+            var service = options.Service.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(service))
             {
-                envVars[ConfigurationKeys.ServiceName] = options.Service;
+                envVars[ConfigurationKeys.ServiceName] = service;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Version))
+            var version = options.Version.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                envVars[ConfigurationKeys.ServiceVersion] = options.Version;
+                envVars[ConfigurationKeys.ServiceVersion] = version;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            var agentUrl = options.AgentUrl.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(agentUrl))
             {
-                envVars[ConfigurationKeys.AgentUri] = options.AgentUrl;
+                envVars[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(string runnerFolder, Platform platform, LegacySettings options)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolder);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context));
 
-            if (!string.IsNullOrWhiteSpace(options.Environment))
+            var environment = options.EnvironmentOption.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(environment))
             {
-                envVars["DD_ENV"] = options.Environment;
+                envVars["DD_ENV"] = environment;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Service))
+            var service = options.ServiceOption.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(service))
             {
-                envVars["DD_SERVICE"] = options.Service;
+                envVars["DD_SERVICE"] = service;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.Version))
+            var version = options.VersionOption.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                envVars["DD_VERSION"] = options.Version;
+                envVars["DD_VERSION"] = version;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            var agentUrl = options.AgentUrlOption.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(agentUrl))
             {
-                envVars["DD_TRACE_AGENT_URL"] = options.AgentUrl;
+                envVars["DD_TRACE_AGENT_URL"] = agentUrl;
             }
 
-            if (!string.IsNullOrWhiteSpace(options.EnvironmentValues))
+            var environmentValues = options.EnvironmentValuesOption.GetValue(context);
+
+            if (!string.IsNullOrWhiteSpace(environmentValues))
             {
-                foreach (var keyValue in options.EnvironmentValues.Split(',', StringSplitOptions.RemoveEmptyEntries))
+                foreach (var keyValue in environmentValues.Split(',', StringSplitOptions.RemoveEmptyEntries))
                 {
                     if (!string.IsNullOrWhiteSpace(keyValue?.Trim()))
                     {
@@ -99,30 +115,38 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static void SetCommonTracerSettingsToCurrentProcess(CommonTracerSettings options)
+        public static void SetCommonTracerSettingsToCurrentProcess(InvocationContext context, CommonTracerSettings options)
         {
+            var environment = options.Environment.GetValue(context);
+
             // Settings back DD_ENV to use it in the current process (eg for CIVisibility's TestSession)
-            if (!string.IsNullOrWhiteSpace(options.Environment))
+            if (!string.IsNullOrWhiteSpace(environment))
             {
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, options.Environment);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Environment, environment);
             }
+
+            var service = options.Service.GetValue(context);
 
             // Settings back DD_SERVICE to use it in the current process (eg for CIVisibility's TestSession)
-            if (!string.IsNullOrWhiteSpace(options.Service))
+            if (!string.IsNullOrWhiteSpace(service))
             {
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, options.Service);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceName, service);
             }
+
+            var version = options.Version.GetValue(context);
 
             // Settings back DD_VERSION to use it in the current process (eg for CIVisibility's TestSession)
-            if (!string.IsNullOrWhiteSpace(options.Version))
+            if (!string.IsNullOrWhiteSpace(version))
             {
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, options.Version);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.ServiceVersion, version);
             }
 
+            var agentUrl = options.AgentUrl.GetValue(context);
+
             // Settings back DD_TRACE_AGENT_URL to use it in the current process (eg for CIVisibility's TestSession)
-            if (!string.IsNullOrWhiteSpace(options.AgentUrl))
+            if (!string.IsNullOrWhiteSpace(agentUrl))
             {
-                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, options.AgentUrl);
+                EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.AgentUri, agentUrl);
             }
         }
 
