@@ -267,11 +267,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
                 if (objectType == typeof(MemoryStream))
                 {
-                    contract.Converter = new MemoryStreamJsonConverter();
+                    contract.Converter = MemoryStreamConverter;
                 }
                 else if (objectType == typeof(DateTime))
                 {
-                    contract.Converter = new DateTimeJsonConverter();
+                    contract.Converter = DateTimeConverter;
                 }
 
                 return contract;
