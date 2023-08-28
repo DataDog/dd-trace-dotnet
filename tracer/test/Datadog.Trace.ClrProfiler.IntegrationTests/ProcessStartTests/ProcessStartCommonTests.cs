@@ -64,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 #endif
 
-            if (expectedSpanCount == 5)
+            if (expectedSpanCount == 5 && !EnvironmentTools.IsWindows())
             {
                 expectedSpanCount = 3;
             }
