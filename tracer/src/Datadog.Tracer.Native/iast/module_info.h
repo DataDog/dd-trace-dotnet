@@ -17,6 +17,7 @@ namespace iast
     class MethodSpec;
     class MethodInfo;
     class FieldInfo;
+    class PropertyInfo;
     class DataflowAspect;
     class DataflowAspectReference;
     class AspectFilter;
