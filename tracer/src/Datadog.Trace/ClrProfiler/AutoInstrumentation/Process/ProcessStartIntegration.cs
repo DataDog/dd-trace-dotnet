@@ -8,7 +8,6 @@ using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 {
@@ -25,7 +24,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
        IntegrationName = nameof(Configuration.IntegrationId.Process))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
-    [IastInstrumentation(AspectType.Sink, VulnerabilityType.CommandInjection)]
     public class ProcessStartIntegration
     {
         /// <summary>

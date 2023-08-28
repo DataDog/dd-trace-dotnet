@@ -10,9 +10,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
 
@@ -37,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     MaximumVersion = "7.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
-[IastInstrumentation(AspectType.Sink, VulnerabilityType.WeakCipher, times: 2)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class SymmetricAlgorithmIntegration

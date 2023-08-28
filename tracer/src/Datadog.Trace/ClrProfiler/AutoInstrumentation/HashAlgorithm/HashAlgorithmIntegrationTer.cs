@@ -12,9 +12,6 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Iast.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 
@@ -44,7 +41,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-[IastInstrumentation(AspectType.Sink, VulnerabilityType.WeakHash, times: 2)]
 public class HashAlgorithmIntegrationTer
 {
     /// <summary>
