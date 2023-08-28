@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using Spectre.Console;
 
@@ -30,7 +31,7 @@ namespace Datadog.Trace.Tools.Runner
             foreach (var item in environmentVariables)
             {
                 // https://learn.microsoft.com/en-gb/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#setvariable-initialize-or-modify-the-value-of-a-variable
-                AnsiConsole.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
+                Console.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
             }
         }
 

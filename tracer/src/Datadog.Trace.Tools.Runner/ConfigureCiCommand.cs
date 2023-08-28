@@ -80,7 +80,7 @@ namespace Datadog.Trace.Tools.Runner
                 return;
             }
 
-            AnsiConsole.WriteLine("Setting up the environment variables.");
+            Console.WriteLine("Setting up the environment variables.");
 
             if (!CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, ciName))
             {
