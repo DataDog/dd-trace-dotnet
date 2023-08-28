@@ -12,6 +12,7 @@
 #include "IUpscaleProvider.h"
 #include "OsSpecificApi.h"
 #include "Sample.h"
+#include "SampleValueTypeProvider.h"
 
 
 std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
@@ -22,7 +23,7 @@ std::vector<SampleValueType> ContentionProvider::SampleTypeDefinitions(
 
 
 ContentionProvider::ContentionProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -32,7 +33,7 @@ ContentionProvider::ContentionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawContentionSample>("ContentionProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawContentionSample>("ContentionProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo{pCorProfilerInfo},
     _pManagedThreadList{pManagedThreadList},
     _sampler(pConfiguration->ContentionSampleLimit(), pConfiguration->GetUploadInterval(), false),
