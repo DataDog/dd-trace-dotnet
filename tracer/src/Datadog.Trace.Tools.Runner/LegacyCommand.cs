@@ -40,7 +40,8 @@ namespace Datadog.Trace.Tools.Runner
                 context,
                 ApplicationContext.RunnerFolder,
                 ApplicationContext.Platform,
-                _legacySettings);
+                _legacySettings,
+                false);
 
             if (profilerEnvironmentVariables is null)
             {

@@ -16,7 +16,8 @@ namespace Datadog.Trace.Tools.Runner
                 invocationContext,
                 applicationContext.RunnerFolder,
                 applicationContext.Platform,
-                settings);
+                settings,
+                false);
 
             if (profilerEnvironmentVariables is null)
             {
