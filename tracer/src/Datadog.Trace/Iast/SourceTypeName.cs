@@ -17,6 +17,5 @@ internal enum SourceTypeName
     RequestQuery,
     CookieName,
     CookieValue,
-    MatrixParameter,
-    None
+    MatrixParameter
 }
