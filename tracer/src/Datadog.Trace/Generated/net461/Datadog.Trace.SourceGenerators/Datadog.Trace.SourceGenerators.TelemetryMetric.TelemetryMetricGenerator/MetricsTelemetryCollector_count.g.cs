@@ -684,7 +684,7 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
             new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
-            // dd.instrumentation_telemetry_data.iast.instrumented.source, index = 445
+            // instrumented.source, index = 445
             new(new[] { "source_type:http.request.body" }),
             new(new[] { "source_type:http.request.path" }),
             new(new[] { "source_type:http.request.parameter.name" }),
@@ -696,9 +696,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.http.cookie.name" }),
             new(new[] { "source_type:http.cookie.value" }),
             new(new[] { "source_type:http.http.request.matrix.parameter" }),
-            // dd.instrumentation_telemetry_data.iast.instrumented.propagation, index = 456
+            // instrumented.propagation, index = 456
             new(null),
-            // dd.instrumentation_telemetry_data.iast.instrumented.sink, index = 457
+            // instrumented.sink, index = 457
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
             new(new[] { "vulnerability_type:sql_injection" }),

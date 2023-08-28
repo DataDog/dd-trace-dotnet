@@ -188,17 +188,17 @@ internal enum Count
     /// <summary>
     /// The number of times the waf is initialized
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSources>("dd.instrumentation_telemetry_data.iast.instrumented.source", isCommon: true, NS.Iast)] IastInstrumentedSources,
+    [TelemetryMetric<MetricTags.IastInstrumentedSources>("instrumented.source", isCommon: true, NS.Iast)] IastInstrumentedSources,
 
     /// <summary>
     /// The number of times we reload the rules (startup + Remote Configuration)
     /// </summary>
-    [TelemetryMetric("dd.instrumentation_telemetry_data.iast.instrumented.propagation", isCommon: true, NS.Iast)] IastInstrumentedPropagations,
+    [TelemetryMetric("instrumented.propagation", isCommon: true, NS.Iast)] IastInstrumentedPropagations,
 
     /// <summary>
     /// Requests analyzed by ddwaf
     /// </summary>
-    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("dd.instrumentation_telemetry_data.iast.instrumented.sink", isCommon: true, NS.Iast)] IastInstrumentedSinks,
+    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("instrumented.sink", isCommon: true, NS.Iast)] IastInstrumentedSinks,
 
 #endregion
 }

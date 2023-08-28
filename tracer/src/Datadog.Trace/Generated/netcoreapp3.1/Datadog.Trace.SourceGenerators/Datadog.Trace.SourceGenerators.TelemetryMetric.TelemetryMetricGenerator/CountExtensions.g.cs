@@ -48,9 +48,9 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
-            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedSources => "dd.instrumentation_telemetry_data.iast.instrumented.source",
-            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedPropagations => "dd.instrumentation_telemetry_data.iast.instrumented.propagation",
-            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedSinks => "dd.instrumentation_telemetry_data.iast.instrumented.sink",
+            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedSources => "instrumented.source",
+            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedPropagations => "instrumented.propagation",
+            Datadog.Trace.Telemetry.Metrics.Count.IastInstrumentedSinks => "instrumented.sink",
             _ => null!,
         };
 
