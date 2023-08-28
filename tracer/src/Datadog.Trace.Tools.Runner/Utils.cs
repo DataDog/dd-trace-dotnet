@@ -158,9 +158,10 @@ namespace Datadog.Trace.Tools.Runner
             {
                 for (int i = 0; i < paths.Length; i++)
                 {
-                    if (Directory.Exists(paths[i]))
+                    var tmpFolder = Path.GetFullPath(paths[i]);
+                    if (Directory.Exists(tmpFolder))
                     {
-                        folderName = paths[i];
+                        folderName = tmpFolder;
                         break;
                     }
                 }
@@ -177,6 +178,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
+                filePath = Path.GetFullPath(filePath);
                 if (!File.Exists(filePath))
                 {
                     WriteError($"Error: The file '{filePath}' can't be found.");
@@ -194,6 +196,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
+                filePath = Path.GetFullPath(filePath);
                 if (!File.Exists(filePath))
                 {
                     return null;
@@ -398,7 +401,7 @@ namespace Datadog.Trace.Tools.Runner
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
             {
-                tracerHome = tracerHomeFolder;
+                tracerHome = Path.GetFullPath(tracerHomeFolder);
                 if (!Directory.Exists(tracerHome))
                 {
                     WriteError("Error: The specified home folder doesn't exist.");
