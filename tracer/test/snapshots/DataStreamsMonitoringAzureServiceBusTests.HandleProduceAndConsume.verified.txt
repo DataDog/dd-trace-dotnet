@@ -1,0 +1,212 @@
+[
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic2,
+      type:azureservicebus
+    ],
+    Hash: 1300400877803061738,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic2,
+      type:azureservicebus
+    ],
+    Hash: 1300400877803061738,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic2/Subscriptions/subscription,
+      type:azureservicebus
+    ],
+    Hash: 3492373990379305333,
+    ParentHash: 1300400877803061738,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic2/Subscriptions/subscription,
+      type:azureservicebus
+    ],
+    Hash: 3492373990379305333,
+    ParentHash: 1300400877803061738,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic3,
+      type:azureservicebus
+    ],
+    Hash: 12635316083485935058,
+    ParentHash: 3492373990379305333,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic3,
+      type:azureservicebus
+    ],
+    Hash: 12635316083485935058,
+    ParentHash: 3492373990379305333,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic3/Subscriptions/subscription,
+      type:azureservicebus
+    ],
+    Hash: 15419176850428514315,
+    ParentHash: 12635316083485935058,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic3/Subscriptions/subscription,
+      type:azureservicebus
+    ],
+    Hash: 15419176850428514315,
+    ParentHash: 12635316083485935058,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic-subscription-filters,
+      type:azureservicebus
+    ],
+    Hash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-topic-subscription-filters,
+      type:azureservicebus
+    ],
+    Hash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic-subscription-filters/Subscriptions/subscription1,
+      type:azureservicebus
+    ],
+    Hash: 3991700814394265234,
+    ParentHash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic-subscription-filters/Subscriptions/subscription1,
+      type:azureservicebus
+    ],
+    Hash: 3991700814394265234,
+    ParentHash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic-subscription-filters/Subscriptions/subscription2,
+      type:azureservicebus
+    ],
+    Hash: 14221557893784108254,
+    ParentHash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-topic-subscription-filters/Subscriptions/subscription2,
+      type:azureservicebus
+    ],
+    Hash: 14221557893784108254,
+    ParentHash: 4124137084012004222,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-direct-queue,
+      type:azureservicebus
+    ],
+    Hash: 16823437917832152374,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:out,
+      topic:dsm-direct-queue,
+      type:azureservicebus
+    ],
+    Hash: 16823437917832152374,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-direct-queue,
+      type:azureservicebus
+    ],
+    Hash: 2365186328731056050,
+    ParentHash: 16823437917832152374,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: current
+  },
+  {
+    EdgeTags: [
+      direction:in,
+      topic:dsm-direct-queue,
+      type:azureservicebus
+    ],
+    Hash: 2365186328731056050,
+    ParentHash: 16823437917832152374,
+    PathwayLatency: /w==,
+    EdgeLatency: /w==,
+    TimestampType: origin
+  }
+]
