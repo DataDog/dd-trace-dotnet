@@ -49,7 +49,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string? ErrorMessage { get; }
 
-        internal bool? HasErrors { get; }
+        internal bool HasErrors { get; }
 
         internal string? RuleFileVersion { get; }
 

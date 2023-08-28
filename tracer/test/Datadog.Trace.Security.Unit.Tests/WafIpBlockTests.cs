@@ -34,6 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             res.Success.Should().BeTrue();
+            res.HasErrors.Should().BeFalse();
             using var context = initResult.Waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
@@ -80,6 +81,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.Concat(rulesData2!).ToArray() } };
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            res.Success.Should().BeTrue();
+            res.HasErrors.Should().BeFalse();
             using var context = waf!.CreateContext();
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },
@@ -89,39 +92,6 @@ namespace Datadog.Trace.Security.Unit.Tests
             result.Actions.Should().NotBeEmpty();
             result.Actions.Should().Contain("block");
             result.ShouldBlock.Should().BeTrue();
-        }
-
-        [Fact]
-        public void Bug_NormalAsmDataUpdateFalselyReportsError()
-        {
-            var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
-
-            using var waf = initResult.Waf;
-            waf.Should().NotBeNull();
-
-            var jsonBlockedIps = """
-            {
-                    "rules_data": [
-                    {
-                        "data": [
-                        {
-                            "value": "172.31.95.141"
-                        },
-                        {
-                            "value": "162.243.132.16"
-                        }
-                        ],
-                        "id": "blocked_ips",
-                        "type": "ip_with_expiration"
-                    }
-                    ]
-            }
-            """;
-
-            var rulesData = JsonConvert.DeserializeObject<Payload>(jsonBlockedIps);
-            var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["blocked_ips"] = rulesData!.RulesData!.ToArray() } };
-            configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
-            var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
         }
     }
 }
