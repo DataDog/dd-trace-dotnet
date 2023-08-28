@@ -4,31 +4,41 @@
 // </copyright>
 
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Linq;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class RunCommand : Command<RunSettings>
+    internal class RunCommand : CommandWithExamples
     {
         private readonly ApplicationContext _applicationContext;
+        private readonly RunSettings _runSettings;
 
         public RunCommand(ApplicationContext applicationContext)
+            : base("run", "Run a command with the Datadog tracer enabled")
         {
             _applicationContext = applicationContext;
+            _runSettings = new RunSettings(this);
+
+            AddExample("dd-trace run -- dotnet myApp.dll");
+            AddExample("dd-trace run -- MyApp.exe");
+
+            this.SetHandler(Execute);
         }
 
-        public override int Execute(CommandContext context, RunSettings settings)
+        private void Execute(InvocationContext context)
         {
-            var args = RunHelper.GetArguments(context, settings);
+            var args = _runSettings.Command.GetValue(context);
             var program = args[0];
-            var arguments = args.Count > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
+            var arguments = args.Length > 1 ? Utils.GetArgumentsAsString(args.Skip(1)) : string.Empty;
 
             // Get profiler environment variables
-            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, settings, out var profilerEnvironmentVariables))
+            if (!RunHelper.TryGetEnvironmentVariables(_applicationContext, context, _runSettings, out var profilerEnvironmentVariables))
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             AnsiConsole.WriteLine("Running: {0} {1}", program, arguments);
@@ -36,7 +46,7 @@ namespace Datadog.Trace.Tools.Runner
             if (Program.CallbackForTests != null)
             {
                 Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
-                return 0;
+                return;
             }
 
             var processInfo = Utils.GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
@@ -45,13 +55,7 @@ namespace Datadog.Trace.Tools.Runner
                 processInfo.Arguments = arguments;
             }
 
-            return Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
-        }
-
-        public override ValidationResult Validate(CommandContext context, RunSettings settings)
-        {
-            var runValidation = RunHelper.Validate(context, settings);
-            return !runValidation.Successful ? runValidation : base.Validate(context, settings);
+            context.ExitCode = Utils.RunProcess(processInfo, _applicationContext.TokenSource.Token);
         }
     }
 }

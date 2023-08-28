@@ -5,20 +5,21 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.Builder;
+using System.CommandLine.Help;
+using System.CommandLine.Parsing;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Tools.Runner.Crank;
 using Spectre.Console;
-using Spectre.Console.Cli;
 using Spectre.Console.Rendering;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal class Program
     {
-        private static readonly List<string> KnownCommands = new();
-
         internal static Action<string, string, Dictionary<string, string>> CallbackForTests { get; set; }
 
         internal static int Main(string[] args)
@@ -57,159 +58,95 @@ namespace Datadog.Trace.Tools.Runner
             AppDomain.CurrentDomain.ProcessExit += (_, _) => CurrentDomain_ProcessExit(applicationContext);
             AppDomain.CurrentDomain.DomainUnload += (_, _) => CurrentDomain_ProcessExit(applicationContext);
 
-            try
+            IEnumerable<HelpSectionDelegate> GetLayout(HelpContext context)
             {
-                var app = new CommandApp();
+                yield return HelpBuilder.Default.SynopsisSection();
+                yield return HelpBuilder.Default.CommandUsageSection();
 
-                app.Configure(config =>
+                if (context.Command is CommandWithExamples command && command.Examples.Count > 0)
                 {
-                    ConfigureApp(new CommandAwareConfigurator(config, KnownCommands), applicationContext);
+                    yield return CommandWithExamples.ExamplesSection();
+                }
+
+                yield return HelpBuilder.Default.CommandArgumentsSection();
+                yield return HelpBuilder.Default.OptionsSection();
+                yield return HelpBuilder.Default.SubcommandsSection();
+                yield return HelpBuilder.Default.AdditionalArgumentsSection();
+            }
+
+            var localizationResources = new CustomLocalizationResources();
+
+            var rootCommand = new CommandWithExamples("dd-trace");
+
+            var builder = new CommandLineBuilder(rootCommand)
+                .UseLocalizationResources(localizationResources)
+                .UseHelp()
+                .UseParseErrorReporting();
+
+            builder.UseHelpBuilder(
+                _ =>
+                {
+                    var helpBuilder = new HelpBuilder(localizationResources);
+                    helpBuilder.CustomizeLayout(GetLayout);
+                    return helpBuilder;
                 });
 
-                return app.Run(args);
-            }
-            catch (CommandParseException ex) when (!IsKnownCommand(args))
-            {
-                try
-                {
-                    return ExecuteLegacyCommandLine(args, applicationContext);
-                }
-                catch (CommandRuntimeException)
-                {
-                    // Command line is invalid for both parsers
-                    if (ex.Pretty != null)
-                    {
-                        AnsiConsole.Write(ex.Pretty);
-                    }
-                    else
-                    {
-                        AnsiConsole.WriteException(ex);
-                    }
+            rootCommand.AddExample("dd-trace run --dd-env prod -- myApp --argument-for-my-app");
+            rootCommand.AddExample("dd-trace ci configure azp");
+            rootCommand.AddExample("dd-trace ci run -- dotnet test");
 
-                    return 1;
+            var ciCommand = new Command("ci", "CI related commands");
+            builder.Command.AddCommand(ciCommand);
+
+            ciCommand.AddCommand(new ConfigureCiCommand(applicationContext));
+            ciCommand.AddCommand(new RunCiCommand(applicationContext));
+            ciCommand.AddCommand(new CrankCommand());
+
+            var checkCommand = new Command("check");
+            builder.Command.AddCommand(checkCommand);
+
+            checkCommand.AddCommand(new CheckProcessCommand());
+            checkCommand.AddCommand(new CheckAgentCommand());
+
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                checkCommand.AddCommand(new CheckIisCommand());
+            }
+
+            builder.Command.AddCommand(new RunCommand(applicationContext));
+            builder.Command.AddCommand(new AotCommand { IsHidden = true });
+            builder.Command.AddCommand(new AnalyzeInstrumentationErrorsCommand { IsHidden = true });
+            builder.Command.AddCommand(new CoverageMergerCommand { IsHidden = true });
+
+            var parser = builder.Build();
+
+            var parseResult = parser.Parse(args);
+
+            if (parseResult.Errors.Count > 0)
+            {
+                if (parseResult.Tokens.Count > 0 && parseResult.CommandResult.Command == builder.Command)
+                {
+                    var legacyParser = new CommandLineBuilder(new LegacyCommand(applicationContext))
+                        .Build();
+
+                    var legacyParseResult = legacyParser.Parse(args);
+
+                    if (legacyParseResult.Errors.Count == 0)
+                    {
+                        return legacyParseResult.Invoke();
+                    }
                 }
+            }
+
+            try
+            {
+                return parseResult.Invoke();
             }
             catch (Exception ex)
             {
-                foreach (var render in GetRenderableErrorMessage(ex))
-                {
-                    AnsiConsole.Write(render);
-                }
-
+                AnsiConsole.Write(new Markup($"[red]Error:[/] {ex.Message.EscapeMarkup()}{Environment.NewLine}"));
                 return 1;
             }
-        }
-
-        private static void ConfigureApp(IConfigurator config, ApplicationContext applicationContext)
-        {
-            config.UseStrictParsing();
-            config.Settings.Registrar.RegisterInstance(applicationContext);
-
-            config.SetApplicationName("dd-trace");
-
-            // Activate the exceptions, so we can fallback on the old syntax if the arguments can't be parsed
-            config.PropagateExceptions();
-
-            config.AddExample("run --dd-env prod -- myApp --argument-for-my-app".Split(' '));
-            config.AddExample("ci configure azp".Split(' '));
-            config.AddExample("ci run -- dotnet test".Split(' '));
-
-            config.AddBranch(
-                "ci",
-                c =>
-                {
-                    c.SetDescription("CI related commands");
-
-                    c.AddCommand<ConfigureCiCommand>("configure")
-                        .WithDescription("Set the environment variables for the CI")
-                        .WithExample("ci configure azp".Split(' '));
-                    c.AddCommand<RunCiCommand>("run")
-                        .WithDescription("Run a command and instrument the tests")
-                        .WithExample("ci run -- dotnet test".Split(' '));
-                    c.AddCommand<CrankCommand>("crank-import")
-                        .IsHidden()
-                        .WithDescription("Import a Microsoft Crank json file")
-                        .WithExample("ci crank-import ./crank-results.json".Split(' '));
-                });
-
-            config.AddBranch(
-                "check",
-                c =>
-                {
-                    c.AddCommand<CheckProcessCommand>("process");
-                    c.AddCommand<CheckAgentCommand>("agent");
-
-                    if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-                    {
-                        c.AddCommand<CheckIisCommand>("iis");
-                    }
-                });
-
-            config.AddCommand<RunCommand>("run")
-                .WithDescription("Run a command with the Datadog tracer enabled")
-                .WithExample("run -- dotnet myApp.dll".Split(' '));
-
-            config.AddCommand<AotCommand>("apply-aot")
-                  .WithDescription("Apply AOT automatic instrumentation on application folder")
-                  .WithExample("apply-aot c:\\input\\ c:\\output\\".Split(' '))
-                  .IsHidden();
-
-            config.AddCommand<AnalyzeInstrumentationErrorsCommand>("analyze-instrumentation")
-                  .WithDescription("Analyze instrumentation errors")
-                  .WithExample("analyze-instrumentation [--process-name dotnet]".Split(' '))
-                  .WithExample("analyze-instrumentation [--pid 12345]".Split(' '))
-                  .WithExample("analyze-instrumentation [--log-path \"C:\\ProgramData\\Datadog .NET Tracer\\logs\\\"]".Split(' '));
-
-            config.AddCommand<CoverageMergerCommand>("coverage-merge")
-                  .WithDescription("Merges all coverage json files into a single one.")
-                  .WithExample("coverage-merge c:\\coverage_folder\\ total-coverage.json".Split(' '))
-                  .IsHidden();
-        }
-
-        private static int ExecuteLegacyCommandLine(string[] args, ApplicationContext applicationContext)
-        {
-            // Try executing the command with the legacy syntax
-            var app = new CommandApp<LegacyCommand>();
-
-            app.Configure(c =>
-            {
-                c.Settings.Registrar.RegisterInstance(applicationContext);
-                c.PropagateExceptions();
-            });
-
-            return app.Run(args);
-        }
-
-        // Extracted from Spectre.Console source code
-        // This is needed because we disable the default error handling to try the fallback legacy parser
-        private static List<IRenderable> GetRenderableErrorMessage(Exception ex, bool convert = true)
-        {
-            if (ex is CommandAppException renderable && renderable.Pretty != null)
-            {
-                return new List<IRenderable> { renderable.Pretty };
-            }
-
-            if (convert)
-            {
-                var converted = new List<IRenderable>
-                {
-                    new Markup($"[red]Error:[/] {ex.Message.EscapeMarkup()}{Environment.NewLine}")
-                };
-
-                // Got a renderable inner exception?
-                if (ex.InnerException != null)
-                {
-                    var innerRenderable = GetRenderableErrorMessage(ex.InnerException, convert: false);
-                    if (innerRenderable != null)
-                    {
-                        converted.AddRange(innerRenderable);
-                    }
-                }
-
-                return converted;
-            }
-
-            return null;
         }
 
         private static void Console_CancelKeyPress(ConsoleCancelEventArgs e, ApplicationContext context)
@@ -221,48 +158,6 @@ namespace Datadog.Trace.Tools.Runner
         private static void CurrentDomain_ProcessExit(ApplicationContext context)
         {
             context.TokenSource.Cancel();
-        }
-
-        private static bool IsKnownCommand(string[] args)
-        {
-            return args.Length > 0 && KnownCommands.Contains(args[0]);
-        }
-
-        private class CommandAwareConfigurator : IConfigurator
-        {
-            private readonly IConfigurator _configurator;
-            private readonly List<string> _commandList;
-
-            public CommandAwareConfigurator(IConfigurator configurator, List<string> commandList)
-            {
-                _configurator = configurator;
-                _commandList = commandList;
-            }
-
-            public ICommandAppSettings Settings => _configurator.Settings;
-
-            public void AddExample(string[] args) => _configurator.AddExample(args);
-
-            public ICommandConfigurator AddCommand<TCommand>(string name)
-                where TCommand : class, ICommand
-            {
-                _commandList.Add(name);
-                return _configurator.AddCommand<TCommand>(name);
-            }
-
-            public ICommandConfigurator AddDelegate<TSettings>(string name, Func<CommandContext, TSettings, int> func)
-                where TSettings : CommandSettings
-            {
-                _commandList.Add(name);
-                return _configurator.AddDelegate<TSettings>(name, func);
-            }
-
-            public void AddBranch<TSettings>(string name, Action<IConfigurator<TSettings>> action)
-                where TSettings : CommandSettings
-            {
-                _commandList.Add(name);
-                _configurator.AddBranch<TSettings>(name, action);
-            }
         }
     }
 }
