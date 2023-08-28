@@ -579,8 +579,7 @@ namespace iast
                 {
                     continue;
                 }
-                auto propAttrs = _module->GetCustomAttributes(property->GetPropertyId());
-                return propAttrs;
+                AddRange(res, _module->GetCustomAttributes(property->GetPropertyId()));
             }
         }
         return res;
