@@ -58,6 +58,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 const int expectedProcessorSpanCount = 91;
+                agent.SpanFilters.Add(s =>
+                    (s.Tags.TryGetValue("otel.library.name", out var value) && value == "Samples.AzureServiceBus")
+                    || (s.Tags.TryGetValue("messaging.system", out value) && value == "servicebus")); // Exclude the Admin requests
                 var spans = agent.WaitForSpans(expectedProcessorSpanCount);
 
                 using var s = new AssertionScope();

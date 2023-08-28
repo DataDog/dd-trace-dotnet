@@ -5,6 +5,7 @@ using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Messaging.ServiceBus;
+using Azure.Messaging.ServiceBus.Administration;
 using Microsoft.Azure.Amqp.Framing;
 using OpenTelemetry.Trace;
 
@@ -38,16 +39,14 @@ namespace Samples.AzureServiceBus
 
         public RequestHelper()
         {
-            var clientOptions = new ServiceBusClientOptions
-            {
-                TransportType = ServiceBusTransportType.AmqpTcp
-            };
-
-            Client = new ServiceBusClient(ConnectionString, clientOptions);
+            AdminClient = new ServiceBusAdministrationClient(ConnectionString);
+            Client = new ServiceBusClient(ConnectionString);
             IsRunningInAzure = ConnectionString.Contains("servicebus.windows.net");
         }
 
-        private ServiceBusClient Client { get; }
+        internal ServiceBusAdministrationClient AdminClient { get; }
+
+        internal ServiceBusClient Client { get; }
 
         private bool IsRunningInAzure { get; }
 

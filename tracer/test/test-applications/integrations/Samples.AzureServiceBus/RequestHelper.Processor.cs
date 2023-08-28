@@ -36,21 +36,21 @@ namespace Samples.AzureServiceBus
             await processor.DisposeAsync();
         }
 
-        public async Task TestServiceBusSubscriptionProcessorAsync(Tracer tracer, string topicName, string subscriptionPrefix, int numSubscribers)
+        public async Task TestServiceBusSubscriptionProcessorAsync(Tracer tracer, string topicName, string[] subscriptionNames)
         {
             await SendMessageToProcessorAsync(tracer, topicName, resourceName: "SendMessageToTopicAsync");
 
             List<ServiceBusProcessor> processorList = new();
 
-            for (int i = 1; i <= numSubscribers; i++)
+            for (int i = 0; i < subscriptionNames.Length; i++)
             {
-                var processor = Client.CreateProcessor(topicName, $"{subscriptionPrefix}{i}");
+                var processor = Client.CreateProcessor(topicName, subscriptionNames[i]);
                 var processorTcs = new TaskCompletionSource<bool>();
 
                 processorList.Add(processor);
 
-                processor.ProcessMessageAsync += ProcessMessageHandler($"TopicSubscriber{i}", processorTcs);
-                processor.ProcessErrorAsync += ProcessErrorHandler($"TopicSubscriber{i}");
+                processor.ProcessMessageAsync += ProcessMessageHandler(subscriptionNames[i], processorTcs);
+                processor.ProcessErrorAsync += ProcessErrorHandler(subscriptionNames[i]);
                 await processor.StartProcessingAsync();
 
                 // To ensure stable ordering, we'll await one message from the newly established subscriber before starting the next
