@@ -10,6 +10,9 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Telemetry;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
 
@@ -36,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.HashAlgorithm;
     MaximumVersion = "7.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.HashAlgorithm))]
+[IastInstrumentation(AspectType.Sink, VulnerabilityType.WeakHash, times: 2)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class HashAlgorithmIntegration

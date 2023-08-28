@@ -13,6 +13,8 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Dataflow;
+using Datadog.Trace.Iast.Telemetry;
 using Microsoft.AspNetCore.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
@@ -65,6 +67,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
 
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [IastInstrumentation(AspectType.Source, sourceType: SourceTypeName.RequestBody, times: 4)]
     public class DefaultModelBindingContext_SetResult_Integration
     {
         /// <summary>

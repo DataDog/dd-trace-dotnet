@@ -22,27 +22,27 @@ internal static class IastInstrumentationMetricsHelper
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private static bool _iastEnabled = Iast.Instance.Settings.Enabled;
 
-    public static void OnInstrumentedSource(SourceTypeName type)
+    public static void OnInstrumentedSource(SourceTypeName type, int counter = 0)
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            instrumentedSources[(int)type]++;
+            instrumentedSources[(int)type] += counter;
         }
     }
 
-    public static void OnInstrumentedPropagation()
+    public static void OnInstrumentedPropagation(int counter = 0)
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            instrumentedPropagations++;
+            instrumentedPropagations += counter;
         }
     }
 
-    public static void OnInstrumentedSink(VulnerabilityType type)
+    public static void OnInstrumentedSink(VulnerabilityType type, int counter = 0)
     {
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
-            instrumentedSinks[(int)type]++;
+            instrumentedSinks[(int)type] += counter;
         }
     }
 

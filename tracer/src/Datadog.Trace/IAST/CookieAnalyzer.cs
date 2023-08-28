@@ -7,7 +7,6 @@
 
 using System;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
