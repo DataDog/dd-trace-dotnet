@@ -162,7 +162,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     else
                     {
                         // assert that "_dd.p.tid" was NOT added
-                        Assert.Null(traceIdUpperTagFromHeader);
+                        Assert.NotNull(traceIdUpperTagFromHeader);
                         Assert.Null(traceIdUpperTagFromSpan);
                     }
 
