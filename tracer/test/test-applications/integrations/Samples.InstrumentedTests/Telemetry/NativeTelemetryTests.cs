@@ -40,18 +40,5 @@ namespace Samples.InstrumentedTests.Iast
             }
             catch { }
         }
-
-        [Fact]
-        public void GivenAMethod_WhenInstrumented_InstrumentationPointsAreDetected2()
-        {
-            var sinks = new int[100];
-            ReadNativeTelemetry(out var sources, out var propagations, sinks);
-            Test();
-            ReadNativeTelemetry(out sources, out propagations, sinks);
-            int sinksTotal = 0;
-            Array.ForEach(sinks, sink => sinksTotal += sink);
-            propagations.Should().BeGreaterThanOrEqualTo(2);
-            sinksTotal.Should().BeGreaterThanOrEqualTo(1);
-        }
     }
 }

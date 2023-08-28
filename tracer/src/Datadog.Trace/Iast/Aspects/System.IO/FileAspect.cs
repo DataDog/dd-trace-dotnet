@@ -6,7 +6,6 @@
 #nullable enable
 
 using Datadog.Trace.Iast.Dataflow;
-using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Iast.Aspects;
 

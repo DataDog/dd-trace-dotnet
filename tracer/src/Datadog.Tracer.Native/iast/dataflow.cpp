@@ -719,8 +719,6 @@ InstrumentResult Dataflow::InstrumentInstruction(ILRewriter* rewriter, ILInstr* 
     return res;
 }
 
-// Declaring each vulnerability type instead of sending an array involes many parameters, but it is also a way to avoid enum errors between the native and managed part
-
 void Dataflow::GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinks)
 {
     *instrumentedSources = _callsiteInstrumentedSources;
