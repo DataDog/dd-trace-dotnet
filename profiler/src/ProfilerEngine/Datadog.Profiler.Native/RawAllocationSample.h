@@ -34,10 +34,11 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
-        uint32_t allocationCountIndex = valueOffset;
-        uint32_t allocationSizeIndex = valueOffset + 1;
+        assert(valueOffsets.size() == 2);
+        auto allocationCountIndex = valueOffsets[0];
+        auto allocationSizeIndex = valueOffsets[1];
 
         sample->AddValue(1, allocationCountIndex);
         sample->AddValue(AllocationSize, allocationSizeIndex);

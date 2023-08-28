@@ -16,7 +16,7 @@ public:
     RawStopTheWorldSample& operator=(RawStopTheWorldSample&& other) noexcept = default;
 
     // Duration is the suspension time so default sample value
-    void DoAdditionalTransform(std::shared_ptr<Sample> sample, uint32_t valueOffset) const override
+    void DoAdditionalTransform(std::shared_ptr<Sample> sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
         // set event type
         sample->AddLabel(Label(Sample::TimelineEventTypeLabel, Sample::TimelineEventTypeStopTheWorld));

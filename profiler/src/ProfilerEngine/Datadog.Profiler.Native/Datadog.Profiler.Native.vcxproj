@@ -257,6 +257,7 @@
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="SampleValueTypeProvider.h" />
     <ClInclude Include="ScopedHandle.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
     <ClInclude Include="GenericSampler.h" />
@@ -365,6 +366,7 @@
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
+    <ClCompile Include="SampleValueTypeProvider.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
     <ClCompile Include="HResultConverter.cpp" />
