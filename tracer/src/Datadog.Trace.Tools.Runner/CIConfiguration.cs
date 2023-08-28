@@ -29,7 +29,8 @@ namespace Datadog.Trace.Tools.Runner
         {
             foreach (var item in environmentVariables)
             {
-                AnsiConsole.WriteLine($"##vso[task.setvariable variable={item.Key}]{item.Value}");
+                // https://learn.microsoft.com/en-gb/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#setvariable-initialize-or-modify-the-value-of-a-variable
+                AnsiConsole.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
             }
         }
 
