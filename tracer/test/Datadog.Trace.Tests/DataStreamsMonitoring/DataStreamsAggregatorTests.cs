@@ -11,6 +11,7 @@ using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using Datadog.Trace.Vendors.Datadog.Sketches;
 using FluentAssertions;
 using Xunit;
@@ -59,6 +60,11 @@ public class DataStreamsAggregatorTests
         // // origin timestamp subtracts the pathway latency
         AssertStats(originStats, TimestampType.Origin, BucketStartTimeForTimestamp(T1 - (5 * OneSecondNs)));
         AssertBucket(originStats, hash: 2, CreateSketch(5), CreateSketch(2));
+
+        // Check that only one backlog is flushed at T2
+        var backlogsToWrite = aggregator.ExportBacklogs(T2);
+        backlogsToWrite.Should().ContainSingle();
+        backlogsToWrite.First().BucketStartTimeNs.Should().Be(BucketStartTimeForTimestamp(T1));
     }
 
     [Fact]
@@ -84,12 +90,24 @@ public class DataStreamsAggregatorTests
         // flush at t2 doesn't flush points at t2 (current bucket)
         // so only the last point is included
         var statsToWrite = aggregator.Export(T2);
+        var backlogsToWrite = aggregator.ExportBacklogs(T2);
+        backlogsToWrite.Should().ContainSingle();
+        backlogsToWrite[0].Bucket.Should().ContainSingle();
+        backlogsToWrite[0].Bucket.First().Key.Should().Be("type:produce,topic:test");
+        backlogsToWrite[0].Bucket.First().Value.Value.Should().Be(100L);
 
         // we always clear after calling Export
-        aggregator.Clear(statsToWrite);
+        aggregator.Clear(statsToWrite, backlogsToWrite);
 
         // Now advance for bucket duration + 1 and flush again
         statsToWrite = aggregator.Export(T2 + BucketDurationNs + OneSecondNs);
+
+        // should contain only one backlog
+        backlogsToWrite = aggregator.ExportBacklogs(T2 + BucketDurationNs + OneSecondNs);
+        backlogsToWrite.Should().ContainSingle();
+        backlogsToWrite[0].Bucket.Should().ContainSingle();
+        backlogsToWrite[0].Bucket.First().Key.Should().Be("type:consume,topic:test");
+        backlogsToWrite[0].Bucket.First().Value.Value.Should().Be(200L);
 
         // compare expected
         var stats = statsToWrite[0];
@@ -149,6 +167,8 @@ public class DataStreamsAggregatorTests
                 pathwayLatencyNs: 5 * OneSecondNs,
                 edgeLatencyNs: 2 * OneSecondNs,
                 payloadSizeBytes: OneKB * 2));
+        aggregator.AddBacklog(new BacklogPoint("type:produce,topic:test", 100, t1));
+        aggregator.AddBacklog(new BacklogPoint("type:consume,topic:test", 200, t2));
         return aggregator;
     }
 

@@ -13,6 +13,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal const string TopicPartitionTypeName = "Confluent.Kafka.TopicPartition";
         internal const string MessageTypeName = "Confluent.Kafka.Message`2[!0,!1]";
         internal const string ConsumeResultTypeName = "Confluent.Kafka.ConsumeResult`2[!0,!1]";
+        internal const string TopicPartitionOffsetEnumerableTypeName = $"System.Collections.Generic.IEnumerable`1[Confluent.Kafka.TopicPartitionOffset]";
+        internal const string TopicPartitionOffsetListTypeName = "System.Collections.Generic.IList`1[Confluent.Kafka.TopicPartitionOffset]";
         internal const string ActionOfDeliveryReportTypeName = "System.Action`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]";
         internal const string TaskDeliveryReportTypeName = "System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]";
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.Kafka;

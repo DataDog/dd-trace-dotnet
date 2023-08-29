@@ -75,8 +75,20 @@ public class DataStreamsMessagePackFormatterTests
                 }),
         };
 
+        List<SerializableBacklogBucket> backlogBuckets = new()
+        {
+            new SerializableBacklogBucket(bucketStartTimeNs1, new()
+            {
+                { "type:produce", new BacklogBucket("type:produce", 1) }
+            }),
+            new SerializableBacklogBucket(bucketStartTimeNs2, new()
+            {
+                { "type:consume", new BacklogBucket("type:consume", 2) }
+            }),
+        };
+
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets);
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets);
 
         var data = new ArraySegment<byte>(ms.GetBuffer());
 
@@ -100,6 +112,32 @@ public class DataStreamsMessagePackFormatterTests
             TracerVersion = TracerConstants.AssemblyVersion,
             Stats = new MockDataStreamsBucket[]
             {
+                new()
+                {
+                    Duration = (ulong)bucketDuration,
+                    Start = (ulong)bucketStartTimeNs1,
+                    Backlogs = new MockDataStreamsBacklog[]
+                    {
+                        new()
+                        {
+                            Tags = new[] { "type:produce" },
+                            Value = 1,
+                        }
+                    }
+                },
+                new()
+                {
+                    Duration = (ulong)bucketDuration,
+                    Start = (ulong)bucketStartTimeNs2,
+                    Backlogs = new MockDataStreamsBacklog[]
+                    {
+                        new()
+                        {
+                            Tags = new[] { "type:consume" },
+                            Value = 2,
+                        }
+                    }
+                },
                 new()
                 {
                     Duration = (ulong)bucketDuration,

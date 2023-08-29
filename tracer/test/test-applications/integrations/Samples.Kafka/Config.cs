@@ -6,7 +6,7 @@ namespace Samples.Kafka
 {
     internal static class Config
     {
-        public static readonly string KafkaBrokerHost = Environment.GetEnvironmentVariable("KAFKA_BROKER_HOST") ?? "localhost:9092";
+        public static readonly string KafkaBrokerHost = Environment.GetEnvironmentVariable("KAFKA_BROKER_HOST") ?? "127.0.0.1:9092";
 
         public static ClientConfig Create()
         {

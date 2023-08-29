@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -50,6 +51,23 @@ public class KafkaConsumerConstructorIntegration
                     }
                 }
             }
+
+            var originalHandler = consumer.OffsetsCommittedHandler;
+            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+            consumer.OffsetsCommittedHandler = (consumer, result) =>
+            {
+                originalHandler?.Invoke(consumer, result);
+                if (result.TryDuckCast<ICommittedOffsets>(out var committedOffsets))
+                {
+                    for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
+                    {
+                        var item = committedOffsets.Offsets[i];
+                        dataStreams.TrackBacklog(
+                            $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",
+                            item.Offset.Value);
+                    }
+                }
+            };
 
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)

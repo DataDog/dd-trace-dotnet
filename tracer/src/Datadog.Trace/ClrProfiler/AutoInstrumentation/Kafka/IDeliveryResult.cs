@@ -11,6 +11,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     internal interface IDeliveryResult
     {
         /// <summary>
+        ///     Gets the topic.
+        /// </summary>
+        public string Topic { get;  }
+
+        /// <summary>
         ///     Gets the Kafka partition.
         /// </summary>
         public Partition Partition { get; }

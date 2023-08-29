@@ -101,6 +101,17 @@ internal class DataStreamsManager
         Log.Debug("Attempted to inject null pathway context");
     }
 
+    public void TrackBacklog(string tags, long value)
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        var writer = Volatile.Read(ref _writer);
+        writer?.AddBacklog(new BacklogPoint(tags, value, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds()));
+    }
+
     /// <summary>
     /// Sets a checkpoint using the provided <see cref="PathwayContext"/>
     /// NOTE: <paramref name="edgeTags"/> must be in correct sort order

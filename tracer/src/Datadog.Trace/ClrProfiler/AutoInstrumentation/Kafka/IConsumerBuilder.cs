@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
@@ -16,4 +17,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 internal interface IConsumerBuilder
 {
     IEnumerable<KeyValuePair<string, string>> Config { get; }
+
+    Action<object, object> OffsetsCommittedHandler { get; set; }
 }

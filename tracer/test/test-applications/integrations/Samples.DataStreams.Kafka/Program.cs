@@ -42,20 +42,20 @@ async Task RunStandardPipelineScenario()
 
     Console.WriteLine($"Creating consumers...");
     var consumer1 = Consumer.Create(topic1, "consumer-1", HandleAndProduceToTopic2);
-    var consumer2 = Consumer.Create(topic2, "consumer-2", HandleAndProduceToTopic3);
-    var consumer3 = Consumer.Create(topic3, "consumer-3", HandleTopic3);
+    var consumer2 = Consumer.Create(topic2, "consumer-2", HandleAndProduceToTopic3, false);
+    var consumer3 = Consumer.Create(topic3, "consumer-3", HandleTopic3, false);
 
     Console.WriteLine("Starting consumers...");
     var cts = new CancellationTokenSource();
     var consumeTasks = new Task[3];
     consumeTasks[0] = Task.Run(() => consumer1.Consume(cts.Token));
-    consumeTasks[1] = Task.Run(() => consumer2.Consume(cts.Token));
-    consumeTasks[2] = Task.Run(() => consumer3.Consume(cts.Token));
+    consumeTasks[1] = Task.Run(() => consumer2.ConsumeWithExplicitCommit(1, cts.Token));
+    consumeTasks[2] = Task.Run(() => consumer3.ConsumeWithExplicitCommit(1, cts.Token, true));
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
     Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false);
-    Producer.Produce(topic2, numMessages: 3, config, handleDelivery: true, isTombstone: false);
+    await Producer.ProduceAsync(topic2, numMessages: 3, config, isTombstone: false);
     LogWithTime("Finished producing messages");
 
     // Wait for all messages to be consumed
