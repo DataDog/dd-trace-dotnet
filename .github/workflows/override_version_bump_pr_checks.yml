@@ -29,6 +29,7 @@ jobs:
             echo "Forcing check check status to $state for $context"
           
             curl -X POST \
+            --fail-with-body \
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
