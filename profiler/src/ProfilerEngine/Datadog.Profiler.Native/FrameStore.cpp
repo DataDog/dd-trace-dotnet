@@ -33,9 +33,27 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
 {
     static const std::string NotResolvedModuleName("NotResolvedModule");
     static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const std::string UnloadedModuleName("UnloadedModule");
 
     FunctionID functionId;
-    HRESULT hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
+
+    // On Windows, the call to GetFunctionFromIP can crash:
+    // We may end up in a situation where the module containing that symbol was just unloaded.
+    // For linux, we do not have solution yet.
+    HRESULT hr;
+#ifdef WINDOWS
+    __try
+    {
+#endif
+        hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
+#ifdef WINDOWS
+    }
+    __except (EXCEPTION_EXECUTE_HANDLER)
+    {
+        // we still want a frame to display a good'ish callstack shape
+        return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
+    }
+#endif
 
     if (SUCCEEDED(hr))
     {
