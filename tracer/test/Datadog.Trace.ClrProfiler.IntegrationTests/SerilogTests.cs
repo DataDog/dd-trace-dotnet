@@ -124,6 +124,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetInstrumentationVerification();
             SetSerilogConfiguration(loadFromConfig);
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Serilog), hostName);
 
             using var telemetry = this.ConfigureTelemetry();

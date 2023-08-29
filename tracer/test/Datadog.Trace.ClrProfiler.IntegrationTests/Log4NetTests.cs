@@ -158,6 +158,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.Log4Net), hostName);
 
             using var telemetry = this.ConfigureTelemetry();
