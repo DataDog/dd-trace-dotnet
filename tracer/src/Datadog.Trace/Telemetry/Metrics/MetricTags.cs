@@ -233,7 +233,7 @@ internal static class MetricTags
 
     public enum IastInstrumentedSources
     {
-        [Description("source_type:http.request.body")] RequestBody,
+        [Description("source_type:http.request.body")] RequestBody, // This one should not be generated ever.
         [Description("source_type:http.request.path")] RequestPath,
         [Description("source_type:http.request.parameter.name")] RequestParameterName,
         [Description("source_type:http.request.parameter")] RequestParameterValue,
@@ -248,6 +248,7 @@ internal static class MetricTags
 
     public enum IastInstrumentedSinks
     {
+        [Description("vulnerability_type:none")] None = 0,
         [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
         [Description("vulnerability_type:weak_hash")] WeakHash = 2,
         [Description("vulnerability_type:sql_injection")] SqlInjection = 3,

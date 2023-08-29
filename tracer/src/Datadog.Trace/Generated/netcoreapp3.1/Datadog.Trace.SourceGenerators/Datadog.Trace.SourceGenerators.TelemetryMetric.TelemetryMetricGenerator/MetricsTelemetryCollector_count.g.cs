@@ -699,6 +699,7 @@ internal partial class MetricsTelemetryCollector
             // instrumented.propagation, index = 456
             new(null),
             // instrumented.sink, index = 457
+            new(new[] { "vulnerability_type:none" }),
             new(new[] { "vulnerability_type:weak_cipher" }),
             new(new[] { "vulnerability_type:weak_hash" }),
             new(new[] { "vulnerability_type:sql_injection" }),
@@ -718,7 +719,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, 11, 1, 11, };
+        = new []{ 4, 165, 55, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 55, 1, 22, 3, 1, 1, 5, 11, 1, 12, };
 
-    private const int _countsLength = 468;
+    private const int _countsLength = 469;
 }
