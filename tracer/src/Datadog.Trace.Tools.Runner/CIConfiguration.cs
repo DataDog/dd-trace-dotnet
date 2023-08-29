@@ -30,8 +30,12 @@ namespace Datadog.Trace.Tools.Runner
         {
             foreach (var item in environmentVariables)
             {
+                // Declaring variables for Azure Pipelines
                 // https://learn.microsoft.com/en-gb/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#setvariable-initialize-or-modify-the-value-of-a-variable
-                // We cannot use `AnsiConsole.WriteLine` due to the word wrapping and text handling in spectre console, so we use the normal `Console.WriteLine` instead.
+
+                // We cannot use `AnsiConsole.WriteLine` due to the word wrapping and text handling in spectre console that affects the azure command, so we use the normal `Console.WriteLine` instead.
+                // See https://github.com/spectreconsole/spectre.console/issues/1122
+
                 Console.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
             }
         }
