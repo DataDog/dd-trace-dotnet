@@ -233,7 +233,7 @@ internal static class MetricTags
 
     public enum IastInstrumentedSources
     {
-        [Description("source_type:http.request.body")] RequestBody, // This one should not be generated ever.
+        [Description("source_type:http.request.body")] RequestBody,
         [Description("source_type:http.request.path")] RequestPath,
         [Description("source_type:http.request.parameter.name")] RequestParameterName,
         [Description("source_type:http.request.parameter")] RequestParameterValue,
