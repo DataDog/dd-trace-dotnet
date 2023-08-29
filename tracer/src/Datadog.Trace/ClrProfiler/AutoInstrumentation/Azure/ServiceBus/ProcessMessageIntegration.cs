@@ -74,6 +74,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                     span.Context.MergePathwayContext(pathwayContext);
 
+                    var consumeTime = span.StartTime.UtcDateTime;
+                    var produceTime = message.EnqueuedTime.UtcDateTime;
+                    var messageQueueTimeMs = Math.Max(0, (consumeTime - produceTime).TotalMilliseconds);
+                    span.Tags.SetMetric(Trace.Metrics.MessageQueueTimeMs, messageQueueTimeMs);
+
                     var namespaceString = instance.Processor.EntityPath;
 
                     // TODO: we could pool these arrays to reduce allocations
@@ -86,8 +91,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                         dataStreamsManager,
                         CheckpointKind.Consume,
                         edgeTags,
-                        0, // message.Body.Length?
-                        0); // tags.MessageQueueTimeMs
+                        message.Body.ToMemory().Length,
+                        (long)messageQueueTimeMs);
                 }
             }
 
