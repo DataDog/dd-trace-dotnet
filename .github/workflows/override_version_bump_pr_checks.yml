@@ -33,5 +33,5 @@ jobs:
             -H "Accept: application/vnd.github.v3+json" \
             -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
-              -d '{"state":"'"$state"'","context":"'"context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
+              -d '{"state":"'"$state"'","context":"'"$context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
           done
