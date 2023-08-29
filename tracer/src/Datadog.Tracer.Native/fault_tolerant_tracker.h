@@ -36,7 +36,7 @@ public:
     bool IsKickoffMethod(ModuleID moduleId, mdMethodDef methodId);
     bool IsOriginalMethod(ModuleID moduleId, mdMethodDef methodId);
     bool IsInstrumentedMethod(ModuleID moduleId, mdMethodDef methodId);
-    void KeepILBodyAndSize(ModuleID moduleId, mdMethodDef methodId, LPCBYTE pMethodBytes, ULONG methodSize);
+    void CacheILBodyIfEmpty(ModuleID moduleId, mdMethodDef methodId, LPCBYTE pMethodBytes, ULONG methodSize);
     std::tuple<LPCBYTE, ULONG> GetILBodyAndSize(ModuleID moduleId, mdMethodDef methodId);
 };
 

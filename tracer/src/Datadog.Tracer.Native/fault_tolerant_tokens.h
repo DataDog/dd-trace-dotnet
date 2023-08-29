@@ -26,7 +26,8 @@ namespace fault_tolerant
  **/
 
 static const WSTRING managed_profiler_should_heal_name = WStr("ShouldHeal");
-static const WSTRING managed_profiler_fault_tolerant_invoker_type = WStr("Datadog.Trace.Debugger.Instrumentation.FaultTolerantInvoker");
+static const WSTRING managed_profiler_report_successful_instrumentation = WStr("ReportSuccessfulInstrumentation");
+static const WSTRING managed_profiler_fault_tolerant_invoker_type = WStr("Datadog.Trace.FaultTolerant.FaultTolerantInvoker");
 static const WSTRING not_implemented;
 
 class FaultTolerantTokens : public CallTargetTokens
@@ -34,6 +35,7 @@ class FaultTolerantTokens : public CallTargetTokens
 private:
     // Fault Tolerant members:
     mdMemberRef shouldSelfHealRef = mdMemberRefNil;
+    mdMemberRef reportSuccessfulInstrumentationRef = mdMemberRefNil;
     mdTypeRef faultTolerantTypeRef = mdTypeRefNil;
     
 protected:
@@ -48,6 +50,7 @@ public:
     FaultTolerantTokens(ModuleMetadata* module_metadata_ptr);
     
     HRESULT WriteShouldHeal(void* rewriterWrapperPtr, ILInstr** instruction);
+    HRESULT WriteReportSuccessfulInstrumentation(void* rewriterWrapperPtr, ILInstr** instruction);
 };
 
 } // namespace fault_tolerant

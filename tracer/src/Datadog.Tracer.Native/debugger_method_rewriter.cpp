@@ -11,6 +11,7 @@
 #include "debugger_probes_tracker.h"
 #include "fault_tolerant_envionrment_variables_util.h"
 #include "fault_tolerant_tracker.h"
+#include "instrumenting_product.h"
 
 namespace debugger
 {
@@ -254,7 +255,7 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
     return S_OK;
 }
 
-HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
 {
     const auto moduleId = moduleHandler->GetModuleId();
     const auto methodId = methodHandler->GetMethodDef();
@@ -324,9 +325,70 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
                      spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
-        auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanOnMethodProbes);
+        auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, methodProbes, lineProbes, spanOnMethodProbes);
         return FAILED(hr) ? S_FALSE : S_OK;
     }
+}
+
+InstrumentingProduct DebuggerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+    RejitHandlerModuleMethod* methodHandler)
+{
+    return InstrumentingProduct::DynamicInstrumentation;
+}
+
+WSTRING DebuggerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+                                                          RejitHandlerModuleMethod* methodHandler)
+{
+    const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+
+    if (debuggerMethodHandler == nullptr)
+    {
+        return EmptyWStr;
+    }
+
+    const auto& probes = debuggerMethodHandler->GetProbes();
+
+    if (probes.empty())
+    {
+        return EmptyWStr;
+    }
+
+    MethodProbeDefinitions methodProbes;
+    LineProbeDefinitions lineProbes;
+    SpanProbeOnMethodDefinitions spanOnMethodProbes;
+
+    for (const auto& probe : probes)
+    {
+        const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
+        if (spanProbe != nullptr)
+        {
+            spanOnMethodProbes.emplace_back(spanProbe);
+            continue;
+        }
+
+        const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
+        if (methodProbe != nullptr)
+        {
+            methodProbes.emplace_back(methodProbe);
+            continue;
+        }
+
+        const auto lineProbe = std::dynamic_pointer_cast<LineProbeDefinition>(probe);
+        if (lineProbe != nullptr)
+        {
+            lineProbes.emplace_back(lineProbe);
+            continue;
+        }
+    }
+
+    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
+    {
+        return EmptyWStr;
+    }
+
+    return  WStr("M") + std::to_wstring(methodProbes.size()) + 
+            WStr("L") + std::to_wstring(lineProbes.size()) +
+            WStr("S") + std::to_wstring(spanOnMethodProbes.size());
 }
 
 /// <summary>
@@ -1992,6 +2054,7 @@ void DebuggerMethodRewriter::MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodD
 
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
+                                        ICorProfilerFunctionControl* pFunctionControl,
                                         MethodProbeDefinitions& methodProbes,
                                         LineProbeDefinitions& lineProbes,
                                         SpanProbeOnMethodDefinitions& spanOnMethodProbes) const
@@ -2041,7 +2104,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     // *** Create rewriter
-    ILRewriter rewriter(m_corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, module_id, function_token);
     auto hr = rewriter.Import();
     if (FAILED(hr))
     {

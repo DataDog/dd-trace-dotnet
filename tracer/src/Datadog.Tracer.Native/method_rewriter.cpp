@@ -63,7 +63,7 @@ namespace trace
 /// <param name="moduleHandler">Module ReJIT handler representation</param>
 /// <param name="methodHandler">Method ReJIT handler representation</param>
 /// <returns>Result of the rewriting</returns>
-HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
 {
     /*  ===============================
         Current CallTarget Limitations:
@@ -149,7 +149,7 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     // *** Create rewriter
-    ILRewriter rewriter(m_corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, module_id, function_token);
     bool modified = false;
     auto hr = rewriter.Import();
     if (FAILED(hr))
@@ -709,6 +709,18 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     }
 
     return S_OK;
+}
+
+InstrumentingProduct TracerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+    RejitHandlerModuleMethod* methodHandler)
+{
+    return InstrumentingProduct::Tracer;
+}
+
+WSTRING TracerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+    RejitHandlerModuleMethod* methodHandler)
+{
+    return EmptyWStr;
 }
 
 std::tuple<WSTRING, WSTRING>

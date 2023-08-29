@@ -82,13 +82,18 @@ bool fault_tolerant::FaultTolerantTracker::IsInstrumentedMethod(ModuleID moduleI
     return iter != _instrumentedMethods.end();
 }
 
-void fault_tolerant::FaultTolerantTracker::KeepILBodyAndSize(ModuleID moduleId, mdMethodDef methodId,
+void fault_tolerant::FaultTolerantTracker::CacheILBodyIfEmpty(ModuleID moduleId, mdMethodDef methodId,
     LPCBYTE pMethodBytes, ULONG methodSize)
 {
     std::lock_guard lock(_faultTolerantMapMutex);
 
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
-    _methodBodies[methodIdentifier] = std::tuple(pMethodBytes, methodSize);
+
+    if (_methodBodies.find(methodIdentifier) == _methodBodies.end())
+    {
+        // Entry does not exist, insert it
+        _methodBodies[methodIdentifier] = std::tuple(pMethodBytes, methodSize);
+    }
 }
 
 std::tuple<LPCBYTE, ULONG> fault_tolerant::FaultTolerantTracker::GetILBodyAndSize(ModuleID moduleId,

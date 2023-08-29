@@ -32,16 +32,6 @@ RejitHandlerModule* RejitHandlerModuleMethod::GetModule()
     return m_module;
 }
 
-ICorProfilerFunctionControl* RejitHandlerModuleMethod::GetFunctionControl()
-{
-    return m_pFunctionControl;
-}
-
-void RejitHandlerModuleMethod::SetFunctionControl(ICorProfilerFunctionControl* pFunctionControl)
-{
-    m_pFunctionControl = pFunctionControl;
-}
-
 FunctionInfo* RejitHandlerModuleMethod::GetFunctionInfo()
 {
     return m_functionInfo.get();
@@ -530,21 +520,10 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
     {
         return S_FALSE;
     }
-
-    methodHandler->SetFunctionControl(pFunctionControl);
-
+    
     if (methodHandler->GetMethodDef() == mdMethodDefNil)
     {
         Logger::Warn("NotifyReJITCompilationStarted: mdMethodDef is missing for "
-                     "MethodDef: ",
-                     methodId);
-        return S_FALSE;
-    }
-
-    if (methodHandler->GetFunctionControl() == nullptr)
-    {
-        Logger::Warn("NotifyReJITCompilationStarted: ICorProfilerFunctionControl is missing "
-                     "for "
                      "MethodDef: ",
                      methodId);
         return S_FALSE;
@@ -584,7 +563,7 @@ HRESULT RejitHandler::NotifyReJITParameters(ModuleID moduleId, mdMethodDef metho
         return S_FALSE;
     }
 
-    return rewriter->Rewrite(moduleHandler, methodHandler);
+    return rewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
 }
 
 HRESULT RejitHandler::NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId)
