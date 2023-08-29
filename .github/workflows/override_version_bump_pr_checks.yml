@@ -13,7 +13,7 @@ jobs:
       - name: Fail if branch is not version-bump PR
         if: ${{ !startsWith(github.ref, 'version-bump-') }}
         run: |
-          echo "This workflow should only be triggered on the version-bump-x.x.x branch
+          echo "This workflow should only be triggered on the version-bump-x.x.x branch, but found  ${{ github.ref }}"
           exit 1
 
       - run: |
