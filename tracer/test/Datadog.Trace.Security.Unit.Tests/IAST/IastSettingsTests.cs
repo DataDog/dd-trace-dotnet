@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -132,5 +133,18 @@ public class IastSettingsTests : SettingsTestsBase
         var settings = new IastSettings(source, NullConfigurationTelemetry.Instance);
 
         settings.DeduplicationEnabled.Should().Be(expected);
+    }
+
+    [Theory]
+    [InlineData("off", IastMetricsVerbosityLevel.Off)]
+    [InlineData("OFF", IastMetricsVerbosityLevel.Off)]
+    [InlineData("manDatory", IastMetricsVerbosityLevel.Mandatory)]
+    [InlineData("information", IastMetricsVerbosityLevel.Information)]
+    [InlineData("nothing", IastMetricsVerbosityLevel.Information)]
+    [InlineData("debUg", IastMetricsVerbosityLevel.Debug)]
+    public void IastMetricsVerbosityLevelExtensionsTests(string value, IastMetricsVerbosityLevel expected)
+    {
+        var result = IastMetricsVerbosityLevelExtensions.Parse(value);
+        result.Should().Be(expected);
     }
 }

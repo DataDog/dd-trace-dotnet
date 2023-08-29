@@ -8,29 +8,18 @@ namespace Datadog.Trace.Iast.Telemetry;
 
 internal static class IastMetricsVerbosityLevelExtensions
 {
-    public const string Off = "Off";
-    public const string Debug = "Debug";
-    public const string Information = "Information";
-    public const string Mandatory = "Mandatory";
-    public const string Unknown = "UNKNOWN";
-
-    public static string GetName(this IastMetricsVerbosityLevel logLevel)
-        => logLevel switch
-        {
-            IastMetricsVerbosityLevel.Off => Off,
-            IastMetricsVerbosityLevel.Mandatory => Mandatory,
-            IastMetricsVerbosityLevel.Debug => Debug,
-            IastMetricsVerbosityLevel.Information => Information,
-            _ => Unknown,
-        };
+    public const string Off = "off";
+    public const string Debug = "debug";
+    public const string Information = "information";
+    public const string Mandatory = "mandatory";
 
     public static IastMetricsVerbosityLevel Parse(string value)
-        => value?.ToUpperInvariant() switch
+        => value?.ToLowerInvariant() switch
         {
-            "OFF" => IastMetricsVerbosityLevel.Off,
-            "MANDATORY" => IastMetricsVerbosityLevel.Mandatory,
-            "DEBUG" => IastMetricsVerbosityLevel.Debug,
-            "INFORMATION" => IastMetricsVerbosityLevel.Information,
+            Off => IastMetricsVerbosityLevel.Off,
+            Mandatory => IastMetricsVerbosityLevel.Mandatory,
+            Debug => IastMetricsVerbosityLevel.Debug,
+            Information => IastMetricsVerbosityLevel.Information,
             // Default value
             _ => IastMetricsVerbosityLevel.Information
         };
