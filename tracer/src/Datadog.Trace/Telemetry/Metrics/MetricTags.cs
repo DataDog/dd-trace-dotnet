@@ -248,16 +248,16 @@ internal static class MetricTags
 
     public enum IastInstrumentedSinks
     {
-        [Description("vulnerability_type:weak_cipher")] WeakCipher,
-        [Description("vulnerability_type:weak_hash")] WeakHash,
-        [Description("vulnerability_type:sql_injection")] SqlInjection,
-        [Description("vulnerability_type:command_injection")] CommandInjection,
-        [Description("vulnerability_type:path_traversal")] PathTraversal,
-        [Description("vulnerability_type:ldap_injection")] LdapInjection,
-        [Description("vulnerability_type:ssrf")] Ssrf,
-        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect,
-        [Description("vulnerability_type:insecure_cookie")] InsecureCookie,
-        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie,
-        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie,
+        [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
+        [Description("vulnerability_type:weak_hash")] WeakHash = 2,
+        [Description("vulnerability_type:sql_injection")] SqlInjection = 3,
+        [Description("vulnerability_type:command_injection")] CommandInjection = 4,
+        [Description("vulnerability_type:path_traversal")] PathTraversal = 5,
+        [Description("vulnerability_type:ldap_injection")] LdapInjection = 6,
+        [Description("vulnerability_type:ssrf")] Ssrf = 7,
+        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect = 8,
+        [Description("vulnerability_type:insecure_cookie")] InsecureCookie = 9,
+        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
+        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
     }
 }

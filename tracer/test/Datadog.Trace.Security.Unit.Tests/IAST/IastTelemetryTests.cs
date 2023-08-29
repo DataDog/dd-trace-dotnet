@@ -5,6 +5,8 @@
 
 using System;
 using Datadog.Trace.Iast;
+using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
@@ -18,10 +20,14 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         public void CheckVulnerabilityTypeAndIastInstrumentedSinksConsistency()
         {
             Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).Length.Should().Be(Enum.GetValues(typeof(VulnerabilityType)).Length - 1);
-            for (int i = 0; i < Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).Length; i++)
+            for (int i = 0; i < Enum.GetValues(typeof(VulnerabilityType)).Length; i++)
             {
-                var tag = Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).GetValue(i);
-                tag.ToString().Should().Be(Enum.GetValues(typeof(VulnerabilityType)).GetValue(i).ToString());
+                var vulnerabilityType = (VulnerabilityType)i;
+                if (vulnerabilityType != VulnerabilityType.None)
+                {
+                    var tag = (MetricTags.IastInstrumentedSinks)i;
+                    tag.ToString().Should().Be(vulnerabilityType.ToString());
+                }
             }
         }
 
@@ -29,10 +35,10 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         public void CheckSourceTypeAndIastInstrumentedSourcesConsistency()
         {
             Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length.Should().Be(Enum.GetValues(typeof(SourceTypeName)).Length);
-            for (int i = 0; i < Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length; i++)
+            for (int i = 0; i < Enum.GetValues(typeof(VulnerabilityType)).Length; i++)
             {
-                var tag = Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).GetValue(i);
-                tag.ToString().Should().Be(Enum.GetValues(typeof(SourceTypeName)).GetValue(i).ToString());
+                var tag = (MetricTags.IastInstrumentedSources)i;
+                tag.ToString().Should().Be(((SourceTypeName)i).ToString());
             }
         }
     }
