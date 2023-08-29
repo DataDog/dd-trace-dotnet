@@ -7,9 +7,20 @@ public class Book
     public string Author { get; set; }
 
     [DelegateDecompiler.Computed]
+    public string FullId
+    {
+        get => Id + "-" + Title + "-" + Author;
+    }
+
     public string FullTitle
     {
-        // [DelegateDecompiler.Computed]
+        [DelegateDecompiler.Computed]
         get => Title + "_";
     }
+
+    public string FullAuthor
+    {
+        get => "_" + Author;
+    }
+
 }

@@ -1,4 +1,5 @@
 #if !NETCOREAPP2_1
+using System;
 using System.Data;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Infrastructure;
@@ -54,19 +55,47 @@ public class EFTests : EFBaseTests
     }
 
     [Fact]
-    public void TestDelegateDecompileLibBug()
+    public void TestDelegateDecompileLibBug_PropertyAttribute()
     {
-        var book = new Book { Id = "id", Title = "title", Author = "author" };
-        var ft = book.FullTitle;
-        var books = (db as ApplicationDbContext).Books;
-        var decompiled = books.Decompile();
-        var any = decompiled.Any(x => x.FullTitle != ft);
-        //var data = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullTitle != "eeef").ToList();
-        if (any)
-        {
-
-        }
+        var all = (db as ApplicationDbContext).Books.ToList();
+        all.Count.Should().Be(2);
+        var book = all[1];
+        var txt = book.FullId;
+        var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullId == txt).ToList();
+        res.Count().Should().Be(1);
     }
+
+    [Fact]
+    public void TestDelegateDecompileLibBug_PropertyGetterAttribute()
+    {
+        // DecompileDelegate does not support the use of the attribute only on the getter
+        Assert.Throws<NotSupportedException>(() =>
+        {
+            var all = (db as ApplicationDbContext).Books.ToList();
+            all.Count.Should().Be(2);
+            var book = all[1];
+            var txt = book.FullTitle;
+            var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullTitle == txt).ToList();
+            res.Count().Should().Be(1);
+        });
+    }
+
+
+    [Fact]
+    public void TestDelegateDecompileLibBug_NoAttribute()
+    {
+        // We don't support this scenario
+        Assert.Throws<NotSupportedException>(() =>
+        {
+            var all = (db as ApplicationDbContext).Books.ToList();
+            all.Count.Should().Be(2);
+            var book = all[1];
+            var txt = book.FullAuthor;
+            var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullAuthor == txt).ToList();
+            res.Count().Should().Be(1);
+        });
+    }
+
 
 }
 #endif
