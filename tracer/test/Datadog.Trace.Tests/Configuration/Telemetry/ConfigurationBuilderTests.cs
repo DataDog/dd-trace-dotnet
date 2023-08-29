@@ -175,6 +175,10 @@ public class ConfigurationBuilderTests
                     {
                         Entry.String(Key, Default, ConfigurationOrigins.Default, error: null),
                     },
+                    double d => new List<Entry>
+                    {
+                        Entry.String(Key, d.ToString(CultureInfo.InvariantCulture), ConfigurationOrigins.Code, error: null),
+                    },
                     { } i => new List<Entry>
                     {
                         Entry.String(Key, i.ToString(), ConfigurationOrigins.Code, error: null),
