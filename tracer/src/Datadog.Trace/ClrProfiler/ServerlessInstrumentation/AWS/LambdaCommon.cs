@@ -28,9 +28,11 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
+
         private static readonly DateTimeJsonConverter DateTimeConverter = new();
         private static readonly MemoryStreamJsonConverter MemoryStreamConverter = new();
         private static readonly ConverterContractResolver ContractResolver = new();
+
         private static readonly JsonSerializerSettings SerializerSettings = new()
         {
             ContractResolver = ContractResolver,
@@ -260,6 +262,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private class ConverterContractResolver : DefaultContractResolver
         {
+            // A custom `ContractResolver` is needed to reduce overhead.
+            // https://www.newtonsoft.com/json/help/html/Performance.htm#JsonConverters
             protected override JsonContract CreateContract(Type objectType)
             {
                 // Create a contract with custom settings
@@ -311,6 +315,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer)
             {
                 var elapsedTime = value - DateTime.UnixEpoch;
+                // `.TotalSeconds` includes milliseconds in the
+                // decimals, which is what the Extension expects.
                 var timestamp = elapsedTime.TotalSeconds;
                 writer.WriteValue(timestamp);
             }
