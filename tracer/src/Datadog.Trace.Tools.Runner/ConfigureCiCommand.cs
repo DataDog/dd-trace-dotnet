@@ -61,7 +61,8 @@ namespace Datadog.Trace.Tools.Runner
                 context,
                 _applicationContext.RunnerFolder,
                 _applicationContext.Platform,
-                _tracerSettings);
+                _tracerSettings,
+                reducePathLength: true);
 
             if (profilerEnvironmentVariables == null)
             {

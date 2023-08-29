@@ -26,11 +26,11 @@ namespace Datadog.Trace.Tools.Runner
     {
         public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
 
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder);
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, tracerHomeFolder, reducePathLength);
 
             var environment = options.Environment.GetValue(context);
 
@@ -63,9 +63,9 @@ namespace Datadog.Trace.Tools.Runner
             return envVars;
         }
 
-        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options)
+        public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, LegacySettings options, bool reducePathLength)
         {
-            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context));
+            var envVars = GetBaseProfilerEnvironmentVariables(runnerFolder, platform, options.TracerHomeFolderOption.GetValue(context), reducePathLength);
 
             var environment = options.EnvironmentOption.GetValue(context);
 
@@ -158,9 +158,10 @@ namespace Datadog.Trace.Tools.Runner
             {
                 for (int i = 0; i < paths.Length; i++)
                 {
-                    if (Directory.Exists(paths[i]))
+                    var tmpFolder = Path.GetFullPath(paths[i]);
+                    if (Directory.Exists(tmpFolder))
                     {
-                        folderName = paths[i];
+                        folderName = tmpFolder;
                         break;
                     }
                 }
@@ -177,6 +178,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
+                filePath = Path.GetFullPath(filePath);
                 if (!File.Exists(filePath))
                 {
                     WriteError($"Error: The file '{filePath}' can't be found.");
@@ -194,6 +196,7 @@ namespace Datadog.Trace.Tools.Runner
         {
             try
             {
+                filePath = Path.GetFullPath(filePath);
                 if (!File.Exists(filePath))
                 {
                     return null;
@@ -387,7 +390,7 @@ namespace Datadog.Trace.Tools.Runner
             return false;
         }
 
-        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder)
+        private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength)
         {
             // In the current nuspec structure RunnerFolder has the following format:
             //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp3.1\any
@@ -398,7 +401,7 @@ namespace Datadog.Trace.Tools.Runner
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
             {
-                tracerHome = tracerHomeFolder;
+                tracerHome = Path.GetFullPath(tracerHomeFolder);
                 if (!Directory.Exists(tracerHome))
                 {
                     WriteError("Error: The specified home folder doesn't exist.");
@@ -411,6 +414,25 @@ namespace Datadog.Trace.Tools.Runner
             {
                 WriteError("Error: The home directory can't be found. Check that the tool is correctly installed, or use --tracer-home to set a custom path.");
                 return null;
+            }
+
+            if (reducePathLength)
+            {
+                // Due to:
+                // https://developercommunity.visualstudio.com/t/vsotasksetvariable-contains-logging-command-keywor/1249340#T-N1253996
+                // We try to use reduce the length of the path using a temporary folder.
+                var tempFolder = Path.Combine(Path.GetTempPath(), "dd");
+                if (tempFolder.Length < tracerHome.Length)
+                {
+                    try
+                    {
+                        CopyFilesRecursively(tracerHome, tempFolder);
+                        tracerHome = tempFolder;
+                    }
+                    catch
+                    {
+                    }
+                }
             }
 
             string tracerMsBuild = FileExists(Path.Combine(tracerHome, "netstandard2.0", "Datadog.Trace.MSBuild.dll"));
@@ -578,6 +600,21 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 return true;
+            }
+        }
+
+        private static void CopyFilesRecursively(string sourcePath, string targetPath)
+        {
+            // Now Create all of the directories
+            foreach (var dirPath in Directory.GetDirectories(sourcePath, "*", SearchOption.AllDirectories))
+            {
+                Directory.CreateDirectory(dirPath.Replace(sourcePath, targetPath));
+            }
+
+            // Copy all the files & Replaces any files with the same name
+            foreach (var newPath in Directory.GetFiles(sourcePath, "*.*", SearchOption.AllDirectories))
+            {
+                File.Copy(newPath, newPath.Replace(sourcePath, targetPath), true);
             }
         }
     }
