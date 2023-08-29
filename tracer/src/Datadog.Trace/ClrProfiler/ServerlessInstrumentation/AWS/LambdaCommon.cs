@@ -28,6 +28,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         private const string PlaceholderOperationName = "placeholder-operation";
         private const string DefaultJson = "{}";
         private const double ServerlessMaxWaitingFlushTime = 3;
+        private static readonly DateTime Epoch = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
         private static readonly DateTimeJsonConverter DateTimeConverter = new();
         private static readonly MemoryStreamJsonConverter MemoryStreamConverter = new();
@@ -220,7 +221,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             }
         }
 
-        private static string SerializeObject<T>(T obj)
+        internal static string SerializeObject<T>(T obj)
         {
             try
             {
@@ -314,7 +315,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         {
             public override void WriteJson(JsonWriter writer, DateTime value, JsonSerializer serializer)
             {
-                var elapsedTime = value - DateTime.UnixEpoch;
+                var elapsedTime = value - Epoch;
                 // `.TotalSeconds` includes milliseconds in the
                 // decimals, which is what the Extension expects.
                 var timestamp = elapsedTime.TotalSeconds;
