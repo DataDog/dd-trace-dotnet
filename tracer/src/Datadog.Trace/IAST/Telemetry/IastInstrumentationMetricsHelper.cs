@@ -22,34 +22,8 @@ internal static class IastInstrumentationMetricsHelper
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private static bool _iastEnabled = Iast.Instance.Settings.Enabled;
 
-    public static void OnInstrumentedSource(SourceTypeName type, int counter = 0)
-    {
-        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
-        {
-            _instrumentedSources[(int)type] += counter;
-        }
-    }
-
-    public static void OnInstrumentedPropagation(int counter = 0)
-    {
-        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
-        {
-            _instrumentedPropagations += counter;
-        }
-    }
-
-    public static void OnInstrumentedSink(VulnerabilityType type, int counter = 0)
-    {
-        if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
-        {
-            _instrumentedSinks[(int)type] += counter;
-        }
-    }
-
     public static void ReportMetrics()
     {
-        var definitions = InstrumentationDefinitions.GetAllDefinitions(InstrumentationCategory.Iast);
-
         if (_iastEnabled && _verbosityLevel != IastMetricsVerbosityLevel.Off)
         {
             int[] instrumentedSinks = new int[_sinksCount];
