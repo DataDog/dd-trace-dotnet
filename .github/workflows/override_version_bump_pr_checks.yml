@@ -6,14 +6,12 @@ on:
 jobs:
   override_checks:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Fail if branch is not version-bump PR
-        if: ${{ !startsWith(github.ref, 'version-bump-') }}
+        if: ${{ !startsWith(github.ref, 'refs/heads/version-bump-') }}
         run: |
-          echo "This workflow should only be triggered on the version-bump-x.x.x branch
+          echo "This workflow should only be triggered on the version-bump-x.x.x branch, but found  ${{ github.ref }}"
           exit 1
 
       - run: |
@@ -22,7 +20,7 @@ jobs:
           # These checks won't run automatically on the version bump PR, so need to force this
           contexts=("code_freeze" "verify_source_generators" "verify_app_trimming_descriptor_generator")
 
-          sha="${{ github.head_ref }}"
+          sha="${{ github.sha }}"
           targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/override_version_bump_pr_checks.yml"
           state="success"
           description="Forced override (via GitHub Action)"
@@ -31,8 +29,9 @@ jobs:
             echo "Forcing check check status to $state for $context"
           
             curl -X POST \
+            --fail-with-body \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ env.github_token }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
-              -d '{"state":"'"$state"'","context":"'"context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
+              -d '{"state":"'"$state"'","context":"'"$context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
           done
