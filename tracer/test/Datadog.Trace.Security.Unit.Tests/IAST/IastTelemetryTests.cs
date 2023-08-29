@@ -19,7 +19,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         [Fact]
         public void CheckVulnerabilityTypeAndIastInstrumentedSinksConsistency()
         {
-            Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).Length.Should().Be(Enum.GetValues(typeof(VulnerabilityType)).Length - 1);
+            Enum.GetValues(typeof(MetricTags.IastInstrumentedSinks)).Length.Should().Be(Enum.GetValues(typeof(VulnerabilityType)).Length);
             for (int i = 0; i < Enum.GetValues(typeof(VulnerabilityType)).Length; i++)
             {
                 var vulnerabilityType = (VulnerabilityType)i;
