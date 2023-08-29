@@ -61,6 +61,9 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
                     _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
                         x => x.PathwayLatency,
                         (_, v) => v?.Length == 0 ? v : new byte[] { 0xFF });
+                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
+                        x => x.PayloadSize,
+                        (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
                 });
             await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringAzureServiceBusTests)}.{nameof(HandleProduceAndConsume)}")

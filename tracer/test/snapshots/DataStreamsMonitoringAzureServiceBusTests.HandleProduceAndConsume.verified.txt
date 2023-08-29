@@ -8,6 +8,7 @@
     Hash: 1300400877803061738,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -19,6 +20,7 @@
     Hash: 1300400877803061738,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -31,6 +33,7 @@
     ParentHash: 1300400877803061738,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -43,6 +46,7 @@
     ParentHash: 1300400877803061738,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -55,6 +59,7 @@
     ParentHash: 3492373990379305333,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -67,6 +72,7 @@
     ParentHash: 3492373990379305333,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -79,6 +85,7 @@
     ParentHash: 12635316083485935058,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -91,6 +98,7 @@
     ParentHash: 12635316083485935058,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -102,6 +110,7 @@
     Hash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -113,6 +122,7 @@
     Hash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -125,6 +135,7 @@
     ParentHash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -137,6 +148,7 @@
     ParentHash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -149,6 +161,7 @@
     ParentHash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -161,6 +174,7 @@
     ParentHash: 4124137084012004222,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -172,6 +186,7 @@
     Hash: 16823437917832152374,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -183,6 +198,7 @@
     Hash: 16823437917832152374,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   },
   {
@@ -195,6 +211,7 @@
     ParentHash: 16823437917832152374,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: current
   },
   {
@@ -207,6 +224,7 @@
     ParentHash: 16823437917832152374,
     PathwayLatency: /w==,
     EdgeLatency: /w==,
+    PayloadSize: /w==,
     TimestampType: origin
   }
 ]
