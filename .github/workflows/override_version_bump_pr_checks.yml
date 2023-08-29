@@ -6,8 +6,6 @@ on:
 jobs:
   override_checks:
     runs-on: ubuntu-latest
-    env:
-      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
 
     steps:
       - name: Fail if branch is not version-bump PR
@@ -32,7 +30,7 @@ jobs:
           
             curl -X POST \
             -H "Accept: application/vnd.github.v3+json" \
-            -H "Authorization: Bearer ${{ env.github_token }}" \
+            -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
               "https://api.github.com/repos/DataDog/dd-trace-dotnet/statuses/$sha" \
               -d '{"state":"'"$state"'","context":"'"context"'","description":"'"$description"'","target_url":"'"$targetUrl"'"}'
           done
