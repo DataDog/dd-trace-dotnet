@@ -3,6 +3,7 @@
 
 #include "../../../shared/src/native-src/util.h"
 #include "cor.h"
+#include "instrumenting_product.h"
 #include "module_metadata.h"
 
 struct ILInstr;
@@ -26,7 +27,11 @@ public:
     {        
     }
 
-    virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) = 0;
+    virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) = 0;
+    virtual InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+                                              RejitHandlerModuleMethod* methodHandler) = 0;
+    virtual WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+                                              RejitHandlerModuleMethod* methodHandler) = 0;
 
     virtual ~MethodRewriter() = default;
 };
@@ -43,7 +48,10 @@ public:
     {
     }
 
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
+
+    InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
 
     std::tuple<WSTRING, WSTRING> GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,
                                                              const FunctionInfo* caller,

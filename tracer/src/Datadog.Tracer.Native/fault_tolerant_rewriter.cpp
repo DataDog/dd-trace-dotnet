@@ -2,6 +2,7 @@
 
 #include "cor_profiler.h"
 #include "dd_profiler_constants.h"
+#include "environment_variables_util.h"
 #include "fault_tolerant_envionrment_variables_util.h"
 #include "fault_tolerant_tracker.h"
 #include "il_rewriter_wrapper.h"
@@ -9,15 +10,20 @@
 
 using namespace fault_tolerant;
 
-FaultTolerantRewriter::FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter) :
+FaultTolerantRewriter::FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter,
+                                             std::shared_ptr<RejitHandler> rejit_handler,
+                                             std::shared_ptr<RejitWorkOffloader> work_offloader) :
     MethodRewriter(corProfiler),
     is_fault_tolerant_instrumentation_enabled(IsFaultTolerantInstrumentationEnabled()),
-    m_methodRewriter(std::move(methodRewriter))
+    m_methodRewriter(std::move(methodRewriter)),
+    m_rejit_handler(std::move(rejit_handler)),
+    m_work_offloader(std::move(work_offloader))
 {
 }
 
 HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* moduleHandler,
-                                                           RejitHandlerModuleMethod* methodHandler) const
+                                                           RejitHandlerModuleMethod* methodHandler,
+                                                           ICorProfilerFunctionControl* pFunctionControl)
 {
     // Kickoff instrumentation
 
@@ -27,7 +33,6 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     LPCBYTE pMethodBytes;
     ULONG methodSize;
     auto hr = m_corProfiler->info_->GetILFunctionBody(moduleId, methodId, &pMethodBytes, &methodSize);
-    FaultTolerantTracker::Instance()->KeepILBodyAndSize(moduleId, methodId, pMethodBytes, methodSize);
 
     if (FAILED(hr))
     {
@@ -35,8 +40,23 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         return hr;
     }
 
+    FaultTolerantTracker::Instance()->CacheILBodyIfEmpty(moduleId, methodId, pMethodBytes, methodSize);
+
     auto methodIdOfOriginalMethod = FaultTolerantTracker::Instance()->GetOriginalMethod(moduleId, methodId);
     auto methodIdOfInstrumentedMethod = FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleId, methodId);
+
+    // Request ReJIT for instrumented and original duplications.
+    std::set<MethodIdentifier> rejitRequests{};
+    rejitRequests.insert({moduleId, methodIdOfOriginalMethod});
+    rejitRequests.insert({moduleId, methodIdOfInstrumentedMethod});
+
+    auto promise = std::make_shared<std::promise<void>>();
+    std::future<void> future = promise->get_future();
+    std::vector<MethodIdentifier> requests(rejitRequests.size());
+    std::copy(rejitRequests.begin(), rejitRequests.end(), requests.begin());
+    EnqueueRequestRejit(requests, promise);
+    // wait and get the value from the future<void>
+    future.get();
 
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
     int numArgs = caller->method_signature.NumberOfArguments();
@@ -46,6 +66,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     auto methodReturnType = caller->method_signature.GetReturnValue();
     auto [functionSignature, functionSignatureLength] = caller->method_signature.GetFunctionSignatureAndLength();
+    const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+    const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
     FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
     faultTolerantTokens->EnsureCorLibTokens();
 
@@ -136,7 +158,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         }
     }
 
-    ILRewriter rewriter(m_corProfiler->info_, methodHandler->GetFunctionControl(), moduleId, methodId);
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, moduleId, methodId);
     ILRewriterWrapper rewriterWrapper(&rewriter);
 
     rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
@@ -233,17 +255,36 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
 
     ILInstr* tryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-    mdString methodNameIdToken;
+    mdString instrumentationVersionIdToken;
     hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineUserString(
-        instrumentedMethodName.c_str(), static_cast<ULONG>(instrumentedMethodName.length()), &methodNameIdToken);
+        instrumentationVersion.c_str(), static_cast<ULONG>(instrumentationVersion.length()),
+        &instrumentationVersionIdToken);
 
     if (FAILED(hr))
     {
-        Logger::Warn("*** FaultTolerantRewriter::Rewrite() DefineUserStringFailed.");
+        Logger::Warn("*** FaultTolerantRewriter::Rewrite() Failed to define instrumentation "
+                     "version string ",
+                     moduleId, " ", methodId);
         return hr;
     }
 
-    ILInstr* catchBegin = rewriterWrapper.LoadStr(methodNameIdToken);
+    // static bool ShouldHeal(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // InstrumentingProduct products)
+
+    ILInstr* catchBegin;
+    if (sizeof(UINT_PTR) == 4) // 32-bit
+    {
+        catchBegin = rewriterWrapper.LoadInt32(static_cast<INT32>(moduleId));
+    }
+    else if (sizeof(UINT_PTR) == 8) // 64-bit
+    {
+        catchBegin = rewriterWrapper.LoadInt64(static_cast<INT64>(moduleId));
+    }
+
+    rewriterWrapper.LoadInt32(methodId);
+    rewriterWrapper.LoadStr(instrumentationVersionIdToken);
+
+    rewriterWrapper.LoadInt32(static_cast<INT32>(instrumentingProduct));
 
     ILInstr* shouldHeal;
     faultTolerantTokens->WriteShouldHeal(&rewriterWrapper, &shouldHeal);
@@ -332,11 +373,13 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     rewriter.SetEHClause(newEHClauses, 1);
     const auto kickOffHr = rewriter.Export();
 
-    std::string original_code =
-        m_corProfiler->GetILCodes("*** FaultTolerantRewriter::Rewrite() Original Code: ", &rewriter, *caller,
-                                  moduleHandler->GetModuleMetadata()->metadata_import);
-
-    Logger::Info(original_code);
+    if (IsDumpILRewriteEnabled())
+    {
+        std::string original_code =
+            m_corProfiler->GetILCodes("*** FaultTolerantRewriter::Rewrite() Original Code: ", &rewriter, *caller,
+                                      moduleHandler->GetModuleMetadata()->metadata_import);
+        Logger::Info(original_code);
+    }
 
     if (FAILED(kickOffHr))
     {
@@ -349,7 +392,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
 }
 
 HRESULT FaultTolerantRewriter::ApplyOriginalInstrumentation(RejitHandlerModule* moduleHandler,
-                                                            RejitHandlerModuleMethod* methodHandler)
+                                                            RejitHandlerModuleMethod* methodHandler,
+                                                            ICorProfilerFunctionControl* pFunctionControl)
 {
     const auto moduleId = moduleHandler->GetModuleId();
     const auto methodId = methodHandler->GetMethodDef();
@@ -360,7 +404,7 @@ HRESULT FaultTolerantRewriter::ApplyOriginalInstrumentation(RejitHandlerModule* 
     const auto [pMethodBytes, methodSize] =
         FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
 
-    auto hr = methodHandler->GetFunctionControl()->SetILFunctionBody(methodSize, pMethodBytes);
+    auto hr = pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
 
     if (FAILED(hr))
     {
@@ -370,12 +414,90 @@ HRESULT FaultTolerantRewriter::ApplyOriginalInstrumentation(RejitHandlerModule* 
     return hr;
 }
 
+HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModule* moduleHandler,
+                                                               RejitHandlerModuleMethod* methodHandler,
+                                                               ICorProfilerFunctionControl* pFunctionControl) const
+{
+    const auto moduleId = moduleHandler->GetModuleId();
+    const auto methodId = methodHandler->GetMethodDef();
+    const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+    const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
+    FunctionInfo* caller = methodHandler->GetFunctionInfo();
+    FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
+    faultTolerantTokens->EnsureCorLibTokens();
+
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, moduleId, methodId);
+    auto hr = rewriter.Import();
+
+    if (FAILED(hr))
+    {
+        Logger::Warn(
+            "*** FaultTolerantRewriter::InjectSuccessfulInstrumentation() Call to ILRewriter.Import() failed for ",
+            moduleId, " ", methodId);
+        return hr;
+    }
+
+    ILRewriterWrapper rewriterWrapper(&rewriter);
+    rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
+
+    mdString instrumentationVersionIdToken;
+    hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineUserString(
+        instrumentationVersion.c_str(), static_cast<ULONG>(instrumentationVersion.length()),
+        &instrumentationVersionIdToken);
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("*** FaultTolerantRewriter::InjectSuccessfulInstrumentation() Failed to define instrumentation "
+                     "version string ",
+                     moduleId, " ", methodId);
+        return hr;
+    }
+
+    // static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // InstrumentingProduct products)
+
+    if (sizeof(UINT_PTR) == 4) // 32-bit
+    {
+        rewriterWrapper.LoadInt32(static_cast<INT32>(moduleId));
+    }
+    else if (sizeof(UINT_PTR) == 8) // 64-bit
+    {
+        rewriterWrapper.LoadInt64(static_cast<INT64>(moduleId));
+    }
+
+    rewriterWrapper.LoadInt32(methodId);
+    rewriterWrapper.LoadStr(instrumentationVersionIdToken);
+    rewriterWrapper.LoadInt32(static_cast<INT32>(instrumentingProduct));
+    ILInstr* reportSuccessfulInstrumentation;
+    faultTolerantTokens->WriteReportSuccessfulInstrumentation(&rewriterWrapper, &reportSuccessfulInstrumentation);
+
+    hr = rewriter.Export();
+
+    if (IsDumpILRewriteEnabled())
+    {
+        std::string original_code = m_corProfiler->GetILCodes(
+            "*** FaultTolerantRewriter::InjectSuccessfulInstrumentation() Original Code: ", &rewriter, *caller,
+            moduleHandler->GetModuleMetadata()->metadata_import);
+        Logger::Info(original_code);
+    }
+
+    if (FAILED(hr))
+    {
+        Logger::Warn("Failed to emit IL for injecting successful instrumentation, ModuleID=", moduleId);
+        return hr;
+    }
+
+    Logger::Info("Successfully added injection of successful instrumentation report, moduleId = ", moduleId);
+    return hr;
+}
+
 HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler,
-                                               RejitHandlerModuleMethod* methodHandler) const
+                                               RejitHandlerModuleMethod* methodHandler,
+                                               ICorProfilerFunctionControl* pFunctionControl)
 {
     if (!is_fault_tolerant_instrumentation_enabled)
     {
-        return m_methodRewriter->Rewrite(moduleHandler, methodHandler);
+        return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
     }
 
     const auto moduleId = moduleHandler->GetModuleId();
@@ -383,25 +505,43 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
 
     if (FaultTolerantTracker::Instance()->IsKickoffMethod(moduleId, methodId))
     {
-        return ApplyKickoffInstrumentation(moduleHandler, methodHandler);
+        return ApplyKickoffInstrumentation(moduleHandler, methodHandler, pFunctionControl);
     }
     else if (FaultTolerantTracker::Instance()->IsOriginalMethod(moduleId, methodId))
     {
-        return ApplyOriginalInstrumentation(moduleHandler, methodHandler);
+        return ApplyOriginalInstrumentation(moduleHandler, methodHandler, pFunctionControl);
     }
     else if (FaultTolerantTracker::Instance()->IsInstrumentedMethod(moduleId, methodId))
     {
-        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler);
+        const auto methodIdOfKickoff =
+            FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(moduleId, methodId);
+        const auto [pMethodBytes, methodSize] =
+            FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
 
-        if (hr != S_OK)
+        pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
+
+        // substitute the methodHandler of the instrumented duplication with the original (the one of the kickoff)
+        if (!moduleHandler->TryGetMethod(methodIdOfKickoff, &methodHandler))
         {
-            const auto methodIdOfKickoff =
-                FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(moduleId, methodId);
-            const auto [pMethodBytes, methodSize] =
-                FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
-
-            methodHandler->GetFunctionControl()->SetILFunctionBody(methodSize, pMethodBytes);
+            Logger::Warn("FaultTolerantRewriter::RewriteInternal(): Failed to substitute the methodHandler of the instrumented duplication with the original's.");
+            return S_FALSE;
         }
+
+        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
+
+        if (hr == S_OK)
+        {
+            return InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl);
+        }
+        // else
+        //{
+        //     const auto methodIdOfKickoff =
+        //         FaultTolerantTracker::Instance()->GetKickoffMethodFromInstrumentedMethod(moduleId, methodId);
+        //     const auto [pMethodBytes, methodSize] =
+        //         FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodIdOfKickoff);
+
+        //    methodHandler->GetFunctionControl()->SetILFunctionBody(methodSize, pMethodBytes);
+        //}
 
         return hr;
     }
@@ -411,8 +551,146 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
     }
 }
 
-HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+void FaultTolerantRewriter::RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread)
 {
-    const auto hr = RewriteInternal(moduleHandler, methodHandler);
-    return FAILED(hr) ? S_FALSE : S_OK;
+    if (!rejitRequests.empty())
+    {
+        std::vector<ModuleID> vtModules;
+        std::vector<mdMethodDef> vtMethodDefs;
+
+        const auto rejitCount = rejitRequests.size();
+        vtModules.reserve(rejitCount);
+        vtMethodDefs.reserve(rejitCount);
+
+        for (const auto& rejitRequest : rejitRequests)
+        {
+            vtModules.push_back(rejitRequest.moduleId);
+            vtMethodDefs.push_back(rejitRequest.methodToken);
+        }
+
+        if (enqueueInSameThread)
+        {
+            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs);
+        }
+        else
+        {
+            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
+        }
+    }
+}
+
+void FaultTolerantRewriter::RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread)
+{
+    if (!revertRequests.empty())
+    {
+        std::vector<ModuleID> vtModules;
+        std::vector<mdMethodDef> vtMethodDefs;
+
+        const auto rejitCount = revertRequests.size();
+        vtModules.reserve(rejitCount);
+        vtMethodDefs.reserve(rejitCount);
+
+        for (const auto& rejitRequest : revertRequests)
+        {
+            vtModules.push_back(rejitRequest.moduleId);
+            vtMethodDefs.push_back(rejitRequest.methodToken);
+        }
+
+        if (enqueueInSameThread)
+        {
+            m_rejit_handler->RequestRevert(vtModules, vtMethodDefs);
+        }
+        else
+        {
+            m_rejit_handler->EnqueueForRevert(vtModules, vtMethodDefs);
+        }
+    }
+}
+
+void FaultTolerantRewriter::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
+                                                std::shared_ptr<std::promise<void>> promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
+        return;
+    }
+
+    if (rejitRequests.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRejit");
+
+    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise]() mutable {
+        // Process modules for rejit
+        RequestRejit(requests, true);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+void FaultTolerantRewriter::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
+    std::shared_ptr<std::promise<void>> promise)
+{
+    if (m_rejit_handler->IsShutdownRequested())
+    {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
+        return;
+    }
+
+    if (revertRequests.size() == 0)
+    {
+        return;
+    }
+
+    Logger::Debug("RejitHandler::EnqueueRequestRevert");
+
+    std::function<void()> action = [=, requests = std::move(revertRequests), localPromise = promise]() mutable {
+        // Process modules for rejit
+        RequestRevert(requests, true);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
+    // Enqueue
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+}
+
+HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
+{
+    const auto hr = RewriteInternal(moduleHandler, methodHandler, pFunctionControl);
+    return (FAILED(hr) || hr == S_FALSE) ? S_FALSE : S_OK;
+}
+
+InstrumentingProduct FaultTolerantRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+                                                                    RejitHandlerModuleMethod* methodHandler)
+{
+    return m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
+}
+
+WSTRING FaultTolerantRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+                                                         RejitHandlerModuleMethod* methodHandler)
+{
+    return m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
 }

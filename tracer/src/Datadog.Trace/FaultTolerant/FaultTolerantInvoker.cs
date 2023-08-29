@@ -1,0 +1,63 @@
+// <copyright file="FaultTolerantInvoker.cs" company="Datadog">
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
+// </copyright>
+
+using System;
+using System.ComponentModel;
+using System.Diagnostics;
+using Datadog.Trace.Logging;
+
+namespace Datadog.Trace.FaultTolerant
+{
+    /// <summary>
+    /// FaultTolerantInvoker
+    /// </summary>
+    [Browsable(false)]
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static class FaultTolerantInvoker
+    {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(FaultTolerantInvoker));
+
+        /// <summary>
+        /// Determines if the Fault-Tolerant's kickoff logic should call the Original version of the faulty method.
+        /// </summary>
+        /// <param name="ex">The excepion that was thrown</param>
+        /// <param name="moduleId">Module ID used for revert.</param>
+        /// <param name="methodToken">Metadata Token of the method for revert</param>
+        /// <param name="instrumentationVersion">An identifier that uniquely describes the applied instrumentation</param>
+        /// <param name="products">The product(s) applied the instrumentation</param>
+        /// <returns>`true` if the exception was thrown due to faulty instrumentation, `false` otherwise</returns>
+        public static bool ShouldHeal(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion, int products)
+        {
+            try
+            {
+                return ShouldHealInternal(ex, instrumentationVersion, (InstrumentingProducts)products);
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to determine if we should-self-heal. ex = {ExceptionToString}, InstrumentedMethodName = {InstrumentationVersion}, Products = {Products}", new object[] { ex.ToString(), instrumentationVersion, products.ToString() });
+                return false;
+            }
+        }
+
+        private static bool ShouldHealInternal(Exception ex, string instrumentationVersion, InstrumentingProducts products)
+        {
+            return true;
+        }
+
+        /// <summary>
+        /// Called upon successful instrumentation. The corresponding Fault-Tolerant kickoff does not need to self-heal.
+        /// </summary>
+        /// <param name="moduleId">Module ID used for revert + rejit.</param>
+        /// <param name="methodToken">Metadata Token of the method for revert + rejit</param>
+        /// <param name="instrumentationVersion">An identifier that uniquely describes the applied instrumentation</param>
+        /// <param name="products">The product(s) applied the instrumentation</param>
+        public static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion, int products)
+        {
+            var instrumentingProducts = (InstrumentingProducts)products;
+
+            Log.Information("Succeeded to instrument using {Products} the method: {MethodToken}, Instrumentation Version: {InstrumentationVersion}", new object[] { instrumentingProducts.ToString(), methodToken, instrumentationVersion });
+        }
+    }
+}

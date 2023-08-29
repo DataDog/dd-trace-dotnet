@@ -310,6 +310,7 @@
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="debugger_probes_tracker.h" />
+    <ClInclude Include="instrumenting_product.h" />
     <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="debugger_members.h" />

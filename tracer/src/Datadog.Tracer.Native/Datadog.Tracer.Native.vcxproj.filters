@@ -179,6 +179,7 @@
     <ClInclude Include="fault_tolerant_tokens.h">
       <Filter>FaultTolerant</Filter>
     </ClInclude>
+    <ClInclude Include="instrumenting_product.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

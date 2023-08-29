@@ -252,7 +252,7 @@ DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandle
                                         const FunctionInfo& functionInfo,
                                         const std::shared_ptr<MethodProbeDefinition>& methodProbe)
 {
-    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
+    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler), m_rejit_handler, m_work_offloader);
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::move(faultTolerantRewriter));
 }
 
@@ -260,7 +260,7 @@ const std::unique_ptr<RejitHandlerModuleMethod>
 DebuggerRejitPreprocessor::CreateMethod(const mdMethodDef methodDef, RejitHandlerModule* module,
                                         const FunctionInfo& functionInfo) const
 {
-    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler));
+    auto faultTolerantRewriter = std::make_unique<fault_tolerant::FaultTolerantRewriter>(m_corProfiler, std::make_unique<DebuggerMethodRewriter>(m_corProfiler), m_rejit_handler, m_work_offloader);
     return std::make_unique<DebuggerRejitHandlerModuleMethod>(methodDef, module, functionInfo, std::move(faultTolerantRewriter));
 }
 

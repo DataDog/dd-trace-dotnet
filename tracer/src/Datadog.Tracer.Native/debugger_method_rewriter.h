@@ -4,6 +4,7 @@
 #include "../../../shared/src/native-src/util.h"
 #include "cor_profiler.h"
 #include "il_rewriter_wrapper.h"
+#include "instrumenting_product.h"
 #include "method_rewriter.h"
 #include "module_metadata.h"
 
@@ -116,7 +117,7 @@ private:
                                   int instrumentedMethodIndex, ILInstr* const& beforeLineProbe,
                                   std::vector<EHClause>& newClauses) const;
     static bool DoesILContainUnsupportedInstructions(ILRewriter& rewriter);
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl,
                     MethodProbeDefinitions& methodProbes, LineProbeDefinitions& lineProbes,
                     SpanProbeOnMethodDefinitions& spanProbesOnMethod) const;
     HRESULT IsTypeByRefLike(ModuleMetadata& module_metadata, const TypeSignature& typeSig,
@@ -128,7 +129,9 @@ private:
     static void AdjustExceptionHandlingClauses(ILInstr* pFromInstr, ILInstr* pToInstr, ILRewriter* pRewriter);
 
 public:
-    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
+    InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                      ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine);
     HRESULT IsAsyncMethodProbe(const ComPtr<IMetaDataImport2>& metadataImport, const FunctionInfo* caller,
