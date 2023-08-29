@@ -20,7 +20,7 @@ jobs:
           # These checks won't run automatically on the version bump PR, so need to force this
           contexts=("code_freeze" "verify_source_generators" "verify_app_trimming_descriptor_generator")
 
-          sha="${{ github.head_ref }}"
+          sha="${{ github.sha }}"
           targetUrl="https://github.com/DataDog/dd-trace-dotnet/actions/workflows/override_version_bump_pr_checks.yml"
           state="success"
           description="Forced override (via GitHub Action)"
