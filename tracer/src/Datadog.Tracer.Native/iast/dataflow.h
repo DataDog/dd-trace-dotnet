@@ -68,7 +68,7 @@ namespace iast
 
         int _callsiteInstrumentedSources = 0;
         int _callsiteInstrumentedPropagations = 0;
-        int _callsiteInstrumentedSinks[(int) VulnerabilityType::None] = {}; // Initialize all values to 0
+        int _callsiteInstrumentedSinks[(int) VulnerabilityType::Max] = {}; // Initialize all values to 0
 
         bool _traceJitMethods = false;
 

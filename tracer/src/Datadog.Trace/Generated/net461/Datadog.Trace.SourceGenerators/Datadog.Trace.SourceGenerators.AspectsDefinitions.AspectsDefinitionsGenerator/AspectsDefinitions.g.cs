@@ -11,7 +11,7 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class AspectDefinitions
     {
         public static string[] Aspects = new string[] {
-"[AspectClass(\"EntityFramework\",[None],Propagation,[])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
+"[AspectClass(\"EntityFramework\",[None],Sink,[SqlInjection])] Datadog.Trace.Iast.Aspects.EntityCommandAspect",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReader(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior,System.Threading.CancellationToken)\",\"\",[2],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",
 "  [AspectMethodInsertBefore(\"System.Data.Entity.Core.EntityClient.EntityCommand::ExecuteReaderAsync(System.Data.CommandBehavior)\",\"\",[1],[False],[None],Default,[])] ReviewSqlCommand(System.Object)",

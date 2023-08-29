@@ -12,7 +12,7 @@ namespace Datadog.Trace.Iast.Aspects;
 
 #if !NETFRAMEWORK
 /// <summary> EntityFrameworkCoreAspect class aspect </summary>
-[AspectClass("Microsoft.EntityFrameworkCore.Relational")]
+[AspectClass("Microsoft.EntityFrameworkCore.Relational", AspectType.Sink, VulnerabilityType.SqlInjection)]
 [global::System.ComponentModel.Browsable(false)]
 [global::System.ComponentModel.EditorBrowsable(global::System.ComponentModel.EditorBrowsableState.Never)]
 public class EntityFrameworkCoreAspect

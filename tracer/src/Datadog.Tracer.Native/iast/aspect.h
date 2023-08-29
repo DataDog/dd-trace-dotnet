@@ -19,18 +19,19 @@ namespace iast
     // Keep this enum syncronized with Iast/VulnerabilityType.cs in managed code
     enum class VulnerabilityType
     {
-        WeakCipher = 0,
-        WeakHash = 1,
-        SqlInjection = 2,
-        CommandInjection = 3,
-        PathTraversal = 4,
-        LdapInjection = 5,
-        Ssrf = 6,
-        UnvalidatedRedirect = 7,
-        InsecureCookie = 8,
-        NoHttpOnlyCookie = 9,
-        NoSameSiteCookie = 10,
-        None = 11,
+        None = 0,
+        WeakCipher = 1,
+        WeakHash = 2,
+        SqlInjection = 3,
+        CommandInjection = 4,
+        PathTraversal = 5,
+        LdapInjection = 6,
+        Ssrf = 7,
+        UnvalidatedRedirect = 8,
+        InsecureCookie = 9,
+        NoHttpOnlyCookie = 10,
+        NoSameSiteCookie = 11,
+        Max = 12
     };
     enum class SpotInfoStatus
     {

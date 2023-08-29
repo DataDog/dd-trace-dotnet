@@ -681,6 +681,8 @@ void Dataflow::ProcessIastMetric(iast::InstrumentResult& result)
             case AspectType::Source:
                 _callsiteInstrumentedSources++;
                 break;
+            default:
+                break;
         }
     }
 }
@@ -728,7 +730,7 @@ void Dataflow::GetIastMetrics(int* instrumentedSources, int* instrumentedPropaga
     _callsiteInstrumentedSources = 0;
     _callsiteInstrumentedPropagations = 0;
 
-    for(int i = 0; i < (int) (VulnerabilityType::None); i++)
+    for(int i = 0; i < (int) VulnerabilityType::Max; i++)
     {
         instrumentedSinks[i] = _callsiteInstrumentedSinks[i];
         _callsiteInstrumentedSinks[i] = 0;
