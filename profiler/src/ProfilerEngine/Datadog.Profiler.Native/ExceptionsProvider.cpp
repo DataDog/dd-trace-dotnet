@@ -10,6 +10,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "ScopeFinalizer.h"
+#include "SampleValueTypeProvider.h"
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
@@ -20,7 +21,7 @@ std::vector<SampleValueType> ExceptionsProvider::SampleTypeDefinitions(
     });
 
 ExceptionsProvider::ExceptionsProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     ICorProfilerInfo4* pCorProfilerInfo,
     IManagedThreadList* pManagedThreadList,
     IFrameStore* pFrameStore,
@@ -30,7 +31,7 @@ ExceptionsProvider::ExceptionsProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
+    CollectorBase<RawExceptionSample>("ExceptionsProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration),
     _pCorProfilerInfo(pCorProfilerInfo),
     _pManagedThreadList(pManagedThreadList),
     _pFrameStore(pFrameStore),

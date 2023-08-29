@@ -18,17 +18,15 @@
 #include "IUpscaleProvider.h"
 
 class IConfiguration;
+class SampleValueTypeProvider;
 
 class ExceptionsProvider :
     public CollectorBase<RawExceptionSample>,
     public IUpscaleProvider
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     ExceptionsProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
@@ -56,6 +54,8 @@ private:
 
 
 private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;

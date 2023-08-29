@@ -74,49 +74,9 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal static InitResult From(Obj diagObject, IntPtr? wafHandle, WafLibraryInvoker? wafLibraryInvoker)
         {
-            ushort failedCount = 0;
-            ushort loadedCount = 0;
-            string rulesetVersion = string.Empty;
-            Dictionary<string, object>? errors = null;
-            try
-            {
-                if (diagObject.ArgsType == ObjType.Invalid)
-                {
-                    errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
-                    return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
-                }
+            var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject, true);
 
-                var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(diagObject);
-                if (diagnosticsData.Count > 0)
-                {
-                    var valueExist = diagnosticsData.TryGetValue("rules", out var rulesObj);
-                    if (!valueExist)
-                    {
-                        errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules" } };
-                        return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
-                    }
-
-                    var rules = rulesObj as Dictionary<string, object>;
-                    if (rules == null)
-                    {
-                        errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules as a dictionary key-value" } };
-                        return new(failedCount, loadedCount, rulesetVersion, errors, wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker, shouldEnableWaf: false);
-                    }
-
-                    failedCount = (ushort)((object[])rules["failed"]).Length;
-                    loadedCount = (ushort)((object[])rules["loaded"]).Length;
-                    errors = (Dictionary<string, object>)rules["errors"];
-                    rulesetVersion = (string)diagnosticsData["ruleset_version"];
-                }
-            }
-            catch (Exception err)
-            {
-                Log.Error(err, "AppSec could not read Waf diagnostics. Disabling AppSec");
-                errors ??= new Dictionary<string, object>();
-                errors.Add("diagnostics-error", err.Message);
-            }
-
-            return new(failedCount, loadedCount, rulesetVersion, errors ?? new(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
+            return new(reportedDiag.FailedCount, reportedDiag.LoadedCount, reportedDiag.RulesetVersion, reportedDiag.Errors ?? new Dictionary<string, object>(), wafHandle: wafHandle, wafLibraryInvoker: wafLibraryInvoker);
         }
     }
 }

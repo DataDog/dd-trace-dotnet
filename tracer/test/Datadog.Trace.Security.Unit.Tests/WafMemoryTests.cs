@@ -93,6 +93,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
+                result.HasErrors.Should().BeFalse();
 
                 Execute(waf, AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120", enabled);
 
