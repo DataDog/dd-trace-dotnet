@@ -102,16 +102,14 @@ partial class Build
            DotNetRestore(s => s
                              .SetDotnetPath(TargetPlatform)
                              .SetProjectFile(autoInstGenProj)
-                             .SetNoWarnDotNetCore3()
-                             .SetProperty("platform", TargetPlatform));
+                             .SetNoWarnDotNetCore3());
 
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
                            .SetFramework(TargetFramework.NET7_0)
                            .SetProjectFile(autoInstGenProj)
                            .SetConfiguration(Configuration.Release)
-                           .SetNoWarnDotNetCore3()
-                           .SetProperty("platform", TargetPlatform));
+                           .SetNoWarnDotNetCore3());
 
            // We need to run the generator this way to avoid nuke waiting until the process finishes.
            var dotnetRunSettings = new DotNetRunSettings()
