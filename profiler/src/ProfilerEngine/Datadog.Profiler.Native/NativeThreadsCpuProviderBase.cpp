@@ -17,7 +17,9 @@ NativeThreadsCpuProviderBase::NativeThreadsCpuProviderBase(CpuTimeProvider* cpuT
 std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
 {
     std::uint64_t cpuTime = 0;
-    for (auto const& thread : GetThreads())
+    auto const& threads = GetThreads();
+    Log::Debug("Starting collecting cpu time for native threads: ", threads.size(), " thread(s)");
+    for (auto const& thread : threads)
     {
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
     }
