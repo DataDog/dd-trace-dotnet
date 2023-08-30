@@ -363,7 +363,8 @@ partial class Build
             var exclude = TracerDirectory.GlobFiles(
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
-                "src/**/Datadog.InstrumentedAssembly*.csproj"
+                "src/**/Datadog.InstrumentedAssembly*.csproj",
+                "src/Datadog.AutoInstrumentation.Generator/*.csproj"
             );
 
             var toBuild = include.Except(exclude);
