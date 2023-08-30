@@ -39,7 +39,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             _appName = appName;
             _framework = framework;
-            Environment = new EnvironmentHelper(appName, framework, enableTracer);
+            Environment = new EnvironmentHelper(framework, enableTracer);
             _testBaseOutputDir = Environment.GetTestOutputPath();
             _appAssembly = appAssembly;
             _output = output;
