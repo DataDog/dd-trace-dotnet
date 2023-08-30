@@ -267,14 +267,27 @@ namespace Datadog.Trace.Coverage.Collector
                         }
                     }
 
-                    if (skipType)
+                    var filteredTargetType = moduleType;
+                    while (filteredTargetType is not null)
                     {
-                        continue;
+                        if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, filteredTargetType.FullName, _settings.ExcludeFilters))
+                        {
+                            _logger.Debug($"Type: {filteredTargetType.FullName}, ignored by settings filter");
+                            skipType = true;
+                            break;
+                        }
+
+                        if (!filteredTargetType.IsNested)
+                        {
+                            break;
+                        }
+
+                        // Nested types are skipped if the declaring type is skipped.
+                        filteredTargetType = filteredTargetType.DeclaringType;
                     }
 
-                    if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, moduleType.FullName, _settings.ExcludeFilters))
+                    if (skipType)
                     {
-                        _logger.Debug($"Type: {moduleType.FullName}, ignored by settings filter");
                         continue;
                     }
 
