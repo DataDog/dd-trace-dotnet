@@ -99,6 +99,8 @@ void fault_tolerant::FaultTolerantMethodDuplicator::Duplicate(const ModuleID mod
         _methodAttributes &= ~mdVirtual;
         _methodAttributes |= mdHideBySig;
         //_methodAttributes |= mdFinal;
+        
+        pdwImplFlags |= miNoInlining;
 
         mdMethodDef originalTargetMethodDef = mdMethodDefNil;
 
