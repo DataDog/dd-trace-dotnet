@@ -1,5 +1,5 @@
-#ifndef DD_CLR_PROFILER_FAULT_TOLERANT_MANAGER_H_
-#define DD_CLR_PROFILER_FAULT_TOLERANT_MANAGER_H_
+#ifndef DD_CLR_PROFILER_FAULT_TOLERANT_METHOD_DUPLICATOR_H_
+#define DD_CLR_PROFILER_FAULT_TOLERANT_METHOD_DUPLICATOR_H_
 
 #include "clr_helpers.h"
 #include "cor_profiler.h"
@@ -9,7 +9,7 @@
 
 namespace fault_tolerant
 {
-class FaultTolerantManager
+class FaultTolerantMethodDuplicator
 {
 private:
     CorProfiler* m_corProfiler;
@@ -19,10 +19,10 @@ private:
     bool is_fault_tolerant_instrumentation_enabled = false;
 
 public:
-    FaultTolerantManager(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
+    FaultTolerantMethodDuplicator(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
                          std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
 
-    void Apply(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+    void Duplicate(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
                ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef) const;
 };
 

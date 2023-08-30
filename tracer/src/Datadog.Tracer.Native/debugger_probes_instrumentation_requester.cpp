@@ -9,7 +9,7 @@
 #include "debugger_probes_tracker.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
-#include "fault_tolerant_manager.h"
+#include "fault_tolerant_method_duplicator.h"
 #include "logger.h"
 #include <random>
 
@@ -187,13 +187,13 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
     std::shared_ptr<trace::RejitWorkOffloader> work_offloader,
-    std::shared_ptr<fault_tolerant::FaultTolerantManager> fault_tolerant_manager) :
+    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator) :
     m_corProfiler(corProfiler),
     m_debugger_rejit_preprocessor(
     std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
-    m_fault_tolerant_manager(fault_tolerant_manager)
+    m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
     is_debugger_enabled = IsDebuggerEnabled();
 }
@@ -770,7 +770,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     {
         auto typeDef = *typeDefIterator;
 
-        m_fault_tolerant_manager->Apply(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef);
+        m_fault_tolerant_method_duplicator->Duplicate(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef);
 
         // check if it is a nested type and the parent is our type
         mdTypeDef parentType;
