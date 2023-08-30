@@ -78,6 +78,7 @@ static const WSTRING _fixedAssemblyExcludeFilters[] = {
     WStr("vstest.console"),
     WStr("testhost.*"),
     WStr("Oracle.ManagedDataAccess"),
+    WStr("DelegateDecompiler*"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 static const WSTRING _fixedMethodIncludeFilters[] = {
@@ -103,6 +104,10 @@ static const WSTRING _fixedMethodExcludeFilters[] = {
     WStr("System.ServiceModel*"),
     WStr("System.Web.Http*"),
     WStr("MongoDB.*"),
+    LastEntry, // Can't have an empty array. This must be the last element
+};
+static const WSTRING _fixedMethodAttributeExcludeFilters[] = {
+    WStr("DelegateDecompiler.ComputedAttribute"),
     LastEntry, // Can't have an empty array. This must be the last element
 };
 
@@ -203,6 +208,13 @@ HRESULT Dataflow::Init()
             {
                 _methodExcludeFilters.push_back(_fixedMethodExcludeFilters[x]);
             }
+
+            // Method attribute filters
+            for (int x = 0; _fixedMethodAttributeExcludeFilters[x] != LastEntry; x++)
+            {
+                _methodAttributeExcludeFilters.push_back(_fixedMethodAttributeExcludeFilters[x]);
+            }
+
         //});
     }
     catch (std::exception& err)
@@ -441,10 +453,19 @@ bool Dataflow::IsAssemblyExcluded(const WSTRING& assemblyName, MatchResult* incl
 {
     return IsExcluded(_assemblyIncludeFilters, _assemblyExcludeFilters, assemblyName, includedMatch, excludedMatch);
 }
-bool Dataflow::IsMethodExcluded(const WSTRING& signature, MatchResult* includedMatch, MatchResult* excludedMatch)
+bool Dataflow::IsMethodExcluded(const WSTRING& methodSignature, MatchResult* includedMatch, MatchResult* excludedMatch)
 {
-    return IsExcluded(_methodIncludeFilters, _methodExcludeFilters, signature, includedMatch, excludedMatch);
+    return IsExcluded(_methodIncludeFilters, _methodExcludeFilters, methodSignature, includedMatch, excludedMatch);
 }
+bool Dataflow::IsMethodAttributeExcluded(const WSTRING& attributeName, MatchResult* includedMatch, MatchResult* excludedMatch)
+{
+    return IsExcluded(_methodAttributeIncludeFilters, _methodAttributeExcludeFilters, attributeName, includedMatch, excludedMatch);
+}
+bool Dataflow::HasMethodAttributeExclusions()
+{
+    return _methodAttributeExcludeFilters.size() > 0;
+}
+
 
 ICorProfilerInfo* Dataflow::GetCorProfilerInfo()
 {

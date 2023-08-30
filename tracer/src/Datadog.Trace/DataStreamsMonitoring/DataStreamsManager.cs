@@ -108,8 +108,15 @@ internal class DataStreamsManager
     /// <param name="parentPathway">The current pathway</param>
     /// <param name="checkpointKind">Is this a Produce or Consume operation?</param>
     /// <param name="edgeTags">Edge tags to set for the new pathway. MUST be sorted in alphabetical order</param>
+    /// <param name="payloadSizeBytes">Payload size in bytes</param>
+    /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
     /// <returns>If disabled, returns <c>null</c>. Otherwise returns a new <see cref="PathwayContext"/></returns>
-    public PathwayContext? SetCheckpoint(in PathwayContext? parentPathway, CheckpointKind checkpointKind, string[] edgeTags)
+    public PathwayContext? SetCheckpoint(
+        in PathwayContext? parentPathway,
+        CheckpointKind checkpointKind,
+        string[] edgeTags,
+        long payloadSizeBytes,
+        long timeInQueueMs)
     {
         if (!IsEnabled)
         {
@@ -124,7 +131,11 @@ internal class DataStreamsManager
                 previousContext = PreviousCheckpoint.Value.Context;
             }
 
-            var edgeStartNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            var nowNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+            // We should use timeInQueue to offset the edge / pathway start if this is a beginning of a pathway
+            // This allows tracking edge / pathway latency for pipelines starting with a queue (no producer instrumented upstream)
+            // by relying on the message timestamp.
+            var edgeStartNs = previousContext == null && timeInQueueMs > 0 ? nowNs - (timeInQueueMs * 1_000_000) : nowNs;
             var pathwayStartNs = previousContext?.PathwayStart ?? edgeStartNs;
 
             var nodeHash = HashHelper.CalculateNodeHash(_nodeHashBase, edgeTags);
@@ -137,9 +148,10 @@ internal class DataStreamsManager
                     edgeTags: edgeTags,
                     hash: pathwayHash,
                     parentHash: parentHash,
-                    timestampNs: edgeStartNs,
-                    pathwayLatencyNs: edgeStartNs - pathwayStartNs,
-                    edgeLatencyNs: edgeStartNs - (previousContext?.EdgeStart ?? edgeStartNs)));
+                    timestampNs: nowNs,
+                    pathwayLatencyNs: nowNs - pathwayStartNs,
+                    edgeLatencyNs: nowNs - (previousContext?.EdgeStart ?? edgeStartNs),
+                    payloadSizeBytes));
 
             var pathway = new PathwayContext(
                 hash: pathwayHash,

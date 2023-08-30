@@ -12,18 +12,17 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class IConfiguration;
-
+class SampleValueTypeProvider;
 
 class StopTheWorldGCProvider
-    :
-    public CollectorBase<RawStopTheWorldSample>,
-    public IGCSuspensionsListener
+    : public CollectorBase<RawStopTheWorldSample>,
+      public IGCSuspensionsListener
 {
-// use the same sample type definition as the GarbageCollectorProvider
+    // use the same sample type definition as the GarbageCollectorProvider
 
 public:
     StopTheWorldGCProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,

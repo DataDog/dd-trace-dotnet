@@ -44,7 +44,7 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => "direct_log_logs",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors.responses",
+            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",

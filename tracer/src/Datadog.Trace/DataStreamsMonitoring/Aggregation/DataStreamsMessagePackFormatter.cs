@@ -38,6 +38,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _parentHashBytes = StringEncoding.UTF8.GetBytes("ParentHash");
         private readonly byte[] _pathwayLatencyBytes = StringEncoding.UTF8.GetBytes("PathwayLatency");
         private readonly byte[] _edgeLatencyBytes = StringEncoding.UTF8.GetBytes("EdgeLatency");
+        private readonly byte[] _payloadSizeBytes = StringEncoding.UTF8.GetBytes("PayloadSize");
         private readonly byte[] _timestampTypeBytes = StringEncoding.UTF8.GetBytes("TimestampType");
         private readonly byte[] _currentTimestampTypeBytes = StringEncoding.UTF8.GetBytes("current");
         private readonly byte[] _originTimestampTypeBytes = StringEncoding.UTF8.GetBytes("origin");
@@ -108,10 +109,10 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                 {
                     var hasEdges = point.EdgeTags.Length > 0;
 
-                    // 6 entries per StatsPoint:
-                    // 5 if no edge tags
+                    // 7 entries per StatsPoint:
+                    // 6 if no edge tags
                     // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L44
-                    var itemCount = hasEdges ? 6 : 5;
+                    var itemCount = hasEdges ? 7 : 6;
                     bytesWritten += MessagePackBinary.WriteMapHeader(stream, itemCount);
 
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, _hashBytes);
@@ -128,6 +129,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeLatencyBytes);
                     bytesWritten += SerializeSketch(stream, point.EdgeLatency);
+
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _payloadSizeBytes);
+                    bytesWritten += SerializeSketch(stream, point.PayloadSize);
 
                     if (hasEdges)
                     {

@@ -4,12 +4,14 @@
 #pragma once
 
 #include "CollectorBase.h"
+
 #include "IGarbageCollectionsListener.h"
 #include "RawGarbageCollectionSample.h"
 #include "MetricsRegistry.h"
 #include "CounterMetric.h"
 #include "MeanMaxMetric.h"
 
+class SampleValueTypeProvider;
 
 class GarbageCollectionProvider
     : public CollectorBase<RawGarbageCollectionSample>,
@@ -20,7 +22,7 @@ public:
 
 public:
     GarbageCollectionProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         IFrameStore* pFrameStore,
         IThreadsCpuManager* pThreadsCpuManager,
         IAppDomainStore* pAppDomainStore,

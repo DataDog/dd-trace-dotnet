@@ -4,74 +4,94 @@
 // </copyright>
 
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Linq;
 using Datadog.Trace.Util;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class LegacyCommand : Command<LegacySettings>
+    internal class LegacyCommand : Command
     {
+        private readonly Argument<string[]> _commandArgument = new("command", "Command to be wrapped by the cli tool.");
+        private readonly LegacySettings _legacySettings;
+
         public LegacyCommand(ApplicationContext applicationContext)
+            : base("command")
         {
             ApplicationContext = applicationContext;
+
+            AddArgument(_commandArgument);
+            _legacySettings = new(this);
+
+            AddValidator(Validate);
+            this.SetHandler(Execute);
         }
 
         protected ApplicationContext ApplicationContext { get; }
 
-        public override int Execute(CommandContext context, LegacySettings options)
+        private void Execute(InvocationContext context)
         {
-            var args = options.Command ?? context.Remaining.Raw;
-
-            // Start logic
+            var args = _commandArgument.GetValue(context);
 
             var profilerEnvironmentVariables = Utils.GetProfilerEnvironmentVariables(
+                context,
                 ApplicationContext.RunnerFolder,
                 ApplicationContext.Platform,
-                options);
+                _legacySettings,
+                reducePathLength: false);
 
             if (profilerEnvironmentVariables is null)
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
+            var enableCIVisibilityMode = _legacySettings.EnableCIVisibilityModeOption.GetValue(context);
+
             // We try to autodetect the CI Visibility Mode
-            if (!options.EnableCIVisibilityMode)
+            if (!enableCIVisibilityMode)
             {
                 // Support for VSTest.Console.exe and dotcover
-                if (args.Count > 0 && (
+                if (args.Length > 0 && (
                     string.Equals(args[0], "VSTest.Console", StringComparison.OrdinalIgnoreCase) ||
                     string.Equals(args[0], "dotcover", StringComparison.OrdinalIgnoreCase)))
                 {
-                    options.EnableCIVisibilityMode = true;
+                    enableCIVisibilityMode = true;
                 }
 
                 // Support for dotnet test and dotnet vstest command
-                if (args.Count > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
+                if (args.Length > 1 && string.Equals(args[0], "dotnet", StringComparison.OrdinalIgnoreCase))
                 {
                     if (string.Equals(args[1], "test", StringComparison.OrdinalIgnoreCase) ||
                        string.Equals(args[1], "vstest", StringComparison.OrdinalIgnoreCase))
                     {
-                        options.EnableCIVisibilityMode = true;
+                        enableCIVisibilityMode = true;
                     }
                 }
             }
 
-            if (options.EnableCIVisibilityMode)
+            if (enableCIVisibilityMode)
             {
                 // Enable CI Visibility mode by configuration
                 profilerEnvironmentVariables[Configuration.ConfigurationKeys.CIVisibility.Enabled] = "1";
             }
 
-            if (options.SetEnvironmentVariables)
+            var setEnvironmentVariables = _legacySettings.SetEnvironmentVariablesOption.GetValue(context);
+            var crankImportFile = _legacySettings.CrankImportFileOption.GetValue(context);
+            var agentUrl = _legacySettings.AgentUrlOption.GetValue(context);
+
+            if (setEnvironmentVariables)
             {
                 AnsiConsole.WriteLine("Setting up the environment variables.");
                 CIConfiguration.SetupCIEnvironmentVariables(profilerEnvironmentVariables, null);
             }
-            else if (!string.IsNullOrEmpty(options.CrankImportFile))
+            else if (!string.IsNullOrEmpty(crankImportFile))
             {
-                return Crank.Importer.Process(options.CrankImportFile);
+                context.ExitCode = Crank.Importer.Process(crankImportFile);
+                return;
             }
             else
             {
@@ -81,7 +101,7 @@ namespace Datadog.Trace.Tools.Runner
                     // CI Visibility mode is enabled.
                     // If the agentless feature flag is enabled, we check for ApiKey
                     // If the agentless feature flag is disabled, we check if we have connection to the agent before running the process.
-                    if (options.EnableCIVisibilityMode)
+                    if (enableCIVisibilityMode)
                     {
                         var ciVisibilitySettings = Ci.Configuration.CIVisibilitySettings.FromDefaultSources();
                         if (ciVisibilitySettings.Agentless)
@@ -89,48 +109,49 @@ namespace Datadog.Trace.Tools.Runner
                             if (string.IsNullOrWhiteSpace(ciVisibilitySettings.ApiKey))
                             {
                                 Utils.WriteError("An API key is required in Agentless mode.");
-                                return 1;
+                                context.ExitCode = 1;
+                                return;
                             }
                         }
-                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(options.AgentUrl)).Configuration is null)
+                        else if (AsyncUtil.RunSync(() => Utils.CheckAgentConnectionAsync(agentUrl)).Configuration is null)
                         {
-                            return 1;
+                            context.ExitCode = 1;
+                            return;
                         }
                     }
 
                     AnsiConsole.WriteLine("Running: " + cmdLine);
 
-                    var arguments = args.Count > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
+                    var arguments = args.Length > 1 ? string.Join(' ', args.Skip(1).ToArray()) : null;
 
                     if (Program.CallbackForTests != null)
                     {
                         Program.CallbackForTests(args[0], arguments, profilerEnvironmentVariables);
-                        return 0;
+                        return;
                     }
 
                     var processInfo = Utils.GetProcessStartInfo(args[0], Environment.CurrentDirectory, profilerEnvironmentVariables);
-                    if (args.Count > 1)
+
+                    if (args.Length > 1)
                     {
                         processInfo.Arguments = arguments;
                     }
 
-                    return Utils.RunProcess(processInfo, ApplicationContext.TokenSource.Token);
+                    context.ExitCode = Utils.RunProcess(processInfo, ApplicationContext.TokenSource.Token);
+                    return;
                 }
             }
-
-            return 0;
         }
 
-        public override ValidationResult Validate(CommandContext context, LegacySettings settings)
+        private void Validate(CommandResult commandResult)
         {
-            var args = settings.Command ?? context.Remaining.Raw;
+            var args = commandResult.GetValueForArgument(_commandArgument);
+            var setEnvironmentVariables = commandResult.GetValueForOption(_legacySettings.SetEnvironmentVariablesOption);
 
-            if (args.Count == 0 && !settings.SetEnvironmentVariables)
+            if (args.Length == 0 && !setEnvironmentVariables)
             {
-                return ValidationResult.Error("No command was specified");
+                commandResult.ErrorMessage = "No command was specified";
             }
-
-            return base.Validate(context, settings);
         }
     }
 }

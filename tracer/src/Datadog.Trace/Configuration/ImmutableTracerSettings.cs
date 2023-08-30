@@ -159,6 +159,8 @@ namespace Datadog.Trace.Configuration
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
 
+            CommandsCollectionEnabled = settings.CommandsCollectionEnabled;
+
             static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
                 if (!string.IsNullOrWhiteSpace(explicitSetting))
@@ -524,6 +526,12 @@ namespace Datadog.Trace.Configuration
         /// even if we are not generating them.
         /// </summary>
         internal bool TraceId128BitLoggingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will send the shell commands of
+        /// the "command_execution" integration to the agent.
+        /// </summary>
+        internal bool CommandsCollectionEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>

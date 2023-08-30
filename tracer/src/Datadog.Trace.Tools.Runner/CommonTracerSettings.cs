@@ -3,31 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.ComponentModel;
-using Spectre.Console.Cli;
+using System.CommandLine;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class CommonTracerSettings : CommandSettings
+    internal class CommonTracerSettings
     {
-        [Description("Sets the environment name for the unified service tagging.")]
-        [CommandOption("--dd-env <ENVIRONMENT>")]
-        public string Environment { get; set; }
+        public CommonTracerSettings(Command command)
+        {
+            command.AddOption(Environment);
+            command.AddOption(Service);
+            command.AddOption(Version);
+            command.AddOption(AgentUrl);
+            command.AddOption(TracerHome);
+        }
 
-        [Description("Sets the service name for the unified service tagging.")]
-        [CommandOption("--dd-service <SERVICE>")]
-        public string Service { get; set; }
+        public Option<string> Environment { get; } = new("--dd-env", "Sets the environment name for the unified service tagging.");
 
-        [Description("Sets the version name for the unified service tagging.")]
-        [CommandOption("--dd-version <VERSION>")]
-        public string Version { get; set; }
+        public Option<string> Service { get; } = new("--dd-service", "Sets the service name for the unified service tagging.");
 
-        [Description("Datadog trace agent url.")]
-        [CommandOption("--agent-url <URL>")]
-        public string AgentUrl { get; set; }
+        public Option<string> Version { get; } = new("--dd-version", "Sets the version name for the unified service tagging.");
 
-        [Description("Sets the tracer home folder path.")]
-        [CommandOption("--tracer-home <PATH>")]
-        public string TracerHome { get; set; }
+        public Option<string> AgentUrl { get; } = new("--agent-url", "Datadog trace agent url.");
+
+        public Option<string> TracerHome { get; } = new("--tracer-home", "Sets the tracer home folder path.");
     }
 }

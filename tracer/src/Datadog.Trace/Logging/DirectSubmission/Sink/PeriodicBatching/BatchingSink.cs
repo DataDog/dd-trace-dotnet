@@ -133,6 +133,8 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
         protected abstract void FlushingEvents(int queueSizeBeforeFlush);
 
+        protected abstract void DelayEvents(TimeSpan delayUntilNextFlush);
+
         private async Task FlushBuffersTaskLoopAsync()
         {
             await Task.WhenAny(_tracerInitialized.Task, _processExit.Task).ConfigureAwait(false);
@@ -273,9 +275,11 @@ namespace Datadog.Trace.Logging.DirectSubmission.Sink.PeriodicBatching
 
             if (noDelay)
             {
+                DelayEvents(TimeSpan.Zero);
                 return Task.CompletedTask;
             }
 
+            DelayEvents(delayTillNextEmit);
             return Task.WhenAny(
                 Task.Delay(delayTillNextEmit),
                 _processExit.Task);

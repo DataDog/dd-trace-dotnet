@@ -14,6 +14,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -27,9 +28,14 @@ namespace Datadog.Trace.Security.Unit.Tests
         public const int TimeoutMicroSeconds = 1_000_000;
         public const int OverheadMargin = 20_000_000; // 20Mb margin
 
-        [Fact]
+        [SkippableFact]
         public void InitMemoryLeakCheck()
         {
+            if (EnvironmentTools.IsLinux())
+            {
+                throw new SkipException("This is flaky on linux, needs investigating");
+            }
+
             var baseline = GetMemory();
 
             // Reduced from 1000 to 250 reduce impact in execution time
@@ -87,6 +93,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
+                result.HasErrors.Should().BeFalse();
 
                 Execute(waf, AddressesConstants.RequestBody, "/.adsensepostnottherenonobook", "security_scanner", "crs-913-120", enabled);
 

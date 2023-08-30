@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -10,7 +10,8 @@
       env: integration_tests,
       http.url: http://localhost:00000/createextraservice/?serviceName=extraVegetables,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.base_service: Samples.Security.AspNetCore5
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -62,7 +63,8 @@
       env: integration_tests,
       http.url: http://localhost:00000/createextraservice/?serviceName=ExTrAvEgEtAbLeS,
       language: dotnet,
-      runtime-id: Guid_1
+      runtime-id: Guid_1,
+      _dd.base_service: Samples.Security.AspNetCore5
     },
     Metrics: {
       _dd.top_level: 1.0
