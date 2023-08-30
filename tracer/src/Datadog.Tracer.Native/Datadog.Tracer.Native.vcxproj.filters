@@ -62,7 +62,7 @@
     <ClCompile Include="fault_tolerant_tracker.cpp">
       <Filter>FaultTolerant</Filter>
     </ClCompile>
-    <ClCompile Include="fault_tolerant_manager.cpp">
+    <ClCompile Include="fault_tolerant_method_duplicator.cpp">
       <Filter>FaultTolerant</Filter>
     </ClCompile>
     <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp">
@@ -164,7 +164,7 @@
     <ClInclude Include="fault_tolerant_tracker.h">
       <Filter>FaultTolerant</Filter>
     </ClInclude>
-    <ClInclude Include="fault_tolerant_manager.h">
+    <ClInclude Include="fault_tolerant_method_duplicator.h">
       <Filter>FaultTolerant</Filter>
     </ClInclude>
     <ClInclude Include="fault_tolerant_envionrment_variables_util.h">

@@ -5,13 +5,13 @@
 #include "../../../shared/src/native-src/string.h"
 #include <corprof.h>
 #include "debugger_members.h"
-#include "fault_tolerant_manager.h"
+#include "fault_tolerant_method_duplicator.h"
 
 // forward declaration
 
 namespace fault_tolerant
 {
-class FaultTolerantManager;
+class FaultTolerantMethodDuplicator;
 } // namespace fault_tolerant
 
 namespace debugger
@@ -26,7 +26,7 @@ private:
     std::unique_ptr<DebuggerRejitPreprocessor> m_debugger_rejit_preprocessor = nullptr;
     std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
     std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
-    std::shared_ptr<fault_tolerant::FaultTolerantManager> m_fault_tolerant_manager = nullptr;
+    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> m_fault_tolerant_method_duplicator = nullptr;
     bool is_debugger_enabled = false;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
@@ -46,7 +46,7 @@ private:
 
 public:
     DebuggerProbesInstrumentationRequester(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
-                                           std::shared_ptr<trace::RejitWorkOffloader> work_offloader, std::shared_ptr<fault_tolerant::FaultTolerantManager> fault_tolerant_manager);
+                                           std::shared_ptr<trace::RejitWorkOffloader> work_offloader, std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator);
 
     void InstrumentProbes(debugger::DebuggerMethodProbeDefinition* methodProbes, int methodProbesLength,
                    debugger::DebuggerLineProbeDefinition* lineProbes, int lineProbesLength,

@@ -272,7 +272,7 @@
     <ClInclude Include="fault_tolerant_tokens.h" />
     <ClInclude Include="fault_tolerant_envionrment_variables_util.h" />
     <ClInclude Include="fault_tolerant_environment_variables.h" />
-    <ClInclude Include="fault_tolerant_manager.h" />
+    <ClInclude Include="fault_tolerant_method_duplicator.h" />
     <ClInclude Include="fault_tolerant_rewriter.h" />
     <ClInclude Include="fault_tolerant_tracker.h" />
     <ClInclude Include="iast\app_domain_info.h" />
@@ -345,7 +345,7 @@
     <ClCompile Include="environment_variables_util.cpp" />
     <ClCompile Include="fault_tolerant_tokens.cpp" />
     <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp" />
-    <ClCompile Include="fault_tolerant_manager.cpp" />
+    <ClCompile Include="fault_tolerant_method_duplicator.cpp" />
     <ClCompile Include="fault_tolerant_rewriter.cpp" />
     <ClCompile Include="fault_tolerant_tracker.cpp" />
     <ClCompile Include="iast\aspect.cpp" />

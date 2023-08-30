@@ -20,7 +20,7 @@
 #include "clr_helpers.h"
 #include "debugger_probes_instrumentation_requester.h"
 #include "Synchronized.hpp"
-#include "fault_tolerant_manager.h"
+#include "fault_tolerant_method_duplicator.h"
 #include "fault_tolerant_rewriter.h"
 
 #include "../../../shared/src/native-src/pal.h"
@@ -39,7 +39,7 @@ class Dataflow;
 
 namespace fault_tolerant
 {
-class FaultTolerantManager;
+class FaultTolerantMethodDuplicator;
 class FaultTolerantRewriter;
 }
 
@@ -85,7 +85,7 @@ private:
     //
     // Fault-Tolerant Instrumentation Members
     //
-    std::shared_ptr<fault_tolerant::FaultTolerantManager> fault_tolerant_manager = nullptr;
+    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator = nullptr;
 
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
@@ -237,7 +237,7 @@ public:
     friend class debugger::DebuggerMethodRewriter;
     friend class TracerMethodRewriter;
     friend class MethodRewriter;
-    friend class fault_tolerant::FaultTolerantManager;
+    friend class fault_tolerant::FaultTolerantMethodDuplicator;
     friend class fault_tolerant::FaultTolerantRewriter;
 };
 

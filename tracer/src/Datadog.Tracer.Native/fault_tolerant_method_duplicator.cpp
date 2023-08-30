@@ -1,4 +1,4 @@
-#include "fault_tolerant_manager.h"
+#include "fault_tolerant_method_duplicator.h"
 
 #include "cor_profiler.h"
 #include "dd_profiler_constants.h"
@@ -6,7 +6,7 @@
 #include "fault_tolerant_tracker.h"
 #include "logger.h"
 
-fault_tolerant::FaultTolerantManager::FaultTolerantManager(CorProfiler* corProfiler,
+fault_tolerant::FaultTolerantMethodDuplicator::FaultTolerantMethodDuplicator(CorProfiler* corProfiler,
     std::shared_ptr<trace::RejitHandler> rejit_handler, std::shared_ptr<trace::RejitWorkOffloader> work_offloader):
     m_corProfiler(corProfiler),
     m_rejit_handler(std::move(rejit_handler)),
@@ -15,7 +15,7 @@ fault_tolerant::FaultTolerantManager::FaultTolerantManager(CorProfiler* corProfi
 {
 }
 
-void fault_tolerant::FaultTolerantManager::Apply(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo,
+void fault_tolerant::FaultTolerantMethodDuplicator::Duplicate(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo,
                                                  ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef) const
 
 {
