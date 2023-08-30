@@ -14,11 +14,7 @@ namespace Datadog.Trace.Iast.Telemetry;
 
 internal static class IastInstrumentationMetricsHelper
 {
-    private static int _instrumentedPropagations = 0;
     private static int _sinksCount = Enum.GetValues(typeof(IastInstrumentedSinks)).Length;
-    private static int _sourceTypesCount = Enum.GetValues(typeof(IastInstrumentedSources)).Length;
-    private static int[] _instrumentedSources = new int[_sourceTypesCount];
-    private static int[] _instrumentedSinks = new int[_sinksCount];
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private static bool _iastEnabled = Iast.Instance.Settings.Enabled;
 
@@ -35,41 +31,34 @@ internal static class IastInstrumentationMetricsHelper
                 instrumentedSinks[i] = 0;
             }
 
-            if (callsiteInstrumentedSources > 0)
-            {
-                // We only have callsite calls for cookie sources
-                ReportSource(IastInstrumentedSources.CookieValue, callsiteInstrumentedSources);
-            }
+            // We only have callsite calls for cookie sources
+            ReportSource(IastInstrumentedSources.CookieValue, callsiteInstrumentedSources);
 
-            for (int i = 0; i < _sourceTypesCount; i++)
-            {
-                ReportSource(((IastInstrumentedSources)i));
-                _instrumentedSources[i] = 0;
-            }
-
-            if (_instrumentedPropagations + callsiteInstrumentedPropagations > 0)
-            {
-                TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(_instrumentedPropagations + callsiteInstrumentedPropagations);
-                _instrumentedPropagations = 0;
-            }
+            ReportPropagations(callsiteInstrumentedPropagations);
         }
     }
 
-    private static void ReportSink(IastInstrumentedSinks tag, int callsiteHits = 0)
+    private static void ReportPropagations(int callsiteHits)
     {
-        var totalHits = _instrumentedSinks[(int)tag] + callsiteHits;
-        if (totalHits > 0)
+        if (callsiteHits > 0)
         {
-            TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(tag, totalHits);
+            TelemetryFactory.Metrics.RecordCountIastInstrumentedPropagations(callsiteHits);
         }
     }
 
-    private static void ReportSource(IastInstrumentedSources tag, int callsiteHits = 0)
+    private static void ReportSink(IastInstrumentedSinks tag, int callsiteHits)
     {
-        var totalHits = _instrumentedSources[(int)tag] + callsiteHits;
-        if (totalHits > 0)
+        if (callsiteHits > 0)
         {
-            TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(tag, totalHits);
+            TelemetryFactory.Metrics.RecordCountIastInstrumentedSinks(tag, callsiteHits);
+        }
+    }
+
+    private static void ReportSource(IastInstrumentedSources tag, int callsiteHits)
+    {
+        if (callsiteHits > 0)
+        {
+            TelemetryFactory.Metrics.RecordCountIastInstrumentedSources(tag, callsiteHits);
         }
     }
 }
