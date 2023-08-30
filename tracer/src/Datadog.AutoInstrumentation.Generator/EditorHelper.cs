@@ -371,6 +371,7 @@ internal static class EditorHelper
             "System.Threading.Tasks.Task`1<System.DateTime[]>" => "Task<DateTime[]>",
             "System.Threading.Tasks.Task`1<System.DateTimeOffset[]>" => "Task<DateTimeOffset[]>",
             "System.Threading.Tasks.Task`1<System.Action[]>" => "Task<Action[]>",
+            "System.Net.Http.HttpClient" => "System.Net.Http.HttpClient",
             _ => null
         };
     }
