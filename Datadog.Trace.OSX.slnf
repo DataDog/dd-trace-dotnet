@@ -3,7 +3,6 @@
     "path": "Datadog.Trace.sln",
     "projects": [
       "tracer\\build\\_build\\_build.csproj",
-      "tracer\\src\\Datadog.AutoInstrumentation.Generator\\Datadog.AutoInstrumentation.Generator.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyGenerator\\Datadog.InstrumentedAssemblyGenerator.csproj",
       "tracer\\src\\Datadog.InstrumentedAssemblyVerification\\Datadog.InstrumentedAssemblyVerification.csproj",
       "tracer\\src\\Datadog.Trace.Annotations\\Datadog.Trace.Annotations.csproj",

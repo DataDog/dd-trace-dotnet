@@ -95,9 +95,16 @@ partial class Build
        .Description("Runs the AutoInstrumentation Generator")
        .Executes(() =>
        {
-           var autoInstGenProj = Solution.GetProject("Datadog.AutoInstrumentation.Generator");
+           var autoInstGenProj =
+               SourceDirectory / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
 
            // We make sure the autoinstrumentation generator builds so we can fail the task if not.
+           DotNetRestore(s => s
+                             .SetDotnetPath(TargetPlatform)
+                             .SetProjectFile(autoInstGenProj)
+                             .SetNoWarnDotNetCore3()
+                             .SetProperty("platform", TargetPlatform));
+
            DotNetBuild(s => s
                            .SetDotnetPath(TargetPlatform)
                            .SetFramework(TargetFramework.NET7_0)
