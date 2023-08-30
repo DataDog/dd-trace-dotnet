@@ -30,7 +30,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetCurrentProcessName()
         {
-            return CurrentProcess.Instance.ProcessName;
+            return CurrentProcess.ProcessName;
         }
 
         /// <summary>
@@ -48,10 +48,9 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessInformation(out string processName, out string machineName, out int processId)
         {
-            var currentProcess = CurrentProcess.Instance;
-            processName = currentProcess.ProcessName;
-            machineName = currentProcess.MachineName;
-            processId = currentProcess.Id;
+            processName = CurrentProcess.ProcessName;
+            machineName = CurrentProcess.MachineName;
+            processId = CurrentProcess.Pid;
         }
 
         /// <summary>
@@ -174,9 +173,18 @@ namespace Datadog.Trace.Util
         {
             internal static readonly Process Instance;
 
+            internal static readonly string ProcessName;
+            internal static readonly string MachineName;
+            internal static readonly int Pid;
+
             static CurrentProcess()
             {
                 Instance = Process.GetCurrentProcess();
+
+                // Cache the information that won't change
+                ProcessName = Instance.ProcessName;
+                MachineName = Instance.MachineName;
+                Pid = Instance.Id;
             }
         }
     }
