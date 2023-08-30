@@ -296,15 +296,15 @@ To run the tool use: `./tracer/build.ps1 RunInstrumentationGenerator`
 
 #### Nuke command:
 
-![nuke command](./images/gen01.png)
+![nuke command](./images/gen01.jpg)
 
 #### Main window:
 
-![tool main window](./images/gen02.png)
+![tool main window](./images/gen02.jpg)
 
 #### Creating a new Instrumentation class with the DuckType proxies:
 
-![tool main window](./images/gen03.png)
+![tool main window](./images/gen03.jpg)
 
 ### Testing
 
