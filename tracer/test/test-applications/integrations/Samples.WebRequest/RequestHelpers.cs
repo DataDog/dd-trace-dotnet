@@ -330,6 +330,52 @@ namespace Samples.WebRequest
                     Console.WriteLine("Received response for request.GetResponse()");
                 }
 
+                using (SampleHelpers.CreateScope("GetResponseNotFound"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseNotFound", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    try
+                    {
+                        request.GetResponse().Close();
+                    }
+                    catch
+                    {
+                        // Gotta catch em all!
+                    }
+                    finally
+                    {
+                        Console.WriteLine("Received response for request.GetResponse()");
+                    }
+                }
+
+                using (SampleHelpers.CreateScope("GetResponseTeapot"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseTeapot", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    try
+                    {
+                        request.GetResponse().Close();
+                    }
+                    catch
+                    {
+                        // Gotta catch em all!
+                    }
+                    finally
+                    {
+                        Console.WriteLine("Received response for request.GetResponse()");
+                    }
+                }
+
                 using (SampleHelpers.CreateScope("GetResponseAsync"))
                 {
                     // Create separate request objects since .NET Core asserts only one response per request
@@ -341,6 +387,52 @@ namespace Samples.WebRequest
 
                     (await request.GetResponseAsync()).Close();
                     Console.WriteLine("Received response for request.GetResponseAsync()");
+                }
+
+                using (SampleHelpers.CreateScope("GetResponseAsyncNotFound"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseAsyncNotFound", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    try
+                    {
+                        (await request.GetResponseAsync()).Close();
+                    }
+                    catch
+                    {
+                        // Gotta catch em all!
+                    }
+                    finally
+                    {
+                        Console.WriteLine("Received response for request.GetResponse()");
+                    }
+                }
+
+                using (SampleHelpers.CreateScope("GetResponseAsyncTeapot"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseAsyncTeapot", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    try
+                    {
+                        (await request.GetResponseAsync()).Close();
+                    }
+                    catch
+                    {
+                        // Gotta catch em all!
+                    }
+                    finally
+                    {
+                        Console.WriteLine("Received response for request.GetResponse()");
+                    }
                 }
 
                 using (SampleHelpers.CreateScope("GetRequestStream"))
@@ -355,7 +447,17 @@ namespace Samples.WebRequest
 
                 using (SampleHelpers.CreateScope("BeginGetResponse"))
                 {
-                    BeginGetResponse(tracingDisabled, url);
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url);
+                }
+
+                using (SampleHelpers.CreateScope("BeginGetResponseNotFound"))
+                {
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseNotFoundAsync", url);
+                }
+
+                using (SampleHelpers.CreateScope("BeginGetResponseTeapot"))
+                {
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseTeapotAsync", url);
                 }
 
                 using (SampleHelpers.CreateScope("BeginGetResponse TaskFactoryFromAsync"))
@@ -380,10 +482,10 @@ namespace Samples.WebRequest
 
         }
 
-        private static void BeginGetResponse(bool tracingDisabled, string url)
+        private static void BeginGetResponse(bool tracingDisabled, string testName, string url)
         {
             // Create separate request objects since .NET Core asserts only one response per request
-            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetResponseAsync", url));
+            HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
             request.Method = "POST";
             request.ContentLength = 1;
             request.AllowWriteStreamBuffering = false;
@@ -400,9 +502,15 @@ namespace Samples.WebRequest
                 iar =>
                 {
                     var req = (HttpWebRequest)iar.AsyncState;
-                    var response = req.EndGetResponse(iar);
-
-                    response.Close();
+                    try
+                    {
+                        var response = req.EndGetResponse(iar);
+                        response.Close();
+                    }
+                    catch
+                    {
+                        // Gotta catch em all!
+                    }
 
                     Console.WriteLine("Received response for request.Begin/EndGetResponse()");
                     _allDone.Set();

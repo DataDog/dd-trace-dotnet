@@ -21,6 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public WebRequestTests(ITestOutputHelper output)
             : base("WebRequest", output)
         {
+            SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "410-499");
             SetServiceVersion("1.0.0");
         }
 
@@ -71,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private void RunTest(string metadataSchemaVersion)
         {
             SetInstrumentationVerification();
-            var expectedSpanCount = 76;
+            var expectedSpanCount = 82;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -88,6 +89,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var spans = agent.WaitForSpans(expectedSpanCount).OrderBy(s => s.Start);
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
+
+                var okSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "200").ToList();
+                var notFoundSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "404").ToList();
+                var teapotSpans = spans.Where(s => s.Tags[Tags.HttpStatusCode] == "418").ToList();
+
+                (okSpans.Count + notFoundSpans.Count + teapotSpans.Count).Should().Be(expectedSpanCount);
+                okSpans.Should().OnlyContain(s => s.Error == 0);
+                notFoundSpans.Should().OnlyContain(s => s.Error == 0);
+                teapotSpans.Should().OnlyContain(s => s.Error == 1);
 
                 var firstSpan = spans.First();
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);

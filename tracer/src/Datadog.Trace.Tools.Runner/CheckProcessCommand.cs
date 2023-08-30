@@ -3,28 +3,41 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
-using Spectre.Console.Cli;
-
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class CheckProcessCommand : AsyncCommand<CheckProcessSettings>
+    internal class CheckProcessCommand : Command
     {
-        public override async Task<int> ExecuteAsync(CommandContext context, CheckProcessSettings settings)
-        {
-            AnsiConsole.WriteLine("Running checks on process " + settings.Pid);
+        private readonly Argument<int> _pidArgument = new("pid");
 
-            var process = ProcessInfo.GetProcessInfo(settings.Pid);
+        public CheckProcessCommand()
+            : base("process")
+        {
+            AddArgument(_pidArgument);
+
+            this.SetHandler(ExecuteAsync);
+        }
+
+        private async Task ExecuteAsync(InvocationContext context)
+        {
+            var pid = _pidArgument.GetValue(context);
+
+            AnsiConsole.WriteLine("Running checks on process " + pid);
+
+            var process = ProcessInfo.GetProcessInfo(pid);
 
             if (process == null)
             {
                 Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             AnsiConsole.WriteLine("Process name: " + process.Name);
@@ -43,19 +56,19 @@ namespace Datadog.Trace.Tools.Runner
 
             if (foundIssue)
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             foundIssue = !await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false);
 
             if (foundIssue)
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             Utils.WriteSuccess("No issue found with the target process.");
-
-            return 0;
         }
     }
 }

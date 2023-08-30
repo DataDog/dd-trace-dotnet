@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests;
 
-[CollectionDefinition("SecuritySequentialTests", DisableParallelization = true)]
+[CollectionDefinition(nameof(SecuritySequentialTests), DisableParallelization = true)]
 public class SecuritySequentialTests
 {
 }

@@ -40,6 +40,7 @@ ModuleInfo::~ModuleInfo()
     DEL_MAP_VALUES(_specs);
     DEL_MAP_VALUES(_methods);
     DEL_MAP_VALUES(_fields);
+    DEL_MAP_VALUES(_properties);
     DEL_MAP_VALUES(_signatures);
 }
 
@@ -159,6 +160,10 @@ MemberRefInfo* ModuleInfo::GetMemberRefInfo(mdMemberRef token)
     {
         return GetFieldInfo(token);
     }
+    else if (typeFromToken == mdtProperty)
+    {
+        return GetPropertyInfo(token);
+    }
     else if (typeFromToken == mdtMethodSpec)
     {
         return GetMethodSpec(token);
@@ -180,6 +185,12 @@ FieldInfo* ModuleInfo::GetFieldInfo(mdFieldDef fieldDef)
 {
     CSGUARD(_cs);
     return Get<mdFieldDef, FieldInfo>(_fields, fieldDef, [this, fieldDef]() { return new iast::FieldInfo(this, fieldDef); });
+}
+
+PropertyInfo* ModuleInfo::GetPropertyInfo(mdProperty propId)
+{
+    CSGUARD(_cs);
+    return Get<mdProperty, PropertyInfo>(_properties, propId, [this, propId]() { return new iast::PropertyInfo(this, propId); });
 }
 
 MethodSpec* ModuleInfo::GetMethodSpec(mdMethodSpec methodSpec)
@@ -260,6 +271,34 @@ std::vector<MethodInfo*> ModuleInfo::GetMethods(mdTypeDef typeDef)
     this->_metadataImport->CloseEnum(hCorEnum);
     return methods;
 }
+
+std::vector<PropertyInfo*> ModuleInfo::GetProperties(mdTypeDef typeDef)
+{
+    HCORENUM hCorEnum = nullptr;
+    std::vector<PropertyInfo*> res;
+    mdProperty elements[64];
+    ULONG elementCount;
+
+    HRESULT hr = this->_metadataImport->EnumProperties(&hCorEnum, typeDef, elements,
+                                                            sizeof(elements) / sizeof(elements[0]),
+                                                            &elementCount);
+    if (SUCCEEDED(hr) && elementCount > 0)
+    {
+        res.reserve(elementCount);
+        for (ULONG i = 0; i < elementCount; i++)
+        {
+            auto element = GetPropertyInfo(elements[i]);
+            if (element)
+            {
+                res.push_back(element);
+            }
+        }
+    }
+
+    this->_metadataImport->CloseEnum(hCorEnum);
+    return res;
+}
+
 std::vector<MethodInfo*> ModuleInfo::GetMethods(mdTypeDef typeDef, const WSTRING& name)
 {
     HCORENUM hCorEnum = nullptr;
@@ -835,4 +874,39 @@ mdToken ModuleInfo::DefineMemberRef(const WSTRING& moduleName, const WSTRING& ty
         return 0;
     }
 }
+
+std::vector<WSTRING> ModuleInfo::GetCustomAttributes(mdToken token)
+{
+    std::vector<WSTRING> res;
+
+    HCORENUM hCorEnum = nullptr;
+    mdCustomAttribute enumeratedElements[64];
+    ULONG enumCount;
+
+    while (_metadataImport->EnumCustomAttributes(&hCorEnum, token, mdTokenNil, enumeratedElements,
+                                                sizeof(enumeratedElements) / sizeof(enumeratedElements[0]),
+                                                &enumCount) == S_OK)
+    {
+        mdToken attributeParentToken = mdTokenNil;
+        mdToken attributeCtorToken = mdTokenNil;
+        const void* attribute_data = nullptr; // Pointer to receive attribute data, which is not needed for our purposes
+        DWORD data_size = 0;
+
+        for (ULONG i = 0; i < enumCount; i++)
+        {
+            HRESULT hr = _metadataImport->GetCustomAttributeProps(enumeratedElements[i], &attributeParentToken,
+                                                                 &attributeCtorToken, &attribute_data, &data_size);
+            if (SUCCEEDED(hr))
+            {
+                auto attrCtor = GetMemberRefInfo(attributeCtorToken);
+                res.push_back(attrCtor->GetTypeName());
+            }
+        }
+    }
+
+    _metadataImport->CloseEnum(hCorEnum);
+    return res;
+}
+
+
 } // namespace iast

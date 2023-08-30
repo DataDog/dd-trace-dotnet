@@ -127,6 +127,7 @@ internal class DataStreamsAggregator
             {
                 _sketchPool.Release(bucket.Value.EdgeLatency);
                 _sketchPool.Release(bucket.Value.PathwayLatency);
+                _sketchPool.Release(bucket.Value.PayloadSize);
             }
         }
     }
@@ -149,7 +150,8 @@ internal class DataStreamsAggregator
                 hash: point.Hash,
                 parentHash: point.ParentHash,
                 pathwayLatency: _sketchPool.Get(),
-                edgeLatency: _sketchPool.Get());
+                edgeLatency: _sketchPool.Get(),
+                payloadSize: _sketchPool.Get());
             bucket[point.Hash.Value] = group;
         }
 
@@ -158,6 +160,7 @@ internal class DataStreamsAggregator
 
         var edgeLatencySeconds = Convert.ToDouble(point.EdgeLatencyNs) / 1_000_000_000;
         group.EdgeLatency.Add(Math.Max(edgeLatencySeconds, 0));
+        group.PayloadSize.Add(point.PayloadSizeBytes);
     }
 
     /// <summary>

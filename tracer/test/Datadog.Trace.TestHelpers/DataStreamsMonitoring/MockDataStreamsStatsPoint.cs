@@ -25,6 +25,9 @@ public class MockDataStreamsStatsPoint
     [Key(nameof(EdgeLatency))]
     public byte[] EdgeLatency { get; set; }
 
+    [Key(nameof(PayloadSize))]
+    public byte[] PayloadSize { get; set; }
+
     [Key(nameof(TimestampType))]
     public string TimestampType { get; set; }
 }

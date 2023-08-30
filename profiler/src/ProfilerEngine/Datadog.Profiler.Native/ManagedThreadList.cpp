@@ -261,6 +261,7 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
         return E_FAIL;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     pThreadInfo = FindByClrId(clrThreadId);
     if (pThreadInfo != nullptr)
     {

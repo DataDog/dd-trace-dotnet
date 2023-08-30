@@ -26,9 +26,10 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
-        sample->AddValue(1, valueOffset);
+        assert(valueOffsets.size() == 1);
+        sample->AddValue(1, valueOffsets[0]);
         sample->AddLabel(Label(Sample::ExceptionMessageLabel, ExceptionMessage));
         sample->AddLabel(Label(Sample::ExceptionTypeLabel, ExceptionType));
     }

@@ -70,6 +70,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
@@ -77,6 +78,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, false);
 
@@ -85,6 +87,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
@@ -93,7 +96,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
-            result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
         }
@@ -122,6 +125,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
+                result.HasErrors.Should().BeFalse();
                 Execute(waf, attackParts1, true, "block");
                 Execute(waf, attackParts2, true);
             }

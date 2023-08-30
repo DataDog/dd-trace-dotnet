@@ -6,6 +6,7 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
@@ -87,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
+                    await ReportRetry(_output, attemptsRemaining, ex);
                 }
             }
         }
@@ -124,6 +125,44 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var contentionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.threads.contention_count"));
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
+            }
+
+// using #if so it's a different test to the one we use in RuntimeMetricsWriter
+#if NETFRAMEWORK || NETCOREAPP3_1_OR_GREATER
+            var runtimeIsBuggy = false;
+#else
+            // https://github.com/dotnet/runtime/issues/23284
+            var runtimeIsBuggy = !EnvironmentTools.IsWindows();
+#endif
+            if (runtimeIsBuggy)
+            {
+                requests.Should().NotContain(s => s.Contains(MetricsNames.CommittedMemory));
+            }
+            else
+            {
+                // these values shouldn't stay the same
+                var memoryRequests = requests
+                                    .Where(r => r.Contains(MetricsNames.CommittedMemory))
+                                    .Select(
+                                         r =>
+                                         {
+                                             _output.WriteLine($"Parsing metrics from {r}");
+                                             // parse to find the memory
+                                             var startIndex = r.IndexOf(MetricsNames.CommittedMemory, StringComparison.Ordinal);
+                                             var separator = r.IndexOf(':', startIndex + 1);
+                                             var endIndex = r.IndexOf('|', separator + 1);
+                                             var name = r.Substring(startIndex, separator - startIndex);
+                                             name.Should().Be(MetricsNames.CommittedMemory);
+                                             return long.Parse(r.Substring(separator + 1, endIndex - separator - 1));
+                                         })
+                                    .ToList();
+
+                if (memoryRequests.Count >= 2)
+                {
+                    // skip the case where we only get one metric for some reason
+                    // Don't require completely distinct to reduce flake
+                    memoryRequests.Distinct().Should().NotHaveCount(1);
+                }
             }
 
             Assert.Empty(agent.Exceptions);

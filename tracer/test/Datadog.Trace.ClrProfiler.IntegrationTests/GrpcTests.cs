@@ -418,9 +418,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
-                if ((string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0"))
-                    && processResult is not null
-                    && processResult.StandardError.Contains("ObjectDisposedException"))
+                if (!string.IsNullOrEmpty(packageVersion)
+                 && new Version(packageVersion) < new Version("2.43.0")
+                 && processResult is not null
+                 && processResult.StandardError.Contains("ObjectDisposedException"))
                 {
                     throw new SkipException("Hit race condition in GRPC deadline exceeded");
                 }
@@ -459,7 +460,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 // There is a race condition in GRPC version < v2.43.0 that can cause ObjectDisposedException
                 // when a deadline is exceeded. Skip the test if we hit it: https://github.com/grpc/grpc-dotnet/pull/1550
-                if ((string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) < new Version("2.43.0"))
+                if ((!string.IsNullOrEmpty(packageVersion) && new Version(packageVersion) < new Version("2.43.0"))
                     && processResult is not null
                     && processResult.StandardError.Contains("ObjectDisposedException"))
                 {
@@ -489,8 +490,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected bool IsSupportedVersion(string packageVersion)
         {
-            return string.IsNullOrEmpty(packageVersion)
-                || new Version(packageVersion) >= new Version("2.30.0");
+            return string.IsNullOrEmpty(packageVersion) || new Version(packageVersion) >= new Version("2.30.0");
         }
     }
 }

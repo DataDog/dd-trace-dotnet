@@ -18,8 +18,8 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.0.1 -->
-    <PackageReference Include="Aerospike.Client" Version="6.0.1" />
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.1.0 -->
+    <PackageReference Include="Aerospike.Client" Version="6.1.0" />
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
@@ -28,28 +28,28 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.200.6 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.200.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.2 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.201.2" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.6 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.22 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.22" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.7 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.7" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.23 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.23" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.35.2 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.2" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.35.3 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.3" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
-    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.9 -->
-    <PackageReference Include="CouchbaseNetClient" Version="3.4.9" />
+    <!-- Latest package https://www.nuget.org/packages/CouchbaseNetClient/3.4.10 -->
+    <PackageReference Include="CouchbaseNetClient" Version="3.4.10" />
 
     <!-- Integration: Elasticsearch.Net -->
     <!-- Assembly: Elasticsearch.Net -->
@@ -58,8 +58,8 @@
 
     <!-- Integration: GraphQL -->
     <!-- Assembly: GraphQL -->
-    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.6.0 -->
-    <PackageReference Include="GraphQL" Version="7.6.0" />
+    <!-- Latest package https://www.nuget.org/packages/GraphQL/7.6.1 -->
+    <PackageReference Include="GraphQL" Version="7.6.1" />
 
     <!-- Integration: GraphQL.SystemReactive -->
     <!-- Assembly: GraphQL.SystemReactive -->
@@ -73,8 +73,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.4.0 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.4.0" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.5.0 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.5.0" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -108,13 +108,13 @@
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.20.0 -->
-    <PackageReference Include="MongoDB.Driver.Core" Version="2.20.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver.Core/2.21.0 -->
+    <PackageReference Include="MongoDB.Driver.Core" Version="2.21.0" />
 
     <!-- Integration: MongoDB.Driver.Core -->
     <!-- Assembly: MongoDB.Driver.Core -->
-    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.20.0 -->
-    <PackageReference Include="MongoDB.Driver" Version="2.20.0" />
+    <!-- Latest package https://www.nuget.org/packages/MongoDB.Driver/2.21.0 -->
+    <PackageReference Include="MongoDB.Driver" Version="2.21.0" />
 
     <!-- Integration: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
     <!-- Assembly: Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter -->
@@ -138,8 +138,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.2 -->
-    <PackageReference Include="NLog" Version="5.2.2" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.3 -->
+    <PackageReference Include="NLog" Version="5.2.3" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -193,8 +193,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.9 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.9" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.10 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.10" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
@@ -258,8 +258,8 @@
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!-- Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.9 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.9" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.10 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.10" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->

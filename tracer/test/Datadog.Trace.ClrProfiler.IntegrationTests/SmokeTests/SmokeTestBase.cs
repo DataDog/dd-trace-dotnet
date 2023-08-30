@@ -131,20 +131,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
                 Spans = agent.Spans;
             }
 
-#if NETCOREAPP2_1
-            if (result.ExitCode == 139)
-            {
-                // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
-                throw new SkipException("Segmentation fault on .NET Core 2.1");
-            }
-#endif
-            if (result.ExitCode == 134
-             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
-             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
-            {
-                // Coverlet occasionally throws AbandonedMutexException during clean up
-                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
-            }
+            ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
 
             ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
 

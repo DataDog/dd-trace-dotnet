@@ -71,6 +71,7 @@ namespace Datadog.Trace.Util
         public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
         {
             var process = CurrentProcess.Instance;
+            process.Refresh();
             userProcessorTime = process.UserProcessorTime;
             systemCpuTime = process.PrivilegedProcessorTime;
             threadCount = process.Threads.Count;
