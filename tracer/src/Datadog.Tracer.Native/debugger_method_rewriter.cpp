@@ -330,10 +330,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
     }
 }
 
-InstrumentingProduct DebuggerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+InstrumentingProducts DebuggerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler)
 {
-    return InstrumentingProduct::DynamicInstrumentation;
+    return InstrumentingProducts::DynamicInstrumentation;
 }
 
 WSTRING DebuggerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,

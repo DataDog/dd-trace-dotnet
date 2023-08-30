@@ -130,7 +130,7 @@ private:
 
 public:
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
-    InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     static HRESULT IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                      ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine);

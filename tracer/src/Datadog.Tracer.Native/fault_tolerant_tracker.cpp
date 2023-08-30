@@ -104,3 +104,15 @@ std::tuple<LPCBYTE, ULONG> fault_tolerant::FaultTolerantTracker::GetILBodyAndSiz
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
     return _methodBodies[methodIdentifier];
 }
+
+void fault_tolerant::FaultTolerantTracker::ReportSuccessfulInstrumentation(ModuleID moduleId, mdMethodDef methodId,
+    const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products)
+{
+
+}
+
+bool fault_tolerant::FaultTolerantTracker::ShouldHeal(ModuleID moduleId, mdMethodDef methodId,
+    const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products)
+{
+    return false;
+}

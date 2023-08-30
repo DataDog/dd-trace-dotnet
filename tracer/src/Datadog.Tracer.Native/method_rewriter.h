@@ -28,7 +28,7 @@ public:
     }
 
     virtual HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) = 0;
-    virtual InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+    virtual InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
                                               RejitHandlerModuleMethod* methodHandler) = 0;
     virtual WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
                                               RejitHandlerModuleMethod* methodHandler) = 0;
@@ -50,7 +50,7 @@ public:
 
     HRESULT Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl) override;
 
-    InstrumentingProduct GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
+    InstrumentingProducts GetInstrumentingProduct(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
     WSTRING GetInstrumentationVersion(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler) override;
 
     std::tuple<WSTRING, WSTRING> GetResourceNameAndOperationName(const ComPtr<IMetaDataImport2>& metadataImport,

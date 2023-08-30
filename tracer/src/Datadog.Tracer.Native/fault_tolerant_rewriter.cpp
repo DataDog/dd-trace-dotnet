@@ -269,7 +269,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     }
 
     // static bool ShouldHeal(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion,
-    // InstrumentingProduct products)
+    // InstrumentingProducts products)
 
     ILInstr* catchBegin;
     if (sizeof(UINT_PTR) == 4) // 32-bit
@@ -454,7 +454,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     }
 
     // static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion,
-    // InstrumentingProduct products)
+    // InstrumentingProducts products)
 
     if (sizeof(UINT_PTR) == 4) // 32-bit
     {
@@ -683,7 +683,7 @@ HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitH
     return (FAILED(hr) || hr == S_FALSE) ? S_FALSE : S_OK;
 }
 
-InstrumentingProduct FaultTolerantRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+InstrumentingProducts FaultTolerantRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
                                                                     RejitHandlerModuleMethod* methodHandler)
 {
     return m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
