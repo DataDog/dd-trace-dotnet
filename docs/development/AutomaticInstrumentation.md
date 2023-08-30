@@ -26,6 +26,8 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
 
 ### Creating a new automatic instrumentation implementation
 
+> Note that you can use the [AutoInstrumentation Generator](#autoinstrumentation-generator) tool to help you with this process.
+
 Creating a new instrumentation implementation typically uses the following process:
 
 1. Identify the operation of interest that we want to measure. Also gather the tags, resource names that we will need to set. Don't forget to check what has been implemented by other tracers.
@@ -285,6 +287,24 @@ There are some current limitations with what types/methods with our `CallTarget`
 5. Methods in a Generic type will not expose the Generic type instance (the instance will be casted as a nongeneric base type or `object` type).
 
 Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
+
+### AutoInstrumentation Generator
+
+There's a tool to help developers in the process of creating all the boilerplate code for new instrumentations.
+
+To run the tool use: `./tracer/build.ps1 RunInstrumentationGenerator`
+
+#### Nuke command:
+
+![nuke command](./images/gen01.png)
+
+#### Main window:
+
+![tool main window](./images/gen02.png)
+
+#### Creating a new Instrumentation class with the DuckType proxies:
+
+![tool main window](./images/gen03.png)
 
 ### Testing
 
