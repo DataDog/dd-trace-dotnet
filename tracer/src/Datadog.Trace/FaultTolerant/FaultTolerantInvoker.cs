@@ -32,18 +32,14 @@ namespace Datadog.Trace.FaultTolerant
         {
             try
             {
-                return ShouldHealInternal(ex, instrumentationVersion, (InstrumentingProducts)products);
+                return System.Threading.Tasks.Task.Run(
+                    () => FaultTolerantNativeMethods.ShouldHeal(moduleId, methodToken, instrumentationVersion, products)).GetAwaiter().GetResult();
             }
             catch (Exception e)
             {
                 Log.Warning(e, "Failed to determine if we should-self-heal. ex = {ExceptionToString}, InstrumentedMethodName = {InstrumentationVersion}, Products = {Products}", new object[] { ex.ToString(), instrumentationVersion, products.ToString() });
                 return false;
             }
-        }
-
-        private static bool ShouldHealInternal(Exception ex, string instrumentationVersion, InstrumentingProducts products)
-        {
-            return true;
         }
 
         /// <summary>
@@ -55,9 +51,20 @@ namespace Datadog.Trace.FaultTolerant
         /// <param name="products">The product(s) applied the instrumentation</param>
         public static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion, int products)
         {
-            var instrumentingProducts = (InstrumentingProducts)products;
+            Log.Information("Succeeded to instrument using {Products} the method: {MethodToken}, Instrumentation Version: {InstrumentationVersion}", new object[] { ((InstrumentingProducts)products).ToString(), methodToken, instrumentationVersion });
 
-            Log.Information("Succeeded to instrument using {Products} the method: {MethodToken}, Instrumentation Version: {InstrumentationVersion}", new object[] { instrumentingProducts.ToString(), methodToken, instrumentationVersion });
+            try
+            {
+                System.Threading.Tasks.Task.Run(
+                    () =>
+                    {
+                        FaultTolerantNativeMethods.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
+                    }).GetAwaiter().GetResult();
+            }
+            catch (Exception e)
+            {
+                Log.Warning(e, "Failed to mark the instrumentation as successful. InstrumentedMethodName = {InstrumentationVersion}, Products = {Products}", new object[] { instrumentationVersion, ((InstrumentingProducts)products).ToString() });
+            }
         }
     }
 }

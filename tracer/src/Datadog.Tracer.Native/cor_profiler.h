@@ -224,6 +224,12 @@ public:
     int GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugger::DebuggerProbeStatus* probeStatuses);
 
     //
+    // Fault-Tolerant Instrumentation methods
+    //
+    void ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products);
+    bool ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products);
+
+    //
     // Disable profiler
     //
     void DisableTracerCLRProfiler();

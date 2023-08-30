@@ -711,10 +711,10 @@ HRESULT TracerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHa
     return S_OK;
 }
 
-InstrumentingProduct TracerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+InstrumentingProducts TracerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler)
 {
-    return InstrumentingProduct::Tracer;
+    return InstrumentingProducts::Tracer;
 }
 
 WSTRING TracerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,

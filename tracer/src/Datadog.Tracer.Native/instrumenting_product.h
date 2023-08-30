@@ -3,31 +3,31 @@
 
 namespace trace
 {
-// Matches Datadog.Trace.FaultTolerant.InstrumentingProduct
-enum class InstrumentingProduct : int
+// Matches Datadog.Trace.FaultTolerant.InstrumentingProducts
+enum class InstrumentingProducts : int
 {
     Tracer = 0x01,
     DynamicInstrumentation = 0x02,
     ASM = 0x04
 };
 
-constexpr InstrumentingProduct operator|(InstrumentingProduct lhs, InstrumentingProduct rhs)
+constexpr InstrumentingProducts operator|(InstrumentingProducts lhs, InstrumentingProducts rhs)
 {
-    return static_cast<InstrumentingProduct>(static_cast<int>(lhs) | static_cast<int>(rhs));
+    return static_cast<InstrumentingProducts>(static_cast<int>(lhs) | static_cast<int>(rhs));
 }
 
-constexpr InstrumentingProduct operator&(InstrumentingProduct lhs, InstrumentingProduct rhs)
+constexpr InstrumentingProducts operator&(InstrumentingProducts lhs, InstrumentingProducts rhs)
 {
-    return static_cast<InstrumentingProduct>(static_cast<int>(lhs) & static_cast<int>(rhs));
+    return static_cast<InstrumentingProducts>(static_cast<int>(lhs) & static_cast<int>(rhs));
 }
 
-inline InstrumentingProduct& operator|=(InstrumentingProduct& lhs, InstrumentingProduct rhs)
+inline InstrumentingProducts& operator|=(InstrumentingProducts& lhs, InstrumentingProducts rhs)
 {
     lhs = lhs | rhs;
     return lhs;
 }
 
-inline InstrumentingProduct& operator&=(InstrumentingProduct& lhs, InstrumentingProduct rhs)
+inline InstrumentingProducts& operator&=(InstrumentingProducts& lhs, InstrumentingProducts rhs)
 {
     lhs = lhs & rhs;
     return lhs;

@@ -216,6 +216,26 @@ EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int 
     return trace::profiler->UpdateSettings(keys, values, length);
 }
 
+EXTERN_C VOID STDAPICALLTYPE ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, WCHAR* instrumentationVersion, int products)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in ReportSuccessfulInstrumentation call. Tracer CLR Profiler was not initialized.");
+    }
+
+    return trace::profiler->ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
+}
+
+EXTERN_C BOOL STDAPICALLTYPE ShouldHeal(ModuleID moduleId, int methodToken, WCHAR* instrumentationVersion, int products)
+{
+    if (trace::profiler == nullptr)
+    {
+        trace::Logger::Error("Error in ShouldHeal call. Tracer CLR Profiler was not initialized.");
+    }
+
+    return trace::profiler->ShouldHeal(moduleId, methodToken, instrumentationVersion, products);
+}
+
 #ifndef _WIN32
 EXTERN_C void *dddlopen (const char *__file, int __mode)
 {

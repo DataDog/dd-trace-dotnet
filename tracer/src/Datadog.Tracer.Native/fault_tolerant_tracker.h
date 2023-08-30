@@ -3,6 +3,7 @@
 
 #include "../../../shared/src/native-src/util.h"
 #include "corhlpr.h"
+#include "instrumenting_product.h"
 #include "integration.h"
 #include <corprof.h>
 #include <mutex>
@@ -38,6 +39,9 @@ public:
     bool IsInstrumentedMethod(ModuleID moduleId, mdMethodDef methodId);
     void CacheILBodyIfEmpty(ModuleID moduleId, mdMethodDef methodId, LPCBYTE pMethodBytes, ULONG methodSize);
     std::tuple<LPCBYTE, ULONG> GetILBodyAndSize(ModuleID moduleId, mdMethodDef methodId);
+
+    void ReportSuccessfulInstrumentation(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products);
+    bool ShouldHeal(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products);
 };
 
 } // namespace fault_tolerant

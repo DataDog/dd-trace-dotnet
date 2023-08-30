@@ -10,6 +10,7 @@
 #include "dllmain.h"
 #include "environment_variables.h"
 #include "environment_variables_util.h"
+#include "fault_tolerant_tracker.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
 #include "integration.h"
@@ -878,10 +879,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, fault_tolerant_windows_nativemethods_type);
 #else
         RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
@@ -2121,6 +2124,26 @@ int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugge
     }
 
     return 0;
+}
+
+//
+// Fault-Tolerant Instrumentation methods
+//
+void CorProfiler::ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion,
+    int products)
+{
+    const auto& instrumentationVersionString = shared::WSTRING(instrumentationVersion);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    fault_tolerant::FaultTolerantTracker::Instance()->ReportSuccessfulInstrumentation(moduleId, methodId, instrumentationVersionString, instrumentingProducts);
+}
+
+bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products)
+{
+    const auto& instrumentationVersionString = shared::WSTRING(instrumentationVersion);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationVersionString, instrumentingProducts);
 }
 
 //
