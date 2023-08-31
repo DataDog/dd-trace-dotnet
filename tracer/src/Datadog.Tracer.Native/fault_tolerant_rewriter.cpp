@@ -3,6 +3,7 @@
 #include "cor_profiler.h"
 #include "dd_profiler_constants.h"
 #include "environment_variables_util.h"
+#include "fault_tolerant_cor_profiler_function_control.h"
 #include "fault_tolerant_envionrment_variables_util.h"
 #include "fault_tolerant_tracker.h"
 #include "il_rewriter_wrapper.h"
@@ -11,13 +12,11 @@
 using namespace fault_tolerant;
 
 FaultTolerantRewriter::FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter,
-                                             std::shared_ptr<RejitHandler> rejit_handler,
-                                             std::shared_ptr<RejitWorkOffloader> work_offloader) :
+                                             std::shared_ptr<RejitHandler> rejit_handler) :
     MethodRewriter(corProfiler),
     is_fault_tolerant_instrumentation_enabled(IsFaultTolerantInstrumentationEnabled()),
     m_methodRewriter(std::move(methodRewriter)),
-    m_rejit_handler(std::move(rejit_handler)),
-    m_work_offloader(std::move(work_offloader))
+    m_rejit_handler(std::move(rejit_handler))
 {
 }
 
@@ -46,16 +45,10 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     auto methodIdOfInstrumentedMethod = FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleId, methodId);
 
     // Request ReJIT for instrumented and original duplications.
-    std::set<MethodIdentifier> rejitRequests{};
-    rejitRequests.insert({moduleId, methodIdOfOriginalMethod});
-    rejitRequests.insert({moduleId, methodIdOfInstrumentedMethod});
-
+    std::vector<MethodIdentifier> requests = {{moduleId, methodIdOfOriginalMethod}, {moduleId, methodIdOfInstrumentedMethod}};
     auto promise = std::make_shared<std::promise<void>>();
-    std::future<void> future = promise->get_future();
-    std::vector<MethodIdentifier> requests(rejitRequests.size());
-    std::copy(rejitRequests.begin(), rejitRequests.end(), requests.begin());
-    EnqueueRequestRejit(requests, promise);
-    // wait and get the value from the future<void>
+    auto future = promise->get_future();
+    m_rejit_handler->EnqueueRequestRejit(requests, promise);
     future.get();
 
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
@@ -268,7 +261,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         return hr;
     }
 
-    // static bool ShouldHeal(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // static bool IsInstrumentationVersionSucceeded(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion,
     // InstrumentingProducts products)
 
     ILInstr* catchBegin;
@@ -416,7 +409,8 @@ HRESULT FaultTolerantRewriter::ApplyOriginalInstrumentation(RejitHandlerModule* 
 
 HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModule* moduleHandler,
                                                                RejitHandlerModuleMethod* methodHandler,
-                                                               ICorProfilerFunctionControl* pFunctionControl) const
+                                                               ICorProfilerFunctionControl* pFunctionControl,
+                                                               LPCBYTE pMethodBytes) const
 {
     const auto moduleId = moduleHandler->GetModuleId();
     const auto methodId = methodHandler->GetMethodDef();
@@ -427,7 +421,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     faultTolerantTokens->EnsureCorLibTokens();
 
     ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, moduleId, methodId);
-    auto hr = rewriter.Import();
+    auto hr = rewriter.Import(pMethodBytes);
 
     if (FAILED(hr))
     {
@@ -453,7 +447,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
         return hr;
     }
 
-    // static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // static void AddSuccessfulInstrumentationVersion(IntPtr moduleId, int methodToken, string instrumentationVersion,
     // InstrumentingProducts products)
 
     if (sizeof(UINT_PTR) == 4) // 32-bit
@@ -505,7 +499,29 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
 
     if (FaultTolerantTracker::Instance()->IsKickoffMethod(moduleId, methodId))
     {
-        return ApplyKickoffInstrumentation(moduleHandler, methodHandler, pFunctionControl);
+        const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+        const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
+
+        if (FaultTolerantTracker::Instance()->IsInstrumentationVersionSucceeded(moduleId, methodId, instrumentationVersion, instrumentingProduct))
+        {
+            // Request Revert for the original method
+            //std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
+            //auto promise = std::make_shared<std::promise<void>>();
+            //auto future = promise->get_future();
+            //m_rejit_handler->EnqueueRequestRevert(requests, promise);
+            //future.get();
+
+            // We also set the original IL function body, in case the revert did not succeeded.
+            // We do that just as a safeguard, it has harmless effect.
+            //const auto [pMethodBytes, methodSize] = FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodId);
+            //pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
+
+            return m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
+        }
+        else
+        {
+            return ApplyKickoffInstrumentation(moduleHandler, methodHandler, pFunctionControl);   
+        }
     }
     else if (FaultTolerantTracker::Instance()->IsOriginalMethod(moduleId, methodId))
     {
@@ -527,12 +543,20 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
             return S_FALSE;
         }
 
-        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler, pFunctionControl);
+        InjectSuccessfulInstrumentationLambda injectSuccessfulInstrumentation =
+            [this](RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler,
+                   ICorProfilerFunctionControl* pFunctionControl, LPCBYTE pbILMethod) -> HRESULT {
+            return this->InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl, pbILMethod);
+        };
 
-        if (hr == S_OK)
-        {
-            return InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl);
-        }
+
+        auto faultTolerantFunctionControl = std::make_unique<fault_tolerant::FaultTolerantCorProfilerFunctionControl>(pFunctionControl, moduleId, methodId, moduleHandler, methodHandler, injectSuccessfulInstrumentation);
+        auto hr = m_methodRewriter->Rewrite(moduleHandler, methodHandler, faultTolerantFunctionControl.get());
+
+        //if (hr == S_OK)
+        //{
+        //    return InjectSuccessfulInstrumentation(moduleHandler, methodHandler, pFunctionControl);
+        //}
         // else
         //{
         //     const auto methodIdOfKickoff =
@@ -549,132 +573,6 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
     {
         return E_NOTIMPL;
     }
-}
-
-void FaultTolerantRewriter::RequestRejit(std::vector<MethodIdentifier>& rejitRequests, bool enqueueInSameThread)
-{
-    if (!rejitRequests.empty())
-    {
-        std::vector<ModuleID> vtModules;
-        std::vector<mdMethodDef> vtMethodDefs;
-
-        const auto rejitCount = rejitRequests.size();
-        vtModules.reserve(rejitCount);
-        vtMethodDefs.reserve(rejitCount);
-
-        for (const auto& rejitRequest : rejitRequests)
-        {
-            vtModules.push_back(rejitRequest.moduleId);
-            vtMethodDefs.push_back(rejitRequest.methodToken);
-        }
-
-        if (enqueueInSameThread)
-        {
-            m_rejit_handler->RequestRejit(vtModules, vtMethodDefs);
-        }
-        else
-        {
-            m_rejit_handler->EnqueueForRejit(vtModules, vtMethodDefs);
-        }
-    }
-}
-
-void FaultTolerantRewriter::RequestRevert(std::vector<MethodIdentifier>& revertRequests, bool enqueueInSameThread)
-{
-    if (!revertRequests.empty())
-    {
-        std::vector<ModuleID> vtModules;
-        std::vector<mdMethodDef> vtMethodDefs;
-
-        const auto rejitCount = revertRequests.size();
-        vtModules.reserve(rejitCount);
-        vtMethodDefs.reserve(rejitCount);
-
-        for (const auto& rejitRequest : revertRequests)
-        {
-            vtModules.push_back(rejitRequest.moduleId);
-            vtMethodDefs.push_back(rejitRequest.methodToken);
-        }
-
-        if (enqueueInSameThread)
-        {
-            m_rejit_handler->RequestRevert(vtModules, vtMethodDefs);
-        }
-        else
-        {
-            m_rejit_handler->EnqueueForRevert(vtModules, vtMethodDefs);
-        }
-    }
-}
-
-void FaultTolerantRewriter::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests,
-                                                std::shared_ptr<std::promise<void>> promise)
-{
-    if (m_rejit_handler->IsShutdownRequested())
-    {
-        if (promise != nullptr)
-        {
-            promise->set_value();
-        }
-
-        return;
-    }
-
-    if (rejitRequests.size() == 0)
-    {
-        return;
-    }
-
-    Logger::Debug("RejitHandler::EnqueueRequestRejit");
-
-    std::function<void()> action = [=, requests = std::move(rejitRequests), localPromise = promise]() mutable {
-        // Process modules for rejit
-        RequestRejit(requests, true);
-
-        // Resolve promise
-        if (localPromise != nullptr)
-        {
-            localPromise->set_value();
-        }
-    };
-
-    // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
-}
-
-void FaultTolerantRewriter::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
-    std::shared_ptr<std::promise<void>> promise)
-{
-    if (m_rejit_handler->IsShutdownRequested())
-    {
-        if (promise != nullptr)
-        {
-            promise->set_value();
-        }
-
-        return;
-    }
-
-    if (revertRequests.size() == 0)
-    {
-        return;
-    }
-
-    Logger::Debug("RejitHandler::EnqueueRequestRevert");
-
-    std::function<void()> action = [=, requests = std::move(revertRequests), localPromise = promise]() mutable {
-        // Process modules for rejit
-        RequestRevert(requests, true);
-
-        // Resolve promise
-        if (localPromise != nullptr)
-        {
-            localPromise->set_value();
-        }
-    };
-
-    // Enqueue
-    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
 HRESULT FaultTolerantRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)

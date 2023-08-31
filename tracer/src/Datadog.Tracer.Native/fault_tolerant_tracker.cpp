@@ -1,5 +1,23 @@
 #include "fault_tolerant_tracker.h"
 
+void fault_tolerant::FaultTolerantTracker::RequestRevert(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
+{
+    std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    rejit_handler->EnqueueRequestRevert(requests, promise);
+    future.get();
+}
+
+void fault_tolerant::FaultTolerantTracker::RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler)
+{
+    std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+    rejit_handler->EnqueueRequestRejit(requests, promise);
+    future.get();
+}
+
 void fault_tolerant::FaultTolerantTracker::AddFaultTolerant(ModuleID fromModuleId, mdMethodDef fromMethodId,
                                                             mdMethodDef toOriginalMethodId,
                                                             mdMethodDef toInstrumentedMethodId)
@@ -105,14 +123,50 @@ std::tuple<LPCBYTE, ULONG> fault_tolerant::FaultTolerantTracker::GetILBodyAndSiz
     return _methodBodies[methodIdentifier];
 }
 
-void fault_tolerant::FaultTolerantTracker::ReportSuccessfulInstrumentation(ModuleID moduleId, mdMethodDef methodId,
-    const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products)
+void fault_tolerant::FaultTolerantTracker::AddSuccessfulInstrumentationVersion(
+    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion,
+    trace::InstrumentingProducts products, std::shared_ptr<RejitHandler> rejit_handler)
 {
+    std::lock_guard lock(_successfulInstrumentationVersionsMutex);
 
+    RequestRevert(moduleId, methodId, rejit_handler);
+    RequestRejit(moduleId, methodId, rejit_handler);
+
+    const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
+
+    auto [iter, _] = _successfulInstrumentationVersions.emplace(methodIdentifier, std::set<shared::WSTRING>());
+    iter->second.insert(instrumentationVersion);
+}
+
+bool fault_tolerant::FaultTolerantTracker::IsInstrumentationVersionSucceeded(
+    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion,
+    trace::InstrumentingProducts products)
+{
+    std::lock_guard lock(_successfulInstrumentationVersionsMutex);
+    
+    const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
+
+    auto it = _successfulInstrumentationVersions.find(methodIdentifier);
+
+    if (it != _successfulInstrumentationVersions.end())
+    {
+        return it->second.find(instrumentationVersion) != it->second.end();
+    }
+
+    return false;
 }
 
 bool fault_tolerant::FaultTolerantTracker::ShouldHeal(ModuleID moduleId, mdMethodDef methodId,
-    const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products)
+                                                      const shared::WSTRING& instrumentationVersion,
+                                                      trace::InstrumentingProducts products,
+                                                      std::shared_ptr<RejitHandler> rejit_handler)
 {
-    return false;
+    const auto shouldHeal = !IsInstrumentationVersionSucceeded(moduleId, methodId, instrumentationVersion, products);
+
+    if (shouldHeal)
+    {
+        RequestRevert(moduleId, methodId, rejit_handler);
+    }
+
+    return shouldHeal;
 }

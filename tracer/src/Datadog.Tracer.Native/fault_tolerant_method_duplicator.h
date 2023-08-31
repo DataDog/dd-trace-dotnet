@@ -21,9 +21,10 @@ private:
 public:
     FaultTolerantMethodDuplicator(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
                          std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
-
-    void Duplicate(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
-               ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef) const;
+    void DuplicateOne(ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+                    ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef, mdMethodDef methodDef) const;
+    void DuplicateAll(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+                   ComPtr<IMetaDataEmit2> metadataEmit) const;
 };
 
 } // namespace fault_tolerant

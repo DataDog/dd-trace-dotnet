@@ -269,6 +269,7 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
+    <ClInclude Include="fault_tolerant_cor_profiler_function_control.h" />
     <ClInclude Include="fault_tolerant_tokens.h" />
     <ClInclude Include="fault_tolerant_envionrment_variables_util.h" />
     <ClInclude Include="fault_tolerant_environment_variables.h" />
@@ -343,6 +344,7 @@
     <ClCompile Include="debugger_rejit_handler_module_method.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp" />
     <ClCompile Include="environment_variables_util.cpp" />
+    <ClCompile Include="fault_tolerant_cor_profiler_function_control.cpp" />
     <ClCompile Include="fault_tolerant_tokens.cpp" />
     <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp" />
     <ClCompile Include="fault_tolerant_method_duplicator.cpp" />

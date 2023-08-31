@@ -762,15 +762,15 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
     Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
                   ").");
-    
+
+    m_fault_tolerant_method_duplicator->DuplicateAll(moduleId, moduleInfo, metadataImport, metadataEmit);
+
     // Enumerate the types of the module
     auto typeDefEnum = EnumTypeDefs(metadataImport);
     auto typeDefIterator = typeDefEnum.begin();
     for (; typeDefIterator != typeDefEnum.end(); typeDefIterator = ++typeDefIterator)
     {
         auto typeDef = *typeDefIterator;
-
-        m_fault_tolerant_method_duplicator->Duplicate(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef);
 
         // check if it is a nested type and the parent is our type
         mdTypeDef parentType;

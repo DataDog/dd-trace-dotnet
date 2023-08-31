@@ -5,6 +5,8 @@
 #include "corhlpr.h"
 #include "instrumenting_product.h"
 #include "integration.h"
+#include "rejit_handler.h"
+
 #include <corprof.h>
 #include <mutex>
 #include <unordered_map>
@@ -17,12 +19,15 @@ class FaultTolerantTracker : public shared::Singleton<FaultTolerantTracker>
 
 private:
     std::recursive_mutex _faultTolerantMapMutex;
-    
-    std::unordered_map<trace::MethodIdentifier, std::tuple<trace::MethodIdentifier, trace::MethodIdentifier>>
-        _faultTolerantMethods{};
+    std::unordered_map<trace::MethodIdentifier, std::tuple<trace::MethodIdentifier, trace::MethodIdentifier>> _faultTolerantMethods{};
     std::unordered_map < trace::MethodIdentifier, std::tuple<LPCBYTE, ULONG>> _methodBodies{};
     std::unordered_map<trace::MethodIdentifier, trace::MethodIdentifier> _originalMethods;
     std::unordered_map<trace::MethodIdentifier, trace::MethodIdentifier> _instrumentedMethods;
+    std::unordered_map<trace::MethodIdentifier, std::set<shared::WSTRING>> _successfulInstrumentationVersions;
+    std::recursive_mutex _successfulInstrumentationVersionsMutex;
+
+    void RequestRevert(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
+    void RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
 
 public:
     FaultTolerantTracker() = default;
@@ -40,8 +45,14 @@ public:
     void CacheILBodyIfEmpty(ModuleID moduleId, mdMethodDef methodId, LPCBYTE pMethodBytes, ULONG methodSize);
     std::tuple<LPCBYTE, ULONG> GetILBodyAndSize(ModuleID moduleId, mdMethodDef methodId);
 
-    void ReportSuccessfulInstrumentation(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products);
-    bool ShouldHeal(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products);
+    void AddSuccessfulInstrumentationVersion(ModuleID moduleId, mdMethodDef methodId,
+                                             const shared::WSTRING& instrumentationVersion,
+                                             trace::InstrumentingProducts products,
+                                             std::shared_ptr<RejitHandler> rejit_handler);
+    bool IsInstrumentationVersionSucceeded(ModuleID moduleId, mdMethodDef methodId,
+                                            const shared::WSTRING& instrumentationVersion,
+                                            trace::InstrumentingProducts products);
+    bool ShouldHeal(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products, std::shared_ptr<RejitHandler> rejit_handler);
 };
 
 } // namespace fault_tolerant
