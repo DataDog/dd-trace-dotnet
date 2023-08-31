@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+using System.Text;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
 
@@ -46,5 +48,47 @@ internal class DataStreamsContextPropagator
         var bytes = headers.TryGetLastBytes(DataStreamsPropagationHeaders.PropagationKey);
 
         return bytes is { } ? PathwayContextEncoder.Decode(bytes) : null;
+    }
+
+    /// <summary>
+    /// Propagates the specified context by adding new headers to a <see cref="IHeadersCollection"/>.
+    /// This locks the sampling priority for <paramref name="context"/>.
+    /// </summary>
+    /// <param name="context">A <see cref="PathwayContext"/> value that will be propagated into <paramref name="headers"/>.</param>
+    /// <param name="headers">A <see cref="IHeadersCollection"/> to add new headers to.</param>
+    /// <typeparam name="TCarrier">Type of header collection</typeparam>
+    public void InjectAsBase64String<TCarrier>(PathwayContext context, TCarrier headers)
+        where TCarrier : IHeadersCollection
+    {
+        if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
+
+        headers.Add(DataStreamsPropagationHeaders.PropagationKey, Convert.ToBase64String(PathwayContextEncoder.Encode(context)));
+    }
+
+    /// <summary>
+    /// Extracts a <see cref="PathwayContext"/> from the values found in the specified headers.
+    /// </summary>
+    /// <param name="headers">The headers that contain the values to be extracted.</param>
+    /// <typeparam name="TCarrier">Type of header collection</typeparam>
+    /// <returns>A new <see cref="PathwayContext"/> that contains the values obtained from <paramref name="headers"/>.</returns>
+    public PathwayContext? ExtractAsBase64String<TCarrier>(TCarrier headers)
+        where TCarrier : IHeadersCollection
+    {
+        if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
+
+        var headerValues = headers.GetValues(DataStreamsPropagationHeaders.PropagationKey);
+        if (headerValues is string[] stringValues)
+        {
+            // Checking string[] allows to avoid the enumerator allocation.
+            foreach (string? headerValue in stringValues)
+            {
+                if (!string.IsNullOrEmpty(headerValue))
+                {
+                    return PathwayContextEncoder.Decode(Convert.FromBase64String(headerValue));
+                }
+            }
+        }
+
+        return null;
     }
 }
