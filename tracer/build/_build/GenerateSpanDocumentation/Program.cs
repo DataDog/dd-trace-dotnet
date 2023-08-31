@@ -331,12 +331,26 @@ The Integration Name (used for configuring individual integrations) of each span
                                 OperationName = null,
                                 RequiredValue = $"`{parts[2]}`",
                             },
+                        (_, "IfPresentMatches") => new Requirement
+                        {
+                            Property = $"{parts[1]}",
+                            PropertyType = propertyType,
+                            OperationName = null,
+                            RequiredValue = $"Optional: `{parts[2]}`",
+                        },
                         (_, "MatchesOneOf") => new Requirement
                             {
                                 Property = $"{parts[1]}",
                                 PropertyType = propertyType,
                                 OperationName = null,
                                 RequiredValue = string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
+                            },
+                        (_, "IfPresentMatchesOneOf") => new Requirement
+                            {
+                                Property = $"{parts[1]}",
+                                PropertyType = propertyType,
+                                OperationName = null,
+                                RequiredValue = "Optional: " + string.Join("; ", parts.Skip(2).Select(s => $"`{s}`")),
                             },
                         (ModelState.ParsingTags, "IsOptional") or (ModelState.ParsingMetrics, "IsOptional")  => new Requirement
                             {

@@ -112,15 +112,15 @@ namespace Datadog.Trace.TestHelpers
         public static Result IsAzureServiceBusInbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAzureServiceBusRequestV1(),
-                _ => span.IsAzureServiceBusRequestV0(),
+                "v1" => span.IsAzureServiceBusInboundV1(),
+                _ => span.IsAzureServiceBusInboundV0(),
             };
 
         public static Result IsAzureServiceBusOutbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
-                "v1" => span.IsAzureServiceBusRequestV1(),
-                _ => span.IsAzureServiceBusRequestV0(),
+                "v1" => span.IsAzureServiceBusOutboundV1(),
+                _ => span.IsAzureServiceBusOutboundV0(),
             };
 
         public static Result IsAzureServiceBusRequest(this MockSpan span, string metadataSchemaVersion) =>
