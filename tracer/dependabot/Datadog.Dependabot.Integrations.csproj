@@ -26,6 +26,11 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
 
+    <!-- Integration: AWSSDK.Kinesis -->
+    <!-- Assembly: AWSSDK.Kinesis -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.21 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.21" />
+
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.9 -->

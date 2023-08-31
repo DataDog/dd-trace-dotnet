@@ -19,6 +19,52 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [SuppressMessage("StyleCop.CSharp.LayoutRules", "SA1516:Elements must be separated by blank line", Justification = "This is an auto-generated file.")]
     public class PackageVersionsLatestMinors
     {
+      public static IEnumerable<object[]> AwsKinesis =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET462
+                new object[] { "3.1.3.5" },
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NETCOREAPP2_1
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NETCOREAPP3_0
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NETCOREAPP3_1
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NET5_0
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NET6_0
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#if NET7_0
+                new object[] { "3.3.101.1" },
+                new object[] { "3.5.0.79" },
+                new object[] { "3.7.200.21" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>

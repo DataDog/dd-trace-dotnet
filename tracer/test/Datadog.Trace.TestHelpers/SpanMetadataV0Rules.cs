@@ -133,6 +133,26 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
+        public static Result IsAwsKinesisOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.kinesis.produce")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("region")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "Kinesis")
+                .Matches("aws_service", "Kinesis")
+                .IsPresent("streamname")
+                .IsOptional("aws.stream.url")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
+
         public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "sqs.request")

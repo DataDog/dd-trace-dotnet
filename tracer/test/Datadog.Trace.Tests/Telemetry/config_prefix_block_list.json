@@ -118,6 +118,8 @@
   "DD_Ssrf_",
   "DD_TRACE_Ldap_",
   "DD_Ldap_",
+  "DD_TRACE_AwsKinesis_",
+  "DD_AwsKinesis_",
   "trace.amqp_enabled",
   "trace.amqp_analytics_enabled",
   "trace.amqp_analytics_sample_rate",
