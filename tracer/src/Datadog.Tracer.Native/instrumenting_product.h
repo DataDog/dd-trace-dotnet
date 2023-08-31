@@ -6,9 +6,9 @@ namespace trace
 // Matches Datadog.Trace.FaultTolerant.InstrumentingProducts
 enum class InstrumentingProducts : int
 {
-    Tracer = 0x01,
-    DynamicInstrumentation = 0x02,
-    ASM = 0x04
+    Tracer = 1,
+    DynamicInstrumentation = 2,
+    ASM = 4
 };
 
 constexpr InstrumentingProducts operator|(InstrumentingProducts lhs, InstrumentingProducts rhs)

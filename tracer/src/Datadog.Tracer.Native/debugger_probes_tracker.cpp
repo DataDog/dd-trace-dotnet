@@ -182,11 +182,9 @@ int debugger::ProbesMetadataTracker::GetInstrumentedMethodIndex(const ModuleID m
 
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
 
-    // Check if an index previously given
     const auto iter = _methodIndexMap.find(methodIdentifier);
     if (iter == _methodIndexMap.end())
     {
-        // Does not exist, create a new index
         _methodIndexMap[methodIdentifier] = std::atomic_fetch_add(&_nextInstrumentedMethodIndex, 1);
     }
 

@@ -2135,7 +2135,7 @@ void CorProfiler::ReportSuccessfulInstrumentation(ModuleID moduleId, int methodT
     const auto& instrumentationVersionString = shared::WSTRING(instrumentationVersion);
     const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
     const auto methodId = static_cast<mdMethodDef>(methodToken);
-    fault_tolerant::FaultTolerantTracker::Instance()->ReportSuccessfulInstrumentation(moduleId, methodId, instrumentationVersionString, instrumentingProducts);
+    fault_tolerant::FaultTolerantTracker::Instance()->AddSuccessfulInstrumentationVersion(moduleId, methodId, instrumentationVersionString, instrumentingProducts, rejit_handler);
 }
 
 bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products)
@@ -2143,7 +2143,7 @@ bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* in
     const auto& instrumentationVersionString = shared::WSTRING(instrumentationVersion);
     const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
     const auto methodId = static_cast<mdMethodDef>(methodToken);
-    return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationVersionString, instrumentingProducts);
+    return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationVersionString, instrumentingProducts, rejit_handler);
 }
 
 //

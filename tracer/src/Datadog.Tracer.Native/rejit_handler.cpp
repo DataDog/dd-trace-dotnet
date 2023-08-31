@@ -324,6 +324,36 @@ void RejitHandler::RequestRevert(std::vector<ModuleID>& modulesVector, std::vect
     }
 }
 
+void RejitHandler::EnqueueRequestRejit(std::vector<MethodIdentifier>& rejitRequests, std::shared_ptr<std::promise<void>> promise)
+{
+    std::vector<ModuleID> modulesVector;
+    std::vector<mdMethodDef> methodsVector;
+
+    for (const auto& request : rejitRequests)
+    {
+        modulesVector.push_back(request.moduleId);
+        methodsVector.push_back(request.methodToken);
+    }
+
+    EnqueueForRejit(modulesVector, methodsVector, promise);
+}
+
+void RejitHandler::EnqueueRequestRevert(std::vector<MethodIdentifier>& revertRequests,
+                                        std::shared_ptr<std::promise<void>> promise)
+{
+    std::vector<ModuleID> modulesVector;
+    std::vector<mdMethodDef> methodsVector;
+
+    for (const auto& request : revertRequests)
+    {
+        modulesVector.push_back(request.moduleId);
+        methodsVector.push_back(request.methodToken);
+    }
+
+    EnqueueForRevert(modulesVector, methodsVector, promise);
+}
+
+
 RejitHandler::RejitHandler(ICorProfilerInfo7* pInfo, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     m_profilerInfo(pInfo),
     m_profilerInfo10(nullptr),
@@ -439,37 +469,60 @@ void RejitHandler::AddNGenInlinerModule(ModuleID moduleId)
     }
 }
 
-void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
+void RejitHandler::EnqueueForRejit(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, std::shared_ptr<std::promise<void>> promise)
 {
     if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
         return;
     }
 
     Logger::Debug("RejitHandler::EnqueueForRejit");
 
-    std::function<void()> action = [=, modules = std::move(modulesVector),
-                                    methods = std::move(modulesMethodDef)]() mutable {
+    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
+                                    localPromise = promise]() mutable {
         // Request ReJIT
         RequestRejit(modules, methods);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
     };
 
     // Enqueue
     m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
 }
 
-void RejitHandler::EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef)
+void RejitHandler::EnqueueForRevert(std::vector<ModuleID>& modulesVector, std::vector<mdMethodDef>& modulesMethodDef, std::shared_ptr<std::promise<void>> promise)
 {
     if (IsShutdownRequested() || modulesVector.size() == 0 || modulesMethodDef.size() == 0)
     {
+        if (promise != nullptr)
+        {
+            promise->set_value();
+        }
+
         return;
     }
 
     Logger::Debug("RejitHandler::EnqueueForRevert");
 
-    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef)]() mutable {
+    std::function<void()> action = [=, modules = std::move(modulesVector), methods = std::move(modulesMethodDef),
+                                    localPromise = promise]() mutable {
         // Request Revert
         RequestRevert(modules, methods);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
     };
 
     // Enqueue

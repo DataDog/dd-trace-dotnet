@@ -32,8 +32,7 @@ namespace Datadog.Trace.FaultTolerant
         {
             try
             {
-                return System.Threading.Tasks.Task.Run(
-                    () => FaultTolerantNativeMethods.ShouldHeal(moduleId, methodToken, instrumentationVersion, products)).GetAwaiter().GetResult();
+                return FaultTolerantNativeMethods.ShouldHeal(moduleId, methodToken, instrumentationVersion, products);
             }
             catch (Exception e)
             {
@@ -55,11 +54,7 @@ namespace Datadog.Trace.FaultTolerant
 
             try
             {
-                System.Threading.Tasks.Task.Run(
-                    () =>
-                    {
-                        FaultTolerantNativeMethods.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
-                    }).GetAwaiter().GetResult();
+                FaultTolerantNativeMethods.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
             }
             catch (Exception e)
             {

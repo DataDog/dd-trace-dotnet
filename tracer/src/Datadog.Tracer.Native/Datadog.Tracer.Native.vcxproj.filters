@@ -74,6 +74,9 @@
     <ClCompile Include="fault_tolerant_tokens.cpp">
       <Filter>FaultTolerant</Filter>
     </ClCompile>
+    <ClCompile Include="fault_tolerant_cor_profiler_function_control.cpp">
+      <Filter>FaultTolerant\Hooks</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -180,6 +183,9 @@
       <Filter>FaultTolerant</Filter>
     </ClInclude>
     <ClInclude Include="instrumenting_product.h" />
+    <ClInclude Include="fault_tolerant_cor_profiler_function_control.h">
+      <Filter>FaultTolerant\Hooks</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
@@ -193,6 +199,9 @@
     </Filter>
     <Filter Include="FaultTolerant">
       <UniqueIdentifier>{c978629f-9250-49b5-a5f4-6bdcedfb1531}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="FaultTolerant\Hooks">
+      <UniqueIdentifier>{35c3ef95-c2c0-4141-8a54-ee60d6a8c348}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>
