@@ -448,18 +448,25 @@ namespace Datadog.Trace.Ci
             string? processName = null;
 
             // By configuration
-            if (Settings.Enabled)
+            if (Settings.Enabled is { } enabled)
             {
-                processName ??= GetProcessName();
-                // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                if (enabled)
                 {
-                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
-                    return false;
+                    processName ??= GetProcessName();
+                    // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    {
+                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
+                        return false;
+                    }
+
+                    Log.Information("CI Visibility Enabled by Configuration");
+                    return true;
                 }
 
-                Log.Information("CI Visibility Enabled by Configuration");
-                return true;
+                // explicitly disabled
+                Log.Information("CI Visibility Disabled by Configuration");
+                return false;
             }
 
             // Try to autodetect based in the domain name.

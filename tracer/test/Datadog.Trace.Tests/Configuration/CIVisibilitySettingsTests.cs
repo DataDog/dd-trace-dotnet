@@ -15,8 +15,8 @@ namespace Datadog.Trace.Tests.Configuration
     public class CIVisibilitySettingsTests : SettingsTestsBase
     {
         [Theory]
-        [MemberData(nameof(BooleanTestCases), false)]
-        public void Enabled(string value, bool expected)
+        [MemberData(nameof(BooleanTestCases), null)]
+        public void Enabled(string value, bool? expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.CIVisibility.Enabled, value));
             var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
