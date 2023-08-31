@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast.Telemetry;
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
-public enum IastMetricsVerbosityLevel
+internal enum IastMetricsVerbosityLevel
 {
     /// <summary>
     /// Debug

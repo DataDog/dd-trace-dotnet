@@ -693,9 +693,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "source_type:http.request.header" }),
             new(new[] { "source_type:http.request.header.name" }),
             new(new[] { "source_type:http.request.query" }),
-            new(new[] { "source_type:http.http.cookie.name" }),
+            new(new[] { "source_type:http.cookie.name" }),
             new(new[] { "source_type:http.cookie.value" }),
-            new(new[] { "source_type:http.http.request.matrix.parameter" }),
+            new(new[] { "source_type:http.request.matrix.parameter" }),
             // instrumented.propagation, index = 456
             new(null),
             // instrumented.sink, index = 457
