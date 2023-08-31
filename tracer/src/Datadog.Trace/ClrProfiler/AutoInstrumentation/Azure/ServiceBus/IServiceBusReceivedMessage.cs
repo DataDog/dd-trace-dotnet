@@ -10,11 +10,7 @@ using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
-internal interface IServiceBusReceivedMessage
+internal interface IServiceBusReceivedMessage : IServiceBusMessage
 {
-    public IDictionary<string, object> ApplicationProperties { get; }
-
-    public IBinaryData Body { get; }
-
     public DateTimeOffset EnqueuedTime { get; }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Azure.Core;
@@ -69,7 +70,9 @@ namespace Samples.DataStreams.AzureServiceBus
                 await using var topic3Sender = Client.CreateSender(Topic3Name);
 
                 // Pipeline 1: Publish to queue
-                await queueSender.SendMessageAsync(CreateMessage("message"));
+                var messageBatch = await queueSender.CreateMessageBatchAsync();
+                messageBatch.TryAddMessage(CreateMessage("message"));
+                await queueSender.SendMessagesAsync(messageBatch);
                 await CreateQueueProcessor(QueueName);
 
                 // Pipeline 2: Publish to topic with multiple subscriptions (Queue=dsm-direct-queue, Subject=order)
@@ -82,7 +85,7 @@ namespace Samples.DataStreams.AzureServiceBus
                 // Pipeline 3: Publish to topic which daisy chains topics and subscriptions (Queue=dsm-direct-queue, Subject=account)
                 var message3 = CreateMessage("message3");
                 message3.Subject = "account";
-                await topic2Sender.SendMessageAsync(message3);
+                await topic2Sender.SendMessagesAsync(new List<ServiceBusMessage> { message3 });
 
                 await CreateTopicProcessor(Topic2Name, new[] { DefaultSubscription }, topic3Sender);
                 await CreateTopicProcessor(Topic3Name, new[] { DefaultSubscription });

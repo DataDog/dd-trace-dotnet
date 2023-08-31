@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 
                 if (dataStreamsManager.IsEnabled)
                 {
-                    if (message?.ApplicationProperties is not null)
+                    if (message.ApplicationProperties is not null)
                     {
                         var headers = new ServiceBusHeadersCollectionAdapter(message.ApplicationProperties);
 
@@ -91,7 +91,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                         dataStreamsManager,
                         CheckpointKind.Consume,
                         edgeTags,
-                        message.Body.ToMemory().Length,
+                        AzureServiceBusCommon.GetMessageSize(message),
                         (long)messageQueueTimeMs);
                 }
             }

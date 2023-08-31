@@ -11,6 +11,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal interface ITransportSender
 {
-    [DuckField(Name = "_entityPath")]
     string EntityPath { get; }
 }
