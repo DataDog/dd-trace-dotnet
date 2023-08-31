@@ -241,9 +241,9 @@ internal static class MetricTags
         [Description("source_type:http.request.header")] RequestHeader,
         [Description("source_type:http.request.header.name")] RequestHeaderName,
         [Description("source_type:http.request.query")] RequestQuery,
-        [Description("source_type:http.http.cookie.name")] CookieName,
+        [Description("source_type:http.cookie.name")] CookieName,
         [Description("source_type:http.cookie.value")] CookieValue,
-        [Description("source_type:http.http.request.matrix.parameter")] MatrixParameter,
+        [Description("source_type:http.request.matrix.parameter")] MatrixParameter,
     }
 
     public enum IastInstrumentedSinks
