@@ -518,15 +518,43 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
-        public void AzureServiceBusV1Tags_PeerService_PopulatesFromNetworkPeerName()
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromMessagingSourceName()
         {
-            var peerName = "127.0.0.1";
+            var sourceName = "source";
             var tags = new AzureServiceBusV1Tags();
 
-            tags.SetTag("net.peer.name", peerName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
 
-            tags.PeerService.Should().Be(peerName);
-            tags.PeerServiceSource.Should().Be("net.peer.name");
+            tags.PeerService.Should().Be(sourceName);
+            tags.PeerServiceSource.Should().Be("messaging.source.name");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromMessagingDestinationName()
+        {
+            var destinationName = "destination";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().Be(destinationName);
+            tags.PeerServiceSource.Should().Be("messaging.destination.name");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromEitherMessagingSourceOrDestinationName()
+        {
+            var sourceName = "source";
+            var destinationName = "destination";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().BeOneOf(sourceName, destinationName);
+            tags.PeerServiceSource.Should().BeOneOf("messaging.source.name", "messaging.destination.name");
             tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
@@ -546,12 +574,14 @@ namespace Datadog.Trace.Tests.Tagging
         [Fact]
         public void AzureServiceBusV1Tags_PeerService_CustomTakesPrecedence()
         {
-            var peerName = "127.0.0.1";
+            var sourceName = "source";
+            var destinationName = "destination";
             var customService = "client-service";
             var tags = new AzureServiceBusV1Tags();
 
             tags.SetTag("peer.service", customService);
-            tags.SetTag("net.peer.name", peerName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");

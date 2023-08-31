@@ -337,7 +337,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "net.peer.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.destination.name", "peer.service")
                 .Matches("span.kind", "producer"));
 
         public static Result IsAzureServiceBusRequestV1(this MockSpan span) => Result.FromSpan(span)
@@ -359,7 +359,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "net.peer.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.source.name", "messaging.destination.name", "peer.service")
                 .Matches("span.kind", "client"));
 
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)

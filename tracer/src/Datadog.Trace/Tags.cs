@@ -279,6 +279,16 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The message source name
+        /// </summary>
+        internal const string MessagingSourceName = "messaging.source.name";
+
+        /// <summary>
+        /// The message destination name
+        /// </summary>
+        internal const string MessagingDestinationName = "messaging.destination.name";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";
@@ -582,8 +592,6 @@ namespace Datadog.Trace
         /// The ip as reported by the framework.
         /// </summary>
         internal const string NetworkClientIp = "network.client.ip";
-
-        internal const string NetworkPeerName = "net.peer.name";
 
         internal const string ElasticsearchAction = "elasticsearch.action";
 

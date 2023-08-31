@@ -15,11 +15,17 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
 #endif
-        // NetworkPeerNameBytes = MessagePack.Serialize("net.peer.name");
+        // MessagingSourceNameBytes = MessagePack.Serialize("messaging.source.name");
 #if NETCOREAPP
-        private static ReadOnlySpan<byte> NetworkPeerNameBytes => new byte[] { 173, 110, 101, 116, 46, 112, 101, 101, 114, 46, 110, 97, 109, 101 };
+        private static ReadOnlySpan<byte> MessagingSourceNameBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
 #else
-        private static readonly byte[] NetworkPeerNameBytes = new byte[] { 173, 110, 101, 116, 46, 112, 101, 101, 114, 46, 110, 97, 109, 101 };
+        private static readonly byte[] MessagingSourceNameBytes = new byte[] { 181, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 115, 111, 117, 114, 99, 101, 46, 110, 97, 109, 101 };
+#endif
+        // MessagingDestinationNameBytes = MessagePack.Serialize("messaging.destination.name");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> MessagingDestinationNameBytes => new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
+#else
+        private static readonly byte[] MessagingDestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
 #endif
         // SpanKindBytes = MessagePack.Serialize("span.kind");
 #if NETCOREAPP
@@ -32,7 +38,8 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "net.peer.name" => NetworkPeerName,
+                "messaging.source.name" => MessagingSourceName,
+                "messaging.destination.name" => MessagingDestinationName,
                 "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
@@ -42,8 +49,11 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "net.peer.name": 
-                    NetworkPeerName = value;
+                case "messaging.source.name": 
+                    MessagingSourceName = value;
+                    break;
+                case "messaging.destination.name": 
+                    MessagingDestinationName = value;
                     break;
                 case "span.kind": 
                     SpanKind = value;
@@ -56,9 +66,14 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateTags<TProcessor>(ref TProcessor processor)
         {
-            if (NetworkPeerName is not null)
+            if (MessagingSourceName is not null)
             {
-                processor.Process(new TagItem<string>("net.peer.name", NetworkPeerName, NetworkPeerNameBytes));
+                processor.Process(new TagItem<string>("messaging.source.name", MessagingSourceName, MessagingSourceNameBytes));
+            }
+
+            if (MessagingDestinationName is not null)
+            {
+                processor.Process(new TagItem<string>("messaging.destination.name", MessagingDestinationName, MessagingDestinationNameBytes));
             }
 
             if (SpanKind is not null)
@@ -71,10 +86,17 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalTags(System.Text.StringBuilder sb)
         {
-            if (NetworkPeerName is not null)
+            if (MessagingSourceName is not null)
             {
-                sb.Append("net.peer.name (tag):")
-                  .Append(NetworkPeerName)
+                sb.Append("messaging.source.name (tag):")
+                  .Append(MessagingSourceName)
+                  .Append(',');
+            }
+
+            if (MessagingDestinationName is not null)
+            {
+                sb.Append("messaging.destination.name (tag):")
+                  .Append(MessagingDestinationName)
                   .Append(',');
             }
 

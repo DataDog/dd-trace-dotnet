@@ -18,8 +18,11 @@ namespace Datadog.Trace.Tagging
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
-        [Tag(Trace.Tags.NetworkPeerName)]
-        public string NetworkPeerName { get; set; }
+        [Tag(Trace.Tags.MessagingSourceName)]
+        public string MessagingSourceName { get; set; }
+
+        [Tag(Trace.Tags.MessagingDestinationName)]
+        public string MessagingDestinationName { get; set; }
 
         [Tag(Trace.Tags.SpanKind)]
         public string SpanKind { get; set; }
@@ -54,7 +57,7 @@ namespace Datadog.Trace.Tagging
                     return null;
                 }
 
-                return _peerServiceOverride ?? NetworkPeerName;
+                return _peerServiceOverride ?? MessagingSourceName ?? MessagingDestinationName;
             }
             private set => _peerServiceOverride = value;
         }
@@ -70,8 +73,10 @@ namespace Datadog.Trace.Tagging
                 }
 
                 return _peerServiceOverride is not null
-                        ? "peer.service"
-                        : Tags.NetworkPeerName;
+                            ? "peer.service"
+                            : MessagingSourceName is not null
+                                ? Trace.Tags.MessagingSourceName
+                                : Trace.Tags.MessagingDestinationName;
             }
         }
     }
