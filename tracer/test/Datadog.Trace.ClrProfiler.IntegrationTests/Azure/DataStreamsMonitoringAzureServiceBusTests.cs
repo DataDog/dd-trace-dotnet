@@ -31,7 +31,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         => from packageVersionArray in new string[] { string.Empty }
            select new string[] { packageVersionArray };
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI")]
     [MemberData(nameof(GetPackageVersions))]
     [Trait("Category", "EndToEnd")]
     public async Task HandleProduceAndConsume(string packageVersion)
@@ -71,7 +71,7 @@ public class DataStreamsMonitoringAzureServiceBusTests : TestHelper
         }
     }
 
-    [SkippableTheory]
+    [SkippableTheory(Skip = "This has only been tested on a live Azure Service Bus namespace using a connection string. Unskip this if you'd like to run locally or if you've correctly configured piotr-rojek/devopsifyme-sbemulator in CI")]
     [MemberData(nameof(GetPackageVersions))]
     [Trait("Category", "EndToEnd")]
     public void ValidateSpanTags(string packageVersion)
