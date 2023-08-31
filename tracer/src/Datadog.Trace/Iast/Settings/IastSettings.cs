@@ -6,6 +6,7 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Telemetry;

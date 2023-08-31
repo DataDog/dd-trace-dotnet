@@ -134,17 +134,4 @@ public class IastSettingsTests : SettingsTestsBase
 
         settings.DeduplicationEnabled.Should().Be(expected);
     }
-
-    [Theory]
-    [InlineData("off", IastMetricsVerbosityLevel.Off)]
-    [InlineData("OFF", IastMetricsVerbosityLevel.Off)]
-    [InlineData("manDatory", IastMetricsVerbosityLevel.Mandatory)]
-    [InlineData("information", IastMetricsVerbosityLevel.Information)]
-    [InlineData("nothing", IastMetricsVerbosityLevel.Information)]
-    [InlineData("debUg", IastMetricsVerbosityLevel.Debug)]
-    public void IastMetricsVerbosityLevelExtensionsTests(string value, IastMetricsVerbosityLevel expected)
-    {
-        var result = IastMetricsVerbosityLevelExtensions.Parse(value);
-        result.Should().Be(expected);
-    }
 }
