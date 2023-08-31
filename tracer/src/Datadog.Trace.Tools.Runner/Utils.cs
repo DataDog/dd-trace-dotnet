@@ -60,11 +60,6 @@ namespace Datadog.Trace.Tools.Runner
                 envVars[ConfigurationKeys.AgentUri] = agentUrl;
             }
 
-            foreach (var pair in envVars)
-            {
-                Console.WriteLine($"### ENV: {pair.Key} - {pair.Value}");
-            }
-
             return envVars;
         }
 

@@ -15,5 +15,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 /// </summary>
 internal interface IProducerBuilder
 {
-    IEnumerable<KeyValuePair<string, string>> Config { get; set; }
+    IEnumerable<KeyValuePair<string, string>> Config { get; }
 }

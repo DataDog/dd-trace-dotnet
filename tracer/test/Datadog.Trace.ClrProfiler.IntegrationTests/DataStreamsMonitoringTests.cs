@@ -217,6 +217,7 @@ public class DataStreamsMonitoringTests : TestHelper
 
         var currentBucketStats = new List<MockDataStreamsStatsPoint>();
         var originBucketStats = new List<MockDataStreamsStatsPoint>();
+        var backlogs = new List<MockDataStreamsBacklog>();
         foreach (var mockPayload in dataStreams)
         {
             foreach (var bucket in mockPayload.Stats)
@@ -224,16 +225,29 @@ public class DataStreamsMonitoringTests : TestHelper
                 bucket.Duration.Should().Be(10_000_000_000); // 10s in ns
                 bucket.Start.Should().BePositive();
 
-                var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
-                foreach (var bucketStat in bucket.Stats)
+                if (bucket.Stats != null)
                 {
-                    if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
+                    var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
+                    foreach (var bucketStat in bucket.Stats)
                     {
-                        buckets.Add(bucketStat);
+                        if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
+                        {
+                            buckets.Add(bucketStat);
+                        }
                     }
+                }
+
+                if (bucket.Backlogs != null)
+                {
+                    backlogs.AddRange(bucket.Backlogs);
                 }
             }
         }
+
+        currentBucket.Backlogs = backlogs
+           .OrderBy(o => string.Join(',', o.Tags))
+           .ThenBy(o => o.Value)
+           .ToArray();
 
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);

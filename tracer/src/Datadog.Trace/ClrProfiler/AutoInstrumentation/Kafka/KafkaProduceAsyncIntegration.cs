@@ -99,7 +99,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
 
                     var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
                     dataStreams.TrackBacklog(
-                        $"partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
+                        $"async:true,partition:{deliveryResult.Partition.Value},topic:{deliveryResult.Topic},type:kafka_produce",
                         deliveryResult.Offset.Value);
                 }
             }

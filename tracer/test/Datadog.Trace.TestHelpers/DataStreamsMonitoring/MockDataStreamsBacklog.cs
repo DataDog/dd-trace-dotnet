@@ -14,5 +14,5 @@ public class MockDataStreamsBacklog
     public string[] Tags { get; set; }
 
     [Key(nameof(Value))]
-    public ulong Value { get; set; }
+    public long Value { get; set; }
 }

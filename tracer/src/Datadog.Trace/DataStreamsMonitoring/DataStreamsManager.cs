@@ -109,7 +109,8 @@ internal class DataStreamsManager
         }
 
         var writer = Volatile.Read(ref _writer);
-        writer?.AddBacklog(new BacklogPoint(tags, value, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds()));
+        var point = new BacklogPoint(tags, value, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
+        writer?.AddBacklog(point);
     }
 
     /// <summary>
