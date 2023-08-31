@@ -54,6 +54,7 @@ public class InstrumentationTestsBase : IDisposable
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -191,6 +192,13 @@ public class InstrumentationTestsBase : IDisposable
         {
             var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
             var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+            var line = _lineProperty.Invoke(locationProperty, Array.Empty<object>());
+
+            if (line != null)
+            {
+                ((int)line).Should().BeGreaterThan(0);
+            }
+
             locations?.Add(path.ToString());
 
             if (!string.IsNullOrEmpty(path as string))
