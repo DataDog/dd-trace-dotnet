@@ -21,6 +21,9 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.NetworkPeerName)]
         public string NetworkPeerName { get; set; }
 
+        [Tag(Trace.Tags.SpanKind)]
+        public string SpanKind { get; set; }
+
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
         {
             if (settings != null)
@@ -44,7 +47,15 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.PeerService)]
         public string PeerService
         {
-            get => _peerServiceOverride ?? NetworkPeerName;
+            get
+            {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
+                return _peerServiceOverride ?? NetworkPeerName;
+            }
             private set => _peerServiceOverride = value;
         }
 
@@ -53,6 +64,11 @@ namespace Datadog.Trace.Tagging
         {
             get
             {
+                if (SpanKind == SpanKinds.Consumer)
+                {
+                    return null;
+                }
+
                 return _peerServiceOverride is not null
                         ? "peer.service"
                         : Tags.NetworkPeerName;

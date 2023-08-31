@@ -21,12 +21,19 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] NetworkPeerNameBytes = new byte[] { 173, 110, 101, 116, 46, 112, 101, 101, 114, 46, 110, 97, 109, 101 };
 #endif
+        // SpanKindBytes = MessagePack.Serialize("span.kind");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#else
+        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
+#endif
 
         public override string? GetTag(string key)
         {
             return key switch
             {
                 "net.peer.name" => NetworkPeerName,
+                "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
         }
@@ -37,6 +44,9 @@ namespace Datadog.Trace.Tagging
             {
                 case "net.peer.name": 
                     NetworkPeerName = value;
+                    break;
+                case "span.kind": 
+                    SpanKind = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -51,6 +61,11 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("net.peer.name", NetworkPeerName, NetworkPeerNameBytes));
             }
 
+            if (SpanKind is not null)
+            {
+                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
+            }
+
             base.EnumerateTags(ref processor);
         }
 
@@ -60,6 +75,13 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("net.peer.name (tag):")
                   .Append(NetworkPeerName)
+                  .Append(',');
+            }
+
+            if (SpanKind is not null)
+            {
+                sb.Append("span.kind (tag):")
+                  .Append(SpanKind)
                   .Append(',');
             }
 

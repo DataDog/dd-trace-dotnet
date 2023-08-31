@@ -134,11 +134,9 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_1,
-      peer.service: localhost,
       span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: net.peer.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -790,11 +788,9 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusSessionProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_7,
-      peer.service: localhost,
       span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: net.peer.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2536,11 +2532,9 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      peer.service: localhost,
       span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: net.peer.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2628,11 +2622,9 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      peer.service: localhost,
       span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: net.peer.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2720,11 +2712,9 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusProcessor,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_50,
-      peer.service: localhost,
       span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: net.peer.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

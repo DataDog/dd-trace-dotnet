@@ -504,6 +504,20 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void AzureServiceBusV1Tags_PeerService_NotSetForConsumer()
+        {
+            var peerName = "127.0.0.1";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("span.kind", "consumer");
+            tags.SetTag("net.peer.name", peerName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
         public void AzureServiceBusV1Tags_PeerService_PopulatesFromNetworkPeerName()
         {
             var peerName = "127.0.0.1";
