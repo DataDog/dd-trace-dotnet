@@ -1994,7 +1994,10 @@ int CorProfiler::RegisterIastAspects(WCHAR** aspects, int aspectsLength)
 
 void CorProfiler::GetIastMetrics(int* instrumentedSources, int* instrumentedPropagations, int* instrumentedSinks)
 {
-    _dataflow->GetIastMetrics(instrumentedSources, instrumentedPropagations, instrumentedSinks);
+    if (_dataflow != nullptr)
+    {
+        _dataflow->GetIastMetrics(instrumentedSources, instrumentedPropagations, instrumentedSinks);
+    }
 }
 
 void CorProfiler::AddTraceAttributeInstrumentation(WCHAR* id, WCHAR* integration_assembly_name_ptr,
