@@ -238,7 +238,7 @@ internal static class MetricTags
         [Description("source_type:http.request.parameter.name")] RequestParameterName,
         [Description("source_type:http.request.parameter")] RequestParameterValue,
         [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
-        [Description("source_type:http.request.header")] RequestHeader,
+        [Description("source_type:http.request.header")] RequestHeaderNameAndValue,
         [Description("source_type:http.request.header.name")] RequestHeaderName,
         [Description("source_type:http.request.query")] RequestQuery,
         [Description("source_type:http.cookie.name")] CookieName,
