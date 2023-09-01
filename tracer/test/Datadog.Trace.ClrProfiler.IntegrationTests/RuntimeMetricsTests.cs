@@ -5,6 +5,7 @@
 
 using System;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.RuntimeMetrics;
 using Datadog.Trace.TestHelpers;
@@ -113,9 +114,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
 
             // Assert service, env, and version
-            requests.Should().OnlyContain(s => s.Contains($"service:{normalizedServiceName}"));
-            requests.Should().OnlyContain(s => s.Contains("env:integration_tests"));
-            requests.Should().OnlyContain(s => s.Contains("version:1.0.0"));
+            requests
+               .SelectMany(x => x.Split('\n'))
+               .Should()
+               .OnlyContain(s => s.Contains($"service:{normalizedServiceName}"))
+               .And.NotContain(s => s.Contains($"service:{inputServiceName}"))
+               .And.OnlyContain(s => Regex.Matches(s, @"env:integration_tests").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"version:1\.0\.0").Count == 1);
 
             // Check if .NET Framework or .NET Core 3.1+
             if (!EnvironmentHelper.IsCoreClr()

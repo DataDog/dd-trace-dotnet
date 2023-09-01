@@ -597,8 +597,9 @@ public class ProbesTests : TestHelper
         }
         else
         {
+            var normalizedServiceName = EnvironmentHelper.SampleName.ToLowerInvariant();
             var requests = await agent.WaitForStatsdRequests(metricProbes.Length);
-            requests.Should().OnlyContain(s => s.Contains($"service:{EnvironmentHelper.SampleName}"));
+            requests.Should().OnlyContain(s => s.Contains($"service:{normalizedServiceName}"));
 
             var retried = false;
 
@@ -617,7 +618,7 @@ public class ProbesTests : TestHelper
                 }
 
                 Assert.NotNull(req);
-                req.Should().Contain($"service:{EnvironmentHelper.SampleName}");
+                req.Should().Contain($"service:{normalizedServiceName}");
             }
         }
     }
