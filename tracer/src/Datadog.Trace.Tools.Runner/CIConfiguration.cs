@@ -23,14 +23,14 @@ namespace Datadog.Trace.Tools.Runner
             {
                 case CIName.AzurePipelines:
                     Log.Information("Setting up the environment variables for auto-instrumentation for Azure Pipelines.");
-                    // Excluding powershell.exe due to interference in the azure agent making that subsequence script tasks fail.
+                    // Excluding powershell.exe and DTAExecutionHost.exe due to interference in the azure agent making that subsequence script tasks fail.
                     if (environmentVariables.TryGetValue("DD_PROFILER_EXCLUDE_PROCESSES", out var excludeProcesses))
                     {
-                        excludeProcesses += ";powershell.exe";
+                        excludeProcesses += ";DTAExecutionHost.exe;powershell.exe";
                     }
                     else
                     {
-                        excludeProcesses = "powershell.exe";
+                        excludeProcesses = "DTAExecutionHost.exe;powershell.exe";
                     }
 
                     environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] = excludeProcesses;
