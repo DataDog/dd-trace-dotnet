@@ -54,7 +54,7 @@ namespace Datadog.Trace.Coverage.Collector
             _settings = settings;
             _logger = logger ?? new ConsoleCollectorLogger();
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _enableJitOptimizations = settings.CIVisibility?.CodeCoverageEnableJitOptimizations ?? true;
+            _enableJitOptimizations = settings.CIVisibility.CodeCoverageEnableJitOptimizations;
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -155,7 +155,7 @@ namespace Datadog.Trace.Coverage.Collector
                 {
                     _logger.Debug($"Assembly: {FilePath} is signed.");
 
-                    var snkFilePath = _settings.CIVisibility?.CodeCoverageSnkFilePath;
+                    var snkFilePath = _settings.CIVisibility.CodeCoverageSnkFilePath;
                     _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
                     if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
                     {

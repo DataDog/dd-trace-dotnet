@@ -110,7 +110,7 @@ public class CoverageRewriteTests
         await Verifier.Verify(originalCode, originalVerifySettings);
 
         // Apply rewriter process
-        var covSettings = new CoverageSettings(null, string.Empty, null);
+        var covSettings = new CoverageSettings(null, string.Empty);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 
@@ -135,7 +135,7 @@ public class CoverageRewriteTests
         var configurationElement = new XmlDocument();
         configurationElement.LoadXml(configurationSettingsXml);
 
-        var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty, null);
+        var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty);
         var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
         asmProcessor.Process();
 
