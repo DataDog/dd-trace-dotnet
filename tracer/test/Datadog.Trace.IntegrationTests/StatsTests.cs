@@ -227,7 +227,7 @@ namespace Datadog.Trace.IntegrationTests
             await tracer.TracerManager.ShutdownAsync(); // Flushes and closes both traces and stats
 
             var statsPayload = agent.WaitForStats(1);
-            var spans = agent.WaitForSpans(13);
+            var spans = agent.WaitForSpans(6);
 
             statsPayload.Should().HaveCount(1);
             statsPayload[0].Stats.Should().HaveCount(1);

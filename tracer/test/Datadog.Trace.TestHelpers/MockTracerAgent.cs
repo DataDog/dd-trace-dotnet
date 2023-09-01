@@ -26,6 +26,7 @@ using Datadog.Trace.TestHelpers.Stats;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
+using FluentAssertions;
 using MessagePack; // use nuget MessagePack to deserialize
 using Xunit.Abstractions;
 
@@ -167,6 +168,8 @@ namespace Datadog.Trace.TestHelpers
 
                 Thread.Sleep(500);
             }
+
+            relevantSpans.Should().HaveCountGreaterThanOrEqualTo(count, "because we want to ensure that we don't timeout while waiting for spans from the mock tracer agent");
 
             foreach (var headers in TraceRequestHeaders)
             {
