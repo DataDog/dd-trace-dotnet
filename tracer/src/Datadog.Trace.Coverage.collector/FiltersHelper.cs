@@ -59,51 +59,58 @@ internal static class FiltersHelper
             return false;
         }
 
-        var value = Matchers.GetOrAdd(
-            filters,
-            list =>
-            {
-                var instance = new Matcher();
-                var lstRegex = new List<Regex>();
-                foreach (var filter in list)
+        try
+        {
+            var value = Matchers.GetOrAdd(
+                filters,
+                list =>
                 {
-                    if (filter is null)
+                    var instance = new Matcher();
+                    var lstRegex = new List<Regex>();
+                    foreach (var filter in list)
                     {
-                        continue;
+                        if (filter is null)
+                        {
+                            continue;
+                        }
+
+                        if (!filter.Contains("**"))
+                        {
+                            try
+                            {
+                                lstRegex.Add(new Regex(filter, RegexOptions.Compiled));
+                            }
+                            catch
+                            {
+                                // .
+                            }
+                        }
+
+                        instance.AddInclude(Path.IsPathRooted(filter) ? filter.Substring(Path.GetPathRoot(filter).Length) : filter);
                     }
 
-                    if (!filter.Contains("**"))
-                    {
-                        try
-                        {
-                            lstRegex.Add(new Regex(filter, RegexOptions.Compiled));
-                        }
-                        catch
-                        {
-                            // .
-                        }
-                    }
+                    return Tuple.Create(instance, (IReadOnlyList<Regex>)lstRegex);
+                });
 
-                    instance.AddInclude(Path.IsPathRooted(filter) ? filter.Substring(Path.GetPathRoot(filter).Length) : filter);
-                }
-
-                return Tuple.Create(instance, (IReadOnlyList<Regex>)lstRegex);
-            });
-
-        var matcher = value.Item1;
-        // https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing.matcher?view=dotnet-plat-ext-6.0
-        var globbingResult = matcher.Match(Path.IsPathRooted(sourcePath) ? sourcePath.Substring(Path.GetPathRoot(sourcePath).Length) : sourcePath).HasMatches;
-        if (globbingResult)
-        {
-            return true;
-        }
-
-        foreach (var regex in value.Item2)
-        {
-            if (regex.IsMatch(sourcePath))
+            var matcher = value.Item1;
+            // https://learn.microsoft.com/en-us/dotnet/api/microsoft.extensions.filesystemglobbing.matcher?view=dotnet-plat-ext-6.0
+            var globbingResult = matcher.Match(Path.IsPathRooted(sourcePath) ? sourcePath.Substring(Path.GetPathRoot(sourcePath).Length) : sourcePath).HasMatches;
+            if (globbingResult)
             {
                 return true;
             }
+
+            foreach (var regex in value.Item2)
+            {
+                if (regex.IsMatch(sourcePath))
+                {
+                    return true;
+                }
+            }
+        }
+        catch
+        {
+            // We don't have any logger here to report the problem, we just skip the check.
         }
 
         return false;
@@ -124,25 +131,47 @@ internal static class FiltersHelper
 
         foreach (var filter in filters)
         {
-            var typePattern = filter.Substring(filter.IndexOf(']') + 1);
-            var modulePattern = filter.Substring(1, filter.IndexOf(']') - 1);
-            var moduleRegex = new Regex(WildcardToRegex(modulePattern));
-
-            if (typePattern == "*")
+            try
             {
-                if (moduleRegex.IsMatch(module))
+                var indexOfModuleTypeSeparator = filter.IndexOf(']');
+                if (indexOfModuleTypeSeparator == -1)
                 {
-                    return true;
+                    // Bad filter format: doesn't have `]`
+                    // we skip the filter
+                    continue;
+                }
+
+                if (indexOfModuleTypeSeparator - 1 < 0)
+                {
+                    // Bad filter format: the module is not inside of a `[]`
+                    // we skip the filter
+                    continue;
+                }
+
+                var typePattern = filter.Substring(indexOfModuleTypeSeparator + 1);
+                var modulePattern = filter.Substring(1, indexOfModuleTypeSeparator - 1);
+                var moduleRegex = new Regex(WildcardToRegex(modulePattern));
+
+                if (typePattern == "*")
+                {
+                    if (moduleRegex.IsMatch(module))
+                    {
+                        return true;
+                    }
+                }
+                else if (type is not null)
+                {
+                    var typeRegex = new Regex(WildcardToRegex(typePattern));
+                    if (moduleRegex.IsMatch(module) &&
+                        typeRegex.IsMatch(type))
+                    {
+                        return true;
+                    }
                 }
             }
-            else if (type is not null)
+            catch
             {
-                var typeRegex = new Regex(WildcardToRegex(typePattern));
-                if (moduleRegex.IsMatch(module) &&
-                    typeRegex.IsMatch(type))
-                {
-                    return true;
-                }
+                // We don't have any logger here to report the problem, we just skip the problematic filter.
             }
         }
 

@@ -22,15 +22,17 @@ internal class CoverageSettings
 
         if (configurationElement is not null)
         {
-            IReadOnlyList<string>? excludeFilters = null, excludeSourceFiles = null, excludeByAttribute = null;
+            IReadOnlyList<string> excludeFilters = new List<string>(),
+                                  excludeSourceFiles = new List<string>(),
+                                  excludeByAttribute = new List<string>();
             GetStringArrayFromXmlElement(configurationElement["Exclude"], ref excludeFilters);
             GetStringArrayFromXmlElement(configurationElement["ExcludeByFile"], ref excludeSourceFiles);
             GetStringArrayFromXmlElement(configurationElement["ExcludeByAttribute"], ref excludeByAttribute);
-            GetStringArrayFromXmlNodeList(configurationElement?["CodeCoverage"]?["Sources"]?["Exclude"]?.ChildNodes, ref excludeSourceFiles);
-            GetStringArrayFromXmlNodeList(configurationElement?["CodeCoverage"]?["Attributes"]?["Exclude"]?.ChildNodes, ref excludeByAttribute);
-            ExcludeFilters = excludeFilters!;
-            ExcludeSourceFiles = excludeSourceFiles!;
-            ExcludeByAttribute = excludeByAttribute!;
+            GetStringArrayFromXmlNodeList(configurationElement["CodeCoverage"]?["Sources"]?["Exclude"]?.ChildNodes, ref excludeSourceFiles);
+            GetStringArrayFromXmlNodeList(configurationElement["CodeCoverage"]?["Attributes"]?["Exclude"]?.ChildNodes, ref excludeByAttribute);
+            ExcludeFilters = excludeFilters;
+            ExcludeSourceFiles = excludeSourceFiles;
+            ExcludeByAttribute = excludeByAttribute;
         }
         else
         {
@@ -70,9 +72,8 @@ internal class CoverageSettings
     /// </summary>
     public CIVisibilitySettings? CIVisibility { get; }
 
-    private static void GetStringArrayFromXmlElement(XmlElement? xmlElement, ref IReadOnlyList<string>? elements)
+    private static void GetStringArrayFromXmlElement(XmlElement? xmlElement, ref IReadOnlyList<string> elements)
     {
-        elements ??= new List<string>();
         if (xmlElement?.InnerText is { } elementText &&
             elementText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } elementsArray)
         {
@@ -93,9 +94,8 @@ internal class CoverageSettings
         }
     }
 
-    private static void GetStringArrayFromXmlNodeList(XmlNodeList? xmlNodeList, ref IReadOnlyList<string>? elements)
+    private static void GetStringArrayFromXmlNodeList(XmlNodeList? xmlNodeList, ref IReadOnlyList<string> elements)
     {
-        elements ??= new List<string>();
         if (xmlNodeList is { } nodeList)
         {
             var lstElements = (List<string>)elements;

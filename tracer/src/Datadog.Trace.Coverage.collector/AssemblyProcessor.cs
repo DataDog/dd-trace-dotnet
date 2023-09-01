@@ -118,6 +118,7 @@ namespace Datadog.Trace.Coverage.Collector
                     if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
                     {
                         _logger.Debug($"Assembly: {FilePath}, ignored by settings attribute filter.");
+                        return;
                     }
 
                     hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
@@ -370,10 +371,17 @@ namespace Datadog.Trace.Coverage.Collector
 
                             var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
-                            var file = sequencePoints
-                                      .Where(s => !s.IsHidden && !string.IsNullOrWhiteSpace(s.Document?.Url))
-                                      .Select(s => s.Document.Url)
-                                      .FirstOrDefault();
+                            string? file = null;
+                            foreach (var pt in sequencePoints)
+                            {
+                                if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
+                                {
+                                    continue;
+                                }
+
+                                file = pt.Document.Url;
+                                break;
+                            }
 
                             if (file is not null && FiltersHelper.FilteredBySourceFile(file, _settings.ExcludeSourceFiles))
                             {

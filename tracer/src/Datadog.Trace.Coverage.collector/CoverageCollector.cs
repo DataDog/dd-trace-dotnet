@@ -30,15 +30,13 @@ namespace Datadog.Trace.Coverage.Collector
         private DataCollectionEvents? _events;
         private CoverageSettings? _settings;
         private int _testNumber;
-        private XmlElement? _configurationElement;
 
         /// <inheritdoc />
         public override void Initialize(XmlElement configurationElement, DataCollectionEvents events, DataCollectionSink dataSink, DataCollectionLogger logger, DataCollectionEnvironmentContext environmentContext)
         {
             _events = events;
-            _configurationElement = configurationElement;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
-            if (Initialize() && events is not null)
+            if (Initialize(configurationElement) && events is not null)
             {
                 events.SessionStart += OnSessionStart;
                 events.SessionEnd += OnSessionEnd;
@@ -108,24 +106,27 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.SetContext(e.Context);
         }
 
-        internal bool Initialize()
+        private bool Initialize(XmlElement configurationElement)
         {
             try
             {
-                var coverageSettings = new CoverageSettings(_configurationElement);
-                foreach (var item in coverageSettings.ExcludeFilters)
+                var coverageSettings = new CoverageSettings(configurationElement);
+                if (_logger?.IsDebugEnabled == true)
                 {
-                    _logger?.Debug($"Exclude filter: {item}");
-                }
+                    foreach (var item in coverageSettings.ExcludeFilters)
+                    {
+                        _logger.Debug($"Exclude filter: {item}");
+                    }
 
-                foreach (var item in coverageSettings.ExcludeByAttribute)
-                {
-                    _logger?.Debug($"Exclude attribute: {item}");
-                }
+                    foreach (var item in coverageSettings.ExcludeByAttribute)
+                    {
+                        _logger.Debug($"Exclude attribute: {item}");
+                    }
 
-                foreach (var item in coverageSettings.ExcludeSourceFiles)
-                {
-                    _logger?.Debug($"Exclude source: {item}");
+                    foreach (var item in coverageSettings.ExcludeSourceFiles)
+                    {
+                        _logger.Debug($"Exclude source: {item}");
+                    }
                 }
 
                 // Read the DD_DOTNET_TRACER_HOME environment variable
@@ -147,7 +148,7 @@ namespace Datadog.Trace.Coverage.Collector
             return true;
         }
 
-        internal void ProcessFolder(string folder, SearchOption searchOption)
+        private void ProcessFolder(string folder, SearchOption searchOption)
         {
             if (_settings is null)
             {
