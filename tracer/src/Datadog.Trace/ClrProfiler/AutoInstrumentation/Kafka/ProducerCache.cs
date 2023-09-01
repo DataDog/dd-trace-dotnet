@@ -5,7 +5,9 @@
 
 #nullable enable
 
+using System;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -13,6 +15,17 @@ internal class ProducerCache
 {
     // A map between Kafka Producer<TKey,TValue> and the corresponding producer bootstrap servers
     private static readonly ConditionalWeakTable<object, string> ProducerToBootstrapServersMap = new();
+    private static readonly ConditionalWeakTable<object, Action<object>> ProducerDefaultDeliveryHandlerMap = new();
+    private static readonly Action<object> DefaultDeliveryHandler = obj =>
+    {
+        if (obj.TryDuckCast<ITopicPartitionOffset>(out var item) && !string.IsNullOrEmpty(item.Topic))
+        {
+            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+            dataStreams.TrackBacklog(
+                $"partition:{item.Partition.Value},topic:{item.Topic},type:kafka_produce",
+                item.Offset.Value);
+        }
+    };
 
     public static void AddProducer(object producer, string bootstrapServers)
     {
@@ -22,6 +35,18 @@ internal class ProducerCache
         ProducerToBootstrapServersMap.GetValue(producer, x => bootstrapServers);
 #endif
     }
+
+    public static void CreateDefaultDeliveryHandler(object producer)
+    {
+#if NETCOREAPP3_1_OR_GREATER
+        ProducerDefaultDeliveryHandlerMap.AddOrUpdate(producer, DefaultDeliveryHandler);
+#else
+        ProducerDefaultDeliveryHandlerMap.GetValue(producer, x => DefaultDeliveryHandler);
+#endif
+    }
+
+    public static bool TryGetDefaultDeliveryHandler(object producer, out Action<object>? handler)
+        => ProducerDefaultDeliveryHandlerMap.TryGetValue(producer, out handler);
 
     public static bool TryGetProducer(object producer, out string? bootstrapServers)
         => ProducerToBootstrapServersMap.TryGetValue(producer, out bootstrapServers);

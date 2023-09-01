@@ -32,15 +32,24 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TTopicPartition">Type of the TopicPartition</typeparam>
         /// <typeparam name="TMessage">Type of the message</typeparam>
-        /// <typeparam name="TDeliveryHandler">Type of the delivery handler action</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="topicPartition">TopicPartition instance</param>
         /// <param name="message">Message instance</param>
         /// <param name="deliveryHandler">Delivery Handler instance</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage, TDeliveryHandler>(TTarget instance, TTopicPartition topicPartition, TMessage message, TDeliveryHandler deliveryHandler)
+        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, ref object deliveryHandler)
             where TMessage : IMessage
         {
+            if (deliveryHandler == null)
+            {
+                // there will be a default delivery handler for this producer unless
+                // the delivery reports are explicitly disabled.
+                if (ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
+                {
+                    deliveryHandler = handler;
+                }
+            }
+
             // manually doing duck cast here so we have access to the _original_ TopicPartition type
             // as a generic parameter, for injecting headers
             var partition = topicPartition.DuckCast<ITopicPartition>();
@@ -74,6 +83,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
+            if (exception != null)
+            {
+                Console.WriteLine($"#### Exception {exception}");
+            }
+
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();
         }

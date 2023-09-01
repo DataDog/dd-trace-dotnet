@@ -4,10 +4,7 @@
 // </copyright>
 
 using System;
-using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -20,6 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     {
         internal const string GroupIdKey = "group.id";
         internal const string BootstrapServersKey = "bootstrap.servers";
+        internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private const string MessagingType = "kafka";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static bool _headersInjectionEnabled = true;

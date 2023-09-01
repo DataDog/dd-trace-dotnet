@@ -54,7 +54,7 @@ async Task RunStandardPipelineScenario()
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
-    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false);
+    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: false, isTombstone: false);
     await Producer.ProduceAsync(topic2, numMessages: 3, config, isTombstone: false);
     LogWithTime("Finished producing messages");
 
