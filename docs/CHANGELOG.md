@@ -6,6 +6,52 @@
 
 
 
+
+## [Release 2.37.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.37.0)
+
+## Summary
+
+[DSM] - Report default time in queue and payload size
+
+## Changes
+
+### Tracer
+* [Tracer] Fix telemetry metrics and add validator (#4543)
+* [Tracer] use 2^64-1 as the modulo in the sampling formula (#4548)
+* [Tracer] Make sure Process is not used concurrently (#4567)
+
+### CI Visibility
+* [CI Visibility] `ConfigureCiCommand` fixes. (#4558)
+* [CI Visibility] Update CI specs (#4565)
+
+### ASM
+* [ASM] Create new appsec waf benchmark with benchmark agent (#4534)
+* [ASM] Fix ASM WAF benchmarks (#4547)
+* [ASM] DecompileDelegate lib bugfix (#4554)
+* [ASM] bugfix - stop misreporting RC update failure (#4557)
+
+### Continuous Profiler
+* [Profiler] Add Sample value type provider (#4480)
+* [Profiler] Fix race in ManagedThreadList class (#4513)
+* [Profiler] Prevent symbols resolution from crashing on Windows (#4564)
+
+### Build / Test
+* Add OpenTelemetry Benchmarks (#4381)
+* Test Package Versions Bump, Updating package versions (#4539)
+* Bump the version of GRPC tested by default (in Windows) (#4542)
+* Validate that we only use known configuration keys in telemetry (#4546)
+* Fix flake in StackExchange.Redis integration tests (#4549)
+* Fix warning in sample (#4551)
+* Add a GH action for forcing required checks for version-bump PR to success (#4556)
+* Fix version-bump PR forcer action (#4563)
+
+### Miscellaneous
+* [DSM] - Default time in queue + payload size (#4520)
+* Migrate from Spectre.Console.Cli to System.CommandLine (#4395)
+
+
+[Changes since 2.36.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.36.0...v2.37.0)
+
 ## [Release 2.36.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.36.0)
 
 ## Summary

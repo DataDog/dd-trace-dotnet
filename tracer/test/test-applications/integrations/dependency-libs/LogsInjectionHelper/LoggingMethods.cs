@@ -25,12 +25,21 @@ namespace PluginApplication
         public static int RunLoggingProcedure(Action<string> logAction)
         {
 #if NETFRAMEWORK
-            // Set up the secondary AppDomain first
-            // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
-            // Create an AppDomain with that directory as the appBasePath
-            var entryDirectory = Directory.GetParent(Assembly.GetEntryAssembly().Location);
-            var applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
-            var applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
+            var includeCrossDomainCall = Environment.GetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL") != "false";
+            
+            DirectoryInfo entryDirectory;
+            string applicationFilesDirectory;
+            AppDomain applicationAppDomain = null;
+
+            if (includeCrossDomainCall)
+            {
+                // Set up the secondary AppDomain first
+                // The plugin application we'll call was built and copied to the ApplicationFiles subdirectory
+                // Create an AppDomain with that directory as the appBasePath
+                entryDirectory = Directory.GetParent(Assembly.GetEntryAssembly().Location);
+                applicationFilesDirectory = Path.Combine(entryDirectory.FullName, "ApplicationFiles");
+                applicationAppDomain = AppDomain.CreateDomain("ApplicationAppDomain", null, applicationFilesDirectory, applicationFilesDirectory, false);
+            }
 #endif
 
             // Do not explicitly set LogsInjectionEnabled = true, use DD_LOGS_INJECTION environment variable to enable
@@ -54,8 +63,16 @@ namespace PluginApplication
                     // System.Runtime.Remoting.Messaging.CallContext:
                     // System.Runtime.Serialization.SerializationException: Type is not resolved for member 'log4net.Util.PropertiesDictionary,log4net, Version=2.0.12.0, Culture=neutral, PublicKeyToken=669e0ddf0bb1aa2a'.
 #if NETFRAMEWORK
-                    logAction("Calling the PluginApplication.Program in a separate AppDomain");
-                    AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
+                    if (includeCrossDomainCall)
+                    {
+                        logAction("Calling the PluginApplication.Program in a separate AppDomain");
+                        AppDomainProxy.Call(applicationAppDomain, "PluginApplication", "PluginApplication.Program", "Invoke", null);
+                    }
+                    else
+                    {
+                        logAction("Skipping the cross-AppDomain call as INCLUDE_CROSS_DOMAIN_CALL=false");
+                        
+                    }
 #else
                     logAction("Skipping the cross-AppDomain call on .NET Core");
 #endif
@@ -63,7 +80,10 @@ namespace PluginApplication
 
                 logAction($"{ExcludeMessagePrefix}Exited Datadog scope.");
 #if NETFRAMEWORK
-                AppDomain.Unload(applicationAppDomain);
+                if (includeCrossDomainCall)
+                {
+                    AppDomain.Unload(applicationAppDomain);
+                }
 #endif
             }
             catch (Exception ex)

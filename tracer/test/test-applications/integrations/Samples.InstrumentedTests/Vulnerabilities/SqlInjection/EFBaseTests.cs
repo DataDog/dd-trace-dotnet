@@ -30,11 +30,12 @@ public abstract class EFBaseTests : InstrumentationTestsBase, IDisposable
         queryUnsafe = "SELECT * from Books where title like '" + taintedTitle + "'";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         db.Database.Connection.Close();
         db.Dispose();
         db = null;
+        base.Dispose();
     }
 
     [Fact]

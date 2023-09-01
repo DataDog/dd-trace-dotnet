@@ -1,0 +1,203 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:viewModels="clr-namespace:Datadog.AutoInstrumentation.Generator.ViewModels"
+             xmlns:AvaloniaEdit="clr-namespace:AvaloniaEdit;assembly=AvaloniaEdit"
+             mc:Ignorable="d" d:DesignWidth="1000" d:DesignHeight="600"
+             x:CompileBindings="True"
+             x:DataType="viewModels:MainViewModel"
+             x:Class="Datadog.AutoInstrumentation.Generator.Views.MainView"
+             Foreground="White"
+             Background="#171C2C">
+    <Design.DataContext>
+        <viewModels:MainViewModel />
+    </Design.DataContext>
+
+    <Panel>
+        <ExperimentalAcrylicBorder IsHitTestVisible="False">
+            <ExperimentalAcrylicBorder.Material>
+                <ExperimentalAcrylicMaterial
+                    BackgroundSource="Digger"
+                    TintColor="Black"
+                    TintOpacity="1"
+                    MaterialOpacity="0.65" />
+            </ExperimentalAcrylicBorder.Material>
+        </ExperimentalAcrylicBorder>
+
+        <DockPanel>
+            <StackPanel DockPanel.Dock="Top">
+                <Grid ColumnDefinitions="40, *" Height="34" Background="#2b2d30">
+                    <Panel Grid.Column="0" Margin="5 2">
+                        <Button Background="Transparent" Command="{Binding OpenFileCommand}">
+                            <Image Source="/Assets/OpenFolder.png" ToolTip.Tip="Open Assembly" />
+                        </Button>
+                    </Panel>
+                    <TextBlock Grid.Column="1"
+                               HorizontalAlignment="Center"
+                               FontSize="12"
+                               FontWeight="Light"
+                               VerticalAlignment="Center"
+                               Margin="10, 0"
+                               Text="{Binding AssemblyPath}" />
+                </Grid>
+            </StackPanel>
+
+            <Grid ColumnDefinitions="450, 4, *, 240">
+                <Panel Grid.Column="0" Background="#80000000">
+                    <TreeView 
+                        ItemsSource="{Binding Items}" SelectedItems="{Binding SelectedItems}"
+                        FontFamily="Sans Serif"
+                        FontSize="12"
+                        FontWeight="Normal"
+                        Margin="5">
+                        <TreeView.Styles>
+                            <Style Selector="TreeViewItem">
+                                <Setter Property="IsExpanded" Value="{Binding (viewModels:Node).Expanded}"></Setter>
+                            </Style>
+                        </TreeView.Styles>
+                        <TreeView.ItemTemplate>
+                            <TreeDataTemplate ItemsSource="{Binding Children}">
+                                <Grid ColumnDefinitions="23, *">
+                                    <Image Grid.Column="0" Source="{Binding IconFile}" Width="16" Height="16" HorizontalAlignment="Left" />
+                                    <StackPanel Grid.Column="1" HorizontalAlignment="Left" Orientation="Horizontal" Height="16">
+                                        <TextBlock Text="{Binding ReturnName}" Foreground="Gray" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="Thin" />
+                                        <TextBlock Text="{Binding Name}" Foreground="LightGray" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                        <TextBlock Text="{Binding Arguments}" Foreground="Gray" HorizontalAlignment="Left" VerticalAlignment="Center" FontWeight="Thin" />
+                                    </StackPanel>
+                                </Grid>
+                            </TreeDataTemplate>
+                        </TreeView.ItemTemplate>
+                    </TreeView>
+                </Panel>
+
+                <GridSplitter Grid.Column="1" Background="#D0000000" ResizeDirection="Columns" />
+
+                <DockPanel Grid.Column="2" Background="#1e1f22">
+                    <AvaloniaEdit:TextEditor Name="textEditor"
+                                             Text="Hello AvaloniaEdit!"
+                                             ShowLineNumbers="True"
+                                             FontFamily="Cascadia Code,Consolas,Menlo,Monospace"
+                                             Margin="10"
+                                             HorizontalScrollBarVisibility="Auto"
+                                             VerticalScrollBarVisibility="Visible"
+                                             FontWeight="Light"
+                                             FontSize="12" />
+                </DockPanel>
+
+                <Panel Grid.Column="3" Background="#70000000">
+                    <Grid RowDefinitions="25, *" Margin="10">
+                        <TextBlock Grid.Row="0" FontWeight="DemiBold" FontSize="17" Margin="0 0 0 10">Configuration</TextBlock>
+                        <ScrollViewer Grid.Row="1">
+                            <StackPanel>
+                                <TextBlock Margin="0 10">Integration</TextBlock>
+                                <StackPanel Margin="20 0">
+                                    <CheckBox IsChecked="{Binding CreateOnMethodBegin}">OnMethodBegin</CheckBox>
+                                    <CheckBox IsChecked="{Binding CreateOnMethodEnd}">OnMethodEnd</CheckBox>
+                                    <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}"
+                                              IsChecked="{Binding CreateOnAsyncMethodEnd}">
+                                        OnAsyncMethodEnd
+                                    </CheckBox>
+                                </StackPanel>
+
+                                <TextBlock Margin="0 10">DuckTypes</TextBlock>
+
+                                <StackPanel Margin="20 0">
+                                    <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
+                                              IsChecked="{Binding UseDuckCopyStruct}">
+                                        Use DuckCopy struct
+                                    </CheckBox>
+
+
+                                    <CheckBox IsEnabled="{Binding CreateDucktypeInstanceEnabled}"
+                                              IsChecked="{Binding CreateDucktypeInstance}">
+                                        Target instance
+                                    </CheckBox>
+                                    <StackPanel Margin="20 0" IsEnabled="{Binding DucktypeInstanceEnabled}">
+                                        <CheckBox IsChecked="{Binding DucktypeInstanceFields}">
+                                            Fields
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeInstanceProperties}">
+                                            Properties
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeInstanceMethods}">
+                                            Methods
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeInstanceDuckChaining}">
+                                            Duckchaining
+                                        </CheckBox>
+                                    </StackPanel>
+                                    
+                                    
+                                    <CheckBox IsEnabled="{Binding CreateOnMethodBegin}"
+                                              IsChecked="{Binding CreateDucktypeArguments}">
+                                        Arguments
+                                    </CheckBox>
+                                    <StackPanel Margin="20 0" IsEnabled="{Binding DucktypeArgumentsEnabled}">
+                                        <CheckBox IsChecked="{Binding DucktypeArgumentsFields}">
+                                            Fields
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeArgumentsProperties}">
+                                            Properties
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeArgumentsMethods}">
+                                            Methods
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeArgumentsDuckChaining}">
+                                            Duckchaining
+                                        </CheckBox>
+                                    </StackPanel>
+
+                                    
+                                    <CheckBox IsEnabled="{Binding CreateOnMethodEnd}"
+                                              IsChecked="{Binding CreateDucktypeReturnValue}">
+                                        Return value
+                                    </CheckBox>
+                                    <StackPanel Margin="20 0" IsEnabled="{Binding DucktypeReturnValueEnabled}">
+                                        <CheckBox IsChecked="{Binding DucktypeReturnValueFields}">
+                                            Fields
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeReturnValueProperties}">
+                                            Properties
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeReturnValueMethods}">
+                                            Methods
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeReturnValueDuckChaining}">
+                                            Duckchaining
+                                        </CheckBox>
+                                    </StackPanel>
+
+                                    <CheckBox IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}" 
+                                              IsEnabled="{Binding CreateOnAsyncMethodEnd}"
+                                              IsChecked="{Binding CreateDucktypeAsyncReturnValue}">
+                                        Async return value
+                                    </CheckBox>
+                                    <StackPanel Margin="20 0" IsVisible="{Binding CreateOnAsyncMethodEndIsVisible}" IsEnabled="{Binding DucktypeAsyncReturnValueEnabled}">
+                                        <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueFields}">
+                                            Fields
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueProperties}">
+                                            Properties
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueMethods}">
+                                            Methods
+                                        </CheckBox>
+                                        <CheckBox IsChecked="{Binding DucktypeAsyncReturnValueDuckChaining}">
+                                            Duckchaining
+                                        </CheckBox>
+                                    </StackPanel>
+                                    
+                                </StackPanel>
+                            </StackPanel>
+                        </ScrollViewer>
+                        
+                    </Grid>
+                        
+                </Panel>
+            </Grid>
+
+        </DockPanel>
+    </Panel>
+
+</UserControl>

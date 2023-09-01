@@ -46,11 +46,17 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, TLoggingConfiguration configuration)
         {
-            if (TracerManager.Instance.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
+            var tracerManager = TracerManager.Instance;
+            if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is not null)
             {
                 // if configuration is not-null, we've already checked that NLog is enabled
-                NLogCommon<TTarget>.AddDatadogTarget(configuration);
+                var wasAdded = NLogCommon<TTarget>.AddDatadogTarget(configuration);
+                if (wasAdded)
+                {
+                    // Not really generating a span, but the point is it's enabled and added
+                    tracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.NLog);
+                }
             }
 
             return CallTargetState.GetDefault();

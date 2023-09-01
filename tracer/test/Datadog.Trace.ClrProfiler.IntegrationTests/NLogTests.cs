@@ -156,10 +156,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             SetInstrumentationVerification();
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
+            SetEnvironmentVariable("INCLUDE_CROSS_DOMAIN_CALL", "false");
             EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), hostName);
 
-            var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = MockTracerAgent.Create(Output, agentPort);
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, packageVersion: packageVersion, arguments: context);
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
@@ -196,6 +197,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 };
                 logs.Should().Contain(x => hasProperty(x, CustomContextKey, CustomContextValue));
             }
+
+            telemetry.AssertIntegrationEnabled(IntegrationId.NLog);
         }
 
         private void VerifyContextProperties(LogFileTest[] testFiles, string packageVersion, string context)
