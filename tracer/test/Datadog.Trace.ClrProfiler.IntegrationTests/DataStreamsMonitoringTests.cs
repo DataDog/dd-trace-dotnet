@@ -245,7 +245,7 @@ public class DataStreamsMonitoringTests : TestHelper
         }
 
         currentBucket.Backlogs = backlogs
-           .OrderBy(o => string.Join(',', o.Tags))
+           .OrderBy(o => string.Join(",", o.Tags))
            .ThenBy(o => o.Value)
            .ToArray();
 
