@@ -36,19 +36,28 @@ public class CoverageFilterTests
             }
            .Concat(ValidModuleFilterData);
 
-    [Fact]
-    public void TestIsValidFilterExpression()
+    public static IEnumerable<object[]> FilterExpressionData
     {
-        Assert.True(FiltersHelper.IsValidFilterExpression("[*]*"));
-        Assert.True(FiltersHelper.IsValidFilterExpression("[*]*core"));
-        Assert.True(FiltersHelper.IsValidFilterExpression("[assembly]*"));
-        Assert.True(FiltersHelper.IsValidFilterExpression("[*]type"));
-        Assert.True(FiltersHelper.IsValidFilterExpression("[assembly]type"));
-        Assert.False(FiltersHelper.IsValidFilterExpression("[*]"));
-        Assert.False(FiltersHelper.IsValidFilterExpression("[-]*"));
-        Assert.False(FiltersHelper.IsValidFilterExpression("*"));
-        Assert.False(FiltersHelper.IsValidFilterExpression("]["));
-        Assert.False(FiltersHelper.IsValidFilterExpression(null));
+        get
+        {
+            yield return new object[] { "[*]*", true };
+            yield return new object[] { "[*]*core", true };
+            yield return new object[] { "[assembly]*", true };
+            yield return new object[] { "[*]type", true };
+            yield return new object[] { "[assembly]type", true };
+            yield return new object[] { "[*]", false };
+            yield return new object[] { "[-]*", false };
+            yield return new object[] { "*", false };
+            yield return new object[] { "][", false };
+            yield return new object[] { null, false };
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(FilterExpressionData))]
+    public void TestIsValidFilterExpression(string filter, bool result)
+    {
+        FiltersHelper.IsValidFilterExpression(filter).Should().Be(result);
     }
 
     [Theory]

@@ -91,6 +91,16 @@ public class CoverageRewriteTests
                 <Exclude>[*]CoverageRewriterAssembly.Class1</Exclude>
             </Configuration>",
         };
+
+        yield return new object[]
+        {
+            "CoverageRewriteTests.Rewritten.CoverletFilterByAssemblyAttribute",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Coverlet configuration -->
+                <ExcludeByAttribute>AssemblyFileVersionAttribute</ExcludeByAttribute>
+            </Configuration>",
+        };
     }
 
     [Fact]
