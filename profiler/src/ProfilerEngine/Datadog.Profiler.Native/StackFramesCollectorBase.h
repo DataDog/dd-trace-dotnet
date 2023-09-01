@@ -33,7 +33,7 @@ protected:
     virtual void PrepareForNextCollectionImplementation();
     virtual bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     virtual void ResumeTargetThreadIfRequiredImplementation(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
-    virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect);
+    virtual StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, bool selfCollect, StackSnapshotResultBuffer* buffer = nullptr);
 
 public:
     virtual ~StackFramesCollectorBase() = default;
@@ -46,14 +46,14 @@ public:
     void PrepareForNextCollection();
     bool SuspendTargetThread(ManagedThreadInfo* pThreadInfo, bool* pIsTargetThreadSuspended);
     void ResumeTargetThreadIfRequired(ManagedThreadInfo* pThreadInfo, bool isTargetThreadSuspended, uint32_t* pErrorCodeHR);
-    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR);
+    StackSnapshotResultBuffer* CollectStackSample(ManagedThreadInfo* pThreadInfo, uint32_t* pHR, StackSnapshotResultBuffer* buffer = nullptr);
 
 protected:
     ManagedThreadInfo* _pCurrentCollectionThreadInfo;
 
 private:
-    std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;
     std::atomic<bool> _isCurrentCollectionAbortRequested;
+    std::unique_ptr<StackSnapshotResultBuffer> _pStackSnapshotResult;
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;

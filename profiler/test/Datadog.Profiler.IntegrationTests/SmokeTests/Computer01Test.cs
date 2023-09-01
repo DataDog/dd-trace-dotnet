@@ -54,7 +54,9 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5 --threads 100", _output);
+            runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.CpuProfilerEnabled] = "0";
+            runner.EnvironmentHelper.CustomEnvironmentVariables["DD_INTERNAL_WALLTIME_CACHING_ENABLED"] = "1";
             runner.RunAndCheck();
         }
 

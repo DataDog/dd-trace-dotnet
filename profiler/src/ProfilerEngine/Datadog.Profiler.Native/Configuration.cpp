@@ -70,6 +70,7 @@ Configuration::Configuration()
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
+    _isCachingEnabled = GetEnvironmentValue(EnvironmentVariables::WallTimeCachingEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -265,6 +266,10 @@ bool Configuration::IsAllocationRecorderEnabled() const
     return _isAllocationRecorderEnabled;
 }
 
+bool Configuration::IsWalltimeCachingEnabled() const
+{
+    return _isCachingEnabled;
+}
 
 fs::path Configuration::GetApmBaseDirectory()
 {

@@ -91,6 +91,7 @@ private:
     std::unordered_map<shared::WSTRING, uint64_t> _encounteredStackCountsForDebug;
     std::chrono::nanoseconds _samplingPeriod;
     uint32_t _nbCores;
+    bool _cachingEnabled;
 
 private:
     void MainLoop();
@@ -101,7 +102,7 @@ private:
     void CollectOneThreadStackSample(std::shared_ptr<ManagedThreadInfo>& pThreadInfo,
                                      int64_t thisSampleTimestampNanosecs,
                                      int64_t duration,
-                                     PROFILING_TYPE profilingType);
+                                     PROFILING_TYPE profilingType, StackSnapshotResultBuffer* snapshot = nullptr);
     void LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog = false);
     int64_t ComputeWallTime(int64_t currentTimestampNs, int64_t prevTimestampNs);
     static void UpdateSnapshotInfos(StackSnapshotResultBuffer* pStackSnapshotResult, int64_t representedDurationNanosecs, time_t currentUnixTimestamp);

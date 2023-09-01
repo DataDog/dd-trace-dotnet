@@ -25,7 +25,8 @@ public:
 protected:
     StackSnapshotResultBuffer* CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                 uint32_t* pHR,
-                                                                bool selfCollect) override;
+                                                                bool selfCollect,
+                                                                StackSnapshotResultBuffer* buffer) override;
 
 private:
     ICorProfilerInfo4* const _pCorProfilerInfo;

@@ -178,8 +178,15 @@ BOOL GetThreadInfo(ManagedThreadInfo* pThreadInfo, CONTEXT& context, HANDLE& han
 
 StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleImplementation(ManagedThreadInfo* pThreadInfo,
                                                                                               uint32_t* pHR,
-                                                                                              bool selfCollect)
+                                                                                              bool selfCollect,
+                                                                                              StackSnapshotResultBuffer* buffer)
 {
+    auto* snapshotResult = GetStackSnapshotResult();
+    if (buffer != nullptr)
+    {
+        snapshotResult = buffer;
+    }
+
     // Collect data for TraceContext Tracking:
     bool traceContextDataCollected = this->TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
@@ -212,10 +219,10 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
 
     do
     {
-        if (!this->AddFrame(context.Rip))
+        if (!snapshotResult->AddFrame(context.Rip))
         {
             SetOutputHr(S_FALSE, pHR);
-            return this->GetStackSnapshotResult();
+            return snapshotResult;
         }
 
         __try
@@ -226,20 +233,20 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
         }
         __except (EXCEPTION_EXECUTE_HANDLER)
         {
-            AddFakeFrame();
+            snapshotResult->AddFakeFrame();
 
             SetOutputHr(E_ABORT, pHR);
-            return this->GetStackSnapshotResult();
+            return snapshotResult;
         }
 
         // RtlLookupFunctionEntry() may try to acquire global locks. The StackSamplerLoopManager should detect it and resume the
         // target thread, which will eventually allow the lookup to complete. In such case, the stack is invalid. Give up:
         if (this->IsCurrentCollectionAbortRequested())
         {
-            this->AddFakeFrame();
+            snapshotResult->AddFakeFrame();
 
             SetOutputHr(E_ABORT, pHR);
-            return this->GetStackSnapshotResult();
+            return snapshotResult;
         }
 
         if (nullptr == pFunctionTableEntry)
@@ -279,40 +286,40 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
             }
             __except (EXCEPTION_EXECUTE_HANDLER)
             {
-                AddFakeFrame();
+                snapshotResult->AddFakeFrame();
 
                 SetOutputHr(E_ABORT, pHR);
-                return this->GetStackSnapshotResult();
+                return snapshotResult;
             }
 
             // RtlVirtualUnwind() may try to acquire global locks. The StackSamplerLoopManager should detect it and resume the
             // target thread, which will eventually allow the unwind to complete. In such case, the stack is invalid. Give up:
             if (this->IsCurrentCollectionAbortRequested())
             {
-                this->AddFakeFrame();
+                snapshotResult->AddFakeFrame();
 
                 SetOutputHr(E_ABORT, pHR);
-                return this->GetStackSnapshotResult();
+                return snapshotResult;
             }
 
             // Sanity checks:
             if (!ValidatePointerInStack(establisherFrame, stackLimit, stackBase, "establisherFrame"))
             {
                 SetOutputHr(ERROR_BAD_STACK, pHR);
-                return this->GetStackSnapshotResult();
+                return snapshotResult;
             }
         }
 
         if (!ValidatePointerInStack(context.Rsp, stackLimit, stackBase, "context.Rsp"))
         {
             SetOutputHr(ERROR_BAD_STACK, pHR);
-            return this->GetStackSnapshotResult();
+            return snapshotResult;
         }
 
     } while (context.Rip != 0);
 
     SetOutputHr(S_OK, pHR);
-    return this->GetStackSnapshotResult();
+    return snapshotResult;
 }
 
 BOOL Windows64BitStackFramesCollector::EnsureThreadIsSuspended(HANDLE hThread)

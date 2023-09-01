@@ -11,6 +11,8 @@
 #include "IThreadInfo.h"
 #include "ScopedHandle.h"
 #include "Semaphore.h"
+#include "StackSnapshotResultBuffer.h"
+
 #include "shared/src/native-src/string.h"
 
 #include <atomic>
@@ -86,9 +88,13 @@ public:
     inline std::string GetProfileThreadId();
     inline std::string GetProfileThreadName();
 
+    inline StackSnapshotResultBuffer* GetResultBuffer();
+    inline bool RunOnCpuSinceLastCall();
+
 private:
     inline void BuildProfileThreadId();
     inline void BuildProfileThreadName();
+    inline bool HasMadeProgress(FILETIME userTime, FILETIME kernelTime);
 
 private:
     static constexpr std::uint32_t MaxProfilerThreadInfoId = 0xFFFFFF; // = 16,777,215
@@ -121,6 +127,12 @@ private:
     //  strings to be used by samples: avoid allocations when rebuilding them over and over again
     std::string _profileThreadId;
     std::string _profileThreadName;
+
+    std::unique_ptr<StackSnapshotResultBuffer> _resultBuffer;
+
+    std::uint64_t _lastCpuCycleTime;
+
+    FILETIME _kernelTime, _userTime;
 };
 
 
@@ -382,4 +394,50 @@ inline bool ManagedThreadInfo::HasTraceContext() const
         return localRootSpanId != 0 && spanId != 0;
     }
     return false;
+}
+
+inline StackSnapshotResultBuffer* ManagedThreadInfo::GetResultBuffer()
+{
+    if (_resultBuffer == nullptr)
+        _resultBuffer = std::make_unique<StackSnapshotResultBuffer>();
+    return _resultBuffer.get();
+}
+
+#include "Log.h"
+
+inline bool ManagedThreadInfo::HasMadeProgress(FILETIME userTime, FILETIME kernelTime)
+{
+    return userTime.dwLowDateTime != _userTime.dwLowDateTime ||
+           userTime.dwHighDateTime != _userTime.dwHighDateTime ||
+           kernelTime.dwLowDateTime != _kernelTime.dwLowDateTime ||
+           kernelTime.dwHighDateTime != _kernelTime.dwHighDateTime;
+}
+
+#include "../Datadog.Profiler.Native.Windows/SystemTime.h"
+
+inline bool ManagedThreadInfo::RunOnCpuSinceLastCall()
+{
+    //std::uint64_t currentCycleTime = 0;
+    //auto result = QueryThreadCycleTime(_osThreadHandle, &currentCycleTime);
+    //if (result == 0)
+    //{
+    //
+    //    Log::Info("Failed to retrieve cycle time for thread ", _osThreadId);
+    //    return true;
+    //}
+
+    //Log::Info("Thread [", _osThreadId, "] current cycle time: ", currentCycleTime);
+
+    FILETIME creationTime, exitTime, kernelTime, userTime;
+    GetThreadTimes(_osThreadHandle, &creationTime, &exitTime, &kernelTime, &userTime);
+
+    //Log::Info("Thread [", _osThreadId, "] user time: ", GetTotalMilliseconds(userTime), " ms kernel time: ", GetTotalMilliseconds(kernelTime), " ms");
+
+    //auto previousCycleTime = _lastCpuCycleTime;
+    //_lastCpuCycleTime = currentCycleTime;
+    //return (currentCycleTime - previousCycleTime) > 0;
+    auto hasProgressed = GetTotalMilliseconds(userTime) != GetTotalMilliseconds(_userTime);
+    _userTime = userTime;
+    _kernelTime = kernelTime;
+    return hasProgressed;
 }
