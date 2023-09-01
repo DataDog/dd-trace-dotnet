@@ -71,8 +71,8 @@ namespace Datadog.Trace.Activity.Handlers
                     }
 
                     var edgeTags = string.IsNullOrEmpty(namespaceString)
-                        ? new[] { "direction:out", "type:azureservicebus" }
-                        : new[] { "direction:out", $"topic:{namespaceString}", "type:azureservicebus" };
+                        ? new[] { "direction:out", "type:servicebus" }
+                        : new[] { "direction:out", $"topic:{namespaceString}", "type:servicebus" };
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,

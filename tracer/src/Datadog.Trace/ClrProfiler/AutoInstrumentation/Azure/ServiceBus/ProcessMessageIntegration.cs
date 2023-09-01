@@ -84,8 +84,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                     // TODO: we could pool these arrays to reduce allocations
                     // NOTE: the tags must be sorted in alphabetical order
                     var edgeTags = string.IsNullOrEmpty(namespaceString)
-                                        ? new[] { "direction:in", "type:azureservicebus" }
-                                        : new[] { "direction:in", $"topic:{namespaceString}", "type:azureservicebus" };
+                                        ? new[] { "direction:in", "type:servicebus" }
+                                        : new[] { "direction:in", $"topic:{namespaceString}", "type:servicebus" };
 
                     span.SetDataStreamsCheckpoint(
                         dataStreamsManager,
