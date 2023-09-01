@@ -231,4 +231,35 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
+
+    public enum IastInstrumentedSources
+    {
+        [Description("source_type:http.request.body")] RequestBody,
+        [Description("source_type:http.request.path")] RequestPath,
+        [Description("source_type:http.request.parameter.name")] RequestParameterName,
+        [Description("source_type:http.request.parameter")] RequestParameterValue,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
+        [Description("source_type:http.request.header")] RequestHeaderNameAndValue,
+        [Description("source_type:http.request.header.name")] RequestHeaderName,
+        [Description("source_type:http.request.query")] RequestQuery,
+        [Description("source_type:http.cookie.name")] CookieName,
+        [Description("source_type:http.cookie.value")] CookieValue,
+        [Description("source_type:http.request.matrix.parameter")] MatrixParameter,
+    }
+
+    public enum IastInstrumentedSinks
+    {
+        [Description("vulnerability_type:none")] None = 0,
+        [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
+        [Description("vulnerability_type:weak_hash")] WeakHash = 2,
+        [Description("vulnerability_type:sql_injection")] SqlInjection = 3,
+        [Description("vulnerability_type:command_injection")] CommandInjection = 4,
+        [Description("vulnerability_type:path_traversal")] PathTraversal = 5,
+        [Description("vulnerability_type:ldap_injection")] LdapInjection = 6,
+        [Description("vulnerability_type:ssrf")] Ssrf = 7,
+        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect = 8,
+        [Description("vulnerability_type:insecure_cookie")] InsecureCookie = 9,
+        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
+        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
+    }
 }
