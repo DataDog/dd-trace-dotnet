@@ -324,7 +324,8 @@ namespace Datadog.Trace
 
         private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
         {
-            var constantTags = new List<string>()
+            var customTagCount = settings.GlobalTagsInternal.Count;
+            var constantTags = new List<string>(5 + customTagCount)
             {
                 "lang:.NET",
                 $"lang_interpreter:{FrameworkDescription.Instance.Name}",
@@ -332,6 +333,18 @@ namespace Datadog.Trace
                 $"tracer_version:{TracerConstants.AssemblyVersion}",
                 $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
             };
+
+            if (customTagCount > 0)
+            {
+                var tagProcessor = new TruncatorTagsProcessor();
+                foreach (var kvp in settings.GlobalTagsInternal)
+                {
+                    var key = kvp.Key;
+                    var value = kvp.Value;
+                    tagProcessor.ProcessMeta(ref key, ref value);
+                    constantTags.Add($"{key}:{value}");
+                }
+            }
 
             return CreateDogStatsdClient(settings, serviceName, constantTags);
         }

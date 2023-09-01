@@ -101,6 +101,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_SERVICE", inputServiceName);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
             SetInstrumentationVerification();
+            SetEnvironmentVariable("DD_TAGS", "some:value"); // Should be added to the metrics
+
             using var agent = EnvironmentHelper.GetMockAgent(useStatsD: true);
             using var processResult = RunSampleAndWaitForExit(agent);
             var requests = agent.StatsdRequests;
@@ -128,7 +130,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                .OnlyContain(s => s.Contains($"service:{normalizedServiceName}"))
                .And.NotContain(s => s.Contains($"service:{inputServiceName}"))
                .And.OnlyContain(s => Regex.Matches(s, @"env:integration_tests").Count == 1)
-               .And.OnlyContain(s => Regex.Matches(s, @"version:1\.0\.0").Count == 1);
+               .And.OnlyContain(s => Regex.Matches(s, @"version:1\.0\.0").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"some:value").Count == 1);
 
             // Check if .NET Framework or .NET Core 3.1+
             if (!EnvironmentHelper.IsCoreClr()
