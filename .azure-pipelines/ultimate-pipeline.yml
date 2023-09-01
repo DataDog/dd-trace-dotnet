@@ -852,6 +852,7 @@ stages:
 
       - script: ./tracer/build.sh BuildAndRunManagedUnitTests --code-coverage $(runCodeCoverage)
         displayName: Build and Test
+        retryCountOnTaskFailure: 1
         env:
           DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
