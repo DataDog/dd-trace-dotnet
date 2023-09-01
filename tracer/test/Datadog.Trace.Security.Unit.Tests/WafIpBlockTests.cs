@@ -34,6 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             res.Success.Should().BeTrue();
+            res.HasErrors.Should().BeFalse();
             using var context = initResult.Waf.CreateContext();
             var result = context!.Run(new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "51.222.158.205" } }, WafTests.TimeoutMicroSeconds);
             result.Should().NotBeNull();
@@ -80,6 +81,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.Concat(rulesData2!).ToArray() } };
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            res.Success.Should().BeTrue();
+            res.HasErrors.Should().BeFalse();
             using var context = waf!.CreateContext();
             var result = context!.Run(
                 new Dictionary<string, object> { { AddressesConstants.RequestClientIp, "188.243.182.156" } },

@@ -89,7 +89,8 @@ public class DataStreamsMonitoringTransportTests
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
             timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
             pathwayLatencyNs: 5_000_000_000,
-            edgeLatencyNs: 2_000_000_000);
+            edgeLatencyNs: 2_000_000_000,
+            payloadSizeBytes: 1024);
 
     private MockTracerAgent Create(TracesTransportType transportType)
         => transportType switch

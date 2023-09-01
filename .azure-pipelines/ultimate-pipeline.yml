@@ -2707,6 +2707,8 @@ stages:
           agent: "BenchmarkAgent5"
         BenchmarkAgent6:
           agent: "BenchmarkAgent6"
+        BenchmarkAgent7:
+          agent: "BenchmarkAgent7"
 
     timeoutInMinutes: 30
     pool:
@@ -2785,6 +2787,12 @@ stages:
       displayName: Download results BenchmarkAgent6
       inputs:
         artifact: benchmarks_results_BenchmarkAgent6
+        path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download results BenchmarkAgent7
+      inputs:
+        artifact: benchmarks_results_BenchmarkAgent7
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/benchmarks
 
     # upload the combined results for simplicity in other pipelines
@@ -3929,7 +3937,7 @@ stages:
       jobs: [test]
 
   - job: test
-    timeoutInMinutes: 120 # Expect this to take ~60
+    timeoutInMinutes: 60
     pool:
       vmImage: ubuntu-20.04
 
@@ -3941,12 +3949,37 @@ stages:
         parametric_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: PARAMETRIC
-        system_tests_poc:
+        appsec_poc:
           WEBLOG_VARIANT: "poc"
-          SCENARIO: TRACER_RELEASE_SCENARIOS
-        system_tests_uds:
+          SCENARIO: APPSEC_SCENARIOS
+        appsec_uds:
           WEBLOG_VARIANT: "uds"
-          SCENARIO: TRACER_RELEASE_SCENARIOS
+          SCENARIO: APPSEC_SCENARIOS
+        rcm_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: REMOTE_CONFIG_SCENARIOS
+        rcm_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: REMOTE_CONFIG_SCENARIOS
+        telemetry_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: TELEMETRY_SCENARIOS
+        telemetry_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: TELEMETRY_SCENARIOS
+        default_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: DEFAULT
+        default_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: DEFAULT
+        # All the other scenarios that aren't in a secenario group
+        remainder_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+        remainder_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
 
     steps:
       - checkout: none
@@ -4939,7 +4972,7 @@ stages:
       eq(variables['isBenchmarksOnlyBuild'], 'False'),
       eq(variables['isMainBranch'], true)
     )
-  dependsOn: trace_pipeline # so it runs last
+  dependsOn: [trace_pipeline] # so it runs last
   jobs:
   - job: notify
     timeoutInMinutes: 10

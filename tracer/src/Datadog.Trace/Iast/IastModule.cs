@@ -23,6 +23,7 @@ internal static class IastModule
     private const string OperationNameSqlInjection = "sql_injection";
     private const string OperationNameCommandInjection = "command_injection";
     private const string OperationNamePathTraversal = "path_traversal";
+    private const string OperationNameLdapInjection = "ldap_injection";
     private const string OperationNameSsrf = "ssrf";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
@@ -31,6 +32,19 @@ internal static class IastModule
     static IastModule()
     {
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
+
+    internal static Scope? OnLdapInjection(string evidence)
+    {
+        try
+        {
+            return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for ldap injection.");
+            return null;
+        }
     }
 
     internal static Scope? OnSSRF(string evidence)
@@ -263,15 +277,17 @@ internal static class IastModule
         }
 
         // Sometimes we do not have the file/line but we have the method/class.
-        var filename = frameInfo.StackFrame?.GetFileName();
+        var stackFrame = frameInfo.StackFrame;
+        var filename = stackFrame?.GetFileName();
+        var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             new Location(
                 stackFile: filename,
-                methodName: string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetMethod()?.Name : null,
-                line: !string.IsNullOrEmpty(filename) ? frameInfo.StackFrame?.GetFileLineNumber() : null,
+                methodName: string.IsNullOrEmpty(filename) ? stackFrame?.GetMethod()?.Name : null,
+                line: line > 0 ? line : null,
                 spanId: currentSpan?.SpanId,
-                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(frameInfo.StackFrame) : null),
+                methodTypeName: string.IsNullOrEmpty(filename) ? GetMethodTypeName(stackFrame) : null),
             new Evidence(evidenceValue, tainted?.Ranges),
             integrationId);
 

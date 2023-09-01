@@ -398,6 +398,11 @@ namespace Datadog.Trace
         internal const string AwsQueueUrl = "aws.queue.url";
 
         /// <summary>
+        /// The stream name associated with the AWS SDK Kinesis span.
+        /// </summary>
+        internal const string StreamName = "streamname";
+
+        /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";
@@ -623,13 +628,22 @@ namespace Datadog.Trace
         internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
+        internal const string ProcessComponent = "cmd.component";
+        internal const string ProcessCommandExec = "cmd.exec";
+        internal const string ProcessCommandShell = "cmd.shell";
+        internal const string ProcessTruncated = "cmd.truncated";
 
         internal const string TagPropagationError = "_dd.propagation_error";
 
         /// <summary>
-        /// Marks a span as injected when DBM data was propagated
+        /// Marks a span as injected when DBM comment has the traceParent on it
         /// </summary>
-        internal const string DbmDataPropagated = "_dd.dbm_trace_injected";
+        internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
+
+        /// <summary>
+        /// Holds the original value for Service when Service is overriden after span creation
+        /// </summary>
+        internal const string BaseService = "_dd.base_service";
 
         internal static class User
         {

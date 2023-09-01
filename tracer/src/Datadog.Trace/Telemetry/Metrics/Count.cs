@@ -162,7 +162,7 @@ internal enum Count
     /// <summary>
     /// The number of requests sent to the api endpoint that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code)
     /// </summary>
-    [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors.responses", isCommon: false)] DirectLogApiErrors,
+    [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
 #endregion
 #region AppSec Namespace

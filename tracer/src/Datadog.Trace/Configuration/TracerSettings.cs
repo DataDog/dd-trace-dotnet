@@ -382,6 +382,10 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
 
+            CommandsCollectionEnabled = config
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
+                                       .AsBool(false);
+
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
@@ -856,6 +860,12 @@ namespace Datadog.Trace.Configuration
         /// even if we are not generating them.
         /// </summary>
         internal bool TraceId128BitLoggingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will send the shell commands of
+        /// the "command_execution" integration to the agent.
+        /// </summary>
+        internal bool CommandsCollectionEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings

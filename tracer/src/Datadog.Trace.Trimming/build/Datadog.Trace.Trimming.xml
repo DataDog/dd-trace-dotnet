@@ -1,6 +1,7 @@
 <linker>
    <assembly fullname="AerospikeClient" />
    <assembly fullname="AWSSDK.Core" />
+   <assembly fullname="AWSSDK.Kinesis" />
    <assembly fullname="AWSSDK.SimpleNotificationService" />
    <assembly fullname="AWSSDK.SQS" />
    <assembly fullname="Confluent.Kafka" />

@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Originally Based on https://github.com/fluentassertions/fluentassertions.json
+// License: https://github.com/fluentassertions/fluentassertions.json/blob/master/LICENSE
+
 namespace Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 
 internal sealed class JsonAssertionRestriction<T, TProperty> : IJsonAssertionRestriction<T, TProperty>

@@ -38,7 +38,7 @@ namespace Samples.AWS.SQS
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("AWS_SQS_HOST") ?? "localhost:9324";
+            return Environment.GetEnvironmentVariable("AWS_SQS_HOST") ?? "localhost:4566";
         }
     }
 }

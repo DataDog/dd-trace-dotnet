@@ -59,6 +59,8 @@ namespace Datadog.Trace.Configuration
         SymmetricAlgorithm,
         OpenTelemetry,
         PathTraversal,
-        Ssrf
+        Ldap,
+        Ssrf,
+        AwsKinesis,
     }
 }

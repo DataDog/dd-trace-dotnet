@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tests.DataStreamsMonitoring;
 public class DataStreamsAggregatorTests
 {
     private const long OneSecondNs = 1_000_000_000;
+    private const long OneKB = 1024;
     private const int BucketDurationMs = DataStreamsConstants.DefaultBucketDurationMs; // 10s
     private const long BucketDurationNs = ((long)BucketDurationMs) * 1_000_000;
 
@@ -116,7 +117,8 @@ public class DataStreamsAggregatorTests
                 parentHash: new PathwayHash(1),
                 timestampNs: t2,
                 pathwayLatencyNs: OneSecondNs,
-                edgeLatencyNs: OneSecondNs));
+                edgeLatencyNs: OneSecondNs,
+                payloadSizeBytes: OneKB));
 
         aggregator.Add(
             new StatsPoint(
@@ -125,7 +127,8 @@ public class DataStreamsAggregatorTests
                 parentHash: new PathwayHash(1),
                 timestampNs: t2,
                 pathwayLatencyNs: 5 * OneSecondNs,
-                edgeLatencyNs: 2 * OneSecondNs));
+                edgeLatencyNs: 2 * OneSecondNs,
+                payloadSizeBytes: OneKB * 2));
 
         aggregator.Add(
             new StatsPoint(
@@ -134,7 +137,8 @@ public class DataStreamsAggregatorTests
                 parentHash: new PathwayHash(1),
                 timestampNs: t2,
                 pathwayLatencyNs: 5 * OneSecondNs,
-                edgeLatencyNs: 2 * OneSecondNs));
+                edgeLatencyNs: 2 * OneSecondNs,
+                payloadSizeBytes: OneKB * 2));
 
         aggregator.Add(
             new StatsPoint(
@@ -143,7 +147,8 @@ public class DataStreamsAggregatorTests
                 parentHash: new PathwayHash(1),
                 timestampNs: t1, // different start time
                 pathwayLatencyNs: 5 * OneSecondNs,
-                edgeLatencyNs: 2 * OneSecondNs));
+                edgeLatencyNs: 2 * OneSecondNs,
+                payloadSizeBytes: OneKB * 2));
         return aggregator;
     }
 
