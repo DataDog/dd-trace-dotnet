@@ -42,21 +42,19 @@ namespace Datadog.Trace.Coverage.Collector
             "Xunit.SkippableFact.dll",
         };
 
-        private readonly CIVisibilitySettings? _ciVisibilitySettings;
+        private readonly CoverageSettings _settings;
         private readonly ICollectorLogger _logger;
-        private readonly string _tracerHome;
         private readonly string _assemblyFilePath;
         private readonly bool _enableJitOptimizations;
 
         private byte[]? _strongNameKeyBlob;
 
-        public AssemblyProcessor(string filePath, string tracerHome, ICollectorLogger? logger = null, CIVisibilitySettings? ciVisibilitySettings = null)
+        public AssemblyProcessor(string filePath, CoverageSettings settings, ICollectorLogger? logger = null)
         {
-            _tracerHome = tracerHome;
+            _settings = settings;
             _logger = logger ?? new ConsoleCollectorLogger();
-            _ciVisibilitySettings = ciVisibilitySettings;
             _assemblyFilePath = filePath ?? throw new ArgumentNullException(nameof(filePath));
-            _enableJitOptimizations = ciVisibilitySettings?.CodeCoverageEnableJitOptimizations ?? true;
+            _enableJitOptimizations = settings.CIVisibility.CodeCoverageEnableJitOptimizations;
 
             if (!File.Exists(_assemblyFilePath))
             {
@@ -117,6 +115,12 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
+                    if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                    {
+                        _logger.Debug($"Assembly: {FilePath}, ignored by settings attribute filter.");
+                        return;
+                    }
+
                     hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
 
                     // Enable Jit Optimizations
@@ -151,7 +155,7 @@ namespace Datadog.Trace.Coverage.Collector
                 {
                     _logger.Debug($"Assembly: {FilePath} is signed.");
 
-                    var snkFilePath = _ciVisibilitySettings?.CodeCoverageSnkFilePath;
+                    var snkFilePath = _settings.CIVisibility.CodeCoverageSnkFilePath;
                     _logger.Debug($"Assembly: {FilePath} loading .snk file: {snkFilePath}.");
                     if (!string.IsNullOrWhiteSpace(snkFilePath) && File.Exists(snkFilePath))
                     {
@@ -180,6 +184,11 @@ namespace Datadog.Trace.Coverage.Collector
                 // Process all modules in the assembly
                 var module = assemblyDefinition.MainModule;
                 _logger.Debug($"Processing module: {module.Name}");
+                if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, null, _settings.ExcludeFilters))
+                {
+                    _logger.Debug($"Module: {module.FileName}, ignored by settings filter");
+                    return;
+                }
 
                 // Process all types defined in the module
                 var moduleTypes = module.GetTypes().ToList();
@@ -250,6 +259,32 @@ namespace Datadog.Trace.Coverage.Collector
                             skipType = true;
                             break;
                         }
+
+                        if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                        {
+                            _logger.Debug($"Type: {moduleType.FullName}, ignored by settings attribute filter");
+                            skipType = true;
+                            break;
+                        }
+                    }
+
+                    var filteredTargetType = moduleType;
+                    while (filteredTargetType is not null)
+                    {
+                        if (FiltersHelper.FilteredByAssemblyAndType(module.FileName, filteredTargetType.FullName, _settings.ExcludeFilters))
+                        {
+                            _logger.Debug($"Type: {filteredTargetType.FullName}, ignored by settings filter");
+                            skipType = true;
+                            break;
+                        }
+
+                        if (!filteredTargetType.IsNested)
+                        {
+                            break;
+                        }
+
+                        // Nested types are skipped if the declaring type is skipped.
+                        filteredTargetType = filteredTargetType.DeclaringType;
                     }
 
                     if (skipType)
@@ -265,9 +300,26 @@ namespace Datadog.Trace.Coverage.Collector
                     for (var methodIndex = 0; methodIndex < moduleTypeMethods.Count; methodIndex++)
                     {
                         var moduleTypeMethod = moduleTypeMethods[methodIndex];
+                        var skipMethod = false;
                         if (moduleTypeMethod.DebugInformation is null || !moduleTypeMethod.DebugInformation.HasSequencePoints)
                         {
                             _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}");
+                            continue;
+                        }
+
+                        foreach (var cAttr in moduleTypeMethod.CustomAttributes)
+                        {
+                            var attrFullName = cAttr.Constructor.DeclaringType.FullName;
+                            if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings attribute filter");
+                                skipMethod = true;
+                                break;
+                            }
+                        }
+
+                        if (skipMethod)
+                        {
                             continue;
                         }
 
@@ -317,6 +369,26 @@ namespace Datadog.Trace.Coverage.Collector
                              *  }
                              */
 
+                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
+
+                            string? file = null;
+                            foreach (var pt in sequencePoints)
+                            {
+                                if (pt.IsHidden || pt.Document is null || string.IsNullOrWhiteSpace(pt.Document.Url))
+                                {
+                                    continue;
+                                }
+
+                                file = pt.Document.Url;
+                                break;
+                            }
+
+                            if (file is not null && FiltersHelper.FilteredBySourceFile(file, _settings.ExcludeSourceFiles))
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings source filter");
+                                continue;
+                            }
+
                             totalMethods++;
                             var methodBody = moduleTypeMethod.Body;
                             var instructions = methodBody.Instructions;
@@ -325,8 +397,6 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 instructions.Capacity = instructionsOriginalLength * 2;
                             }
-
-                            var sequencePoints = moduleTypeMethod.DebugInformation.SequencePoints;
 
                             // Step 1 - Remove Short OpCodes
                             foreach (var instruction in instructions)
@@ -530,7 +600,7 @@ namespace Datadog.Trace.Coverage.Collector
         {
             // Get the Datadog.Trace path
 
-            if (string.IsNullOrEmpty(_tracerHome))
+            if (string.IsNullOrEmpty(_settings.TracerHome))
             {
                 // If tracer home is empty then we try to load the Datadog.Trace.dll in the current folder.
                 return "Datadog.Trace.dll";
@@ -553,7 +623,7 @@ namespace Datadog.Trace.Coverage.Collector
                     break;
             }
 
-            return Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
+            return Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
         }
 
         private string CopyRequiredAssemblies(AssemblyDefinition assemblyDefinition, TracerTarget tracerTarget)
@@ -578,8 +648,8 @@ namespace Datadog.Trace.Coverage.Collector
                         break;
                 }
 
-                var datadogTraceDllPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.dll");
-                var datadogTracePdbPath = Path.Combine(_tracerHome, targetFolder, "Datadog.Trace.pdb");
+                var datadogTraceDllPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.dll");
+                var datadogTracePdbPath = Path.Combine(_settings.TracerHome, targetFolder, "Datadog.Trace.pdb");
 
                 // Global lock for copying the Datadog.Trace assembly to the output folder
                 lock (PadLock)

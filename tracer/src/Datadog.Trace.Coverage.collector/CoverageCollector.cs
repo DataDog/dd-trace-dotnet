@@ -28,8 +28,7 @@ namespace Datadog.Trace.Coverage.Collector
     {
         private DataCollectorLogger? _logger;
         private DataCollectionEvents? _events;
-        private CIVisibilitySettings? _ciVisibilitySettings;
-        private string? _tracerHome;
+        private CoverageSettings? _settings;
         private int _testNumber;
 
         /// <inheritdoc />
@@ -37,10 +36,7 @@ namespace Datadog.Trace.Coverage.Collector
         {
             _events = events;
             _logger = new DataCollectorLogger(logger, environmentContext.SessionDataCollectionContext);
-
-            Initialize();
-
-            if (events is not null)
+            if (Initialize(configurationElement) && events is not null)
             {
                 events.SessionStart += OnSessionStart;
                 events.SessionEnd += OnSessionEnd;
@@ -110,32 +106,51 @@ namespace Datadog.Trace.Coverage.Collector
             _logger?.SetContext(e.Context);
         }
 
-        internal void Initialize()
+        private bool Initialize(XmlElement configurationElement)
         {
             try
             {
-                _ciVisibilitySettings = CIVisibilitySettings.FromDefaultSources();
+                var coverageSettings = new CoverageSettings(configurationElement);
+                if (_logger?.IsDebugEnabled == true)
+                {
+                    foreach (var item in coverageSettings.ExcludeFilters)
+                    {
+                        _logger.Debug($"Exclude filter: {item}");
+                    }
+
+                    foreach (var item in coverageSettings.ExcludeByAttribute)
+                    {
+                        _logger.Debug($"Exclude attribute: {item}");
+                    }
+
+                    foreach (var item in coverageSettings.ExcludeSourceFiles)
+                    {
+                        _logger.Debug($"Exclude source: {item}");
+                    }
+                }
 
                 // Read the DD_DOTNET_TRACER_HOME environment variable
-                _tracerHome = Util.EnvironmentHelpers.GetEnvironmentVariable("DD_DOTNET_TRACER_HOME");
-                if (string.IsNullOrEmpty(_tracerHome) || !Directory.Exists(_tracerHome))
+                if (string.IsNullOrEmpty(coverageSettings.TracerHome) || !Directory.Exists(coverageSettings.TracerHome))
                 {
                     _logger?.Error("Tracer home (DD_DOTNET_TRACER_HOME environment variable) is not defined or folder doesn't exist, coverage has been disabled.");
 
                     // By not register a handler to SessionStart and SessionEnd the coverage gets disabled (assemblies are not being processed).
-                    return;
+                    return false;
                 }
+
+                _settings = coverageSettings;
             }
             catch (Exception ex)
             {
                 _logger?.Error(ex);
-                _ciVisibilitySettings = null;
             }
+
+            return true;
         }
 
-        internal void ProcessFolder(string folder, SearchOption searchOption)
+        private void ProcessFolder(string folder, SearchOption searchOption)
         {
-            if (_tracerHome is null)
+            if (_settings is null)
             {
                 return;
             }
@@ -169,7 +184,7 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 try
                                 {
-                                    var asmProcessor = new AssemblyProcessor(file, _tracerHome, _logger, _ciVisibilitySettings);
+                                    var asmProcessor = new AssemblyProcessor(file, _settings, _logger);
                                     asmProcessor.Process();
                                     Interlocked.Increment(ref numAssemblies);
                                     if (asmProcessor.HasTracerAssemblyCopied)
