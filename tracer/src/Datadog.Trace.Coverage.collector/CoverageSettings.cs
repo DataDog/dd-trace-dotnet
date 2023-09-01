@@ -25,7 +25,7 @@ internal class CoverageSettings
             IReadOnlyList<string> excludeFilters = new List<string>(),
                                   excludeSourceFiles = new List<string>(),
                                   excludeByAttribute = new List<string>();
-            GetStringArrayFromXmlElement(configurationElement["Exclude"], ref excludeFilters);
+            GetStringArrayFromXmlElement(configurationElement["Exclude"], ref excludeFilters, FiltersHelper.IsValidFilterExpression);
             GetStringArrayFromXmlElement(configurationElement["ExcludeByFile"], ref excludeSourceFiles);
             GetStringArrayFromXmlElement(configurationElement["ExcludeByAttribute"], ref excludeByAttribute);
             GetStringArrayFromXmlNodeList(configurationElement["CodeCoverage"]?["Sources"]?["Exclude"]?.ChildNodes, ref excludeSourceFiles);
@@ -72,7 +72,7 @@ internal class CoverageSettings
     /// </summary>
     public CIVisibilitySettings? CIVisibility { get; }
 
-    private static void GetStringArrayFromXmlElement(XmlElement? xmlElement, ref IReadOnlyList<string> elements)
+    private static void GetStringArrayFromXmlElement(XmlElement? xmlElement, ref IReadOnlyList<string> elements, Func<string?, bool>? validator = null)
     {
         if (xmlElement?.InnerText is { } elementText &&
             elementText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) is { Length: > 0 } elementsArray)
@@ -88,7 +88,10 @@ internal class CoverageSettings
                 var value = item.Trim();
                 if (!lstElements.Contains(value))
                 {
-                    lstElements.Add(value);
+                    if (validator is null || validator(value))
+                    {
+                        lstElements.Add(value);
+                    }
                 }
             }
         }

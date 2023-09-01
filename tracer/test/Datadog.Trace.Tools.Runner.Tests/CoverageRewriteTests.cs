@@ -14,149 +14,148 @@ using VerifyTests;
 using VerifyXunit;
 using Xunit;
 
-namespace Datadog.Trace.Tools.Runner.Tests
+namespace Datadog.Trace.Tools.Runner.Tests;
+
+[UsesVerify]
+public class CoverageRewriteTests
 {
-    [UsesVerify]
-    public class CoverageRewriteTests
+    public CoverageRewriteTests()
     {
-        public CoverageRewriteTests()
-        {
-            VerifierSettings.DerivePathInfo(
-                (sourceFile, projectDirectory, type, method) =>
-                {
-                    return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
-                });
-        }
-
-        public static IEnumerable<object[]> FiltersData()
-        {
-            yield return new object[]
+        VerifierSettings.DerivePathInfo(
+            (sourceFile, projectDirectory, type, method) =>
             {
-                "CoverageRewriteTests.Rewritten.CoverletFilterByAttribute",
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Configuration>
-                    <!-- Coverlet configuration -->
-                    <ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>
-                </Configuration>",
-            };
+                return new(directory: Path.Combine(projectDirectory, "..", "snapshots"));
+            });
+    }
 
-            yield return new object[]
-            {
-                "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterByAttribute",
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Configuration>
-                    <!-- Old .NET Framework configuration -->
-                    <CodeCoverage>
-                        <Attributes>
-                            <Exclude>
-                                <Attribute>^System\.Runtime\.CompilerServices\.CompilerGeneratedAttribute$</Attribute>
-                            </Exclude>
-                        </Attributes>
-                    </CodeCoverage>
-                </Configuration>",
-            };
-
-            yield return new object[]
-            {
-                "CoverageRewriteTests.Rewritten.CoverletFilterBySourceFile",
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Configuration>
-                    <!-- Coverlet configuration -->
-                    <ExcludeByFile>**/CoverageRewriterAssembly/Class1.cs</ExcludeByFile>
-                </Configuration>",
-            };
-
-            yield return new object[]
-            {
-                "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterBySourceFile",
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Configuration>
-                    <!-- Old .NET Framework configuration -->
-                    <CodeCoverage>
-                        <Sources>
-                            <Exclude>
-                                <Source>.*/CoverageRewriterAssembly/Class1.cs$</Source>
-                            </Exclude>
-                        </Sources>
-                    </CodeCoverage>
-                </Configuration>",
-            };
-
-            yield return new object[]
-            {
-                "CoverageRewriteTests.Rewritten.CoverletFilterByAssemblyType",
-                @"<?xml version=""1.0"" encoding=""utf-8""?>
-                <Configuration>
-                    <!-- Coverlet configuration -->
-                    <Exclude>[*]CoverageRewriterAssembly.Class1</Exclude>
-                </Configuration>",
-            };
-        }
-
-        [Fact]
-        public async Task NoFilter()
+    public static IEnumerable<object[]> FiltersData()
+    {
+        yield return new object[]
         {
-            var tempFileName = GetTempFile();
+            "CoverageRewriteTests.Rewritten.CoverletFilterByAttribute",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Coverlet configuration -->
+                <ExcludeByAttribute>CompilerGeneratedAttribute</ExcludeByAttribute>
+            </Configuration>",
+        };
 
-            // Verify settings
-            var settings = new DecompilerSettings();
-
-            // Decompile original code
-            var decompilerOriginalCode = new CSharpDecompiler(tempFileName, settings);
-            var originalCode = decompilerOriginalCode.DecompileWholeModuleAsString();
-
-            var originalVerifySettings = new VerifySettings();
-            originalVerifySettings.UseFileName("CoverageRewriteTests.Original");
-            await Verifier.Verify(originalCode, originalVerifySettings);
-
-            // Apply rewriter process
-            var covSettings = new CoverageSettings(null, string.Empty, null);
-            var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
-            asmProcessor.Process();
-
-            // Decompile rewritten code
-            var decompilerTransCode = new CSharpDecompiler(tempFileName, settings);
-            var transCode = decompilerTransCode.DecompileWholeModuleAsString();
-
-            var transVerifySettings = new VerifySettings();
-            transVerifySettings.UseFileName("CoverageRewriteTests.Rewritten");
-            await Verifier.Verify(transCode, transVerifySettings);
-        }
-
-        [Theory]
-        [MemberData(nameof(FiltersData))]
-        public async Task WithFilters(string targetSnapshot, string configurationSettingsXml)
+        yield return new object[]
         {
-            var tempFileName = GetTempFile();
+            "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterByAttribute",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Old .NET Framework configuration -->
+                <CodeCoverage>
+                    <Attributes>
+                        <Exclude>
+                            <Attribute>^System\.Runtime\.CompilerServices\.CompilerGeneratedAttribute$</Attribute>
+                        </Exclude>
+                    </Attributes>
+                </CodeCoverage>
+            </Configuration>",
+        };
 
-            // Verify settings
-            var settings = new DecompilerSettings();
-
-            var configurationElement = new XmlDocument();
-            configurationElement.LoadXml(configurationSettingsXml);
-
-            var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty, null);
-            var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
-            asmProcessor.Process();
-
-            // Decompile rewritten code
-            var decompilerTransCode = new CSharpDecompiler(tempFileName, settings);
-            var transCode = decompilerTransCode.DecompileWholeModuleAsString();
-
-            var transVerifySettings = new VerifySettings();
-            transVerifySettings.UseFileName(targetSnapshot);
-            await Verifier.Verify(transCode, transVerifySettings);
-        }
-
-        private string GetTempFile()
+        yield return new object[]
         {
-            const string assemblyFileName = "CoverageRewriterAssembly.dll";
+            "CoverageRewriteTests.Rewritten.CoverletFilterBySourceFile",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Coverlet configuration -->
+                <ExcludeByFile>**/CoverageRewriterAssembly/Class1.cs</ExcludeByFile>
+            </Configuration>",
+        };
 
-            // Copy assembly and symbols to a temp folder (we need to rewrite it)
-            var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName()) + ".dll";
-            File.Copy(assemblyFileName, tempFileName, true);
-            File.Copy(Path.GetFileNameWithoutExtension(assemblyFileName) + ".pdb", Path.GetFileNameWithoutExtension(tempFileName) + ".pdb", true);
-            return tempFileName;
-        }
+        yield return new object[]
+        {
+            "CoverageRewriteTests.Rewritten.NetFrameworkSettingsFilterBySourceFile",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Old .NET Framework configuration -->
+                <CodeCoverage>
+                    <Sources>
+                        <Exclude>
+                            <Source>.*/CoverageRewriterAssembly/Class1.cs$</Source>
+                        </Exclude>
+                    </Sources>
+                </CodeCoverage>
+            </Configuration>",
+        };
+
+        yield return new object[]
+        {
+            "CoverageRewriteTests.Rewritten.CoverletFilterByAssemblyType",
+            @"<?xml version=""1.0"" encoding=""utf-8""?>
+            <Configuration>
+                <!-- Coverlet configuration -->
+                <Exclude>[*]CoverageRewriterAssembly.Class1</Exclude>
+            </Configuration>",
+        };
+    }
+
+    [Fact]
+    public async Task NoFilter()
+    {
+        var tempFileName = GetTempFile();
+
+        // Verify settings
+        var settings = new DecompilerSettings();
+
+        // Decompile original code
+        var decompilerOriginalCode = new CSharpDecompiler(tempFileName, settings);
+        var originalCode = decompilerOriginalCode.DecompileWholeModuleAsString();
+
+        var originalVerifySettings = new VerifySettings();
+        originalVerifySettings.UseFileName("CoverageRewriteTests.Original");
+        await Verifier.Verify(originalCode, originalVerifySettings);
+
+        // Apply rewriter process
+        var covSettings = new CoverageSettings(null, string.Empty, null);
+        var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
+        asmProcessor.Process();
+
+        // Decompile rewritten code
+        var decompilerTransCode = new CSharpDecompiler(tempFileName, settings);
+        var transCode = decompilerTransCode.DecompileWholeModuleAsString();
+
+        var transVerifySettings = new VerifySettings();
+        transVerifySettings.UseFileName("CoverageRewriteTests.Rewritten");
+        await Verifier.Verify(transCode, transVerifySettings);
+    }
+
+    [Theory]
+    [MemberData(nameof(FiltersData))]
+    public async Task WithFilters(string targetSnapshot, string configurationSettingsXml)
+    {
+        var tempFileName = GetTempFile();
+
+        // Verify settings
+        var settings = new DecompilerSettings();
+
+        var configurationElement = new XmlDocument();
+        configurationElement.LoadXml(configurationSettingsXml);
+
+        var covSettings = new CoverageSettings(configurationElement.DocumentElement, string.Empty, null);
+        var asmProcessor = new AssemblyProcessor(tempFileName, covSettings);
+        asmProcessor.Process();
+
+        // Decompile rewritten code
+        var decompilerTransCode = new CSharpDecompiler(tempFileName, settings);
+        var transCode = decompilerTransCode.DecompileWholeModuleAsString();
+
+        var transVerifySettings = new VerifySettings();
+        transVerifySettings.UseFileName(targetSnapshot);
+        await Verifier.Verify(transCode, transVerifySettings);
+    }
+
+    private string GetTempFile()
+    {
+        const string assemblyFileName = "CoverageRewriterAssembly.dll";
+
+        // Copy assembly and symbols to a temp folder (we need to rewrite it)
+        var tempFileName = Path.GetFileNameWithoutExtension(Path.GetTempFileName()) + ".dll";
+        File.Copy(assemblyFileName, tempFileName, true);
+        File.Copy(Path.GetFileNameWithoutExtension(assemblyFileName) + ".pdb", Path.GetFileNameWithoutExtension(tempFileName) + ".pdb", true);
+        return tempFileName;
     }
 }
