@@ -31,6 +31,9 @@
     <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
+    <Content Update="Asm\rule-set.1.7.1.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />

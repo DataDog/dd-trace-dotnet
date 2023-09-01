@@ -19,7 +19,7 @@ namespace Benchmarks.Trace.Asm;
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
-
+    private const int WafRuns = 1000;
     private static readonly Waf Waf;
     private Context _context;
 
@@ -52,7 +52,7 @@ public class AppSecWafBenchmark
 
             folder = folder.Parent;
         }
-        
+
         path = Path.Combine(path, $"./{rid}/");
         if (!Directory.Exists(path))
         {
@@ -67,7 +67,7 @@ public class AppSecWafBenchmark
         }
 
         var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
-        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty);
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.1.json"));
         Waf = initResult.Waf;
     }
 
@@ -78,10 +78,31 @@ public class AppSecWafBenchmark
         yield return MakeNestedMap(1000);
     }
 
-    private static NestedMap MakeNestedMap(int nestingDepth)
+    public IEnumerable<NestedMap> SourceWithAttack()
+    {
+        yield return MakeNestedMap(10, true);
+        yield return MakeNestedMap(100, true);
+        yield return MakeNestedMap(1000, true);
+    }
+
+    private static NestedMap MakeNestedMap(int nestingDepth, bool withAttack = false)
     {
         var root = new Dictionary<string, object>();
         var map = root;
+        if (withAttack)
+        {
+            map.Add(
+                AddressesConstants.RequestHeaderNoCookies,
+                new Dictionary<string, string> { { "user-agent", "Arachni/v1" } }
+            );
+        }
+        else
+        {
+            map.Add(
+                "toto",
+                new Dictionary<string, string> { { "user-agent", "tata" } }
+            );
+        }
 
         for (var i = 0; i < nestingDepth; i++)
         {
@@ -98,7 +119,8 @@ public class AppSecWafBenchmark
                     "lorem",
                     "ipsum",
                     "dolor",
-                    AddressesConstants.RequestCookies, new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } }
+                    AddressesConstants.RequestCookies,
+                    new Dictionary<string, string> { { "something", ".htaccess" }, { "something2", ";shutdown--" } }
                 };
                 map.Add("list", nextList);
             }
@@ -127,7 +149,23 @@ public class AppSecWafBenchmark
 
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
-    public void RunWaf(NestedMap args) => _context.Run(args.Map, TimeoutMicroSeconds);
+    public void RunWaf(NestedMap args)
+    {
+        for (var i = 0; i < WafRuns; i++)
+        {
+            _context.Run(args.Map, TimeoutMicroSeconds);
+        }
+    }
+    
+    [Benchmark]
+    [ArgumentsSource(nameof(SourceWithAttack))]
+    public void RunWafWithAttack(NestedMap args)
+    {
+        for (var i = 0; i < WafRuns; i++)
+        {
+            _context.Run(args.Map, TimeoutMicroSeconds);
+        }
+    }
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth)
     {
