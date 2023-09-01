@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Microsoft.Extensions.FileSystemGlobbing;
 
@@ -133,21 +134,13 @@ internal static class FiltersHelper
         {
             try
             {
+                if (!IsValidFilterExpression(filter))
+                {
+                    // The filter is invalid so we skip it
+                    continue;
+                }
+
                 var indexOfModuleTypeSeparator = filter.IndexOf(']');
-                if (indexOfModuleTypeSeparator == -1)
-                {
-                    // Bad filter format: doesn't have `]`
-                    // we skip the filter
-                    continue;
-                }
-
-                if (indexOfModuleTypeSeparator - 1 < 0)
-                {
-                    // Bad filter format: the module is not inside of a `[]`
-                    // we skip the filter
-                    continue;
-                }
-
                 var typePattern = filter.Substring(indexOfModuleTypeSeparator + 1);
                 var modulePattern = filter.Substring(1, indexOfModuleTypeSeparator - 1);
                 var moduleRegex = new Regex(WildcardToRegex(modulePattern));
@@ -183,5 +176,55 @@ internal static class FiltersHelper
                                Replace("\\*", ".*").
                                Replace("\\?", "?") + "$";
         }
+    }
+
+    public static bool IsValidFilterExpression(string? filter)
+    {
+        if (filter == null)
+        {
+            return false;
+        }
+
+        if (!filter.StartsWith("["))
+        {
+            return false;
+        }
+
+        if (!filter.Contains("]"))
+        {
+            return false;
+        }
+
+        if (filter.Count(f => f == '[') > 1)
+        {
+            return false;
+        }
+
+        if (filter.Count(f => f == ']') > 1)
+        {
+            return false;
+        }
+
+        if (filter.IndexOf(']') < filter.IndexOf('['))
+        {
+            return false;
+        }
+
+        if (filter.IndexOf(']') - filter.IndexOf('[') == 1)
+        {
+            return false;
+        }
+
+        if (filter.EndsWith("]"))
+        {
+            return false;
+        }
+
+        if (new Regex(@"[^\w*]").IsMatch(filter.Replace(".", string.Empty).Replace("?", string.Empty).Replace("[", string.Empty).Replace("]", string.Empty)))
+        {
+            return false;
+        }
+
+        return true;
     }
 }
