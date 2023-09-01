@@ -13,6 +13,7 @@ using Microsoft.AspNetCore.Http;
 #endif
 using System.Xml.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast;
@@ -25,6 +26,7 @@ internal class IastRequestContext
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
+    private SpanTelemetryHelper? _spanTelemetryHelper = SpanTelemetryHelper.Enabled() ? new SpanTelemetryHelper() : null;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -38,6 +40,15 @@ internal class IastRequestContext
         if (_vulnerabilityBatch != null)
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+        }
+
+        if (_spanTelemetryHelper != null)
+        {
+            var tags = _spanTelemetryHelper.GetMetricTags();
+            foreach (var tag in tags)
+            {
+                span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
+            }
         }
     }
 
