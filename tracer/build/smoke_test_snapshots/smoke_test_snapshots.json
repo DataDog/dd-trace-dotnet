@@ -58,7 +58,7 @@
       "metrics": {
         "_dd.appsec.enabled": 1.0,
         "_dd.appsec.event_rules.error_count": 0.0,
-        "_dd.appsec.event_rules.loaded": 144.0,
+        "_dd.appsec.event_rules.loaded": 146.0,
         "_dd.top_level": 1.0,
         "_dd.tracer_kr": 0.0,
         "_sampling_priority_v1": 2.0,
