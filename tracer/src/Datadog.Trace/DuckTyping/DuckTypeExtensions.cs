@@ -47,15 +47,10 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast<T>(this object? instance, [NotNullWhen(true)] out T? value)
         {
-            if (instance is null)
+            if (instance is not null &&
+                DuckType.CreateCache<T>.GetProxy(instance.GetType()) is { Success: true } proxyResult)
             {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
-            if (proxyResult.Success)
-            {
-                value = proxyResult.CreateInstance<T>(instance)!;
+                value = proxyResult.CreateInstance<T>(instance);
                 return true;
             }
 
@@ -73,19 +68,12 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckCast(this object? instance, Type? targetType, [NotNullWhen(true)] out object? value)
         {
-            if (instance is null)
+            if (instance is not null &&
+                targetType is not null &&
+                DuckType.GetOrCreateProxyType(targetType, instance.GetType()) is { Success: true } proxyResult)
             {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            if (targetType != null)
-            {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
-                if (proxyResult.Success)
-                {
-                    value = proxyResult.CreateInstance(instance);
-                    return true;
-                }
+                value = proxyResult.CreateInstance(instance);
+                return true;
             }
 
             value = default;
@@ -102,13 +90,8 @@ namespace Datadog.Trace.DuckTyping
         public static T? DuckAs<T>(this object? instance)
             where T : class
         {
-            if (instance is null)
-            {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            DuckType.CreateTypeResult proxyResult = DuckType.CreateCache<T>.GetProxy(instance.GetType());
-            if (proxyResult.Success)
+            if (instance is not null &&
+                DuckType.CreateCache<T>.GetProxy(instance.GetType()) is { Success: true } proxyResult)
             {
                 return proxyResult.CreateInstance<T>(instance);
             }
@@ -125,18 +108,11 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static object? DuckAs(this object? instance, Type? targetType)
         {
-            if (instance is null)
+            if (instance is not null &&
+                targetType is not null &&
+                DuckType.GetOrCreateProxyType(targetType, instance.GetType()) is { Success: true } proxyResult)
             {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            if (targetType != null)
-            {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateProxyType(targetType, instance.GetType());
-                if (proxyResult.Success)
-                {
-                    return proxyResult.CreateInstance(instance);
-                }
+                return proxyResult.CreateInstance(instance);
             }
 
             return null;
@@ -151,12 +127,7 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs<T>(this object? instance)
         {
-            if (instance is null)
-            {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            return DuckType.CanCreate<T>(instance);
+            return instance is not null && DuckType.CanCreate<T>(instance);
         }
 
         /// <summary>
@@ -168,12 +139,8 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool DuckIs(this object? instance, Type? targetType)
         {
-            if (instance is null)
-            {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            if (targetType != null)
+            if (instance is not null &&
+                targetType is not null)
             {
                 return DuckType.CanCreate(targetType, instance);
             }
@@ -204,19 +171,12 @@ namespace Datadog.Trace.DuckTyping
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static bool TryDuckImplement(this object? instance, Type? typeToDeriveFrom, [NotNullWhen(true)] out object? value)
         {
-            if (instance is null)
+            if (instance is not null &&
+                typeToDeriveFrom is not null &&
+                DuckType.GetOrCreateReverseProxyType(typeToDeriveFrom, instance.GetType()) is { Success: true } proxyResult)
             {
-                DuckTypeTargetObjectInstanceIsNull.Throw();
-            }
-
-            if (typeToDeriveFrom != null)
-            {
-                DuckType.CreateTypeResult proxyResult = DuckType.GetOrCreateReverseProxyType(typeToDeriveFrom, instance.GetType());
-                if (proxyResult.Success)
-                {
-                    value = proxyResult.CreateInstance(instance);
-                    return true;
-                }
+                value = proxyResult.CreateInstance(instance);
+                return true;
             }
 
             value = default;

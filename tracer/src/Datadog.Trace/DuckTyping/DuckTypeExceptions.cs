@@ -496,4 +496,22 @@ namespace Datadog.Trace.DuckTyping
             throw new DuckTypeCustomAttributeHasNamedArgumentsException(attributeData.AttributeType?.FullName ?? "Null", type?.FullName ?? type?.Name ?? "NULL");
         }
     }
+
+    /// <summary>
+    /// Ducktype DuckCopy struct does not contains any field
+    /// </summary>
+    internal class DuckTypeDuckCopyStructDoesNotContainsAnyField : DuckTypeException
+    {
+        private DuckTypeDuckCopyStructDoesNotContainsAnyField(string type)
+            : base($"The [DuckCopy] struct '{type}' does not contains any public field. Remember that DuckCopy proxies must be declared using fields instead of properties.")
+        {
+        }
+
+        [DebuggerHidden]
+        [DoesNotReturn]
+        internal static void Throw(Type type)
+        {
+            throw new DuckTypeDuckCopyStructDoesNotContainsAnyField(type?.FullName ?? type?.Name ?? "NULL");
+        }
+    }
 }
