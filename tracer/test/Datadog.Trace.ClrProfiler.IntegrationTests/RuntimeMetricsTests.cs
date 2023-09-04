@@ -113,9 +113,17 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Assert.True(exceptionRequestsCount > 0, "No exception metrics received. Metrics received: " + string.Join("\n", requests));
 
-            // Assert service, env, and version
-            requests
-               .SelectMany(x => x.Split('\n'))
+            // Example of metrics, once split by \n
+            // runtime.dotnet.threads.contention_time:0.4899|g|#lang:.NET,lang_interpreter:.NET,lang_version:7.0.9,tracer_version:2.38.0.0,runtime-id:b23d3d95-fefa-451f-8286-f6f5ad4aeb27,service:samples._runtimemetrics,env:integration_tests,version:1.0.0
+            // runtime.dotnet.threads.contention_count:1|c|#lang:.NET,lang_interpreter:.NET,lang_version:7.0.9,tracer_version:2.38.0.0,runtime-id:b23d3d95-fefa-451f-8286-f6f5ad4aeb27,service:samples._runtimemetrics,env:integration_tests,version:1.0.0
+            // runtime.dotnet.threads.contention_time:0|g|#lang:.NET,lang_interpreter:.NET,lang_version:7.0.9,tracer_version:2.38.0.0,runtime-id:b23d3d95-fefa-451f-8286-f6f5ad4aeb27,service:samples._runtimemetrics,env:integration_tests,version:1.0.0
+            var metrics = requests.SelectMany(x => x.Split('\n')).ToList();
+
+            // We don't expect any "internal" metrics
+            metrics.Should().NotContain(x => x.StartsWith("datadog.dogstatsd.client."));
+
+            // Assert tags
+            metrics
                .Should()
                .OnlyContain(s => s.Contains($"service:{normalizedServiceName}"))
                .And.NotContain(s => s.Contains($"service:{inputServiceName}"))
@@ -127,7 +135,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
              || (Environment.Version.Major == 3 && Environment.Version.Minor == 1)
              || Environment.Version.Major >= 5)
             {
-                var contentionRequestsCount = requests.Count(r => r.Contains("runtime.dotnet.threads.contention_count"));
+                var contentionRequestsCount = metrics.Count(r => r.StartsWith("runtime.dotnet.threads.contention_count"));
 
                 Assert.True(contentionRequestsCount > 0, "No contention metrics received. Metrics received: " + string.Join("\n", requests));
             }

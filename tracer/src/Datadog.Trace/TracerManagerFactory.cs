@@ -288,6 +288,7 @@ namespace Datadog.Trace
                     ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
                     Environment = settings.EnvironmentInternal,
                     ServiceVersion = settings.ServiceVersionInternal,
+                    Advanced = { TelemetryFlushInterval = null }
                 };
 
                 switch (settings.ExporterInternal.MetricsTransport)
