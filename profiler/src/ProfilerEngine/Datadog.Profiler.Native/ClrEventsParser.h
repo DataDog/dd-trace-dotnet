@@ -19,6 +19,9 @@
 #include "IGarbageCollectionsListener.h"
 #include "IGCSuspensionsListener.h"
 
+#include "EventPipe/DiagnosticsClient.h"
+#include "OpSysTools.h"
+
 #include "shared/src/native-src/string.h"
 #include "assert.h"
 
@@ -215,6 +218,11 @@ private:
 
     // this is a foreground GC (could be triggered while a background GC is already running)
     GCDetails _gcInProgress;
+
+    // allow EventPipe connection with the CLR of the current process
+    std::unique_ptr<DiagnosticsClient> _pDiagnosticClient;
+    int32_t _pid;
+
 
 private:
     const int EVENT_ALLOCATION_TICK = 10;   // version 4 contains the size + reference

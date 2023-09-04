@@ -40,6 +40,7 @@ ClrEventsParser::ClrEventsParser(
     _pGCSuspensionsListener{pGCSuspensionsListener}
 {
     ClearCollections();
+    _pid = OpSysTools::GetProcId();
 }
 
 void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
@@ -198,6 +199,8 @@ void ClrEventsParser::ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, L
         {
             return;
         }
+
+        std::cout << "#" << payload.Count << std::endl;
 
         LOG_GC_EVENT("OnGCStart");
         OnGCStart(payload);

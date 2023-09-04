@@ -85,6 +85,7 @@ CorProfilerCallback::CorProfilerCallback()
     _this = this;
 
     _pClrLifetime = std::make_unique<ClrLifetime>(&_isInitialized);
+    _defaultDotnetEventProvider = NULL;
 
 #ifndef _WINDOWS
     CGroup::Initialize();
@@ -1691,6 +1692,170 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::DynamicMethodUnloaded(FunctionID 
 {
     return S_OK;
 }
+
+#define GCStart 1
+#define GCEnd 2
+#define GCRestartEEEnd 3
+#define GCHeapStats 4
+#define GCCreateSegment 5
+#define GCFreeSegment 6
+#define GCRestartEEBegin 7
+#define GCSuspendEEEnd 8
+#define GCSuspendEEBegin 9
+#define GCAllocationTick 10
+#define GCCreateConcurrentThread 11
+#define GCCTerminateConcurrentThread 12
+#define GCFinalizersEnd 13
+#define GCFinalizersBegin 14
+#define BulkType 15
+#define GCBulkRootEdge 16
+#define GCBulkRootConditionalWeakTableElementEdge 17
+#define GCBulkNode 18
+#define GCBulkEdge 19
+#define FinalizeObject 29
+#define PinObjectAtGCTime 33
+#define GCTriggered 35
+#define GCBulkRootStaticVar 38
+#define GCMarkWithType 202
+#define GCPerHeapHistory 204
+#define GCGlobalHeapHistory 205
+
+void DumpEvent(DWORD eventId, bool defaultProvider)
+{
+    std::string suffix = (defaultProvider) ? "   | " : " ? | ";
+    switch (eventId)
+    {
+        case GCTriggered:
+        {
+            std::cout << suffix << "GCTriggered" << std::endl;
+        }
+        break;
+        case GCStart:
+        {
+            std::cout << suffix << "GCStart" << std::endl;
+        }
+        break;
+        case GCEnd:
+        {
+            std::cout << suffix << "GCEnd" << std::endl;
+        }
+        break;
+        case GCRestartEEEnd:
+        {
+            std::cout << suffix << "GCRestartEEEnd" << std::endl;
+        }
+        break;
+        case GCHeapStats:
+        {
+            std::cout << suffix << "GCHeapStats" << std::endl;
+        }
+        break;
+        case GCCreateSegment:
+        {
+            std::cout << suffix << "GCCreateSegment" << std::endl;
+        }
+        break;
+        case GCFreeSegment:
+        {
+            std::cout << suffix << "GCFreeSegment" << std::endl;
+        }
+        break;
+        case GCRestartEEBegin:
+        {
+            std::cout << suffix << "GCRestartEEBegin" << std::endl;
+        }
+        break;
+        case GCSuspendEEEnd:
+        {
+            std::cout << suffix << "GCSuspendEEEnd" << std::endl;
+        }
+        break;
+        case GCSuspendEEBegin:
+        {
+            std::cout << suffix << "GCSuspendEEBegin" << std::endl;
+        }
+        break;
+        case GCAllocationTick:
+        {
+            std::cout << suffix << "GCAllocationTick" << std::endl;
+        }
+        break;
+        case GCCreateConcurrentThread:
+        {
+            std::cout << suffix << "GCCreateConcurrentThread" << std::endl;
+        }
+        break;
+        case GCCTerminateConcurrentThread:
+        {
+            std::cout << suffix << "GCCTerminateConcurrentThread" << std::endl;
+        }
+        break;
+        case GCFinalizersEnd:
+        {
+            std::cout << suffix << "GCFinalizersEnd" << std::endl;
+        }
+        break;
+        case GCFinalizersBegin:
+        {
+            std::cout << suffix << "GCFinalizersBegin" << std::endl;
+        }
+        break;
+        case FinalizeObject:
+        {
+            std::cout << suffix << "FinalizeObject" << std::endl;
+        }
+        break;
+        case PinObjectAtGCTime:
+        {
+            std::cout << suffix << "PinObjectAtGCTime" << std::endl;
+        }
+        break;
+        case GCMarkWithType:
+        {
+            std::cout << suffix << "GCMarkWithType" << std::endl;
+        }
+        break;
+        case GCPerHeapHistory:
+        {
+            std::cout << suffix << "GCPerHeapHistory" << std::endl;
+        }
+        break;
+        case GCGlobalHeapHistory:
+        {
+            std::cout << suffix << "GCGlobalHeapHistory" << std::endl;
+        }
+        break;
+        case GCBulkRootEdge:
+        {
+            std::cout << suffix << "RootEdge" << std::endl;
+        }
+        break;
+        case GCBulkRootConditionalWeakTableElementEdge:
+        {
+            std::cout << suffix << "RootCWTable" << std::endl;
+        }
+        break;
+        case GCBulkNode:
+        {
+            std::cout << suffix << "Node" << std::endl;
+        }
+        break;
+        case GCBulkEdge:
+        {
+            std::cout << suffix << "Edge" << std::endl;
+        }
+        break;
+        case GCBulkRootStaticVar:
+        {
+            std::cout << suffix << "RootStaticVar" << std::endl;
+        }
+        break;
+        default:
+            std::cout << suffix << eventId << std::endl;
+        break;
+    }
+}
+
 HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE_PROVIDER provider,
                                                                        DWORD eventId,
                                                                        DWORD eventVersion,
@@ -1704,6 +1869,18 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
+    // keep track of the default provider
+    if (_defaultDotnetEventProvider == NULL)
+    {
+        _defaultDotnetEventProvider = provider;
+    }
+
+    DumpEvent(eventId, ((_defaultDotnetEventProvider == provider) || (provider == NULL)));
+    //if (_defaultDotnetEventProvider != provider)
+    //{
+    //    return S_OK;
+    //}
+
     if (_pClrEventsParser != nullptr)
     {
         _pClrEventsParser->ParseEvent(

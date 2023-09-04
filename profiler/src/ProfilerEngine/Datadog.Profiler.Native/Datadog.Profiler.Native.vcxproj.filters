@@ -332,6 +332,17 @@
     <ClInclude Include="ScopedHandle.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
+    <ClInclude Include="EventPipe\BlockParser.h" />
+    <ClInclude Include="EventPipe\DiagnosticsClient.h" />
+    <ClInclude Include="EventPipe\DiagnosticsProtocol.h" />
+    <ClInclude Include="EventPipe\EventPipeSession.h" />
+    <ClInclude Include="EventPipe\FileRecorder.h" />
+    <ClInclude Include="EventPipe\IIpcEndpoint.h" />
+    <ClInclude Include="EventPipe\IIpcRecorder.h" />
+    <ClInclude Include="EventPipe\IpcEndpoint.h" />
+    <ClInclude Include="EventPipe\NettraceFormat.h" />
+    <ClInclude Include="EventPipe\PidEndpoint.h" />
+    <ClInclude Include="EventPipe\RecordedEndpoint.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -418,9 +429,6 @@
     </ClCompile>
     <ClCompile Include="ApplicationStore.cpp" />
     <ClCompile Include="RuntimeIdStore.cpp" />
-    <ClCompile Include="ApplicationInfo.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="RawExceptionSample.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
@@ -500,6 +508,42 @@
       <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\BlockParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\DiagnosticsClient.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\DiagnosticsProtocol.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\EventParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\EventPipeSession.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\FileRecorder.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\IpcEndpoint.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\MetadataParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\PidEndpoint.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\RecordedEndpoint.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\SequencePointParser.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\StackParser.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
   </ItemGroup>

@@ -249,6 +249,8 @@ private :
 
     std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
 
+    EVENTPIPE_PROVIDER _defaultDotnetEventProvider;
+
 private:
     static void ConfigureDebugLog();
     static void InspectRuntimeCompatibility(IUnknown* corProfilerInfoUnk, uint16_t& runtimeMajor, uint16_t& runtimeMinor);
