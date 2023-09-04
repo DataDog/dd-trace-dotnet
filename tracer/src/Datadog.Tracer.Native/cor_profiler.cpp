@@ -262,10 +262,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                         : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
 
-    fault_tolerant_method_duplicator = std::make_shared<fault_tolerant::FaultTolerantMethodDuplicator>(this, rejit_handler, work_offloader);
-
-    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(
-        this, rejit_handler, work_offloader, fault_tolerant_method_duplicator);
+    debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(this, rejit_handler, work_offloader);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |

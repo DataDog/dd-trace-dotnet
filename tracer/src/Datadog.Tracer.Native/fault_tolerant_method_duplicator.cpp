@@ -6,17 +6,17 @@
 #include "fault_tolerant_tracker.h"
 #include "logger.h"
 
-fault_tolerant::FaultTolerantMethodDuplicator::FaultTolerantMethodDuplicator(CorProfiler* corProfiler,
-    std::shared_ptr<trace::RejitHandler> rejit_handler, std::shared_ptr<trace::RejitWorkOffloader> work_offloader):
-    m_corProfiler(corProfiler),
-    m_rejit_handler(std::move(rejit_handler)),
-    m_work_offloader(std::move(work_offloader)),
-    is_fault_tolerant_instrumentation_enabled(IsFaultTolerantInstrumentationEnabled())
+void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(
+    const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
+                                                                 ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef,
+                                                                 mdMethodDef methodDef, ICorProfilerInfo10* profilerInfo,
+                                                                 bool shouldApplyMetadata)
 {
-}
+    if (!IsFaultTolerantInstrumentationEnabled())
+    {
+        return;
+    }
 
-void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef, mdMethodDef methodDef) const
-{
     const auto caller = GetFunctionInfo(metadataImport, methodDef);
     if (!caller.IsValid())
     {
@@ -316,15 +316,23 @@ void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateOne(const ModuleID 
         }
     }
 
+    if (shouldApplyMetadata && FAILED(profilerInfo->ApplyMetaData(moduleId)))
+    {
+        trace::Logger::Warn(
+            "    * Failed to call ApplyMetadata from within FaultTolerantMethodDuplicator::DuplicateOne");
+    }
+
     FaultTolerantTracker::Instance()->AddFaultTolerant(moduleId, methodDef, originalTargetMethodDef,
                                                        instrumentedTargetMethodDef);
 }
 
 void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateAll(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo,
-                                                              ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit) const
+                                                                 ComPtr<IMetaDataImport2> metadataImport,
+                                                                 ComPtr<IMetaDataEmit2> metadataEmit,
+                                                                 ICorProfilerInfo10* profilerInfo)
 
 {
-    if (!is_fault_tolerant_instrumentation_enabled)
+    if (!IsFaultTolerantInstrumentationEnabled())
     {
         return;
     }
@@ -347,12 +355,13 @@ void fault_tolerant::FaultTolerantMethodDuplicator::DuplicateAll(const ModuleID 
         for (; methodDefIterator != enumMethods.end(); methodDefIterator = ++methodDefIterator)
         {
             const auto methodDef = *methodDefIterator;
-            DuplicateOne(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef, methodDef);
+            FaultTolerantMethodDuplicator::DuplicateOne(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef,
+                                                        methodDef, profilerInfo, /* shouldApplyMetadata */ false);
         }
     }
 
-    if (FAILED(this->m_corProfiler->info_->ApplyMetaData(moduleId)))
+    if (FAILED(profilerInfo->ApplyMetaData(moduleId)))
     {
-        trace::Logger::Warn("    * Failed to call ApplyMetadata.");
+        trace::Logger::Warn("    * Failed to call ApplyMetadata from within FaultTolerantMethodDuplicator::DuplicateAll");
     }
 }

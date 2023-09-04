@@ -629,6 +629,11 @@ ICorProfilerInfo7* RejitHandler::GetCorProfilerInfo()
     return m_profilerInfo;
 }
 
+ICorProfilerInfo10* RejitHandler::GetCorProfilerInfo10()
+{
+    return m_profilerInfo10;
+}
+
 void RejitHandler::SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler)
 {
     m_pCorAssemblyProperty = pCorAssemblyProfiler;

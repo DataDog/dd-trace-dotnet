@@ -9,22 +9,22 @@
 
 namespace fault_tolerant
 {
-class FaultTolerantMethodDuplicator
+class FaultTolerantMethodDuplicator : public shared::Singleton<FaultTolerantMethodDuplicator>
 {
-private:
-    CorProfiler* m_corProfiler;
-    std::shared_ptr<RejitHandler> m_rejit_handler = nullptr;
-    std::shared_ptr<RejitWorkOffloader> m_work_offloader = nullptr;
+    friend class shared::Singleton<FaultTolerantMethodDuplicator>;
 
+private:
     bool is_fault_tolerant_instrumentation_enabled = false;
 
 public:
-    FaultTolerantMethodDuplicator(CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
-                         std::shared_ptr<trace::RejitWorkOffloader> work_offloader);
-    void DuplicateOne(ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
-                    ComPtr<IMetaDataEmit2> metadataEmit, mdTypeDef typeDef, mdMethodDef methodDef) const;
-    void DuplicateAll(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport,
-                   ComPtr<IMetaDataEmit2> metadataEmit) const;
+    FaultTolerantMethodDuplicator() = default;
+
+    static void DuplicateOne(ModuleID moduleId, const trace::ModuleInfo& moduleInfo, ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit,
+                             mdTypeDef typeDef, mdMethodDef methodDef, ICorProfilerInfo10* profilerInfo,
+                             bool shouldCallApplyMetadata = true);
+
+    static void DuplicateAll(const ModuleID moduleId, const trace::ModuleInfo& moduleInfo,
+                             ComPtr<IMetaDataImport2> metadataImport, ComPtr<IMetaDataEmit2> metadataEmit, ICorProfilerInfo10* profilerInfo);
 };
 
 } // namespace fault_tolerant

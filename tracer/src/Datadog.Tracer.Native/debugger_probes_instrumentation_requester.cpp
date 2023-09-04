@@ -186,14 +186,12 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
-    std::shared_ptr<trace::RejitWorkOffloader> work_offloader,
-    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator) :
+    std::shared_ptr<trace::RejitWorkOffloader> work_offloader) :
     m_corProfiler(corProfiler),
     m_debugger_rejit_preprocessor(
     std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
     m_rejit_handler(rejit_handler),
-    m_work_offloader(work_offloader),
-    m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
+    m_work_offloader(work_offloader)
 {
     is_debugger_enabled = IsDebuggerEnabled();
 }
@@ -763,7 +761,7 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
     Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
                   ").");
 
-    m_fault_tolerant_method_duplicator->DuplicateAll(moduleId, moduleInfo, metadataImport, metadataEmit);
+    //fault_tolerant::FaultTolerantMethodDuplicator::Instance()->DuplicateAll(moduleId, moduleInfo, metadataImport, metadataEmit, m_rejit_handler->GetCorProfilerInfo10());
 
     // Enumerate the types of the module
     auto typeDefEnum = EnumTypeDefs(metadataImport);

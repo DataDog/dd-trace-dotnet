@@ -82,11 +82,6 @@ private:
     //
     std::unique_ptr<debugger::DebuggerProbesInstrumentationRequester> debugger_instrumentation_requester = nullptr;
 
-    //
-    // Fault-Tolerant Instrumentation Members
-    //
-    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator = nullptr;
-
     // Cor assembly properties
     AssemblyProperty corAssemblyProperty{};
     AssemblyReference* managed_profiler_assembly_reference = nullptr;

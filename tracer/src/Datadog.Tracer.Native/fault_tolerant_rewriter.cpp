@@ -11,12 +11,12 @@
 
 using namespace fault_tolerant;
 
-FaultTolerantRewriter::FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter,
-                                             std::shared_ptr<RejitHandler> rejit_handler) :
+FaultTolerantRewriter::FaultTolerantRewriter(CorProfiler* corProfiler, std::unique_ptr<MethodRewriter> methodRewriter, std::shared_ptr<RejitWorkOffloader> work_offloader) :
     MethodRewriter(corProfiler),
     is_fault_tolerant_instrumentation_enabled(IsFaultTolerantInstrumentationEnabled()),
     m_methodRewriter(std::move(methodRewriter)),
-    m_rejit_handler(std::move(rejit_handler))
+    m_rejit_handler(corProfiler->rejit_handler),
+    m_work_offloader(work_offloader)
 {
 }
 
@@ -485,6 +485,59 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     return hr;
 }
 
+HRESULT FaultTolerantRewriter::DuplicateMethodOnlyInDotnet3Onward(RejitHandlerModuleMethod* methodHandler, const ModuleID moduleId, const mdMethodDef methodId) const
+{
+    // Only for .NET Core 3.0 onward: granular method duplication
+    // TODO check for .NET 3.0 onward
+    auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo10();
+    const auto& moduleInfo = GetModuleInfo(corProfilerInfo, moduleId);
+
+    if (moduleInfo.IsNGEN() || moduleInfo.IsDynamic())
+    {
+        // Don't duplicate, NGEN images and dynamic assemblies are not supported.
+        return S_FALSE;
+    }
+
+    ComPtr<IUnknown> metadataInterfaces;
+
+    Logger::Debug("  Loading Assembly Metadata...");
+    auto hr = corProfilerInfo->GetModuleMetaData(moduleInfo.id, ofRead | ofWrite, IID_IMetaDataImport2,
+                                                 metadataInterfaces.GetAddressOf());
+
+    if (FAILED(hr))
+    {
+        Logger::Warn(
+            "FaultTolerantRewriter::RewriteInternal failed to get metadata interface for ",
+            moduleInfo.id, " ", moduleInfo.assembly.name);
+        return S_FALSE;
+    }
+
+    ComPtr<IMetaDataImport2> metadataImport = metadataInterfaces.As<IMetaDataImport2>(IID_IMetaDataImport);
+    ComPtr<IMetaDataEmit2> metadataEmit = metadataInterfaces.As<IMetaDataEmit2>(IID_IMetaDataEmit);
+
+    auto typeDef = methodHandler->GetFunctionInfo()->type.id;
+
+    auto promise = std::make_shared<std::promise<void>>();
+    auto future = promise->get_future();
+
+    std::function<void()> action = [&, localPromise = promise]() mutable {
+
+        FaultTolerantMethodDuplicator::Instance()->DuplicateOne(moduleId, moduleInfo, metadataImport, metadataEmit, typeDef, methodId, corProfilerInfo);
+
+        // Resolve promise
+        if (localPromise != nullptr)
+        {
+            localPromise->set_value();
+        }
+    };
+
+    m_work_offloader->Enqueue(std::make_unique<RejitWorkItem>(std::move(action)));
+
+    future.get();
+
+    return S_OK;
+}
+
 HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler,
                                                RejitHandlerModuleMethod* methodHandler,
                                                ICorProfilerFunctionControl* pFunctionControl)
@@ -501,7 +554,7 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
     {
         const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
         const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
-
+        
         if (FaultTolerantTracker::Instance()->IsInstrumentationVersionSucceeded(moduleId, methodId, instrumentationVersion, instrumentingProduct))
         {
             // Request Revert for the original method
@@ -511,7 +564,7 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
             //m_rejit_handler->EnqueueRequestRevert(requests, promise);
             //future.get();
 
-            // We also set the original IL function body, in case the revert did not succeeded.
+            // We also set the original IL function body, in case the revert did not succeed.
             // We do that just as a safeguard, it has harmless effect.
             //const auto [pMethodBytes, methodSize] = FaultTolerantTracker::Instance()->GetILBodyAndSize(moduleId, methodId);
             //pFunctionControl->SetILFunctionBody(methodSize, pMethodBytes);
@@ -571,7 +624,8 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
     }
     else
     {
-        return E_NOTIMPL;
+        DuplicateMethodOnlyInDotnet3Onward(methodHandler, moduleId, methodId);
+        return RewriteInternal(moduleHandler, methodHandler, pFunctionControl);
     }
 }
 

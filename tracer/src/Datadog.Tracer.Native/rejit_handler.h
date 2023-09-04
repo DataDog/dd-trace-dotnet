@@ -168,6 +168,7 @@ public:
     static HRESULT NotifyReJITCompilationStarted(FunctionID functionId, ReJITID rejitId);
 
     ICorProfilerInfo7* GetCorProfilerInfo();
+    ICorProfilerInfo10* GetCorProfilerInfo10();
 
     void SetCorAssemblyProfiler(AssemblyProperty* pCorAssemblyProfiler);
     AssemblyProperty* GetCorAssemblyProperty();
