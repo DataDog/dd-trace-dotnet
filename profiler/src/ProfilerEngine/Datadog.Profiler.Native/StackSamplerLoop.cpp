@@ -242,7 +242,7 @@ void StackSamplerLoop::CpuProfilingIteration()
     for (int32_t i = 0; i < sampledThreadsCount && !_shutdownRequested; i++)
     {
         _targetThread = _pManagedThreadList->LoopNext(_iteratorCpuTime);
-        if (_targetThread != nullptr)
+        if (_targetThread != nullptr && _targetThread->GetOsThreadHandle() != static_cast<HANDLE>(NULL))
         {
             // detect Windows API call failure
             bool failure = false;
