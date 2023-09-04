@@ -23,7 +23,7 @@ public class AppSecWafBenchmark
     // this is necessary, as we use Iteration setup and cleanup which disables the bdn mechanism to estimate the necessary iteration count.Only 1 iteration count will be done with iteration setup and cleanup.
     // See https://github.com/dotnet/BenchmarkDotNet/pull/1157
     //Iteration setup and cleanup are necessary as we cant use GlobalCleanup here, the waf needs to flush more often than every 1xx.xxx ops, otherwise OutOfMemory occurs. 
-    private const int WafRuns = 1000;
+    private const int WafRuns = 2000;
     private static readonly Waf Waf;
     private Context _context;
 
@@ -153,17 +153,13 @@ public class AppSecWafBenchmark
 
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
-    public void RunWaf(NestedMap args)
-    {
-        for (var i = 0; i < WafRuns; i++)
-        {
-            _context.Run(args.Map, TimeoutMicroSeconds);
-        }
-    }
+    public void RunWaf(NestedMap args) => RunWafBenchmark(args);
 
     [Benchmark]
     [ArgumentsSource(nameof(SourceWithAttack))]
-    public void RunWafWithAttack(NestedMap args)
+    public void RunWafWithAttack(NestedMap args) => RunWafBenchmark(args);
+
+    private void RunWafBenchmark(NestedMap args)
     {
         for (var i = 0; i < WafRuns; i++)
         {
@@ -173,6 +169,6 @@ public class AppSecWafBenchmark
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)
     {
-        public override string ToString() => IsAttack ? $"NestedMap ({NestingDepth}, with attack)" : $"NestedMap ({NestingDepth})";
+        public override string ToString() => IsAttack ? $"NestedMap ({NestingDepth}, attack)" : $"NestedMap ({NestingDepth})";
     }
 }
