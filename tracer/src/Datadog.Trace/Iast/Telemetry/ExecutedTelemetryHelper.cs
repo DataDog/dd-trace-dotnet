@@ -18,6 +18,7 @@ internal class ExecutedTelemetryHelper
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = "executed.propagation";
     private static bool? _enabled = null;
+    private static bool? _enabledDebug = null;
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private int[] _executedSinks = new int[Enum.GetValues(typeof(IastInstrumentedSinks)).Length];
     private int[] _executedSources = new int[Enum.GetValues(typeof(IastInstrumentedSources)).Length];
@@ -35,11 +36,17 @@ internal class ExecutedTelemetryHelper
         return _enabled ?? false;
     }
 
+    public static bool EnabledDebug()
+    {
+        return _enabledDebug ?? (Enabled() && _verbosityLevel == IastMetricsVerbosityLevel.Debug);
+    }
+
     public void AddExecutedSink(IastInstrumentedSinks type)
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
             _executedSinks[(int)type]++;
+            TelemetryFactory.Metrics.RecordCountIastExecutedSinks(type);
         }
     }
 
@@ -48,6 +55,7 @@ internal class ExecutedTelemetryHelper
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Debug)
         {
             _executedPropagations++;
+            TelemetryFactory.Metrics.RecordCountIastExecutedPropagations();
         }
     }
 
@@ -56,6 +64,7 @@ internal class ExecutedTelemetryHelper
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
             _executedSources[(int)type]++;
+            TelemetryFactory.Metrics.RecordCountIastExecutedSources(type);
         }
     }
 
@@ -66,7 +75,6 @@ internal class ExecutedTelemetryHelper
         if (_executedPropagations > 0)
         {
             tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
-            TelemetryFactory.Metrics.RecordCountIastExecutedPropagations(_executedPropagations);
         }
 
         for (int i = 0; i < _executedSources.Length; i++)
@@ -74,7 +82,6 @@ internal class ExecutedTelemetryHelper
             if (_executedSources[i] > 0)
             {
                 tags.Add(Tuple.Create(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]));
-                TelemetryFactory.Metrics.RecordCountIastExecutedSources((IastInstrumentedSources)i, _executedSources[i]);
             }
         }
 
@@ -83,7 +90,6 @@ internal class ExecutedTelemetryHelper
             if (_executedSinks[i] > 0)
             {
                 tags.Add(Tuple.Create(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]));
-                TelemetryFactory.Metrics.RecordCountIastExecutedSinks((IastInstrumentedSinks)i, _executedSinks[i]);
             }
         }
 

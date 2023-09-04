@@ -184,6 +184,14 @@ internal static class IastModule
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
     }
 
+    internal static void OnExecutedPropagationTelemetry()
+    {
+        if (ExecutedTelemetryHelper.EnabledDebug())
+        {
+            GetIastContext()?.OnExecutedPropagation();
+        }
+    }
+
     private static void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
     {
         if (ExecutedTelemetryHelper.Enabled())

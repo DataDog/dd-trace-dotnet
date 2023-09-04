@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -85,6 +86,7 @@ internal class IastRequestContext
 
     private void AddExtractedBody(object bodyExtracted, string? key)
     {
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
         if (bodyExtracted != null)
         {
             // We get either string, List<object> or Dictionary<string, object>
@@ -170,6 +172,15 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request)
     {
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+
         if (!_querySourcesAdded)
         {
             if (request.QueryString != null)
@@ -222,6 +233,7 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request, IDictionary<string, object> routeData)
     {
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
         AddRouteData(routeData);
         AddRequestData(request);
     }
@@ -230,6 +242,16 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
     {
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+
         AddRouteData(routeParameters);
 
         if (!_querySourcesAdded)
@@ -299,5 +321,10 @@ internal class IastRequestContext
     internal void OnExecutedSinkTelemetry(MetricTags.IastInstrumentedSinks sink)
     {
         _executedTelemetryHelper?.AddExecutedSink(sink);
+    }
+
+    internal void OnExecutedPropagation()
+    {
+        _executedTelemetryHelper?.AddExecutedInstrumentation();
     }
 }
