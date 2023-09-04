@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             using var agent = EnvironmentHelper.GetMockAgent();
             using var process = RunSampleAndWaitForExit(agent);
-            var spans = agent.WaitForSpans(1, 2000);
+            var spans = agent.Spans;
 
             Assert.Empty(spans);
             telemetry?.AssertIntegration(IntegrationId.TraceAnnotations, enabled: false, autoEnabled: false);

@@ -18,11 +18,13 @@ using Nuke.Common.Utilities;
 using System.Collections;
 using System.Threading.Tasks;
 using Logger = Serilog.Log;
-using Nuke.Common.Utilities.Collections;
 
 partial class Build
 {
     const string ClangTidyChecks = "-clang-analyzer-osx*,-clang-analyzer-optin.osx*,-cppcoreguidelines-avoid-magic-numbers,-cppcoreguidelines-pro-type-vararg,-readability-braces-around-statements";
+    const string LinuxApiWrapperLibrary = "Datadog.Linux.ApiWrapper.x64.so";
+
+    AbsolutePath ProfilerDeployDirectory => ProfilerOutputDirectory / "DDProf-Deploy";
 
     Target CompileProfilerNativeSrc => _ => _
         .Unlisted()
@@ -92,7 +94,12 @@ partial class Build
         .After(CompileProfilerNativeSrcAndTestLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None);
+
+            // LD_PRELOAD must be set for this test library to validate that it works correctly.
+            var (arch, _) = GetUnixArchitectureAndExtension();
+            var envVars = new[] { $"LD_PRELOAD={ProfilerDeployDirectory / arch / LinuxApiWrapperLibrary}" };
+            RunProfilerUnitTests("Datadog.Linux.ApiWrapper.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.None, envVars);
         });
 
     Target CompileProfilerNativeTestsWindows => _ => _
@@ -133,7 +140,7 @@ partial class Build
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
-            RunProfilerUnitTests(BuildConfiguration, TargetPlatform);
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", BuildConfiguration, TargetPlatform);
         });
 
     Target PublishProfiler => _ => _
@@ -148,11 +155,11 @@ partial class Build
         .Executes(() =>
         {
             var (arch, ext) = GetUnixArchitectureAndExtension();
-            var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / arch;
+            var sourceDir = ProfilerDeployDirectory / arch;
             EnsureExistingDirectory(MonitoringHomeDirectory / arch);
             EnsureExistingDirectory(SymbolsDirectory / arch);
 
-            var files = new[] { "Datadog.Profiler.Native.so", "Datadog.Linux.ApiWrapper.x64.so" };
+            var files = new[] { "Datadog.Profiler.Native.so", LinuxApiWrapperLibrary };
             foreach (var file in files)
             {
                 var source = sourceDir / file;
@@ -169,7 +176,7 @@ partial class Build
         {
             foreach (var architecture in ArchitecturesForPlatformForProfiler)
             {
-                var sourceDir = ProfilerOutputDirectory / "DDProf-Deploy" / $"win-{architecture}";
+                var sourceDir = ProfilerDeployDirectory / $"win-{architecture}";
                 var source = sourceDir / "Datadog.Profiler.Native.dll";
                 var dest = MonitoringHomeDirectory / $"win-{architecture}";
                 CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
@@ -468,7 +475,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Asan);
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Asan);
         });
 
     Target CompileProfilerWithAsanWindows => _ => _
@@ -512,7 +519,7 @@ partial class Build
         {
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
             {
-                RunProfilerUnitTests(Configuration.Release, platform);
+                RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, platform, SanitizerKind.Asan);
             }
         });
 
@@ -611,7 +618,7 @@ partial class Build
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
-            RunProfilerUnitTests(Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
+            RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
     Target RunSampleWithProfilerUbsan => _ => _
@@ -698,14 +705,14 @@ partial class Build
         }
     }
 
-    void RunProfilerUnitTests(Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None)
+    void RunProfilerUnitTests(string testLibrary, Configuration configuration, MSBuildTargetPlatform platform, SanitizerKind sanitizer = SanitizerKind.None, string[] additionalEnvVars = null)
     {
         var intermediateDirPath =
             IsWin
             ? (RelativePath)$"{configuration}-{platform}" / "profiler" / "test"
             : string.Empty;
 
-        var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / "Datadog.Profiler.Native.Tests";
+        var workingDirectory = ProfilerOutputDirectory / "bin" / intermediateDirPath / testLibrary;
         EnsureExistingDirectory(workingDirectory);
 
         // Nuke.Tool creates a Process and run the executable inside.
@@ -727,7 +734,7 @@ partial class Build
         }
 
         var ext = IsWin ? ".exe" : string.Empty;
-        var exePath = workingDirectory / $"Datadog.Profiler.Native.Tests{ext}";
+        var exePath = workingDirectory / $"{testLibrary}{ext}";
 
         if (IsLinux)
         {
@@ -743,7 +750,9 @@ partial class Build
             }
         }
 
-        var testsResultFile = ProfilerBuildDataDirectory / $"Datadog.Profiler.Tests.Results.{Platform}.{configuration}.{platform}.xml";
+        AddExtraEnvVariables(envVars, additionalEnvVars);
+
+        var testsResultFile = ProfilerBuildDataDirectory / $"{testLibrary}.Results.{Platform}.{configuration}.{platform}.xml";
         var testExe = ToolResolver.GetLocalTool(exePath);
         testExe($"--gtest_output=xml:{testsResultFile}", workingDirectory: workingDirectory, environmentVariables: envVars);
     }

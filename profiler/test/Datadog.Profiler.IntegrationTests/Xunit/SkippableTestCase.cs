@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Datadog.Profiler.IntegrationTests.Helpers
+namespace Datadog.Profiler.IntegrationTests.Xunit
 {
     [Serializable]
     public class SkippableTestCase : TestMethodTestCase, IXunitTestCase

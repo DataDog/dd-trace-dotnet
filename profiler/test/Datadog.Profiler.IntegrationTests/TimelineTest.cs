@@ -6,7 +6,6 @@
 using System;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using Xunit;
 using Xunit.Abstractions;
 
