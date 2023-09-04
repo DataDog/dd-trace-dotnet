@@ -44,7 +44,7 @@ internal class IastRequestContext
 
         if (_spanTelemetryHelper != null)
         {
-            var tags = _spanTelemetryHelper.GetMetricTags();
+            var tags = _spanTelemetryHelper.GenerateMetricTags();
             foreach (var tag in tags)
             {
                 span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
@@ -292,7 +292,7 @@ internal class IastRequestContext
 
     private void AddHeaderData(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), name, value));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderValue), name, value));
         _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
     }
 }

@@ -65,6 +65,8 @@ internal class IastSettings
                                 .WithKeys(ConfigurationKeys.Iast.RedactionRegexTimeout)
                                 .AsDouble(200, val1 => val1 is > 0).Value;
 
+        TelemetryEnabled = config.WithKeys(ConfigurationKeys.Telemetry.Enabled).AsBool(false);
+
         IastTelemetryVerbosity = config
             .WithKeys(ConfigurationKeys.Iast.IastTelemetryVerbosity)
             .GetAs(
@@ -107,6 +109,8 @@ internal class IastSettings
     public double RedactionRegexTimeout { get; }
 
     public IastMetricsVerbosityLevel IastTelemetryVerbosity { get; }
+
+    public bool TelemetryEnabled { get; }
 
     public static IastSettings FromDefaultSources()
     {

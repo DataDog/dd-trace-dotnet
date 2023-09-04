@@ -26,7 +26,7 @@ internal static class SourceType
         {
             SourceTypeName.RequestParameterValue => "http.request.parameter",
             SourceTypeName.RequestParameterName => "http.request.parameter.name",
-            SourceTypeName.RequestHeader => "http.request.header",
+            SourceTypeName.RequestHeaderValue => "http.request.header",
             SourceTypeName.RequestHeaderName => "http.request.header.name",
             SourceTypeName.RequestPath => "http.request.path",
             SourceTypeName.RequestBody => "http.request.body",
@@ -43,7 +43,7 @@ internal static class SourceType
         {
             "http.request.parameter" => SourceTypeName.RequestParameterValue,
             "http.request.parameter.name" => SourceTypeName.RequestParameterName,
-            "http.request.header" => SourceTypeName.RequestHeader,
+            "http.request.header" => SourceTypeName.RequestHeaderValue,
             "http.request.header.name" => SourceTypeName.RequestHeaderName,
             "http.request.path" => SourceTypeName.RequestPath,
             "http.request.body" => SourceTypeName.RequestBody,

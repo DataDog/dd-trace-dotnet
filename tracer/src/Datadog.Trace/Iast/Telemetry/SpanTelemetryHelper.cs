@@ -5,7 +5,7 @@
 
 using System;
 using System.Collections.Generic;
-using System.Web.Caching;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
@@ -18,14 +18,22 @@ internal class SpanTelemetryHelper
     private const string SourceExecutedTag = "executed.source.";
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = "executed.propagation";
+    private static bool? _enabled = null;
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private int[] _executedSinks = new int[Enum.GetValues(typeof(IastInstrumentedSinks)).Length];
     private int[] _executedSources = new int[Enum.GetValues(typeof(IastInstrumentedSources)).Length];
-    private int _executedInstrumentations = 0;
+    private int _executedPropagations = 0;
 
     public static bool Enabled()
     {
-        return Iast.Instance.Settings.IastTelemetryVerbosity <= IastMetricsVerbosityLevel.Information;
+        if (_enabled is null)
+        {
+            var telemetryEnabled = Iast.Instance.Settings.TelemetryEnabled;
+            // This class does not send any mandatory telemetry
+            _enabled = telemetryEnabled && _verbosityLevel <= IastMetricsVerbosityLevel.Information;
+        }
+
+        return _enabled ?? false;
     }
 
     public void AddExecutedSink(VulnerabilityType type)
@@ -40,7 +48,7 @@ internal class SpanTelemetryHelper
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Debug)
         {
-            _executedInstrumentations++;
+            _executedPropagations++;
         }
     }
 
@@ -52,13 +60,14 @@ internal class SpanTelemetryHelper
         }
     }
 
-    public List<Tuple<string, int>> GetMetricTags()
+    public List<Tuple<string, int>> GenerateMetricTags()
     {
         List<Tuple<string, int>> tags = new();
 
-        if (_executedInstrumentations > 0)
+        if (_executedPropagations > 0)
         {
-            tags.Add(Tuple.Create(PropagationExecutedTag, _executedInstrumentations));
+            tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
+            TelemetryFactory.Metrics.RecordCountIastExecutedPropagations(_executedPropagations);
         }
 
         for (int i = 0; i < _executedSources.Length; i++)
@@ -66,6 +75,7 @@ internal class SpanTelemetryHelper
             if (_executedSources[i] > 0)
             {
                 tags.Add(Tuple.Create(GetExecutedSourceTag((SourceTypeName)i), _executedSources[i]));
+                TelemetryFactory.Metrics.RecordCountIastExecutedSources((IastInstrumentedSources)i, _executedSources[i]);
             }
         }
 
@@ -74,10 +84,28 @@ internal class SpanTelemetryHelper
             if (_executedSinks[i] > 0)
             {
                 tags.Add(Tuple.Create(GetExecutedSinkTag((VulnerabilityType)i), _executedSinks[i]));
+                TelemetryFactory.Metrics.RecordCountIastExecutedSinks((IastInstrumentedSinks)i, _executedSinks[i]);
             }
         }
 
+        ResetMetrics();
+
         return tags;
+    }
+
+    private void ResetMetrics()
+    {
+        _executedPropagations = 0;
+
+        for (int i = 0; i < _executedSources.Length; i++)
+        {
+            _executedSources[i] = 0;
+        }
+
+        for (int i = 0; i < _executedSinks.Length; i++)
+        {
+            _executedSinks[i] = 0;
+        }
     }
 
     private string GetExecutedSourceTag(SourceTypeName source)

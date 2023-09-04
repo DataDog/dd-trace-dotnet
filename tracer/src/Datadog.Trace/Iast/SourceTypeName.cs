@@ -12,7 +12,7 @@ internal enum SourceTypeName
     RequestParameterName,
     RequestParameterValue,
     RoutedParameterValue,
-    RequestHeader,
+    RequestHeaderValue,
     RequestHeaderName,
     RequestQuery,
     CookieName,
