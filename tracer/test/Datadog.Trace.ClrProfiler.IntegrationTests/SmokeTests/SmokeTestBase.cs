@@ -133,6 +133,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
 
+#if NETCOREAPP2_1
+            if (result.StandardOutput.Contains("The AssemblyResolve event didn't cause infinite")
+                && result.ExitCode != expectedExitCode)
+            {
+                // The above message is the last thing set before we exit. On .NET Core 2.1
+                // we can still get flake on shutdown
+                throw new SkipException("Error while shutting down on .NET Core 2.1");
+            }
+#endif
             ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
 
             if (expectedExitCode == 0)
