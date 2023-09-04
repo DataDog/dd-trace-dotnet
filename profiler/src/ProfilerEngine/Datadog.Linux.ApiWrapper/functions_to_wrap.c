@@ -124,19 +124,19 @@ int dladdr(const void* addr_arg, Dl_info* info)
 #ifdef DD_ALPINE
 
 /* Function pointers to hold the value of the glibc functions */
-static int (*__real___pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
+static int (*__real_pthread_create)(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg) = NULL;
 
-int __pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg)
+int pthread_create(pthread_t* restrict res, const pthread_attr_t* restrict attrp, void* (*entry)(void*), void* restrict arg)
 {
-    if (__real___pthread_create == NULL)
+    if (__real_pthread_create == NULL)
     {
-        __real___pthread_create = dlsym(RTLD_NEXT, "__pthread_create");
+        __real_pthread_create = dlsym(RTLD_NEXT, "pthread_create");
     }
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]++;
 
-    // call the real __pthread_create (libc/musl-libc)
-    int result = __real___pthread_create(res, attrp, entry, arg);
+    // call the real pthread_create (libc/musl-libc)
+    int result = __real_pthread_create(res, attrp, entry, arg);
 
     ((char*)&functions_entered_counter)[ENTERED_PTHREAD_CREATE]--;
 
