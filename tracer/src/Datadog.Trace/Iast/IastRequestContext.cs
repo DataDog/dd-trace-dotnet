@@ -11,10 +11,10 @@ using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #endif
-using System.Xml.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Iast;
 
@@ -26,7 +26,7 @@ internal class IastRequestContext
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
-    private SpanTelemetryHelper? _spanTelemetryHelper = SpanTelemetryHelper.Enabled() ? new SpanTelemetryHelper() : null;
+    private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -42,9 +42,9 @@ internal class IastRequestContext
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
         }
 
-        if (_spanTelemetryHelper != null)
+        if (_executedTelemetryHelper != null)
         {
-            var tags = _spanTelemetryHelper.GenerateMetricTags();
+            var tags = _executedTelemetryHelper.GenerateMetricTags();
             foreach (var tag in tags)
             {
                 span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
@@ -294,5 +294,10 @@ internal class IastRequestContext
     {
         _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderValue), name, value));
         _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
+    }
+
+    internal void OnExecutedSinkTelemetry(MetricTags.IastInstrumentedSinks sink)
+    {
+        _executedTelemetryHelper?.AddExecutedSink(sink);
     }
 }

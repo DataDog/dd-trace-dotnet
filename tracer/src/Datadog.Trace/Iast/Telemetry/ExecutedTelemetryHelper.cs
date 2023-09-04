@@ -1,18 +1,17 @@
-// <copyright file="SpanTelemetryHelper.cs" company="Datadog">
+// <copyright file="ExecutedTelemetryHelper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 using System;
 using System.Collections.Generic;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 #nullable enable
 namespace Datadog.Trace.Iast.Telemetry;
 
-internal class SpanTelemetryHelper
+internal class ExecutedTelemetryHelper
 {
     private const string BasicExecutedTag = "_dd.iast.telemetry.";
     private const string SourceExecutedTag = "executed.source.";
@@ -36,7 +35,7 @@ internal class SpanTelemetryHelper
         return _enabled ?? false;
     }
 
-    public void AddExecutedSink(VulnerabilityType type)
+    public void AddExecutedSink(IastInstrumentedSinks type)
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
@@ -52,7 +51,7 @@ internal class SpanTelemetryHelper
         }
     }
 
-    public void AddExecutedSource(SourceTypeName type)
+    public void AddExecutedSource(IastInstrumentedSources type)
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
@@ -74,7 +73,7 @@ internal class SpanTelemetryHelper
         {
             if (_executedSources[i] > 0)
             {
-                tags.Add(Tuple.Create(GetExecutedSourceTag((SourceTypeName)i), _executedSources[i]));
+                tags.Add(Tuple.Create(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]));
                 TelemetryFactory.Metrics.RecordCountIastExecutedSources((IastInstrumentedSources)i, _executedSources[i]);
             }
         }
@@ -83,7 +82,7 @@ internal class SpanTelemetryHelper
         {
             if (_executedSinks[i] > 0)
             {
-                tags.Add(Tuple.Create(GetExecutedSinkTag((VulnerabilityType)i), _executedSinks[i]));
+                tags.Add(Tuple.Create(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]));
                 TelemetryFactory.Metrics.RecordCountIastExecutedSinks((IastInstrumentedSinks)i, _executedSinks[i]);
             }
         }
@@ -108,40 +107,36 @@ internal class SpanTelemetryHelper
         }
     }
 
-    private string GetExecutedSourceTag(SourceTypeName source)
+    private string GetExecutedSourceTag(IastInstrumentedSources source)
     {
         return BasicExecutedTag + SourceExecutedTag + GetSourceTag(source);
     }
 
-    private string GetExecutedSinkTag(VulnerabilityType vulnerability)
+    private string GetExecutedSinkTag(IastInstrumentedSinks vulnerability)
     {
         return BasicExecutedTag + SinkExecutedTag + GetVulnerabilityTag(vulnerability);
     }
 
-    // TODO: make test to make sure that all vulnerabilitis have tags
-
-    private string GetVulnerabilityTag(VulnerabilityType vulnerability)
+    private string GetVulnerabilityTag(IastInstrumentedSinks vulnerability)
         => vulnerability switch
         {
-            VulnerabilityType.LdapInjection => "ldap_injection",
-            VulnerabilityType.SqlInjection => "sql_injection",
-            VulnerabilityType.CommandInjection => "command_injection",
-            VulnerabilityType.InsecureCookie => "insecure_cookie",
-            VulnerabilityType.NoHttpOnlyCookie=> "no_http_only_cookie",
-            VulnerabilityType.NoSameSiteCookie => "no_samesite_cookie",
-            VulnerabilityType.WeakCipher => "weak_cipher",
-            VulnerabilityType.WeakHash => "weak_hash",
-            VulnerabilityType.PathTraversal => "path_traversal",
-            VulnerabilityType.Ssrf => "ssrf",
-            VulnerabilityType.UnvalidatedRedirect => "unvalidated_redirect",
-            VulnerabilityType.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
+            IastInstrumentedSinks.LdapInjection => "ldap_injection",
+            IastInstrumentedSinks.SqlInjection => "sql_injection",
+            IastInstrumentedSinks.CommandInjection => "command_injection",
+            IastInstrumentedSinks.InsecureCookie => "insecure_cookie",
+            IastInstrumentedSinks.NoHttpOnlyCookie=> "no_http_only_cookie",
+            IastInstrumentedSinks.NoSameSiteCookie => "no_samesite_cookie",
+            IastInstrumentedSinks.WeakCipher => "weak_cipher",
+            IastInstrumentedSinks.WeakHash => "weak_hash",
+            IastInstrumentedSinks.PathTraversal => "path_traversal",
+            IastInstrumentedSinks.Ssrf => "ssrf",
+            IastInstrumentedSinks.UnvalidatedRedirect => "unvalidated_redirect",
+            IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
 
-    // TODO: make test to make sure that all vulnerabilitis have tags
-
-    private string? GetSourceTag(SourceTypeName source)
+    private string? GetSourceTag(IastInstrumentedSources source)
     {
-        return SourceType.GetString(source).Replace(".", "_");
+        return SourceType.GetString((SourceTypeName)source);
     }
 }

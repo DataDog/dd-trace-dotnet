@@ -5,10 +5,7 @@
 
 using System;
 using Datadog.Trace.Iast;
-using Datadog.Trace.Iast.Telemetry;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
-using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using Xunit;
 
