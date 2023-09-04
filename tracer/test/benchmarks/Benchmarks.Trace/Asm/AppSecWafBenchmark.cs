@@ -19,6 +19,7 @@ namespace Benchmarks.Trace.Asm;
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
+
     // this is necessary, as we use Iteration setup and cleanup which disables the bdn mechanism to estimate the necessary iteration count.Only 1 iteration count will be done with iteration setup and cleanup.
     // See https://github.com/dotnet/BenchmarkDotNet/pull/1157
     //Iteration setup and cleanup are necessary as we cant use GlobalCleanup here, the waf needs to flush more often than every 1xx.xxx ops, otherwise OutOfMemory occurs. 
@@ -141,7 +142,7 @@ public class AppSecWafBenchmark
             map = nextMap;
         }
 
-        return new NestedMap(root, nestingDepth);
+        return new NestedMap(root, nestingDepth, withAttack);
     }
 
     [IterationSetup]
@@ -170,8 +171,8 @@ public class AppSecWafBenchmark
         }
     }
 
-    public record NestedMap(Dictionary<string, object> Map, int NestingDepth)
+    public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)
     {
-        public override string ToString() => $"NestedMap ({NestingDepth})";
+        public override string ToString() => IsAttack ? $"NestedMap ({NestingDepth}, with attack)" : $"NestedMap ({NestingDepth})";
     }
 }
