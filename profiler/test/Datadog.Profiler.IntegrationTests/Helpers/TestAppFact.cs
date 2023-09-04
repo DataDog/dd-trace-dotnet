@@ -3,13 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using Xunit;
 using Xunit.Sdk;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
-    [XunitTestCaseDiscoverer("Datadog.Profiler.SmokeTests.TestAppFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
+    [XunitTestCaseDiscoverer("Datadog.Profiler.IntegrationTests.Xunit.TestAppFrameworkDiscover", "Datadog.Profiler.IntegrationTests")]
     internal class TestAppFact : FactAttribute
     {
         public TestAppFact(string appAssembly, string[] frameworks = null)

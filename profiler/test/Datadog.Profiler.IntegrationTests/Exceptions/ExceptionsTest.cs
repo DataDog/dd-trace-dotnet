@@ -9,9 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
-using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
 

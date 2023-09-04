@@ -21,7 +21,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSmoke(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
             runner.RunAndCheck();
         }
 
@@ -29,7 +29,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.BuggyBits")]
         public void CheckSmokeForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
