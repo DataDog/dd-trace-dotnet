@@ -19,6 +19,9 @@ namespace Benchmarks.Trace.Asm;
 public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
+    // this is necessary, as we use Iteration setup and cleanup which disables the bdn mechanism to estimate the necessary iteration count.Only 1 iteration count will be done with iteration setup and cleanup.
+    // See https://github.com/dotnet/BenchmarkDotNet/pull/1157
+    //Iteration setup and cleanup are necessary as we cant use GlobalCleanup here, the waf needs to flush more often than every 1xx.xxx ops, otherwise OutOfMemory occurs. 
     private const int WafRuns = 1000;
     private static readonly Waf Waf;
     private Context _context;
@@ -67,7 +70,7 @@ public class AppSecWafBenchmark
         }
 
         var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
-        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.1.json"));
+        var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.2.json"));
         Waf = initResult.Waf;
     }
 
@@ -156,7 +159,7 @@ public class AppSecWafBenchmark
             _context.Run(args.Map, TimeoutMicroSeconds);
         }
     }
-    
+
     [Benchmark]
     [ArgumentsSource(nameof(SourceWithAttack))]
     public void RunWafWithAttack(NestedMap args)

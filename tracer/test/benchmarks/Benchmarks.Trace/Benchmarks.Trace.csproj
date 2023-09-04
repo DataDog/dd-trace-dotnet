@@ -31,7 +31,7 @@
     <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
-    <Content Update="Asm\rule-set.1.7.1.json">
+    <Content Update="Asm\rule-set.1.7.2.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
