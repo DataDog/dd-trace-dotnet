@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
@@ -85,6 +84,7 @@ public class DataStreamsMonitoringTests : TestHelper
             {
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
             });
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
@@ -145,6 +145,7 @@ public class DataStreamsMonitoringTests : TestHelper
             {
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
                 _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
+                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
             });
 
         await Verifier.Verify(payload, settings)
@@ -163,7 +164,8 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.WaitForDataStreams(2);
+        // We don't expect any streams here, so no point waiting for ages
+        var dataStreams = agent.WaitForDataStreams(2, timeoutInMilliseconds: 2_000);
         dataStreams.Should().BeEmpty();
     }
 

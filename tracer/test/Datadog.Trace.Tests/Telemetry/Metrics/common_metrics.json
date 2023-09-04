@@ -1,0 +1,550 @@
+﻿{
+  "general": {
+    "init_time": {
+      "tags": [
+        "total",
+        "component"
+      ],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to import/initialize the tracer on startup. If this consists of multiple steps/components, tagged by the component/total e.g. `component:call_target`. Component tags will vary by language",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "logs_created": {
+      "tags": [
+        "level"
+      ],
+      "metric_type": "count",
+      "data_type": "logs",
+      "description": "The number of logs created with a given log level. Useful for calculating impact for other features (automatic sending of logs). Levels should be one of `debug`, `info`, `warn`, `error`, `critical`",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  },
+  "tracers": {
+    "integration_errors": {
+      "tags": [
+        "integration_name",
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of errors/failures in the library integration, tagged by the integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) and ErrorType (e.g. `error:duck_type`, `error:runtime`). Both tags will vary by implementation language",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "spans_created": {
+      "tags": [
+        "integration_name"
+      ],
+      "metric_type": "count",
+      "data_type": "spans",
+      "description": "The number of spans created by the tracer, tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "spans_finished": {
+      "tags": [
+        "integration_name"
+      ],
+      "metric_type": "count",
+      "data_type": "spans",
+      "description": "The number of spans finished, optionally (if implementation allows) tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "spans_enqueued_for_serialization": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "spans",
+      "description": "The number of spans enqueued for serialization/flushing. Tagged by one of `reason:p0_keep` (the span was part of a p0 trace that was kept for sending to the agent), `reason:single_span_sampling` (the span was selected via single_span_sampling, and otherwise would have been dropped as a p0 span), or `reason:default` - The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "spans_dropped": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "spans",
+      "description": "The number of spans dropped and the reason for being dropped, for example `reason:p0_drop` (the span was part of a p0 trace that was droped by the tracer), `reason:overfull_buffer` (the local buffer was full, and the span had to be dropped), `reason:serialization_error` (there was an error serializing the span and it had to be dropped)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_segments_created": {
+      "tags": [
+        "new_continued"
+      ],
+      "metric_type": "count",
+      "data_type": "trace segments",
+      "description": "The number of trace segments (local traces) created, tagged with new/continued depending on whether this is a new trace (no distributed context information) or continued (has distributed context).",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunks_enqueued": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "trace chunks",
+      "description": "The number of times a trace chunk is enqueued for sampling/serialization. In partial-flush scenarios, multiple trace chunks may be enququed per trace segment/local trace",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunk_size": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "spans",
+      "description": "The number of spans in the trace chunk when it is enqueued",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunk_serialization.bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The size in bytes of the serialized trace chunk",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunk_serialization.ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to serialize a trace chunk",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunks_enqueued_for_serialization": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "trace chunks",
+      "description": "The number of trace chunks kept for serialization. Excludes single-span sampling spans. Tagged by one of `reason:p0_keep` (the trace was a p0 trace that was kept for sending to the agent) or `reason:default` - The tracer is not dropping p0 spans, so the span was enqueued 'by default' for sending to the trace-agent)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunks_dropped": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "trace chunks",
+      "description": "the number of trace chunks dropped prior to serialization, tagged by reason. Includes traces which are dropped due to errors, overfull buffers, as well as due to sampling decision. For example `reason:p0_drop` (the span a p0 trace that was droped by the tracer), `reason:overfull_buffer` (the local buffer was full, and the trace chunk had to be dropped), `reason:serialization_error` (there was an error serializing the trace and it had to be dropped)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_chunks_sent": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "trace chunks",
+      "description": "The number of trace chunks attempted to be sent to the backend, regardless of response",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_segments_closed": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "trace segments",
+      "description": "The number of trace segments (local traces) closed. In non partial flush scenarios, trace_segments_closed == trace_chunks_enqueued",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_api.requests": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the trace endopint in the agent, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_api.bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The size of the payload sent to the endpoint in bytes",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_api.ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to flush the trace payload to the agent. Note that this is not the per trace time, this is the per payload time",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_api.responses": {
+      "tags": [
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "responses",
+      "description": "The number of responses received from the trace endpoint, tagged with status code, e.g. `status_code:200`, `status_code:404`. May also use `status_code:5xx` for example as a catch-all for 2xx, 3xx, 4xx, 5xx responses",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_api.errors": {
+      "tags": [
+        "type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the trace endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_partial_flush.count": {
+      "tags": [
+        "reason"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times a partial flush (where a span is flushed separately from its local root span) is triggered, tagged by the reason the flush was triggered (`reason:large_trace`, `reason:single_span_ingestion`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_partial_flush.spans_closed": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "spans",
+      "description": "The number of spans included in the trace chunk when partial flush is triggered",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "trace_partial_flush.spans_remaining": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "spans",
+      "description": "The number of open spans remaining in the trace segment (local trace) when partial flush is triggered",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "context_header_style.injected": {
+      "tags": [
+        "header_style"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times distributed context is injected into an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "context_header_style.extracted": {
+      "tags": [
+        "header_style"
+      ],
+      "metric_type": "count",
+      "data_type": "instances",
+      "description": "The number of times distributed context is successfully extracted from an outgoing span, tagged by header style (`header_style:tracecontext`, `header_style:datadog`, `header_style:b3multi`, `header_style:b3single`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_buckets": {
+      "tags": [],
+      "metric_type": "gauge",
+      "data_type": "keys",
+      "description": "The number of unique buckets created for stats aggregation",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_api.requests": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the stats endopint in the agent, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_api.bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The size of the payload sent to the stats endpoint in bytes",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_api.ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to send the payload sent to the endpoint in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_api.responses": {
+      "tags": [
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "responses",
+      "description": "The number of responses received from the endpoint, tagged with status code, e.g. `status_code:200`, `status_code:404`. May also use `status_code:5xx` for example as a catch-all for 2xx, 3xx, 4xx, 5xx responses",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "stats_api.errors": {
+      "tags": [
+        "type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. Timeout, NetworkError, StatusCode)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "host_lib_injection.success": {
+      "tags": [
+        "language",
+        "version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful host lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "host_lib_injection.failure": {
+      "tags": [
+        "language",
+        "version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of failed host lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "docker_lib_injection.success": {
+      "tags": [
+        "language",
+        "version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of successful docker lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    },
+    "docker_lib_injection.failure": {
+      "tags": [
+        "language",
+        "version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of failed docker lib injection",
+      "send_to_user": false,
+      "user_tags": []
+    }
+  },
+  "telemetry": {
+    "telemetry_api.requests": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to a telemetry endopint, regardless of success, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "telemetry_api.bytes": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The size of the payload sent to the stats endpoint in bytes, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "telemetry_api.ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to send the payload sent to the endpoint in ms, tagged by the endpoint (`endpoint:agent`, `endpoint:agentless`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "telemetry_api.responses": {
+      "tags": [
+        "endpoint",
+        "status_code"
+      ],
+      "metric_type": "count",
+      "data_type": "responses",
+      "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`)",
+      "send_to_user": false,
+      "user_tags":[]
+
+    },
+    "telemetry_api.errors": {
+      "tags": [
+        "endpoint",
+        "type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the api endpoint in the agent that errored, tagged by the error type (e.g. `type:timeout`, `type:network`, `type:status_code`) and Endpoint (`endpoint:agent`, `endpoint:agentless`)",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  },
+  "appsec": {
+    "waf.init": {
+      "tags": [
+        "waf_version",
+        "event_rules_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of times we is initialized",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.updates": {
+      "tags": [
+        "waf_version",
+        "event_rules_version"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Number of times we reload the rules (startup + Remote Configuration)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.duration": {
+      "tags": [
+        "waf_version",
+        "event_rules_version"
+      ],
+      "metric_type": "distribution",
+      "data_type": "requests",
+      "description": "Total WAF duration",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.duration_ext": {
+      "tags": [
+        "waf_version",
+        "event_rules_version"
+      ],
+      "metric_type": "distribution",
+      "data_type": "requests",
+      "description": "Total WAF duration  including bindings",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "waf.requests": {
+      "tags": [
+        "waf_version",
+        "event_rules_version",
+        "rule_triggered",
+        "request_blocked",
+        "waf_timeout",
+        "request_excluded"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "Requests analyzed by ddwaf",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  },
+  "iast": {
+    "instrumented.source": {
+      "tags": [
+        "source_type"
+      ],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of source call sites instrumented",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "instrumented.propagation": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of propagation call sites instrumented",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "instrumented.sink": {
+      "tags": [
+        "vulnerability_type"
+      ],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of sink call sites instrumented",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "executed.source": {
+      "tags": [
+        "source_type"
+      ],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of source call sites executed",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "executed.propagation": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of propagation call sites executed",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "executed.sink": {
+      "tags": [
+        "vulnerability_type"
+      ],
+      "metric_type": "count",
+      "data_type": "call sites",
+      "description": "Number of sink call sites executed",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "executed.tainted": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "operations",
+      "description": "Number of taint operations triggered during a request",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "request.tainted": {
+      "tags": [
+        "vulnerability_type"
+      ],
+      "metric_type": "count",
+      "data_type": "values",
+      "description": "Number of tainted values at the end of a request",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  },
+  "sidecar": {
+    "server.active_sessions": {
+      "tags": [],
+      "metric_type": "gauge",
+      "data_type": "sessions",
+      "description": "Number of sessions active in parallel",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "server.submitted_payloads": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "payloads",
+      "description": "Number of payloads the sidecar has processed",
+      "send_to_user": false,
+      "user_tags":[]
+    }
+  }
+}

@@ -169,7 +169,6 @@ namespace Samples.DatabaseHelper
 
                     Console.WriteLine("  Synchronous");
                     Console.WriteLine();
-                    await Task.Delay(100, cancellationToken);
 
                     command = commandFactory.GetCreateTableCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
@@ -195,15 +194,12 @@ namespace Samples.DatabaseHelper
 
                 if (commandExecutor.SupportsAsyncMethods)
                 {
-                    await Task.Delay(100, cancellationToken);
-
                     using (var scope = SampleHelpers.CreateScope("async"))
                     {
                         SampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous");
                         Console.WriteLine();
-                        await Task.Delay(100, cancellationToken);
 
                         command = commandFactory.GetCreateTableCommand(connection);
                         await commandExecutor.ExecuteNonQueryAsync(command);
@@ -227,15 +223,12 @@ namespace Samples.DatabaseHelper
                         await commandExecutor.ExecuteNonQueryAsync(command);
                     }
 
-                    await Task.Delay(100, cancellationToken);
-
                     using (var scope = SampleHelpers.CreateScope("async-with-cancellation"))
                     {
                         SampleHelpers.TrySetResourceName(scope, commandName);
 
                         Console.WriteLine("  Asynchronous with cancellation");
                         Console.WriteLine();
-                        await Task.Delay(100, cancellationToken);
 
                         command = commandFactory.GetCreateTableCommand(connection);
                         await commandExecutor.ExecuteNonQueryAsync(command, cancellationToken);
@@ -260,8 +253,6 @@ namespace Samples.DatabaseHelper
                     }
                 }
             }
-
-            await Task.Delay(100, cancellationToken);
         }
     }
 }

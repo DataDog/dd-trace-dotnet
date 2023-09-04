@@ -38,6 +38,12 @@ namespace Benchmarks.Trace
         {
         }
     }
+    public class BenchmarkAgent7Attribute : AgentFilterAttribute
+    {
+        public BenchmarkAgent7Attribute() : base(Agent.BenchmarkAgent7)
+        {
+        }
+    }
 
     public abstract class AgentFilterAttribute : Attribute
     {
@@ -56,6 +62,7 @@ namespace Benchmarks.Trace
             BenchmarkAgent4,
             BenchmarkAgent5,
             BenchmarkAgent6,
+            BenchmarkAgent7,
         }
     }
 }

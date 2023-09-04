@@ -63,10 +63,9 @@ public class WeakCipherTests : TestHelper
     {
         SetEnvironmentVariable("DD_IAST_ENABLED", "true");
         SetEnvironmentVariable(variableName, variableValue);
-        const int expectedSpanCount = 6;
         using var agent = EnvironmentHelper.GetMockAgent();
         using var process = RunSampleAndWaitForExit(agent);
-        var spans = agent.WaitForSpans(expectedSpanCount, returnAllOperations: true);
+        var spans = agent.Spans; // we expect no spans
 
         Assert.Empty(spans.Where(s => s.Name.Equals(ExpectedOperationName)));
     }

@@ -75,14 +75,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (transportType == TestTransports.WindowsNamedPipe && attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
+                    await ReportRetry(_output, attemptsRemaining, ex);
                 }
             }
         }
 
         private async Task TestInstrumentation(MockTracerAgent agent, string metadataSchemaVersion)
         {
-            const int expectedSpanCount = 5;
+            // 3 on non-windows because of SecureString
+            var expectedSpanCount = EnvironmentTools.IsWindows() ? 5 : 3;
+
             const string expectedOperationName = "command_execution";
 
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);

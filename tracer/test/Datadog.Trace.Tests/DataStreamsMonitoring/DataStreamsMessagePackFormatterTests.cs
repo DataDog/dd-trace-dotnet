@@ -36,6 +36,7 @@ public class DataStreamsMessagePackFormatterTests
 
         var pathwaySketch = CreateSketch(5);
         var edgeSketch = CreateSketch(2);
+        var payloadSizeSketch = CreateSketch(2);
 
         var hash1 = new PathwayHash(2);
         var hash2 = new PathwayHash(3);
@@ -53,7 +54,8 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash1,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
             new SerializableStatsBucket(
@@ -67,7 +69,8 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash2,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
         };
@@ -85,6 +88,9 @@ public class DataStreamsMessagePackFormatterTests
         var edgeBytes = new byte[edgeSketch.ComputeSerializedSize()];
         using var ms2 = new MemoryStream(edgeBytes);
         edgeSketch.Serialize(ms2);
+        var payloadSizeBytes = new byte[payloadSizeSketch.ComputeSerializedSize()];
+        using var ms3 = new MemoryStream(payloadSizeBytes);
+        payloadSizeSketch.Serialize(ms3);
 
         var expected = new MockDataStreamsPayload
         {
@@ -107,6 +113,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "current",
                         }
                     }
@@ -124,6 +131,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "origin",
                         }
                     }

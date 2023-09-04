@@ -1,4 +1,4 @@
-﻿// <copyright file="IntegrationIdExtensions.cs" company="Datadog">
+// <copyright file="IntegrationIdExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -60,6 +60,9 @@ internal static class IntegrationIdExtensions
             IntegrationId.SymmetricAlgorithm => MetricTags.IntegrationName.SymmetricAlgorithm,
             IntegrationId.OpenTelemetry => MetricTags.IntegrationName.OpenTelemetry,
             IntegrationId.PathTraversal => MetricTags.IntegrationName.PathTraversal,
+            IntegrationId.Ssrf => MetricTags.IntegrationName.Ssrf,
+            IntegrationId.Ldap => MetricTags.IntegrationName.Ldap,
+            IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

@@ -23,7 +23,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
         notTaintedQuery = "SELECT * from persons where name = 'Emilio'";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         if (databaseConnection != null)
         {
@@ -31,6 +31,7 @@ public class SqlCommandTests : InstrumentationTestsBase, IDisposable
             databaseConnection.Dispose();
             databaseConnection = null;
         }
+        base.Dispose();
     }
 
     [Fact]

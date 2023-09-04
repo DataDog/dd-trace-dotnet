@@ -52,7 +52,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Remove="Telemetry\config_norm_rules.json" />
+    <None Remove="Telemetry\config_prefix_block_list.json" />
+    <EmbeddedResource Include="Telemetry\config_norm_rules.json" />
+    <EmbeddedResource Include="Telemetry\config_prefix_block_list.json" />
     <None Remove="Telemetry\telemetry_*.json" />
     <EmbeddedResource Include="Telemetry\telemetry_*.json" />
+    <None Remove="Telemetry\Metrics\*.json" />
+    <EmbeddedResource Include="Telemetry\Metrics\*.json" />
   </ItemGroup>
 </Project>

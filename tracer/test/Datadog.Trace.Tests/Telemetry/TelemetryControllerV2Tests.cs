@@ -168,8 +168,10 @@ public class TelemetryControllerV2Tests
         foreach (var assemblyName in currentAssemblyNames)
         {
             dependencies
-                   .Should()
-                   .ContainEquivalentOf(assemblyName);
+               .Should()
+               .Contain(
+                    x => x.Name.Equals(assemblyName.Name, StringComparison.OrdinalIgnoreCase)
+                      && x.Version.Equals(assemblyName.Version, StringComparison.OrdinalIgnoreCase));
         }
 
         await controller.DisposeAsync();

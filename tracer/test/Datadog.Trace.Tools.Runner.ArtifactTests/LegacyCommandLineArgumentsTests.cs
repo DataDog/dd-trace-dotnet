@@ -53,8 +53,8 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
 
             foreach (var line in helper.StandardOutput.Split(Environment.NewLine))
             {
-                // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome
-                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+)\](?<value>.*)");
+                // ##vso[task.setvariable variable=DD_DOTNET_TRACER_HOME]TestTracerHome;
+                var match = Regex.Match(line, @"##vso\[task.setvariable variable=(?<name>[A-Z1-9_]+);\](?<value>.*)");
 
                 if (match.Success)
                 {
@@ -65,7 +65,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests
             environmentVariables["DD_ENV"].Should().Be("TestEnv");
             environmentVariables["DD_SERVICE"].Should().Be("TestService");
             environmentVariables["DD_VERSION"].Should().Be("TestVersion");
-            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be("TestTracerHome");
+            environmentVariables["DD_DOTNET_TRACER_HOME"].Should().Be(Path.GetFullPath("TestTracerHome"));
             environmentVariables["DD_TRACE_AGENT_URL"].Should().Be("TestAgentUrl");
             environmentVariables["VAR1"].Should().Be("A");
             environmentVariables["VAR2"].Should().Be("B");

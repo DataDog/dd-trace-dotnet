@@ -11,6 +11,7 @@ class IConfiguration;
 class IFrameStore;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class SampleValueTypeProvider;
 
 
 class CpuTimeProvider
@@ -18,15 +19,15 @@ class CpuTimeProvider
     public CollectorBase<RawCpuSample> // accepts cputime samples
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     CpuTimeProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration
         );
+
+private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
 };

@@ -9,11 +9,26 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
 {
     public class Program
     {
-        public static async Task Main()
+        public static async Task<int> Main()
         {
             try
             {
                 await RunTest();
+            }
+            catch (Exception ex)
+                when (ex.GetType().Name == "RedisConnectionException"
+                 &&  ex.Message.Contains("No connection is available to service this operation"))
+            {
+                // If the redis server is being too slow in responding, we can end up with timeouts
+                // We could do retries, but then we risk butting up against timeout limits etc
+                // As a workaround, we use the specific exit code 13 to indicate a faulty program,
+                // and skip the test.
+                // We need to keep the catch very specific here, so that we don't accidentally
+                // start skipping tests when we shouldn't be
+                Console.WriteLine("Unexpected exception during execution " + ex);
+                Console.WriteLine("Exiting with skip code (13)");
+                return 13;
+                
             }
             finally
             {
@@ -31,6 +46,7 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             // This would cause a segmentation fault on .net core 2.x
             System.Threading.Thread.Sleep(5000);
 #endif
+            return 0;
         }
 
         private static async Task RunTest()

@@ -64,6 +64,7 @@ namespace iast
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
         CorElementType GetReturnCorType();
+        virtual std::vector<WSTRING> GetCustomAttributes();
 
     private:
         std::atomic<unsigned char> _fullNameCounterLock;
@@ -93,6 +94,21 @@ namespace iast
         FieldInfo(ModuleInfo* pModuleInfo, mdFieldDef fieldDef);
 
         mdFieldDef GetFieldDef();
+    };
+
+    class PropertyInfo : public MemberRefInfo
+    {
+        friend class ILRewriter;
+        friend class ModuleInfo;
+    protected:
+        mdMethodDef _getter;
+        mdMethodDef _setter;
+    public:
+        PropertyInfo(ModuleInfo* pModuleInfo, mdProperty mdProperty);
+
+        inline mdProperty GetPropertyId() { return _id; }
+        inline mdMethodDef GetGetterId() { return _getter; }
+        inline mdMethodDef GetSetterId() { return _setter; }
     };
 
     class MethodInfo : public MemberRefInfo
@@ -147,5 +163,8 @@ namespace iast
         void ReJITCompilationFinished();
 
         void DumpIL(std::string message = "", ULONG pnMethodIL = 0, LPCBYTE pMethodIL = nullptr);
+
+        bool IsPropertyAccessor();
+        std::vector<WSTRING> GetCustomAttributes() override;
     };
 }

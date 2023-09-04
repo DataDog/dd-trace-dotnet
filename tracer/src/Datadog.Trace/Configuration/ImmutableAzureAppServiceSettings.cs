@@ -57,6 +57,8 @@ namespace Datadog.Trace.Configuration
             FunctionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
             FunctionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
 
+            WebsiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+
             if (FunctionsWorkerRuntime is not null || FunctionsExtensionVersion is not null)
             {
                 AzureContext = AzureContext.AzureFunctions;
@@ -68,6 +70,7 @@ namespace Datadog.Trace.Configuration
                     SiteKind = "functionapp";
                     SiteType = "function";
                     IsFunctionsApp = true;
+                    IsFunctionsAppConsumptionPlan = GetIsFunctionsAppConsumptionPlan(source, telemetry);
                     IsIsolatedFunctionsApp = FunctionsWorkerRuntime?.EndsWith("-isolated", StringComparison.OrdinalIgnoreCase) == true;
                     PlatformStrategy.ShouldSkipClientSpan = ShouldSkipClientSpanWithinFunctions;
                     break;
@@ -114,6 +117,10 @@ namespace Datadog.Trace.Configuration
         public AzureContext AzureContext { get; private set; } = AzureContext.AzureAppService;
 
         public bool IsFunctionsApp { get; private set; }
+
+        public bool IsFunctionsAppConsumptionPlan { get; }
+
+        public string? WebsiteSKU { get; }
 
         public string? FunctionsExtensionVersion { get; }
 
@@ -182,6 +189,18 @@ namespace Datadog.Trace.Configuration
             }
 
             return null;
+        }
+
+        public static bool GetIsFunctionsAppConsumptionPlan(IConfigurationSource source, IConfigurationTelemetry telemetry)
+        {
+            var config = new ConfigurationBuilder(source, telemetry);
+            var websiteSKU = config.WithKeys(ConfigurationKeys.AzureAppService.WebsiteSKU).AsString();
+
+            var functionsExtensionVersion = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey).AsString();
+            var functionsWorkerRuntime = config.WithKeys(ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey).AsString();
+            var isFunctionApp = functionsExtensionVersion is not null || functionsWorkerRuntime is not null;
+
+            return websiteSKU is "Dynamic" or null && isFunctionApp;
         }
     }
 }

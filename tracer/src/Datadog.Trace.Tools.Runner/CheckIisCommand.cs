@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -13,20 +15,33 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Tools.Runner.Checks;
 using Microsoft.Web.Administration;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class CheckIisCommand : AsyncCommand<CheckIisSettings>
+    internal class CheckIisCommand : Command
     {
-        public override Task<int> ExecuteAsync(CommandContext context, CheckIisSettings settings)
+        private readonly Argument<string> _siteNameArgument = new("siteName") { Arity = ArgumentArity.ZeroOrOne };
+
+        public CheckIisCommand()
+            : base("iis")
         {
-            return ExecuteAsync(settings, null, null);
+            AddArgument(_siteNameArgument);
+
+            this.SetHandler(ExecuteAsync);
         }
 
-        internal static async Task<int> ExecuteAsync(CheckIisSettings settings, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
+        public async Task ExecuteAsync(InvocationContext context)
+        {
+            var siteName = _siteNameArgument.GetValue(context);
+
+            var result = await ExecuteAsync(siteName, null, null).ConfigureAwait(false);
+
+            context.ExitCode = result;
+        }
+
+        internal static async Task<int> ExecuteAsync(string siteAndApplicationName, string applicationHostConfigurationPath, int? pid, IRegistryService registryService = null)
         {
             static IEnumerable<string> GetAllApplicationNames(ServerManager sm)
             {
@@ -37,7 +52,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var serverManager = new ServerManager(readOnly: true, applicationHostConfigurationPath);
 
-            if (settings.SiteName == null)
+            if (siteAndApplicationName == null)
             {
                 AnsiConsole.WriteLine(IisApplicationNotProvided());
 
@@ -47,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner
                 return 1;
             }
 
-            var values = settings.SiteName.Split('/', 2);
+            var values = siteAndApplicationName.Split('/', 2);
 
             var siteName = values[0];
             var applicationName = values.Length > 1 ? $"/{values[1]}" : "/";

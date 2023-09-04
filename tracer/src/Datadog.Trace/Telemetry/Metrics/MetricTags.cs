@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricTags.cs" company="Datadog">
+// <copyright file="MetricTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -207,6 +207,9 @@ internal static class MetricTags
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
+        [Description("integration_name:ssrf")]Ssrf,
+        [Description("integration_name:ldap")]Ldap,
+        [Description("integration_name:awskinesis")]AwsKinesis,
     }
 
     public enum InstrumentationError

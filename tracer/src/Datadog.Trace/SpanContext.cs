@@ -436,9 +436,11 @@ namespace Datadog.Trace
         /// <param name="manager">The <see cref="DataStreamsManager"/> to use</param>
         /// <param name="checkpointKind">The type of the checkpoint</param>
         /// <param name="edgeTags">The edge tags for this checkpoint. NOTE: These MUST be sorted alphabetically</param>
-        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags)
+        /// <param name="payloadSizeBytes">Payload size in bytes</param>
+        /// <param name="timeInQueueMs">Edge start time extracted from the message metadata. Used only if this is start of the pathway</param>
+        internal void SetCheckpoint(DataStreamsManager manager, CheckpointKind checkpointKind, string[] edgeTags, long payloadSizeBytes, long timeInQueueMs)
         {
-            PathwayContext = manager.SetCheckpoint(PathwayContext, checkpointKind, edgeTags);
+            PathwayContext = manager.SetCheckpoint(PathwayContext, checkpointKind, edgeTags, payloadSizeBytes, timeInQueueMs);
         }
 
         /// <summary>

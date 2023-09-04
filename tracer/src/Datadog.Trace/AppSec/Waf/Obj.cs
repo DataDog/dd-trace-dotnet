@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Waf
     // NOTE: this is referred to as ddwaf_object in the C++ code, we call it Obj to avoid a naming clash
     internal class Obj : IDisposable
     {
-        private readonly IntPtr ptr;
+        private IntPtr ptr;
         private DdwafObjectStruct innerObj;
         private bool innerObjInitialized = false;
         private bool disposed = false;
@@ -71,22 +71,37 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IntPtr RawPtr => ptr;
 
+        public void Dispose(WafLibraryInvoker waf)
+        {
+            if (waf != null)
+            {
+                var rawPtr = ptr;
+                waf.ObjectFreePtr(ref rawPtr);
+                Dispose();
+            }
+        }
+
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        public void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (disposed)
             {
+                ptr = IntPtr.Zero;
                 return;
             }
 
             disposed = true;
 
-            Marshal.FreeHGlobal(ptr);
+            if (ptr != IntPtr.Zero)
+            {
+                Marshal.FreeHGlobal(ptr);
+                ptr = IntPtr.Zero;
+            }
         }
 
         private void Initialize()
