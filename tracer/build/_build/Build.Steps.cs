@@ -950,6 +950,51 @@ partial class Build
                 workingDirectory / versionedName);
         });
 
+    Target ZipMonitoringHomeForAwsLambda => _ => _
+        .Unlisted()
+        .After(BuildTracerHomeForAwsLambda)
+        .Requires(() => IsLinux && (TargetPlatform == MSBuildTargetPlatform.x64 || TargetPlatform == ARM64TargetPlatform))
+        .Executes(() =>
+        {
+            var workingDirectory = AwsLambdaTracerHomeDirectory;
+            EnsureCleanDirectory(workingDirectory);
+
+            var arch = TargetPlatform == MSBuildTargetPlatform.x64 ? "amd64" : "arm64";
+            var archiveFileName = workingDirectory / $"dd-trace-dotnet-aws-lambda-{arch}.zip";
+
+            // we want the tracer home directory to be in "/opt/datadog" in the AWS Lambda layer,
+            // so we need to nest it under a "datadog" folder in the zip file
+            var zipDirectory = MonitoringHomeDirectory / "lambda";
+            var datadogDirectory = zipDirectory / "datadog";
+            EnsureCleanDirectory(zipDirectory);
+            EnsureCleanDirectory(datadogDirectory);
+
+            foreach (var directory in Directory.GetDirectories(MonitoringHomeDirectory))
+            {
+                var directoryName = Path.GetFileName(directory);
+
+                if (directoryName != "lambda")
+                {
+                    Logger.Information("Moving {Source} to {Destination}", directory, datadogDirectory / directoryName);
+                    Directory.Move(directory, datadogDirectory / directoryName);
+                }
+            }
+
+            // create the zip file
+            CompressZip(zipDirectory, archiveFileName, fileMode: FileMode.Create);
+
+            // move the folders back
+            foreach (var directory in Directory.GetDirectories(datadogDirectory))
+            {
+                var directoryName = Path.GetFileName(directory);
+                Logger.Information("Moving {Source} to {Destination}", directory, MonitoringHomeDirectory / directoryName);
+
+                Directory.Move(directory, MonitoringHomeDirectory / directoryName);
+            }
+
+            DeleteDirectory(zipDirectory);
+        });
+
     Target ZipMonitoringHomeOsx => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildNativeLoader)
