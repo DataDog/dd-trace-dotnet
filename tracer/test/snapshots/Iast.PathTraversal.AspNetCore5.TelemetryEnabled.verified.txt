@@ -45,6 +45,7 @@
     }
   ]
 },
+      _dd.iast.telemetry.executed.propagation: 1,
       _dd.iast.telemetry.executed.sink.path_traversal: 1,
       _dd.iast.telemetry.executed.source.http.cookie.name: 1,
       _dd.iast.telemetry.executed.source.http.cookie.value: 1,

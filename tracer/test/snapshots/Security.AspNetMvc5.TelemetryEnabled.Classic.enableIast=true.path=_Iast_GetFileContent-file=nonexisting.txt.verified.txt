@@ -8,7 +8,6 @@
     Type: web,
     Tags: {
       env: integration_tests,
-      executed.propagation: 1,
       http.method: GET,
       http.request.headers.host: localhost:00000,
       http.route: {controller}/{action}/{id},
@@ -44,6 +43,7 @@
     }
   ]
 },
+      _dd.iast.telemetry.executed.propagation: 2,
       _dd.iast.telemetry.executed.sink.path_traversal: 1,
       _dd.iast.telemetry.executed.source.http.cookie.name: 1,
       _dd.iast.telemetry.executed.source.http.cookie.value: 1,

@@ -12,6 +12,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -38,7 +39,7 @@ public class AspNetCore2IastTestsTwoVulnerabilityPerRequestIastEnabled : AspNetC
 public class AspNetCore2IastTestsSpanTelemetryIastEnabled : AspNetCore2IastTests
 {
     public AspNetCore2IastTestsSpanTelemetryIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-: base(fixture, outputHelper, true, "AspNetCore2IastSpanTelemetryEnabled", useTelemetry: true, samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100)
+: base(fixture, outputHelper, true, "AspNetCore2IastSpanTelemetryEnabled", iastTelemetryLevel: IastMetricsVerbosityLevel.Debug, samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100)
     {
     }
 
@@ -372,7 +373,7 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
 
 public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, bool? useTelemetry = false)
+    public AspNetCore2IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, IastMetricsVerbosityLevel iastTelemetryLevel = IastMetricsVerbosityLevel.Off)
         : base("AspNetCore2", outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
@@ -382,7 +383,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
         IsIastDeduplicationEnabled = isIastDeduplicationEnabled;
         VulnerabilitiesPerRequest = vulnerabilitiesPerRequest;
         SamplingRate = samplingRate;
-        UseTelemetry = useTelemetry;
+        IastTelemetryLevel = iastTelemetryLevel;
     }
 
     protected AspNetCoreTestFixture Fixture { get; }
@@ -399,6 +400,8 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
 
     protected int? SamplingRate { get; }
 
+    protected IastMetricsVerbosityLevel? IastTelemetryLevel { get; }
+
     public override void Dispose()
     {
         base.Dispose();
@@ -409,7 +412,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
     {
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
-        EnableTelemetry(UseTelemetry);
+        EnableTelemetry(IastTelemetryLevel);
         DisableObfuscationQueryString();
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);

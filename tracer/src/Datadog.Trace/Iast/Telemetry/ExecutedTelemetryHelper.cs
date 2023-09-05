@@ -16,7 +16,7 @@ internal class ExecutedTelemetryHelper
     private const string BasicExecutedTag = "_dd.iast.telemetry.";
     private const string SourceExecutedTag = "executed.source.";
     private const string SinkExecutedTag = "executed.sink.";
-    private const string PropagationExecutedTag = "executed.propagation";
+    private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
     private static bool? _enabled = null;
     private static bool? _enabledDebug = null;
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
@@ -38,7 +38,12 @@ internal class ExecutedTelemetryHelper
 
     public static bool EnabledDebug()
     {
-        return _enabledDebug ?? (Enabled() && _verbosityLevel == IastMetricsVerbosityLevel.Debug);
+        if (_enabledDebug is null)
+        {
+            _enabledDebug = Iast.Instance.Settings.TelemetryEnabled && _verbosityLevel == IastMetricsVerbosityLevel.Debug;
+        }
+
+        return _enabledDebug ?? false;
     }
 
     public void AddExecutedSink(IastInstrumentedSinks type)

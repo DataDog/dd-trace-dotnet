@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -346,11 +347,12 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void EnableTelemetry(bool? useTelemetry)
+        public void EnableTelemetry(IastMetricsVerbosityLevel? level)
         {
-            if (useTelemetry == true)
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, level.ToString());
+
+            if (level is not null && level != IastMetricsVerbosityLevel.Off)
             {
-                SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, "INFORMATION");
                 SetEnvironmentVariable(ConfigurationKeys.Telemetry.Enabled, "1");
             }
         }

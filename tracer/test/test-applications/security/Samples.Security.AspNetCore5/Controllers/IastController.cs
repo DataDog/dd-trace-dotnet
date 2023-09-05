@@ -261,7 +261,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch
             {
-                return Content("The provided file could not be opened");
+                return Content("The provided file " + file + " could not be opened");
             }
         }
 
