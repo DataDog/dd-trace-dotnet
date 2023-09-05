@@ -14,6 +14,7 @@ using DiffMatchPatch;
 using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
+using JetBrains.Annotations;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -450,6 +451,35 @@ partial class Build
         }
 
         return MSBuildTargetPlatform.x64;
+    }
+
+    [CanBeNull]
+    private static string GetDefaultRuntimeIdentifier()
+    {
+        // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+
+        var os = Platform switch
+                 {
+                     PlatformFamily.Windows => "win",
+                     PlatformFamily.Linux => "linux",
+                     PlatformFamily.OSX => "osx",
+                     _ => null
+                 };
+
+        var arch = (string)GetDefaultTargetPlatform() switch
+                   {
+                       "x86" => "x86",
+                       "x64" => "x64",
+                       "ARM64" or "ARM64EC" => "arm64",
+                       _ => null
+                   };
+
+        if (os is null || arch is null)
+        {
+            return null;
+        }
+
+        return $"{os}-{arch}";
     }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";

@@ -39,6 +39,15 @@ partial class Build : NukeBuild
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
 
+    [Parameter("Publish ReadyToRun assemblies in 'PublishManagedTracerForAwsLambda'. Default is 'true'." +
+               "If enabled, requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run")]
+    readonly bool PublishReadyToRun = true;
+
+    // using string instead of DotNetRuntimeIdentifier type because parameter values must match field names, e.g. "win-x64" vs "win_x64"
+    [Parameter("RuntimeIdentifier identifies the target platform for ReadyToRun assemblies in 'PublishManagedTracerForAwsLambda'." +
+               "Required if 'PublishReadyToRun' is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
+    readonly string RuntimeIdentifier = GetDefaultRuntimeIdentifier();
+
     [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;
 
@@ -98,6 +107,8 @@ partial class Build : NukeBuild
                             Logger.Information($"Configuration: {BuildConfiguration}");
                             Logger.Information($"TargetPlatform: {TargetPlatform}");
                             Logger.Information($"Framework: {Framework}");
+                            Logger.Information($"PublishReadyToRun: {PublishReadyToRun}");
+                            Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestAllPackageVersions: {TestAllPackageVersions}");
                             Logger.Information($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
                             Logger.Information($"ArtifactsDirectory: {ArtifactsDirectory}");
