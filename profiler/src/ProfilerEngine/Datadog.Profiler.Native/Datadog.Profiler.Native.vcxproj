@@ -244,7 +244,6 @@
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IDebugInfoStore.h" />
-    <ClInclude Include="IExceptionsRecorder.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
