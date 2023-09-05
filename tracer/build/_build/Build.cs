@@ -188,6 +188,22 @@ partial class Build : NukeBuild
         .After(Clean)
         .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
 
+    // This target is used to build the tracer home directory for the AWS Lambda layer.
+    // The same as BuildTracerHome, but requires Linux,
+    // uses PublishManagedTracerForAwsLambda, and skips LibDdwaf.
+    Target BuildTracerHomeForAwsLambda => _ => _
+        .Description("Builds the native and managed src, and publishes the tracer home directory for AWS Lambda")
+        .Requires(() => IsLinux)
+        .After(Clean)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(Restore)
+        .DependsOn(PublishManagedTracerForAwsLambda)
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(PublishNativeTracer)
+        //.DependsOn(DownloadLibDdwaf)
+        //.DependsOn(CopyLibDdwaf)
+        .DependsOn(BuildNativeLoader);
+
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
         .After(Clean)
