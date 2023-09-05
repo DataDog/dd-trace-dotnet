@@ -143,6 +143,7 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
             if (routeData != null)
             {
                 foreach (var item in routeData)
@@ -233,7 +234,6 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request, IDictionary<string, object> routeData)
     {
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
         AddRouteData(routeData);
         AddRequestData(request);
     }
@@ -242,20 +242,19 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(Microsoft.AspNetCore.Http.HttpRequest request, IDictionary<string, object> routeParameters)
     {
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
-
         AddRouteData(routeParameters);
 
         if (!_querySourcesAdded)
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+
             if (request.Query != null)
             {
                 foreach (var item in request.Query)
@@ -318,12 +317,17 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
     }
 
-    internal void OnExecutedSinkTelemetry(MetricTags.IastInstrumentedSinks sink)
+    internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
     {
         _executedTelemetryHelper?.AddExecutedSink(sink);
     }
 
-    internal void OnExecutedPropagation()
+    internal void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    {
+        _executedTelemetryHelper?.AddExecutedSource(source);
+    }
+
+    internal void OnExecutedPropagationTelemetry()
     {
         _executedTelemetryHelper?.AddExecutedInstrumentation();
     }

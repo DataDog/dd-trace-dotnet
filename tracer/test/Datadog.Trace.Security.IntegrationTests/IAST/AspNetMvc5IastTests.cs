@@ -48,6 +48,49 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
+public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
+{
+    private readonly IisFixture _iisFixture;
+    private readonly string _testName;
+
+    public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableIast(true);
+        EnableEvidenceRedaction(false);
+        EnableTelemetry(true);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+
+        _iisFixture = iisFixture;
+        _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
+                 ".Classic" + ".enableIast=true";
+        SetHttpPort(iisFixture.HttpPort);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt")]
+    public async Task TestIastTelemetry(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(false);
+        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{_testName}.path={sanitisedPath}")
+                          .DisableRequireUniquePrefix();
+    }
+}
+
+[Collection("IisTests")]
 public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
 {
     public AspNetMvc5ClassicWithoutIast(IisFixture iisFixture, ITestOutputHelper output)

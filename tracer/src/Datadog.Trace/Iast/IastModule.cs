@@ -188,11 +188,19 @@ internal static class IastModule
     {
         if (ExecutedTelemetryHelper.EnabledDebug())
         {
-            GetIastContext()?.OnExecutedPropagation();
+            GetIastContext()?.OnExecutedPropagationTelemetry();
         }
     }
 
-    private static void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
+    internal static void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    {
+        if (ExecutedTelemetryHelper.Enabled())
+        {
+            GetIastContext()?.OnExecutedSourceTelemetry(source);
+        }
+    }
+
+    internal static void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
     {
         if (ExecutedTelemetryHelper.Enabled())
         {

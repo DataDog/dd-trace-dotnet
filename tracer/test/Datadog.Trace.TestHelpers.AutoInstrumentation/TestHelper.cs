@@ -346,6 +346,15 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
+        public void EnableTelemetry(bool? useTelemetry)
+        {
+            if (useTelemetry == true)
+            {
+                SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, "INFORMATION");
+                SetEnvironmentVariable(ConfigurationKeys.Telemetry.Enabled, "1");
+            }
+        }
+
         public void DisableObfuscationQueryString()
         {
             SetEnvironmentVariable(ConfigurationKeys.ObfuscationQueryStringRegex, string.Empty);

@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -21,6 +22,8 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedSourceTelemetry((IastInstrumentedSources)source.OriginByte);
+
             if (input is null || input == string.Empty)
             {
                 return;
@@ -56,6 +59,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (result is null || target is null)
             {
                 return result;
@@ -92,6 +96,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -125,6 +130,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -156,7 +162,7 @@ internal static class PropagationModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputArrayTainted)} exception");
         }
 
         return result;
@@ -181,6 +187,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (!(results?.Length > 0) || input is null)
             {
                 return results;
@@ -216,10 +223,12 @@ internal static class PropagationModuleImpl
         return results;
     }
 
-    public static object? PropagateTaint(object? input, object? result, int offset = 0)
+    public static object? PropagateTaint(object? input, object? result, int offset = 0, bool addTelemetry = true)
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
+
             if (result is null || input is null)
             {
                 return result;
@@ -268,10 +277,16 @@ internal static class PropagationModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> the substring result </param>
     /// <param name="resultLength"> Result's length </param>
-    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength)
+    /// <param name="addTelemetry"> true to add a telemetry instrumentation point </param>
+    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength, bool addTelemetry = true)
     {
         try
         {
+            if (addTelemetry)
+            {
+                IastModule.OnExecutedPropagationTelemetry();
+            }
+
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
             {

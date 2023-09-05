@@ -1,0 +1,88 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet.request,
+    Resource: GET /iast/getfilecontent,
+    Service: sample,
+    Type: web,
+    Tags: {
+      env: integration_tests,
+      executed.propagation: 1,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.route: {controller}/{action}/{id},
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/GetFileContent?file=nonexisting.txt,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.iast.enabled: 1,
+      _dd.iast.json:
+{
+  "vulnerabilities": [
+    {
+      "type": "PATH_TRAVERSAL",
+      "hash": -466351658,
+      
+      "evidence": {
+        "valueParts": [
+          {
+            "value": "nonexisting.txt",
+            "source": 0
+          }
+        ]
+      }
+    }
+  ],
+  "sources": [
+    {
+      "origin": "http.request.parameter",
+      "name": "file",
+      "value": "nonexisting.txt"
+    }
+  ]
+},
+      _dd.iast.telemetry.executed.sink.path_traversal: 1,
+      _dd.iast.telemetry.executed.source.http.cookie.name: 1,
+      _dd.iast.telemetry.executed.source.http.cookie.value: 1,
+      _dd.iast.telemetry.executed.source.http.request.header: 1,
+      _dd.iast.telemetry.executed.source.http.request.header.name: 1,
+      _dd.iast.telemetry.executed.source.http.request.parameter: 1,
+      _dd.iast.telemetry.executed.source.http.request.parameter.name: 1,
+      _dd.iast.telemetry.executed.source.http.request.path: 1,
+      _dd.iast.telemetry.executed.source.http.request.query: 1,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet-mvc.request,
+    Resource: GET /iast/getfilecontent,
+    Service: sample,
+    Type: web,
+    ParentId: Id_2,
+    Tags: {
+      aspnet.action: getfilecontent,
+      aspnet.controller: iast,
+      aspnet.route: {controller}/{action}/{id},
+      env: integration_tests,
+      http.method: GET,
+      http.request.headers.host: localhost:00000,
+      http.status_code: 200,
+      http.url: http://localhost:00000/Iast/GetFileContent?file=nonexisting.txt,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      span.kind: server
+    }
+  }
+]
