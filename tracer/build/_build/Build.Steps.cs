@@ -45,6 +45,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
+    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / "aws-lambda" / RuntimeIdentifier;
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -590,6 +591,33 @@ partial class Build
                 .CombineWith(targetFrameworks, (p, framework) => p
                     .SetFramework(framework)
                     .SetOutput(MonitoringHomeDirectory / framework)));
+        });
+
+    Target PublishManagedTracerForAwsLambda => _ => _
+        .Unlisted()
+        .Requires(() => RuntimeIdentifier != null)
+        .After(Clean, Restore)
+        .Executes(() =>
+        {
+            // always target .NET 6 on AWS Lambda
+            var framework = TargetFramework.NET6_0;
+
+            // we need to nest the tracer home directory under a "datadog" subdirectory in the AWS Lambda layer
+            var outputDirectory = AwsLambdaTracerHomeDirectory / "datadog";
+
+            // allow restore/build because we're targeting different runtime identifiers than when we initially restored
+            DotNetPublish(s => s
+                              .SetProject(Solution.GetProject(Projects.DatadogTrace))
+                              .SetConfiguration(BuildConfiguration)
+                              .SetTargetPlatformAnyCPU()
+                              .SetOutput(outputDirectory)
+                              .SetFramework(framework)
+                              .SetProperty("GenerateDocumentationFile", "false")
+                              .SetProperty("DebugSymbols", "false")
+                              .SetProperty("DebugType", "none")
+                              .SetPublishReadyToRun(PublishReadyToRun)
+                              .When(PublishReadyToRun, settings => settings.SetRuntime(RuntimeIdentifier) // required for ReadyToRun
+                                                                           .SetSelfContained(false)));    // required when setting RuntimeIdentifier
         });
 
     Target PublishNativeSymbolsWindows => _ => _
