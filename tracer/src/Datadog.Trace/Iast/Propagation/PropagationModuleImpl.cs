@@ -18,7 +18,7 @@ internal static class PropagationModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PropagationModuleImpl));
 
-    public static void AddTainted(string? input, Source source)
+    public static void AddTaintedSource(string? input, Source source)
     {
         try
         {
@@ -227,7 +227,10 @@ internal static class PropagationModuleImpl
     {
         try
         {
-            IastModule.OnExecutedPropagationTelemetry();
+            if (addTelemetry)
+            {
+                IastModule.OnExecutedPropagationTelemetry();
+            }
 
             if (result is null || input is null)
             {

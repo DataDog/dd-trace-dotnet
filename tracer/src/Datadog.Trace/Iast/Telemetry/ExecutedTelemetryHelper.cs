@@ -28,9 +28,8 @@ internal class ExecutedTelemetryHelper
     {
         if (_enabled is null)
         {
-            var telemetryEnabled = Iast.Instance.Settings.TelemetryEnabled;
             // This class does not send any mandatory telemetry
-            _enabled = telemetryEnabled && _verbosityLevel <= IastMetricsVerbosityLevel.Information;
+            _enabled = Iast.Instance.Settings.TelemetryEnabled && _verbosityLevel <= IastMetricsVerbosityLevel.Information;
         }
 
         return _enabled ?? false;
@@ -55,9 +54,9 @@ internal class ExecutedTelemetryHelper
         }
     }
 
-    public void AddExecutedInstrumentation()
+    public void AddExecutedPropagation()
     {
-        if (_verbosityLevel <= IastMetricsVerbosityLevel.Debug)
+        if (_verbosityLevel == IastMetricsVerbosityLevel.Debug)
         {
             _executedPropagations++;
             TelemetryFactory.Metrics.RecordCountIastExecutedPropagations();

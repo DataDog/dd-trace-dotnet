@@ -173,17 +173,17 @@ internal class IastRequestContext
     // It might happen that we call more than once this method depending on the asp version. Anyway, these calls would be sequential.
     internal void AddRequestData(System.Web.HttpRequest request)
     {
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
-
         if (!_querySourcesAdded)
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+
             if (request.QueryString != null)
             {
                 foreach (var key in request.QueryString.AllKeys)
@@ -329,6 +329,6 @@ internal class IastRequestContext
 
     internal void OnExecutedPropagationTelemetry()
     {
-        _executedTelemetryHelper?.AddExecutedInstrumentation();
+        _executedTelemetryHelper?.AddExecutedPropagation();
     }
 }
