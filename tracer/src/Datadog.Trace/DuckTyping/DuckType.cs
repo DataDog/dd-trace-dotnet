@@ -987,19 +987,19 @@ namespace Datadog.Trace.DuckTyping
 
         private static Delegate CreateStructCopyMethod(ModuleBuilder? moduleBuilder, Type proxyDefinitionType, Type proxyType, Type targetType)
         {
-            var ctor = proxyType.GetConstructors()[0];
+            ConstructorInfo ctor = proxyType.GetConstructors()[0];
 
-            var createStructMethod = new DynamicMethod(
+            DynamicMethod createStructMethod = new DynamicMethod(
                 $"CreateStructInstance<{proxyType.Name}>",
                 proxyDefinitionType,
                 new[] { typeof(object) },
                 typeof(DuckType).Module,
                 true);
-            var il = createStructMethod.GetILGenerator();
+            ILGenerator il = createStructMethod.GetILGenerator();
 
             // First we declare the locals
-            var proxyLocal = il.DeclareLocal(proxyType);
-            var structLocal = il.DeclareLocal(proxyDefinitionType);
+            LocalBuilder proxyLocal = il.DeclareLocal(proxyType);
+            LocalBuilder structLocal = il.DeclareLocal(proxyDefinitionType);
 
             // We create an instance of the proxy type
             il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
@@ -1016,7 +1016,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Initobj, proxyDefinitionType);
 
             // Start copy properties from the proxy to the structure
-            var containsFields = false;
+            bool containsFields = false;
             foreach (var finfo in proxyDefinitionType.GetFields())
             {
                 // Skip readonly fields
@@ -1050,7 +1050,7 @@ namespace Datadog.Trace.DuckTyping
                 DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(proxyDefinitionType);
             }
 
-            var delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
+            Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             return createStructMethod.CreateDelegate(delegateType);
         }
 
