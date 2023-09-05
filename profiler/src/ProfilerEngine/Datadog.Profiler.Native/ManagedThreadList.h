@@ -61,19 +61,6 @@ private:
     // so keep track of them in a vector of positions initialized to 0
     std::vector<uint32_t> _iterators;
 
-    // ProfilerThreadInfoId is unique numeric ID of a ManagedThreadInfo record.
-    // We cannot use the OS id, because we do not always have it, and we cannot use the Clr internal thread id,
-    // because we do not want to architecturally restrict ourselves to never profile native threads in the future
-    // + it could be reused for a different thread by the CLR since this is the value of the pointer to the internal
-    // representation of the managed thread.
-    //
-    // We tag all collected stack samples using the ProfilerThreadInfoId.
-    // When the managed engine subsequently processes the stack samples, it may request
-    // the info from the corresponding ManagedThreadInfo.
-    // When that happens, we use the '_lookupByProfilerThreadInfoId' table to look up the ManagedThreadInfo instance
-    // that corresponds to the id. If the thread is dead, it will no longer be in the table.
-    std::unordered_map<std::uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByProfilerThreadInfoId;
-
     ICorProfilerInfo4* _pCorProfilerInfo;
 
 private:

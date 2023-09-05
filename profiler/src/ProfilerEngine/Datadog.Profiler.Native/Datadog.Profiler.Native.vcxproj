@@ -277,7 +277,6 @@
     <ClInclude Include="CorProfilerCallback.h" />
     <ClInclude Include="CorProfilerCallbackFactory.h" />
     <ClInclude Include="CpuTimeProvider.h" />
-    <ClInclude Include="DirectAccessCollection.h" />
     <ClInclude Include="DogFood.hpp" />
     <ClInclude Include="DogstatsdService.h" />
     <ClInclude Include="EnvironmentVariables.h" />

@@ -89,8 +89,8 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::Start()
 {
-    this->RunStackSampling();
-    this->RunWatcher();
+    RunStackSampling();
+    RunWatcher();
 
     return true;
 }
@@ -112,55 +112,41 @@ bool StackSamplerLoopManager::Stop()
 
 void StackSamplerLoopManager::RunStackSampling()
 {
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop == nullptr)
-    {
-        assert(_pStackFramesCollector != nullptr);
-
-        stackSamplerLoop = new StackSamplerLoop(
-            _pCorProfilerInfo,
-            _pConfiguration,
-            _pStackFramesCollector.get(),
-            this,
-            _pThreadsCpuManager,
-            _pManagedThreadList,
-            _pCodeHotspotsThreadList,
-            _pWallTimeCollector,
-            _pCpuTimeCollector,
-            _metricsRegistry);
-        _pStackSamplerLoop = stackSamplerLoop;
-    }
+    _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration,
+        _pStackFramesCollector.get(),
+        this,
+        _pThreadsCpuManager,
+        _pManagedThreadList,
+        _pCodeHotspotsThreadList,
+        _pWallTimeCollector,
+        _pCpuTimeCollector,
+        _metricsRegistry);
 }
 
 void StackSamplerLoopManager::GracefulShutdownStackSampling()
 {
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop != nullptr)
+    if (_pStackSamplerLoop != nullptr)
     {
-        stackSamplerLoop->RequestShutdown();
-        stackSamplerLoop->Join();
-        delete stackSamplerLoop;
-        _pStackSamplerLoop = nullptr;
+        _pStackSamplerLoop->RequestShutdown();
+        _pStackSamplerLoop->Join();
     }
 }
 
 void StackSamplerLoopManager::RunWatcher()
 {
-    _pWatcherThread = new std::thread(&StackSamplerLoopManager::WatcherLoop, this);
-    OpSysTools::SetNativeThreadName(_pWatcherThread, WatcherThreadName);
+    _pWatcherThread = std::make_unique<std::thread>(&StackSamplerLoopManager::WatcherLoop, this);
+    OpSysTools::SetNativeThreadName(_pWatcherThread.get(), WatcherThreadName);
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()
 {
-    std::thread* pWatcherThread = _pWatcherThread;
-    if (pWatcherThread != nullptr)
+    if (_pWatcherThread != nullptr)
     {
         _isWatcherShutdownRequested = true;
 
-        pWatcherThread->join();
-
-        delete pWatcherThread;
-        _pWatcherThread = nullptr;
+        _pWatcherThread->join();
     }
 }
 

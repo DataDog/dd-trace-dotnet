@@ -74,7 +74,7 @@ private:
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
-    std::thread* _pLoopThread;
+    std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
     std::shared_ptr<ManagedThreadInfo> _targetThread;

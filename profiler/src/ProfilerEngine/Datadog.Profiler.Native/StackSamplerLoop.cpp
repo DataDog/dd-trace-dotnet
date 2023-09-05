@@ -89,8 +89,8 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread, ThreadName);
+    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
+    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
 
     if(_areInternalMetricsEnabled)
     {
@@ -101,8 +101,8 @@ StackSamplerLoop::StackSamplerLoop(
 
 StackSamplerLoop::~StackSamplerLoop()
 {
-    this->RequestShutdown();
-    this->Join();
+    RequestShutdown();
+    Join();
 
     ICorProfilerInfo4* corProfilerInfo = _pCorProfilerInfo;
     if (corProfilerInfo != nullptr)
@@ -114,20 +114,15 @@ StackSamplerLoop::~StackSamplerLoop()
 
 void StackSamplerLoop::Join()
 {
-    std::thread* pLoopThread = _pLoopThread;
-    if (pLoopThread != nullptr)
+    if (_pLoopThread != nullptr)
     {
-        // race condition if the Manager just terminated our thread
         try
         {
-            pLoopThread->join();
+            _pLoopThread->join();
         }
         catch (const std::exception&)
         {
         }
-
-        delete pLoopThread;
-        _pLoopThread = nullptr;
     }
 }
 
