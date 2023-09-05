@@ -3726,10 +3726,12 @@ stages:
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
+        DD_TRACE_LOG_PATH: $(CRANK_WORKING_DIRECTORY)/logs
 
     - script: |
         mkdir -p $(CrankDir)/results
         cp $(CrankDir)/*.json $(CrankDir)/results
+        cp -r $(CRANK_WORKING_DIRECTORY)/ $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
       continueOnError: true
