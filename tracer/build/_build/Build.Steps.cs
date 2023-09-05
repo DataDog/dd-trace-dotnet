@@ -45,7 +45,7 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / "aws-lambda" / RuntimeIdentifier;
+    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -674,6 +674,21 @@ partial class Build
             CopyFileToDirectory(
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
+                FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeTracerAwsLambda => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeSrc, PublishManagedTracer)
+        .Executes(() =>
+        {
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+
+            // Copy Native file
+            CopyFileToDirectory(
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                AwsLambdaTracerHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
 

@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -14,7 +12,6 @@ using DiffMatchPatch;
 using GenerateSpanDocumentation;
 using GeneratePackageVersions;
 using Honeypot;
-using JetBrains.Annotations;
 using Microsoft.TeamFoundation.Build.WebApi;
 using Microsoft.VisualStudio.Services.Common;
 using Microsoft.VisualStudio.Services.WebApi;
@@ -453,7 +450,6 @@ partial class Build
         return MSBuildTargetPlatform.x64;
     }
 
-    [CanBeNull]
     private static string GetDefaultRuntimeIdentifier()
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog

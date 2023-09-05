@@ -236,6 +236,23 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
+    Target PublishNativeLoaderAwsLambda => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeLoader)
+        .Executes(() =>
+        {
+            // Copy native loader assets
+            var (arch, ext) = GetUnixArchitectureAndExtension();
+            var source = NativeLoaderProject.Directory / "bin" / "loader.conf";
+            var dest = AwsLambdaTracerHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+
+            source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
+            dest = AwsLambdaTracerHomeDirectory / arch;
+            CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+        });
+
     Target PublishNativeLoaderOsx => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsOsx)
