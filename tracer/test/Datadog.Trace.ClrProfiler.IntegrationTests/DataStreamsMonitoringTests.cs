@@ -244,10 +244,16 @@ public class DataStreamsMonitoringTests : TestHelper
             }
         }
 
+        // order and reset tag offset values, since
+        // there's no guarantee that messages will be routed the same way on every run.
         currentBucket.Backlogs = backlogs
-           .OrderBy(o => string.Join(",", o.Tags))
-           .ThenBy(o => o.Value)
-           .ToArray();
+                                .Select(s => new MockDataStreamsBacklog() { Tags = s.Tags })
+                                .OrderBy(o =>
+                                 {
+                                     Array.Sort(o.Tags);
+                                     return string.Join(",", o.Tags);
+                                 })
+                                .ToArray();
 
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);

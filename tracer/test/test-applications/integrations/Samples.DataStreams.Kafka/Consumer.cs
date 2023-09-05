@@ -25,7 +25,7 @@ internal class Consumer : ConsumerBase
             GroupId = "Samples.DataStreams.Kafka." + consumerName,
             AutoOffsetReset = AutoOffsetReset.Earliest,
             EnableAutoCommit = enableAutoCommit,
-            AutoCommitIntervalMs = 100,
+            AutoCommitIntervalMs = 5, 
         };
         return new Consumer(config, topic, consumerName, handler);
     }

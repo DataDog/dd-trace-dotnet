@@ -178,6 +178,8 @@ async Task RunFanInAndOutScenario()
         await Task.Delay(1000);
     }
 
+    // give some time to autocommit offsets
+    await Task.Delay(100);
     LogWithTime("Finished waiting for messages");
 
     Console.WriteLine($"Waiting for graceful exit...");

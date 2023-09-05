@@ -16,16 +16,7 @@ internal class ProducerCache
     // A map between Kafka Producer<TKey,TValue> and the corresponding producer bootstrap servers
     private static readonly ConditionalWeakTable<object, string> ProducerToBootstrapServersMap = new();
     private static readonly ConditionalWeakTable<object, Action<object>> ProducerDefaultDeliveryHandlerMap = new();
-    private static readonly Action<object> DefaultDeliveryHandler = obj =>
-    {
-        if (obj.TryDuckCast<ITopicPartitionOffset>(out var item) && !string.IsNullOrEmpty(item.Topic))
-        {
-            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-            dataStreams.TrackBacklog(
-                $"partition:{item.Partition.Value},topic:{item.Topic},type:kafka_produce",
-                item.Offset.Value);
-        }
-    };
+    private static readonly Action<object> DefaultDeliveryHandler = _ => { };
 
     public static void AddProducer(object producer, string bootstrapServers)
     {
