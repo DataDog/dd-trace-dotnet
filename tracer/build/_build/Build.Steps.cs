@@ -390,7 +390,6 @@ partial class Build
             DotnetBuild(toBuild, noDependencies: false);
         });
 
-
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
         .After(CompileNativeSrc)

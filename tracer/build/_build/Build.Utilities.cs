@@ -435,7 +435,7 @@ partial class Build
             Logger.Warning(ex, "Error calling Azdo API to check for debug run");
             return false;
         }
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {

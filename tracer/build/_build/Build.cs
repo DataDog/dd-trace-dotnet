@@ -30,7 +30,7 @@ partial class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    [Parameter("Configuration to build - Default is 'Release'")]
+    [Parameter("Configuration to build. Default is 'Release'")]
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
@@ -47,6 +47,7 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
+
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
@@ -59,13 +60,13 @@ partial class Build : NukeBuild
     [Parameter("The current version of the source and build")]
     readonly string Version = "2.41.0";
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the current build version is a prerelease (for packaging purposes)")]
     readonly bool IsPrerelease = false;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
-    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the new build version is a prerelease (for packaging purposes)")]
     readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
