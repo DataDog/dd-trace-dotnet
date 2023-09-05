@@ -1,0 +1,78 @@
+using System;
+using System.Diagnostics;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using System.Runtime.Versioning;
+using System.Threading.Tasks;
+using Datadog.Trace.Ci.Coverage;
+using Datadog.Trace.Ci.Coverage.Attributes;
+using Datadog.Trace.Ci.Coverage.Metadata.Target;
+
+[assembly: CompilationRelaxations(8)]
+[assembly: RuntimeCompatibility(WrapNonExceptionThrows = true)]
+[assembly: Debuggable(DebuggableAttribute.DebuggingModes.IgnoreSymbolStoreSequencePoints)]
+[assembly: TargetFramework(".NETStandard,Version=v2.0", FrameworkDisplayName = "")]
+[assembly: AssemblyCompany("CoverageRewriterAssembly")]
+[assembly: AssemblyConfiguration("Debug")]
+[assembly: AssemblyFileVersion("1.0.0.0")]
+[assembly: AssemblyInformationalVersion("1.0.0")]
+[assembly: AssemblyProduct("CoverageRewriterAssembly")]
+[assembly: AssemblyTitle("CoverageRewriterAssembly")]
+[assembly: CoveredAssembly]
+[assembly: AssemblyVersion("1.0.0.0")]
+namespace CoverageRewriterAssembly
+{
+	public class Class1
+	{
+		public string MyProperty { get; set; }
+
+		public void Main()
+		{
+			int[] counters = CoverageReporter<ModuleCoverage>.GetCounters(0);
+			_ = counters[10];
+			counters[0]++;
+			counters[1]++;
+			Console.WriteLine("Main Method");
+			counters[2]++;
+			int num = 0;
+			while (true)
+			{
+				counters[7]++;
+				if (num >= 100)
+				{
+					break;
+				}
+				counters[3]++;
+				counters[4]++;
+				Console.WriteLine(num);
+				counters[5]++;
+				counters[6]++;
+				num++;
+			}
+			counters[8]++;
+			MyProperty = "Value";
+			counters[9]++;
+			Console.WriteLine(MyProperty);
+			counters[10]++;
+		}
+
+		public async Task MainAsync()
+		{
+			await Task.Delay(100);
+		}
+	}
+}
+namespace Datadog.Trace.Ci.Coverage.Metadata.Target
+{
+	internal sealed class ModuleCoverage : ModuleCoverageMetadata
+	{
+		public ModuleCoverage()
+		{
+			SequencePoints = new int[1];
+			SequencePoints[0] = 11;
+			Metadata = new long[1];
+			Metadata[0] = 4294967298L;
+			TotalInstructions = 11L;
+		}
+	}
+}

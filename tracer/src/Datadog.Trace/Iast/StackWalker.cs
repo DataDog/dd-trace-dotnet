@@ -35,6 +35,7 @@ internal static class StackWalker
         "System",
         "System.",
         "xunit.",
+        "Azure."
     };
 
     private static readonly Dictionary<string, bool> ExcludedAssemblyCache = new Dictionary<string, bool>();

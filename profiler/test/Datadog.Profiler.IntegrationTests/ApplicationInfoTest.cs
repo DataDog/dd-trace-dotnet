@@ -9,7 +9,6 @@ using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
 using Xunit.Abstractions;
 

@@ -89,9 +89,9 @@ namespace Datadog.Trace.TestHelpers
                 _tags.Remove(tagName);
             }
 
-            if (!value.Equals(expectedValue))
+            if (value is null || !value.Equals(expectedValue))
             {
-                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue.ToString(), value.ToString()));
+                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue.ToString(), value?.ToString() ?? "null"));
             }
 
             return this;
