@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using Nuke.Common;
-using Nuke.Common.Tools.DotNet;
 using Nuke.Common.IO;
 using System.Linq;
 using Nuke.Common.Tooling;

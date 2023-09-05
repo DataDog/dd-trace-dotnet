@@ -45,7 +45,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
-    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}";
+    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}" / "datadog";
+    AbsolutePath AwsLambdaTracerHomeZip => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -602,15 +603,12 @@ partial class Build
             // always target .NET 6 on AWS Lambda
             var framework = TargetFramework.NET6_0;
 
-            // we need to nest the tracer home directory under a "datadog" subdirectory in the AWS Lambda layer
-            var outputDirectory = AwsLambdaTracerHomeDirectory / "datadog";
-
             // allow restore/build because we're targeting different runtime identifiers than when we initially restored
             DotNetPublish(s => s
                               .SetProject(Solution.GetProject(Projects.DatadogTrace))
                               .SetConfiguration(BuildConfiguration)
                               .SetTargetPlatformAnyCPU()
-                              .SetOutput(outputDirectory)
+                              .SetOutput(AwsLambdaTracerHomeDirectory)
                               .SetFramework(framework)
                               .SetProperty("GenerateDocumentationFile", "false")
                               .SetProperty("DebugSymbols", "false")
@@ -968,46 +966,11 @@ partial class Build
     Target ZipMonitoringHomeForAwsLambda => _ => _
         .Unlisted()
         .After(BuildTracerHomeForAwsLambda)
-        .Requires(() => IsLinux && (TargetPlatform == MSBuildTargetPlatform.x64 || TargetPlatform == ARM64TargetPlatform))
+        .Requires(() => IsLinux)
         .Executes(() =>
         {
-            var workingDirectory = AwsLambdaTracerHomeDirectory;
-            EnsureCleanDirectory(workingDirectory);
-
-            var arch = TargetPlatform == MSBuildTargetPlatform.x64 ? "amd64" : "arm64";
-            var archiveFileName = workingDirectory / $"dd-trace-dotnet-aws-lambda-{arch}.zip";
-
-            // we want the tracer home directory to be in "/opt/datadog" in the AWS Lambda layer,
-            // so we need to nest it under a "datadog" folder in the zip file
-            var zipDirectory = MonitoringHomeDirectory / "lambda";
-            var datadogDirectory = zipDirectory / "datadog";
-            EnsureCleanDirectory(zipDirectory);
-            EnsureCleanDirectory(datadogDirectory);
-
-            foreach (var directory in Directory.GetDirectories(MonitoringHomeDirectory))
-            {
-                var directoryName = Path.GetFileName(directory);
-
-                if (directoryName != "lambda")
-                {
-                    Logger.Information("Moving {Source} to {Destination}", directory, datadogDirectory / directoryName);
-                    Directory.Move(directory, datadogDirectory / directoryName);
-                }
-            }
-
             // create the zip file
-            CompressZip(zipDirectory, archiveFileName, fileMode: FileMode.Create);
-
-            // move the folders back
-            foreach (var directory in Directory.GetDirectories(datadogDirectory))
-            {
-                var directoryName = Path.GetFileName(directory);
-                Logger.Information("Moving {Source} to {Destination}", directory, MonitoringHomeDirectory / directoryName);
-
-                Directory.Move(directory, MonitoringHomeDirectory / directoryName);
-            }
-
-            DeleteDirectory(zipDirectory);
+            CompressZip(AwsLambdaTracerHomeDirectory, AwsLambdaTracerHomeZip, fileMode: FileMode.Create);
         });
 
     Target ZipMonitoringHomeOsx => _ => _
