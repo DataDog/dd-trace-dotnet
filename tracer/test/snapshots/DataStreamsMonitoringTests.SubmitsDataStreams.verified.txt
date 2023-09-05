@@ -145,72 +145,12 @@
       Backlogs: [
         {
           Tags: [
+            consumer_group:Samples.DataStreams.Kafka.consumer-1,
             partition:0,
-            topic:data-streams-2,
-            type:kafka_produce
-          ],
-          Value: 1
-        },
-        {
-          Tags: [
-            partition:1,
             topic:data-streams-1,
-            type:kafka_produce
+            type:kafka_commit
           ],
-          Value: 2
-        },
-        {
-          Tags: [
-            partition:1,
-            topic:data-streams-3,
-            type:kafka_produce
-          ],
-          Value: 1
-        },
-        {
-          Tags: [
-            partition:2,
-            topic:data-streams-2,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:2,
-            topic:data-streams-3,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:2,
-            topic:data-streams-3,
-            type:kafka_produce
-          ],
-          Value: 3
-        },
-        {
-          Tags: [
-            partition:0,
-            topic:data-streams-2,
-            type:kafka_produce
-          ],
-          Value: 2
-        },
-        {
-          Tags: [
-            partition:1,
-            topic:data-streams-2,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:2,
-            topic:data-streams-2,
-            type:kafka_produce
-          ],
-          Value: 1
+          Value: -1001
         },
         {
           Tags: [
@@ -220,6 +160,15 @@
             type:kafka_commit
           ],
           Value: -1001
+        },
+        {
+          Tags: [
+            consumer_group:Samples.DataStreams.Kafka.consumer-1,
+            partition:1,
+            topic:data-streams-1,
+            type:kafka_commit
+          ],
+          Value: 1
         },
         {
           Tags: [
@@ -241,12 +190,21 @@
         },
         {
           Tags: [
+            consumer_group:Samples.DataStreams.Kafka.consumer-1,
+            partition:2,
+            topic:data-streams-1,
+            type:kafka_commit
+          ],
+          Value: -1001
+        },
+        {
+          Tags: [
             consumer_group:Samples.DataStreams.Kafka.consumer-2,
             partition:0,
             topic:data-streams-2,
             type:kafka_commit
           ],
-          Value: 3
+          Value: 2
         },
         {
           Tags: [
@@ -264,7 +222,7 @@
             topic:data-streams-2,
             type:kafka_commit
           ],
-          Value: 2
+          Value: 3
         },
         {
           Tags: [
@@ -273,39 +231,12 @@
             topic:data-streams-3,
             type:kafka_commit
           ],
-          Value: -1001
-        },
-        {
-          Tags: [
-            consumer_group:Samples.DataStreams.Kafka.consumer-3,
-            partition:0,
-            topic:data-streams-3,
-            type:kafka_commit
-          ],
-          Value: -1001
+          Value: 1
         },
         {
           Tags: [
             consumer_group:Samples.DataStreams.Kafka.consumer-3,
             partition:1,
-            topic:data-streams-3,
-            type:kafka_commit
-          ],
-          Value: -1001
-        },
-        {
-          Tags: [
-            consumer_group:Samples.DataStreams.Kafka.consumer-3,
-            partition:1,
-            topic:data-streams-3,
-            type:kafka_commit
-          ],
-          Value: 2
-        },
-        {
-          Tags: [
-            consumer_group:Samples.DataStreams.Kafka.consumer-3,
-            partition:2,
             topic:data-streams-3,
             type:kafka_commit
           ],
@@ -322,11 +253,71 @@
         },
         {
           Tags: [
+            partition:0,
+            topic:data-streams-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-2,
+            type:kafka_produce
+          ],
+          Value: 1
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-3,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
             partition:1,
             topic:data-streams-1,
             type:kafka_produce
           ],
           Value: 2
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-3,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-2,
+            type:kafka_produce
+          ],
+          Value: 1
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-2,
+            type:kafka_produce
+          ],
+          Value: 2
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-3,
+            type:kafka_produce
+          ],
+          Value: 3
         }
       ]
     },

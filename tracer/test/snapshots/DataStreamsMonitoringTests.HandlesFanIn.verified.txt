@@ -65,41 +65,6 @@
       Backlogs: [
         {
           Tags: [
-            partition:0,
-            topic:data-streams-fan-in-out-1,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:0,
-            topic:data-streams-fan-in-out-2,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:1,
-            topic:data-streams-fan-in-out-1,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:1,
-            topic:data-streams-fan-in-out-2,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
-            partition:2,
-            topic:data-streams-fan-in-out-1,
-            type:kafka_produce
-          ]
-        },
-        {
-          Tags: [
             consumer_group:Samples.DataStreams.Kafka.fan-in-consumer,
             partition:0,
             topic:data-streams-fan-in-out-1,
@@ -151,6 +116,41 @@
             type:kafka_commit
           ],
           Value: -1001
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-fan-in-out-1,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:0,
+            topic:data-streams-fan-in-out-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-fan-in-out-1,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-fan-in-out-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-fan-in-out-1,
+            type:kafka_produce
+          ]
         }
       ]
     },
