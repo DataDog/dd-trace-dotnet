@@ -10,6 +10,11 @@
 
 
 const std::string MetadataProvider::SectionEnvVars("Environment Variables");
+const std::string MetadataProvider::DebugLogEnabled("DD_TRACE_DEBUG"); // could be an issue if enabled
+const std::string MetadataProvider::UploadInterval("DD_PROFILING_UPLOAD_PERIOD");  // could explain weird upload frequencies
+const std::string MetadataProvider::NamedPipeName("DD_TRACE_PIPE_NAME");  // could explain issues on Linux
+const std::string MetadataProvider::NativeFramesEnabled("DD_PROFILING_FRAMES_NATIVE_ENABLED");     // should be always disabled
+const std::string MetadataProvider::DeprecatedContentionProfilingEnabled("DD_PROFILING_CONTENTION_ENABLED"); // deprecated
 const std::string MetadataProvider::ExceptionSampleLimit("DD_INTERNAL_PROFILING_EXCEPTION_SAMPLE_LIMIT");
 const std::string MetadataProvider::AllocationSampleLimit("DD_INTERNAL_PROFILING_ALLOCATION_SAMPLE_LIMIT");
 const std::string MetadataProvider::ContentionSampleLimit("DD_INTERNAL_PROFILING_CONTENTION_SAMPLE_LIMIT");
@@ -17,11 +22,12 @@ const std::string MetadataProvider::CpuWallTimeSamplingRate("DD_INTERNAL_PROFILI
 const std::string MetadataProvider::WalltimeThreadsThreshold("DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD");
 const std::string MetadataProvider::CpuTimeThreadsThreshold("DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD");
 const std::string MetadataProvider::CodeHotspotsThreadsThreshold("DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD");
+const std::string MetadataProvider::TimestampsAsLabelEnabled("DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED"); // should never be 0
+const std::string MetadataProvider::CoreMinimumOverride("DD_PROFILING_MIN_CORES_THRESHOLD");
 const std::string MetadataProvider::UseBacktrace2("DD_INTERNAL_USE_BACKTRACE2");
 const std::string MetadataProvider::DebugInfoEnabled("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
 const std::string MetadataProvider::GcThreadsCpuTimeEnabled("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
 const std::string MetadataProvider::InternalMetricsEnabled("DD_INTERNAL_METRICS_ENABLED");
-const std::string MetadataProvider::CoreMinimumOverride("DD_PROFILING_MIN_CORES_THRESHOLD");
 
 const std::string MetadataProvider::SectionRuntimeSettings("Runtime Settings");
 const std::string MetadataProvider::StartTime("Start Time");

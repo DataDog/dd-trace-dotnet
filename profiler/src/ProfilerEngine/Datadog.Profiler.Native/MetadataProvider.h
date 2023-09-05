@@ -11,6 +11,11 @@ class MetadataProvider : public IMetadataProvider
 {
 public:
     static const std::string SectionEnvVars;
+    static const std::string DebugLogEnabled;
+    static const std::string UploadInterval;
+    static const std::string NamedPipeName;
+    static const std::string NativeFramesEnabled;
+    static const std::string DeprecatedContentionProfilingEnabled;
     static const std::string ExceptionSampleLimit;
     static const std::string AllocationSampleLimit;
     static const std::string ContentionSampleLimit;
@@ -18,6 +23,7 @@ public:
     static const std::string WalltimeThreadsThreshold;
     static const std::string CpuTimeThreadsThreshold;
     static const std::string CodeHotspotsThreadsThreshold;
+    static const std::string TimestampsAsLabelEnabled;
     static const std::string UseBacktrace2;
     static const std::string DebugInfoEnabled;
     static const std::string GcThreadsCpuTimeEnabled;
