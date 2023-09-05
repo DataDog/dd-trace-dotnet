@@ -151,7 +151,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         pos++;
     }
 
-    Log::Debug("ManagedThreadList: thread ", std::dec, clrThreadId, " cannot be unregister because not in the list");
+    Log::Debug("ManagedThreadList: thread 0x", std::hex, clrThreadId, std::dec, " cannot be unregister because not in the list");
     return false;
 }
 
