@@ -453,41 +453,17 @@ partial class Build
     private static string GetDefaultRuntimeIdentifier()
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
-        var rid = (Platform, (string)GetDefaultTargetPlatform()) switch
-                  {
-                      (PlatformFamily.Windows, "x86") => "win-x86",
-                      (PlatformFamily.Windows, "x64") => "win-x64",
-                      (PlatformFamily.Windows, "arm64") => "win-arm64",
-                      (PlatformFamily.Linux, "x64") => "linux-x64",
-                      (PlatformFamily.Linux, "arm64") => "linux-arm64",
-                      (PlatformFamily.OSX, "x64") => "osx-x64",
-                      (PlatformFamily.OSX, "ARM64") => "osx-arm64",
-                      _ => null
-                  };
+        return (Platform, (string)GetDefaultTargetPlatform()) switch
+               {
+                   (PlatformFamily.Windows, "x86") => "win-x86",
+                   (PlatformFamily.Windows, "x64") => "win-x64",
 
+                   (PlatformFamily.Linux, "x64") => "linux-x64",
+                   (PlatformFamily.Linux, "ARM64" or "ARM64EC") => "linux-arm64",
 
-        var os = Platform switch
-                 {
-                     PlatformFamily.Windows => "win",
-                     PlatformFamily.Linux => "linux",
-                     PlatformFamily.OSX => "osx",
-                     _ => null
-                 };
-
-        var arch = (string)GetDefaultTargetPlatform() switch
-                   {
-                       "x86" => "x86",
-                       "x64" => "x64",
-                       "ARM64" or "ARM64EC" => "arm64",
-                       _ => null
-                   };
-
-        if (os is null || arch is null)
-        {
-            return null;
-        }
-
-        return $"{os}-{arch}";
+                   (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
+                   _ => null
+               };
     }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";
