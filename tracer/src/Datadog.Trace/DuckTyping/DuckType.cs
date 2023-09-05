@@ -1006,14 +1006,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldarg_0);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
-                if (targetType.IsValueType)
-                {
-                    il.Emit(OpCodes.Unbox_Any, targetType);
-                }
-                else
-                {
-                    il.Emit(OpCodes.Castclass, targetType);
-                }
+                il.Emit(targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, targetType);
             }
 
             il.Emit(OpCodes.Call, ctor);
@@ -1023,7 +1016,8 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Initobj, proxyDefinitionType);
 
             // Start copy properties from the proxy to the structure
-            foreach (FieldInfo finfo in proxyDefinitionType.GetFields())
+            bool containsFields = false;
+            foreach (var finfo in proxyDefinitionType.GetFields())
             {
                 // Skip readonly fields
                 if ((finfo.Attributes & FieldAttributes.InitOnly) != 0)
@@ -1037,19 +1031,24 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                PropertyInfo? prop = proxyType.GetProperty(finfo.Name);
-                if (prop?.GetMethod is not null)
+                if (proxyType.GetProperty(finfo.Name) is { GetMethod: { } propGetMethod })
                 {
                     il.Emit(OpCodes.Ldloca_S, structLocal.LocalIndex);
                     il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
-                    il.EmitCall(OpCodes.Call, prop.GetMethod, null);
+                    il.EmitCall(OpCodes.Call, propGetMethod, null);
                     il.Emit(OpCodes.Stfld, finfo);
+                    containsFields = true;
                 }
             }
 
             // Return
             il.WriteLoadLocal(structLocal.LocalIndex);
             il.Emit(OpCodes.Ret);
+
+            if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
+            {
+                DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(proxyDefinitionType);
+            }
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             return createStructMethod.CreateDelegate(delegateType);
