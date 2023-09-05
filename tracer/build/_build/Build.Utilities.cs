@@ -453,6 +453,18 @@ partial class Build
     private static string GetDefaultRuntimeIdentifier()
     {
         // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+        var rid = (Platform, (string)GetDefaultTargetPlatform()) switch
+                  {
+                      (PlatformFamily.Windows, "x86") => "win-x86",
+                      (PlatformFamily.Windows, "x64") => "win-x64",
+                      (PlatformFamily.Windows, "arm64") => "win-arm64",
+                      (PlatformFamily.Linux, "x64") => "linux-x64",
+                      (PlatformFamily.Linux, "arm64") => "linux-arm64",
+                      (PlatformFamily.OSX, "x64") => "osx-x64",
+                      (PlatformFamily.OSX, "ARM64") => "osx-arm64",
+                      _ => null
+                  };
+
 
         var os = Platform switch
                  {

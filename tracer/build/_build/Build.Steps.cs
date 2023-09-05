@@ -608,7 +608,7 @@ partial class Build
                               .SetProject(Solution.GetProject(Projects.DatadogTrace))
                               .SetConfiguration(BuildConfiguration)
                               .SetTargetPlatformAnyCPU()
-                              .SetOutput(AwsLambdaTracerHomeDirectory)
+                              .SetOutput(AwsLambdaTracerHomeDirectory / framework)
                               .SetFramework(framework)
                               .SetProperty("GenerateDocumentationFile", "false")
                               .SetProperty("DebugSymbols", "false")
@@ -970,7 +970,7 @@ partial class Build
         .Executes(() =>
         {
             // create the zip file
-            CompressZip(AwsLambdaTracerHomeDirectory, AwsLambdaTracerHomeZip, fileMode: FileMode.Create);
+            CompressZip(AwsLambdaTracerHomeDirectory.Parent, AwsLambdaTracerHomeZip, fileMode: FileMode.Create);
         });
 
     Target ZipMonitoringHomeOsx => _ => _
