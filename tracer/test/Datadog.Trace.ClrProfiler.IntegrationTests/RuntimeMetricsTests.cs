@@ -97,7 +97,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private void RunTest()
         {
             var inputServiceName = "12_$#Samples.$RuntimeMetrics";
-            var normalizedServiceName = "samples._runtimemetrics";
             SetEnvironmentVariable("DD_SERVICE", inputServiceName);
             SetEnvironmentVariable("DD_RUNTIME_METRICS_ENABLED", "1");
             SetInstrumentationVerification();
@@ -127,11 +126,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Assert tags
             metrics
                .Should()
-               .OnlyContain(s => s.Contains($"service:{normalizedServiceName}"))
-               .And.NotContain(s => s.Contains($"service:{inputServiceName}"))
-               .And.OnlyContain(s => Regex.Matches(s, @"env:integration_tests").Count == 1)
-               .And.OnlyContain(s => Regex.Matches(s, @"version:1\.0\.0").Count == 1)
-               .And.OnlyContain(s => Regex.Matches(s, @"some:value").Count == 1);
+               .OnlyContain(s => Regex.Matches(s, @"\bservice:samples\._runtimemetrics").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\benv:integration_tests").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\bversion:1\.0\.0").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\benv:").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\bversion:").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\bservice:").Count == 1)
+               .And.OnlyContain(s => Regex.Matches(s, @"\bsome:value").Count == 1);
 
             // Check if .NET Framework or .NET Core 3.1+
             if (!EnvironmentHelper.IsCoreClr()
