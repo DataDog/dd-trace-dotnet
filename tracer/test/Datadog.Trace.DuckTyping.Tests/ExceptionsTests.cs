@@ -748,64 +748,46 @@ namespace Datadog.Trace.DuckTyping.Tests
         [Fact]
         public void TargetObjectInstanceIsNullWithTryDuckCast()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.TryDuckCast(null, out ITargetObjectInstanceIsNull value);
-            });
+            DuckTypeExtensions.TryDuckCast(null, out ITargetObjectInstanceIsNull value).Should().BeFalse();
+            value.Should().BeNull();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithTryDuckCast2()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.TryDuckCast(null, typeof(ITargetObjectInstanceIsNull), out var value);
-            });
+            DuckTypeExtensions.TryDuckCast(null, typeof(ITargetObjectInstanceIsNull), out var value).Should().BeFalse();
+            value.Should().BeNull();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithDuckAs()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.DuckAs<ITargetObjectInstanceIsNull>(null);
-            });
+            DuckTypeExtensions.DuckAs<ITargetObjectInstanceIsNull>(null).Should().BeNull();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithDuckAs2()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.DuckAs(null, typeof(ITargetObjectInstanceIsNull));
-            });
+            DuckTypeExtensions.DuckAs(null, typeof(ITargetObjectInstanceIsNull)).Should().BeNull();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithDuckIs()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.DuckIs<ITargetObjectInstanceIsNull>(null);
-            });
+            DuckTypeExtensions.DuckIs<ITargetObjectInstanceIsNull>(null).Should().BeFalse();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithDuckIs2()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.DuckIs(null, typeof(ITargetObjectInstanceIsNull));
-            });
+            DuckTypeExtensions.DuckIs(null, typeof(ITargetObjectInstanceIsNull)).Should().BeFalse();
         }
 
         [Fact]
         public void TargetObjectInstanceIsNullWithTryDuckImplement()
         {
-            Assert.Throws<DuckTypeTargetObjectInstanceIsNull>(() =>
-            {
-                DuckTypeExtensions.TryDuckImplement(null, typeof(ITargetObjectInstanceIsNull), out var value);
-            });
+            DuckTypeExtensions.TryDuckImplement(null, typeof(ITargetObjectInstanceIsNull), out var value).Should().BeFalse();
+            value.Should().BeNull();
         }
 
         public interface ITargetObjectInstanceIsNull
@@ -818,7 +800,6 @@ namespace Datadog.Trace.DuckTyping.Tests
         public void InvalidTypeConversionException()
         {
             object target = new InvalidTypeConversionExceptionClass();
-
             Assert.Throws<DuckTypeInvalidTypeConversionException>(() =>
             {
                 target.DuckCast<IInvalidTypeConversionException>();
@@ -912,6 +893,29 @@ namespace Datadog.Trace.DuckTyping.Tests
 #pragma warning restore SA1306 // Field names must begin with lower-case letter
 #pragma warning restore IDE0051 // Remove unused private members
 #pragma warning restore 414
+        }
+
+        // *
+        [Fact]
+        public void DuckCopyContainsNoFieldsException()
+        {
+            object target = new SourceObject();
+
+            Assert.Throws<DuckTypeDuckCopyStructDoesNotContainsAnyField>(() =>
+            {
+                target.DuckCast<SourceStructProxy>();
+            });
+        }
+
+        [DuckCopy]
+        public struct SourceStructProxy
+        {
+            public string Name { get; set; }
+        }
+
+        public class SourceObject
+        {
+            public string Name { get; set; }
         }
     }
 }
