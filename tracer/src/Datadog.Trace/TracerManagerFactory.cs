@@ -229,9 +229,7 @@ namespace Datadog.Trace
             int? traceRateIntervalMilliseconds = null;
             if (!settings.ApmTracingEnabledInternal)
             {
-                // TODO : Detect if the setting has been overriden
-                traceRateLimit = 1; // 1 trace per minute max
-                traceRateIntervalMilliseconds = 60_000;
+                return new TraceSampler(new TracerRateLimiter(1, 60_000)); // 1 trace per minute max
             }
 
             var sampler = new TraceSampler(new TracerRateLimiter(traceRateLimit, traceRateIntervalMilliseconds));
@@ -257,7 +255,7 @@ namespace Datadog.Trace
                     sampler.RegisterRule(new GlobalSamplingRule(globalRate));
                 }
             }
-            else if (!settings.ApmTracingEnabledInternal)
+            else
             {
                 sampler.RegisterRule(new GlobalSamplingRule(1)); // Keep all APM traces by default
             }

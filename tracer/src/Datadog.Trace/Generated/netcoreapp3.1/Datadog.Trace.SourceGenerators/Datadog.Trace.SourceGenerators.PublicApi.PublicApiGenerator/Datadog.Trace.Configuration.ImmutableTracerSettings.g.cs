@@ -70,15 +70,15 @@ partial record ImmutableTracerSettings
         /// Gets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ApmEnabled"/>
+        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ApmEnabled
+    public bool ApmTracingEnabled
     {
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)161);
-            return ApmEnabledInternal;
+            return ApmTracingEnabledInternal;
         }
     }
 

@@ -96,21 +96,21 @@ partial class TracerSettings
         /// Gets or sets a value indicating whether tracing is enabled.
         /// Default is <c>true</c>.
         /// </summary>
-        /// <seealso cref="ConfigurationKeys.ApmEnabled"/>
+        /// <seealso cref="ConfigurationKeys.ApmTracingEnabled"/>
     [Datadog.Trace.SourceGenerators.PublicApi]
-    public bool ApmEnabled
+    public bool ApmTracingEnabled
     {
         get
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)132);
-            return ApmEnabledInternal;
+            return ApmTracingEnabledInternal;
         }
         set
         {
             Datadog.Trace.Telemetry.TelemetryFactory.Metrics.Record(
                 (Datadog.Trace.Telemetry.Metrics.PublicApiUsage)133);
-            ApmEnabledInternal = value;
+            ApmTracingEnabledInternal = value;
         }
     }
 

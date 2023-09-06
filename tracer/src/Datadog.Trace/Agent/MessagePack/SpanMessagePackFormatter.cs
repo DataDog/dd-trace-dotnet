@@ -63,6 +63,10 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
 
+        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ApmEnabled);
+
+        private readonly byte[] _propagatedApmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Propagated.ApmEnabled);
+
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
         private byte[] _aasSiteKindTagNameBytes;
@@ -291,6 +295,16 @@ namespace Datadog.Trace.Agent.MessagePack
                     offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _versionNameBytes);
                     offset += MessagePackBinary.WriteRaw(ref bytes, offset, versionRawBytes);
                 }
+            }
+
+            // add "apm.enabled:0" tag to all spans when APM is disabled
+            if (!model.TraceChunk.IsApmEnabled)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
+                offset += MessagePackBinary.WriteByte(ref bytes, offset, 0);
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _propagatedApmEnabledBytes);
+                offset += MessagePackBinary.WriteByte(ref bytes, offset, 0);
             }
 
             // AAS tags need to be set on any span for the backend to properly handle the billing.
