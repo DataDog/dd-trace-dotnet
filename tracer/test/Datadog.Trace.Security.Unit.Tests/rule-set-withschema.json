@@ -7076,7 +7076,7 @@
       "transformers": []
     }
   ],
-  "preprocessors": [
+  "processors": [
     {
       "id": "preprocessor-001",
       "generator": "extract_schema",
