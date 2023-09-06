@@ -118,24 +118,19 @@ internal class ExecutedTelemetryHelper
     }
 
     private string GetExecutedSinkTag(IastInstrumentedSinks vulnerability)
-    {
-        return BasicExecutedTag + SinkExecutedTag + GetVulnerabilityTag(vulnerability);
-    }
-
-    private string GetVulnerabilityTag(IastInstrumentedSinks vulnerability)
         => vulnerability switch
         {
-            IastInstrumentedSinks.LdapInjection => "ldap_injection",
-            IastInstrumentedSinks.SqlInjection => "sql_injection",
-            IastInstrumentedSinks.CommandInjection => "command_injection",
-            IastInstrumentedSinks.InsecureCookie => "insecure_cookie",
-            IastInstrumentedSinks.NoHttpOnlyCookie=> "no_http_only_cookie",
-            IastInstrumentedSinks.NoSameSiteCookie => "no_samesite_cookie",
-            IastInstrumentedSinks.WeakCipher => "weak_cipher",
-            IastInstrumentedSinks.WeakHash => "weak_hash",
-            IastInstrumentedSinks.PathTraversal => "path_traversal",
-            IastInstrumentedSinks.Ssrf => "ssrf",
-            IastInstrumentedSinks.UnvalidatedRedirect => "unvalidated_redirect",
+            IastInstrumentedSinks.LdapInjection => BasicExecutedTag + SinkExecutedTag + "ldap_injection",
+            IastInstrumentedSinks.SqlInjection => BasicExecutedTag + SinkExecutedTag + "sql_injection",
+            IastInstrumentedSinks.CommandInjection => BasicExecutedTag + SinkExecutedTag + "command_injection",
+            IastInstrumentedSinks.InsecureCookie => BasicExecutedTag + SinkExecutedTag + "insecure_cookie",
+            IastInstrumentedSinks.NoHttpOnlyCookie=> BasicExecutedTag + SinkExecutedTag + "no_http_only_cookie",
+            IastInstrumentedSinks.NoSameSiteCookie => BasicExecutedTag + SinkExecutedTag + "no_samesite_cookie",
+            IastInstrumentedSinks.WeakCipher => BasicExecutedTag + SinkExecutedTag + "weak_cipher",
+            IastInstrumentedSinks.WeakHash => BasicExecutedTag + SinkExecutedTag + "weak_hash",
+            IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
+            IastInstrumentedSinks.Ssrf => BasicExecutedTag + SinkExecutedTag + "ssrf",
+            IastInstrumentedSinks.UnvalidatedRedirect => BasicExecutedTag + SinkExecutedTag + "unvalidated_redirect",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
