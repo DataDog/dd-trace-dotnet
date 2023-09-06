@@ -32,7 +32,7 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
         public void CheckSourceTypeAndIastInstrumentedSourcesConsistency()
         {
             Enum.GetValues(typeof(MetricTags.IastInstrumentedSources)).Length.Should().Be(Enum.GetValues(typeof(SourceTypeName)).Length);
-            for (int i = 0; i < Enum.GetValues(typeof(VulnerabilityType)).Length; i++)
+            for (int i = 0; i < Enum.GetValues(typeof(SourceTypeName)).Length; i++)
             {
                 var tag = (MetricTags.IastInstrumentedSources)i;
                 tag.ToString().Should().Be(((SourceTypeName)i).ToString());
