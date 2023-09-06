@@ -176,14 +176,19 @@ internal class IastRequestContext
     {
         if (!_querySourcesAdded)
         {
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieName);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.CookieValue);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestPath);
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+            
+            if(_executedTelemetryHelper is { } helper)
+            {
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+             }
+                
 
             if (request.QueryString != null)
             {
