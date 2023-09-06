@@ -148,7 +148,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             // instrumentation target
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
-                Logger::Debug("    * The caller for the methoddef: ", caller.name,
+                Logger::Info("    * The caller for the methoddef: ", caller.name,
                               " doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 continue;
             }
@@ -171,7 +171,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
             if (argumentsMismatch)
             {
-                Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
+                Logger::Info("    * The caller for the methoddef: ", target_method.method_name,
                               " doesn't have the right type of arguments.");
                 continue;
             }
@@ -200,6 +200,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
+        Logger::Info("Method enqueued for ReJIT for ", target_method.type.name, ".", target_method.method_name,
+                  "(", (target_method.signature_types.size() - 1), " params)'.");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 
