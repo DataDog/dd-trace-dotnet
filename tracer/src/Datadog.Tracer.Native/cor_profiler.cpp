@@ -275,7 +275,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Info("JIT Inlining is enabled.");
+        Logger::Debug("JIT Inlining is enabled.");
     }
 
     if (DisableOptimizations())
@@ -286,7 +286,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (IsNGENEnabled())
     {
-        Logger::Info("NGEN is enabled.");
+        Logger::Debug("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
     else
@@ -523,7 +523,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                 auto methodDef = *enumIterator;
 
                 const auto& caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
-                Logger::Info("Rewriting PInvoke method: ", caller.name);
+                Logger::Debug("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;

@@ -107,7 +107,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
                     moduleInfo.assembly.app_domain_id, pCorAssemblyProperty, enable_by_ref_instrumentation,
                     enable_calltarget_state_by_ref);
 
-                Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+                Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                              " AppDomain ", moduleInfo.assembly.app_domain_id, " ",
                              moduleInfo.assembly.app_domain_name);
 
