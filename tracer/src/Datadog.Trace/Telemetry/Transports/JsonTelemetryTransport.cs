@@ -17,6 +17,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Telemetry.Transports
 {
@@ -54,6 +55,11 @@ namespace Datadog.Trace.Telemetry.Transports
             {
                 // have to buffer in memory so we know the content length
                 var serializedData = SerializeTelemetry(data);
+                if (_enableDebug && Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("Sending telemetry payload {Payload}", serializedData);
+                }
+
                 var bytes = Encoding.UTF8.GetBytes(serializedData);
 
                 var request = _requestFactory.Create(_endpoint);

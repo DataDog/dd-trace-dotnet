@@ -25,6 +25,7 @@ namespace Datadog.Trace.Logging
         private const LogEventLevel DefaultLogLevel = LogEventLevel.Information;
         private static readonly IDatadogLogger SharedLogger;
         private static readonly Timer? DiagnosticLogTimer;
+        private static readonly LoggingLevelSwitch? TelemetryLevelSwitch;
 
         static DatadogLogging()
         {
@@ -34,12 +35,12 @@ namespace Datadog.Trace.Logging
 
             try
             {
-                if (GlobalSettings.Instance.DebugEnabledInternal)
+                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
+
+                if (GlobalSettings.Instance.DebugEnabledInternal || config.DiagnosticTelemetry is not null)
                 {
                     LoggingLevelSwitch.MinimumLevel = LogEventLevel.Debug;
                 }
-
-                var config = DatadogLoggingFactory.GetConfiguration(GlobalConfigurationSource.Instance, TelemetryFactory.Config);
 
                 if (config.File is { LogFileRetentionDays: > 0 } fileConfig)
                 {
@@ -48,6 +49,7 @@ namespace Datadog.Trace.Logging
 
                 if (config.DiagnosticTelemetry is { } telemetry)
                 {
+                    TelemetryLevelSwitch = telemetry.LogLevelSwitch;
                     DiagnosticLogTimer = CreateDiagnosticLogDisableTimer(telemetry);
                 }
 
@@ -97,7 +99,13 @@ namespace Datadog.Trace.Logging
         internal static Timer CreateDiagnosticLogDisableTimer(DiagnosticTelemetryLoggingConfiguration telemetry)
         {
             return new Timer(
-                callback: state => ((LoggingLevelSwitch)state!).MinimumLevel = LogEventLevel.Fatal,
+                callback: state =>
+                {
+                    // "turn off" the telemetry sink, as best we can
+                    ((LoggingLevelSwitch)state!).MinimumLevel = LogEventLevel.Fatal;
+
+                    // reset the top-level filter to its default value
+                },
                 state: telemetry.LogLevelSwitch,
                 dueTime: telemetry.DisableAt - DateTimeOffset.UtcNow,
                 period: Timeout.InfiniteTimeSpan); // disable periodic invocation

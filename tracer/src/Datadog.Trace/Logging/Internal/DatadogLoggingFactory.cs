@@ -16,6 +16,7 @@ using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Logging;
 
@@ -83,25 +84,19 @@ internal static class DatadogLoggingFactory
 
         var loggerConfiguration =
             new LoggerConfiguration()
-               .Enrich.FromLogContext();
+               .Enrich.FromLogContext()
+               .MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
 
-        LoggingLevelSwitch? fileLevelSwitch = null;
         if (config.DiagnosticTelemetry is { } telemetry)
         {
+            telemetry.LogLevelSwitch.MinimumLevel = LogEventLevel.Debug;
+
             loggerConfiguration
                .WriteTo.Logger(
                     lc => lc
+                         // add an additional switch so that we can disable telemetry separately
                          .MinimumLevel.ControlledBy(telemetry.LogLevelSwitch)
                          .WriteTo.Sink(new DiagnosticTelemetryLogSink(TelemetryFactory.DiagnosticLogs)));
-
-            // If we have diagnostic logs enabled, we don't set a "top-level"
-            // filter, and instead turn on filtering at the sink level.
-            fileLevelSwitch = DatadogLogging.LoggingLevelSwitch;
-        }
-        else
-        {
-            // if diagnostic logs are not enabled, filter logs at the top-level for perf
-            loggerConfiguration.MinimumLevel.ControlledBy(DatadogLogging.LoggingLevelSwitch);
         }
 
         if (config.File is { } fileConfig)
@@ -116,8 +111,7 @@ internal static class DatadogLoggingFactory
                     rollingInterval: RollingInterval.Day,
                     rollOnFileSizeLimit: true,
                     fileSizeLimitBytes: fileConfig.MaxLogFileSizeBytes,
-                    shared: true,
-                    levelSwitch: fileLevelSwitch);
+                    shared: true);
         }
 
         try
@@ -150,7 +144,17 @@ internal static class DatadogLoggingFactory
             rateLimiter = new NullLogRateLimiter();
         }
 
-        return new DatadogSerilogLogger(internalLogger, rateLimiter);
+        // record the configuration
+        var finalLogger = new DatadogSerilogLogger(internalLogger, rateLimiter);
+        if (finalLogger.IsEnabled(LogEventLevel.Debug))
+        {
+            finalLogger.Debug(
+                "Logger configuration initialized. File Logging: {LogDirectory}, telemetry: {DisabledAt}, rate limit: {RateLimit}",
+                config.File is { LogDirectory: var dir } ? dir : "Not enabled",
+                config.DiagnosticTelemetry is { DisableAt: var disableAt } ? disableAt.ToString("u") : "Not enabled");
+        }
+
+        return finalLogger;
     }
 
     // Internal for testing
