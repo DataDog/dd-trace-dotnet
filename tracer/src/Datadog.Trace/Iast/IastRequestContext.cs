@@ -48,7 +48,7 @@ internal class IastRequestContext
             var tags = _executedTelemetryHelper.GenerateMetricTags();
             foreach (var tag in tags)
             {
-                span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
+                span.SetMetric(tag.Item1, tag.Item2);
             }
         }
     }
