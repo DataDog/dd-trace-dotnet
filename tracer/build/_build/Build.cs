@@ -197,13 +197,14 @@ partial class Build : NukeBuild
         .After(Clean)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
-        .DependsOn(PublishManagedTracerForAwsLambda)
-        .DependsOn(CompileTracerNativeSrcLinux)   // CompileNativeSrc
-        .DependsOn(PublishNativeTracerAwsLambda)  // PublishNativeTracer
+        //.DependsOn(CompileManagedSrc)              // PublishManagedTracerForAwsLambda below restores and compiles
+        .DependsOn(PublishManagedTracerForAwsLambda) // instead of PublishManagedTracer
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(PublishNativeTracerAwsLambda)     // instead of PublishNativeTracer
         //.DependsOn(DownloadLibDdwaf)
         //.DependsOn(CopyLibDdwaf)
-        .DependsOn(CompileNativeLoaderLinux)      // BuildNativeLoader -> CompileNativeLoader
-        .DependsOn(PublishNativeLoaderAwsLambda); // BuildNativeLoader -> PublishNativeLoader
+        .DependsOn(CompileNativeLoader)              // instead of BuildNativeLoader -> CompileNativeLoader
+        .DependsOn(PublishNativeLoaderAwsLambda);    // instead of BuildNativeLoader -> PublishNativeLoader
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")

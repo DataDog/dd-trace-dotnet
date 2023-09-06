@@ -605,17 +605,18 @@ partial class Build
 
             // allow restore/build because we're targeting different runtime identifiers than when we initially restored
             DotNetPublish(s => s
-                              .SetProject(Solution.GetProject(Projects.DatadogTrace))
-                              .SetConfiguration(BuildConfiguration)
-                              .SetTargetPlatformAnyCPU()
-                              .SetOutput(AwsLambdaTracerHomeDirectory / framework)
-                              .SetFramework(framework)
-                              .SetProperty("GenerateDocumentationFile", "false")
-                              .SetProperty("DebugSymbols", "false")
-                              .SetProperty("DebugType", "none")
-                              .SetPublishReadyToRun(PublishReadyToRun)
-                              .When(PublishReadyToRun, settings => settings.SetRuntime(RuntimeIdentifier) // required for ReadyToRun
-                                                                           .SetSelfContained(false)));    // required when setting RuntimeIdentifier
+                .SetProject(Solution.GetProject(Projects.DatadogTrace))
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetOutput(AwsLambdaTracerHomeDirectory / framework)
+                .SetFramework(framework)
+                .SetProperty("GenerateDocumentationFile", "false")
+                .SetProperty("DebugSymbols", "false")
+                .SetProperty("DebugType", "none")
+                .SetPublishReadyToRun(PublishReadyToRun)
+                .When(PublishReadyToRun, settings => settings
+                    .SetRuntime(RuntimeIdentifier) // required for ReadyToRun
+                    .SetSelfContained(false)));    // required when setting RuntimeIdentifier
         });
 
     Target PublishNativeSymbolsWindows => _ => _

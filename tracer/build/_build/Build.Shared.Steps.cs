@@ -231,7 +231,6 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
-            dest = MonitoringHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
@@ -248,7 +247,6 @@ partial class Build
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
 
             source = NativeLoaderProject.Directory / "bin" / $"{NativeLoaderProject.Name}.{ext}";
-            dest = AwsLambdaTracerHomeDirectory / arch;
             CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
         });
 
