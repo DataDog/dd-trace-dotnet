@@ -69,7 +69,8 @@
             partition:0,
             topic:data-streams-fan-in-out-1,
             type:kafka_commit
-          ]
+          ],
+          Value: 1
         },
         {
           Tags: [
@@ -77,7 +78,8 @@
             partition:1,
             topic:data-streams-fan-in-out-1,
             type:kafka_commit
-          ]
+          ],
+          Value: -1001
         },
         {
           Tags: [
@@ -85,7 +87,8 @@
             partition:2,
             topic:data-streams-fan-in-out-1,
             type:kafka_commit
-          ]
+          ],
+          Value: 2
         },
         {
           Tags: [
@@ -93,7 +96,8 @@
             partition:0,
             topic:data-streams-fan-in-out-2,
             type:kafka_commit
-          ]
+          ],
+          Value: -1001
         },
         {
           Tags: [
@@ -101,7 +105,8 @@
             partition:1,
             topic:data-streams-fan-in-out-2,
             type:kafka_commit
-          ]
+          ],
+          Value: 1
         },
         {
           Tags: [
@@ -109,7 +114,8 @@
             partition:2,
             topic:data-streams-fan-in-out-2,
             type:kafka_commit
-          ]
+          ],
+          Value: 1
         },
         {
           Tags: [
@@ -130,7 +136,8 @@
             partition:2,
             topic:data-streams-fan-in-out-1,
             type:kafka_produce
-          ]
+          ],
+          Value: 1
         },
         {
           Tags: [

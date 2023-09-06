@@ -244,17 +244,26 @@ public class DataStreamsMonitoringTests : TestHelper
             }
         }
 
+        // we care only about max value per tags (multiple values may be rep0
+        var deduplicatedBacklogs = backlogs
+           .Select(
+                s =>
+                {
+                    Array.Sort(s.Tags);
+                    return new Tuple<string, long>(string.Join(",", s.Tags), s.Value);
+                })
+           .GroupBy(
+                g => g.Item1,
+                g => g.Item2,
+                (tags, values) => new Tuple<string, long>(tags, values.Max()))
+                                  .OrderBy(o => o.Item1)
+                                  .ThenBy(o => o.Item2)
+                                  .Select(s => new MockDataStreamsBacklog() { Tags = s.Item1.Split(","), Value = s.Item2 })
+           .ToArray();
+
         // order and reset tag offset values, since
         // there's no guarantee that messages will be routed the same way on every run.
-        currentBucket.Backlogs = backlogs
-                                .Select(s => new MockDataStreamsBacklog() { Tags = s.Tags })
-                                .OrderBy(o =>
-                                 {
-                                     Array.Sort(o.Tags);
-                                     return string.Join(",", o.Tags);
-                                 })
-                                .ToArray();
-
+        currentBucket.Backlogs = GroupBacklogs(backlogs);
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);
         payload.Stats = new[] { currentBucket, originBucket };
@@ -305,6 +314,30 @@ public class DataStreamsMonitoringTests : TestHelper
             }
 
             return depth;
+        }
+
+        static MockDataStreamsBacklog[] GroupBacklogs(List<MockDataStreamsBacklog> backlogs)
+        {
+            var tuples = backlogs.Select(s =>
+                {
+                    Array.Sort(s.Tags);
+                    return new Tuple<string, long>(string.Join(",", s.Tags), s.Value);
+                });
+
+            var maxByTags = tuples.GroupBy(
+                g => g.Item1,
+                g => g.Item2,
+                (tags, values) => new Tuple<string, long>(tags, values.Max()));
+
+            return maxByTags
+                  .OrderBy(o => o.Item1)
+                  .ThenBy(o => o.Item2)
+                  .Select(s => new MockDataStreamsBacklog()
+                   {
+                       Tags = s.Item1.Split(","),
+                       Value = s.Item2
+                   })
+                  .ToArray();
         }
     }
 }
