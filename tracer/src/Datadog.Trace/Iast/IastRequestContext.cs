@@ -45,10 +45,11 @@ internal class IastRequestContext
 
         if (_executedTelemetryHelper != null)
         {
-            var tags = _executedTelemetryHelper.GenerateMetricTags();
+            var tags = new List<Tuple<string, int>>();
+            _executedTelemetryHelper.GenerateMetricTags(tags);
             foreach (var tag in tags)
             {
-                span.SetMetric(tag.Item1, tag.Item2);
+                span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
             }
         }
     }

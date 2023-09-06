@@ -72,10 +72,8 @@ internal class ExecutedTelemetryHelper
         }
     }
 
-    public List<Tuple<string, int>> GenerateMetricTags()
+    public void GenerateMetricTags(List<Tuple<string, int>> tags)
     {
-        List<Tuple<string, int>> tags = new();
-
         if (_executedPropagations > 0)
         {
             tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
@@ -98,8 +96,6 @@ internal class ExecutedTelemetryHelper
         }
 
         ResetMetrics();
-
-        return tags;
     }
 
     private void ResetMetrics()
