@@ -10,6 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using Spectre.Console;
 
@@ -22,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
 
-        public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
+        public static bool Run(ProcessInfo process, IRegistryService? registryService = null, ApplicationPool? appPool = null)
         {
             bool ok = true;
             var runtime = process.DotnetRuntime;
@@ -123,33 +124,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
-            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
-
-            process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
-
-            bool isTracingUsingBundle = TracingWithBundle(corProfilerPathValue);
-
-            if (isTracingUsingBundle)
-            {
-                AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
-            }
-            else
-            {
-                AnsiConsole.WriteLine(TracingWithInstaller);
-                NoManageCodeClrVersionIis(process);
-
-                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-                ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
-
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                {
-                    if (!CheckRegistry(CheckWindowsInstallation(), registryService))
-                    {
-                        ok = false;
-                    }
-                }
-            }
-
             ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
@@ -170,6 +144,35 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
+            }
+
+            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
+
+            bool isTracingUsingBundle = TracingWithBundle(corProfilerPathValue);
+
+            if (isTracingUsingBundle)
+            {
+                AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
+            }
+            else
+            {
+                AnsiConsole.WriteLine(TracingWithInstaller);
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                {
+                    NoManageCodeClrVersionIis(process);
+
+                    ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
+                    ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
+
+                    if (!CheckRegistry(CheckWindowsInstallation(), registryService))
+                    {
+                        ok = false;
+                        CheckAppPools(appPool);
+                    }
+                }
             }
 
             // Running non-blocker checks after confirming setup was done correctly
@@ -585,6 +588,46 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             return tracerVersion;
+        }
+
+        private static void CheckAppPools(ApplicationPool? pool)
+        {
+            var tracingRelevantVariables = new Dictionary<string, string>
+            {
+                { "COR_ENABLE_PROFILING", "1" },
+                { "CORECLR_ENABLE_PROFILING", "1" },
+                { "COR_PROFILER", Utils.Profilerid },
+                { "CORECLR_PROFILER", Utils.Profilerid }
+            };
+
+            var variableFound = false;
+            var foundVariables = new Dictionary<string, object>();
+
+            if (pool != null)
+            {
+                var environmentVariablesCollection = pool.GetCollection("environmentVariables");
+                foreach (var variable in environmentVariablesCollection)
+                {
+                    var name = (string)variable.Attributes["name"].Value;
+                    var value = (string)variable.Attributes["value"].Value;
+
+                    if (tracingRelevantVariables.ContainsKey(name) && value != tracingRelevantVariables[name])
+                    {
+                        variableFound = true;
+                        foundVariables[name] = value;
+                    }
+                }
+
+                if (variableFound)
+                {
+                    Utils.WriteWarning(AppPoolCheckFindings(pool.Name));
+
+                    foreach (var variable in foundVariables)
+                    {
+                        Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, tracingRelevantVariables[variable.Key], variable.Value.ToString()));
+                    }
+                }
+            }
         }
     }
 }

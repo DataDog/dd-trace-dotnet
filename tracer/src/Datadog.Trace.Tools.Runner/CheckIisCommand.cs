@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tools.Runner
                     }
                 }
 
-                if (!ProcessBasicCheck.Run(process, registryService))
+                if (!ProcessBasicCheck.Run(process, registryService, pool))
                 {
                     return 1;
                 }
