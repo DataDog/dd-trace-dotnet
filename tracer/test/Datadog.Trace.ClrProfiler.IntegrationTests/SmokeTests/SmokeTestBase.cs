@@ -134,7 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
 
-#if !NETCOREAPP3_1_OR_GREATER
+#if !NET5_0_OR_GREATER
             if (result.StandardOutput.Contains("App completed successfully")
                 && result.ExitCode != expectedExitCode
                 && Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)"))
