@@ -218,14 +218,14 @@
         {
           Tags: [
             partition:0,
-            topic:data-streams-2,
+            topic:data-streams-1,
             type:kafka_produce
           ]
         },
         {
           Tags: [
             partition:0,
-            topic:data-streams-3,
+            topic:data-streams-2,
             type:kafka_produce
           ]
         },
@@ -240,6 +240,20 @@
           Tags: [
             partition:1,
             topic:data-streams-2,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:1,
+            topic:data-streams-3,
+            type:kafka_produce
+          ]
+        },
+        {
+          Tags: [
+            partition:2,
+            topic:data-streams-1,
             type:kafka_produce
           ]
         },

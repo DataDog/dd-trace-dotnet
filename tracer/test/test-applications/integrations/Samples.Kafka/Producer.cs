@@ -1,4 +1,9 @@
 ﻿using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -12,6 +17,7 @@ namespace Samples.Kafka
         // Flush every x messages
         private const int FlushInterval = 3;
         private static readonly TimeSpan FlushTimeout = TimeSpan.FromSeconds(1);
+        private static readonly ConcurrentDictionary<string, int> topicPartitions = new ();
         private static int _messageNumber = 0;
 
         public static async Task ProduceAsync(string topic, int numMessages, ClientConfig config, bool isTombstone)
@@ -21,7 +27,7 @@ namespace Samples.Kafka
                 BootstrapServers = config.BootstrapServers,
                 MessageTimeoutMs = 3000 // earlier versions would return right away when producing to invalid topics - later versions would block for 30 seconds
             };
-
+            
             using (var producer = new ProducerBuilder<string, string>(producerConfig).Build())
             {
                 for (var i=0; i<numMessages; ++i)
@@ -35,7 +41,7 @@ namespace Samples.Kafka
 
                     try
                     {
-                        var deliveryResult = await producer.ProduceAsync(topic, message);
+                        var deliveryResult = await producer.ProduceAsync(new TopicPartition(topic, GetPartition(config, topic, key)), message);
                         Console.WriteLine($"Produced message to: {deliveryResult.TopicPartitionOffset}");
 
                     }
@@ -57,6 +63,36 @@ namespace Samples.Kafka
             {
                 queueLength = producer.Flush(FlushTimeout);
             }
+        }
+        
+        private static int GetTopicPartitionCount(string topic, ClientConfig config)
+        {
+            var partitions = new HashSet<int>();
+            using var aminClient = new AdminClientBuilder(config).Build();
+            
+            var metadata = aminClient.GetMetadata(topic, TimeSpan.FromSeconds(5));
+            var topicMetadata = metadata.Topics.FirstOrDefault(w => w.Topic == topic);
+            if (topicMetadata != null)
+            {
+                return topicMetadata.Partitions.Count;
+            }
+
+            return 0;
+        }
+
+        private static Partition GetPartition(ClientConfig config, string topic, string key)
+        {
+            var numPartitions = topicPartitions.GetOrAdd(topic, t => GetTopicPartitionCount(topic, config));
+            if (numPartitions == 0)
+            {
+                return new Partition(0);
+            }
+
+            using var md5 = MD5.Create();
+            var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
+            var intHash = BitConverter.ToInt64(hash);
+            
+            return new Partition(Math.Abs((int)(intHash % numPartitions)));
         }
 
         public static void Produce(string topic, int numMessages, ClientConfig config, bool handleDelivery, bool isTombstone)
@@ -83,8 +119,7 @@ namespace Samples.Kafka
                     var message = new Message<string, string> { Key = key, Value = value };
 
                     Console.WriteLine($"Producing record {i}: {message.Key}...");
-
-                    producer.Produce(topic, message, deliveryHandler);
+                    producer.Produce(new TopicPartition(topic, GetPartition(config, topic, key)), message, deliveryHandler);
 
                     if (numMessages % FlushInterval == 0)
                     {
