@@ -7,15 +7,15 @@ namespace Datadog.Trace.Iast;
 
 internal enum SourceTypeName
 {
-    RequestBody,
-    RequestPath,
-    RequestParameterName,
-    RequestParameterValue,
-    RoutedParameterValue,
-    RequestHeaderValue,
-    RequestHeaderName,
-    RequestQuery,
-    CookieName,
-    CookieValue,
-    MatrixParameter
+    RequestBody = 0,
+    RequestPath = 1,
+    RequestParameterName = 2,
+    RequestParameterValue = 3,
+    RoutedParameterValue = 4,
+    RequestHeaderValue = 5,
+    RequestHeaderName = 6,
+    RequestQuery = 7,
+    CookieName = 8,
+    CookieValue = 9,
+    MatrixParameter = 10
 }

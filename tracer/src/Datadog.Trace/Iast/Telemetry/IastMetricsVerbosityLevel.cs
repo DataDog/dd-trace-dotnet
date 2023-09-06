@@ -9,7 +9,7 @@ using System.ComponentModel;
 namespace Datadog.Trace.Iast.Telemetry;
 
 /// <summary>
-/// The unified log levels to use with direct submission
+/// The verbosity telemetry level to be used by Iast
 /// </summary>
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

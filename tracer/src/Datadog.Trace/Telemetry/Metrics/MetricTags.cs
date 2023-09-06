@@ -234,17 +234,17 @@ internal static class MetricTags
 
     public enum IastInstrumentedSources
     {
-        [Description("source_type:http.request.body")] RequestBody,
-        [Description("source_type:http.request.path")] RequestPath,
-        [Description("source_type:http.request.parameter.name")] RequestParameterName,
-        [Description("source_type:http.request.parameter")] RequestParameterValue,
-        [Description("source_type:http.request.path.parameter")] RoutedParameterValue,
-        [Description("source_type:http.request.header")] RequestHeaderValue,
-        [Description("source_type:http.request.header.name")] RequestHeaderName,
-        [Description("source_type:http.request.query")] RequestQuery,
-        [Description("source_type:http.cookie.name")] CookieName,
-        [Description("source_type:http.cookie.value")] CookieValue,
-        [Description("source_type:http.request.matrix.parameter")] MatrixParameter,
+        [Description("source_type:http.request.body")] RequestBody = 0,
+        [Description("source_type:http.request.path")] RequestPath = 1,
+        [Description("source_type:http.request.parameter.name")] RequestParameterName = 2,
+        [Description("source_type:http.request.parameter")] RequestParameterValue = 3,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue = 4,
+        [Description("source_type:http.request.header")] RequestHeaderValue = 5,
+        [Description("source_type:http.request.header.name")] RequestHeaderName = 6,
+        [Description("source_type:http.request.query")] RequestQuery = 7,
+        [Description("source_type:http.cookie.name")] CookieName = 8,
+        [Description("source_type:http.cookie.value")] CookieValue = 9,
+        [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
     }
 
     public enum IastInstrumentedSinks
