@@ -232,6 +232,7 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
     }
 
+    [EnumExtensions]
     public enum IastInstrumentedSources
     {
         [Description("source_type:http.request.body")] RequestBody = 0,
@@ -247,6 +248,7 @@ internal static class MetricTags
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
     }
 
+    [EnumExtensions]
     public enum IastInstrumentedSinks
     {
         [Description("vulnerability_type:none")] None = 0,
