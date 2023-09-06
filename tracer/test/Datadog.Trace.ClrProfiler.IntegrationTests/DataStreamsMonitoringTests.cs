@@ -309,16 +309,13 @@ public class DataStreamsMonitoringTests : TestHelper
 
             var maxByTags = tuples.GroupBy(
                 g => g.Item1,
-                g => g.Item2,
-                (tags, values) => new Tuple<string, long>(tags, values.Max()));
+                (tags, values) => tags);
 
             return maxByTags
-                  .OrderBy(o => o.Item1)
-                  .ThenBy(o => o.Item2)
+                  .OrderBy(o => o)
                   .Select(s => new MockDataStreamsBacklog()
                    {
-                       Tags = s.Item1.Split(','),
-                       Value = s.Item2
+                       Tags = s.Split(',')
                    })
                   .ToArray();
         }

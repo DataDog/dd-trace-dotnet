@@ -2,8 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using System.Security.Cryptography;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Confluent.Kafka;
@@ -17,7 +15,8 @@ namespace Samples.Kafka
         // Flush every x messages
         private const int FlushInterval = 3;
         private static readonly TimeSpan FlushTimeout = TimeSpan.FromSeconds(1);
-        private static readonly ConcurrentDictionary<string, int> topicPartitions = new ();
+        private static readonly ConcurrentDictionary<string, int> TopicPartitions = new ();
+        private static readonly ConcurrentDictionary<string, int> LastUsedPartition = new();
         private static int _messageNumber = 0;
 
         public static async Task ProduceAsync(string topic, int numMessages, ClientConfig config, bool isTombstone)
@@ -82,17 +81,15 @@ namespace Samples.Kafka
 
         private static Partition GetPartition(ClientConfig config, string topic, string key)
         {
-            var numPartitions = topicPartitions.GetOrAdd(topic, t => GetTopicPartitionCount(topic, config));
-            if (numPartitions == 0)
+            var numPartitions = TopicPartitions.GetOrAdd(topic, t => GetTopicPartitionCount(topic, config));
+            var partition = LastUsedPartition.GetOrAdd(topic, t => 0);
+            if (partition >= numPartitions)
             {
-                return new Partition(0);
+                partition = 0;
             }
 
-            using var md5 = MD5.Create();
-            var hash = md5.ComputeHash(Encoding.UTF8.GetBytes(key));
-            var intHash = BitConverter.ToInt64(hash);
-            
-            return new Partition(Math.Abs((int)(intHash % numPartitions)));
+            LastUsedPartition.TryUpdate(topic, partition + 1, partition);
+            return new Partition(partition);
         }
 
         public static void Produce(string topic, int numMessages, ClientConfig config, bool handleDelivery, bool isTombstone)
