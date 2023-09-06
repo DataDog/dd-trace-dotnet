@@ -365,8 +365,9 @@
     <ClInclude Include="IClrLifetime.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
-    <ClInclude Include="IMetadataProvider.h" />
-    <ClInclude Include="MetadataProvider.h" />
+    <ClInclude Include="IMetadataProvider.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
