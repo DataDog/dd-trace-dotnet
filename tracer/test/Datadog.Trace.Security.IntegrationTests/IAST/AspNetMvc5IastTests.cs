@@ -59,7 +59,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
     {
         EnableIast(true);
         EnableEvidenceRedaction(false);
-        EnableTelemetry(IastMetricsVerbosityLevel.Debug);
+        EnableTelemetry((int)IastMetricsVerbosityLevel.Debug);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");

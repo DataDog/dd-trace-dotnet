@@ -347,14 +347,9 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void EnableTelemetry(IastMetricsVerbosityLevel? level)
+        public void EnableTelemetry(int level)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, level.ToString());
-
-            if (level is not null && level != IastMetricsVerbosityLevel.Off)
-            {
-                SetEnvironmentVariable(ConfigurationKeys.Telemetry.Enabled, "1");
-            }
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()

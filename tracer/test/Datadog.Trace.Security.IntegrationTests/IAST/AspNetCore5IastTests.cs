@@ -63,7 +63,7 @@ public abstract class AspNetCore5IastTests50PctSamplingIastEnabled : AspNetCore5
 public class AspNetCore5IastTestsSpanTelemetryIastEnabled : AspNetCore5IastTests
 {
     public AspNetCore5IastTestsSpanTelemetryIastEnabled(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper)
-: base(fixture, outputHelper, true, "AspNetCore5IastSpanTelemetryEnabled", iastTelemetryLevel: IastMetricsVerbosityLevel.Debug, samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100)
+: base(fixture, outputHelper, true, "AspNetCore5IastSpanTelemetryEnabled", iastTelemetryLevel: (int)IastMetricsVerbosityLevel.Debug, samplingRate: 100, isIastDeduplicationEnabled: false, vulnerabilitiesPerRequest: 100)
     {
     }
 
@@ -398,7 +398,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
 
 public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, IastMetricsVerbosityLevel iastTelemetryLevel = IastMetricsVerbosityLevel.Off)
+    public AspNetCore5IastTests(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableIast, string testName, bool? isIastDeduplicationEnabled = null, int? samplingRate = null, int? vulnerabilitiesPerRequest = null, bool? redactionEnabled = false, int iastTelemetryLevel = (int)IastMetricsVerbosityLevel.Off)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {
         Fixture = fixture;
@@ -423,7 +423,7 @@ public abstract class AspNetCore5IastTests : AspNetBase, IClassFixture<AspNetCor
 
     protected int? SamplingRate { get; }
 
-    protected IastMetricsVerbosityLevel? IastTelemetryLevel { get; }
+    protected int IastTelemetryLevel { get; }
 
     public override void Dispose()
     {
