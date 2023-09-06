@@ -275,21 +275,22 @@ namespace Datadog.Trace
         protected virtual IDiscoveryService GetDiscoveryService(ImmutableTracerSettings settings)
             => DiscoveryService.Create(settings.ExporterInternal);
 
-        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, List<string> constantTags, string prefix = null)
+        internal static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName, List<string> constantTags, string prefix = null)
         {
             try
             {
-                if (settings.EnvironmentInternal != null)
-                {
-                    constantTags?.Add($"env:{settings.EnvironmentInternal}");
-                }
-
-                if (settings.ServiceVersionInternal != null)
-                {
-                    constantTags?.Add($"version:{settings.ServiceVersionInternal}");
-                }
-
                 var statsd = new DogStatsdService();
+                var config = new StatsdConfig
+                {
+                    ConstantTags = constantTags?.ToArray(),
+                    Prefix = prefix,
+                    // note that if these are null, statsd tries to grab them directly from the environment, which could be unsafe
+                    ServiceName = NormalizerTraceProcessor.NormalizeService(serviceName),
+                    Environment = settings.EnvironmentInternal,
+                    ServiceVersion = settings.ServiceVersionInternal,
+                    Advanced = { TelemetryFlushInterval = null }
+                };
+
                 switch (settings.ExporterInternal.MetricsTransport)
                 {
                     case MetricsTransportType.NamedPipe:
@@ -297,35 +298,21 @@ namespace Datadog.Trace
                         // They are retrieved within the vendored code, so there is nothing to pass.
                         // Passing anything through StatsdConfig may cause bugs when windows named pipes should be used.
                         Log.Information("Using windows named pipes for metrics transport.");
-                        statsd.Configure(new StatsdConfig
-                        {
-                            ConstantTags = constantTags?.ToArray(),
-                            Prefix = prefix
-                        });
                         break;
 #if NETCOREAPP3_1_OR_GREATER
                     case MetricsTransportType.UDS:
                         Log.Information("Using unix domain sockets for metrics transport.");
-                        statsd.Configure(new StatsdConfig
-                        {
-                            StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.ExporterInternal.MetricsUnixDomainSocketPathInternal}",
-                            ConstantTags = constantTags?.ToArray(),
-                            Prefix = prefix
-                        });
+                        config.StatsdServerName = $"{ExporterSettings.UnixDomainSocketPrefix}{settings.ExporterInternal.MetricsUnixDomainSocketPathInternal}";
                         break;
 #endif
                     case MetricsTransportType.UDP:
                     default:
-                        statsd.Configure(new StatsdConfig
-                        {
-                            StatsdServerName = settings.ExporterInternal.AgentUriInternal.DnsSafeHost,
-                            StatsdPort = settings.ExporterInternal.DogStatsdPortInternal,
-                            ConstantTags = constantTags?.ToArray(),
-                            Prefix = prefix
-                        });
+                        config.StatsdServerName = settings.ExporterInternal.AgentUriInternal.DnsSafeHost;
+                        config.StatsdPort = settings.ExporterInternal.DogStatsdPortInternal;
                         break;
                 }
 
+                statsd.Configure(config);
                 return statsd;
             }
             catch (Exception ex)
@@ -337,17 +324,29 @@ namespace Datadog.Trace
 
         private static IDogStatsd CreateDogStatsdClient(ImmutableTracerSettings settings, string serviceName)
         {
-            var constantTags = new List<string>
+            var customTagCount = settings.GlobalTagsInternal.Count;
+            var constantTags = new List<string>(5 + customTagCount)
             {
                 "lang:.NET",
                 $"lang_interpreter:{FrameworkDescription.Instance.Name}",
                 $"lang_version:{FrameworkDescription.Instance.ProductVersion}",
                 $"tracer_version:{TracerConstants.AssemblyVersion}",
-                $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}",
                 $"{Tags.RuntimeId}:{Tracer.RuntimeId}"
             };
 
-            return CreateDogStatsdClient(settings, constantTags);
+            if (customTagCount > 0)
+            {
+                var tagProcessor = new TruncatorTagsProcessor();
+                foreach (var kvp in settings.GlobalTagsInternal)
+                {
+                    var key = kvp.Key;
+                    var value = kvp.Value;
+                    tagProcessor.ProcessMeta(ref key, ref value);
+                    constantTags.Add($"{key}:{value}");
+                }
+            }
+
+            return CreateDogStatsdClient(settings, serviceName, constantTags);
         }
 
         /// <summary>
