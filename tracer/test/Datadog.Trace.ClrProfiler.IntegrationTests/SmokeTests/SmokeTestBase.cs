@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Text.RegularExpressions;
 using Datadog.Trace.TestHelpers;
 using Xunit;
 using Xunit.Abstractions;
@@ -133,6 +134,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.SmokeTests
 
             ErrorHelpers.CheckForKnownSkipConditions(Output, result.ExitCode, result.StandardError, EnvironmentHelper);
 
+#if !NET5_0_OR_GREATER
+            if (result.StandardOutput.Contains("App completed successfully")
+                && result.ExitCode != expectedExitCode
+                && Regex.IsMatch(result.StandardError, @"open\(/proc/\d+/mem\) FAILED 2 \(No such file or directory\)"))
+            {
+                // The above message is the last thing set before we exit.
+                // We can still get flake on shutdown (which we can't isolate), but for some reason
+                // the crash dump _also_ fails. As this doesn't give us any useful information,
+                // Skip the test instead of giving flake
+                throw new SkipException("Error during shutting down but crash dump failed");
+            }
+#endif
             ExitCodeException.ThrowIfNonExpected(result.ExitCode, expectedExitCode, result.StandardError);
 
             if (expectedExitCode == 0)
