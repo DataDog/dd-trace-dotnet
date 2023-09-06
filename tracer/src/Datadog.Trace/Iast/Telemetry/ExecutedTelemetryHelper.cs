@@ -17,39 +17,27 @@ internal class ExecutedTelemetryHelper
     private const string SourceExecutedTag = "executed.source.";
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
-    private static bool? _enabled = null;
-    private static bool? _enabledDebug = null;
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
-    private int[] _executedSinks = new int[Enum.GetValues(typeof(IastInstrumentedSinks)).Length];
-    private int[] _executedSources = new int[Enum.GetValues(typeof(IastInstrumentedSources)).Length];
+    private int[] _executedSinks = new int[IastInstrumentedSinks.Length];
+    private int[] _executedSources = new int[IastInstrumentedSources.Length];
     private int _executedPropagations = 0;
+    private object _metricsLock = new();
 
     public static bool Enabled()
-    {
-        if (_enabled is null)
-        {
-            // This class does not send any mandatory telemetry
-            _enabled = Iast.Instance.Settings.TelemetryEnabled && _verbosityLevel <= IastMetricsVerbosityLevel.Information;
-        }
-
-        return _enabled ?? false;
-    }
+        => _verbosityLevel <= IastMetricsVerbosityLevel.Information;
 
     public static bool EnabledDebug()
-    {
-        if (_enabledDebug is null)
-        {
-            _enabledDebug = Iast.Instance.Settings.TelemetryEnabled && _verbosityLevel == IastMetricsVerbosityLevel.Debug;
-        }
-
-        return _enabledDebug ?? false;
-    }
+        => _verbosityLevel == IastMetricsVerbosityLevel.Debug;
 
     public void AddExecutedSink(IastInstrumentedSinks type)
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
-            _executedSinks[(int)type]++;
+            lock (_metricsLock)
+            {
+                _executedSinks[(int)type]++;
+            }
+
             TelemetryFactory.Metrics.RecordCountIastExecutedSinks(type);
         }
     }
@@ -58,7 +46,11 @@ internal class ExecutedTelemetryHelper
     {
         if (_verbosityLevel == IastMetricsVerbosityLevel.Debug)
         {
-            _executedPropagations++;
+            lock (_metricsLock)
+            {
+                _executedPropagations++;
+            }
+
             TelemetryFactory.Metrics.RecordCountIastExecutedPropagations();
         }
     }
@@ -67,31 +59,38 @@ internal class ExecutedTelemetryHelper
     {
         if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
         {
-            _executedSources[(int)type]++;
+            lock (_metricsLock)
+            {
+                _executedSources[(int)type]++;
+            }
+
             TelemetryFactory.Metrics.RecordCountIastExecutedSources(type);
         }
     }
 
     public void GenerateMetricTags(List<Tuple<string, int>> tags)
     {
-        if (_executedPropagations > 0)
+        lock (_metricsLock)
         {
-            tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
-        }
-
-        for (int i = 0; i < _executedSources.Length; i++)
-        {
-            if (_executedSources[i] > 0)
+            if (_executedPropagations > 0)
             {
-                tags.Add(Tuple.Create(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]));
+                tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
             }
-        }
 
-        for (int i = 0; i < _executedSinks.Length; i++)
-        {
-            if (_executedSinks[i] > 0)
+            for (int i = 0; i < _executedSources.Length; i++)
             {
-                tags.Add(Tuple.Create(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]));
+                if (_executedSources[i] > 0)
+                {
+                    tags.Add(Tuple.Create(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]));
+                }
+            }
+
+            for (int i = 0; i < _executedSinks.Length; i++)
+            {
+                if (_executedSinks[i] > 0)
+                {
+                    tags.Add(Tuple.Create(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]));
+                }
             }
         }
 
