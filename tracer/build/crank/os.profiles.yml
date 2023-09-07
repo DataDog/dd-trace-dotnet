@@ -48,6 +48,7 @@ profiles:
           DD_TRACE_DEBUG: 0
           DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
           DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
+          DD_TRACE_LOG_DIRECTORY: "{{ linuxProfilerPath }}/{{ commit_hash }}/logs"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
