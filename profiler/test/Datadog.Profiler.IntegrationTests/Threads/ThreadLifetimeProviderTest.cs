@@ -47,6 +47,23 @@ namespace Datadog.Profiler.IntegrationTests.Threads
             Assert.True(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
         }
 
+        [TestAppFact("Samples.Computer01", new[] { /*"net45", "net48",*/ "net6.0", "net7.0" })]
+        public void ShouldNotGetThreadLifetimeSamplesByDefault(string appName, string framework, string appAssembly)
+        {
+            var runner = new TestApplicationRunner(appName, framework, appAssembly, _output, commandLine: ScenarioGenerics);
+
+            // disable default profilers
+            runner.Environment.SetVariable(EnvironmentVariables.WallTimeProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.CpuProfilerEnabled, "0");
+            runner.Environment.SetVariable(EnvironmentVariables.GarbageCollectionProfilerEnabled, "0");
+
+            // only thread lifetime profiler is enabled so should only see the corresponding samples
+            using var agent = MockDatadogAgent.CreateHttpAgent(_output);
+            runner.Run(agent);
+            Assert.False(agent.NbCallsOnProfilingEndpoint > 0);
+            Assert.False(CheckSamplesAreThreadTimeline(runner.Environment.PprofDir));
+        }
+
         private bool CheckSamplesAreThreadTimeline(string directory)
         {
             var threadStartFrame = new StackFrame(ThreadStartFrame);
