@@ -448,14 +448,6 @@
     <ClCompile Include="RawSample.cpp">
       <Filter>Profiler-Driver</Filter>
     </ClCompile>
-<<<<<<< HEAD
-=======
-    <ClCompile Include="ApplicationStore.cpp" />
-    <ClCompile Include="RuntimeIdStore.cpp" />
-    <ClCompile Include="RawExceptionSample.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
->>>>>>> bd3813db5 (Add startup settings as metadata via libdatadog)
     <ClCompile Include="ExceptionsProvider.cpp">
       <Filter>Exceptions</Filter>
     </ClCompile>

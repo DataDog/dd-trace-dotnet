@@ -41,7 +41,7 @@ MetadataProvider::MetadataProvider()
     _metadata.reserve(16);
 }
 
-void MetadataProvider::Initialize(IConfiguration* configuration)
+void MetadataProvider::Initialize()
 {
     AddEnvVar(SectionEnvVars, ExceptionSampleLimit, EnvironmentVariables::ExceptionSampleLimit);
     AddEnvVar(SectionEnvVars, AllocationSampleLimit, EnvironmentVariables::AllocationSampleLimit);
@@ -63,20 +63,20 @@ void MetadataProvider::Initialize(IConfiguration* configuration)
     }
 }
 
-void MetadataProvider::Add(std::string section, std::string key, std::string value)
+void MetadataProvider::Add(std::string const& section, std::string const& key, std::string const& value)
 {
     auto& element = GetOrAdd(section);
     element.second.push_back(std::make_pair(key, value));
 }
 
-std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& MetadataProvider::Get()
+MetadataProvider::metadata_t const& MetadataProvider::Get()
 {
     return _metadata;
 }
 
-std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& MetadataProvider::GetOrAdd(std::string section)
+MetadataProvider::section_t& MetadataProvider::GetOrAdd(std::string const& section)
 {
-    for (std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& part : _metadata)
+    for (auto& part : _metadata)
     {
         if (part.first == section)
         {
@@ -84,27 +84,15 @@ std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& Metada
         }
     }
 
-    _metadata.push_back(std::make_pair(section, std::vector<std::pair<std::string, std::string>>()));
+    _metadata.push_back(section_t(section, std::vector<std::pair<std::string, std::string>>()));
     return _metadata[_metadata.size()-1];
 }
 
-void MetadataProvider::AddEnvVar(std::string section, std::string name, shared::WSTRING var)
+void MetadataProvider::AddEnvVar(std::string const& section, std::string const& name, shared::WSTRING const& var)
 {
-    std::string value;
-    if (GetEnvVar(var, value))
+    auto value = shared::GetEnvironmentValue(var);
+    if (!value.empty())
     {
-        Add(section, name, value);
+        Add(section, name, shared::ToString(value));
     }
-}
-
-bool MetadataProvider::GetEnvVar(shared::WSTRING name, std::string& value)
-{
-    auto var = shared::GetEnvironmentValue(name);
-    if (var.empty())
-    {
-        return false;
-    }
-
-    value = shared::ToString(var);
-    return true;
 }

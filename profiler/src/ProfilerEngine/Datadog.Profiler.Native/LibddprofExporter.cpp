@@ -833,7 +833,7 @@ std::string LibddprofExporter::GetMetadata() const
     // TODO: check if we plan to update the metadata after the application starts
     //       otherwise, we could cache the result once for all.
 
-    auto metadata = _metadataProvider->Get();
+    auto const& metadata = _metadataProvider->Get();
     if (metadata.empty())
     {
         return "";
@@ -845,25 +845,25 @@ std::string LibddprofExporter::GetMetadata() const
     std::stringstream builder;
     builder << "{ \"systemInfo\": ";
     builder << "{";
-    for (auto const& section : metadata)
+    for (auto const& [section, kvp] : metadata)
     {
         currentSection++;
 
         builder << "\"";
-        builder << section.first;
+        builder << section;
         builder << "\":";
         builder << "{";
 
-        auto keyCount = section.second.size();
+        auto keyCount = kvp.size();
         auto currentKey = 0;
-        for (auto const& key : section.second)
+        for (auto const& [key, value] : kvp)
         {
             currentKey++;
             builder << "\"";
-            builder << key.first;
+            builder << key;
             builder << "\":";
             builder << "\"";
-            builder << key.second;
+            builder << value;
             builder << "\"";
 
             if (currentKey < keyCount)

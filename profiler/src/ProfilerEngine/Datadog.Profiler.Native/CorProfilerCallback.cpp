@@ -822,7 +822,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
 
     _pConfiguration = std::make_unique<Configuration>();
     _pMetadataProvider = std::make_unique<MetadataProvider>();
-    _pMetadataProvider->Initialize(_pConfiguration.get());
+    _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
     double coresThreshold = _pConfiguration->MinimumCores();

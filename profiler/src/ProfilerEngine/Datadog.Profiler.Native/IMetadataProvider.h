@@ -11,9 +11,12 @@
 class IMetadataProvider
 {
 public:
-    virtual void Initialize(IConfiguration* configuration) = 0;
-    virtual void Add(std::string section, std::string key, std::string value) = 0;
-    virtual std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& Get() = 0;
+    using section_t = std::pair<std::string, std::vector<std::pair<std::string, std::string>>>;
+    using metadata_t = std::vector<section_t>;
 
     virtual ~IMetadataProvider() = default;
+
+    virtual void Initialize() = 0;
+    virtual void Add(std::string const& section, std::string const& key, std::string const& value) = 0;
+    virtual metadata_t const& Get() = 0;
 };

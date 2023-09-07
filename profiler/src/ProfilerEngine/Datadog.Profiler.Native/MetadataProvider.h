@@ -41,15 +41,14 @@ public:
     ~MetadataProvider() override = default;
 
     // Inherited via IMetadataProvider
-    virtual void Initialize(IConfiguration* configuration) override;
-    virtual void Add(std::string section, std::string key, std::string value) override;
-    virtual std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>>& Get() override;
+    virtual void Initialize() override;
+    virtual void Add(std::string const& section, std::string const& key, std::string const& value) override;
+    virtual metadata_t const& Get() override;
 
 private:
-    std::pair<std::string, std::vector<std::pair<std::string, std::string>>>& GetOrAdd(std::string section);
-    void AddEnvVar(std::string section, std::string name, shared::WSTRING var);
-    bool GetEnvVar(shared::WSTRING name, std::string& value);
+    section_t& GetOrAdd(std::string const& section);
+    void AddEnvVar(std::string const& section, std::string const& name, shared::WSTRING const& var);
 
-        private:
-    std::vector<std::pair<std::string, std::vector<std::pair<std::string, std::string>>>> _metadata;
+private:
+    metadata_t _metadata;
 };
