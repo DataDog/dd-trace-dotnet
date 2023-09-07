@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Telemetry;
 using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
