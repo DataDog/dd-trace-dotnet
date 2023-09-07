@@ -1,3 +1,4 @@
+using System;
 using System.Reflection;
 
 namespace AssemblyLoadContextRedirect
@@ -16,6 +17,7 @@ namespace AssemblyLoadContextRedirect
 
             var type = assembly.GetType("AssemblyLoadContextRedirect.StuffUsingTracer");
             type.GetMethod("Invoke", BindingFlags.Public | BindingFlags.Static).Invoke(null, null);
+            Console.WriteLine("App completed successfully");
         }
     }
 }

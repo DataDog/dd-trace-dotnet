@@ -37,6 +37,7 @@ namespace ServiceBus.Minimal.Rebus
                 .Start();
 
             SendMessages(connectionString);
+            Console.WriteLine("App completed successfully");
         }
 
         static void SendMessages(string connectionString)

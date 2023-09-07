@@ -18,6 +18,7 @@ namespace EnumerateAssemblyReferences
             }
 
             Console.WriteLine(names);
+            Console.WriteLine("App completed successfully");
         }
     }
 }

@@ -78,7 +78,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
             const auto caller = GetFunctionInfo(metadataImport, methodDef);
             if (!caller.IsValid())
             {
-                Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
+                Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
                 continue;
             }
 
@@ -88,7 +88,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
             auto hr = functionInfo.method_signature.TryParse();
             if (FAILED(hr))
             {
-                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+                Logger::Warn("    * Skipping ", functionInfo.method_signature.str(), ": the method signature cannot be parsed.");
                 continue;
             }
 
@@ -107,7 +107,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
                     moduleInfo.assembly.app_domain_id, pCorAssemblyProperty, enable_by_ref_instrumentation,
                     enable_calltarget_state_by_ref);
 
-                Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+                Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                              " AppDomain ", moduleInfo.assembly.app_domain_id, " ",
                              moduleInfo.assembly.app_domain_name);
 
@@ -386,7 +386,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The caller for the methoddef: ",
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The methoddef: ",
                       shared::TokenStr(&moveNextMethod), " is not valid!");
         return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }

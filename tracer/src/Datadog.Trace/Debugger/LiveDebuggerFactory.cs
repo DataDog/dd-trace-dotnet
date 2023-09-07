@@ -68,12 +68,7 @@ internal class LiveDebuggerFactory
         }
         else
         {
-            var constantTags = new List<string>
-            {
-                $"service:{NormalizerTraceProcessor.NormalizeService(serviceName)}"
-            };
-
-            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, constantTags, DebuggerSettings.DebuggerMetricPrefix);
+            statsd = TracerManagerFactory.CreateDogStatsdClient(tracerSettings, serviceName, constantTags: null, DebuggerSettings.DebuggerMetricPrefix);
         }
 
         telemetry.ProductChanged(TelemetryProductType.DynamicInstrumentation, enabled: true, error: null);
