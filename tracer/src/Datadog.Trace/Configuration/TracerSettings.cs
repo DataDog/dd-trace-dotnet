@@ -1055,12 +1055,12 @@ namespace Datadog.Trace.Configuration
                 {
                     headerTags.Add(headerName.Trim(), string.Empty);
                 }
-                else if (headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: false, out var normalizedTagName))
+                else if (headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: false, out var normalizedTagName))
                 {
-                    // If the user has provided a tag name, then we don't normalize periods in the provided tag name
+                    // If the user has provided a tag name, then we don't normalize periods or spaces in the provided tag name
                     headerTags.Add(headerName.Trim(), normalizedTagName);
                 }
-                else if (!headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriods: true, out var normalizedTagNameNoPeriods))
+                else if (!headerTagsNormalizationFixEnabled && providedTagName.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: true, out var normalizedTagNameNoPeriods))
                 {
                     // Back to the previous behaviour if the flag is set
                     headerTags.Add(headerName.Trim(), normalizedTagNameNoPeriods);
