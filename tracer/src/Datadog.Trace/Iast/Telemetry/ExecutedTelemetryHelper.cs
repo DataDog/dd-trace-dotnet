@@ -68,20 +68,20 @@ internal class ExecutedTelemetryHelper
         }
     }
 
-    public void GenerateMetricTags(List<Tuple<string, int>> tags)
+    public void GenerateMetricTags(ITags tags)
     {
         lock (_metricsLock)
         {
             if (_executedPropagations > 0)
             {
-                tags.Add(Tuple.Create(PropagationExecutedTag, _executedPropagations));
+                tags.SetMetric(PropagationExecutedTag, _executedPropagations);
             }
 
             for (int i = 0; i < _executedSources.Length; i++)
             {
                 if (_executedSources[i] > 0)
                 {
-                    tags.Add(Tuple.Create(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]));
+                    tags.SetMetric(GetExecutedSourceTag((IastInstrumentedSources)i), _executedSources[i]);
                 }
             }
 
@@ -89,7 +89,7 @@ internal class ExecutedTelemetryHelper
             {
                 if (_executedSinks[i] > 0)
                 {
-                    tags.Add(Tuple.Create(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]));
+                    tags.SetMetric(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]);
                 }
             }
         }
