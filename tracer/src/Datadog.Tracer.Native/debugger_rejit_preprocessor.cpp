@@ -78,7 +78,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
             const auto caller = GetFunctionInfo(metadataImport, methodDef);
             if (!caller.IsValid())
             {
-                Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
+                Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
                 continue;
             }
 
@@ -88,7 +88,7 @@ ULONG DebuggerRejitPreprocessor::PreprocessLineProbes(
             auto hr = functionInfo.method_signature.TryParse();
             if (FAILED(hr))
             {
-                Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+                Logger::Warn("    * Skipping ", functionInfo.method_signature.str(), ": the method signature cannot be parsed.");
                 continue;
             }
 
@@ -386,7 +386,7 @@ std::tuple<HRESULT, mdMethodDef, FunctionInfo> DebuggerRejitPreprocessor::Transf
     auto caller = GetFunctionInfo(metadataImport, moveNextMethod);
     if (!caller.IsValid())
     {
-        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The caller for the methoddef: ",
+        Logger::Error("DebuggerRejitPreprocessor::TransformKickOffToMoveNext: The methoddef: ",
                       shared::TokenStr(&moveNextMethod), " is not valid!");
         return {E_FAIL, mdMethodDefNil, FunctionInfo()};
     }

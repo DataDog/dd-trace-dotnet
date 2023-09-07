@@ -1099,8 +1099,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                 const auto caller = GetFunctionInfo(metadata_import, methodDef);
                                 if (!caller.IsValid())
                                 {
-                                    Logger::Warn("    * The caller for the methoddef: ",
-                                                 shared::TokenStr(&parent_token), " is not valid!");
+                                    Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                                        ": the methoddef is not valid!");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
@@ -1111,8 +1111,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                 auto hr = functionInfo.method_signature.TryParse();
                                 if (FAILED(hr))
                                 {
-                                    Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                                                 " cannot be parsed.");
+                                    Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                                 ": the method signature cannot be parsed.");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
