@@ -276,7 +276,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
     }
     else
     {
-        Logger::Info("JIT Inlining is enabled.");
+        Logger::Debug("JIT Inlining is enabled.");
     }
 
     if (DisableOptimizations())
@@ -287,7 +287,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
 
     if (IsNGENEnabled())
     {
-        Logger::Info("NGEN is enabled.");
+        Logger::Debug("NGEN is enabled.");
         event_mask |= COR_PRF_MONITOR_CACHE_SEARCHES;
     }
     else
@@ -481,6 +481,7 @@ HRESULT STDMETHODCALLTYPE CorProfiler::AssemblyLoadFinished(AssemblyID assembly_
 }
 
 void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
+                                       const shared::WSTRING& rewrite_reason,
                                        const shared::WSTRING& nativemethods_type_name,
                                        const shared::WSTRING& library_path)
 {
@@ -499,11 +500,11 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
 
         if (!fs::exists(native_profiler_file))
         {
-            Logger::Warn("Unable to rewrite PInvokes. Native library not found: ", native_profiler_file);
+            Logger::Warn("Unable to rewrite PInvokes for ", rewrite_reason, ". Native library not found: ", native_profiler_file);
             return;
         }
 
-        Logger::Info("Rewriting PInvokes to native: ", native_profiler_file);
+        Logger::Info("Rewriting PInvokes to native for ", rewrite_reason, ": ", native_profiler_file);
 
         // Define the actual profiler file path as a ModuleRef
         mdModuleRef profiler_ref;
@@ -524,7 +525,7 @@ void CorProfiler::RewritingPInvokeMaps(const ModuleMetadata& module_metadata,
                 auto methodDef = *enumIterator;
 
                 const auto& caller = GetFunctionInfo(module_metadata.metadata_import, methodDef);
-                Logger::Info("Rewriting PInvoke method: ", caller.name);
+                Logger::Debug("Rewriting PInvoke method: ", caller.name);
 
                 // Get the current PInvoke map to extract the flags and the entrypoint name
                 DWORD pdwMappingFlags;
@@ -874,13 +875,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         Logger::Info("ModuleLoadFinished: ", managed_profiler_name, " v", assemblyVersion, " - Fix PInvoke maps");
         managedProfilerModuleId_ = module_id;
 #ifdef _WIN32
-        RewritingPInvokeMaps(module_metadata, windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, appsec_windows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
 #else
-        RewritingPInvokeMaps(module_metadata, nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, appsec_nonwindows_nativemethods_type);
-        RewritingPInvokeMaps(module_metadata, debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
@@ -889,13 +890,13 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         if (fs::exists(native_loader_library_path))
         {
             auto native_loader_file_path = shared::ToWSTRING(native_loader_library_path);
-            RewritingPInvokeMaps(module_metadata, native_loader_nativemethods_type, native_loader_file_path);
+            RewritingPInvokeMaps(module_metadata, WStr("native loader"), native_loader_nativemethods_type, native_loader_file_path);
         }
 
         if (ShouldRewriteProfilerMaps())
         {
             auto profiler_library_path = shared::GetEnvironmentValue(WStr("DD_INTERNAL_PROFILING_NATIVE_ENGINE_PATH"));
-            RewritingPInvokeMaps(module_metadata, profiler_nativemethods_type, profiler_library_path);
+            RewritingPInvokeMaps(module_metadata, WStr("continuous profiler"), profiler_nativemethods_type, profiler_library_path);
         }
 
         if (IsVersionCompatibilityEnabled())
@@ -1099,8 +1100,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                 const auto caller = GetFunctionInfo(metadata_import, methodDef);
                                 if (!caller.IsValid())
                                 {
-                                    Logger::Warn("    * The caller for the methoddef: ",
-                                                 shared::TokenStr(&parent_token), " is not valid!");
+                                    Logger::Warn("    * Skipping ", shared::TokenStr(&parent_token),
+                                        ": the methoddef is not valid!");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
@@ -1111,8 +1112,8 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
                                 auto hr = functionInfo.method_signature.TryParse();
                                 if (FAILED(hr))
                                 {
-                                    Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(),
-                                                 " cannot be parsed.");
+                                    Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                                                 ": the method signature cannot be parsed.");
                                     customAttributesIterator = ++customAttributesIterator;
                                     continue;
                                 }
