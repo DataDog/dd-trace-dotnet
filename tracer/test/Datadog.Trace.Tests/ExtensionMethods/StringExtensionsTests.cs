@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.ExtensionMethods;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Tests.ExtensionMethods
@@ -45,6 +46,20 @@ namespace Datadog.Trace.Tests.ExtensionMethods
             {
                 Assert.Equal(expectedTagName, actualTagName);
             }
+        }
+
+        [Theory]
+        [InlineData("Some.Header", true, "some_header")]
+        [InlineData("Some Header", true, "some_header")]
+        [InlineData("Some.Header", false, "some.header")]
+        [InlineData("Some Header", false, "some header")]
+        [InlineData(" Some Header ", true, "some_header")]  // always trim whitespace
+        [InlineData(" Some Header ", false, "some header")] // always trim whitespace
+        public void TryConvertToNormalizedTagName_NormalizePeriodsAndSpaces(string input, bool normalizePeriodsAndSpaces, string expectedTagName)
+        {
+            input.TryConvertToNormalizedTagName(normalizePeriodsAndSpaces: normalizePeriodsAndSpaces, out var actualTagName).Should().BeTrue();
+
+            Assert.Equal(expectedTagName, actualTagName);
         }
 
         [Theory]
