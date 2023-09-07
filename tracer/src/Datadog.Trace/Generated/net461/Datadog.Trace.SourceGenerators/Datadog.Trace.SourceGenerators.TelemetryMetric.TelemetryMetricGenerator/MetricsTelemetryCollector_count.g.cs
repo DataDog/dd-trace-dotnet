@@ -6,6 +6,8 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
+    // These can technically overflow, but it's _very_ unlikely as we reset every minute
+    // Negative values are normalized during polling
     public void RecordCountLogCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.LogLevel tag, int increment = 1)
     {
         var index = 0 + (int)tag;
@@ -200,8 +202,910 @@ internal partial class MetricsTelemetryCollector
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
-    public void RecordCountIastRequestTainted(int increment = 1)
+    public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[479], increment);
+        var index = 479 + ((int)tag1 * 8) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
     }
+
+    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
+    {
+        var index = 519 + ((int)tag1 * 8) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    {
+        var index = 559 + ((int)tag1 * 2) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    {
+        var index = 569 + ((int)tag1 * 2) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityManualApiEvent(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 579 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityEventsEnqueueForSerialization(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[583], increment);
+    }
+
+    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
+    {
+        var index = 584 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityEndpointPayloadRequestsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag2, int increment = 1)
+    {
+        var index = 586 + ((int)tag1 * 4) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
+    {
+        var index = 594 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
+    {
+        var index = 601 + ((int)tag1 * 6) + (int)tag2;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSearchCommits(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[643], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 644 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsObjectsPack(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[648], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 649 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettings(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[653], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 654 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    {
+        var index = 658 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsRequest(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[661], increment);
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+        var index = 662 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[666], increment);
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[667], increment);
+    }
+
+    public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 668 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 672 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+        var index = 676 + (int)tag;
+        Interlocked.Add(ref _buffer.Counts[index], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[680], increment);
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
+    {
+        Interlocked.Add(ref _buffer.Counts[681], increment);
+    }
+
+    /// <summary>
+    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> values.
+    /// </summary>
+    private static AggregatedMetric[] GetCountBuffer()
+        => new AggregatedMetric[]
+        {
+            // logs_created, index = 0
+            new(new[] { "level:debug" }),
+            new(new[] { "level:info" }),
+            new(new[] { "level:warn" }),
+            new(new[] { "level:error" }),
+            // integration_errors, index = 4
+            new(new[] { "integration_name:datadog", "error_type:duck_typing" }),
+            new(new[] { "integration_name:datadog", "error_type:invoker" }),
+            new(new[] { "integration_name:datadog", "error_type:execution" }),
+            new(new[] { "integration_name:opentracing", "error_type:duck_typing" }),
+            new(new[] { "integration_name:opentracing", "error_type:invoker" }),
+            new(new[] { "integration_name:opentracing", "error_type:execution" }),
+            new(new[] { "integration_name:ciapp", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ciapp", "error_type:invoker" }),
+            new(new[] { "integration_name:ciapp", "error_type:execution" }),
+            new(new[] { "integration_name:debugger_span_probe", "error_type:duck_typing" }),
+            new(new[] { "integration_name:debugger_span_probe", "error_type:invoker" }),
+            new(new[] { "integration_name:debugger_span_probe", "error_type:execution" }),
+            new(new[] { "integration_name:aws_lambda", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aws_lambda", "error_type:invoker" }),
+            new(new[] { "integration_name:aws_lambda", "error_type:execution" }),
+            new(new[] { "integration_name:msbuild", "error_type:duck_typing" }),
+            new(new[] { "integration_name:msbuild", "error_type:invoker" }),
+            new(new[] { "integration_name:msbuild", "error_type:execution" }),
+            new(new[] { "integration_name:httpmessagehandler", "error_type:duck_typing" }),
+            new(new[] { "integration_name:httpmessagehandler", "error_type:invoker" }),
+            new(new[] { "integration_name:httpmessagehandler", "error_type:execution" }),
+            new(new[] { "integration_name:httpsocketshandler", "error_type:duck_typing" }),
+            new(new[] { "integration_name:httpsocketshandler", "error_type:invoker" }),
+            new(new[] { "integration_name:httpsocketshandler", "error_type:execution" }),
+            new(new[] { "integration_name:winhttphandler", "error_type:duck_typing" }),
+            new(new[] { "integration_name:winhttphandler", "error_type:invoker" }),
+            new(new[] { "integration_name:winhttphandler", "error_type:execution" }),
+            new(new[] { "integration_name:curlhandler", "error_type:duck_typing" }),
+            new(new[] { "integration_name:curlhandler", "error_type:invoker" }),
+            new(new[] { "integration_name:curlhandler", "error_type:execution" }),
+            new(new[] { "integration_name:aspnetcore", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aspnetcore", "error_type:invoker" }),
+            new(new[] { "integration_name:aspnetcore", "error_type:execution" }),
+            new(new[] { "integration_name:adonet", "error_type:duck_typing" }),
+            new(new[] { "integration_name:adonet", "error_type:invoker" }),
+            new(new[] { "integration_name:adonet", "error_type:execution" }),
+            new(new[] { "integration_name:aspnet", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aspnet", "error_type:invoker" }),
+            new(new[] { "integration_name:aspnet", "error_type:execution" }),
+            new(new[] { "integration_name:aspnetmvc", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aspnetmvc", "error_type:invoker" }),
+            new(new[] { "integration_name:aspnetmvc", "error_type:execution" }),
+            new(new[] { "integration_name:aspnetwebapi2", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aspnetwebapi2", "error_type:invoker" }),
+            new(new[] { "integration_name:aspnetwebapi2", "error_type:execution" }),
+            new(new[] { "integration_name:graphql", "error_type:duck_typing" }),
+            new(new[] { "integration_name:graphql", "error_type:invoker" }),
+            new(new[] { "integration_name:graphql", "error_type:execution" }),
+            new(new[] { "integration_name:hotchocolate", "error_type:duck_typing" }),
+            new(new[] { "integration_name:hotchocolate", "error_type:invoker" }),
+            new(new[] { "integration_name:hotchocolate", "error_type:execution" }),
+            new(new[] { "integration_name:mongodb", "error_type:duck_typing" }),
+            new(new[] { "integration_name:mongodb", "error_type:invoker" }),
+            new(new[] { "integration_name:mongodb", "error_type:execution" }),
+            new(new[] { "integration_name:xunit", "error_type:duck_typing" }),
+            new(new[] { "integration_name:xunit", "error_type:invoker" }),
+            new(new[] { "integration_name:xunit", "error_type:execution" }),
+            new(new[] { "integration_name:nunit", "error_type:duck_typing" }),
+            new(new[] { "integration_name:nunit", "error_type:invoker" }),
+            new(new[] { "integration_name:nunit", "error_type:execution" }),
+            new(new[] { "integration_name:mstestv2", "error_type:duck_typing" }),
+            new(new[] { "integration_name:mstestv2", "error_type:invoker" }),
+            new(new[] { "integration_name:mstestv2", "error_type:execution" }),
+            new(new[] { "integration_name:wcf", "error_type:duck_typing" }),
+            new(new[] { "integration_name:wcf", "error_type:invoker" }),
+            new(new[] { "integration_name:wcf", "error_type:execution" }),
+            new(new[] { "integration_name:webrequest", "error_type:duck_typing" }),
+            new(new[] { "integration_name:webrequest", "error_type:invoker" }),
+            new(new[] { "integration_name:webrequest", "error_type:execution" }),
+            new(new[] { "integration_name:elasticsearchnet", "error_type:duck_typing" }),
+            new(new[] { "integration_name:elasticsearchnet", "error_type:invoker" }),
+            new(new[] { "integration_name:elasticsearchnet", "error_type:execution" }),
+            new(new[] { "integration_name:servicestackredis", "error_type:duck_typing" }),
+            new(new[] { "integration_name:servicestackredis", "error_type:invoker" }),
+            new(new[] { "integration_name:servicestackredis", "error_type:execution" }),
+            new(new[] { "integration_name:stackexchangeredis", "error_type:duck_typing" }),
+            new(new[] { "integration_name:stackexchangeredis", "error_type:invoker" }),
+            new(new[] { "integration_name:stackexchangeredis", "error_type:execution" }),
+            new(new[] { "integration_name:serviceremoting", "error_type:duck_typing" }),
+            new(new[] { "integration_name:serviceremoting", "error_type:invoker" }),
+            new(new[] { "integration_name:serviceremoting", "error_type:execution" }),
+            new(new[] { "integration_name:rabbitmq", "error_type:duck_typing" }),
+            new(new[] { "integration_name:rabbitmq", "error_type:invoker" }),
+            new(new[] { "integration_name:rabbitmq", "error_type:execution" }),
+            new(new[] { "integration_name:msmq", "error_type:duck_typing" }),
+            new(new[] { "integration_name:msmq", "error_type:invoker" }),
+            new(new[] { "integration_name:msmq", "error_type:execution" }),
+            new(new[] { "integration_name:kafka", "error_type:duck_typing" }),
+            new(new[] { "integration_name:kafka", "error_type:invoker" }),
+            new(new[] { "integration_name:kafka", "error_type:execution" }),
+            new(new[] { "integration_name:cosmosdb", "error_type:duck_typing" }),
+            new(new[] { "integration_name:cosmosdb", "error_type:invoker" }),
+            new(new[] { "integration_name:cosmosdb", "error_type:execution" }),
+            new(new[] { "integration_name:awssdk", "error_type:duck_typing" }),
+            new(new[] { "integration_name:awssdk", "error_type:invoker" }),
+            new(new[] { "integration_name:awssdk", "error_type:execution" }),
+            new(new[] { "integration_name:awssqs", "error_type:duck_typing" }),
+            new(new[] { "integration_name:awssqs", "error_type:invoker" }),
+            new(new[] { "integration_name:awssqs", "error_type:execution" }),
+            new(new[] { "integration_name:awssns", "error_type:duck_typing" }),
+            new(new[] { "integration_name:awssns", "error_type:invoker" }),
+            new(new[] { "integration_name:awssns", "error_type:execution" }),
+            new(new[] { "integration_name:ilogger", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ilogger", "error_type:invoker" }),
+            new(new[] { "integration_name:ilogger", "error_type:execution" }),
+            new(new[] { "integration_name:aerospike", "error_type:duck_typing" }),
+            new(new[] { "integration_name:aerospike", "error_type:invoker" }),
+            new(new[] { "integration_name:aerospike", "error_type:execution" }),
+            new(new[] { "integration_name:azurefunctions", "error_type:duck_typing" }),
+            new(new[] { "integration_name:azurefunctions", "error_type:invoker" }),
+            new(new[] { "integration_name:azurefunctions", "error_type:execution" }),
+            new(new[] { "integration_name:couchbase", "error_type:duck_typing" }),
+            new(new[] { "integration_name:couchbase", "error_type:invoker" }),
+            new(new[] { "integration_name:couchbase", "error_type:execution" }),
+            new(new[] { "integration_name:mysql", "error_type:duck_typing" }),
+            new(new[] { "integration_name:mysql", "error_type:invoker" }),
+            new(new[] { "integration_name:mysql", "error_type:execution" }),
+            new(new[] { "integration_name:npgsql", "error_type:duck_typing" }),
+            new(new[] { "integration_name:npgsql", "error_type:invoker" }),
+            new(new[] { "integration_name:npgsql", "error_type:execution" }),
+            new(new[] { "integration_name:oracle", "error_type:duck_typing" }),
+            new(new[] { "integration_name:oracle", "error_type:invoker" }),
+            new(new[] { "integration_name:oracle", "error_type:execution" }),
+            new(new[] { "integration_name:sqlclient", "error_type:duck_typing" }),
+            new(new[] { "integration_name:sqlclient", "error_type:invoker" }),
+            new(new[] { "integration_name:sqlclient", "error_type:execution" }),
+            new(new[] { "integration_name:sqlite", "error_type:duck_typing" }),
+            new(new[] { "integration_name:sqlite", "error_type:invoker" }),
+            new(new[] { "integration_name:sqlite", "error_type:execution" }),
+            new(new[] { "integration_name:serilog", "error_type:duck_typing" }),
+            new(new[] { "integration_name:serilog", "error_type:invoker" }),
+            new(new[] { "integration_name:serilog", "error_type:execution" }),
+            new(new[] { "integration_name:log4net", "error_type:duck_typing" }),
+            new(new[] { "integration_name:log4net", "error_type:invoker" }),
+            new(new[] { "integration_name:log4net", "error_type:execution" }),
+            new(new[] { "integration_name:nlog", "error_type:duck_typing" }),
+            new(new[] { "integration_name:nlog", "error_type:invoker" }),
+            new(new[] { "integration_name:nlog", "error_type:execution" }),
+            new(new[] { "integration_name:traceannotations", "error_type:duck_typing" }),
+            new(new[] { "integration_name:traceannotations", "error_type:invoker" }),
+            new(new[] { "integration_name:traceannotations", "error_type:execution" }),
+            new(new[] { "integration_name:grpc", "error_type:duck_typing" }),
+            new(new[] { "integration_name:grpc", "error_type:invoker" }),
+            new(new[] { "integration_name:grpc", "error_type:execution" }),
+            new(new[] { "integration_name:process", "error_type:duck_typing" }),
+            new(new[] { "integration_name:process", "error_type:invoker" }),
+            new(new[] { "integration_name:process", "error_type:execution" }),
+            new(new[] { "integration_name:hashalgorithm", "error_type:duck_typing" }),
+            new(new[] { "integration_name:hashalgorithm", "error_type:invoker" }),
+            new(new[] { "integration_name:hashalgorithm", "error_type:execution" }),
+            new(new[] { "integration_name:symmetricalgorithm", "error_type:duck_typing" }),
+            new(new[] { "integration_name:symmetricalgorithm", "error_type:invoker" }),
+            new(new[] { "integration_name:symmetricalgorithm", "error_type:execution" }),
+            new(new[] { "integration_name:opentelemetry", "error_type:duck_typing" }),
+            new(new[] { "integration_name:opentelemetry", "error_type:invoker" }),
+            new(new[] { "integration_name:opentelemetry", "error_type:execution" }),
+            new(new[] { "integration_name:pathtraversal", "error_type:duck_typing" }),
+            new(new[] { "integration_name:pathtraversal", "error_type:invoker" }),
+            new(new[] { "integration_name:pathtraversal", "error_type:execution" }),
+            new(new[] { "integration_name:ssrf", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ssrf", "error_type:invoker" }),
+            new(new[] { "integration_name:ssrf", "error_type:execution" }),
+            new(new[] { "integration_name:ldap", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ldap", "error_type:invoker" }),
+            new(new[] { "integration_name:ldap", "error_type:execution" }),
+            new(new[] { "integration_name:awskinesis", "error_type:duck_typing" }),
+            new(new[] { "integration_name:awskinesis", "error_type:invoker" }),
+            new(new[] { "integration_name:awskinesis", "error_type:execution" }),
+            new(new[] { "integration_name:azureservicebus", "error_type:duck_typing" }),
+            new(new[] { "integration_name:azureservicebus", "error_type:invoker" }),
+            new(new[] { "integration_name:azureservicebus", "error_type:execution" }),
+            // spans_created, index = 175
+            new(new[] { "integration_name:datadog" }),
+            new(new[] { "integration_name:opentracing" }),
+            new(new[] { "integration_name:ciapp" }),
+            new(new[] { "integration_name:debugger_span_probe" }),
+            new(new[] { "integration_name:aws_lambda" }),
+            new(new[] { "integration_name:msbuild" }),
+            new(new[] { "integration_name:httpmessagehandler" }),
+            new(new[] { "integration_name:httpsocketshandler" }),
+            new(new[] { "integration_name:winhttphandler" }),
+            new(new[] { "integration_name:curlhandler" }),
+            new(new[] { "integration_name:aspnetcore" }),
+            new(new[] { "integration_name:adonet" }),
+            new(new[] { "integration_name:aspnet" }),
+            new(new[] { "integration_name:aspnetmvc" }),
+            new(new[] { "integration_name:aspnetwebapi2" }),
+            new(new[] { "integration_name:graphql" }),
+            new(new[] { "integration_name:hotchocolate" }),
+            new(new[] { "integration_name:mongodb" }),
+            new(new[] { "integration_name:xunit" }),
+            new(new[] { "integration_name:nunit" }),
+            new(new[] { "integration_name:mstestv2" }),
+            new(new[] { "integration_name:wcf" }),
+            new(new[] { "integration_name:webrequest" }),
+            new(new[] { "integration_name:elasticsearchnet" }),
+            new(new[] { "integration_name:servicestackredis" }),
+            new(new[] { "integration_name:stackexchangeredis" }),
+            new(new[] { "integration_name:serviceremoting" }),
+            new(new[] { "integration_name:rabbitmq" }),
+            new(new[] { "integration_name:msmq" }),
+            new(new[] { "integration_name:kafka" }),
+            new(new[] { "integration_name:cosmosdb" }),
+            new(new[] { "integration_name:awssdk" }),
+            new(new[] { "integration_name:awssqs" }),
+            new(new[] { "integration_name:awssns" }),
+            new(new[] { "integration_name:ilogger" }),
+            new(new[] { "integration_name:aerospike" }),
+            new(new[] { "integration_name:azurefunctions" }),
+            new(new[] { "integration_name:couchbase" }),
+            new(new[] { "integration_name:mysql" }),
+            new(new[] { "integration_name:npgsql" }),
+            new(new[] { "integration_name:oracle" }),
+            new(new[] { "integration_name:sqlclient" }),
+            new(new[] { "integration_name:sqlite" }),
+            new(new[] { "integration_name:serilog" }),
+            new(new[] { "integration_name:log4net" }),
+            new(new[] { "integration_name:nlog" }),
+            new(new[] { "integration_name:traceannotations" }),
+            new(new[] { "integration_name:grpc" }),
+            new(new[] { "integration_name:process" }),
+            new(new[] { "integration_name:hashalgorithm" }),
+            new(new[] { "integration_name:symmetricalgorithm" }),
+            new(new[] { "integration_name:opentelemetry" }),
+            new(new[] { "integration_name:pathtraversal" }),
+            new(new[] { "integration_name:ssrf" }),
+            new(new[] { "integration_name:ldap" }),
+            new(new[] { "integration_name:awskinesis" }),
+            new(new[] { "integration_name:azureservicebus" }),
+            // spans_finished, index = 232
+            new(null),
+            // spans_enqueued_for_serialization, index = 233
+            new(new[] { "reason:p0_keep" }),
+            new(new[] { "reason:single_span_sampling" }),
+            new(new[] { "reason:default" }),
+            // spans_dropped, index = 236
+            new(new[] { "reason:p0_drop" }),
+            new(new[] { "reason:overfull_buffer" }),
+            new(new[] { "reason:serialization_error" }),
+            new(new[] { "reason:api_error" }),
+            // trace_segments_created, index = 240
+            new(new[] { "new_continued:new" }),
+            new(new[] { "new_continued:continued" }),
+            // trace_chunks_enqueued_for_serialization, index = 242
+            new(new[] { "reason:p0_keep" }),
+            new(new[] { "reason:default" }),
+            // trace_chunks_dropped, index = 244
+            new(new[] { "reason:p0_drop" }),
+            new(new[] { "reason:overfull_buffer" }),
+            new(new[] { "reason:serialization_error" }),
+            new(new[] { "reason:api_error" }),
+            // trace_chunks_sent, index = 248
+            new(null),
+            // trace_segments_closed, index = 249
+            new(null),
+            // trace_api.requests, index = 250
+            new(null),
+            // trace_api.responses, index = 251
+            new(new[] { "status_code:200" }),
+            new(new[] { "status_code:201" }),
+            new(new[] { "status_code:202" }),
+            new(new[] { "status_code:204" }),
+            new(new[] { "status_code:2xx" }),
+            new(new[] { "status_code:301" }),
+            new(new[] { "status_code:302" }),
+            new(new[] { "status_code:307" }),
+            new(new[] { "status_code:308" }),
+            new(new[] { "status_code:3xx" }),
+            new(new[] { "status_code:400" }),
+            new(new[] { "status_code:401" }),
+            new(new[] { "status_code:403" }),
+            new(new[] { "status_code:404" }),
+            new(new[] { "status_code:405" }),
+            new(new[] { "status_code:4xx" }),
+            new(new[] { "status_code:500" }),
+            new(new[] { "status_code:501" }),
+            new(new[] { "status_code:502" }),
+            new(new[] { "status_code:503" }),
+            new(new[] { "status_code:504" }),
+            new(new[] { "status_code:5xx" }),
+            // trace_api.errors, index = 273
+            new(new[] { "type:timeout" }),
+            new(new[] { "type:network" }),
+            new(new[] { "type:status_code" }),
+            // trace_partial_flush.count, index = 276
+            new(new[] { "reason:large_trace" }),
+            new(new[] { "reason:single_span_ingestion" }),
+            // context_header_style.injected, index = 278
+            new(new[] { "header_style:tracecontext" }),
+            new(new[] { "header_style:datadog" }),
+            new(new[] { "header_style:b3multi" }),
+            new(new[] { "header_style:b3single" }),
+            // context_header_style.extracted, index = 282
+            new(new[] { "header_style:tracecontext" }),
+            new(new[] { "header_style:datadog" }),
+            new(new[] { "header_style:b3multi" }),
+            new(new[] { "header_style:b3single" }),
+            // stats_api.requests, index = 286
+            new(null),
+            // stats_api.responses, index = 287
+            new(new[] { "status_code:200" }),
+            new(new[] { "status_code:201" }),
+            new(new[] { "status_code:202" }),
+            new(new[] { "status_code:204" }),
+            new(new[] { "status_code:2xx" }),
+            new(new[] { "status_code:301" }),
+            new(new[] { "status_code:302" }),
+            new(new[] { "status_code:307" }),
+            new(new[] { "status_code:308" }),
+            new(new[] { "status_code:3xx" }),
+            new(new[] { "status_code:400" }),
+            new(new[] { "status_code:401" }),
+            new(new[] { "status_code:403" }),
+            new(new[] { "status_code:404" }),
+            new(new[] { "status_code:405" }),
+            new(new[] { "status_code:4xx" }),
+            new(new[] { "status_code:500" }),
+            new(new[] { "status_code:501" }),
+            new(new[] { "status_code:502" }),
+            new(new[] { "status_code:503" }),
+            new(new[] { "status_code:504" }),
+            new(new[] { "status_code:5xx" }),
+            // stats_api.errors, index = 309
+            new(new[] { "type:timeout" }),
+            new(new[] { "type:network" }),
+            new(new[] { "type:status_code" }),
+            // telemetry_api.requests, index = 312
+            new(new[] { "endpoint:agent" }),
+            new(new[] { "endpoint:agentless" }),
+            // telemetry_api.responses, index = 314
+            new(new[] { "endpoint:agent", "status_code:200" }),
+            new(new[] { "endpoint:agent", "status_code:201" }),
+            new(new[] { "endpoint:agent", "status_code:202" }),
+            new(new[] { "endpoint:agent", "status_code:204" }),
+            new(new[] { "endpoint:agent", "status_code:2xx" }),
+            new(new[] { "endpoint:agent", "status_code:301" }),
+            new(new[] { "endpoint:agent", "status_code:302" }),
+            new(new[] { "endpoint:agent", "status_code:307" }),
+            new(new[] { "endpoint:agent", "status_code:308" }),
+            new(new[] { "endpoint:agent", "status_code:3xx" }),
+            new(new[] { "endpoint:agent", "status_code:400" }),
+            new(new[] { "endpoint:agent", "status_code:401" }),
+            new(new[] { "endpoint:agent", "status_code:403" }),
+            new(new[] { "endpoint:agent", "status_code:404" }),
+            new(new[] { "endpoint:agent", "status_code:405" }),
+            new(new[] { "endpoint:agent", "status_code:4xx" }),
+            new(new[] { "endpoint:agent", "status_code:500" }),
+            new(new[] { "endpoint:agent", "status_code:501" }),
+            new(new[] { "endpoint:agent", "status_code:502" }),
+            new(new[] { "endpoint:agent", "status_code:503" }),
+            new(new[] { "endpoint:agent", "status_code:504" }),
+            new(new[] { "endpoint:agent", "status_code:5xx" }),
+            new(new[] { "endpoint:agentless", "status_code:200" }),
+            new(new[] { "endpoint:agentless", "status_code:201" }),
+            new(new[] { "endpoint:agentless", "status_code:202" }),
+            new(new[] { "endpoint:agentless", "status_code:204" }),
+            new(new[] { "endpoint:agentless", "status_code:2xx" }),
+            new(new[] { "endpoint:agentless", "status_code:301" }),
+            new(new[] { "endpoint:agentless", "status_code:302" }),
+            new(new[] { "endpoint:agentless", "status_code:307" }),
+            new(new[] { "endpoint:agentless", "status_code:308" }),
+            new(new[] { "endpoint:agentless", "status_code:3xx" }),
+            new(new[] { "endpoint:agentless", "status_code:400" }),
+            new(new[] { "endpoint:agentless", "status_code:401" }),
+            new(new[] { "endpoint:agentless", "status_code:403" }),
+            new(new[] { "endpoint:agentless", "status_code:404" }),
+            new(new[] { "endpoint:agentless", "status_code:405" }),
+            new(new[] { "endpoint:agentless", "status_code:4xx" }),
+            new(new[] { "endpoint:agentless", "status_code:500" }),
+            new(new[] { "endpoint:agentless", "status_code:501" }),
+            new(new[] { "endpoint:agentless", "status_code:502" }),
+            new(new[] { "endpoint:agentless", "status_code:503" }),
+            new(new[] { "endpoint:agentless", "status_code:504" }),
+            new(new[] { "endpoint:agentless", "status_code:5xx" }),
+            // telemetry_api.errors, index = 358
+            new(new[] { "endpoint:agent", "type:timeout" }),
+            new(new[] { "endpoint:agent", "type:network" }),
+            new(new[] { "endpoint:agent", "type:status_code" }),
+            new(new[] { "endpoint:agentless", "type:timeout" }),
+            new(new[] { "endpoint:agentless", "type:network" }),
+            new(new[] { "endpoint:agentless", "type:status_code" }),
+            // version_conflict_tracers_created, index = 364
+            new(null),
+            // direct_log_logs, index = 365
+            new(new[] { "integration_name:datadog" }),
+            new(new[] { "integration_name:opentracing" }),
+            new(new[] { "integration_name:ciapp" }),
+            new(new[] { "integration_name:debugger_span_probe" }),
+            new(new[] { "integration_name:aws_lambda" }),
+            new(new[] { "integration_name:msbuild" }),
+            new(new[] { "integration_name:httpmessagehandler" }),
+            new(new[] { "integration_name:httpsocketshandler" }),
+            new(new[] { "integration_name:winhttphandler" }),
+            new(new[] { "integration_name:curlhandler" }),
+            new(new[] { "integration_name:aspnetcore" }),
+            new(new[] { "integration_name:adonet" }),
+            new(new[] { "integration_name:aspnet" }),
+            new(new[] { "integration_name:aspnetmvc" }),
+            new(new[] { "integration_name:aspnetwebapi2" }),
+            new(new[] { "integration_name:graphql" }),
+            new(new[] { "integration_name:hotchocolate" }),
+            new(new[] { "integration_name:mongodb" }),
+            new(new[] { "integration_name:xunit" }),
+            new(new[] { "integration_name:nunit" }),
+            new(new[] { "integration_name:mstestv2" }),
+            new(new[] { "integration_name:wcf" }),
+            new(new[] { "integration_name:webrequest" }),
+            new(new[] { "integration_name:elasticsearchnet" }),
+            new(new[] { "integration_name:servicestackredis" }),
+            new(new[] { "integration_name:stackexchangeredis" }),
+            new(new[] { "integration_name:serviceremoting" }),
+            new(new[] { "integration_name:rabbitmq" }),
+            new(new[] { "integration_name:msmq" }),
+            new(new[] { "integration_name:kafka" }),
+            new(new[] { "integration_name:cosmosdb" }),
+            new(new[] { "integration_name:awssdk" }),
+            new(new[] { "integration_name:awssqs" }),
+            new(new[] { "integration_name:awssns" }),
+            new(new[] { "integration_name:ilogger" }),
+            new(new[] { "integration_name:aerospike" }),
+            new(new[] { "integration_name:azurefunctions" }),
+            new(new[] { "integration_name:couchbase" }),
+            new(new[] { "integration_name:mysql" }),
+            new(new[] { "integration_name:npgsql" }),
+            new(new[] { "integration_name:oracle" }),
+            new(new[] { "integration_name:sqlclient" }),
+            new(new[] { "integration_name:sqlite" }),
+            new(new[] { "integration_name:serilog" }),
+            new(new[] { "integration_name:log4net" }),
+            new(new[] { "integration_name:nlog" }),
+            new(new[] { "integration_name:traceannotations" }),
+            new(new[] { "integration_name:grpc" }),
+            new(new[] { "integration_name:process" }),
+            new(new[] { "integration_name:hashalgorithm" }),
+            new(new[] { "integration_name:symmetricalgorithm" }),
+            new(new[] { "integration_name:opentelemetry" }),
+            new(new[] { "integration_name:pathtraversal" }),
+            new(new[] { "integration_name:ssrf" }),
+            new(new[] { "integration_name:ldap" }),
+            new(new[] { "integration_name:awskinesis" }),
+            new(new[] { "integration_name:azureservicebus" }),
+            // direct_log_api.requests, index = 422
+            new(null),
+            // direct_log_api.responses, index = 423
+            new(new[] { "status_code:200" }),
+            new(new[] { "status_code:201" }),
+            new(new[] { "status_code:202" }),
+            new(new[] { "status_code:204" }),
+            new(new[] { "status_code:2xx" }),
+            new(new[] { "status_code:301" }),
+            new(new[] { "status_code:302" }),
+            new(new[] { "status_code:307" }),
+            new(new[] { "status_code:308" }),
+            new(new[] { "status_code:3xx" }),
+            new(new[] { "status_code:400" }),
+            new(new[] { "status_code:401" }),
+            new(new[] { "status_code:403" }),
+            new(new[] { "status_code:404" }),
+            new(new[] { "status_code:405" }),
+            new(new[] { "status_code:4xx" }),
+            new(new[] { "status_code:500" }),
+            new(new[] { "status_code:501" }),
+            new(new[] { "status_code:502" }),
+            new(new[] { "status_code:503" }),
+            new(new[] { "status_code:504" }),
+            new(new[] { "status_code:5xx" }),
+            // direct_log_api.errors, index = 445
+            new(new[] { "type:timeout" }),
+            new(new[] { "type:network" }),
+            new(new[] { "type:status_code" }),
+            // waf.init, index = 448
+            new(null),
+            // waf.updates, index = 449
+            new(null),
+            // waf.requests, index = 450
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:false", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:true", "request_blocked:true", "waf_timeout:false", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:true", "request_excluded:false" }),
+            new(new[] { "waf_version", "rule_triggered:false", "request_blocked:false", "waf_timeout:false", "request_excluded:true" }),
+            // executed.source, index = 455
+            new(new[] { "source_type:http.request.body" }),
+            new(new[] { "source_type:http.request.path" }),
+            new(new[] { "source_type:http.request.parameter.name" }),
+            new(new[] { "source_type:http.request.parameter" }),
+            new(new[] { "source_type:http.request.path.parameter" }),
+            new(new[] { "source_type:http.request.header" }),
+            new(new[] { "source_type:http.request.header.name" }),
+            new(new[] { "source_type:http.request.query" }),
+            new(new[] { "source_type:http.cookie.name" }),
+            new(new[] { "source_type:http.cookie.value" }),
+            new(new[] { "source_type:http.request.matrix.parameter" }),
+            // executed.propagation, index = 466
+            new(null),
+            // executed.sink, index = 467
+            new(new[] { "vulnerability_type:none" }),
+            new(new[] { "vulnerability_type:weak_cipher" }),
+            new(new[] { "vulnerability_type:weak_hash" }),
+            new(new[] { "vulnerability_type:sql_injection" }),
+            new(new[] { "vulnerability_type:command_injection" }),
+            new(new[] { "vulnerability_type:path_traversal" }),
+            new(new[] { "vulnerability_type:ldap_injection" }),
+            new(new[] { "vulnerability_type:ssrf" }),
+            new(new[] { "vulnerability_type:unvalidated_redirect" }),
+            new(new[] { "vulnerability_type:insecure_cookie" }),
+            new(new[] { "vulnerability_type:no_httponly_cookie" }),
+            new(new[] { "vulnerability_type:no_samesite_cookie" }),
+            // event_created, index = 479
+            new(new[] { "test_framework:xunit", "event_type:test" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:xunit", "event_type:suite" }),
+            new(new[] { "test_framework:xunit", "event_type:module" }),
+            new(new[] { "test_framework:xunit", "event_type:session" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:nunit", "event_type:test" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:nunit", "event_type:suite" }),
+            new(new[] { "test_framework:nunit", "event_type:module" }),
+            new(new[] { "test_framework:nunit", "event_type:session" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:mstest", "event_type:test" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:mstest", "event_type:suite" }),
+            new(new[] { "test_framework:mstest", "event_type:module" }),
+            new(new[] { "test_framework:mstest", "event_type:session" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:suite" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:module" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:unknown", "event_type:test" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:unknown", "event_type:suite" }),
+            new(new[] { "test_framework:unknown", "event_type:module" }),
+            new(new[] { "test_framework:unknown", "event_type:session" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner" }),
+            // event_finished, index = 519
+            new(new[] { "test_framework:xunit", "event_type:test" }),
+            new(new[] { "test_framework:xunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:xunit", "event_type:suite" }),
+            new(new[] { "test_framework:xunit", "event_type:module" }),
+            new(new[] { "test_framework:xunit", "event_type:session" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:xunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:nunit", "event_type:test" }),
+            new(new[] { "test_framework:nunit", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:nunit", "event_type:suite" }),
+            new(new[] { "test_framework:nunit", "event_type:module" }),
+            new(new[] { "test_framework:nunit", "event_type:session" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:nunit", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:mstest", "event_type:test" }),
+            new(new[] { "test_framework:mstest", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:mstest", "event_type:suite" }),
+            new(new[] { "test_framework:mstest", "event_type:module" }),
+            new(new[] { "test_framework:mstest", "event_type:session" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:mstest", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:suite" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:module" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:benchmarkdotnet", "event_type:session", "has_codeowner" }),
+            new(new[] { "test_framework:unknown", "event_type:test" }),
+            new(new[] { "test_framework:unknown", "event_type:test", "is_benchmark" }),
+            new(new[] { "test_framework:unknown", "event_type:suite" }),
+            new(new[] { "test_framework:unknown", "event_type:module" }),
+            new(new[] { "test_framework:unknown", "event_type:session" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner", "unsupported_ci" }),
+            new(new[] { "test_framework:unknown", "event_type:session", "has_codeowner" }),
+            // code_coverage_started, index = 559
+            new(new[] { "test_framework:xunit", "library:custom" }),
+            new(new[] { "test_framework:xunit", "library:unknown" }),
+            new(new[] { "test_framework:nunit", "library:custom" }),
+            new(new[] { "test_framework:nunit", "library:unknown" }),
+            new(new[] { "test_framework:mstest", "library:custom" }),
+            new(new[] { "test_framework:mstest", "library:unknown" }),
+            new(new[] { "test_framework:benchmarkdotnet", "library:custom" }),
+            new(new[] { "test_framework:benchmarkdotnet", "library:unknown" }),
+            new(new[] { "test_framework:unknown", "library:custom" }),
+            new(new[] { "test_framework:unknown", "library:unknown" }),
+            // code_coverage_finished, index = 569
+            new(new[] { "test_framework:xunit", "library:custom" }),
+            new(new[] { "test_framework:xunit", "library:unknown" }),
+            new(new[] { "test_framework:nunit", "library:custom" }),
+            new(new[] { "test_framework:nunit", "library:unknown" }),
+            new(new[] { "test_framework:mstest", "library:custom" }),
+            new(new[] { "test_framework:mstest", "library:unknown" }),
+            new(new[] { "test_framework:benchmarkdotnet", "library:custom" }),
+            new(new[] { "test_framework:benchmarkdotnet", "library:unknown" }),
+            new(new[] { "test_framework:unknown", "library:custom" }),
+            new(new[] { "test_framework:unknown", "library:unknown" }),
+            // manual_api_events, index = 579
+            new(new[] { "event_type:test" }),
+            new(new[] { "event_type:suite" }),
+            new(new[] { "event_type:module" }),
+            new(new[] { "event_type:session" }),
+            // events_enqueued_for_serialization, index = 583
+            new(null),
+            // endpoint_payload.requests, index = 584
+            new(new[] { "endpoint:test_cycle" }),
+            new(new[] { "endpoint:code_coverage" }),
+            // endpoint_payload.requests_errors, index = 586
+            new(new[] { "endpoint:test_cycle", "error_type:timeout" }),
+            new(new[] { "endpoint:test_cycle", "error_type:network" }),
+            new(new[] { "endpoint:test_cycle", "error_type:status_code_4xx_response" }),
+            new(new[] { "endpoint:test_cycle", "error_type:status_code_5xx_response" }),
+            new(new[] { "endpoint:code_coverage", "error_type:timeout" }),
+            new(new[] { "endpoint:code_coverage", "error_type:network" }),
+            new(new[] { "endpoint:code_coverage", "error_type:status_code_4xx_response" }),
+            new(new[] { "endpoint:code_coverage", "error_type:status_code_5xx_response" }),
+            // git.command, index = 594
+            new(new[] { "command:get_repository" }),
+            new(new[] { "command:get_branch" }),
+            new(new[] { "command:check_shallow" }),
+            new(new[] { "command:unshallow" }),
+            new(new[] { "command:get_local_commits" }),
+            new(new[] { "command:get_objects" }),
+            new(new[] { "command:pack_objects" }),
+            // git.command_errors, index = 601
+            new(new[] { "command:get_repository", "exit_code:-1" }),
+            new(new[] { "command:get_repository", "exit_code:1" }),
+            new(new[] { "command:get_repository", "exit_code:2" }),
+            new(new[] { "command:get_repository", "exit_code:127" }),
+            new(new[] { "command:get_repository", "exit_code:128" }),
+            new(new[] { "command:get_repository", "exit_code:129" }),
+            new(new[] { "command:get_branch", "exit_code:-1" }),
+            new(new[] { "command:get_branch", "exit_code:1" }),
+            new(new[] { "command:get_branch", "exit_code:2" }),
+            new(new[] { "command:get_branch", "exit_code:127" }),
+            new(new[] { "command:get_branch", "exit_code:128" }),
+            new(new[] { "command:get_branch", "exit_code:129" }),
+            new(new[] { "command:check_shallow", "exit_code:-1" }),
+            new(new[] { "command:check_shallow", "exit_code:1" }),
+            new(new[] { "command:check_shallow", "exit_code:2" }),
+            new(new[] { "command:check_shallow", "exit_code:127" }),
+            new(new[] { "command:check_shallow", "exit_code:128" }),
+            new(new[] { "command:check_shallow", "exit_code:129" }),
+            new(new[] { "command:unshallow", "exit_code:-1" }),
+            new(new[] { "command:unshallow", "exit_code:1" }),
+            new(new[] { "command:unshallow", "exit_code:2" }),
+            new(new[] { "command:unshallow", "exit_code:127" }),
+            new(new[] { "command:unshallow", "exit_code:128" }),
+            new(new[] { "command:unshallow", "exit_code:129" }),
+            new(new[] { "command:get_local_commits", "exit_code:-1" }),
+            new(new[] { "command:get_local_commits", "exit_code:1" }),
+            new(new[] { "command:get_local_commits", "exit_code:2" }),
+            new(new[] { "command:get_local_commits", "exit_code:127" }),
+            new(new[] { "command:get_local_commits", "exit_code:128" }),
+            new(new[] { "command:get_local_commits", "exit_code:129" }),
+            new(new[] { "command:get_objects", "exit_code:-1" }),
+            new(new[] { "command:get_objects", "exit_code:1" }),
+            new(new[] { "command:get_objects", "exit_code:2" }),
+            new(new[] { "command:get_objects", "exit_code:127" }),
+            new(new[] { "command:get_objects", "exit_code:128" }),
+            new(new[] { "command:get_objects", "exit_code:129" }),
+            new(new[] { "command:pack_objects", "exit_code:-1" }),
+            new(new[] { "command:pack_objects", "exit_code:1" }),
+            new(new[] { "command:pack_objects", "exit_code:2" }),
+            new(new[] { "command:pack_objects", "exit_code:127" }),
+            new(new[] { "command:pack_objects", "exit_code:128" }),
+            new(new[] { "command:pack_objects", "exit_code:129" }),
+            // git_requests.search_commits, index = 643
+            new(null),
+            // git_requests.search_commits_errors, index = 644
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            // git_requests.objects_pack, index = 648
+            new(null),
+            // git_requests.objects_pack_errors, index = 649
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            // git_requests.settings, index = 653
+            new(null),
+            // git_requests.settings_errors, index = 654
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            // git_requests.settings_response, index = 658
+            new(new[] { "coverage_enabled" }),
+            new(new[] { "itrskip_enabled" }),
+            new(new[] { "coverage_enabled", "itrskip_enabled" }),
+            // itr_skippable_tests.request, index = 661
+            new(null),
+            // itr_skippable_tests.request_errors, index = 662
+            new(new[] { "error_type:timeout" }),
+            new(new[] { "error_type:network" }),
+            new(new[] { "error_type:status_code_4xx_response" }),
+            new(new[] { "error_type:status_code_5xx_response" }),
+            // itr_skippable_tests.response_tests, index = 666
+            new(null),
+            // itr_skippable_tests.response_suites, index = 667
+            new(null),
+            // itr_skipped, index = 668
+            new(new[] { "event_type:test" }),
+            new(new[] { "event_type:suite" }),
+            new(new[] { "event_type:module" }),
+            new(new[] { "event_type:session" }),
+            // itr_unskippable, index = 672
+            new(new[] { "event_type:test" }),
+            new(new[] { "event_type:suite" }),
+            new(new[] { "event_type:module" }),
+            new(new[] { "event_type:session" }),
+            // itr_forced_run, index = 676
+            new(new[] { "event_type:test" }),
+            new(new[] { "event_type:suite" }),
+            new(new[] { "event_type:module" }),
+            new(new[] { "event_type:session" }),
+            // code_coverage.is_empty, index = 680
+            new(null),
+            // code_coverage.errors, index = 681
+            new(null),
+        };
+
+    /// <summary>
+    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.Count" />.
+    /// Each value represents the number of unique entries in the buffer returned by <see cref="GetCountBuffer()" />
+    /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
+    /// </summary>
+    private static int[] CountEntryCounts { get; }
+        = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 40, 40, 10, 10, 4, 1, 2, 8, 7, 42, 1, 4, 1, 4, 1, 4, 3, 1, 4, 1, 1, 4, 4, 4, 1, 1, };
+
+    private const int _countsLength = 682;
 }
