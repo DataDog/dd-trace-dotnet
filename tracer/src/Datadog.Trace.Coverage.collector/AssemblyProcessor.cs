@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -26,6 +27,12 @@ namespace Datadog.Trace.Coverage.Collector
 {
     internal class AssemblyProcessor
     {
+        private static readonly string? ExcludeFromCodeCoverageAttributeFullName = typeof(ExcludeFromCodeCoverageAttribute).FullName;
+        private static readonly string? AvoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
+        private static readonly string? CoveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
+        private static readonly string? InternalsVisibleToAttributeFullName = typeof(InternalsVisibleToAttribute).FullName;
+        private static readonly string? DebuggableAttributeFullName = typeof(DebuggableAttribute).FullName;
+
         private static readonly object PadLock = new();
         private static readonly Regex NetCorePattern = new(@".NETCoreApp,Version=v(\d.\d)", RegexOptions.Compiled);
         private static readonly Assembly TracerAssembly = typeof(CoverageReporter).Assembly;
@@ -95,21 +102,17 @@ namespace Datadog.Trace.Coverage.Collector
                     AssemblyResolver = customResolver,
                 });
 
-                var avoidCoverageAttributeFullName = typeof(AvoidCoverageAttribute).FullName;
-                var coveredAssemblyAttributeFullName = typeof(CoveredAssemblyAttribute).FullName;
-                var internalsVisibleToAttributeFullName = typeof(InternalsVisibleToAttribute).FullName;
-                var debuggableAttributeFullName = typeof(DebuggableAttribute).FullName;
                 var hasInternalsVisibleAttribute = false;
                 foreach (var cAttr in assemblyDefinition.CustomAttributes)
                 {
                     var attrFullName = cAttr.Constructor.DeclaringType.FullName;
-                    if (attrFullName == avoidCoverageAttributeFullName)
+                    if (attrFullName == AvoidCoverageAttributeFullName || attrFullName == ExcludeFromCodeCoverageAttributeFullName)
                     {
                         _logger.Debug($"Assembly: {FilePath}, ignored.");
                         return;
                     }
 
-                    if (attrFullName == coveredAssemblyAttributeFullName)
+                    if (attrFullName == CoveredAssemblyAttributeFullName)
                     {
                         _logger.Debug($"Assembly: {FilePath}, already have coverage information.");
                         return;
@@ -121,13 +124,13 @@ namespace Datadog.Trace.Coverage.Collector
                         return;
                     }
 
-                    hasInternalsVisibleAttribute |= attrFullName == internalsVisibleToAttributeFullName;
+                    hasInternalsVisibleAttribute |= attrFullName == InternalsVisibleToAttributeFullName;
 
                     // Enable Jit Optimizations
                     if (_enableJitOptimizations)
                     {
                         // We check for the Debuggable attribute to enable jit optimizations and improve coverage performance.
-                        if (attrFullName == debuggableAttributeFullName)
+                        if (attrFullName == DebuggableAttributeFullName)
                         {
                             _logger.Debug($"Modifying the DebuggableAttribute to enable jit optimizations");
 
@@ -260,6 +263,13 @@ namespace Datadog.Trace.Coverage.Collector
                             break;
                         }
 
+                        if (attrFullName == ExcludeFromCodeCoverageAttributeFullName)
+                        {
+                            _logger.Debug($"Type: {moduleType.FullName}, ignored by: {ExcludeFromCodeCoverageAttributeFullName}");
+                            skipType = true;
+                            break;
+                        }
+
                         if (FiltersHelper.FilteredByAttribute(attrFullName, _settings.ExcludeByAttribute))
                         {
                             _logger.Debug($"Type: {moduleType.FullName}, ignored by settings attribute filter");
@@ -314,6 +324,13 @@ namespace Datadog.Trace.Coverage.Collector
                             {
                                 _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by settings attribute filter");
                                 skipMethod = true;
+                                break;
+                            }
+
+                            if (attrFullName == ExcludeFromCodeCoverageAttributeFullName)
+                            {
+                                _logger.Debug($"\t\t[NO] {moduleTypeMethod.FullName}, ignored by: {ExcludeFromCodeCoverageAttributeFullName}");
+                                skipType = true;
                                 break;
                             }
                         }
