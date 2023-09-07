@@ -365,6 +365,18 @@
     <ClInclude Include="IClrLifetime.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="ThreadLifetimeProvider.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="IThreadLifetimeListener.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="RawThreadLifetimeSample.h">
+      <Filter>Threads</Filter>
+    </ClInclude>
+    <ClInclude Include="TimelineSampleType.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -540,6 +552,15 @@
     </ClCompile>
     <ClCompile Include="RawExceptionSample.cpp">
       <Filter>Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadLifetimeProvider.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="RawThreadLifetimeSample.cpp">
+      <Filter>Threads</Filter>
+    </ClCompile>
+    <ClCompile Include="TimelineSampleType.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -140,6 +140,8 @@ public:
     static const std::string TimelineEventTypeLabel;
     static const std::string TimelineEventTypeStopTheWorld;
     static const std::string TimelineEventTypeGarbageCollection;
+    static const std::string TimelineEventTypeThreadStart;
+    static const std::string TimelineEventTypeThreadStop;
     static const std::string GarbageCollectionReasonLabel;
     static const std::string GarbageCollectionTypeLabel;
     static const std::string GarbageCollectionCompactingLabel;
