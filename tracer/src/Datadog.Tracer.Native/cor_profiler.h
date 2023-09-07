@@ -96,7 +96,9 @@ private:
     //
     // Helper methods
     //
-    static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& nativemethods_type_name, const shared::WSTRING& library_path = shared::WSTRING());
+    static void RewritingPInvokeMaps(const ModuleMetadata& module_metadata, const shared::WSTRING& rewrite_reason,
+                                     const shared::WSTRING& nativemethods_type_name,
+                                     const shared::WSTRING& library_path = shared::WSTRING());
     bool GetIntegrationTypeRef(ModuleMetadata& module_metadata, ModuleID module_id,
                                const IntegrationDefinition& integration_definition, mdTypeRef& integration_type_ref);
     bool ProfilerAssemblyIsLoadedIntoAppDomain(AppDomainID app_domain_id);
