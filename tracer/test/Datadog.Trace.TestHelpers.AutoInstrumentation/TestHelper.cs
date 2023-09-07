@@ -347,7 +347,7 @@ namespace Datadog.Trace.TestHelpers
             }
         }
 
-        public void EnableTelemetry(int level)
+        public void EnableIastTelemetry(int level)
         {
             SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }

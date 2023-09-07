@@ -360,6 +360,7 @@ public class AspNetCore2IastTests50PctSamplingIastEnabled : AspNetCore2IastTests
 
     protected override async Task TryStartApp()
     {
+        EnableIastTelemetry(IastTelemetryLevel);
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
         DisableObfuscationQueryString();
@@ -412,7 +413,7 @@ public abstract class AspNetCore2IastTests : AspNetBase, IClassFixture<AspNetCor
     {
         EnableIast(IastEnabled);
         EnableEvidenceRedaction(RedactionEnabled);
-        EnableTelemetry(IastTelemetryLevel);
+        EnableIastTelemetry(IastTelemetryLevel);
         DisableObfuscationQueryString();
         SetEnvironmentVariable(ConfigurationKeys.Iast.IsIastDeduplicationEnabled, IsIastDeduplicationEnabled?.ToString() ?? string.Empty);
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, VulnerabilitiesPerRequest?.ToString() ?? string.Empty);
