@@ -45,22 +45,22 @@
     }
   ]
 },
-      _dd.iast.telemetry.executed.propagation: 1,
-      _dd.iast.telemetry.executed.sink.path_traversal: 1,
-      _dd.iast.telemetry.executed.source.http.cookie.name: 1,
-      _dd.iast.telemetry.executed.source.http.cookie.value: 1,
-      _dd.iast.telemetry.executed.source.http.request.header: 1,
-      _dd.iast.telemetry.executed.source.http.request.header.name: 1,
-      _dd.iast.telemetry.executed.source.http.request.parameter: 1,
-      _dd.iast.telemetry.executed.source.http.request.parameter.name: 1,
-      _dd.iast.telemetry.executed.source.http.request.path: 1,
-      _dd.iast.telemetry.executed.source.http.request.path.parameter: 1,
-      _dd.iast.telemetry.executed.source.http.request.query: 1,
       _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
+      _dd.iast.telemetry.executed.propagation: 1.0,
+      _dd.iast.telemetry.executed.sink.path_traversal: 1.0,
+      _dd.iast.telemetry.executed.source.http.cookie.name: 1.0,
+      _dd.iast.telemetry.executed.source.http.cookie.value: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.header: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.header.name: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.parameter: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.parameter.name: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.path: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.path.parameter: 1.0,
+      _dd.iast.telemetry.executed.source.http.request.query: 1.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
       _sampling_priority_v1: 1.0

@@ -49,7 +49,7 @@ internal class IastRequestContext
             _executedTelemetryHelper.GenerateMetricTags(tags);
             foreach (var tag in tags)
             {
-                span.Tags.SetTag(tag.Item1, tag.Item2.ToString());
+                span.Tags.SetMetric(tag.Item1, tag.Item2);
             }
         }
     }
