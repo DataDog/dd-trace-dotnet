@@ -65,7 +65,7 @@ For example:
 .\build.cmd PackageTracerHome
 
 # Build and run integration tests. Requires BuildTracerHome to have previously been run
-.\build.cmd BuildAndRunWindowsIntegrationTests
+.\build.cmd BuildAndRunWindowsIntegrationTests --framework "net6.0" --filter "rabbit" --SampleName "Samples.Rabbit"
 ```
 
 ### Linux
