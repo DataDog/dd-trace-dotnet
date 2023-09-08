@@ -44,42 +44,42 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(double value)
     {
-        _buffer.Distributions[29].TryEnqueue(value);
+        _buffer.Distributions[31].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityGitRequestsObjectsPackMs(double value)
     {
-        _buffer.Distributions[30].TryEnqueue(value);
+        _buffer.Distributions[32].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(double value)
     {
-        _buffer.Distributions[31].TryEnqueue(value);
+        _buffer.Distributions[33].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(double value)
     {
-        _buffer.Distributions[32].TryEnqueue(value);
+        _buffer.Distributions[34].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityGitRequestsSettingsMs(double value)
     {
-        _buffer.Distributions[33].TryEnqueue(value);
+        _buffer.Distributions[35].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityITRSkippableTestsRequestMs(double value)
     {
-        _buffer.Distributions[34].TryEnqueue(value);
+        _buffer.Distributions[36].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(double value)
     {
-        _buffer.Distributions[35].TryEnqueue(value);
+        _buffer.Distributions[37].TryEnqueue(value);
     }
 
     public void RecordDistributionCIVisibilityCodeCoverageFiles(double value)
     {
-        _buffer.Distributions[36].TryEnqueue(value);
+        _buffer.Distributions[38].TryEnqueue(value);
     }
 
     /// <summary>
@@ -118,26 +118,28 @@ internal partial class MetricsTelemetryCollector
             // git.command_ms, index = 22
             new(new[] { "command:get_repository" }),
             new(new[] { "command:get_branch" }),
+            new(new[] { "command:get_remote" }),
+            new(new[] { "command:get_head" }),
             new(new[] { "command:check_shallow" }),
             new(new[] { "command:unshallow" }),
             new(new[] { "command:get_local_commits" }),
             new(new[] { "command:get_objects" }),
             new(new[] { "command:pack_objects" }),
-            // git_requests.search_commits_ms, index = 29
+            // git_requests.search_commits_ms, index = 31
             new(null),
-            // git_requests.objects_pack_ms, index = 30
+            // git_requests.objects_pack_ms, index = 32
             new(null),
-            // git_requests.objects_pack_bytes, index = 31
+            // git_requests.objects_pack_bytes, index = 33
             new(null),
-            // git_requests.objects_pack_files, index = 32
+            // git_requests.objects_pack_files, index = 34
             new(null),
-            // git_requests.settings_ms, index = 33
+            // git_requests.settings_ms, index = 35
             new(null),
-            // itr_skippable_tests.request_ms, index = 34
+            // itr_skippable_tests.request_ms, index = 36
             new(null),
-            // itr_skippable_tests.response_bytes, index = 35
+            // itr_skippable_tests.response_bytes, index = 37
             new(null),
-            // code_coverage.files, index = 36
+            // code_coverage.files, index = 38
             new(null),
         };
 
@@ -147,7 +149,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionEntryCounts { get; }
-        = new []{ 14, 2, 2, 2, 2, 7, 1, 1, 1, 1, 1, 1, 1, 1, };
+        = new []{ 14, 2, 2, 2, 2, 9, 1, 1, 1, 1, 1, 1, 1, 1, };
 
-    private const int _distributionsLength = 37;
+    private const int _distributionsLength = 39;
 }

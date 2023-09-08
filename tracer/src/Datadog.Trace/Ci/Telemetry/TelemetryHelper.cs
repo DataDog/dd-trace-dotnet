@@ -43,4 +43,23 @@ internal static class TelemetryHelper
             _ => MetricTags.CIVisibilityErrorType.Network,
         };
     }
+
+    /// <summary>
+    /// Gets the CIVisibilityExitCodes enum from the process exit code
+    /// </summary>
+    /// <param name="exitCode">Command exit code</param>
+    /// <returns>MetricTags.CIVisibilityExitCodes</returns>
+    public static MetricTags.CIVisibilityExitCodes GetTelemetryExitCodeFromExitCode(int exitCode)
+    {
+        return exitCode switch
+        {
+            -1 => MetricTags.CIVisibilityExitCodes.ECMinus1,
+            1 => MetricTags.CIVisibilityExitCodes.EC1,
+            2 => MetricTags.CIVisibilityExitCodes.EC2,
+            127 => MetricTags.CIVisibilityExitCodes.EC127,
+            128 => MetricTags.CIVisibilityExitCodes.EC128,
+            129 => MetricTags.CIVisibilityExitCodes.EC129,
+            _ => MetricTags.CIVisibilityExitCodes.Unknown,
+        };
+    }
 }

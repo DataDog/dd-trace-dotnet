@@ -59,12 +59,23 @@ internal abstract class CoverageEventHandler
         if (_asyncContext.Value is { } context)
         {
             _asyncContext.Value = null;
+            var sessionEndData = OnSessionFinished(context);
             if (context.State is MetricTags.CIVisibilityTestFramework { } telemetryTestingFramework)
             {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageStarted(telemetryTestingFramework, MetricTags.CIVisibilityCoverageLibrary.Custom);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageFinished(telemetryTestingFramework, MetricTags.CIVisibilityCoverageLibrary.Custom);
             }
 
-            return OnSessionFinished(context);
+            if (sessionEndData is Models.Tests.TestCoverage testCoverage)
+            {
+                if (testCoverage.Files is null || testCoverage.Files.Count == 0)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageIsEmpty();
+                }
+
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(testCoverage.Files?.Count ?? 0);
+            }
+
+            return sessionEndData;
         }
 
         return null;

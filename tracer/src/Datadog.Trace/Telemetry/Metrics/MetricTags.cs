@@ -320,6 +320,8 @@ internal static class MetricTags
     {
         [Description("command:get_repository")] GetRepository,
         [Description("command:get_branch")] GetBranch,
+        [Description("command:get_remote")] GetRemote,
+        [Description("command:get_head")] GetHead,
         [Description("command:check_shallow")] CheckShallow,
         [Description("command:unshallow")] Unshallow,
         [Description("command:get_local_commits")] GetLocalCommits,
@@ -329,6 +331,8 @@ internal static class MetricTags
 
     public enum CIVisibilityExitCodes
     {
+        [Description("")] None,
+        [Description("exit_code:unknown")] Unknown,
         [Description("exit_code:-1")] ECMinus1,
         [Description("exit_code:1")] EC1,
         [Description("exit_code:2")] EC2,

@@ -18,9 +18,12 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -171,7 +174,7 @@ internal class IntelligentTestRunnerClient
             // We need to check if the git clone is a shallow one before uploading anything.
             // In the case is a shallow clone we need to reconfigure it to upload the git tree
             // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse --is-shallow-repository", _workingDirectory)).ConfigureAwait(false);
+            var gitRevParseShallowOutput = await RunGitCommandAsync("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
             if (gitRevParseShallowOutput is null)
             {
                 Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
@@ -181,7 +184,7 @@ internal class IntelligentTestRunnerClient
             if (gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
             {
                 // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-                var gitShallowLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=oneline -n 2", _workingDirectory)).ConfigureAwait(false);
+                var gitShallowLogOutput = await RunGitCommandAsync("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
                 if (gitShallowLogOutput is null)
                 {
                     Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
@@ -196,12 +199,12 @@ internal class IntelligentTestRunnerClient
                     // Just one commit SHA. Fetching previous commits
                     // git config --default origin --get clone.defaultRemoteName
                     // git rev-parse HEAD
-                    var originNameOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --default origin --get clone.defaultRemoteName", _workingDirectory)).ConfigureAwait(false);
+                    var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
                     var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
-                    var headOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
+                    var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
                     var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
                     Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", _workingDirectory)).ConfigureAwait(false);
+                    await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
                 }
             }
         }
@@ -210,7 +213,7 @@ internal class IntelligentTestRunnerClient
             Log.Error(ex, "Error detecting and reconfiguring git repository for shallow clone.");
         }
 
-        var gitLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=%H -n 1000 --since=\"1 month ago\"", _workingDirectory)).ConfigureAwait(false);
+        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
         if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
@@ -559,7 +562,7 @@ internal class IntelligentTestRunnerClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
+        var getObjectsCommand = await RunGitCommandAsync(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects).ConfigureAwait(false);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
@@ -569,7 +572,7 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug("ITR: Packing objects...");
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -592,7 +595,7 @@ internal class IntelligentTestRunnerClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+                packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -756,14 +759,8 @@ internal class IntelligentTestRunnerClient
             return repository;
         }
 
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --get remote.origin.url", _workingDirectory)).ConfigureAwait(false);
-        if (gitOutput is null)
-        {
-            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
-            return string.Empty;
-        }
-
-        return gitOutput.Output.Replace("\n", string.Empty);
+        var gitOutput = await RunGitCommandAsync("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository).ConfigureAwait(false);
+        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
     private async Task<string> GetBranchNameAsync()
@@ -773,14 +770,27 @@ internal class IntelligentTestRunnerClient
             return branch;
         }
 
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "branch --show-current", _workingDirectory)).ConfigureAwait(false);
+        var gitOutput = await RunGitCommandAsync("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch).ConfigureAwait(false);
+        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+    }
+
+    private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", arguments, _workingDirectory), input).ConfigureAwait(false);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
         {
-            Log.Warning("ITR: 'git branch --show-current' command is null");
-            return string.Empty;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.None);
+            Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
+        }
+        else if (gitOutput.ExitCode != 0)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
         }
 
-        return gitOutput.Output.Replace("\n", string.Empty);
+        return gitOutput;
     }
 
     private readonly struct DataEnvelope<T>

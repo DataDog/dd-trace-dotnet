@@ -257,96 +257,96 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
     {
-        var index = 603 + ((int)tag1 * 6) + (int)tag2;
+        var index = 605 + ((int)tag1 * 8) + (int)tag2;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommits(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[645], increment);
+        Interlocked.Add(ref _buffer.Counts[677], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 646 + (int)tag;
+        var index = 678 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPack(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[651], increment);
+        Interlocked.Add(ref _buffer.Counts[683], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 652 + (int)tag;
+        var index = 684 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettings(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[657], increment);
+        Interlocked.Add(ref _buffer.Counts[689], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 658 + (int)tag;
+        var index = 690 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
     {
-        var index = 663 + (int)tag;
+        var index = 695 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequest(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[667], increment);
+        Interlocked.Add(ref _buffer.Counts[699], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 668 + (int)tag;
+        var index = 700 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[673], increment);
+        Interlocked.Add(ref _buffer.Counts[705], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[674], increment);
+        Interlocked.Add(ref _buffer.Counts[706], increment);
     }
 
     public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 675 + (int)tag;
+        var index = 707 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 679 + (int)tag;
+        var index = 711 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 683 + (int)tag;
+        var index = 715 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[687], increment);
+        Interlocked.Add(ref _buffer.Counts[719], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[688], increment);
+        Interlocked.Add(ref _buffer.Counts[720], increment);
     }
 
     /// <summary>
@@ -996,113 +996,145 @@ internal partial class MetricsTelemetryCollector
             // git.command, index = 596
             new(new[] { "command:get_repository" }),
             new(new[] { "command:get_branch" }),
+            new(new[] { "command:get_remote" }),
+            new(new[] { "command:get_head" }),
             new(new[] { "command:check_shallow" }),
             new(new[] { "command:unshallow" }),
             new(new[] { "command:get_local_commits" }),
             new(new[] { "command:get_objects" }),
             new(new[] { "command:pack_objects" }),
-            // git.command_errors, index = 603
+            // git.command_errors, index = 605
+            new(new[] { "command:get_repository" }),
+            new(new[] { "command:get_repository", "exit_code:unknown" }),
             new(new[] { "command:get_repository", "exit_code:-1" }),
             new(new[] { "command:get_repository", "exit_code:1" }),
             new(new[] { "command:get_repository", "exit_code:2" }),
             new(new[] { "command:get_repository", "exit_code:127" }),
             new(new[] { "command:get_repository", "exit_code:128" }),
             new(new[] { "command:get_repository", "exit_code:129" }),
+            new(new[] { "command:get_branch" }),
+            new(new[] { "command:get_branch", "exit_code:unknown" }),
             new(new[] { "command:get_branch", "exit_code:-1" }),
             new(new[] { "command:get_branch", "exit_code:1" }),
             new(new[] { "command:get_branch", "exit_code:2" }),
             new(new[] { "command:get_branch", "exit_code:127" }),
             new(new[] { "command:get_branch", "exit_code:128" }),
             new(new[] { "command:get_branch", "exit_code:129" }),
+            new(new[] { "command:get_remote" }),
+            new(new[] { "command:get_remote", "exit_code:unknown" }),
+            new(new[] { "command:get_remote", "exit_code:-1" }),
+            new(new[] { "command:get_remote", "exit_code:1" }),
+            new(new[] { "command:get_remote", "exit_code:2" }),
+            new(new[] { "command:get_remote", "exit_code:127" }),
+            new(new[] { "command:get_remote", "exit_code:128" }),
+            new(new[] { "command:get_remote", "exit_code:129" }),
+            new(new[] { "command:get_head" }),
+            new(new[] { "command:get_head", "exit_code:unknown" }),
+            new(new[] { "command:get_head", "exit_code:-1" }),
+            new(new[] { "command:get_head", "exit_code:1" }),
+            new(new[] { "command:get_head", "exit_code:2" }),
+            new(new[] { "command:get_head", "exit_code:127" }),
+            new(new[] { "command:get_head", "exit_code:128" }),
+            new(new[] { "command:get_head", "exit_code:129" }),
+            new(new[] { "command:check_shallow" }),
+            new(new[] { "command:check_shallow", "exit_code:unknown" }),
             new(new[] { "command:check_shallow", "exit_code:-1" }),
             new(new[] { "command:check_shallow", "exit_code:1" }),
             new(new[] { "command:check_shallow", "exit_code:2" }),
             new(new[] { "command:check_shallow", "exit_code:127" }),
             new(new[] { "command:check_shallow", "exit_code:128" }),
             new(new[] { "command:check_shallow", "exit_code:129" }),
+            new(new[] { "command:unshallow" }),
+            new(new[] { "command:unshallow", "exit_code:unknown" }),
             new(new[] { "command:unshallow", "exit_code:-1" }),
             new(new[] { "command:unshallow", "exit_code:1" }),
             new(new[] { "command:unshallow", "exit_code:2" }),
             new(new[] { "command:unshallow", "exit_code:127" }),
             new(new[] { "command:unshallow", "exit_code:128" }),
             new(new[] { "command:unshallow", "exit_code:129" }),
+            new(new[] { "command:get_local_commits" }),
+            new(new[] { "command:get_local_commits", "exit_code:unknown" }),
             new(new[] { "command:get_local_commits", "exit_code:-1" }),
             new(new[] { "command:get_local_commits", "exit_code:1" }),
             new(new[] { "command:get_local_commits", "exit_code:2" }),
             new(new[] { "command:get_local_commits", "exit_code:127" }),
             new(new[] { "command:get_local_commits", "exit_code:128" }),
             new(new[] { "command:get_local_commits", "exit_code:129" }),
+            new(new[] { "command:get_objects" }),
+            new(new[] { "command:get_objects", "exit_code:unknown" }),
             new(new[] { "command:get_objects", "exit_code:-1" }),
             new(new[] { "command:get_objects", "exit_code:1" }),
             new(new[] { "command:get_objects", "exit_code:2" }),
             new(new[] { "command:get_objects", "exit_code:127" }),
             new(new[] { "command:get_objects", "exit_code:128" }),
             new(new[] { "command:get_objects", "exit_code:129" }),
+            new(new[] { "command:pack_objects" }),
+            new(new[] { "command:pack_objects", "exit_code:unknown" }),
             new(new[] { "command:pack_objects", "exit_code:-1" }),
             new(new[] { "command:pack_objects", "exit_code:1" }),
             new(new[] { "command:pack_objects", "exit_code:2" }),
             new(new[] { "command:pack_objects", "exit_code:127" }),
             new(new[] { "command:pack_objects", "exit_code:128" }),
             new(new[] { "command:pack_objects", "exit_code:129" }),
-            // git_requests.search_commits, index = 645
+            // git_requests.search_commits, index = 677
             new(null),
-            // git_requests.search_commits_errors, index = 646
+            // git_requests.search_commits_errors, index = 678
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
-            // git_requests.objects_pack, index = 651
+            // git_requests.objects_pack, index = 683
             new(null),
-            // git_requests.objects_pack_errors, index = 652
+            // git_requests.objects_pack_errors, index = 684
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
-            // git_requests.settings, index = 657
+            // git_requests.settings, index = 689
             new(null),
-            // git_requests.settings_errors, index = 658
+            // git_requests.settings_errors, index = 690
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
-            // git_requests.settings_response, index = 663
+            // git_requests.settings_response, index = 695
             new(null),
             new(new[] { "coverage_enabled" }),
             new(new[] { "itrskip_enabled" }),
             new(new[] { "coverage_enabled", "itrskip_enabled" }),
-            // itr_skippable_tests.request, index = 667
+            // itr_skippable_tests.request, index = 699
             new(null),
-            // itr_skippable_tests.request_errors, index = 668
+            // itr_skippable_tests.request_errors, index = 700
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code" }),
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
-            // itr_skippable_tests.response_tests, index = 673
+            // itr_skippable_tests.response_tests, index = 705
             new(null),
-            // itr_skippable_tests.response_suites, index = 674
+            // itr_skippable_tests.response_suites, index = 706
             new(null),
-            // itr_skipped, index = 675
+            // itr_skipped, index = 707
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_unskippable, index = 679
+            // itr_unskippable, index = 711
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_forced_run, index = 683
+            // itr_forced_run, index = 715
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // code_coverage.is_empty, index = 687
+            // code_coverage.is_empty, index = 719
             new(null),
-            // code_coverage.errors, index = 688
+            // code_coverage.errors, index = 720
             new(null),
         };
 
@@ -1112,7 +1144,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 40, 40, 10, 10, 4, 1, 2, 10, 7, 42, 1, 5, 1, 5, 1, 5, 4, 1, 5, 1, 1, 4, 4, 4, 1, 1, };
+        = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 40, 40, 10, 10, 4, 1, 2, 10, 9, 72, 1, 5, 1, 5, 1, 5, 4, 1, 5, 1, 1, 4, 4, 4, 1, 1, };
 
-    private const int _countsLength = 689;
+    private const int _countsLength = 721;
 }
