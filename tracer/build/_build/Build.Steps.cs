@@ -679,7 +679,7 @@ partial class Build
     Target PublishNativeTracerAwsLambda => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsLinux)
-        .After(CompileNativeSrc, PublishManagedTracer)
+        .After(CompileNativeSrc, PublishManagedTracerForAwsLambda)
         .Executes(() =>
         {
             var (arch, extension) = GetUnixArchitectureAndExtension();
@@ -806,7 +806,7 @@ partial class Build
             }
         });
 
-    Target ExtractDebugInfoAwsLambda => _ => _
+    Target RemoveDebugInfoAwsLambda => _ => _
         .Unlisted()
         .After(/*BuildProfilerHome,*/ CompileNativeSrc, PublishNativeLoaderAwsLambda)
         .Executes(() =>
@@ -990,7 +990,7 @@ partial class Build
 
     Target ZipMonitoringHomeForAwsLambda => _ => _
         .Unlisted()
-        .After(BuildTracerHomeForAwsLambda)
+        .After(PublishTracerHomeForAwsLambda)
         .Requires(() => IsLinux)
         .Executes(() =>
         {

@@ -210,11 +210,11 @@ partial class Build : NukeBuild
     Target PublishTracerHomeForAwsLambda => _ => _
         .Description("Publishes the tracer home directory for AWS Lambda. Can be used after BuildTracerHome instead of BuildTracerHomeForAwsLambda.")
         .Requires(() => IsLinux)
-        .After(BuildTracerHome, BuildTracerHomeForAwsLambda)
+        .After(BuildTracerHome /*, BuildTracerHomeForAwsLambda*/)
         .DependsOn(PublishManagedTracerForAwsLambda) // instead of PublishManagedTracer (restores, builds, and publishes)
         .DependsOn(PublishNativeTracerAwsLambda)     // instead of PublishNativeTracer
         .DependsOn(PublishNativeLoaderAwsLambda)     // instead of BuildNativeLoader -> PublishNativeLoader
-        .DependsOn(ExtractDebugInfoAwsLambda);
+        .DependsOn(RemoveDebugInfoAwsLambda);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
