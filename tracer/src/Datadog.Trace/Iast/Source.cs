@@ -22,6 +22,8 @@ internal class Source
         this._redacted = false;
     }
 
+    public byte OriginByte => _origin;
+
     public string Origin => SourceType.GetString(_origin);
 
     public string? Name { get; }

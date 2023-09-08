@@ -19,6 +19,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -344,6 +345,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, enable.ToString().ToLower());
             }
+        }
+
+        public void EnableIastTelemetry(int level)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()
