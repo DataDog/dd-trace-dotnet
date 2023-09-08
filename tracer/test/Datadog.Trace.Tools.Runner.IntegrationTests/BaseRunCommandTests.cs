@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -66,7 +67,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests
             environmentVariables.Should().Contain("DD_ENV", "TestEnv");
             environmentVariables.Should().Contain("DD_SERVICE", "TestService");
             environmentVariables.Should().Contain("DD_VERSION", "TestVersion");
-            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME", "TestTracerHome");
+            environmentVariables.Should().Contain("DD_DOTNET_TRACER_HOME",  Path.GetFullPath("TestTracerHome"));
             environmentVariables.Should().Contain("DD_TRACE_AGENT_URL", agentUrl);
             environmentVariables.Should().Contain("VAR1", "A");
             environmentVariables.Should().Contain("VAR2", "B");

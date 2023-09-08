@@ -1,0 +1,65 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <LangVersion>latest</LangVersion>
+        <AvaloniaVersion>11.0.2</AvaloniaVersion>
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <OutputType>WinExe</OutputType>
+        <TargetFrameworks>net7.0</TargetFrameworks>
+        <SignAssembly>false</SignAssembly>
+        <Nullable>enable</Nullable>
+        <!--Avalonia doesen't support TrimMode=link currently,but we are working on that https://github.com/AvaloniaUI/Avalonia/issues/6892 -->
+        <TrimMode>copyused</TrimMode>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <!--        
+        <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
+        -->
+    </PropertyGroup>
+
+    <PropertyGroup>
+        <Version>0.0.1</Version>
+        <IsPackable>true</IsPackable>
+        <PackAsTool>true</PackAsTool>
+        <ToolCommandName>dd-instrumentation-generator</ToolCommandName>
+        <PublishRepositoryUrl>true</PublishRepositoryUrl>
+        <EmbedUntrackedSources>true</EmbedUntrackedSources>
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>dd-instrumentation-generator</PackageId>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!--This helps with theme dll-s trimming.
+        If you will publish your application in self-contained mode with p:PublishTrimmed=true and it will use Fluent theme Default theme will be trimmed from the output and vice versa.
+        https://github.com/AvaloniaUI/Avalonia/issues/5593 -->
+        <TrimmableAssembly Include="Avalonia.Themes.Fluent"/>
+        <TrimmableAssembly Include="Avalonia.Themes.Default"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <AvaloniaResource Include="Assets\**"/>
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
+        <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)"/>
+        <PackageReference Include="Avalonia.AvaloniaEdit" Version="11.0.1" />
+        <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
+        <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
+        <PackageReference Include="Avalonia.ReactiveUI" Version="$(AvaloniaVersion)" />
+        <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
+        <PackageReference Include="AvaloniaEdit.TextMate" Version="11.0.1" />
+        <PackageReference Include="dnlib" Version="3.6.0" />
+        <PackageReference Include="MessageBox.Avalonia" Version="3.1.3" />
+        <PackageReference Include="TextMateSharp.Grammars" Version="1.0.55" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <EmbeddedResource Include="Resources\Data\**\*" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <Compile Remove="Resources\Data\**\*.cs" />
+    </ItemGroup>
+</Project>

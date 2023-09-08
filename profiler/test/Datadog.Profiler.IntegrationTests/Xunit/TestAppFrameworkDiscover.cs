@@ -3,13 +3,14 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
-namespace Datadog.Profiler.SmokeTests
+namespace Datadog.Profiler.IntegrationTests.Xunit
 {
     /// <summary>
     /// This class allows to discover test cases for smoke application.
@@ -46,13 +47,13 @@ namespace Datadog.Profiler.SmokeTests
                 return results;
             }
 
-            foreach (string folder in System.IO.Directory.GetDirectories(appFolderPath))
+            foreach (var folder in System.IO.Directory.GetDirectories(appFolderPath))
             {
                 var framework = System.IO.Path.GetFileName(folder);
                 if (frameworks == null || frameworks.Contains(framework))
                 {
                     results.Add(
-                        new XunitTestCase(
+                        new ProfilerTestCase(
                                 MessageSink,
                                 TestMethodDisplay.ClassAndMethod,
                                 TestMethodDisplayOptions.All,

@@ -46,6 +46,7 @@ namespace ServiceBus.Minimal.NServiceBus
 
             await endpointInstance.Stop()
                 .ConfigureAwait(false);
+            Console.WriteLine("App completed successfully");
         }
 
         static async Task SendMessagesAsync(string storageDirectory)

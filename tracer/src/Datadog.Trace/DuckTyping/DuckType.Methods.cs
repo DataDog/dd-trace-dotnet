@@ -1035,10 +1035,9 @@ namespace Datadog.Trace.DuckTyping
 
             internal static Type AddIlToDuckChain(LazyILGenerator il, Type genericType, Type fromType)
             {
-                MethodInfo? getProxyMethodInfo;
                 if (fromType.IsValueType)
                 {
-                    getProxyMethodInfo = typeof(CreateCache<>)
+                    var getProxyMethodInfo = typeof(CreateCache<>)
                                         .MakeGenericType(genericType)
                                         .GetMethod("CreateFrom")?
                                         .MakeGenericMethod(fromType);
@@ -1047,10 +1046,59 @@ namespace Datadog.Trace.DuckTyping
                     {
                         DuckTypeException.Throw($"CreateCache<{genericType}>.CreateFrom<{fromType}>() cannot be found!");
                     }
+
+                    il.Emit(OpCodes.Call, getProxyMethodInfo);
+                }
+                else if (genericType.IsGenericType && genericType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                {
+                    // Support for Nullable<T>
+                    var argGenericType = genericType.GenericTypeArguments[0];
+                    var getProxyMethodInfo = typeof(CreateCache<>)
+                                        .MakeGenericType(argGenericType)
+                                        .GetMethod("Create");
+
+                    if (getProxyMethodInfo is null)
+                    {
+                        DuckTypeException.Throw($"CreateCache<{argGenericType}>.Create() cannot be found!");
+                    }
+
+                    // if (<original_value> is null)
+                    // {
+                    //     return default;  (NOT AN ACTUAL RETURN BUT A PUSH TO THE STACK)
+                    // }
+                    // else
+                    // {
+                    //     return new Nullable<T>(CreateCache<T>.Create(<original_value>)); (NOT AN ACTUAL RETURN BUT A PUSH TO THE STACK)
+                    // }
+
+                    var local = il.DeclareLocal(genericType)!;
+                    var lblInstanceIsNotNull = il.DefineLabel();
+                    var lblRet = il.DefineLabel();
+
+                    // Compare if the inner value is null or not
+                    il.Emit(OpCodes.Dup);
+                    il.Emit(OpCodes.Brtrue_S, lblInstanceIsNotNull);
+
+                    // Handle if the inner instance is null (we create a default Nullable<T> instance)
+                    // Because we are creating a default value for a value type we need to declare a new local for that Nullable<T> instance
+                    // and load the address of that local for initialization (ldloca_s + intobj)
+                    // then we load the value initialized in the local with `ldloc`
+                    il.Emit(OpCodes.Pop);
+                    il.Emit(OpCodes.Ldloca_S, local);
+                    il.Emit(OpCodes.Initobj, genericType);
+                    il.Emit(OpCodes.Ldloc, local);
+                    il.Emit(OpCodes.Br_S, lblRet);
+
+                    // Calling the proxy creation (we call the CreateCache<T>.Create and wrap the result in a Nullable<T> instance)
+                    il.MarkLabel(lblInstanceIsNotNull);
+                    il.Emit(OpCodes.Call, getProxyMethodInfo);
+                    il.Emit(OpCodes.Newobj, genericType.GetConstructors()[0]);
+
+                    il.MarkLabel(lblRet);
                 }
                 else
                 {
-                    getProxyMethodInfo = typeof(CreateCache<>)
+                    var getProxyMethodInfo = typeof(CreateCache<>)
                                         .MakeGenericType(genericType)
                                         .GetMethod("Create");
 
@@ -1058,9 +1106,10 @@ namespace Datadog.Trace.DuckTyping
                     {
                         DuckTypeException.Throw($"CreateCache<{genericType}>.Create() cannot be found!");
                     }
+
+                    il.Emit(OpCodes.Call, getProxyMethodInfo);
                 }
 
-                il.Emit(OpCodes.Call, getProxyMethodInfo);
                 return genericType;
             }
 

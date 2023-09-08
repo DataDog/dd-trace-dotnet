@@ -3,11 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
-using System.Linq;
-using Datadog.Profiler.IntegrationTests;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -33,28 +29,28 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckAppDomain(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]
         public void CheckGenerics(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]
         public void CheckPi(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
             runner.RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]
         public void CheckFibonacci(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
             runner.RunAndCheck();
         }
 
@@ -62,7 +58,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckAppDomainForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
@@ -71,7 +67,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckGenericsForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 2", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
@@ -80,7 +76,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckPiForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 4", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }
@@ -89,7 +85,7 @@ namespace Datadog.Profiler.SmokeTests
         [TestAppFact("Samples.Computer01")]
         public void CheckFibonacciForOldWayToStackWalk(string appName, string framework, string appAssembly)
         {
-            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", _output);
+            var runner = new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 5", output: _output);
             runner.EnvironmentHelper.CustomEnvironmentVariables[EnvironmentVariables.UseBacktrace2] = "0";
             runner.RunAndCheck();
         }

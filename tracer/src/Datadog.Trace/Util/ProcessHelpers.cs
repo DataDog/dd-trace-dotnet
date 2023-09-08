@@ -4,7 +4,6 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -30,7 +29,7 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static string GetCurrentProcessName()
         {
-            return CurrentProcess.Instance.ProcessName;
+            return CurrentProcess.ProcessName;
         }
 
         /// <summary>
@@ -48,34 +47,9 @@ namespace Datadog.Trace.Util
         [MethodImpl(MethodImplOptions.NoInlining)]
         public static void GetCurrentProcessInformation(out string processName, out string machineName, out int processId)
         {
-            var currentProcess = CurrentProcess.Instance;
-            processName = currentProcess.ProcessName;
-            machineName = currentProcess.MachineName;
-            processId = currentProcess.Id;
-        }
-
-        /// <summary>
-        /// Wrapper around <see cref="Process.GetCurrentProcess"/> and its property accesses
-        ///
-        /// On .NET Framework the <see cref="Process"/> class is guarded by a
-        /// LinkDemand for FullTrust, so partial trust callers will throw an exception.
-        /// This exception is thrown when the caller method is being JIT compiled, NOT
-        /// when Process.GetCurrentProcess is called, so this wrapper method allows
-        /// us to catch the exception.
-        /// </summary>
-        /// <param name="userProcessorTime">CPU time in user mode</param>
-        /// <param name="systemCpuTime">CPU time in kernel mode</param>
-        /// <param name="threadCount">Number of threads</param>
-        /// <param name="privateMemorySize">Committed memory size</param>
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public static void GetCurrentProcessRuntimeMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
-        {
-            var process = CurrentProcess.Instance;
-            process.Refresh();
-            userProcessorTime = process.UserProcessorTime;
-            systemCpuTime = process.PrivilegedProcessorTime;
-            threadCount = process.Threads.Count;
-            privateMemorySize = process.PrivateMemorySize64;
+            processName = CurrentProcess.ProcessName;
+            machineName = CurrentProcess.MachineName;
+            processId = CurrentProcess.Pid;
         }
 
         /// <summary>
@@ -172,11 +146,18 @@ namespace Datadog.Trace.Util
 
         private static class CurrentProcess
         {
-            internal static readonly Process Instance;
+            internal static readonly string ProcessName;
+            internal static readonly string MachineName;
+            internal static readonly int Pid;
 
             static CurrentProcess()
             {
-                Instance = Process.GetCurrentProcess();
+                using var process = Process.GetCurrentProcess();
+
+                // Cache the information that won't change
+                ProcessName = process.ProcessName;
+                MachineName = process.MachineName;
+                Pid = process.Id;
             }
         }
     }

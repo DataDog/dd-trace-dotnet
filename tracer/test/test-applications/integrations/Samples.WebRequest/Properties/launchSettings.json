@@ -12,6 +12,7 @@
           "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-x64\\Datadog.Trace.ClrProfiler.Native.dll",
   
           "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+          "DD_TRACE_OTEL_ENABLED": "true"
         },
         "nativeDebugging": true
       }

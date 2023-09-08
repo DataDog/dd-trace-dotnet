@@ -145,7 +145,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.IL
         {
             var factory = new LoggerFactory();
             var loggerProvider = new DirectSubmissionLoggerProvider(new NullDirectSubmissionLogSink(), LogSettingsHelper.GetFormatter(), DirectSubmissionLogLevel.Debug, scopeProvider: null);
-            LoggerFactoryIntegrationCommon<LoggerFactory>.AddDirectSubmissionLoggerProvider(factory, loggerProvider);
+            LoggerFactoryIntegrationCommon<LoggerFactory>.TryAddDirectSubmissionLoggerProvider(factory, loggerProvider).Should().BeTrue();
         }
 
         public sealed class DummyOptionsMonitor : IOptionsMonitor<ConsoleLoggerOptions>

@@ -91,6 +91,37 @@ partial class Build
             }
         });
 
+    Target RunInstrumentationGenerator => _ => _
+       .Description("Runs the AutoInstrumentation Generator")
+       .Executes(() =>
+       {
+           var autoInstGenProj =
+               SourceDirectory / "Datadog.AutoInstrumentation.Generator" / "Datadog.AutoInstrumentation.Generator.csproj";
+
+           // We make sure the autoinstrumentation generator builds so we can fail the task if not.
+           DotNetRestore(s => s
+                             .SetDotnetPath(TargetPlatform)
+                             .SetProjectFile(autoInstGenProj)
+                             .SetNoWarnDotNetCore3());
+
+           DotNetBuild(s => s
+                           .SetDotnetPath(TargetPlatform)
+                           .SetFramework(TargetFramework.NET7_0)
+                           .SetProjectFile(autoInstGenProj)
+                           .SetConfiguration(Configuration.Release)
+                           .SetNoWarnDotNetCore3());
+
+           // We need to run the generator this way to avoid nuke waiting until the process finishes.
+           var dotnetRunSettings = new DotNetRunSettings()
+                                  .SetDotnetPath(TargetPlatform)
+                                  .SetNoBuild(true)
+                                  .SetFramework(TargetFramework.NET7_0)
+                                  .EnableNoLaunchProfile()
+                                  .SetProjectFile(autoInstGenProj)
+                                  .SetConfiguration(Configuration.Release);
+           ProcessTasks.StartProcess(dotnetRunSettings);
+       });
+
     Target BuildIisSampleApp => _ => _
         .Description("Rebuilds an IIS sample app")
         .Requires(() => SampleName)

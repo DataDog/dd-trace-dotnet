@@ -48,11 +48,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Log4Net.DirectSu
                 return new CallTargetReturn<TResponse>(response);
             }
 
-            var updatedResponse = Log4NetCommon<TResponse>.AddAppenderToResponse(response, DirectSubmissionLog4NetAppender.Instance);
-            if (!_logWritten)
+            if (Log4NetCommon<TResponse>.TryAddAppenderToResponse(response, DirectSubmissionLog4NetAppender.Instance, out var updatedResponse))
             {
-                _logWritten = true;
-                Log.Information("Direct log submission via Log4Net enabled");
+                if (!_logWritten)
+                {
+                    _logWritten = true;
+                    TracerManager.Instance.Telemetry.IntegrationGeneratedSpan(IntegrationId.Log4Net);
+                    Log.Information("Direct log submission via Log4Net enabled");
+                }
             }
 
             return new CallTargetReturn<TResponse>(updatedResponse);

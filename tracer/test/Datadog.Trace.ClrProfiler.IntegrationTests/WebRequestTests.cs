@@ -23,6 +23,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetEnvironmentVariable("DD_HTTP_CLIENT_ERROR_STATUSES", "410-499");
             SetServiceVersion("1.0.0");
+            SetEnvironmentVariable("DD_TRACE_OTEL_ENABLED", "true");
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsWebRequest(metadataSchemaVersion);
@@ -53,9 +54,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"TracingDisabled Port={httpPort}"))
             {
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(1, 3000);
-                Assert.Equal(0, spans.Count);
+                var spans = agent.Spans.Where(s => s.Type == SpanTypes.Http);
+                Assert.Empty(spans);
 
                 var traceId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.TraceId);
                 var parentSpanId = StringUtil.GetHeader(processResult.StandardOutput, HttpHeaderNames.ParentId);

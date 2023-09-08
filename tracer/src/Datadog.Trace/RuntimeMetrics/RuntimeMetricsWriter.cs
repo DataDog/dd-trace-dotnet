@@ -5,6 +5,8 @@
 
 using System;
 using System.Collections.Concurrent;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
 using System.Threading;
 using Datadog.Trace.Logging;
@@ -25,6 +27,8 @@ namespace Datadog.Trace.RuntimeMetrics
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<RuntimeMetricsWriter>();
         private static readonly Func<IDogStatsd, TimeSpan, bool, IRuntimeMetricsListener> InitializeListenerFunc = InitializeListener;
+
+        private readonly Process _process;
 
         private readonly TimeSpan _delay;
 
@@ -67,7 +71,9 @@ namespace Datadog.Trace.RuntimeMetrics
 
             try
             {
-                ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var userCpu, out var systemCpu, out _, out _);
+                _process = GetCurrentProcess();
+
+                GetCurrentProcessMetrics(out var userCpu, out var systemCpu, out _, out _);
 
                 _previousUserCpu = userCpu;
                 _previousSystemCpu = systemCpu;
@@ -124,7 +130,7 @@ namespace Datadog.Trace.RuntimeMetrics
 
                 if (_enableProcessMetrics)
                 {
-                    ProcessHelpers.GetCurrentProcessRuntimeMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
+                    GetCurrentProcessMetrics(out var newUserCpu, out var newSystemCpu, out var threadCount, out var memoryUsage);
 
                     var userCpu = newUserCpu - _previousUserCpu;
                     var systemCpu = newSystemCpu - _previousSystemCpu;
@@ -202,11 +208,36 @@ namespace Datadog.Trace.RuntimeMetrics
 #endif
         }
 
+        /// <summary>
+        /// Wrapper around <see cref="Process.GetCurrentProcess"/>
+        ///
+        /// On .NET Framework the <see cref="Process"/> class is guarded by a
+        /// LinkDemand for FullTrust, so partial trust callers will throw an exception.
+        /// This exception is thrown when the caller method is being JIT compiled, NOT
+        /// when Process.GetCurrentProcess is called, so this wrapper method allows
+        /// us to catch the exception.
+        /// </summary>
+        /// <returns>Returns the name of the current process</returns>
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static Process GetCurrentProcess()
+        {
+            return Process.GetCurrentProcess();
+        }
+
         private void FirstChanceException(object sender, FirstChanceExceptionEventArgs e)
         {
             var name = e.Exception.GetType().Name;
 
             _exceptionCounts.AddOrUpdate(name, 1, (_, count) => count + 1);
+        }
+
+        private void GetCurrentProcessMetrics(out TimeSpan userProcessorTime, out TimeSpan systemCpuTime, out int threadCount, out long privateMemorySize)
+        {
+            _process.Refresh();
+            userProcessorTime = _process.UserProcessorTime;
+            systemCpuTime = _process.PrivilegedProcessorTime;
+            threadCount = _process.Threads.Count;
+            privateMemorySize = _process.PrivateMemorySize64;
         }
     }
 }

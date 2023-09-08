@@ -28,7 +28,7 @@ namespace Datadog.Profiler.SmokeTests
             string appAssembly,
             ITestOutputHelper output,
             TransportType transportType = TransportType.Http)
-            : this(appName, framework, appAssembly, commandLine: null, output, transportType)
+            : this(appName, framework, appAssembly, commandLine: null, output: output, transportType: transportType)
         {
         }
 

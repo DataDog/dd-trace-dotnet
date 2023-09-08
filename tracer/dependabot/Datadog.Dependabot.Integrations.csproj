@@ -26,20 +26,25 @@
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
     <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
 
+    <!-- Integration: AWSSDK.Kinesis -->
+    <!-- Assembly: AWSSDK.Kinesis -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.21 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.21" />
+
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.2 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.201.2" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.9 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.201.9" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.22 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.22" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.29 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.29" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.23 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.23" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.30 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.30" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -268,13 +273,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.56.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.56.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.55.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.55.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.56.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.56.0" />
 
   </ItemGroup>
 

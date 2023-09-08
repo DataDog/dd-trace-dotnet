@@ -151,7 +151,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         pos++;
     }
 
-    Log::Debug("ManagedThreadList: thread ", std::dec, clrThreadId, " cannot be unregister because not in the list");
+    Log::Debug("ManagedThreadList: thread 0x", std::hex, clrThreadId, std::dec, " cannot be unregister because not in the list");
     return false;
 }
 
@@ -225,18 +225,24 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::LoopNext(uint32_t iterator
     }
 
     uint32_t pos = _iterators[iterator];
-    std::shared_ptr<ManagedThreadInfo> pInfo = _threads[pos];
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
 
-    // move the iterator to the next thread
-    if (pos < activeThreadCount - 1)
+    auto startPos = pos;
+    do
     {
-        pos++;
-    }
-    else // go back to the first thread if the end is reached
-    {
-        pos = 0;
-    }
+        pInfo = _threads[pos];
+        // move the iterator to the next thread and loop
+        // back to the first thread if the end is reached
+        pos = (pos + 1) % activeThreadCount;
+    } while (startPos != pos &&
+        (pInfo->GetOsThreadHandle() == static_cast<HANDLE>(NULL) || pInfo->GetOsThreadHandle() == INVALID_HANDLE_VALUE));
+
     _iterators[iterator] = pos;
+
+    if (startPos == pos)
+    {
+        return nullptr;
+    }
 
     return pInfo;
 }

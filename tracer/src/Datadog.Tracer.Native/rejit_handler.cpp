@@ -58,8 +58,11 @@ bool RejitHandlerModuleMethod::RequestRejitForInlinersInModule(ModuleID moduleId
     ModuleID currentModuleId = m_module->GetModuleId();
     mdMethodDef currentMethodDef = m_methodDef;
 
+#if DEBUG
+    // We generate this log hundreds of times, and isn't typically useful in escalations 
     Logger::Debug("RejitHandlerModuleMethod::RequestRejitForInlinersInModule for ",
                   "[ModuleInliner=", moduleId , ", ModuleId=", currentModuleId, ", MethodDef=", currentMethodDef, "]");
+#endif
 
     RejitHandler* handler = m_module->GetHandler();
     ICorProfilerInfo7* pInfo = handler->GetCorProfilerInfo();

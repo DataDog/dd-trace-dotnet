@@ -14,7 +14,6 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             try
             {
                 await RunTest();
-                return 0;
             }
             catch (Exception ex)
                 when (ex.GetType().Name == "RedisConnectionException"
@@ -47,6 +46,8 @@ namespace StackExchange.Redis.AssemblyConflict.SdkProject
             // This would cause a segmentation fault on .net core 2.x
             System.Threading.Thread.Sleep(5000);
 #endif
+            Console.WriteLine("App completed successfully");
+            return 0;
         }
 
         private static async Task RunTest()

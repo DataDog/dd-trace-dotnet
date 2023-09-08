@@ -576,25 +576,28 @@ internal class IntelligentTestRunnerClient
             return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
         }
 
-        if (packObjectsResultCommand.ExitCode != 0 && packObjectsResultCommand.Error.IndexOf("Cross-device", StringComparison.OrdinalIgnoreCase) != -1)
+        if (packObjectsResultCommand.ExitCode != 0)
         {
-            // Git can throw a cross device error if the temporal folder is in a different drive than the .git folder (eg. symbolic link)
-            // to handle this edge case, we create a temporal folder inside the current folder.
-
-            Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
-            temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
-            if (!Directory.Exists(temporaryFolder))
+            if (packObjectsResultCommand.Error.IndexOf("Cross-device", StringComparison.OrdinalIgnoreCase) != -1)
             {
-                Directory.CreateDirectory(temporaryFolder);
-            }
+                // Git can throw a cross device error if the temporal folder is in a different drive than the .git folder (eg. symbolic link)
+                // to handle this edge case, we create a temporal folder inside the current folder.
 
-            temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
-            getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-            packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
-            if (packObjectsResultCommand is null)
-            {
-                Log.Warning("ITR: 'git pack-objects...' command is null");
-                return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+                Log.Warning("ITR: 'git pack-objects...' returned a cross-device error, retrying using a local temporal folder.");
+                temporaryFolder = Path.Combine(Environment.CurrentDirectory, ".git_tmp");
+                if (!Directory.Exists(temporaryFolder))
+                {
+                    Directory.CreateDirectory(temporaryFolder);
+                }
+
+                temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
+                getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
+                packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+                if (packObjectsResultCommand is null)
+                {
+                    Log.Warning("ITR: 'git pack-objects...' command is null");
+                    return new ObjectPackFilesResult(Array.Empty<string>(), temporaryFolder);
+                }
             }
 
             if (packObjectsResultCommand.ExitCode != 0)
