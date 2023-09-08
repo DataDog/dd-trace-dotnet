@@ -31,6 +31,7 @@ namespace StackExchange.Redis.AssemblyConflict.LegacyProject
             // This would cause a segmentation fault on .net core 2.x
             System.Threading.Thread.Sleep(5000);
 #endif
+            Console.WriteLine("App completed successfully");
         }
 
         private static async Task RunTest()

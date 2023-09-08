@@ -37,6 +37,7 @@ namespace IBM.Data.DB2.DBCommand
 
 
             Console.WriteLine("Done");
+            Console.WriteLine("App completed successfully");
         }
     }
 }
