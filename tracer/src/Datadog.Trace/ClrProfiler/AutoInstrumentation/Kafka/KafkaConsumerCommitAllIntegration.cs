@@ -25,11 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaConsumerCommitAllIntegration
 {
-    internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
-    {
-        return CallTargetState.GetDefault();
-    }
-
     internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
         where TResponse : ITopicPartitionOffsets, IDuckType
     {

@@ -83,11 +83,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            if (exception != null)
-            {
-                Console.WriteLine($"#### Exception {exception}");
-            }
-
             state.Scope.DisposeWithException(exception);
             return CallTargetReturn.GetDefault();
         }

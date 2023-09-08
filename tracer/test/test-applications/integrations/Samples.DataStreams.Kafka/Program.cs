@@ -255,6 +255,7 @@ IDisposable CreateScope(ConsumeResult<string, string> consumeResult, string oper
         return new NoOpDisposable();
     }
 
+    Console.WriteLine("#### CREATING SCOPE MANUALLY");
     return SampleHelpers.CreateScopeWithPropagation(
         operationName,
         consumeResult.Message.Headers,
