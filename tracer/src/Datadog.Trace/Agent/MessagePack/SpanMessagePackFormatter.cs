@@ -65,8 +65,6 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ApmEnabled);
 
-        private readonly byte[] _propagatedApmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.Propagated.ApmEnabled);
-
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
         private byte[] _aasSiteKindTagNameBytes;
@@ -297,16 +295,6 @@ namespace Datadog.Trace.Agent.MessagePack
                 }
             }
 
-            // add "apm.enabled:0" tag to all spans when APM is disabled
-            if (!model.TraceChunk.IsApmEnabled)
-            {
-                count++;
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
-                offset += MessagePackBinary.WriteByte(ref bytes, offset, 0);
-                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _propagatedApmEnabledBytes);
-                offset += MessagePackBinary.WriteByte(ref bytes, offset, 0);
-            }
-
             // AAS tags need to be set on any span for the backend to properly handle the billing.
             // That said, it's more intuitive to find it on the local root for the customer.
             if (model.TraceChunk.IsRunningInAzureAppService && model.TraceChunk.AzureAppServiceSettings is { } azureAppServiceSettings)
@@ -485,6 +473,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+            }
+
+            // add "apm.enabled:0" tag to the first span in the chunk when APM is disabled
+            if (!model.TraceChunk.IsApmEnabled && model.IsFirstSpanInChunk)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"

@@ -677,11 +677,6 @@ namespace Datadog.Trace
             /// lower-case hexadecimal string with no zero-padding or `0x` prefix.
             /// </summary>
             internal const string TraceIdUpper = "_dd.p.tid";
-
-            /// <summary>
-            /// Tag used to propagate the status of the APM.
-            /// </summary>
-            public const string ApmEnabled = "_dd.p.apm.enabled";
         }
     }
 }
