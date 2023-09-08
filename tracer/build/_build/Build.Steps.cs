@@ -808,10 +808,10 @@ partial class Build
 
     Target ExtractDebugInfoAwsLambda => _ => _
         .Unlisted()
-        .After(/*BuildProfilerHome,*/ BuildTracerHomeForAwsLambda, PublishNativeLoaderAwsLambda)
+        .After(/*BuildProfilerHome,*/ CompileNativeSrc, PublishNativeLoaderAwsLambda)
         .Executes(() =>
         {
-            // extract debug info from everything in monitoring home and copy it to the linux symbols directory
+            // remove debug info from everything in AWS Lambda home
             var files = AwsLambdaTracerHomeDirectory.GlobFiles("linux-*/*.so");
 
             foreach (var file in files)
