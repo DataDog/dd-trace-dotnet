@@ -158,6 +158,7 @@ public class TelemetryMetricGeneratorTests
 
             public enum LogLevel
             {
+                [Description("")] None,
                 [Description("debug")] Debug,
                 [Description("info")] Info,
                 [Description("error")] Error,
@@ -165,8 +166,9 @@ public class TelemetryMetricGeneratorTests
 
             public enum ErrorType
             {
-                [Description("random")] Random,
-                [Description("ducktyping;othertag;somethingelse")] DuckTyping,
+                [Description("")] None,
+                [Description("random;;")] Random,
+                [Description("ducktyping;;othertag;somethingelse")] DuckTyping,
             }
             """;
 
@@ -245,13 +247,13 @@ public class TelemetryMetricGeneratorTests
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1)
                 {
-                    var index = 4 + ((int)tag1 * 2) + (int)tag2;
+                    var index = 5 + ((int)tag1 * 3) + (int)tag2;
                     Interlocked.Add(ref _buffer.Counts[index], increment);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[10], increment);
+                    Interlocked.Add(ref _buffer.Counts[17], increment);
                 }
 
                 /// <summary>
@@ -263,17 +265,24 @@ public class TelemetryMetricGeneratorTests
                         // metric.zero, index = 0
                         new(null),
                         // metric.one, index = 1
+                        new(null),
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
-                        // metric.two, index = 4
+                        // metric.two, index = 5
+                        new(null),
+                        new(new[] { "random" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "debug" }),
                         new(new[] { "debug", "random" }),
                         new(new[] { "debug", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "info" }),
                         new(new[] { "info", "random" }),
                         new(new[] { "info", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "error" }),
                         new(new[] { "error", "random" }),
                         new(new[] { "error", "ducktyping", "othertag", "somethingelse" }),
-                        // metric.zeroagain, index = 10
+                        // metric.zeroagain, index = 17
                         new(null),
                     };
 
@@ -283,9 +292,9 @@ public class TelemetryMetricGeneratorTests
                 /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
-                    = new []{ 1, 3, 6, 1, };
+                    = new []{ 1, 4, 12, 1, };
 
-                private const int _countsLength = 11;
+                private const int _countsLength = 18;
             }
             """;
 
@@ -367,6 +376,7 @@ public class TelemetryMetricGeneratorTests
 
             public enum LogLevel
             {
+                [Description("")] None,
                 [Description("debug")] Debug,
                 [Description("info")] Info,
                 [Description("error")] Error,
@@ -374,8 +384,9 @@ public class TelemetryMetricGeneratorTests
 
             public enum ErrorType
             {
-                [Description("random")] Random,
-                [Description("ducktyping")] DuckTyping,
+                [Description("")] None,
+                [Description("random;;")] Random,
+                [Description("ducktyping;;othertag;somethingelse")] DuckTyping,
             }
             """;
 
@@ -452,13 +463,13 @@ public class TelemetryMetricGeneratorTests
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int value)
                 {
-                    var index = 4 + ((int)tag1 * 2) + (int)tag2;
+                    var index = 5 + ((int)tag1 * 3) + (int)tag2;
                     Interlocked.Exchange(ref _buffer.Gauges[index], value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[10], value);
+                    Interlocked.Exchange(ref _buffer.Gauges[17], value);
                 }
 
                 /// <summary>
@@ -470,17 +481,24 @@ public class TelemetryMetricGeneratorTests
                         // metric.zero, index = 0
                         new(null),
                         // metric.one, index = 1
+                        new(null),
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
-                        // metric.two, index = 4
+                        // metric.two, index = 5
+                        new(null),
+                        new(new[] { "random" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "debug" }),
                         new(new[] { "debug", "random" }),
-                        new(new[] { "debug", "ducktyping" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "info" }),
                         new(new[] { "info", "random" }),
-                        new(new[] { "info", "ducktyping" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "error" }),
                         new(new[] { "error", "random" }),
-                        new(new[] { "error", "ducktyping" }),
-                        // metric.zeroagain, index = 10
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse" }),
+                        // metric.zeroagain, index = 17
                         new(null),
                     };
 
@@ -490,9 +508,9 @@ public class TelemetryMetricGeneratorTests
                 /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
-                    = new []{ 1, 3, 6, 1, };
+                    = new []{ 1, 4, 12, 1, };
 
-                private const int _gaugesLength = 11;
+                private const int _gaugesLength = 18;
             }
             """;
 
@@ -574,6 +592,7 @@ public class TelemetryMetricGeneratorTests
 
             public enum LogLevel
             {
+                [Description("")] None,
                 [Description("debug")] Debug,
                 [Description("info")] Info,
                 [Description("error")] Error,
@@ -581,8 +600,9 @@ public class TelemetryMetricGeneratorTests
 
             public enum ErrorType
             {
-                [Description("random")] Random,
-                [Description("ducktyping")] DuckTyping,
+                [Description("")] None,
+                [Description("random;;")] Random,
+                [Description("ducktyping;;othertag;somethingelse")] DuckTyping,
             }
             """;
 
@@ -659,13 +679,13 @@ public class TelemetryMetricGeneratorTests
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, double value)
                 {
-                    var index = 4 + ((int)tag1 * 2) + (int)tag2;
+                    var index = 5 + ((int)tag1 * 3) + (int)tag2;
                     _buffer.Distributions[index].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(double value)
                 {
-                    _buffer.Distributions[10].TryEnqueue(value);
+                    _buffer.Distributions[17].TryEnqueue(value);
                 }
 
                 /// <summary>
@@ -677,17 +697,24 @@ public class TelemetryMetricGeneratorTests
                         // metric.zero, index = 0
                         new(null),
                         // metric.one, index = 1
+                        new(null),
                         new(new[] { "debug" }),
                         new(new[] { "info" }),
                         new(new[] { "error" }),
-                        // metric.two, index = 4
+                        // metric.two, index = 5
+                        new(null),
+                        new(new[] { "random" }),
+                        new(new[] { "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "debug" }),
                         new(new[] { "debug", "random" }),
-                        new(new[] { "debug", "ducktyping" }),
+                        new(new[] { "debug", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "info" }),
                         new(new[] { "info", "random" }),
-                        new(new[] { "info", "ducktyping" }),
+                        new(new[] { "info", "ducktyping", "othertag", "somethingelse" }),
+                        new(new[] { "error" }),
                         new(new[] { "error", "random" }),
-                        new(new[] { "error", "ducktyping" }),
-                        // metric.zeroagain, index = 10
+                        new(new[] { "error", "ducktyping", "othertag", "somethingelse" }),
+                        // metric.zeroagain, index = 17
                         new(null),
                     };
 
@@ -697,9 +724,9 @@ public class TelemetryMetricGeneratorTests
                 /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
                 /// </summary>
                 private static int[] TestMetricEntryCounts { get; }
-                    = new []{ 1, 3, 6, 1, };
+                    = new []{ 1, 4, 12, 1, };
 
-                private const int _distributionsLength = 11;
+                private const int _distributionsLength = 18;
             }
             """;
 

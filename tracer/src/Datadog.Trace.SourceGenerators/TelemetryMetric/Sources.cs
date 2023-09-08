@@ -710,8 +710,15 @@ internal partial class Sources
                         foreach (var tag2Value in tag2Values)
                         {
                             i++;
-                            sb.Append(prefix)
-                              .Append("new[] { ");
+                            sb.Append(prefix);
+
+                            if (string.IsNullOrEmpty(tag1Value) && string.IsNullOrEmpty(tag2Value))
+                            {
+                                sb.AppendLine("null),");
+                                continue;
+                            }
+
+                            sb.Append("new[] { ");
 
                             WriteAllValues(sb, tag1Value);
                             WriteAllValues(sb, tag2Value);
@@ -723,8 +730,15 @@ internal partial class Sources
                     else
                     {
                         i++;
-                        sb.Append(prefix)
-                          .Append("new[] { ");
+                        sb.Append(prefix);
+
+                        if (string.IsNullOrEmpty(tag1Value))
+                        {
+                            sb.AppendLine("null),");
+                            continue;
+                        }
+
+                        sb.Append("new[] { ");
 
                         WriteAllValues(sb, tag1Value);
 
@@ -754,9 +768,13 @@ internal partial class Sources
                                                        ? (true, tagValue.Length - previousSeparator)
                                                        : (false, nextSeparator - previousSeparator);
 
-                sb.Append('"')
-                  .Append(tagValue, previousSeparator, length)
-                  .Append("\", ");
+                if (length > 0)
+                {
+                    sb.Append('"')
+                      .Append(tagValue, previousSeparator, length)
+                      .Append("\", ");
+                }
+
                 previousSeparator = nextSeparator + 1;
             }
         }
