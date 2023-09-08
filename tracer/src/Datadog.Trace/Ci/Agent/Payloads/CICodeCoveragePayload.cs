@@ -10,6 +10,7 @@ using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.MessagePack;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
@@ -30,6 +31,8 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public override string EventPlatformSubdomain => "citestcov-intake";
 
         public override string EventPlatformPath => "api/v2/citestcov";
+
+        public override MetricTags.CIVisibilityEndpoints TelemetryEndpoint => MetricTags.CIVisibilityEndpoints.CodeCoverage;
 
         public override bool CanProcessEvent(IEvent @event)
         {

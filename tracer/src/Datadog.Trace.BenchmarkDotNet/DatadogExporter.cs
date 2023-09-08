@@ -45,7 +45,7 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", DateTime.UtcNow, false);
+        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
     }
 
     /// <inheritdoc />
@@ -77,7 +77,7 @@ internal class DatadogExporter : IExporter
                 {
                     BenchmarkMetadata.GetTimes(benchmarkModule.Key, out var moduleStartTime, out var moduleEndTime);
                     var moduleName = benchmarkModule.Key.GetName().Name ?? "Module";
-                    var framework = "BenchmarkDotNet";
+                    var framework = CommonTags.TestingFrameworkNameBenchmarkDotNet;
                     testModule = moduleStartTime is null ?
                                      TestSession.CreateModule(moduleName, framework, version) :
                                      TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);

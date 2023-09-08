@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Tagging;
+using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -62,7 +64,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
             }
 
             CIVisibility.WaitForSkippableTaskToFinish();
-            return new CallTargetState(null, TestModule.Create(testBundleString, "xUnit", frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty));
+            return new CallTargetState(null, TestModule.Create(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty));
         }
 
         return CallTargetState.GetDefault();

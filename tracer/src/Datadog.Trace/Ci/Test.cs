@@ -56,7 +56,7 @@ public sealed class Test
 
         if (CIVisibility.Settings.CodeCoverageEnabled == true)
         {
-            Coverage.CoverageReporter.Handler.StartSession();
+            Coverage.CoverageReporter.Handler.StartSession(module.Framework);
         }
 
         CurrentTest.Value = this;

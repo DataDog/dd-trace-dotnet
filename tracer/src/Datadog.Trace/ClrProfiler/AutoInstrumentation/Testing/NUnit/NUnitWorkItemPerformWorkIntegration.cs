@@ -45,7 +45,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                     var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                     var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                     CIVisibility.WaitForSkippableTaskToFinish();
-                    NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
+                    NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion));
                     break;
                 case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
                     NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));

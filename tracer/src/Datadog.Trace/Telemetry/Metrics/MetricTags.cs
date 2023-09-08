@@ -311,6 +311,7 @@ internal static class MetricTags
     {
         [Description("error_type:timeout")] Timeout,
         [Description("error_type:network")] Network,
+        [Description("error_type:status_code")] StatusCode,
         [Description("error_type:status_code_4xx_response")] StatusCode4xx,
         [Description("error_type:status_code_5xx_response")] StatusCode5xx,
     }
