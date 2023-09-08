@@ -202,8 +202,6 @@ void StackSamplerLoop::MainLoopIteration()
     // and if they are currently running, they are sampled.
     if (_isCpuEnabled)
     {
-        CpuProfilingIteration();
-
         if (_areInternalMetricsEnabled)
         {
             // avoid an unnecessary call to OpSysTools::GetHighPrecisionTimestamp() if possible
@@ -211,7 +209,12 @@ void StackSamplerLoop::MainLoopIteration()
             {
                 timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
             }
+        }
 
+        CpuProfilingIteration();
+
+        if (_areInternalMetricsEnabled)
+        {
             timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
             _cpuDurationMetric->Add(static_cast<double>(timestampNanosecs1 - timestampNanosecs2));
         }
