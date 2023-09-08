@@ -6,7 +6,7 @@
 
 using System;
 
-namespace Datadog.Trace.Util.Delegates.Actions;
+namespace Datadog.Trace.Util.Delegates;
 
 #pragma warning disable SA1402
 
