@@ -170,6 +170,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     if (!CheckRegistry(CheckWindowsInstallation(), registryService))
                     {
                         ok = false;
+                    }
+
+                    if (!ok)
+                    {
                         CheckAppPools(appPool);
                     }
                 }
@@ -558,8 +562,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                                 if (subKey?.GetValue("DisplayName") is datadog64BitProgram or datadog32BitProgram && displayName is null)
                                 {
-                                    displayName = (string?)subKey?.GetValue("DisplayName");
-                                    tracerVersion = subKey?.GetValue("VersionMajor") + "." + subKey?.GetValue("VersionMinor");
+                                    displayName = (string?)subKey.GetValue("DisplayName");
+                                    tracerVersion = subKey.GetValue("VersionMajor") + "." + subKey.GetValue("VersionMinor");
                                     break;
                                 }
                             }
@@ -626,6 +630,34 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     {
                         Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, tracingRelevantVariables[variable.Key], variable.Value.ToString()));
                     }
+
+                    foundVariables.Clear();
+                    variableFound = false;
+                }
+            }
+
+            var serverManager = new ServerManager();
+            var defaultEnvironmentVariables = serverManager.ApplicationPools.GetChildElement("applicationPoolDefaults").GetCollection("environmentVariables");
+
+            foreach (var variable in defaultEnvironmentVariables)
+            {
+                var name = (string)variable.Attributes["name"].Value;
+                var value = (string)variable.Attributes["value"].Value;
+
+                if (tracingRelevantVariables.ContainsKey(name) && value != tracingRelevantVariables[name])
+                {
+                    variableFound = true;
+                    foundVariables[name] = value;
+                }
+            }
+
+            if (variableFound)
+            {
+                Utils.WriteWarning(AppPoolCheckFindings("applicationPoolDefaults"));
+
+                foreach (var variable in foundVariables)
+                {
+                    Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, tracingRelevantVariables[variable.Key], variable.Value.ToString()));
                 }
             }
         }
