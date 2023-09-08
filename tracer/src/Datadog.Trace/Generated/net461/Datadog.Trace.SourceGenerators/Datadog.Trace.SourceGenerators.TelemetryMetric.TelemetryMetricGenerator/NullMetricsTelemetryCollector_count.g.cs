@@ -139,4 +139,8 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1)
     {
     }
+
+    public void RecordCountIastRequestTainted(int increment = 1)
+    {
+    }
 }
