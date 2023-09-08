@@ -808,7 +808,7 @@ partial class Build
 
     Target RemoveDebugInfoAwsLambda => _ => _
         .Unlisted()
-        .After(/*BuildProfilerHome,*/ CompileNativeSrc, PublishNativeLoaderAwsLambda)
+        .After(PublishNativeTracerAwsLambda, PublishNativeLoaderAwsLambda)
         .Executes(() =>
         {
             // remove debug info from everything in AWS Lambda home
