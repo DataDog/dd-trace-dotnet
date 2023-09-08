@@ -32,7 +32,7 @@ public class HttpCookieAspect
 
         if (!string.IsNullOrEmpty(value))
         {
-            PropagationModuleImpl.AddTainted(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), cookie?.Name, value));
+            PropagationModuleImpl.AddTaintedSource(value, new Source(SourceType.GetByte(SourceTypeName.CookieValue), cookie?.Name, value));
         }
 
         return value;

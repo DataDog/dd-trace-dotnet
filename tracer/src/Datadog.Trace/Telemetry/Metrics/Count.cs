@@ -1,4 +1,4 @@
-﻿// <copyright file="Count.cs" company="Datadog">
+// <copyright file="Count.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -182,5 +182,23 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
 
-#endregion
+    #endregion
+    #region Iast Namespace
+
+    /// <summary>
+    /// Counts the number of source methods that have been called
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastInstrumentedSources>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
+
+    /// <summary>
+    /// Counts the number of proopagation methods that have been called
+    /// </summary>
+    [TelemetryMetric("executed.propagation", isCommon: true, NS.Iast)] IastExecutedPropagations,
+
+    /// <summary>
+    /// Counts the number of sinks that have been called
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
+
+    #endregion
 }
