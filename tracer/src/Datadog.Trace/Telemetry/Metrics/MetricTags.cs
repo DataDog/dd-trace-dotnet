@@ -338,6 +338,7 @@ internal static class MetricTags
 
     public enum CIVisibilityITRSettingsResponse
     {
+        [Description("")] CoverageDisabled_ItrSkipDisabled,
         [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
         [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
         [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,

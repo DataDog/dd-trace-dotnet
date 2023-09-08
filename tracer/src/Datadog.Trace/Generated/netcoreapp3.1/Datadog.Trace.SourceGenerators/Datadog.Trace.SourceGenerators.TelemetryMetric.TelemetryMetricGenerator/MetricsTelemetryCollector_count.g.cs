@@ -302,51 +302,51 @@ internal partial class MetricsTelemetryCollector
 
     public void RecordCountCIVisibilityITRSkippableTestsRequest(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[661], increment);
+        Interlocked.Add(ref _buffer.Counts[662], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
     {
-        var index = 662 + (int)tag;
+        var index = 663 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[666], increment);
+        Interlocked.Add(ref _buffer.Counts[667], increment);
     }
 
     public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[667], increment);
+        Interlocked.Add(ref _buffer.Counts[668], increment);
     }
 
     public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 668 + (int)tag;
+        var index = 669 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 672 + (int)tag;
+        var index = 673 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
     {
-        var index = 676 + (int)tag;
+        var index = 677 + (int)tag;
         Interlocked.Add(ref _buffer.Counts[index], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[680], increment);
+        Interlocked.Add(ref _buffer.Counts[681], increment);
     }
 
     public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
     {
-        Interlocked.Add(ref _buffer.Counts[681], increment);
+        Interlocked.Add(ref _buffer.Counts[682], increment);
     }
 
     /// <summary>
@@ -1064,38 +1064,39 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
             // git_requests.settings_response, index = 658
+            new(null),
             new(new[] { "coverage_enabled" }),
             new(new[] { "itrskip_enabled" }),
             new(new[] { "coverage_enabled", "itrskip_enabled" }),
-            // itr_skippable_tests.request, index = 661
+            // itr_skippable_tests.request, index = 662
             new(null),
-            // itr_skippable_tests.request_errors, index = 662
+            // itr_skippable_tests.request_errors, index = 663
             new(new[] { "error_type:timeout" }),
             new(new[] { "error_type:network" }),
             new(new[] { "error_type:status_code_4xx_response" }),
             new(new[] { "error_type:status_code_5xx_response" }),
-            // itr_skippable_tests.response_tests, index = 666
+            // itr_skippable_tests.response_tests, index = 667
             new(null),
-            // itr_skippable_tests.response_suites, index = 667
+            // itr_skippable_tests.response_suites, index = 668
             new(null),
-            // itr_skipped, index = 668
+            // itr_skipped, index = 669
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_unskippable, index = 672
+            // itr_unskippable, index = 673
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // itr_forced_run, index = 676
+            // itr_forced_run, index = 677
             new(new[] { "event_type:test" }),
             new(new[] { "event_type:suite" }),
             new(new[] { "event_type:module" }),
             new(new[] { "event_type:session" }),
-            // code_coverage.is_empty, index = 680
+            // code_coverage.is_empty, index = 681
             new(null),
-            // code_coverage.errors, index = 681
+            // code_coverage.errors, index = 682
             new(null),
         };
 
@@ -1105,7 +1106,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountEntryCounts { get; }
-        = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 40, 40, 10, 10, 4, 1, 2, 8, 7, 42, 1, 4, 1, 4, 1, 4, 3, 1, 4, 1, 1, 4, 4, 4, 1, 1, };
+        = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 40, 40, 10, 10, 4, 1, 2, 8, 7, 42, 1, 4, 1, 4, 1, 4, 4, 1, 4, 1, 1, 4, 4, 4, 1, 1, };
 
-    private const int _countsLength = 682;
+    private const int _countsLength = 683;
 }
