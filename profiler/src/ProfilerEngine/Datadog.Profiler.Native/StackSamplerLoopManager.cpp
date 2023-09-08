@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "StackSamplerLoopManager.h"
+
 #include "IClrLifetime.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -10,8 +11,8 @@
 using namespace std::chrono_literals;
 
 constexpr std::chrono::milliseconds DeadlockDetectionInterval = 1s;
-constexpr std::chrono::milliseconds StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs = 500ms;
-constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs);
+constexpr std::chrono::milliseconds MaxExpectedStackSampleCollectionDurationMs = 500ms;
+constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(MaxExpectedStackSampleCollectionDurationMs);
 
 #ifdef NDEBUG
 constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 30000ms;
@@ -104,7 +105,8 @@ bool StackSamplerLoopManager::Stop()
     }
     _isStopped = true;
 
-    GracefulShutdownStackSampling();
+    _pStackSamplerLoop->Stop();
+
     ShutdownWatcher();
 
     return true;
@@ -123,15 +125,8 @@ void StackSamplerLoopManager::RunStackSampling()
         _pWallTimeCollector,
         _pCpuTimeCollector,
         _metricsRegistry);
-}
 
-void StackSamplerLoopManager::GracefulShutdownStackSampling()
-{
-    if (_pStackSamplerLoop != nullptr)
-    {
-        _pStackSamplerLoop->RequestShutdown();
-        _pStackSamplerLoop->Join();
-    }
+    _pStackSamplerLoop->Start();
 }
 
 void StackSamplerLoopManager::RunWatcher()

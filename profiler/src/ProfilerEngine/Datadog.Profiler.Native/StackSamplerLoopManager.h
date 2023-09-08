@@ -103,7 +103,6 @@ private:
     static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
     void RunStackSampling();
-    void GracefulShutdownStackSampling();
 
     void RunWatcher();
     void ShutdownWatcher();
