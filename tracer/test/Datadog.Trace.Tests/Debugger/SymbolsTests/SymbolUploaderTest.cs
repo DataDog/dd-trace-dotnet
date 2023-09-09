@@ -32,7 +32,7 @@ public class SymbolUploaderTest
         var discoveryService = new DiscoveryServiceMock();
         _api = new MockBatchUploadApi();
         var settings = new DebuggerSettings(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, "1000000" } }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
         _upload = SymbolsUploader.Create(_api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
     }
@@ -43,7 +43,7 @@ public class SymbolUploaderTest
         var (root, classes) = GenerateSymbolString(1);
         var success = await UploadClasses(root, classes);
         Assert.True(success);
-        var result = DeserializeRoot(_api.Segments.SelectMany(arr => arr).ToArray());
+        var result = DeserializeRoot(_api.Segments.SelectMany(arr => arr).ToArray())[0];
         Assert.NotNull(result);
         var assembly = result.Scopes[0];
         var classesScope = assembly.Scopes;
@@ -61,12 +61,15 @@ public class SymbolUploaderTest
         Assert.True(success);
         var result = DeserializeRoot(_api.Segments.SelectMany(arr => arr).ToArray());
         Assert.NotNull(result);
-        var assembly = result.Scopes[0];
-        var classesScope = assembly.Scopes;
-        Assert.True(result.Scopes.Count == root.Scopes.Count);
-        Assert.True(classesScope.Count == 1000);
-        Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
-        Assert.True(classesScope.All(cls => cls.ScopeType == SymbolType.Class));
+        foreach (var root1 in result)
+        {
+            Assert.NotNull(root1);
+            var assembly = root1.Scopes[0];
+            var classesScope = assembly.Scopes;
+            Assert.True(root1.Scopes.Count == root.Scopes.Count);
+            Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
+            Assert.True(classesScope.All(cls => cls.ScopeType == SymbolType.Class));
+        }
     }
 
     private async Task<bool> UploadClasses(Root root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> classes)
@@ -81,10 +84,14 @@ public class SymbolUploaderTest
         return true;
     }
 
-    private Root? DeserializeRoot(byte[] json)
+    private Root?[] DeserializeRoot(byte[] json)
     {
+        const string startOfRoot = "{\"service\":";
         var jsonStr = Encoding.UTF8.GetString(json);
-        return JsonConvert.DeserializeObject<Root>(jsonStr);
+        return jsonStr.
+               Split(new[] { startOfRoot }, StringSplitOptions.RemoveEmptyEntries).
+               Select(str => startOfRoot + str).
+               Select(JsonConvert.DeserializeObject<Root>).ToArray();
     }
 
     private (Root Root, IEnumerable<Trace.Debugger.Symbols.Model.Scope?> Classes) GenerateSymbolString(int numberOfTypes)
@@ -95,7 +102,7 @@ public class SymbolUploaderTest
             Language = "dotnet",
             Service = nameof(SymbolUploaderTest),
             Version = "0",
-            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = SymbolType.Assembly, Scopes = new List<Trace.Debugger.Symbols.Model.Scope>() } }
+            Scopes = new List<Trace.Debugger.Symbols.Model.Scope> { new() { ScopeType = SymbolType.Assembly, Scopes = null } }
         };
 
         var scopes = new List<Trace.Debugger.Symbols.Model.Scope?>();

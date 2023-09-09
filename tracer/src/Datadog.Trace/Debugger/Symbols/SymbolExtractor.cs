@@ -23,7 +23,25 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal class SymbolExtractor : IDisposable
     {
+        private const MethodAttributes StaticFinalVirtual = MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.Virtual;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
+
+        private readonly Dictionary<int, string> _methodAccess = new()
+        {
+            { 0x0001, "Private" },
+            { 0x0002, "FamANDAssem" },
+            { 0x0003, "Assembly" },
+            { 0x0004, "Family" },
+            { 0x0005, "FamORAssem" },
+            { 0x0006, "Public" }
+        };
+
+        private readonly Dictionary<int, string> _methodAttributes = new()
+        {
+            { 0x0010, "Static" },
+            { 0x0020, "Final" },
+            { 0x0040, "Virtual" }
+        };
 
         private readonly ModuleDefMD _module;
         private bool _disposed;
@@ -75,7 +93,7 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 Name = _module.Assembly.FullName,
                 ScopeType = SymbolType.Assembly,
-                SourceFile = _module.Location,
+                SourceFile = _module.Location
             };
 
             return assemblyScope;
@@ -305,18 +323,17 @@ namespace Datadog.Trace.Debugger.Symbols
         protected virtual Model.Scope CreateMethodScope(TypeDef type, MethodDef method)
         {
             // arguments
-            var argsSymbol = GetArgsSymbol(method, -1);
+            var argsSymbol = GetArgsSymbol(method);
 
             // closures
             var closureScopes = GetClosureScopes(type, method);
+            var methodAttributes = method.Attributes & StaticFinalVirtual;
 
-            const MethodAttributes staticVirtualFinal = MethodAttributes.Static | MethodAttributes.Virtual | MethodAttributes.Final;
-            var methodAttributes = method.Attributes & staticVirtualFinal;
             var methodLanguageSpecifics = new LanguageSpecifics
             {
                 ReturnType = method.ReturnType.FullName,
-                AccessModifiers = new[] { method.Access.ToString() },
-                Annotations = methodAttributes > 0 ? new[] { methodAttributes.ToString() } : null
+                AccessModifiers = method.Access > 0 ? new[] { _methodAccess[Convert.ToUInt16(method.Access)] } : null,
+                Annotations = methodAttributes > 0 ? new[] { _methodAttributes[Convert.ToUInt16(methodAttributes)] } : null
             };
 
             var methodScope = new Model.Scope
@@ -407,7 +424,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return closureMethodScope;
         }
 
-        protected Symbol[]? GetArgsSymbol(MethodDef method, int startLine)
+        private Symbol[]? GetArgsSymbol(MethodDef method)
         {
             if (method.Parameters.Count <= 0 ||
                 (method.Parameters.Count == 1 && method.Parameters[0].IsHiddenThisParameter))
@@ -424,7 +441,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     Name = parameter.Name,
                     Type = parameter.Type.FullName,
                     SymbolType = SymbolType.Arg,
-                    Line = startLine
+                    Line = -1
                 };
             }
 

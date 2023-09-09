@@ -35,8 +35,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
         }
 
         var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false);
-        var typeSourceFile = firstSq.Document?.URL;
         var startLine = firstSq.Line == 0 ? -1 : firstSq.Line;
+        var typeSourceFile = firstSq.Document?.URL;
         var lastSq = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false);
         var endLine = lastSq.EndLine;
         var startColumn = firstSq.Column == 0 ? -1 : firstSq.Column;
