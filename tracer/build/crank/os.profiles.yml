@@ -29,7 +29,7 @@ profiles:
           - "../../tracer-home-win/**;{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
           downloadFiles:
           - ".\\logs\\*"
-          downloadFilesOutput: "results/"
+          downloadFilesOutput: "results/logs/"
       load:
         endpoints:
           - http://localhost:5010
