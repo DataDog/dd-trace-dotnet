@@ -26,16 +26,16 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action action2 = () => { Interlocked.Increment(ref value); };
+        Action action2 = () => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = ActionInstrumentation.Wrap(action2, new DefaultAction0Callbacks(
                                                  target =>
                                                  {
-                                                     Interlocked.Increment(ref value);
+                                                     Interlocked.Increment(ref value).Should().Be(1);
                                                      return null;
                                                  },
                                                  (target, exception, state) =>
                                                  {
-                                                     Interlocked.Increment(ref value);
+                                                     Interlocked.Increment(ref value).Should().Be(3);
                                                  }));
         action2();
         value.Should().Be(3);
