@@ -13,11 +13,13 @@ namespace Datadog.Trace.Util.Delegates;
 
 internal class ActionInstrumentation
 {
-    public static Delegate Wrap(Delegate target, ActionCallbacks callbacks)
-        => Wrap<Delegate>(target, callbacks);
+    public static Delegate Wrap<TActionCallbacks>(Delegate target, TActionCallbacks callbacks)
+        where TActionCallbacks : struct, IActionCallbacks
+        => Wrap<Delegate, TActionCallbacks>(target, callbacks);
 
-    public static TDelegate Wrap<TDelegate>(TDelegate target, ActionCallbacks callbacks)
+    public static TDelegate Wrap<TDelegate, TActionCallbacks>(TDelegate target, TActionCallbacks callbacks)
         where TDelegate : Delegate
+        where TActionCallbacks : struct, IActionCallbacks
     {
         var targetType = target.GetType();
         var invokeMethod = targetType.GetMethod("Invoke");
@@ -26,64 +28,70 @@ internal class ActionInstrumentation
         {
             case 0:
             {
-                var wrapperType = typeof(Action0Wrapper<>).MakeGenericType(
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                var wrapperType = typeof(Action0Wrapper<,>).MakeGenericType(
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
             case 1:
             {
-                var wrapperType = typeof(Action1Wrapper<,>).MakeGenericType(
+                var wrapperType = typeof(Action1Wrapper<,,>).MakeGenericType(
                     arguments[0].ParameterType,
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
             case 2:
             {
-                var wrapperType = typeof(Action2Wrapper<,,>).MakeGenericType(
+                var wrapperType = typeof(Action2Wrapper<,,,>).MakeGenericType(
                     arguments[0].ParameterType,
                     arguments[1].ParameterType,
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
             case 3:
             {
-                var wrapperType = typeof(Action3Wrapper<,,,>).MakeGenericType(
+                var wrapperType = typeof(Action3Wrapper<,,,,>).MakeGenericType(
                     arguments[0].ParameterType,
                     arguments[1].ParameterType,
                     arguments[2].ParameterType,
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
             case 4:
             {
-                var wrapperType = typeof(Action4Wrapper<,,,,>).MakeGenericType(
+                var wrapperType = typeof(Action4Wrapper<,,,,,>).MakeGenericType(
                     arguments[0].ParameterType,
                     arguments[1].ParameterType,
                     arguments[2].ParameterType,
                     arguments[3].ParameterType,
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
             case 5:
             {
-                var wrapperType = typeof(Action5Wrapper<,,,,,>).MakeGenericType(
+                var wrapperType = typeof(Action5Wrapper<,,,,,,>).MakeGenericType(
                     arguments[0].ParameterType,
                     arguments[1].ParameterType,
                     arguments[2].ParameterType,
                     arguments[3].ParameterType,
                     arguments[4].ParameterType,
-                    targetType);
-                var wrapper = (ActionWrapper)Activator.CreateInstance(wrapperType, target, callbacks)!;
+                    targetType,
+                    typeof(TActionCallbacks));
+                var wrapper = (ActionWrapper<TActionCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
                 return (TDelegate)wrapper.Handler;
             }
 
@@ -93,11 +101,12 @@ internal class ActionInstrumentation
         }
     }
 
-    private abstract class ActionWrapper
+    private abstract class ActionWrapper<TActionCallbacks>
+        where TActionCallbacks : struct, IActionCallbacks
     {
         private Delegate? _handler;
 
-        protected ActionWrapper(Delegate target, ActionCallbacks? callbacks)
+        protected ActionWrapper(Delegate target, TActionCallbacks callbacks)
         {
             Target = target;
             Callbacks = callbacks;
@@ -107,14 +116,15 @@ internal class ActionInstrumentation
 
         public Delegate Handler => _handler ??= GetHandler();
 
-        public ActionCallbacks? Callbacks { get; }
+        public TActionCallbacks Callbacks { get; }
 
         protected abstract Delegate GetHandler();
     }
 
-    private abstract class ActionWrapper<TDelegate> : ActionWrapper
+    private abstract class ActionWrapper<TDelegate, TActionCallbacks> : ActionWrapper<TActionCallbacks>
+        where TActionCallbacks : struct, IActionCallbacks
     {
-        protected ActionWrapper(Delegate target, ActionCallbacks? callbacks)
+        protected ActionWrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -127,9 +137,10 @@ internal class ActionInstrumentation
 
 #region Action 0 Argument
 
-    private class Action0Wrapper<TDelegate> : ActionWrapper<TDelegate>
+    private class Action0Wrapper<TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction0Callbacks
     {
-        public Action0Wrapper(Delegate target, Action0Callbacks? callbacks)
+        public Action0Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -137,18 +148,17 @@ internal class ActionInstrumentation
         private void Invoke()
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action0Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender);
+                    state = Callbacks.OnDelegateBegin(sender);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke();
@@ -162,11 +172,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
@@ -176,9 +186,10 @@ internal class ActionInstrumentation
 
 #region Action 1 Argument
 
-    private class Action1Wrapper<TArg, TDelegate> : ActionWrapper<TDelegate>
+    private class Action1Wrapper<TArg, TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction1Callbacks
     {
-        public Action1Wrapper(Delegate target, Action1Callbacks? callbacks)
+        public Action1Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -186,18 +197,17 @@ internal class ActionInstrumentation
         private void Invoke(TArg arg1)
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action1Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender, arg1);
+                    state = Callbacks.OnDelegateBegin(sender, ref arg1);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke(arg1);
@@ -211,11 +221,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
@@ -225,9 +235,10 @@ internal class ActionInstrumentation
 
 #region Action 2 Arguments
 
-    private class Action2Wrapper<TArg, TArg2, TDelegate> : ActionWrapper<TDelegate>
+    private class Action2Wrapper<TArg, TArg2, TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction2Callbacks
     {
-        public Action2Wrapper(Delegate target, Action2Callbacks? callbacks)
+        public Action2Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -235,18 +246,17 @@ internal class ActionInstrumentation
         private void Invoke(TArg arg1, TArg2 arg2)
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action2Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender, arg1, arg2);
+                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke(arg1, arg2);
@@ -260,11 +270,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
@@ -274,9 +284,10 @@ internal class ActionInstrumentation
 
 #region Action 3 Arguments
 
-    private class Action3Wrapper<TArg, TArg2, TArg3, TDelegate> : ActionWrapper<TDelegate>
+    private class Action3Wrapper<TArg, TArg2, TArg3, TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction3Callbacks
     {
-        public Action3Wrapper(Delegate target, Action3Callbacks? callbacks)
+        public Action3Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -284,18 +295,17 @@ internal class ActionInstrumentation
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3)
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action3Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender, arg1, arg2, arg3);
+                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke(arg1, arg2, arg3);
@@ -309,11 +319,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
@@ -323,9 +333,10 @@ internal class ActionInstrumentation
 
 #region Action 4 Arguments
 
-    private class Action4Wrapper<TArg, TArg2, TArg3, TArg4, TDelegate> : ActionWrapper<TDelegate>
+    private class Action4Wrapper<TArg, TArg2, TArg3, TArg4, TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction4Callbacks
     {
-        public Action4Wrapper(Delegate target, Action4Callbacks? callbacks)
+        public Action4Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -333,18 +344,17 @@ internal class ActionInstrumentation
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action4Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender, arg1, arg2, arg3, arg4);
+                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke(arg1, arg2, arg3, arg4);
@@ -358,11 +368,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
@@ -372,9 +382,10 @@ internal class ActionInstrumentation
 
 #region Action 5 Arguments
 
-    private class Action5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TDelegate> : ActionWrapper<TDelegate>
+    private class Action5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TDelegate, TActionCallbacks> : ActionWrapper<TDelegate, TActionCallbacks>
+        where TActionCallbacks : struct, IAction5Callbacks
     {
-        public Action5Wrapper(Delegate target, Action5Callbacks? callbacks)
+        public Action5Wrapper(Delegate target, TActionCallbacks callbacks)
             : base(target, callbacks)
         {
         }
@@ -382,18 +393,17 @@ internal class ActionInstrumentation
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
         {
             var sender = Target.Target;
-            var callbacks = Callbacks as Action5Callbacks;
             object? state = null;
             Exception? exception = null;
             try
             {
                 try
                 {
-                    state = callbacks?.OnDelegateBegin?.Invoke(sender, arg1, arg2, arg3, arg4, arg5);
+                    state = Callbacks.OnDelegateBegin(sender, ref arg1, ref arg2, ref arg3, ref arg4, ref arg5);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
 
                 Target.DynamicInvoke(arg1, arg2, arg3, arg4, arg5);
@@ -407,11 +417,11 @@ internal class ActionInstrumentation
             {
                 try
                 {
-                    callbacks?.OnDelegateEnd?.Invoke(sender, exception, state);
+                    Callbacks.OnDelegateEnd(sender, exception, state);
                 }
                 catch (Exception innerException)
                 {
-                    callbacks?.OnException?.Invoke(sender, innerException);
+                    Callbacks.OnException(sender, innerException);
                 }
             }
         }
