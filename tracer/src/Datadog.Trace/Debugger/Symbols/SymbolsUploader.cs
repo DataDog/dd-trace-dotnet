@@ -241,7 +241,8 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var classesIndex = rootAsString.IndexOf(classScopeString, StringComparison.Ordinal);
 
-            sb.Insert(0, rootAsString.Substring(0, classesIndex + classScopeString.Length - "null".Length));
+            sb.Insert(0, rootAsString.Substring(0, classesIndex + classScopeString.Length - "null".Length) + "[");
+            sb.Append("]");
             sb.Append(rootAsString.Substring(classesIndex + classScopeString.Length));
         }
 
