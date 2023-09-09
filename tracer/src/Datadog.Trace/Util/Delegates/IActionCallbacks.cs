@@ -8,6 +8,8 @@ using System;
 
 namespace Datadog.Trace.Util.Delegates;
 
+#pragma warning disable SA1201
+
 internal interface IActionCallbacks
 {
     void OnDelegateEnd(object? sender, Exception? exception, object? state);
@@ -45,6 +47,10 @@ internal interface IAction5Callbacks : IActionCallbacks
     object? OnDelegateBegin<TArg1, TArg2, TArg3, TArg4, TArg5>(object? sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5);
 }
 
+internal delegate void DelegateEnd(object? sender, Exception? exception, object? state);
+
+internal delegate void ExceptionDelegate(object? sender, Exception ex);
+
 internal readonly struct DefaultAction0Callbacks : IAction0Callbacks
 {
     public readonly DelegateBegin? OnDelegateBegin;
@@ -59,10 +65,6 @@ internal readonly struct DefaultAction0Callbacks : IAction0Callbacks
     }
 
     public delegate object? DelegateBegin(object? sender);
-
-    public delegate void DelegateEnd(object? sender, Exception? exception, object? state);
-
-    public delegate void ExceptionDelegate(object? sender, Exception ex);
 
     object? IAction0Callbacks.OnDelegateBegin(object? sender)
         => OnDelegateBegin?.Invoke(sender);
