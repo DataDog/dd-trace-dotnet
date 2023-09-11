@@ -53,59 +53,6 @@ namespace Datadog.Trace.AppSec.Waf
 
         public static Obj Encode(object o, WafLibraryInvoker wafLibraryInvoker, List<Obj>? argCache = null, bool applySafetyLimits = true) => EncodeInternal(o, argCache, WafConstants.MaxContainerDepth, applySafetyLimits, wafLibraryInvoker);
 
-        public static object Decode(Obj o) => InnerDecode(o.InnerStruct);
-
-        public static object InnerDecode(DdwafObjectStruct o)
-        {
-            switch (DecodeArgsType(o.Type))
-            {
-                case ObjType.Invalid:
-                    return new object();
-                case ObjType.SignedNumber:
-                    return o.IntValue;
-                case ObjType.UnsignedNumber:
-                    return o.UintValue;
-                case ObjType.Bool:
-                    return o.BoolValue;
-                case ObjType.Double:
-                    return o.DoubleValue;
-                case ObjType.String:
-                    return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
-                case ObjType.Array:
-                    var arr = new object[o.NbEntries];
-                    for (var i = 0; i < arr.Length; i++)
-                    {
-                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
-                        if (nextObj != null)
-                        {
-                            var next = (DdwafObjectStruct)nextObj;
-                            arr[i] = InnerDecode(next);
-                        }
-                    }
-
-                    return arr;
-                case ObjType.Map:
-                    var entries = (int)o.NbEntries;
-                    var map = new Dictionary<string, object>(entries);
-                    for (int i = 0; i < entries; i++)
-                    {
-                        var nextObj = Marshal.PtrToStructure(o.Array + (i * ObjectStructSize), typeof(DdwafObjectStruct));
-                        if (nextObj != null)
-                        {
-                            var next = (DdwafObjectStruct)nextObj;
-                            var key = Marshal.PtrToStringAnsi(next.ParameterName, (int)next.ParameterNameLength) ?? string.Empty;
-                            map[key] = InnerDecode(next);
-                            var nextO = InnerDecode(next);
-                            map[key] = nextO;
-                        }
-                    }
-
-                    return map;
-                default:
-                    throw new ArgumentOutOfRangeException();
-            }
-        }
-
         private static Obj EncodeUnknownType(object o, WafLibraryInvoker wafLibraryInvoker)
         {
             Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
