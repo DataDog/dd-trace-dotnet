@@ -10,7 +10,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
@@ -20,7 +19,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 {
     private readonly TimeSpan _aggregationInterval;
     private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
-    private readonly AggregatedMetrics _aggregated = new();
+    private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private MetricBuffer _buffer = new();
@@ -56,10 +55,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         List<MetricData>? metricData;
         List<DistributionMetricData>? distributionData;
 
-        lock (_aggregated)
+        var aggregated = _aggregated.Value;
+        lock (aggregated)
         {
-            metricData = GetMetricData(_aggregated.PublicApiCounts, _aggregated.Counts, _aggregated.Gauges);
-            distributionData = GetDistributionData(_aggregated.Distributions);
+            metricData = GetMetricData(aggregated.PublicApiCounts, aggregated.Counts, aggregated.Gauges);
+            distributionData = GetDistributionData(aggregated.Distributions);
         }
 
         return new(metricData, distributionData);
@@ -85,15 +85,16 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
     {
         var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
 
+        var aggregated = _aggregated.Value;
         // _aggregated, containing the aggregated metrics, is not thread-safe
         // and is also used when getting the metrics for serialization.
-        lock (_aggregated)
+        lock (aggregated)
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            AggregateMetric(buffer.PublicApiCounts, timestamp, _aggregated.PublicApiCounts);
-            AggregateMetric(buffer.Counts, timestamp, _aggregated.Counts);
-            AggregateMetric(buffer.Gauges, timestamp, _aggregated.Gauges);
-            AggregateDistribution(buffer.Distributions, _aggregated.Distributions);
+            AggregateMetric(buffer.PublicApiCounts, timestamp, aggregated.PublicApiCounts);
+            AggregateMetric(buffer.Counts, timestamp, aggregated.Counts);
+            AggregateMetric(buffer.Gauges, timestamp, aggregated.Gauges);
+            AggregateDistribution(buffer.Distributions, aggregated.Distributions);
         }
 
         // prepare the buffer for next time

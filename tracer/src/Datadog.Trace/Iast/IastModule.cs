@@ -12,7 +12,9 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
 using Datadog.Trace.Iast.Settings;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -38,6 +40,7 @@ internal static class IastModule
     {
         try
         {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.LdapInjection);
             return GetScope(evidence, IntegrationId.Ldap, VulnerabilityTypeName.LdapInjection, OperationNameLdapInjection, true);
         }
         catch (Exception ex)
@@ -51,6 +54,7 @@ internal static class IastModule
     {
         try
         {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.Ssrf);
             return GetScope(evidence, IntegrationId.Ssrf, VulnerabilityTypeName.Ssrf, OperationNameSsrf, true);
         }
         catch (Exception ex)
@@ -64,6 +68,7 @@ internal static class IastModule
     {
         try
         {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.PathTraversal);
             return GetScope(evidence, IntegrationId.PathTraversal, VulnerabilityTypeName.PathTraversal, OperationNamePathTraversal, true);
         }
         catch (Exception ex)
@@ -77,6 +82,7 @@ internal static class IastModule
     {
         try
         {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.SqlInjection);
             return GetScope(query, integrationId, VulnerabilityTypeName.SqlInjection, OperationNameSqlInjection, true);
         }
         catch (Exception ex)
@@ -90,6 +96,7 @@ internal static class IastModule
     {
         try
         {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.CommandInjection);
             var evidence = BuildCommandInjectionEvidence(file, argumentLine, argumentList);
             return string.IsNullOrEmpty(evidence) ? null : GetScope(evidence, integrationId, VulnerabilityTypeName.CommandInjection, OperationNameCommandInjection, true);
         }
@@ -134,24 +141,28 @@ internal static class IastModule
 
     public static Scope? OnInsecureCookie(IntegrationId integrationId, string cookieName)
     {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.InsecureCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.InsecureCookie, (VulnerabilityTypeName.InsecureCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoHttpOnlyCookie(IntegrationId integrationId, string cookieName)
     {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.NoHttpOnlyCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoHttpOnlyCookie, (VulnerabilityTypeName.NoHttpOnlyCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnNoSamesiteCookie(IntegrationId integrationId, string cookieName)
     {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.NoSameSiteCookie);
         // We provide a hash value for the vulnerability instead of calculating one, following the agreed conventions
         return AddWebVulnerability(cookieName, integrationId, VulnerabilityTypeName.NoSameSiteCookie, (VulnerabilityTypeName.NoSameSiteCookie.ToString() + ":" + cookieName).GetStaticHashCode());
     }
 
     public static Scope? OnCipherAlgorithm(Type type, IntegrationId integrationId)
     {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakCipher);
         var algorithm = type.BaseType?.Name;
 
         if (algorithm is null || !InvalidCipherAlgorithm(type, algorithm))
@@ -164,12 +175,37 @@ internal static class IastModule
 
     public static Scope? OnHashingAlgorithm(string? algorithm, IntegrationId integrationId)
     {
+        OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakHash);
         if (algorithm == null || !InvalidHashAlgorithm(algorithm))
         {
             return null;
         }
 
         return GetScope(algorithm, integrationId, VulnerabilityTypeName.WeakHash, OperationNameWeakHash);
+    }
+
+    internal static void OnExecutedPropagationTelemetry()
+    {
+        if (ExecutedTelemetryHelper.EnabledDebug())
+        {
+            GetIastContext()?.OnExecutedPropagationTelemetry();
+        }
+    }
+
+    internal static void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    {
+        if (ExecutedTelemetryHelper.Enabled())
+        {
+            GetIastContext()?.OnExecutedSourceTelemetry(source);
+        }
+    }
+
+    internal static void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
+    {
+        if (ExecutedTelemetryHelper.Enabled())
+        {
+            GetIastContext()?.OnExecutedSinkTelemetry(sink);
+        }
     }
 
     public static IastRequestContext? GetIastContext()
