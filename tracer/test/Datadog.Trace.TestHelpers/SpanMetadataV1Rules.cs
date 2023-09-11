@@ -304,12 +304,12 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusInboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "Message", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionProcessor.ProcessSessionMessage")
-                .Matches(Type, "custom"))
+                .MatchesOneOf(Name, "Message", "ServiceBusReceiver.Peek", "ServiceBusReceiver.Receive", "ServiceBusReceiver.ReceiveDeferred", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionProcessor.ProcessSessionMessage")
+                .MatchesOneOf(Type, "http", "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
                 .IsPresent("az.schema_url")
-                .Matches("messaging.operation", "process")
+                .MatchesOneOf("messaging.operation", "receive", "process")
                 .IsPresent("messaging.source.name")
                 .Matches("messaging.system", "servicebus")
                 .IsPresent("net.peer.name")
@@ -342,7 +342,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusRequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "ServiceBusSender.Send", "ServiceBusReceiver.Receive", "ServiceBusReceiver.Complete", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSessionProcessor.ProcessSessionMessage", "ServiceBusSender.Schedule", "ServiceBusSender.Cancel", "ServiceBusReceiver.Peek", "ServiceBusReceiver.RenewMessageLock", "ServiceBusReceiver.Abandon", "ServiceBusReceiver.Defer", "ServiceBusReceiver.ReceiveDeferred", "ServiceBusReceiver.DeadLetter")
+                .MatchesOneOf(Name, "ServiceBusSender.Send", "ServiceBusReceiver.Complete", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSender.Schedule", "ServiceBusSender.Cancel", "ServiceBusReceiver.RenewMessageLock", "ServiceBusReceiver.Abandon", "ServiceBusReceiver.Defer", "ServiceBusReceiver.DeadLetter")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
@@ -359,7 +359,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("otel.status_description")
                 .IsPresent("peer.service")
                 .IsOptional("peer.service.remapped_from")
-                .MatchesOneOf("_dd.peer.service.source", "messaging.source.name", "messaging.destination.name", "peer.service")
+                .MatchesOneOf("_dd.peer.service.source", "messaging.destination.name", "peer.service")
                 .Matches("span.kind", "client"));
 
         public static Result IsCosmosDbV1(this MockSpan span) => Result.FromSpan(span)

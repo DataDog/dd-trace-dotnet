@@ -96,7 +96,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -460,7 +460,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_8,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -650,7 +650,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_14,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -714,7 +714,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_16,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1096,7 +1096,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_19,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1128,7 +1128,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_20,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1223,7 +1223,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_23,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1287,7 +1287,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_25,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1351,7 +1351,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_27,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1667,7 +1667,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_31,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1700,7 +1700,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_32,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1829,7 +1829,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_36,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1958,7 +1958,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_40,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -1990,7 +1990,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_41,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -2022,7 +2022,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_42,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -2150,7 +2150,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_46,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -2356,7 +2356,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_51,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -2442,7 +2442,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_52,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },
@@ -2528,7 +2528,7 @@
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_53,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
       _dd.p.tid: 1234567890abcdef
     },

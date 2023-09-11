@@ -15,6 +15,8 @@ namespace Datadog.Trace.Tagging
     // without being limited by our tags infrastructure
     internal partial class AzureServiceBusTags : CommonTags
     {
+        private string _spanKind;
+
         [Metric(Trace.Tags.Analytics)]
         public double? AnalyticsSampleRate { get; set; }
 
@@ -24,8 +26,19 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
+        [Tag(Trace.Tags.MessagingOperation)]
+        public string MessagingOperation { get; set; }
+
         [Tag(Trace.Tags.SpanKind)]
-        public string SpanKind { get; set; }
+        public string SpanKind
+        {
+            get => MessagingOperation switch
+                {
+                    "receive" => SpanKinds.Consumer, // Override the Azure Service Bus implementation to mark receive-related operations as consumers
+                    _ => _spanKind,
+                };
+            set => _spanKind = value;
+        }
 
         public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
         {
@@ -57,7 +70,7 @@ namespace Datadog.Trace.Tagging
                     return null;
                 }
 
-                return _peerServiceOverride ?? MessagingSourceName ?? MessagingDestinationName;
+                return _peerServiceOverride ?? MessagingDestinationName;
             }
             private set => _peerServiceOverride = value;
         }
@@ -74,9 +87,7 @@ namespace Datadog.Trace.Tagging
 
                 return _peerServiceOverride is not null
                             ? "peer.service"
-                            : MessagingSourceName is not null
-                                ? Trace.Tags.MessagingSourceName
-                                : Trace.Tags.MessagingDestinationName;
+                            : Trace.Tags.MessagingDestinationName;
             }
         }
     }

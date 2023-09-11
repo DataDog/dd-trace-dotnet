@@ -99,12 +99,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_4,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -483,12 +481,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_8,
-      peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       messaging.batch.message_count: 2.0,
@@ -685,12 +681,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_14,
-      peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -753,12 +747,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_16,
-      peer.service: samples-azureservicebus-queue-session,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1159,12 +1151,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_19,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1193,12 +1183,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_20,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1294,12 +1282,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_23,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1362,12 +1348,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_25,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1430,12 +1414,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_27,
-      peer.service: samples-azureservicebus-queue/$deadletterqueue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -1766,12 +1748,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_31,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1801,12 +1781,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_32,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -1938,12 +1916,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_36,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -2075,12 +2051,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_40,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2109,12 +2083,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_41,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2143,12 +2115,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_42,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2279,12 +2249,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_46,
-      peer.service: samples-azureservicebus-queue,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       messaging.batch.message_count: 3.0,
@@ -2497,12 +2465,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_51,
-      peer.service: samples-azureservicebus-topic/Subscriptions/subscription1,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2587,12 +2553,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_52,
-      peer.service: samples-azureservicebus-topic/Subscriptions/subscription2,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -2677,12 +2641,10 @@
       otel.library.name: Azure.Messaging.ServiceBus.ServiceBusReceiver,
       otel.status_code: STATUS_CODE_UNSET,
       otel.trace_id: Guid_53,
-      peer.service: samples-azureservicebus-topic/Subscriptions/subscription3,
       runtime-id: Guid_2,
-      span.kind: client,
+      span.kind: consumer,
       _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
-      _dd.peer.service.source: messaging.source.name
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

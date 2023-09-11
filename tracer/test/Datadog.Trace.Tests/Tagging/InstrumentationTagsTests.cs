@@ -8,6 +8,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using Xunit;
 
@@ -504,6 +505,21 @@ namespace Datadog.Trace.Tests.Tagging
         }
 
         [Fact]
+        public void AzureServiceBusTags_ReceiveMessagingOperation_ReturnsSpanKindConsumer()
+        {
+            var spanKind = "client";
+            var tags = new AzureServiceBusTags();
+
+            tags.SetTag("span.kind", spanKind);
+            tags.SetTag("messaging.operation", "publish");
+            tags.GetTag("span.kind").Should().Be(spanKind);
+
+            // Set messaging operation to invoke our custom behavior
+            tags.SetTag("messaging.operation", "receive");
+            tags.GetTag("span.kind").Should().Be("consumer");
+        }
+
+        [Fact]
         public void AzureServiceBusV1Tags_PeerService_NotSetForConsumer()
         {
             var sourceName = "source";
@@ -514,19 +530,6 @@ namespace Datadog.Trace.Tests.Tagging
 
             tags.PeerService.Should().BeNull();
             tags.PeerServiceSource.Should().BeNull();
-            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
-        }
-
-        [Fact]
-        public void AzureServiceBusV1Tags_PeerService_PopulatesFromMessagingSourceName()
-        {
-            var sourceName = "source";
-            var tags = new AzureServiceBusV1Tags();
-
-            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
-
-            tags.PeerService.Should().Be(sourceName);
-            tags.PeerServiceSource.Should().Be("messaging.source.name");
             tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
         }
 
