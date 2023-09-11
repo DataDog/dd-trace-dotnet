@@ -46,10 +46,11 @@ internal class DataStreamsManager
     public static DataStreamsManager Create(
         ImmutableTracerSettings settings,
         IDiscoveryService discoveryService,
-        string defaultServiceName)
+        string defaultServiceName,
+        string version)
     {
         var writer = settings.IsDataStreamsMonitoringEnabled
-                         ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName)
+                         ? DataStreamsWriter.Create(settings, discoveryService, defaultServiceName, version)
                          : null;
 
         return new DataStreamsManager(settings.EnvironmentInternal, defaultServiceName, writer);

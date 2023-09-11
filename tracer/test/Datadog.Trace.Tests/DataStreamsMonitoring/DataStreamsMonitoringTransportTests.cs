@@ -59,7 +59,7 @@ public class DataStreamsMonitoringTransportTests
         var discovery = new DiscoveryServiceMock();
         var writer = new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter("env", "service"),
+                new DataStreamsMessagePackFormatter("env", "service", "version"),
                 bucketDurationMs),
             api,
             bucketDurationMs: bucketDurationMs,

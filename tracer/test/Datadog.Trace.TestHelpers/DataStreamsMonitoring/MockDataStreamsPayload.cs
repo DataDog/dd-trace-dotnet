@@ -17,6 +17,9 @@ public class MockDataStreamsPayload
     [Key(nameof(Service))]
     public string Service { get; set; }
 
+    [Key(nameof(Version))]
+    public string Version { get; set; }
+
     [Key(nameof(PrimaryTag))]
     public string PrimaryTag { get; set; }
 

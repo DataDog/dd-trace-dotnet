@@ -104,6 +104,9 @@ namespace Datadog.Trace
                 GetApplicationName(settings) ??
                 UnknownServiceName;
 
+            var version = settings.ServiceVersionInternal ??
+                "";
+
             discoveryService ??= GetDiscoveryService(settings);
 
             bool runtimeMetricsEnabled = settings.RuntimeMetricsEnabled && !DistributedTracer.Instance.IsChildTracer;
@@ -152,7 +155,7 @@ namespace Datadog.Trace
 
             SpanContextPropagator.Instance = SpanContextPropagatorFactory.GetSpanContextPropagator(settings.PropagationStyleInject, settings.PropagationStyleExtract);
 
-            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName);
+            dataStreamsManager ??= DataStreamsManager.Create(settings, discoveryService, defaultServiceName, version);
 
             if (remoteConfigurationManager == null)
             {

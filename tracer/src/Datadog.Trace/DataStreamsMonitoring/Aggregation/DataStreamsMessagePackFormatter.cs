@@ -21,11 +21,13 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _serviceBytes = StringEncoding.UTF8.GetBytes("Service");
 
         private readonly byte[] _serviceValueBytes;
+        private readonly byte[] _versionValueBytes;
 
         // private readonly byte[] _primaryTagBytes = StringEncoding.UTF8.GetBytes("PrimaryTag");
         // private readonly byte[] _primaryTagValueBytes;
         private readonly byte[] _statsBytes = StringEncoding.UTF8.GetBytes("Stats");
         private readonly byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("TracerVersion");
+        private readonly byte[] _versionBytes = StringEncoding.UTF8.GetBytes("Version");
         private readonly byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         private readonly byte[] _langBytes = StringEncoding.UTF8.GetBytes("Lang");
         private readonly byte[] _langValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.Language);
@@ -43,12 +45,12 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _currentTimestampTypeBytes = StringEncoding.UTF8.GetBytes("current");
         private readonly byte[] _originTimestampTypeBytes = StringEncoding.UTF8.GetBytes("origin");
 
-        public DataStreamsMessagePackFormatter(ImmutableTracerSettings tracerSettings, string defaultServiceName)
+        public DataStreamsMessagePackFormatter(ImmutableTracerSettings tracerSettings, string defaultServiceName, string version)
             : this(tracerSettings.EnvironmentInternal, defaultServiceName)
         {
         }
 
-        public DataStreamsMessagePackFormatter(string? environment, string defaultServiceName)
+        public DataStreamsMessagePackFormatter(string? environment, string defaultServiceName, string version)
         {
             // .NET tracer doesn't yet support primary tag
             // _primaryTagValueBytes = Array.Empty<byte>();
@@ -56,16 +58,17 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
                                          ? Array.Empty<byte>()
                                          : StringEncoding.UTF8.GetBytes(environment);
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
+            _versionValueBytes = StringEncoding.UTF8.GetBytes(version);
         }
 
         public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets)
         {
             var bytesWritten = 0;
 
-            // 6 entries in StatsPayload:
+            // 7 entries in StatsPayload:
             // -1 because we don't have a primary tag
             // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L11
-            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 5);
+            bytesWritten += MessagePackBinary.WriteMapHeader(stream, 6);
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _environmentValueBytes);
@@ -82,6 +85,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionBytes);
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionValueBytes);
+
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _versionBytes);
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _versionValueBytes);
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
             bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count);
