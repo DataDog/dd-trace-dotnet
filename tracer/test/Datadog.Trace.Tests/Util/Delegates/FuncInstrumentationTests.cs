@@ -38,7 +38,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func().Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -98,7 +98,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func("Arg01").Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -160,7 +160,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func("Arg01", "Arg02").Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -224,7 +224,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func("Arg01", "Arg02", "Arg03").Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -290,7 +290,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func("Arg01", "Arg02", "Arg03", "Arg04").Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -358,7 +358,7 @@ public class FuncInstrumentationTests
             callbacks.Count.Value++;
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         func("Arg01", "Arg02", "Arg03", "Arg04", "Arg05").Should().Be(43);
         callbacks.Count.Value.Should().Be(3);
 
@@ -429,7 +429,7 @@ public class FuncInstrumentationTests
             await Task.Delay(100).ConfigureAwait(false);
             return 42;
         };
-        func = DelegateInstrumentation.Wrap(func, callbacks);
+        func = func.Instrument(callbacks);
         var result = await func("Arg01").ConfigureAwait(false);
         result.Should().Be(43);
         callbacks.Count.Value.Should().Be(4);

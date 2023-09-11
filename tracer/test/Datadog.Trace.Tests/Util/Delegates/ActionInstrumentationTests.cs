@@ -33,7 +33,7 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action0Callbacks();
         Action action = () => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action();
         callbacks.Count.Value.Should().Be(3);
 
@@ -83,7 +83,7 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action1Callbacks();
         Action<string> action = (arg1) => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action("Arg01");
         callbacks.Count.Value.Should().Be(3);
 
@@ -135,7 +135,7 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action2Callbacks();
         Action<string, string> action = (arg1, arg2) => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action("Arg01", "Arg02");
         callbacks.Count.Value.Should().Be(3);
 
@@ -189,7 +189,7 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action3Callbacks();
         Action<string, string, string> action = (arg1, arg2, arg3) => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action("Arg01", "Arg02", "Arg03");
         callbacks.Count.Value.Should().Be(3);
 
@@ -245,8 +245,14 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action4Callbacks();
         Action<string, string, string, string> action = (arg1, arg2, arg3, arg4) => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action("Arg01", "Arg02", "Arg03", "Arg04");
+        callbacks.Count.Value.Should().Be(3);
+
+        callbacks.Count.Value = 0;
+        var delAction = (Delegate)new Action<string, string, string, string>((arg1, arg2, arg3, arg4) => { callbacks.Count.Value++; });
+        delAction = delAction.Instrument(callbacks);
+        delAction.DynamicInvoke("Arg01", "Arg02", "Arg03", "Arg04");
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
@@ -303,7 +309,7 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action5Callbacks();
         Action<string, string, string, string, string> action = (arg1, arg2, arg3, arg4, arg5) => { callbacks.Count.Value++; };
-        action = DelegateInstrumentation.Wrap(action, callbacks);
+        action = action.Instrument(callbacks);
         action("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
         callbacks.Count.Value.Should().Be(3);
 
