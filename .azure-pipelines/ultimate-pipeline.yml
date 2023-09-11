@@ -3473,6 +3473,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         mkdir -p tracer/bin/netcoreapp3.1
         cp tracer/tracer-home-linux/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "linux" "$(runExtendedThroughputTests)"
@@ -3484,7 +3485,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - script: |
-        mkdir -p $(CrankDir)/results
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
@@ -3516,7 +3516,8 @@ stages:
         test ! -s "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll" && echo "tracer/tracer-home-win/win-x64/Datadog.Tracer.Native.dll does not exist" && exit 1
         test ! -s "tracer/tracer-home-win/win-x64/ddwaf.dll" && echo "tracer/tracer-home-win/win-x64/ddwaf.dll does not exist" && exit 1
         mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        cp tracer/tracer-home-win/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run.sh
         ./run.sh "windows" "$(runExtendedThroughputTests)"
@@ -3528,7 +3529,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - script: |
-        mkdir -p $(CrankDir)/results
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
@@ -3559,7 +3559,8 @@ stages:
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so" && echo "tracer/tracer-home-linux-arm64/linux-arm64/libddwaf.so does not exist" && exit 1
         mkdir -p tracer/bin/netcoreapp3.1
-        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll 
+        cp tracer/tracer-home-linux-arm64/netcoreapp3.1/Datadog.Trace.dll tracer/bin/netcoreapp3.1/Datadog.Trace.dll
+        mkdir -p $(CrankDir)/results
         cd $(System.DefaultWorkingDirectory)/tracer/build/crank
         chmod +x ./run.sh
         ./run.sh "linux_arm64" "$(runExtendedThroughputTests)"
@@ -3571,7 +3572,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - script: |
-        mkdir -p $(CrankDir)/results
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
@@ -3622,6 +3622,7 @@ stages:
         test ! -s "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "monitoring-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "monitoring-home-linux/linux-x64/libddwaf.so" && echo "monitoring-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        mkdir -p $(crankDir)/results
         cd $(crankDir)
         chmod +x ./run.sh
         ./run.sh "linux"
@@ -3633,7 +3634,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - script: |
-        mkdir -p $(crankDir)/results
         cp $(crankDir)/*.json $(crankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
@@ -3663,6 +3663,7 @@ stages:
     - script: |
         test ! -s "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll" && echo "monitoring-home-windows/win-x64/Datadog.Trace.ClrProfiler.Native.dll does not exist" && exit 1
         test ! -s "monitoring-home-windows/win-x64/ddwaf.dll" && echo "monitoring-home-windows/win-x64/ddwaf.dll does not exist" && exit 1
+        mkdir -p $(crankDir)/results
         cd $(crankDir)
         chmod +x ./run.sh
         ./run.sh "windows"
@@ -3675,7 +3676,6 @@ stages:
         DD_API_KEY: $(ddApiKey)
 
     - script: |
-        mkdir -p $(crankDir)/results
         cp $(crankDir)/*.json $(crankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
@@ -3719,6 +3719,7 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+        mkdir -p $(CrankDir)/results/logs
         cd $(CrankDir)
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
@@ -3728,7 +3729,6 @@ stages:
         DD_ENV: CI
 
     - script: |
-        mkdir -p $(CrankDir)/results
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
