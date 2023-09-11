@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -280,26 +281,48 @@ internal class IntelligentTestRunnerClient
 
         async Task<SettingsResponse> InternalGetSettingsAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_settingsUrl);
-            SetRequestHeader(request, useApplicationHeader: true);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
+                var request = _apiRequestFactory.Create(_settingsUrl);
+                SetRequestHeader(request, useApplicationHeader: true);
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
+                }
+
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return default;
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
+                var settingsResponse = deserializedResult.Data?.Attributes ?? default;
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
+                {
+                    { CodeCoverage: true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
+                    { CodeCoverage: !true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
+                });
+                return settingsResponse;
             }
-
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
+            finally
             {
-                return default;
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(sw.Elapsed.TotalMilliseconds);
             }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
-            return deserializedResult.Data?.Attributes ?? default;
         }
     }
 
@@ -348,66 +371,83 @@ internal class IntelligentTestRunnerClient
 
         async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_skippableTestsUrl);
-            SetRequestHeader(request, useApplicationHeader: true);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
-            }
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequest();
+                var request = _apiRequestFactory.Create(_skippableTestsUrl);
+                SetRequestHeader(request, useApplicationHeader: true);
 
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
-            {
-                return Array.Empty<SkippableTest>();
-            }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
-            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-            {
-                return Array.Empty<SkippableTest>();
-            }
-
-            var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
-            var customConfigurations = _customConfigurations;
-            for (var i = 0; i < deserializedResult.Data.Length; i++)
-            {
-                var includeItem = true;
-                var item = deserializedResult.Data[i].Attributes;
-                if (item.Configurations?.Custom is { } itemCustomConfiguration)
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    if (customConfigurations is null)
-                    {
-                        continue;
-                    }
+                    Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
+                }
 
-                    foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return Array.Empty<SkippableTest>();
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent!);
+                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                {
+                    return Array.Empty<SkippableTest>();
+                }
+
+                var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
+                var customConfigurations = _customConfigurations;
+                for (var i = 0; i < deserializedResult.Data.Length; i++)
+                {
+                    var includeItem = true;
+                    var item = deserializedResult.Data[i].Attributes;
+                    if (item.Configurations?.Custom is { } itemCustomConfiguration)
                     {
-                        if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
-                            rsCustomConfigurationItem.Value != customConfigValue)
+                        if (customConfigurations is null)
                         {
-                            includeItem = false;
-                            break;
+                            continue;
+                        }
+
+                        foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                        {
+                            if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
+                                rsCustomConfigurationItem.Value != customConfigValue)
+                            {
+                                includeItem = false;
+                                break;
+                            }
                         }
                     }
+
+                    if (includeItem)
+                    {
+                        testAttributes.Add(item);
+                    }
                 }
 
-                if (includeItem)
+                if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
                 {
-                    testAttributes.Add(item);
+                    Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
                 }
-            }
 
-            if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
+                var totalSkippableTests = testAttributes.ToArray();
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(totalSkippableTests.Length);
+                return totalSkippableTests;
+            }
+            finally
             {
-                Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsRequestMs(sw.Elapsed.TotalMilliseconds);
             }
-
-            return testAttributes.ToArray();
         }
     }
 
@@ -443,113 +483,144 @@ internal class IntelligentTestRunnerClient
 
         async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_searchCommitsUrl);
-            SetRequestHeader(request, useApplicationHeader: false);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
-            }
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
+                var request = _apiRequestFactory.Create(_searchCommitsUrl);
+                SetRequestHeader(request, useApplicationHeader: false);
 
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
-            {
-                return Array.Empty<string>();
-            }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
-            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            var stringArray = new string[deserializedResult.Data.Length];
-            for (var i = 0; i < deserializedResult.Data.Length; i++)
-            {
-                var value = deserializedResult.Data[i].Id;
-                if (value is not null)
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    if (ShaRegex.Matches(value).Count != 1)
-                    {
-                        ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
-                    }
-
-                    stringArray[i] = value;
+                    Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
                 }
-            }
 
-            return stringArray;
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return Array.Empty<string>();
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
+                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                {
+                    return Array.Empty<string>();
+                }
+
+                var stringArray = new string[deserializedResult.Data.Length];
+                for (var i = 0; i < deserializedResult.Data.Length; i++)
+                {
+                    var value = deserializedResult.Data[i].Id;
+                    if (value is not null)
+                    {
+                        if (ShaRegex.Matches(value).Count != 1)
+                        {
+                            ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                        }
+
+                        stringArray[i] = value;
+                    }
+                }
+
+                return stringArray;
+            }
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
+            }
         }
     }
 
     public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
-        Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
-
-        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
-        if (packFilesObject is null || packFilesObject.Files.Length == 0)
+        var sw = Stopwatch.StartNew();
+        try
         {
-            return 0;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
+            Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
+
+            var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
+            if (packFilesObject is null || packFilesObject.Files.Length == 0)
+            {
+                return 0;
+            }
+
+            var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+            var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
+            Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+            var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
+
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(packFilesObject.Files.Length);
+            long totalUploadSize = 0;
+            foreach (var packFile in packFilesObject.Files)
+            {
+                // Send PackFile content
+                Log.Information("ITR: Sending {PackFile}", packFile);
+                totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
+
+                // Delete temporal pack file
+                try
+                {
+                    File.Delete(packFile);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
+                }
+            }
+
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(totalUploadSize);
+
+            // Delete temporary folder after the upload
+            if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
+            {
+                try
+                {
+                    Directory.Delete(packFilesObject.TemporaryFolder, true);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
+                }
+            }
+
+            Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
+            return totalUploadSize;
+
+            async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
+            {
+                var request = _apiRequestFactory.Create(_packFileUrl);
+                SetRequestHeader(request, useApplicationHeader: false);
+
+                var multipartRequest = (IMultipartApiRequest)request;
+                using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var response = await multipartRequest.PostAsync(
+                    new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                .ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPackErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                return new FileInfo(packFile).Length;
+            }
         }
-
-        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
-        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
-        var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
-
-        long totalUploadSize = 0;
-        foreach (var packFile in packFilesObject.Files)
+        finally
         {
-            // Send PackFile content
-            Log.Information("ITR: Sending {PackFile}", packFile);
-            totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
-
-            // Delete temporal pack file
-            try
-            {
-                File.Delete(packFile);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
-            }
-        }
-
-        // Delete temporary folder after the upload
-        if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
-        {
-            try
-            {
-                Directory.Delete(packFilesObject.TemporaryFolder, true);
-            }
-            catch (Exception ex)
-            {
-                Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
-            }
-        }
-
-        Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
-        return totalUploadSize;
-
-        async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
-        {
-            var request = _apiRequestFactory.Create(_packFileUrl);
-            SetRequestHeader(request, useApplicationHeader: false);
-
-            var multipartRequest = (IMultipartApiRequest)request;
-            using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var response = await multipartRequest.PostAsync(
-                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
-            .ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            return new FileInfo(packFile).Length;
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackMs(sw.Elapsed.TotalMilliseconds);
         }
     }
 
@@ -653,7 +724,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private void CheckResponseStatusCode(IApiResponse response, string responseContent, bool finalTry)
+    private void CheckResponseStatusCode(IApiResponse response, string? responseContent, bool finalTry)
     {
         // Check if the rate limit header was received.
         if (response.StatusCode == 429 &&
@@ -673,7 +744,7 @@ internal class IntelligentTestRunnerClient
         {
             if (finalTry)
             {
-                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent ?? string.Empty);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");

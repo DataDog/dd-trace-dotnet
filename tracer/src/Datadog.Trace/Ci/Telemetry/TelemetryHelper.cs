@@ -32,11 +32,12 @@ internal static class TelemetryHelper
     /// </summary>
     /// <param name="statusCode">Http status code</param>
     /// <returns>MetricTags.CIVisibilityErrorType</returns>
-    public static MetricTags.CIVisibilityErrorType GetErrorTypeFromStatusCode(int statusCode)
+    public static MetricTags.CIVisibilityErrorType? GetErrorTypeFromStatusCode(int statusCode)
     {
         return statusCode switch
         {
             >= 0 and < 200 => MetricTags.CIVisibilityErrorType.StatusCode,
+            >= 200 and < 300 => null,
             >= 300 and < 400 => MetricTags.CIVisibilityErrorType.StatusCode,
             >= 400 and < 500 => MetricTags.CIVisibilityErrorType.StatusCode4xx,
             >= 500 => MetricTags.CIVisibilityErrorType.StatusCode5xx,

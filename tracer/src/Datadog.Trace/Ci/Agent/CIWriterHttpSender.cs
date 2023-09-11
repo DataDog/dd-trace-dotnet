@@ -221,7 +221,10 @@ namespace Datadog.Trace.Ci.Agent
 
                 TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
                 TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
-                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, TelemetryHelper.GetErrorTypeFromStatusCode(statusCode));
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
+                }
             }
             finally
             {
@@ -261,7 +264,10 @@ namespace Datadog.Trace.Ci.Agent
                 payloadArray).ConfigureAwait(false);
 
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, TelemetryHelper.GetErrorTypeFromStatusCode(statusCode));
+            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
+            }
         }
 
         private class MultipartApiRequestNotSupported : NotSupportedException
