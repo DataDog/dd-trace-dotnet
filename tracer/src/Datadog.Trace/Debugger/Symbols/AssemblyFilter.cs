@@ -16,7 +16,8 @@ namespace Datadog.Trace.Debugger.Symbols
             return assembly.IsDynamic ||
                    assembly.ManifestModule.IsResource() ||
                    string.IsNullOrWhiteSpace(assembly.Location) ||
-                   IsThirdPartyCode(assembly);
+                   IsThirdPartyCode(assembly) ||
+                   IsDatadogAssembly(assembly);
         }
 
         internal static bool IsThirdPartyCode(Assembly loadedAssembly)
@@ -32,7 +33,7 @@ namespace Datadog.Trace.Debugger.Symbols
         internal static bool IsDatadogAssembly(Assembly loadedAssembly)
         {
             var assemblyName = loadedAssembly.GetName().Name;
-            return assemblyName?.StartsWith("datadog", StringComparison.OrdinalIgnoreCase) == true;
+            return assemblyName?.StartsWith("datadog.", StringComparison.OrdinalIgnoreCase) == true;
         }
     }
 }

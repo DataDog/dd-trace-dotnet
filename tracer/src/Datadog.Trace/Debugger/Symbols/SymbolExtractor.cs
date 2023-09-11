@@ -92,7 +92,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             var assemblyScope = new Model.Scope
             {
-                Name = _module.Assembly.FullName,
+                Name = _module.Assembly.Name,
                 ScopeType = SymbolType.Assembly,
                 SourceFile = _module.Location
             };
