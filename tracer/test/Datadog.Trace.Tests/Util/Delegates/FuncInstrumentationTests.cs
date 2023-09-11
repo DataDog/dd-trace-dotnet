@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Threading;
 using Datadog.Trace.Util.Delegates;
 using FluentAssertions;
@@ -11,194 +12,397 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Util.Delegates;
 
+#pragma warning disable SA1201
+
 public class FuncInstrumentationTests
 {
     [Fact]
     public void Func0Test()
     {
-        var value = 0;
+        var callbacks = new Func0Callbacks();
         Func<int> func = () =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func0Callbacks
-            {
-                OnDelegateBegin = target =>
-                {
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func().Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<int> func2 = () =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc0Callbacks(
+                                                 target =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2().Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func0Callbacks : IBegin0Callbacks, IReturnCallback
+    {
+        public Func0Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin(object sender)
+        {
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 
     [Fact]
     public void Func1Test()
     {
-        var value = 0;
+        var callbacks = new Func1Callbacks();
         Func<string, int> func = (arg1) =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func1Callbacks
-            {
-                OnDelegateBegin = (target, arg1) =>
-                {
-                    arg1.Should().Be("Arg01");
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func("Arg01").Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<string, int> func2 = (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2("Arg01").Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func1Callbacks : IBegin1Callbacks, IReturnCallback
+    {
+        public Func1Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg1)
+        {
+            arg1.Should().Be("Arg01");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 
     [Fact]
     public void Func2Test()
     {
-        var value = 0;
+        var callbacks = new Func2Callbacks();
         Func<string, string, int> func = (arg1, arg2) =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func2Callbacks
-            {
-                OnDelegateBegin = (target, arg1, arg2) =>
-                {
-                    arg1.Should().Be("Arg01");
-                    arg2.Should().Be("Arg02");
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func("Arg01", "Arg02").Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<string, string, int> func2 = (arg1, arg2) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc2Callbacks(
+                                                 (target, arg1, arg2) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2("Arg01", "Arg02").Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func2Callbacks : IBegin2Callbacks, IReturnCallback
+    {
+        public Func2Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1, TArg2>(object sender, ref TArg1 arg1, ref TArg2 arg2)
+        {
+            arg1.Should().Be("Arg01");
+            arg2.Should().Be("Arg02");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 
     [Fact]
     public void Func3Test()
     {
-        var value = 0;
+        var callbacks = new Func3Callbacks();
         Func<string, string, string, int> func = (arg1, arg2, arg3) =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func3Callbacks
-            {
-                OnDelegateBegin = (target, arg1, arg2, arg3) =>
-                {
-                    arg1.Should().Be("Arg01");
-                    arg2.Should().Be("Arg02");
-                    arg3.Should().Be("Arg03");
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func("Arg01", "Arg02", "Arg03").Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<string, string, string, int> func2 = (arg1, arg2, arg3) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc3Callbacks(
+                                                 (target, arg1, arg2, arg3) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2("Arg01", "Arg02", "Arg03").Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func3Callbacks : IBegin3Callbacks, IReturnCallback
+    {
+        public Func3Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1, TArg2, TArg3>(object sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3)
+        {
+            arg1.Should().Be("Arg01");
+            arg2.Should().Be("Arg02");
+            arg3.Should().Be("Arg03");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 
     [Fact]
     public void Func4Test()
     {
-        var value = 0;
+        var callbacks = new Func4Callbacks();
         Func<string, string, string, string, int> func = (arg1, arg2, arg3, arg4) =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func4Callbacks
-            {
-                OnDelegateBegin = (target, arg1, arg2, arg3, arg4) =>
-                {
-                    arg1.Should().Be("Arg01");
-                    arg2.Should().Be("Arg02");
-                    arg3.Should().Be("Arg03");
-                    arg4.Should().Be("Arg04");
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func("Arg01", "Arg02", "Arg03", "Arg04").Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc4Callbacks(
+                                                 (target, arg1, arg2, arg3, arg4) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     arg4.Should().Be("Arg04");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2("Arg01", "Arg02", "Arg03", "Arg04").Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func4Callbacks : IBegin4Callbacks, IReturnCallback
+    {
+        public Func4Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1, TArg2, TArg3, TArg4>(object sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4)
+        {
+            arg1.Should().Be("Arg01");
+            arg2.Should().Be("Arg02");
+            arg3.Should().Be("Arg03");
+            arg4.Should().Be("Arg04");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 
     [Fact]
     public void Func5Test()
     {
-        var value = 0;
+        var callbacks = new Func5Callbacks();
         Func<string, string, string, string, string, int> func = (arg1, arg2, arg3, arg4, arg5) =>
         {
-            Interlocked.Increment(ref value);
+            callbacks.Count.Value++;
             return 42;
         };
-        func = FuncInstrumentation.Wrap(
-            func,
-            new Func5Callbacks
-            {
-                OnDelegateBegin = (target, arg1, arg2, arg3, arg4, arg5) =>
-                {
-                    arg1.Should().Be("Arg01");
-                    arg2.Should().Be("Arg02");
-                    arg3.Should().Be("Arg03");
-                    arg4.Should().Be("Arg04");
-                    arg5.Should().Be("Arg05");
-                    Interlocked.Increment(ref value);
-                    return null;
-                },
-                OnDelegateEnd = (target, returnValue, exception, state) =>
-                {
-                    Interlocked.Increment(ref value);
-                    return ((int)returnValue) + 1;
-                },
-            });
-
+        func = DelegateInstrumentation.Wrap(func, callbacks);
         func("Arg01", "Arg02", "Arg03", "Arg04", "Arg05").Should().Be(43);
+        callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Func<string, string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4, arg5) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc5Callbacks(
+                                                 (target, arg1, arg2, arg3, arg4, arg5) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     arg4.Should().Be("Arg04");
+                                                     arg5.Should().Be("Arg05");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        func2("Arg01", "Arg02", "Arg03", "Arg04", "Arg05").Should().Be(43);
         value.Should().Be(3);
+    }
+
+    public readonly struct Func5Callbacks : IBegin5Callbacks, IReturnCallback
+    {
+        public Func5Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1, TArg2, TArg3, TArg4, TArg5>(object sender, ref TArg1 arg1, ref TArg2 arg2, ref TArg3 arg3, ref TArg4 arg4, ref TArg5 arg5)
+        {
+            arg1.Should().Be("Arg01");
+            arg2.Should().Be("Arg02");
+            arg3.Should().Be("Arg03");
+            arg4.Should().Be("Arg04");
+            arg5.Should().Be("Arg05");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 }

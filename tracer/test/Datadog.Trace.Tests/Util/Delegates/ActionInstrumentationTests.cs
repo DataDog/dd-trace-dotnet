@@ -21,13 +21,13 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action0Callbacks();
         Action action = () => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action();
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
         Action action2 = () => { Interlocked.Increment(ref value).Should().Be(2); };
-        action2 = ActionInstrumentation.Wrap(action2, new DefaultAction0Callbacks(
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction0Callbacks(
                                                  target =>
                                                  {
                                                      Interlocked.Increment(ref value).Should().Be(1);
@@ -41,7 +41,7 @@ public class ActionInstrumentationTests
         value.Should().Be(3);
     }
 
-    public readonly struct Action0Callbacks : IAction0Callbacks
+    public readonly struct Action0Callbacks : IBegin0Callbacks, IVoidReturnCallback
     {
         public Action0Callbacks()
         {
@@ -71,12 +71,28 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action1Callbacks();
         Action<string> action = (arg1) => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action("Arg01");
         callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Action<string> action2 = (arg1) => { Interlocked.Increment(ref value).Should().Be(2); };
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                 }));
+        action2("Arg01");
+        value.Should().Be(3);
     }
 
-    public readonly struct Action1Callbacks : IAction1Callbacks
+    public readonly struct Action1Callbacks : IBegin1Callbacks, IVoidReturnCallback
     {
         public Action1Callbacks()
         {
@@ -107,12 +123,29 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action2Callbacks();
         Action<string, string> action = (arg1, arg2) => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action("Arg01", "Arg02");
         callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Action<string, string> action2 = (arg1, arg2) => { Interlocked.Increment(ref value).Should().Be(2); };
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction2Callbacks(
+                                                 (target, arg1, arg2) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                 }));
+        action2("Arg01", "Arg02");
+        value.Should().Be(3);
     }
 
-    public readonly struct Action2Callbacks : IAction2Callbacks
+    public readonly struct Action2Callbacks : IBegin2Callbacks, IVoidReturnCallback
     {
         public Action2Callbacks()
         {
@@ -144,12 +177,30 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action3Callbacks();
         Action<string, string, string> action = (arg1, arg2, arg3) => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action("Arg01", "Arg02", "Arg03");
         callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Action<string, string, string> action2 = (arg1, arg2, arg3) => { Interlocked.Increment(ref value).Should().Be(2); };
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction3Callbacks(
+                                                 (target, arg1, arg2, arg3) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                 }));
+        action2("Arg01", "Arg02", "Arg03");
+        value.Should().Be(3);
     }
 
-    public readonly struct Action3Callbacks : IAction3Callbacks
+    public readonly struct Action3Callbacks : IBegin3Callbacks, IVoidReturnCallback
     {
         public Action3Callbacks()
         {
@@ -182,12 +233,31 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action4Callbacks();
         Action<string, string, string, string> action = (arg1, arg2, arg3, arg4) => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action("Arg01", "Arg02", "Arg03", "Arg04");
         callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Action<string, string, string, string> action2 = (arg1, arg2, arg3, arg4) => { Interlocked.Increment(ref value).Should().Be(2); };
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction4Callbacks(
+                                                 (target, arg1, arg2, arg3, arg4) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     arg4.Should().Be("Arg04");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                 }));
+        action2("Arg01", "Arg02", "Arg03", "Arg04");
+        value.Should().Be(3);
     }
 
-    public readonly struct Action4Callbacks : IAction4Callbacks
+    public readonly struct Action4Callbacks : IBegin4Callbacks, IVoidReturnCallback
     {
         public Action4Callbacks()
         {
@@ -221,12 +291,32 @@ public class ActionInstrumentationTests
     {
         var callbacks = new Action5Callbacks();
         Action<string, string, string, string, string> action = (arg1, arg2, arg3, arg4, arg5) => { callbacks.Count.Value++; };
-        action = ActionInstrumentation.Wrap(action, callbacks);
+        action = DelegateInstrumentation.Wrap(action, callbacks);
         action("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
         callbacks.Count.Value.Should().Be(3);
+
+        var value = 0;
+        Action<string, string, string, string, string> action2 = (arg1, arg2, arg3, arg4, arg5) => { Interlocked.Increment(ref value).Should().Be(2); };
+        action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction5Callbacks(
+                                                 (target, arg1, arg2, arg3, arg4, arg5) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     arg2.Should().Be("Arg02");
+                                                     arg3.Should().Be("Arg03");
+                                                     arg4.Should().Be("Arg04");
+                                                     arg5.Should().Be("Arg05");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                 }));
+        action2("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
+        value.Should().Be(3);
     }
 
-    public readonly struct Action5Callbacks : IAction5Callbacks
+    public readonly struct Action5Callbacks : IBegin5Callbacks, IVoidReturnCallback
     {
         public Action5Callbacks()
         {
