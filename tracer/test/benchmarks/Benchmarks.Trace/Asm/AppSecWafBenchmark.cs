@@ -20,12 +20,7 @@ public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    // this is necessary, as we use Iteration setup and cleanup which disables the bdn mechanism to estimate the necessary iteration count.Only 1 iteration count will be done with iteration setup and cleanup.
-    // See https://github.com/dotnet/BenchmarkDotNet/pull/1157
-    //Iteration setup and cleanup are necessary as we cant use GlobalCleanup here, the waf needs to flush more often than every 1xx.xxx ops, otherwise OutOfMemory occurs. 
-    private const int WafRuns = 2000;
     private static readonly Waf Waf;
-    private Context _context;
 
     static AppSecWafBenchmark()
     {
@@ -128,7 +123,7 @@ public class AppSecWafBenchmark
                 };
                 map.Add("list", nextList);
             }
-
+        
             var nextMap = new Dictionary<string, object>
             {
                 { "lorem", "ipsum" },
@@ -145,12 +140,6 @@ public class AppSecWafBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    [IterationSetup]
-    public void Setup() => _context = Waf.CreateContext() as Context;
-
-    [IterationCleanup]
-    public void Cleanup() => _context.Dispose();
-
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
     public void RunWaf(NestedMap args) => RunWafBenchmark(args);
@@ -161,10 +150,9 @@ public class AppSecWafBenchmark
 
     private void RunWafBenchmark(NestedMap args)
     {
-        for (var i = 0; i < WafRuns; i++)
-        {
-            _context.Run(args.Map, TimeoutMicroSeconds);
-        }
+        var context = Waf.CreateContext();
+        context!.Run(args.Map, TimeoutMicroSeconds);
+        context.Dispose();
     }
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)
