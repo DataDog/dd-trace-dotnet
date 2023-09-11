@@ -247,9 +247,12 @@ internal class DelegateInstrumentation
     private class Action0Wrapper<TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin0Callbacks, IVoidReturnCallback
     {
+        private readonly Action _invokeDelegate;
+
         public Action0Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action)target.Method.CreateDelegate(typeof(Action), target.Target);
         }
 
         private void Invoke()
@@ -268,7 +271,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke();
+                _invokeDelegate();
             }
             catch (Exception ex)
             {
@@ -296,9 +299,15 @@ internal class DelegateInstrumentation
     private class Action1Wrapper<TArg, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin1Callbacks, IVoidReturnCallback
     {
+        private readonly Action<TArg> _invokeDelegate;
+
         public Action1Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action<TArg>)target.Method.CreateDelegate(
+                typeof(Action<>).MakeGenericType(
+                    typeof(TArg)),
+                target.Target);
         }
 
         private void Invoke(TArg arg1)
@@ -317,7 +326,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke(arg1);
+                _invokeDelegate(arg1);
             }
             catch (Exception ex)
             {
@@ -345,9 +354,16 @@ internal class DelegateInstrumentation
     private class Action2Wrapper<TArg, TArg2, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin2Callbacks, IVoidReturnCallback
     {
+        private readonly Action<TArg, TArg2> _invokeDelegate;
+
         public Action2Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action<TArg, TArg2>)target.Method.CreateDelegate(
+                typeof(Action<,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2)),
+                target.Target);
         }
 
         private void Invoke(TArg arg1, TArg2 arg2)
@@ -366,7 +382,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke(arg1, arg2);
+                _invokeDelegate(arg1, arg2);
             }
             catch (Exception ex)
             {
@@ -394,9 +410,17 @@ internal class DelegateInstrumentation
     private class Action3Wrapper<TArg, TArg2, TArg3, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin3Callbacks, IVoidReturnCallback
     {
+        private readonly Action<TArg, TArg2, TArg3> _invokeDelegate;
+
         public Action3Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action<TArg, TArg2, TArg3>)target.Method.CreateDelegate(
+                typeof(Action<,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3)),
+                target.Target);
         }
 
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3)
@@ -415,7 +439,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke(arg1, arg2, arg3);
+                _invokeDelegate(arg1, arg2, arg3);
             }
             catch (Exception ex)
             {
@@ -443,9 +467,18 @@ internal class DelegateInstrumentation
     private class Action4Wrapper<TArg, TArg2, TArg3, TArg4, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin4Callbacks, IVoidReturnCallback
     {
+        private readonly Action<TArg, TArg2, TArg3, TArg4> _invokeDelegate;
+
         public Action4Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action<TArg, TArg2, TArg3, TArg4>)target.Method.CreateDelegate(
+                typeof(Action<,,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3),
+                    typeof(TArg4)),
+                target.Target);
         }
 
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
@@ -464,7 +497,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke(arg1, arg2, arg3, arg4);
+                _invokeDelegate(arg1, arg2, arg3, arg4);
             }
             catch (Exception ex)
             {
@@ -492,9 +525,19 @@ internal class DelegateInstrumentation
     private class Action5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin5Callbacks, IVoidReturnCallback
     {
+        private readonly Action<TArg, TArg2, TArg3, TArg4, TArg5> _invokeDelegate;
+
         public Action5Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Action<TArg, TArg2, TArg3, TArg4, TArg5>)target.Method.CreateDelegate(
+                typeof(Action<,,,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3),
+                    typeof(TArg4),
+                    typeof(TArg5)),
+                target.Target);
         }
 
         private void Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
@@ -513,7 +556,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                Target.DynamicInvoke(arg1, arg2, arg3, arg4, arg5);
+                _invokeDelegate(arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception ex)
             {
@@ -541,9 +584,15 @@ internal class DelegateInstrumentation
     private class Func0Wrapper<TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin0Callbacks, IReturnCallback
     {
+        private readonly Func<TReturn> _invokeDelegate;
+
         public Func0Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TReturn>)target.Method.CreateDelegate(
+                typeof(Func<>).MakeGenericType(
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke()
@@ -563,7 +612,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke();
+                returnValue = (TReturn?)_invokeDelegate();
             }
             catch (Exception ex)
             {
@@ -593,9 +642,16 @@ internal class DelegateInstrumentation
     private class Func1Wrapper<TArg, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin1Callbacks, IReturnCallback
     {
+        private readonly Func<TArg, TReturn> _invokeDelegate;
+
         public Func1Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TArg, TReturn>)target.Method.CreateDelegate(
+                typeof(Func<,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke(TArg arg1)
@@ -615,7 +671,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke(arg1);
+                returnValue = (TReturn?)_invokeDelegate(arg1);
             }
             catch (Exception ex)
             {
@@ -645,9 +701,17 @@ internal class DelegateInstrumentation
     private class Func2Wrapper<TArg, TArg2, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin2Callbacks, IReturnCallback
     {
+        private readonly Func<TArg, TArg2, TReturn> _invokeDelegate;
+
         public Func2Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TArg, TArg2, TReturn>)target.Method.CreateDelegate(
+                typeof(Func<,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke(TArg arg1, TArg2 arg2)
@@ -667,7 +731,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke(arg1, arg2);
+                returnValue = (TReturn?)_invokeDelegate(arg1, arg2);
             }
             catch (Exception ex)
             {
@@ -697,9 +761,18 @@ internal class DelegateInstrumentation
     private class Func3Wrapper<TArg, TArg2, TArg3, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin3Callbacks, IReturnCallback
     {
+        private readonly Func<TArg, TArg2, TArg3, TReturn> _invokeDelegate;
+
         public Func3Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TArg, TArg2, TArg3, TReturn>)target.Method.CreateDelegate(
+                typeof(Func<,,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3),
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke(TArg arg1, TArg2 arg2, TArg3 arg3)
@@ -719,7 +792,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke(arg1, arg2, arg3);
+                returnValue = (TReturn?)_invokeDelegate(arg1, arg2, arg3);
             }
             catch (Exception ex)
             {
@@ -749,9 +822,19 @@ internal class DelegateInstrumentation
     private class Func4Wrapper<TArg, TArg2, TArg3, TArg4, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin4Callbacks, IReturnCallback
     {
+        private readonly Func<TArg, TArg2, TArg3, TArg4, TReturn> _invokeDelegate;
+
         public Func4Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TArg, TArg2, TArg3, TArg4, TReturn>)target.Method.CreateDelegate(
+                typeof(Func<,,,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3),
+                    typeof(TArg4),
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4)
@@ -771,7 +854,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke(arg1, arg2, arg3, arg4);
+                returnValue = (TReturn?)_invokeDelegate(arg1, arg2, arg3, arg4);
             }
             catch (Exception ex)
             {
@@ -801,9 +884,20 @@ internal class DelegateInstrumentation
     private class Func5Wrapper<TArg, TArg2, TArg3, TArg4, TArg5, TReturn, TDelegate, TCallbacks> : Wrapper<TReturn, TDelegate, TCallbacks>
         where TCallbacks : struct, IBegin5Callbacks, IReturnCallback
     {
+        private readonly Func<TArg, TArg2, TArg3, TArg4, TArg5, TReturn> _invokeDelegate;
+
         public Func5Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+            _invokeDelegate = (Func<TArg, TArg2, TArg3, TArg4, TArg5, TReturn>)target.Method.CreateDelegate(
+                typeof(Func<,,,,,>).MakeGenericType(
+                    typeof(TArg),
+                    typeof(TArg2),
+                    typeof(TArg3),
+                    typeof(TArg4),
+                    typeof(TArg5),
+                    typeof(TReturn)),
+                target.Target);
         }
 
         private TReturn? Invoke(TArg arg1, TArg2 arg2, TArg3 arg3, TArg4 arg4, TArg5 arg5)
@@ -823,7 +917,7 @@ internal class DelegateInstrumentation
                     Callbacks.OnException(sender, innerException);
                 }
 
-                returnValue = (TReturn?)Target.DynamicInvoke(arg1, arg2, arg3, arg4, arg5);
+                returnValue = (TReturn?)_invokeDelegate(arg1, arg2, arg3, arg4, arg5);
             }
             catch (Exception ex)
             {

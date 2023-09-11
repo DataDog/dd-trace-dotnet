@@ -16,6 +16,18 @@ namespace Datadog.Trace.Tests.Util.Delegates;
 
 public class ActionInstrumentationTests
 {
+    private delegate void CustomAction();
+
+    private delegate void CustomAction<T>(T arg1);
+
+    private delegate void CustomAction<T, T2>(T arg1, T2 arg2);
+
+    private delegate void CustomAction<T, T2, T3>(T arg1, T2 arg2, T3 arg3);
+
+    private delegate void CustomAction<T, T2, T3, T4>(T arg1, T2 arg2, T3 arg3, T4 arg4);
+
+    private delegate void CustomAction<T, T2, T3, T4, T5>(T arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+
     [Fact]
     public void Action0Test()
     {
@@ -26,7 +38,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action action2 = () => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction action2 = () => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction0Callbacks(
                                                  target =>
                                                  {
@@ -76,7 +88,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action<string> action2 = (arg1) => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction<string> action2 = (arg1) => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction1Callbacks(
                                                  (target, arg1) =>
                                                  {
@@ -128,7 +140,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action<string, string> action2 = (arg1, arg2) => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction<string, string> action2 = (arg1, arg2) => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction2Callbacks(
                                                  (target, arg1, arg2) =>
                                                  {
@@ -182,7 +194,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action<string, string, string> action2 = (arg1, arg2, arg3) => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction<string, string, string> action2 = (arg1, arg2, arg3) => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction3Callbacks(
                                                  (target, arg1, arg2, arg3) =>
                                                  {
@@ -238,7 +250,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action<string, string, string, string> action2 = (arg1, arg2, arg3, arg4) => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction<string, string, string, string> action2 = (arg1, arg2, arg3, arg4) => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction4Callbacks(
                                                  (target, arg1, arg2, arg3, arg4) =>
                                                  {
@@ -296,7 +308,7 @@ public class ActionInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Action<string, string, string, string, string> action2 = (arg1, arg2, arg3, arg4, arg5) => { Interlocked.Increment(ref value).Should().Be(2); };
+        CustomAction<string, string, string, string, string> action2 = (arg1, arg2, arg3, arg4, arg5) => { Interlocked.Increment(ref value).Should().Be(2); };
         action2 = DelegateInstrumentation.Wrap(action2, new DelegateAction5Callbacks(
                                                  (target, arg1, arg2, arg3, arg4, arg5) =>
                                                  {

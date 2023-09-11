@@ -16,6 +16,18 @@ namespace Datadog.Trace.Tests.Util.Delegates;
 
 public class FuncInstrumentationTests
 {
+    private delegate TReturn CustomFunc<TReturn>();
+
+    private delegate TReturn CustomFunc<T, TReturn>(T arg1);
+
+    private delegate TReturn CustomFunc<T, T2, TReturn>(T arg1, T2 arg2);
+
+    private delegate TReturn CustomFunc<T, T2, T3, TReturn>(T arg1, T2 arg2, T3 arg3);
+
+    private delegate TReturn CustomFunc<T, T2, T3, T4, TReturn>(T arg1, T2 arg2, T3 arg3, T4 arg4);
+
+    private delegate TReturn CustomFunc<T, T2, T3, T4, T5, TReturn>(T arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5);
+
     [Fact]
     public void Func0Test()
     {
@@ -30,7 +42,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<int> func2 = () =>
+        CustomFunc<int> func2 = () =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
@@ -90,7 +102,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<string, int> func2 = (arg1) =>
+        CustomFunc<string, int> func2 = (arg1) =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
@@ -152,7 +164,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<string, string, int> func2 = (arg1, arg2) =>
+        CustomFunc<string, string, int> func2 = (arg1, arg2) =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
@@ -216,7 +228,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<string, string, string, int> func2 = (arg1, arg2, arg3) =>
+        CustomFunc<string, string, string, int> func2 = (arg1, arg2, arg3) =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
@@ -282,7 +294,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4) =>
+        CustomFunc<string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4) =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
@@ -350,7 +362,7 @@ public class FuncInstrumentationTests
         callbacks.Count.Value.Should().Be(3);
 
         var value = 0;
-        Func<string, string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4, arg5) =>
+        CustomFunc<string, string, string, string, string, int> func2 = (arg1, arg2, arg3, arg4, arg5) =>
         {
             Interlocked.Increment(ref value).Should().Be(2);
             return 42;
