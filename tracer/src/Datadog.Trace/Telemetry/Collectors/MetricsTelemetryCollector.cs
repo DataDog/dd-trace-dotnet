@@ -55,9 +55,9 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
         List<MetricData>? metricData;
         List<DistributionMetricData>? distributionData;
 
-        lock (_aggregated)
+        var aggregated = _aggregated.Value;
+        lock (aggregated)
         {
-            var aggregated = _aggregated.Value;
             metricData = GetMetricData(aggregated.PublicApiCounts, aggregated.Counts, aggregated.Gauges);
             distributionData = GetDistributionData(aggregated.Distributions);
         }
@@ -85,11 +85,11 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
     {
         var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
 
+        var aggregated = _aggregated.Value;
         // _aggregated, containing the aggregated metrics, is not thread-safe
         // and is also used when getting the metrics for serialization.
-        lock (_aggregated)
+        lock (aggregated)
         {
-            var aggregated = _aggregated.Value;
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             AggregateMetric(buffer.PublicApiCounts, timestamp, aggregated.PublicApiCounts);
             AggregateMetric(buffer.Counts, timestamp, aggregated.Counts);
