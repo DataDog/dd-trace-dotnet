@@ -199,12 +199,10 @@ namespace UpdateVendors
                             builder.Replace(foreachOriginal, foreachNew);
 
                             var valueTupleOriginal =
-                                """
-                                        if (definition == typeof(ValueTuple<>) || definition == typeof(ValueTuple<,>) ||
-                                            definition == typeof(ValueTuple<,,>) || definition == typeof(ValueTuple<,,,>) ||
-                                            definition == typeof(ValueTuple<,,,,>) || definition == typeof(ValueTuple<,,,,,>) ||
-                                            definition == typeof(ValueTuple<,,,,,,>))
-                                """;
+                                "        if (definition == typeof(ValueTuple<>) || definition == typeof(ValueTuple<,>) ||\n" +
+                                "            definition == typeof(ValueTuple<,,>) || definition == typeof(ValueTuple<,,,>) ||\n" +
+                                "            definition == typeof(ValueTuple<,,,,>) || definition == typeof(ValueTuple<,,,,,>) ||\n" +
+                                "            definition == typeof(ValueTuple<,,,,,,>))";
                             var valueTupleNew = 
                                 """
                                 #if VALUETUPLE
