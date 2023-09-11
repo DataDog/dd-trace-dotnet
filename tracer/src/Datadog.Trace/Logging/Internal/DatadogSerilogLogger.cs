@@ -26,7 +26,7 @@ namespace Datadog.Trace.Logging
             _rateLimiter = rateLimiter;
         }
 
-        public static DatadogSerilogLogger NullLogger { get; } = new(SilentLogger.Instance, new NullLogRateLimiter());
+        public static DatadogSerilogLogger NullLogger { get; } = new(Datadog.Trace.Vendors.Serilog.Core.Logger.None, new NullLogRateLimiter());
 
         public bool IsEnabled(LogEventLevel level) => _logger.IsEnabled(level);
 
@@ -155,7 +155,7 @@ namespace Datadog.Trace.Logging
 
         public void CloseAndFlush()
         {
-            var logger = Interlocked.Exchange(ref _logger, SilentLogger.Instance);
+            var logger = Interlocked.Exchange(ref _logger, Datadog.Trace.Vendors.Serilog.Core.Logger.None);
 
             (logger as IDisposable)?.Dispose();
         }
