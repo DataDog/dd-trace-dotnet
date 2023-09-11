@@ -29,8 +29,11 @@ namespace Datadog.Trace.AppSec.Waf
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => ObjType.SignedNumber,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => ObjType.UnsignedNumber,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => ObjType.String,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL => ObjType.Bool,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE => ObjType.Double,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => ObjType.Array,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => ObjType.Map,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_NULL => ObjType.Null,
                 _ => throw new Exception($"Invalid DDWAF_INPUT_TYPE {t}")
             };
         }
@@ -62,6 +65,10 @@ namespace Datadog.Trace.AppSec.Waf
                     return o.IntValue;
                 case ObjType.UnsignedNumber:
                     return o.UintValue;
+                case ObjType.Bool:
+                    return o.BoolValue;
+                case ObjType.Double:
+                    return o.DoubleValue;
                 case ObjType.String:
                     return Marshal.PtrToStringAnsi(o.Array) ?? string.Empty;
                 case ObjType.Array:
