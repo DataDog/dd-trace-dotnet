@@ -18,6 +18,7 @@ internal class ExecutedTelemetryHelper
     private const string SourceExecutedTag = "executed.source.";
     private const string SinkExecutedTag = "executed.sink.";
     private const string PropagationExecutedTag = BasicExecutedTag + "executed.propagation";
+    private const string RequestTaintedTag = BasicExecutedTag + "request.tainted";
     private static IastMetricsVerbosityLevel _verbosityLevel = Iast.Instance.Settings.IastTelemetryVerbosity;
     private int[] _executedSinks = new int[Trace.Telemetry.Metrics.IastInstrumentedSinksExtensions.Length];
     private int[] _executedSources = new int[Trace.Telemetry.Metrics.IastInstrumentedSourcesExtensions.Length];
@@ -69,7 +70,7 @@ internal class ExecutedTelemetryHelper
         }
     }
 
-    public void GenerateMetricTags(ITags tags)
+    public void GenerateMetricTags(ITags tags, int taintedSize)
     {
         lock (_metricsLock)
         {
@@ -93,9 +94,15 @@ internal class ExecutedTelemetryHelper
                     tags.SetMetric(GetExecutedSinkTag((IastInstrumentedSinks)i), _executedSinks[i]);
                 }
             }
+
+            ResetMetrics();
         }
 
-        ResetMetrics();
+        if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
+        {
+            TelemetryFactory.Metrics.RecordCountIastRequestTainted(taintedSize);
+            tags.SetMetric(RequestTaintedTag, taintedSize);
+        }
     }
 
     private void ResetMetrics()
