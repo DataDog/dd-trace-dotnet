@@ -3,7 +3,7 @@ Before reading on, make sure you understand the current instrumentation behavior
 
 ### ServiceBusSender.SendMessageAsync and ServiceBusSender.SendMessagesAsync
 When this API is called, the following diagnostic activity occurs:
-1. A `Message` Activity is started, whose TraceId/SpanId is injected into the Azure Service Bus message's properties `Diagnostic-Id` and `traceparent` (and `tracestate` property if applicable)
+1. A `Message` Activity is started, whose TraceId/SpanId is injected into the Azure Service Bus message's properties `Diagnostic-Id` and `traceparent` (and `tracestate` property if applicable). The message activity is then stopped.
 2. A `ServiceBusSender.Send` Activity is started that represents the sending operation.
 3. The `ServiceBusSender.Send` Activity is decorated with a Span Link for each `Message` Activity
 
@@ -17,24 +17,31 @@ The test application consists of 5 separate test methods, which will be explaine
 Source: [`RequestHelper.Processor.cs`](./RequestHelper.Processor.cs)
 API tested: ServiceBusProcessor
 
-The test method initializes a ServiceBusProcessor, opens a root span, sends one message
-
 ### TestServiceBusSessionReceiverAsync
 > Source: [`RequestHelper.Session.cs`](./RequestHelper.Session.cs)
+API tested: ServiceBusSessionReceiver
 
 ### TestSenderSchedulingAsync
 > Source: [`RequestHelper.cs`](./RequestHelper.cs)
+API tested: ServiceBusSender
 
 ### TestServiceBusReceiverIndividualMessageAsync
 > Source: [`RequestHelper.cs`](./RequestHelper.cs)
+API tested: ServiceBusSender, ServiceBusReceiver
 
 ### TestServiceBusReceiverBatchMessagesAsync
 > Source: [`RequestHelper.cs`](./RequestHelper.cs)
+API tested: Sending to Topics and Receiving from Subscriptions
 
 
 ## Resulting Traces
+This is much easier to view by using the following tools:
+- [Snapshot Viewer](https://andrewlock.github.io/DatadogSpanSnapshotViewer/)
+- [Link to v0 snapshot](../../../snapshots/AzureServiceBusTests.SchemaV0.verified.txt)
+- [Link to v1 snapshot](../../../snapshots/AzureServiceBusTests.SchemaV1.verified.txt)
 ### TestServiceBusProcessorAsync traces
 Trace #1
+Snapshot: TraceId_1 1
 
 ```plaintext
 SendMessageToProcessorAsync
@@ -48,14 +55,15 @@ ServiceBusReceiver.Complete
 ```
 
 Trace #2
+Snapshot: TraceId_5 2
 
 ```plaintext
 ServiceBusReceiver.Receive
 ```
 
 ### TestServiceBusSessionReceiverAsync
-
-Trace #1
+Trace #3
+Snapshot: TraceId_9 3
 
 ```plaintext
 FirstSessionId_Producer
@@ -64,7 +72,8 @@ FirstSessionId_Producer
 Message    ServiceBusSender.Send    Message     ServiceBusSender.Send
 ```
 
-Trace #2
+Trace #4
+Snapshot: TraceId_15 4
 
 ```plaintext
 SecondSessionId_Producer
@@ -73,7 +82,8 @@ SecondSessionId_Producer
 Message    ServiceBusSender.Send
 ```
 
-Trace #3
+Trace #5
+Snapshot: TraceId_19 5
 
 ```plaintext
 ProcessorSessionId_Producer
@@ -86,7 +96,8 @@ ServiceBusSessionProcessor.ProcessSessionMessage
 ServiceBusReceiver.Complete
 ```
 
-Traces #5-13
+Traces #6-14
+Snapshot: TraceId_23-39 (odd numbers only)
 
 - `ServiceBusReceiver.Receive`
 - 2x `ServiceBusReceiver.Complete`
@@ -99,7 +110,8 @@ Traces #5-13
 
 ### TestSenderSchedulingAsync
 
-Trace #1
+Trace #15
+Snapshot: TraceId_43 15
 
 ```plaintext
 TestSenderSchedulingAsync
@@ -111,7 +123,8 @@ Message    ServiceBusSender.Schedule    ServiceBusSender.Cancel    Message    Me
 ### TestServiceBusReceiverIndividualMessageAsync
 
 
-Trace #1
+Trace #16
+Snapshot: TraceId_53 16
 
 ```plaintext
 SendIndividualMessageAsync
@@ -120,7 +133,8 @@ SendIndividualMessageAsync
 Message    ServiceBusSender.Send
 ```
 
-Traces #2-10
+Traces #17-26
+Snapshot: TraceId_57-75 (odd numbers only)
 
 - `ServiceBusReceiver.Peek`
 - `ServiceBusReceiver.Receive`
@@ -135,7 +149,8 @@ Traces #2-10
 
 ### TestServiceBusReceiverBatchMessagesAsync
 
-Trace #1
+Trace #27
+Snapshot: TraceId_77 27
 
 ```plaintext
 SendBatchMessagesAsync_IEnumerable_ServiceBusMessage
@@ -144,7 +159,8 @@ SendBatchMessagesAsync_IEnumerable_ServiceBusMessage
 Message    Message    Message    ServiceBusSender.Send
 ```
 
-Trace #2
+Trace #28
+Snapshot: TraceId_83 28
 
 ```plaintext
 SendBatchMessagesAsync_ServiceBusMessageBatch
@@ -153,7 +169,8 @@ SendBatchMessagesAsync_ServiceBusMessageBatch
 Message    Message    Message    ServiceBusSender.Send
 ```
 
-Traces #3-21
+Traces #29-47
+Snapshot: TraceId_89-125 (odd numbers only)
 
 - `ServiceBusReceiver.Peek`
 - `ServiceBusReceiver.Receive` (receives entire batch in one operation)
@@ -167,7 +184,8 @@ Traces #3-21
 
 ### TestServiceBusSubscriptionProcessorAsync
 
-Trace #1
+Trace #48
+Snapshot: TraceId_127 48
 
 ```plaintext
 SendMessageToTopicAsync
@@ -181,6 +199,7 @@ ServiceBusProcessor.ProcessMessage    ServiceBusProcessor.ProcessMessage    Serv
 ServiceBusReceiver.Complete           ServiceBusReceiver.Complete           ServiceBusReceiver.Complete
 ```
 
-Traces #2-4
+Traces #49-51
+Snapshot: TraceIds 131, 135, 139
 
 - 3x `ServiceBusReceiver.Receive`

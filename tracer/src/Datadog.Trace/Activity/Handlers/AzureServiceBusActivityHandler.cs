@@ -24,7 +24,6 @@ namespace Datadog.Trace.Activity.Handlers
         {
             var tags = Tracer.Instance.CurrentTraceSettings.Schema.Client.CreateAzureServiceBusTags();
             ActivityHandlerCommon.ActivityStarted(sourceName, activity, tags: tags, out var activityMapping);
-            // TODO: Update the Activity's traceparent and/or tracestate strings here
         }
 
         public void ActivityStopped<T>(string sourceName, T activity)
