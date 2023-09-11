@@ -107,7 +107,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
             await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}")
+                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{(usingWebsockets ? string.Empty : GetSuffix(packageVersion))}")
                                   .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
@@ -190,6 +190,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     new GraphQLCommon.RequestInfo() { Url = url, HttpMethod = httpMethod, RequestBody = graphQlRequestBody, });
             }
         }
+
+        private string GetSuffix(string packageVersion)
+            => packageVersion switch
+            {
+                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
+                _ => ".Pre_13_1_0",
+            };
     }
 }
 
