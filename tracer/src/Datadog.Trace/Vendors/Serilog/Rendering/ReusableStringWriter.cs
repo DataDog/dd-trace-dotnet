@@ -37,40 +37,45 @@ using Datadog.Trace.Vendors.Serilog.Parsing;
 using Datadog.Trace.Vendors.Serilog.Policies;
 using Datadog.Trace.Vendors.Serilog.Rendering;
 using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
-// Copyright 2013-2017 Serilog Contributors
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
+namespace Datadog.Trace.Vendors.Serilog.Rendering;
 
-namespace Datadog.Trace.Vendors.Serilog.Policies;
-
-class SimpleScalarConversionPolicy : IScalarConversionPolicy
+/// <summary>
+/// Class that provides reusable StringWriters to reduce memory allocations
+/// </summary>
+class ReusableStringWriter : StringWriter
 {
-    readonly HashSet<Type> _scalarTypes;
+    [ThreadStatic]
+    static ReusableStringWriter? _pooledWriter;
 
-    public SimpleScalarConversionPolicy(IEnumerable<Type> scalarTypes)
+    /// <summary>
+    /// Gets already created StringWriter if there is one available or creates a new one.
+    /// </summary>
+    /// <param name="formatProvider"></param>
+    public static StringWriter GetOrCreate(IFormatProvider? formatProvider = null)
     {
-        _scalarTypes = new(scalarTypes);
-    }
-
-    public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result)
-    {
-        if (_scalarTypes.Contains(value.GetType()))
+        var fmtProvider = formatProvider ?? CultureInfo.CurrentCulture;
+        var writer = _pooledWriter;
+        _pooledWriter = null;
+        if (writer == null || !Equals(writer.FormatProvider, fmtProvider))
         {
-            result = new(value);
-            return true;
+            writer = new ReusableStringWriter(formatProvider);
         }
 
-        result = null;
-        return false;
+        return writer;
+    }
+
+    ReusableStringWriter(IFormatProvider? formatProvider) : base(formatProvider ?? CultureInfo.CurrentCulture)
+    {
+    }
+
+    /// <summary>
+    /// Clear this instance and prepare it for reuse in the future.
+    /// </summary>
+    protected override void Dispose(bool disposing)
+    {
+        // We don't call base.Dispose because all it does is mark the writer as closed so it can't be
+        // written to and we want to keep it open as reusable writer.
+        GetStringBuilder().Clear();
+        _pooledWriter = this;
     }
 }

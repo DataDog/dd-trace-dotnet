@@ -37,7 +37,7 @@ using Datadog.Trace.Vendors.Serilog.Parsing;
 using Datadog.Trace.Vendors.Serilog.Policies;
 using Datadog.Trace.Vendors.Serilog.Rendering;
 using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
-// Copyright 2013-2017 Serilog Contributors
+// Copyright 2013-2015 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,26 +51,31 @@ using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-namespace Datadog.Trace.Vendors.Serilog.Policies;
+namespace Datadog.Trace.Vendors.Serilog.Core;
 
-class SimpleScalarConversionPolicy : IScalarConversionPolicy
+/// <summary>
+/// Event arguments for <see cref="LoggingLevelSwitch.MinimumLevelChanged"/> event.
+/// </summary>
+internal class LoggingLevelSwitchChangedEventArgs : EventArgs
 {
-    readonly HashSet<Type> _scalarTypes;
-
-    public SimpleScalarConversionPolicy(IEnumerable<Type> scalarTypes)
+    /// <summary>
+    /// Creates an instance of <see cref="LoggingLevelSwitchChangedEventArgs"/> specifying old and new levels.
+    /// </summary>
+    /// <param name="oldLevel">Old level.</param>
+    /// <param name="newLevel">New level.</param>
+    public LoggingLevelSwitchChangedEventArgs(LogEventLevel oldLevel, LogEventLevel newLevel)
     {
-        _scalarTypes = new(scalarTypes);
+        OldLevel = oldLevel;
+        NewLevel = newLevel;
     }
 
-    public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result)
-    {
-        if (_scalarTypes.Contains(value.GetType()))
-        {
-            result = new(value);
-            return true;
-        }
+    /// <summary>
+    /// Old level.
+    /// </summary>
+    public LogEventLevel OldLevel { get; }
 
-        result = null;
-        return false;
-    }
+    /// <summary>
+    /// New level.
+    /// </summary>
+    public LogEventLevel NewLevel { get; }
 }
