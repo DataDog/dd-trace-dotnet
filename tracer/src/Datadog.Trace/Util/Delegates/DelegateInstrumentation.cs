@@ -289,7 +289,7 @@ internal class DelegateInstrumentation
                 {
                     if (!originalTask.IsCompleted)
                     {
-                        await new NoThrowAwaiter(originalTask, false);
+                        await new NoThrowAwaiter(originalTask, asyncCallback.PreserveAsyncContext);
                     }
 
                     if (originalTask.Status == TaskStatus.Faulted)
@@ -301,7 +301,7 @@ internal class DelegateInstrumentation
                         try
                         {
                             // The only supported way to extract the cancellation exception is to await the task
-                            await originalTask.ConfigureAwait(false);
+                            await originalTask.ConfigureAwait(asyncCallback.PreserveAsyncContext);
                         }
                         catch (Exception ex)
                         {
@@ -315,7 +315,7 @@ internal class DelegateInstrumentation
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    await asyncCallback.OnDelegateEndAsync(sender, (object?)null, exception, state).ConfigureAwait(false);
+                    await asyncCallback.OnDelegateEndAsync(sender, (object?)null, exception, state).ConfigureAwait(asyncCallback.PreserveAsyncContext);
                 }
                 catch (Exception ex)
                 {
@@ -338,7 +338,7 @@ internal class DelegateInstrumentation
                 {
                     if (!originalTask.IsCompleted)
                     {
-                        await new NoThrowAwaiter(originalTask, false);
+                        await new NoThrowAwaiter(originalTask, asyncCallback.PreserveAsyncContext);
                     }
 
                     if (originalTask.Status == TaskStatus.RanToCompletion)
@@ -354,7 +354,7 @@ internal class DelegateInstrumentation
                         try
                         {
                             // The only supported way to extract the cancellation exception is to await the task
-                            await originalTask.ConfigureAwait(false);
+                            await originalTask.ConfigureAwait(asyncCallback.PreserveAsyncContext);
                         }
                         catch (Exception ex)
                         {
@@ -369,7 +369,7 @@ internal class DelegateInstrumentation
                     // *
                     // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
                     // *
-                    continuationResult = await asyncCallback.OnDelegateEndAsync(sender, taskResult!, exception, state).ConfigureAwait(false);
+                    continuationResult = await asyncCallback.OnDelegateEndAsync(sender, taskResult!, exception, state).ConfigureAwait(asyncCallback.PreserveAsyncContext);
                 }
                 catch (Exception ex)
                 {

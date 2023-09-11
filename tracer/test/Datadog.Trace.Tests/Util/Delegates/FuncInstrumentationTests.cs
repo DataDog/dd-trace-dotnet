@@ -473,6 +473,8 @@ public class FuncInstrumentationTests
 
         public StrongBox<int> Count { get; }
 
+        public bool PreserveAsyncContext => false;
+
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg1)
         {
             arg1.Should().Be("Arg01");

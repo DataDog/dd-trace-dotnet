@@ -26,6 +26,8 @@ internal interface IReturnCallback : ICallbacks
 
 internal interface IReturnAsyncCallback : ICallbacks
 {
+    bool PreserveAsyncContext { get; }
+
     Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state);
 }
 
