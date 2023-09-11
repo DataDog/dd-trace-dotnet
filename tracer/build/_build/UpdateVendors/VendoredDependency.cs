@@ -190,13 +190,38 @@ namespace UpdateVendors
                         if (originalNamespace.Equals("Serilog")
                             && Path.GetFileName(filePath).Equals("PropertyValueConverter.cs"))
                         {
-                            var toReplace = "                    foreach (DictionaryEntry entry in dictionaryEntries)";
-                            var replaceWith = """
+                            var foreachOriginal = "                    foreach (DictionaryEntry entry in dictionaryEntries)";
+                            var foreachNew = """
                                               #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
                                                                   foreach (DictionaryEntry entry in dictionaryEntries)
                                               #pragma warning restore CS8605 // Unboxing a possibly null value.
                                               """;
-                            builder.Replace(toReplace, replaceWith);
+                            builder.Replace(foreachOriginal, foreachNew);
+
+                            var valueTupleOriginal =
+                                """
+                                        if (definition == typeof(ValueTuple<>) || definition == typeof(ValueTuple<,>) ||
+                                            definition == typeof(ValueTuple<,,>) || definition == typeof(ValueTuple<,,,>) ||
+                                            definition == typeof(ValueTuple<,,,,>) || definition == typeof(ValueTuple<,,,,,>) ||
+                                            definition == typeof(ValueTuple<,,,,,,>))
+                                """;
+                            var valueTupleNew = 
+                                """
+                                #if VALUETUPLE
+                                        if (definition == typeof(ValueTuple<>) || definition == typeof(ValueTuple<,>) ||
+                                            definition == typeof(ValueTuple<,,>) || definition == typeof(ValueTuple<,,,>) ||
+                                            definition == typeof(ValueTuple<,,,,>) || definition == typeof(ValueTuple<,,,,,>) ||
+                                            definition == typeof(ValueTuple<,,,,,,>))
+                                #else
+                                        // ReSharper disable once PossibleNullReferenceException
+                                        var defn = definition.FullName;
+                                        if (defn == "System.ValueTuple`1" || defn == "System.ValueTuple`2" ||
+                                            defn == "System.ValueTuple`3" || defn == "System.ValueTuple`4" ||
+                                            defn == "System.ValueTuple`5" || defn == "System.ValueTuple`6" ||
+                                            defn == "System.ValueTuple`7")
+                                #endif
+                                """;
+                            builder.Replace(valueTupleOriginal, valueTupleNew);
                         }
 
                         if (originalNamespace.Equals("dnlib"))
