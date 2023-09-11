@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Util.Delegates;
 
@@ -14,6 +15,8 @@ internal delegate void DelegateEnd(object? sender, Exception? exception, object?
 
 internal delegate object? DelegateReturnEnd(object? sender, object? returnValue, Exception? exception, object? state);
 
+internal delegate Task<object?> DelegateReturnAsyncEnd(object? sender, object? returnValue, Exception? exception, object? state);
+
 internal delegate void ExceptionDelegate(object? sender, Exception ex);
 
 internal readonly struct DelegateAction0Callbacks : IBegin0Callbacks, IVoidReturnCallback
@@ -22,7 +25,10 @@ internal readonly struct DelegateAction0Callbacks : IBegin0Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction0Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction0Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -47,7 +53,10 @@ internal readonly struct DelegateAction1Callbacks : IBegin1Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction1Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction1Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -72,7 +81,10 @@ internal readonly struct DelegateAction2Callbacks : IBegin2Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction2Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction2Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -97,7 +109,10 @@ internal readonly struct DelegateAction3Callbacks : IBegin3Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction3Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction3Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -122,7 +137,10 @@ internal readonly struct DelegateAction4Callbacks : IBegin4Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction4Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction4Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -147,7 +165,10 @@ internal readonly struct DelegateAction5Callbacks : IBegin5Callbacks, IVoidRetur
     private readonly DelegateEnd? _onDelegateEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateAction5Callbacks(DelegateBegin? onDelegateBegin = null, DelegateEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateAction5Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
@@ -166,16 +187,22 @@ internal readonly struct DelegateAction5Callbacks : IBegin5Callbacks, IVoidRetur
         => _onException?.Invoke(sender, ex);
 }
 
-internal readonly struct DelegateFunc0Callbacks : IBegin0Callbacks, IReturnCallback
+internal readonly struct DelegateFunc0Callbacks : IBegin0Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc0Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc0Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -189,18 +216,34 @@ internal readonly struct DelegateFunc0Callbacks : IBegin0Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }
 
-internal readonly struct DelegateFunc1Callbacks : IBegin1Callbacks, IReturnCallback
+internal readonly struct DelegateFunc1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc1Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc1Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -214,18 +257,34 @@ internal readonly struct DelegateFunc1Callbacks : IBegin1Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }
 
-internal readonly struct DelegateFunc2Callbacks : IBegin2Callbacks, IReturnCallback
+internal readonly struct DelegateFunc2Callbacks : IBegin2Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc2Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc2Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -239,18 +298,34 @@ internal readonly struct DelegateFunc2Callbacks : IBegin2Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }
 
-internal readonly struct DelegateFunc3Callbacks : IBegin3Callbacks, IReturnCallback
+internal readonly struct DelegateFunc3Callbacks : IBegin3Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc3Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc3Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -264,18 +339,34 @@ internal readonly struct DelegateFunc3Callbacks : IBegin3Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }
 
-internal readonly struct DelegateFunc4Callbacks : IBegin4Callbacks, IReturnCallback
+internal readonly struct DelegateFunc4Callbacks : IBegin4Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc4Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc4Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -289,18 +380,34 @@ internal readonly struct DelegateFunc4Callbacks : IBegin4Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }
 
-internal readonly struct DelegateFunc5Callbacks : IBegin5Callbacks, IReturnCallback
+internal readonly struct DelegateFunc5Callbacks : IBegin5Callbacks, IReturnCallback, IReturnAsyncCallback
 {
     private readonly DelegateBegin? _onDelegateBegin;
     private readonly DelegateReturnEnd? _onDelegateEnd;
+    private readonly DelegateReturnAsyncEnd? _onDelegateAsyncEnd;
     private readonly ExceptionDelegate? _onException;
 
-    public DelegateFunc5Callbacks(DelegateBegin? onDelegateBegin = null, DelegateReturnEnd? onDelegateEnd = null, ExceptionDelegate? onException = null)
+    public DelegateFunc5Callbacks(
+        DelegateBegin? onDelegateBegin = null,
+        DelegateReturnEnd? onDelegateEnd = null,
+        ExceptionDelegate? onException = null,
+        DelegateReturnAsyncEnd? onDelegateAsyncEnd = null)
     {
         _onDelegateBegin = onDelegateBegin;
         _onDelegateEnd = onDelegateEnd;
+        _onDelegateAsyncEnd = onDelegateAsyncEnd;
         _onException = onException;
     }
 
@@ -314,4 +421,14 @@ internal readonly struct DelegateFunc5Callbacks : IBegin5Callbacks, IReturnCallb
 
     void ICallbacks.OnException(object? sender, Exception ex)
         => _onException?.Invoke(sender, ex);
+
+    async Task<TInnerReturn> IReturnAsyncCallback.OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state)
+    {
+        if (_onDelegateAsyncEnd is not null)
+        {
+            return ((TInnerReturn?)await _onDelegateAsyncEnd.Invoke(sender, returnValue, exception, state).ConfigureAwait(false))!;
+        }
+
+        return default!;
+    }
 }

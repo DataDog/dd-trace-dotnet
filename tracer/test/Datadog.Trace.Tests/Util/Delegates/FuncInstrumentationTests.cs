@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Util.Delegates;
 using FluentAssertions;
 using Xunit;
@@ -411,6 +412,84 @@ public class FuncInstrumentationTests
         {
             Count.Value++;
             return (TReturn)(object)((int)(object)returnValue + 1);
+        }
+
+        public void OnException(object sender, Exception ex)
+        {
+        }
+    }
+
+    [Fact]
+    public async Task Async1Test()
+    {
+        var callbacks = new Async1Callbacks();
+        Func<string, Task<int>> func = async (arg1) =>
+        {
+            callbacks.Count.Value++;
+            await Task.Delay(100).ConfigureAwait(false);
+            return 42;
+        };
+        func = DelegateInstrumentation.Wrap(func, callbacks);
+        var result = await func("Arg01").ConfigureAwait(false);
+        result.Should().Be(43);
+        callbacks.Count.Value.Should().Be(4);
+
+        var value = 0;
+        CustomFunc<string, Task<int>> func2 = async (arg1) =>
+        {
+            Interlocked.Increment(ref value).Should().Be(2);
+            await Task.Delay(100).ConfigureAwait(false);
+            return 42;
+        };
+        func2 = DelegateInstrumentation.Wrap(func2, new DelegateFunc1Callbacks(
+                                                 (target, arg1) =>
+                                                 {
+                                                     arg1.Should().Be("Arg01");
+                                                     Interlocked.Increment(ref value).Should().Be(1);
+                                                     return null;
+                                                 },
+                                                 (target, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(3);
+                                                     return returnValue;
+                                                 },
+                                                 onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
+                                                 {
+                                                     Interlocked.Increment(ref value).Should().Be(4);
+                                                     await Task.Delay(100).ConfigureAwait(false);
+                                                     return ((int)returnValue) + 1;
+                                                 }));
+        result = await func2("Arg01").ConfigureAwait(false);
+        result.Should().Be(43);
+        value.Should().Be(4);
+    }
+
+    public readonly struct Async1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
+    {
+        public Async1Callbacks()
+        {
+            Count = new StrongBox<int>(0);
+        }
+
+        public StrongBox<int> Count { get; }
+
+        public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg1)
+        {
+            arg1.Should().Be("Arg01");
+            Count.Value++;
+            return null;
+        }
+
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return returnValue;
+        }
+
+        public Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
+        {
+            Count.Value++;
+            return (Task<TInnerReturn>)(object)Task.FromResult((int)(object)returnValue + 1);
         }
 
         public void OnException(object sender, Exception ex)

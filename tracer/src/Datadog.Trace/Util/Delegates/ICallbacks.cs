@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Threading.Tasks;
 
 namespace Datadog.Trace.Util.Delegates;
 
@@ -21,6 +22,11 @@ internal interface IVoidReturnCallback : ICallbacks
 internal interface IReturnCallback : ICallbacks
 {
     TReturn OnDelegateEnd<TReturn>(object? sender, TReturn returnValue, Exception? exception, object? state);
+}
+
+internal interface IReturnAsyncCallback : ICallbacks
+{
+    Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object? sender, TInnerReturn returnValue, Exception? exception, object? state);
 }
 
 internal interface IBegin0Callbacks : ICallbacks

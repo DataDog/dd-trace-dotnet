@@ -6,7 +6,10 @@
 #nullable enable
 
 using System;
+using System.Reflection;
+using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
+using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
 
 namespace Datadog.Trace.Util.Delegates;
 
@@ -227,18 +230,162 @@ internal class DelegateInstrumentation
     private abstract class Wrapper<TReturn, TDelegate, TCallbacks> : Wrapper<TDelegate, TCallbacks>
         where TCallbacks : struct, ICallbacks
     {
-        protected static readonly bool ReturnIsTask;
+        private static readonly Type? ReturnInnerType;
 
         static Wrapper()
         {
             var returnType = typeof(TReturn);
             var taskType = typeof(Task);
-            ReturnIsTask = returnType == taskType || (returnType.IsGenericType && taskType.IsAssignableFrom(returnType));
+            if (returnType == taskType)
+            {
+                ReturnInnerType = null;
+                var method = typeof(Wrapper<TReturn, TDelegate, TCallbacks>).GetMethod(nameof(ProcessContinuation), BindingFlags.Static | BindingFlags.NonPublic);
+                method = method?.MakeGenericMethod(ReturnInnerType ?? typeof(object));
+                if (method is not null)
+                {
+                    SetContinuation = (SetContinuationDelegate)method.CreateDelegate(typeof(SetContinuationDelegate));
+                }
+            }
+            else if (returnType.IsGenericType && taskType.IsAssignableFrom(returnType))
+            {
+                ReturnInnerType = returnType.GenericTypeArguments[0];
+                var method = typeof(Wrapper<TReturn, TDelegate, TCallbacks>).GetMethod(nameof(ProcessContinuation), BindingFlags.Static | BindingFlags.NonPublic);
+                method = method?.MakeGenericMethod(ReturnInnerType ?? typeof(object));
+                if (method is not null)
+                {
+                    SetContinuation = (SetContinuationDelegate)method.CreateDelegate(typeof(SetContinuationDelegate));
+                }
+            }
         }
 
         protected Wrapper(Delegate target, TCallbacks callbacks)
             : base(target, callbacks)
         {
+        }
+
+        protected delegate TReturn? SetContinuationDelegate(TCallbacks callbacks, object? sender, Exception? exception, object? state, TReturn? returnValue);
+
+        protected static SetContinuationDelegate? SetContinuation { get; }
+
+        private static TReturn? ProcessContinuation<TInnerReturn>(TCallbacks callbacks, object? sender, Exception? exception, object? state, TReturn? returnValue)
+        {
+            if (callbacks is IReturnAsyncCallback returnAsyncCallback)
+            {
+                if (ReturnInnerType is null)
+                {
+                    returnValue = (TReturn)(object)AddContinuationToSimpleTask((Task?)(object?)returnValue, returnAsyncCallback);
+                }
+                else
+                {
+                    returnValue = (TReturn)(object)AddContinuation((Task<TInnerReturn>?)(object?)returnValue, returnAsyncCallback);
+                }
+            }
+
+            return returnValue;
+
+            async Task AddContinuationToSimpleTask(Task? originalTask, IReturnAsyncCallback asyncCallback)
+            {
+                if (originalTask is not null)
+                {
+                    if (!originalTask.IsCompleted)
+                    {
+                        await new NoThrowAwaiter(originalTask, false);
+                    }
+
+                    if (originalTask.Status == TaskStatus.Faulted)
+                    {
+                        exception ??= originalTask.Exception?.GetBaseException();
+                    }
+                    else if (originalTask.Status == TaskStatus.Canceled)
+                    {
+                        try
+                        {
+                            // The only supported way to extract the cancellation exception is to await the task
+                            await originalTask.ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            exception ??= ex;
+                        }
+                    }
+                }
+
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    await asyncCallback.OnDelegateEndAsync(sender, (object?)null, exception, state).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    asyncCallback.OnException(sender, ex);
+                }
+
+                // *
+                // If the original task throws an exception we rethrow it here.
+                // *
+                if (exception != null)
+                {
+                    ExceptionDispatchInfo.Capture(exception).Throw();
+                }
+            }
+
+            async Task<TInnerReturn> AddContinuation(Task<TInnerReturn>? originalTask, IReturnAsyncCallback asyncCallback)
+            {
+                TInnerReturn? taskResult = default;
+                if (originalTask is not null)
+                {
+                    if (!originalTask.IsCompleted)
+                    {
+                        await new NoThrowAwaiter(originalTask, false);
+                    }
+
+                    if (originalTask.Status == TaskStatus.RanToCompletion)
+                    {
+                        taskResult = originalTask.Result;
+                    }
+                    else if (originalTask.Status == TaskStatus.Faulted)
+                    {
+                        exception ??= originalTask.Exception?.GetBaseException();
+                    }
+                    else if (originalTask.Status == TaskStatus.Canceled)
+                    {
+                        try
+                        {
+                            // The only supported way to extract the cancellation exception is to await the task
+                            await originalTask.ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            exception ??= ex;
+                        }
+                    }
+                }
+
+                TInnerReturn? continuationResult = default;
+                try
+                {
+                    // *
+                    // Calls the CallTarget integration continuation, exceptions here should never bubble up to the application
+                    // *
+                    continuationResult = await asyncCallback.OnDelegateEndAsync(sender, taskResult!, exception, state).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    asyncCallback.OnException(sender, ex);
+                }
+
+                // *
+                // If the original task throws an exception we rethrow it here.
+                // *
+                if (exception != null)
+                {
+                    ExceptionDispatchInfo.Capture(exception).Throw();
+                }
+
+                return continuationResult!;
+            }
         }
     }
 
@@ -631,6 +778,11 @@ internal class DelegateInstrumentation
                 }
             }
 
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+            }
+
             return returnValue;
         }
     }
@@ -688,6 +840,11 @@ internal class DelegateInstrumentation
                 {
                     Callbacks.OnException(sender, innerException);
                 }
+            }
+
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -750,6 +907,11 @@ internal class DelegateInstrumentation
                 }
             }
 
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+            }
+
             return returnValue;
         }
     }
@@ -809,6 +971,11 @@ internal class DelegateInstrumentation
                 {
                     Callbacks.OnException(sender, innerException);
                 }
+            }
+
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
@@ -873,6 +1040,11 @@ internal class DelegateInstrumentation
                 }
             }
 
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
+            }
+
             return returnValue;
         }
     }
@@ -934,6 +1106,11 @@ internal class DelegateInstrumentation
                 {
                     Callbacks.OnException(sender, innerException);
                 }
+            }
+
+            if (SetContinuation is { } setContinuation)
+            {
+                returnValue = setContinuation(Callbacks, sender, exception, state, returnValue);
             }
 
             return returnValue;
