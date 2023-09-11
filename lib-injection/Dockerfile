@@ -4,7 +4,7 @@ ARG LINUX_PACKAGE
 # The ADD command does more than COPY, so it can directly copy a local directory or it can copy over a `tar.gz` file and automatically extract its contents into the destination
 ADD ${LINUX_PACKAGE} /
 
-FROM busybox
+FROM alpine:3.18.3
 
 ARG UID=10000
 RUN addgroup -g 10000 -S datadog && \
