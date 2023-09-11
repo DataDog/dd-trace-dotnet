@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         internal const string ClsidKey = @"SOFTWARE\Classes\CLSID\" + Utils.Profilerid + @"\InprocServer32";
         internal const string Clsid32Key = @"SOFTWARE\Classes\Wow6432Node\CLSID\" + Utils.Profilerid + @"\InprocServer32";
 
-        public static bool Run(ProcessInfo process, IRegistryService? registryService = null, ApplicationPool? appPool = null)
+        public static bool Run(ProcessInfo process, IRegistryService? registryService = null)
         {
             bool ok = true;
             var runtime = process.DotnetRuntime;
@@ -162,19 +162,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    NoManageCodeClrVersionIis(process);
-
                     ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
                     ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
 
                     if (!CheckRegistry(CheckWindowsInstallation(), registryService))
                     {
                         ok = false;
-                    }
-
-                    if (!ok)
-                    {
-                        CheckAppPools(appPool);
                     }
                 }
             }
@@ -328,7 +321,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
         }
 
-        private static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
+        internal static bool CheckProfilerPath(ProcessInfo process, string key, bool requiredOnLinux)
         {
             bool ok = true;
 
@@ -383,7 +376,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return true;
         }
 
-        private static bool IsExpectedProfilerFile(string fullPath)
+        internal static bool IsExpectedProfilerFile(string fullPath)
         {
             var fileName = Path.GetFileName(fullPath);
 
@@ -525,19 +518,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return false;
         }
 
-        private static void NoManageCodeClrVersionIis(ProcessInfo process)
-        {
-            foreach (var module in process.Modules)
-            {
-                var fileName = Path.GetFileName(module);
-
-                if (fileName.Equals("Microsoft.AspNetCore.Server.IIS.dll", StringComparison.OrdinalIgnoreCase))
-                {
-                    AnsiConsole.WriteLine(TracingDotnetOnIis);
-                }
-            }
-        }
-
         private static string? CheckWindowsInstallation()
         {
             string? tracerVersion = null;
@@ -592,74 +572,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             return tracerVersion;
-        }
-
-        private static void CheckAppPools(ApplicationPool? pool)
-        {
-            var tracingRelevantVariables = new Dictionary<string, string>
-            {
-                { "COR_ENABLE_PROFILING", "1" },
-                { "CORECLR_ENABLE_PROFILING", "1" },
-                { "COR_PROFILER", Utils.Profilerid },
-                { "CORECLR_PROFILER", Utils.Profilerid }
-            };
-
-            var variableFound = false;
-            var foundVariables = new Dictionary<string, object>();
-
-            if (pool != null)
-            {
-                var environmentVariablesCollection = pool.GetCollection("environmentVariables");
-                foreach (var variable in environmentVariablesCollection)
-                {
-                    var name = (string)variable.Attributes["name"].Value;
-                    var value = (string)variable.Attributes["value"].Value;
-
-                    if (tracingRelevantVariables.ContainsKey(name) && value != tracingRelevantVariables[name])
-                    {
-                        variableFound = true;
-                        foundVariables[name] = value;
-                    }
-                }
-
-                if (variableFound)
-                {
-                    Utils.WriteWarning(AppPoolCheckFindings(pool.Name));
-
-                    foreach (var variable in foundVariables)
-                    {
-                        Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, tracingRelevantVariables[variable.Key], variable.Value.ToString()));
-                    }
-
-                    foundVariables.Clear();
-                    variableFound = false;
-                }
-            }
-
-            var serverManager = new ServerManager();
-            var defaultEnvironmentVariables = serverManager.ApplicationPools.GetChildElement("applicationPoolDefaults").GetCollection("environmentVariables");
-
-            foreach (var variable in defaultEnvironmentVariables)
-            {
-                var name = (string)variable.Attributes["name"].Value;
-                var value = (string)variable.Attributes["value"].Value;
-
-                if (tracingRelevantVariables.ContainsKey(name) && value != tracingRelevantVariables[name])
-                {
-                    variableFound = true;
-                    foundVariables[name] = value;
-                }
-            }
-
-            if (variableFound)
-            {
-                Utils.WriteWarning(AppPoolCheckFindings("applicationPoolDefaults"));
-
-                foreach (var variable in foundVariables)
-                {
-                    Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, tracingRelevantVariables[variable.Key], variable.Value.ToString()));
-                }
-            }
         }
     }
 }
