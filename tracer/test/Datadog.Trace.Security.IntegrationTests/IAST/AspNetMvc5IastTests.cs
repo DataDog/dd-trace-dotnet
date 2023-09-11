@@ -83,7 +83,7 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(false);
+        settings.AddIastScrubbing(true);
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedPath}")
