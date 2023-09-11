@@ -152,31 +152,37 @@ namespace GeneratePackageVersions
 
         private bool IsSupported(PackageVersionEntry entry, string packageVersion, TargetFramework targetFramework)
         {
-            var condition = entry
-                  .VersionConditions
-                  .FirstOrDefault(condition => AppliesToPackageVersion(packageVersion, condition));
+            return entry
+                .VersionConditions
+                .Where(condition => AppliesToPackageVersion(entry, packageVersion, condition))
+                .All(condition => ShouldIncludeFramework(condition, targetFramework));
 
-            if (condition is null)
+            static bool ShouldIncludeFramework(
+                PackageVersionEntry.PackageVersionConditionEntry condition,
+                TargetFramework targetFramework)
             {
+                if (condition is null)
+                {
+                    return true;
+                }
+
+                if (condition.ExcludeTargetFrameworks.Any()
+                    && condition.ExcludeTargetFrameworks.Contains(targetFramework))
+                {
+                    return false;
+                }
+
+                if (condition.IncludeOnlyTargetFrameworks.Any()
+                    && !condition.IncludeOnlyTargetFrameworks.Contains(targetFramework))
+                {
+                    return false;
+                }
+
                 return true;
             }
-
-            if (condition.ExcludeTargetFrameworks.Any()
-             && condition.ExcludeTargetFrameworks.Contains(targetFramework))
-            {
-                return false;
-            }
-
-            if (condition.IncludeOnlyTargetFrameworks.Any()
-             && !condition.IncludeOnlyTargetFrameworks.Contains(targetFramework))
-            {
-                return false;
-            }
-
-            return true;
-
-
-            bool AppliesToPackageVersion(
+            
+            static bool AppliesToPackageVersion(
+                PackageVersionEntry entry,
                 string packageVersionText,
                 PackageVersionEntry.PackageVersionConditionEntry condition)
             {

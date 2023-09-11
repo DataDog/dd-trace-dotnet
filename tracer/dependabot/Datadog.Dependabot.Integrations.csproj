@@ -28,23 +28,23 @@
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!-- Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.21 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.21" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.36 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.36" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.201.9 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.201.9" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.202.5 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.202.5" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.29 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.29" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.36 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.36" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.30 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.30" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.37 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.37" />
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
@@ -143,8 +143,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.3 -->
-    <PackageReference Include="NLog" Version="5.2.3" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.4 -->
+    <PackageReference Include="NLog" Version="5.2.4" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -158,13 +158,13 @@
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.5.1 -->
-    <PackageReference Include="OpenTelemetry" Version="1.5.1" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry/1.6.0 -->
+    <PackageReference Include="OpenTelemetry" Version="1.6.0" />
 
     <!-- Integration: OpenTelemetry.Api -->
     <!-- Assembly: OpenTelemetry.Api -->
-    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.5.1 -->
-    <PackageReference Include="OpenTelemetry.Api" Version="1.5.1" />
+    <!-- Latest package https://www.nuget.org/packages/OpenTelemetry.Api/1.6.0 -->
+    <PackageReference Include="OpenTelemetry.Api" Version="1.6.0" />
 
     <!-- Integration: Oracle.ManagedDataAccess -->
     <!-- Assembly: Oracle.ManagedDataAccess -->
@@ -273,13 +273,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.56.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.56.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.57.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.56.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.56.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.57.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
 
   </ItemGroup>
 

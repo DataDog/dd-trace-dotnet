@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         TraceSampleRate = .5,
                         // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "foo:bar",
-                        TraceHeaderTags = "User-Agent:http_user_agent"
+                        TraceHeaderTags = "User-Agent:http.user_agent"
                     });
 
                 await UpdateAndValidateConfig(

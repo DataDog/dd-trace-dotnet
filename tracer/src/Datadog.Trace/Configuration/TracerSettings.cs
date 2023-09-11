@@ -148,12 +148,12 @@ namespace Datadog.Trace.Configuration
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            var headerTagsNormalizationFixEnabled = config
-                                                   .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                                   .AsBool(defaultValue: true);
+            HeaderTagsNormalizationFixEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                               .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
+            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, HeaderTagsNormalizationFixEnabled)
                 ?? new Dictionary<string, string>();
 
             PeerServiceTagsEnabled = config
