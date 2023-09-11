@@ -40,7 +40,8 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             { 0x0010, "Static" },
             { 0x0020, "Final" },
-            { 0x0040, "Virtual" }
+            { 0x0040, "Virtual" },
+            { 0x0060, "Final Virtual" },
         };
 
         private readonly ModuleDefMD _module;
@@ -302,8 +303,9 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var methodScope = CreateMethodScope(type, method);
+                typeSourceFile ??= methodScope.SourceFile;
 
-                if (j == 0)
+                if (classStartLine == -1 || methodScope.StartLine < classStartLine)
                 {
                     // not really first line but good enough for inner scopes (fields doesn't has line number anyway)
                     classStartLine = methodScope.StartLine;
