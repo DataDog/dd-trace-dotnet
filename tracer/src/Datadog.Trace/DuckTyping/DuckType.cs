@@ -1263,7 +1263,7 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Type of proxy definition</typeparam>
         public static class CreateCache<T>
         {
-            private static CreateTypeResult _fastPath = default;
+            private static StrongBox<CreateTypeResult> _fastPath = new(default);
 
             /// <summary>
             /// Gets the type of T
@@ -1279,7 +1279,8 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
+                var boxedFastPath = _fastPath;
+                var fastPath = boxedFastPath.Value;
                 if (fastPath.TargetType == targetType)
                 {
                     return fastPath;
@@ -1287,10 +1288,11 @@ namespace Datadog.Trace.DuckTyping
 
                 CreateTypeResult result = GetOrCreateProxyType(Type, targetType);
 
-                fastPath = _fastPath;
+                boxedFastPath = _fastPath;
+                fastPath = boxedFastPath.Value;
                 if (fastPath.TargetType is null)
                 {
-                    _fastPath = result;
+                    _fastPath = new StrongBox<CreateTypeResult>(result);
                 }
 
                 return result;
@@ -1373,7 +1375,8 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetReverseProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
+                var boxedFastPath = _fastPath;
+                var fastPath = boxedFastPath.Value;
                 if (fastPath.TargetType == targetType)
                 {
                     return fastPath;
@@ -1381,10 +1384,11 @@ namespace Datadog.Trace.DuckTyping
 
                 CreateTypeResult result = GetOrCreateReverseProxyType(Type, targetType);
 
-                fastPath = _fastPath;
+                boxedFastPath = _fastPath;
+                fastPath = boxedFastPath.Value;
                 if (fastPath.TargetType is null)
                 {
-                    _fastPath = result;
+                    _fastPath = new StrongBox<CreateTypeResult>(result);
                 }
 
                 return result;
