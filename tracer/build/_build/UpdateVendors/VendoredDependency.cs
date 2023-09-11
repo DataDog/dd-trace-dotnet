@@ -186,6 +186,18 @@ namespace UpdateVendors
                             }
                         }
 
+                        // Special Serilog processing
+                        if (originalNamespace.Equals("Serilog")
+                            && Path.GetFileName(filePath).Equals("PropertyValueConverter.cs"))
+                        {
+                            var toReplace = "                    foreach (DictionaryEntry entry in dictionaryEntries)";
+                            var replaceWith = """
+                                              #pragma warning disable CS8605 // Unboxing a possibly null value. This is a lie, that only affects .NET Core 3.1
+                                                                  foreach (DictionaryEntry entry in dictionaryEntries)
+                                              #pragma warning restore CS8605 // Unboxing a possibly null value.
+                                              """;
+                            builder.Replace(toReplace, replaceWith);
+                        }
 
                         if (originalNamespace.Equals("dnlib"))
                         {
