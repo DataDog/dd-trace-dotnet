@@ -1,12 +1,14 @@
-﻿// <copyright file="LogFactoryGetConfigurationForLoggerInstrumentation.cs" company="Datadog">
+// <copyright file="LogFactoryGetConfigurationForLoggerInstrumentation.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 #nullable enable
 
 using System.ComponentModel;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission
 {
@@ -47,6 +49,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, TLoggingConfiguration configuration)
         {
             var tracerManager = TracerManager.Instance;
+
+            if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
+            {
+                ConfigureLogsInjection(configuration);
+            }
+
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is not null)
             {
@@ -60,6 +68,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             }
 
             return CallTargetState.GetDefault();
+        }
+
+        internal static void ConfigureLogsInjection(object loggingConfiguration)
+        {
+            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationProxy>();
+            if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
+            {
+                foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
+                {
+                    if (target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithStuff))
+                    {
+                        object layout = targetWithStuff.Layout;
+                        // TODO NLog v5
+                        if (layout.TryDuckCast<IJsonLayoutProxy>(out var layoutWithMdc))
+                        {
+                            layoutWithMdc.IncludeMdc = true;
+                            layoutWithMdc.IncludeMdlc = true;
+                        }
+                        else if (layout.TryDuckCast<ISimpleLayoutProxy>(out var simpleLayoutProxy))
+                        {
+                            // hack
+                            if (!simpleLayoutProxy.Text.Contains("dd.trace_id"))
+                            {
+                                simpleLayoutProxy.Text += @"| {dd.env: ""${mdlc:item=dd.env}\"",dd.service: ""${mdlc:item=dd.service}"",dd.version: ""${mdlc:item=dd.version}"",dd.trace_id: ""${mdlc:item=dd.trace_id}"",dd.span_id: ""${mdlc:item=dd.span_id}""}";
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 }
