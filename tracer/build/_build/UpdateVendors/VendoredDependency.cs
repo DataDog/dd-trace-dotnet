@@ -26,14 +26,15 @@ namespace UpdateVendors
                 version: "3.0.1",
                 downloadUrl: "https://github.com/serilog/serilog/archive/v3.0.1.zip",
                 pathToSrc: new[] { "serilog-3.0.1", "src", "Serilog" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform));
+                relativePathsToExclude: new[] { "GlobalUsings.cs" },
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddSerilogGlobalUsings, AddStandardGlobalUsings, AddNullableDirectiveTransform));
 
             Add(
                 libraryName: "Serilog.Sinks.File",
                 version: "5.0.0",
                 downloadUrl: "https://github.com/serilog/serilog-sinks-file/archive/v5.0.0.zip",
                 pathToSrc: new[] { "serilog-sinks-file-5.0.0", "src", "Serilog.Sinks.File" },
-                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog"));
+                transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "Serilog", AddNullableDirectiveTransform));
 
             Add(
                 libraryName: "StatsdClient",
@@ -313,5 +314,46 @@ namespace UpdateVendors
                 fileContent,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
+
+        private static string AddStandardGlobalUsings(string filePath, string content) =>
+            """
+            using global::System;
+            using global::System.Collections.Generic;
+            using global::System.IO;
+            using global::System.Linq;
+            #if !NETFRAMEWORK
+            using global::System.Net.Http;
+            #endif
+            using global::System.Threading;
+            using global::System.Threading.Tasks;
+            """ + Environment.NewLine + content;
+
+        private static string AddSerilogGlobalUsings(string filePath, string content) =>
+            """
+            using System.Collections;
+            using System.ComponentModel;
+            using System.Diagnostics.CodeAnalysis;
+            using System.Globalization;
+            using System.Reflection;
+            using System.Runtime.CompilerServices;
+            using System.Text;
+            using System.Text.RegularExpressions;
+            using Serilog.Capturing;
+            using Serilog.Configuration;
+            using Serilog.Context;
+            using Serilog.Core;
+            using Serilog.Core.Enrichers;
+            using Serilog.Core.Filters;
+            using Serilog.Core.Pipeline;
+            using Serilog.Core.Sinks;
+            using Serilog.Data;
+            using Serilog.Debugging;
+            using Serilog.Events;
+            using Serilog.Formatting.Json;
+            using Serilog.Parsing;
+            using Serilog.Policies;
+            using Serilog.Rendering;
+            using Serilog.Settings.KeyValuePairs;
+            """ + Environment.NewLine + content;
     }
 }
