@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
@@ -21,6 +22,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
     private readonly Option<string> _processNameOption = new("--process-name", "Sets the process name.");
     private readonly Option<int?> _pidOption = new("--pid", "Sets the process ID.");
     private readonly Option<string> _logDirectoryOption = new("--log-path", "Sets the instrumentation log folder path.");
+    private readonly Option<string> _originalAssembliesOption = new("--original-assemblies", "Sets if the original assemblies has copied during the app running.");
 
     public AnalyzeInstrumentationErrorsCommand()
         : base("analyze-instrumentation", "Analyze instrumentation errors")
@@ -28,6 +30,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         AddOption(_processNameOption);
         AddOption(_pidOption);
         AddOption(_logDirectoryOption);
+        AddOption(_originalAssembliesOption);
 
         AddExample("dd-trace analyze-instrumentation --process-name dotnet");
         AddExample("dd-trace analyze-instrumentation --pid 12345");
@@ -79,9 +82,10 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         }
 
         bool hasOriginalAssemblies = false;
-        if (!string.IsNullOrEmpty(settings.OriginalAssemblies))
+        var originalAssemblies = _originalAssembliesOption.GetValue(context);
+        if (!string.IsNullOrEmpty(originalAssemblies))
         {
-            hasOriginalAssemblies = bool.TryParse(settings.OriginalAssemblies, out hasOriginalAssemblies);
+            hasOriginalAssemblies = bool.TryParse(originalAssemblies, out hasOriginalAssemblies);
         }
 
         var generatorArgs = new AssemblyGeneratorArgs(processLogDir, copyOriginalModulesToDisk: hasOriginalAssemblies, modulesToVerify: null);
@@ -124,6 +128,8 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
     }
 
     /// <param name="tracerLogDir">Tracer logs directory</param>
+    /// <param name="processName">Process name if exist</param>
+    /// <param name="pid">process id if exist</param>
     /// <returns>e.g. C:\ProgramData\Datadog .NET Tracer\logs\InstrumentationVerification\dotnet_12345_dd-mm-yyyy_hh-mm-ss or C:\ProgramData\Datadog-APM\logs\DotNet\dotnet_12345_dd-mm-yyyy_hh-mm-ss</returns>
     private string GetProcessInstrumentationVerificationLogDirectory(string tracerLogDir, string processName, int? pid)
     {
@@ -133,7 +139,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             return null;
         }
 
-        var dirs = Directory.EnumerateDirectories(instrumentationVerificationLogs).Select(d => new DirectoryInfo(d)).ToList();
+        List<DirectoryInfo> dirs = Directory.EnumerateDirectories(instrumentationVerificationLogs).Select(d => new DirectoryInfo(d)).ToList();
         if (dirs.Count == 0)
         {
             return null;
@@ -145,7 +151,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             if (dirs.Count > 1)
             {
                 AnsiConsole.WriteLine($"There is more than one directory in {instrumentationVerificationLogs}, taking the last modified one");
-                dir = dirs.OrderByDescending(dir => dir.LastWriteTime).First();
+                dir = dirs.OrderByDescending(di => di.LastWriteTime).First();
             }
             else
             {
