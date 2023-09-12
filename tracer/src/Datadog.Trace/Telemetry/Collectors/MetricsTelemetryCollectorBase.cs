@@ -22,7 +22,10 @@ internal abstract partial class MetricsTelemetryCollectorBase
     private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
-    private MetricBuffer _buffer = new();
+    // ReSharper disable once InconsistentNaming
+#pragma warning disable SA1401 // field should be private, but we access it in the MetricsTelemetryCollector + CiVisibilityCollector
+    protected MetricBuffer _buffer = new();
+#pragma warning restore SA1401 // field should be private, but we access it in the MetricsTelemetryCollector + CiVisibilityCollector
     private MetricBuffer _reserveBuffer = new();
     private string[]? _wafVersionTags;
 
@@ -411,7 +414,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private class MetricBuffer
+    protected class MetricBuffer
     {
 #pragma warning disable SA1401 // fields should be private
         public readonly int[] PublicApiCounts;
