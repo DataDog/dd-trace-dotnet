@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
@@ -53,19 +54,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
             foreach (var pair in message.ApplicationProperties)
             {
                 size += Encoding.UTF8.GetByteCount(pair.Key);
-                size += TryGetValueSize(pair.Value);
+                size += MessageSizeHelper.TryGetSize(pair.Value);
             }
 
             return size;
         }
-
-        private static long TryGetValueSize(object obj)
-            => obj switch
-            {
-                null => 0,
-                byte[] bytes => bytes.Length,
-                string str => Encoding.UTF8.GetByteCount(str),
-                _ => 0,
-            };
     }
 }
