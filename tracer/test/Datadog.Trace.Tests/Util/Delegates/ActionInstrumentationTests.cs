@@ -79,6 +79,21 @@ public class ActionInstrumentationTests
     }
 
     [Fact]
+    public void NullAction0Test()
+    {
+        var callbacks = new Action0Callbacks();
+        Action action = null;
+        action = (Action)DelegateInstrumentation.Wrap(null, typeof(Action), callbacks);
+        action();
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action), callbacks).DynamicInvoke();
+        callbacks.Count.Value.Should().Be(2);
+    }
+
+    [Fact]
     public void Action1Test()
     {
         var callbacks = new Action1Callbacks();
@@ -128,6 +143,21 @@ public class ActionInstrumentationTests
         public void OnException(object sender, Exception ex)
         {
         }
+    }
+
+    [Fact]
+    public void NullAction1Test()
+    {
+        var callbacks = new Action1Callbacks();
+        Action<string> action = null;
+        action = (Action<string>)DelegateInstrumentation.Wrap(null, typeof(Action<string>), callbacks);
+        action("Arg01");
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action<string>), callbacks).DynamicInvoke("Arg01");
+        callbacks.Count.Value.Should().Be(2);
     }
 
     [Fact]
@@ -185,6 +215,21 @@ public class ActionInstrumentationTests
     }
 
     [Fact]
+    public void NullAction2Test()
+    {
+        var callbacks = new Action2Callbacks();
+        Action<string, string> action = null;
+        action = (Action<string, string>)DelegateInstrumentation.Wrap(null, typeof(Action<string, string>), callbacks);
+        action("Arg01", "Arg02");
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action<string, string>), callbacks).DynamicInvoke("Arg01", "Arg02");
+        callbacks.Count.Value.Should().Be(2);
+    }
+
+    [Fact]
     public void Action3Test()
     {
         var callbacks = new Action3Callbacks();
@@ -238,6 +283,21 @@ public class ActionInstrumentationTests
         public void OnException(object sender, Exception ex)
         {
         }
+    }
+
+    [Fact]
+    public void NullAction3Test()
+    {
+        var callbacks = new Action3Callbacks();
+        Action<string, string, string> action = null;
+        action = (Action<string, string, string>)DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string>), callbacks);
+        action("Arg01", "Arg02", "Arg03");
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string>), callbacks).DynamicInvoke("Arg01", "Arg02", "Arg03");
+        callbacks.Count.Value.Should().Be(2);
     }
 
     [Fact]
@@ -305,6 +365,21 @@ public class ActionInstrumentationTests
     }
 
     [Fact]
+    public void NullAction4Test()
+    {
+        var callbacks = new Action4Callbacks();
+        Action<string, string, string, string> action = null;
+        action = (Action<string, string, string, string>)DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string, string>), callbacks);
+        action("Arg01", "Arg02", "Arg03", "Arg04");
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string, string>), callbacks).DynamicInvoke("Arg01", "Arg02", "Arg03", "Arg04");
+        callbacks.Count.Value.Should().Be(2);
+    }
+
+    [Fact]
     public void Action5Test()
     {
         var callbacks = new Action5Callbacks();
@@ -362,5 +437,20 @@ public class ActionInstrumentationTests
         public void OnException(object sender, Exception ex)
         {
         }
+    }
+
+    [Fact]
+    public void NullAction5Test()
+    {
+        var callbacks = new Action5Callbacks();
+        Action<string, string, string, string, string> action = null;
+        action = (Action<string, string, string, string, string>)DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string, string, string>), callbacks);
+        action("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string, string, string>), callbacks).DynamicInvoke("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
+        callbacks.Count.Value.Should().Be(2);
     }
 }

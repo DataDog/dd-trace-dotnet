@@ -90,6 +90,21 @@ public class FuncInstrumentationTests
     }
 
     [Fact]
+    public void NullFunc0Test()
+    {
+        var callbacks = new Func0Callbacks();
+        Func<int> func = null;
+        func = (Func<int>)DelegateInstrumentation.Wrap(null, typeof(Func<int>), callbacks);
+        func();
+        callbacks.Count.Value.Should().Be(2);
+
+        // with no casting
+        callbacks.Count.Value = 0;
+        DelegateInstrumentation.Wrap(null, typeof(Func<int>), callbacks).DynamicInvoke();
+        callbacks.Count.Value.Should().Be(2);
+    }
+
+    [Fact]
     public void Func1Test()
     {
         var callbacks = new Func1Callbacks();
