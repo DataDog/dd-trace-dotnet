@@ -28,14 +28,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string NoWorkerProcess = "No worker process found, to perform additional checks make sure the application is active";
         public const string GetProcessError = "Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
         public const string IisNoIssue = "No issue found with the IIS site.";
-        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflicts.";
+        public const string IisMixedRuntimes = "The application pool is configured to host both .NET Framework and .NET Core runtimes. When hosting .NET Core, it's recommended to set '.NET CLR Version' to 'No managed code' to prevent conflict: https://learn.microsoft.com/en-us/aspnet/core/host-and-deploy/iis/?view=aspnetcore-3.1#create-the-iis-site:~:text=CLR%20version%20to-,No%20Managed%20Code,-%3A";
         public const string OutOfProcess = "Detected ASP.NET Core hosted out of proces. Trying to find the application process.";
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
         public const string TracingWithBundleProfilerPath = "Assuming process is traced with Datadog.Trace.Bundle Nuget, configuration(CORECLR_PROFILER_PATH or COR_PROFILER_PATH) was found for this service: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstaller = "Assuming process is traced with Installer/MSI, Nuget configuration not found: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=containers#install-the-tracer";
-        public const string TracingDotnetOnIis = "This service is .NET/.NET Core running on IIS, based on the module found: Microsoft.AspNetCore.Server.IIS.dll";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
@@ -146,6 +145,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current machine is X64 Bit, make sure to install the 64-bit tracer instead.";
 
-        public static string AppPoolCheckFindings(string appPool) => $"Checks not passing so far, update the configuration below which has been set on the {appPool} AppPool:";
+        public static string AppPoolCheckFindings(string appPool) => $"Check did not pass, fix the configuration on the {appPool} AppPool:";
     }
 }

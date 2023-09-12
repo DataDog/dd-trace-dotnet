@@ -69,101 +69,6 @@ namespace Datadog.Trace.Tools.Runner
 
             var pool = serverManager.ApplicationPools[application.ApplicationPoolName];
 
-            var relevantProfilerConfiguration = new Dictionary<string, string>
-            {
-                { "COR_ENABLE_PROFILING", "1" },
-                { "CORECLR_ENABLE_PROFILING", "1" },
-                { "COR_PROFILER", Utils.Profilerid },
-                { "CORECLR_PROFILER", Utils.Profilerid }
-            };
-
-            var relevantProfilerPathConfiguration = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                "COR_PROFILER_PATH",
-                "COR_PROFILER_PATH_32",
-                "COR_PROFILER_PATH_64",
-                "CORECLR_PROFILER_PATH",
-                "CORECLR_PROFILER_PATH_32",
-                "CORECLR_PROFILER_PATH_64"
-            };
-
-            var foundVariables = new Dictionary<string, string>();
-            var foundPathVariables = new Dictionary<string, string>();
-
-            if (pool != null)
-            {
-                var environmentVariablesCollection = pool.GetCollection("environmentVariables");
-                foreach (var variable in environmentVariablesCollection)
-                {
-                    var name = (string)variable.Attributes["name"].Value;
-                    var value = (string)variable.Attributes["value"].Value;
-
-                    if (relevantProfilerConfiguration.ContainsKey(name) && value != relevantProfilerConfiguration[name])
-                    {
-                        foundVariables[name] = value;
-                    }
-                    else if (relevantProfilerPathConfiguration.Contains(name))
-                    {
-                        foundPathVariables[name] = value;
-                    }
-                }
-
-                if (foundVariables.Count is not 0 || foundPathVariables.Count is not 0)
-                {
-                    Utils.WriteWarning(AppPoolCheckFindings(pool.Name));
-
-                    foreach (var variable in foundVariables)
-                    {
-                        Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
-                    }
-
-                    foreach (var profilerPath in foundPathVariables)
-                    {
-                        if (!ProcessBasicCheck.IsExpectedProfilerFile(profilerPath.Value))
-                        {
-                            Utils.WriteError(WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
-                        }
-                    }
-
-                    foundVariables.Clear();
-                }
-            }
-
-            var defaultEnvironmentVariables = serverManager.ApplicationPools.GetChildElement("applicationPoolDefaults").GetCollection("environmentVariables");
-
-            foreach (var variable in defaultEnvironmentVariables)
-            {
-                var name = (string)variable.Attributes["name"].Value;
-                var value = (string)variable.Attributes["value"].Value;
-
-                if (relevantProfilerConfiguration.ContainsKey(name) && value != relevantProfilerConfiguration[name])
-                {
-                    foundVariables[name] = value;
-                }
-                else if (relevantProfilerPathConfiguration.Contains(name))
-                {
-                    foundPathVariables[name] = value;
-                }
-            }
-
-            if (foundVariables.Count is not 0 || foundPathVariables.Count is not 0)
-            {
-                Utils.WriteWarning(AppPoolCheckFindings("applicationPoolDefaults"));
-
-                foreach (var variable in foundVariables)
-                {
-                    Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
-                }
-
-                foreach (var profilerPath in foundPathVariables)
-                {
-                    if (!ProcessBasicCheck.IsExpectedProfilerFile(profilerPath.Value))
-                    {
-                        Utils.WriteError(WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
-                    }
-                }
-            }
-
             // The WorkerProcess part of ServerManager doesn't seem to be compatible with IISExpress
             // so we skip this bit when launched from the tests
             if (pid == null)
@@ -266,6 +171,7 @@ namespace Datadog.Trace.Tools.Runner
 
                 if (!ProcessBasicCheck.Run(process, registryService))
                 {
+                    CheckAppPoolsEnvVars(pool, serverManager);
                     return 1;
                 }
 
@@ -283,6 +189,77 @@ namespace Datadog.Trace.Tools.Runner
             Utils.WriteSuccess(IisNoIssue);
 
             return 0;
+        }
+
+        internal static void CheckAppPoolsEnvVars(ApplicationPool pool, ServerManager serverManager)
+        {
+            var relevantProfilerConfiguration = new Dictionary<string, string>
+            {
+                { "COR_ENABLE_PROFILING", "1" },
+                { "CORECLR_ENABLE_PROFILING", "1" },
+                { "COR_PROFILER", Utils.Profilerid },
+                { "CORECLR_PROFILER", Utils.Profilerid }
+            };
+
+            var relevantProfilerPathConfiguration = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "COR_PROFILER_PATH",
+                "COR_PROFILER_PATH_32",
+                "COR_PROFILER_PATH_64",
+                "CORECLR_PROFILER_PATH",
+                "CORECLR_PROFILER_PATH_32",
+                "CORECLR_PROFILER_PATH_64"
+            };
+
+            if (pool != null)
+            {
+                CheckEnvironmentVariables(pool.GetCollection("environmentVariables"), relevantProfilerConfiguration, relevantProfilerPathConfiguration, pool.Name);
+            }
+
+            if (serverManager != null)
+            {
+                var defaultEnvironmentVariables = serverManager.ApplicationPools?.GetChildElement("applicationPoolDefaults").GetCollection("environmentVariables");
+                if (defaultEnvironmentVariables != null)
+                {
+                    CheckEnvironmentVariables(defaultEnvironmentVariables, relevantProfilerConfiguration, relevantProfilerPathConfiguration, "applicationPoolDefaults");
+                }
+            }
+        }
+
+        private static void CheckEnvironmentVariables(ConfigurationElementCollection environmentVariablesCollection, Dictionary<string, string> relevantProfilerConfiguration, HashSet<string> relevantProfilerPathConfiguration, string poolName)
+        {
+            var foundVariables = new Dictionary<string, string>();
+            var foundPathVariables = new Dictionary<string, string>();
+
+            foreach (var variable in environmentVariablesCollection)
+            {
+                var name = (string)variable.Attributes["name"].Value;
+                var value = (string)variable.Attributes["value"].Value;
+
+                if (relevantProfilerConfiguration.ContainsKey(name) && value != relevantProfilerConfiguration[name])
+                {
+                    foundVariables[name] = value;
+                }
+                else if (relevantProfilerPathConfiguration.Contains(name) && !ProcessBasicCheck.IsExpectedProfilerFile(value))
+                {
+                    foundPathVariables[name] = value;
+                }
+            }
+
+            if (foundVariables.Count != 0 || foundPathVariables.Count != 0)
+            {
+                Utils.WriteWarning(AppPoolCheckFindings(poolName));
+
+                foreach (var variable in foundVariables)
+                {
+                    Utils.WriteError("- " + WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
+                }
+
+                foreach (var profilerPath in foundPathVariables)
+                {
+                    Utils.WriteError("- " + WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
+                }
+            }
         }
     }
 }
