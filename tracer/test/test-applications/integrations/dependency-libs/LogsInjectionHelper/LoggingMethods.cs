@@ -17,9 +17,12 @@ namespace PluginApplication
             var appDirectory = Directory.GetParent(typeof(LoggingMethods).Assembly.Location).FullName;
             var textFilePath = Path.Combine(appDirectory, "log-textFile.log");
             var jsonFilePath = Path.Combine(appDirectory, "log-jsonFile.log");
-
+            var textFile2Path = Path.Combine(appDirectory, "log-textFile2.log");
+            var jsonFile2Path = Path.Combine(appDirectory, "log-jsonFile2.log");
             File.Delete(textFilePath);
             File.Delete(jsonFilePath);
+            File.Delete(textFile2Path);
+            File.Delete(jsonFile2Path);
         }
 
         public static int RunLoggingProcedure(Action<string> logAction)

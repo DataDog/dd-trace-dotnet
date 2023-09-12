@@ -36,6 +36,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             PropertiesUseSerilogNaming = false
         };
 
+        private readonly LogFileTest _textFile2 = new()
+        {
+            FileName = "log-textFile2.log",
+            RegexFormat = @"{0}: {1}",
+            // txt format can't conditionally add properties
+            UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
+            PropertiesUseSerilogNaming = false
+        };
+
         public NLogTests(ITestOutputHelper output)
             : base(output, "LogsInjection.NLog")
         {
@@ -206,7 +215,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (context == ContextNone) { return; }
 
             // Skip for versions that don't support json
-            if (testFiles.Length < 2) { return; }
+            if (testFiles.Length < 4) { return; }
 
             var test = testFiles[1];
             var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
@@ -232,7 +241,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (version < new Version("4.0.0"))
             {
                 // pre 4.0 can't write to json file
-                return new[] { _textFile };
+                return new[] { _textFile, _textFile2 };
             }
 
             var unTracedLogType = logsInjectionEnabled switch
@@ -243,7 +252,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 false => UnTracedLogTypes.None,
             };
 
-            return new[] { _textFile, GetJsonTestFile(unTracedLogType) };
+            return new[] { _textFile, _textFile2, GetJsonTestFile(unTracedLogType) };
         }
 
         private LogFileTest GetJsonTestFile(UnTracedLogTypes unTracedLogType) => new()
