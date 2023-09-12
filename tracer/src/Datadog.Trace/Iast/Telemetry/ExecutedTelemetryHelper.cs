@@ -145,6 +145,6 @@ internal class ExecutedTelemetryHelper
 
     private string? GetSourceTag(IastInstrumentedSources source)
     {
-        return SourceType.GetString((SourceTypeName)source);
+        return SourceType.GetString((SourceTypeName)source).Replace(".", "_");
     }
 }
