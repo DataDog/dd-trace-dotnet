@@ -95,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                             // hacky implementation to get everything in
                             if (!simpleLayoutProxy.Text.Contains("dd.env"))
                             {
-                                simpleLayoutProxy.Text += @"{dd.env: ""${mdlc:item=dd.env}\"",";
+                                simpleLayoutProxy.Text += @"{dd.env: ""${mdlc:item=dd.env}"",";
                             }
 
                             if (!simpleLayoutProxy.Text.Contains("dd.service"))
