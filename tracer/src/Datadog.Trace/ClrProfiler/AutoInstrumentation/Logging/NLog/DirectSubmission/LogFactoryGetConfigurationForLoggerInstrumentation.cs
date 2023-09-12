@@ -77,21 +77,45 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             {
                 foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
                 {
-                    if (target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithStuff))
+                    if (target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithLayout))
                     {
-                        object layout = targetWithStuff.Layout;
-                        // TODO NLog v5
-                        if (layout.TryDuckCast<IJsonLayoutProxy>(out var layoutWithMdc))
+                        var layout = targetWithLayout.Layout;
+
+                        if (layout.TryDuckCast<IJson5LayoutProxy>(out var layoutWithScope))
+                        {
+                            layoutWithScope.IncludeScopeProperties = true;
+                        }
+                        else if (layout.TryDuckCast<IJsonLayoutProxy>(out var layoutWithMdc))
                         {
                             layoutWithMdc.IncludeMdc = true;
                             layoutWithMdc.IncludeMdlc = true;
                         }
                         else if (layout.TryDuckCast<ISimpleLayoutProxy>(out var simpleLayoutProxy))
                         {
-                            // hack
+                            // hacky implementation to get everything in
+                            if (!simpleLayoutProxy.Text.Contains("dd.env"))
+                            {
+                                simpleLayoutProxy.Text += @"{dd.env: ""${mdlc:item=dd.env}\"",";
+                            }
+
+                            if (!simpleLayoutProxy.Text.Contains("dd.service"))
+                            {
+                                simpleLayoutProxy.Text += @"dd.service: ""${mdlc:item=dd.service}"",";
+                            }
+
+                            if (!simpleLayoutProxy.Text.Contains("dd.version"))
+                            {
+                                simpleLayoutProxy.Text += @"dd.version: ""${mdlc:item=dd.version}"",";
+                            }
+
                             if (!simpleLayoutProxy.Text.Contains("dd.trace_id"))
                             {
-                                simpleLayoutProxy.Text += @"| {dd.env: ""${mdlc:item=dd.env}\"",dd.service: ""${mdlc:item=dd.service}"",dd.version: ""${mdlc:item=dd.version}"",dd.trace_id: ""${mdlc:item=dd.trace_id}"",dd.span_id: ""${mdlc:item=dd.span_id}""}";
+                                simpleLayoutProxy.Text += @"dd.trace_id: ""${mdlc:item=dd.trace_id}"",";
+                            }
+
+                            if (!simpleLayoutProxy.Text.Contains("dd.span_id"))
+                            {
+                                simpleLayoutProxy.Text += @"dd.span_id: ""${mdlc:item=dd.span_id}""";
                             }
                         }
                     }
