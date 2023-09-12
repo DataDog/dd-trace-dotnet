@@ -23,8 +23,8 @@ private:
     std::unordered_map < trace::MethodIdentifier, std::tuple<LPCBYTE, ULONG>> _methodBodies{};
     std::unordered_map<trace::MethodIdentifier, trace::MethodIdentifier> _originalMethods;
     std::unordered_map<trace::MethodIdentifier, trace::MethodIdentifier> _instrumentedMethods;
-    std::unordered_map<trace::MethodIdentifier, std::set<shared::WSTRING>> _successfulInstrumentationVersions;
-    std::recursive_mutex _successfulInstrumentationVersionsMutex;
+    std::unordered_map<trace::MethodIdentifier, std::set<shared::WSTRING>> _successfulInstrumentationIds;
+    std::recursive_mutex _successfulInstrumentationIdsMutex;
 
     void RequestRevert(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
     void RequestRejit(ModuleID moduleId, mdMethodDef methodId, std::shared_ptr<RejitHandler> rejit_handler);
@@ -45,14 +45,14 @@ public:
     void CacheILBodyIfEmpty(ModuleID moduleId, mdMethodDef methodId, LPCBYTE pMethodBytes, ULONG methodSize);
     std::tuple<LPCBYTE, ULONG> GetILBodyAndSize(ModuleID moduleId, mdMethodDef methodId);
 
-    void AddSuccessfulInstrumentationVersion(ModuleID moduleId, mdMethodDef methodId,
-                                             const shared::WSTRING& instrumentationVersion,
+    void AddSuccessfulInstrumentationId(ModuleID moduleId, mdMethodDef methodId,
+                                             const shared::WSTRING& instrumentationId,
                                              trace::InstrumentingProducts products,
                                              std::shared_ptr<RejitHandler> rejit_handler);
-    bool IsInstrumentationVersionSucceeded(ModuleID moduleId, mdMethodDef methodId,
-                                            const shared::WSTRING& instrumentationVersion,
+    bool IsInstrumentationIdSucceeded(ModuleID moduleId, mdMethodDef methodId,
+                                            const shared::WSTRING& instrumentationId,
                                             trace::InstrumentingProducts products);
-    bool ShouldHeal(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion, trace::InstrumentingProducts products, std::shared_ptr<RejitHandler> rejit_handler);
+    bool ShouldHeal(ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationId, trace::InstrumentingProducts products, std::shared_ptr<RejitHandler> rejit_handler);
 };
 
 } // namespace fault_tolerant

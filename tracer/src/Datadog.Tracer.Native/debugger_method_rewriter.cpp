@@ -336,7 +336,7 @@ InstrumentingProducts DebuggerMethodRewriter::GetInstrumentingProduct(RejitHandl
     return InstrumentingProducts::DynamicInstrumentation;
 }
 
-WSTRING DebuggerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleHandler,
                                                           RejitHandlerModuleMethod* methodHandler)
 {
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);

@@ -717,7 +717,7 @@ InstrumentingProducts TracerMethodRewriter::GetInstrumentingProduct(RejitHandler
     return InstrumentingProducts::Tracer;
 }
 
-WSTRING TracerMethodRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+WSTRING TracerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleHandler,
     RejitHandlerModuleMethod* methodHandler)
 {
     return EmptyWStr;

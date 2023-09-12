@@ -228,8 +228,8 @@ public:
     //
     // Fault-Tolerant Instrumentation methods
     //
-    void ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products);
-    bool ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationVersion, int products);
+    void ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products);
+    bool ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products);
 
     //
     // Disable profiler

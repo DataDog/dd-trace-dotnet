@@ -16,27 +16,27 @@ namespace Datadog.Trace.FaultTolerant
     {
         private static readonly bool IsWindows = FrameworkDescription.Instance.IsWindows();
 
-        public static bool ShouldHeal(IntPtr moduleId, int methodToken, string instrumentationVersion, int products)
+        public static bool ShouldHeal(IntPtr moduleId, int methodToken, string instrumentationId, int products)
         {
             if (IsWindows)
             {
-                return Windows.ShouldHeal(moduleId, methodToken, instrumentationVersion, products);
+                return Windows.ShouldHeal(moduleId, methodToken, instrumentationId, products);
             }
             else
             {
-                return NonWindows.ShouldHeal(moduleId, methodToken, instrumentationVersion, products);
+                return NonWindows.ShouldHeal(moduleId, methodToken, instrumentationId, products);
             }
         }
 
-        public static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationVersion, int products)
+        public static void ReportSuccessfulInstrumentation(IntPtr moduleId, int methodToken, string instrumentationId, int products)
         {
             if (IsWindows)
             {
-                Windows.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
+                Windows.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationId, products);
             }
             else
             {
-                NonWindows.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationVersion, products);
+                NonWindows.ReportSuccessfulInstrumentation(moduleId, methodToken, instrumentationId, products);
             }
         }
 
@@ -49,14 +49,14 @@ namespace Datadog.Trace.FaultTolerant
             public static extern bool ShouldHeal(
                 [In] IntPtr moduleId,
                 [In] int methodToken,
-                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationVersion,
+                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationId,
                 [In] int products);
 
             [DllImport("Datadog.Tracer.Native.dll")]
             public static extern void ReportSuccessfulInstrumentation(
                 [In] IntPtr moduleId,
                 [In] int methodToken,
-                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationVersion,
+                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationId,
                 [In] int products);
         }
 
@@ -68,14 +68,14 @@ namespace Datadog.Trace.FaultTolerant
             public static extern bool ShouldHeal(
                 [In] IntPtr moduleId,
                 [In] int methodToken,
-                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationVersion,
+                [In] [MarshalAs(UnmanagedType.LPWStr)] string instrumentationId,
                 [In] int products);
 
             [DllImport("Datadog.Tracer.Native")]
             public static extern void ReportSuccessfulInstrumentation(
                 [In] IntPtr moduleId,
                 [In] int methodToken,
-                [In][MarshalAs(UnmanagedType.LPWStr)] string instrumentationVersion,
+                [In][MarshalAs(UnmanagedType.LPWStr)] string instrumentationId,
                 [In] int products);
         }
     }

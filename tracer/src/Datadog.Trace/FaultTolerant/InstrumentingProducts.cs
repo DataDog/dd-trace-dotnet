@@ -16,7 +16,7 @@ namespace Datadog.Trace.FaultTolerant
     /// Matches a native `enum class` of the same structure.
     /// </summary>
     [Flags]
-    public enum InstrumentingProducts
+    internal enum InstrumentingProducts
     {
         /// <summary>
         /// The tracer instrumentation.

@@ -59,7 +59,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     bool isVoid = (retTypeFlags & TypeFlagVoid) > 0;
     auto methodReturnType = caller->method_signature.GetReturnValue();
     auto [functionSignature, functionSignatureLength] = caller->method_signature.GetFunctionSignatureAndLength();
-    const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+    const auto instrumentationId = m_methodRewriter->GetInstrumentationId(moduleHandler, methodHandler);
     const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
     FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
     faultTolerantTokens->EnsureCorLibTokens();
@@ -248,10 +248,10 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
 
     ILInstr* tryLeaveInstr = rewriterWrapper.CreateInstr(CEE_LEAVE_S);
 
-    mdString instrumentationVersionIdToken;
+    mdString instrumentationIdToken;
     hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineUserString(
-        instrumentationVersion.c_str(), static_cast<ULONG>(instrumentationVersion.length()),
-        &instrumentationVersionIdToken);
+        instrumentationId.c_str(), static_cast<ULONG>(instrumentationId.length()),
+        &instrumentationIdToken);
 
     if (FAILED(hr))
     {
@@ -261,7 +261,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         return hr;
     }
 
-    // static bool IsInstrumentationVersionSucceeded(Exception ex, IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // static bool IsInstrumentationIdSucceeded(Exception ex, IntPtr moduleId, int methodToken, string instrumentationId,
     // InstrumentingProducts products)
 
     ILInstr* catchBegin;
@@ -275,7 +275,7 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     }
 
     rewriterWrapper.LoadInt32(methodId);
-    rewriterWrapper.LoadStr(instrumentationVersionIdToken);
+    rewriterWrapper.LoadStr(instrumentationIdToken);
 
     rewriterWrapper.LoadInt32(static_cast<INT32>(instrumentingProduct));
 
@@ -414,7 +414,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
 {
     const auto moduleId = moduleHandler->GetModuleId();
     const auto methodId = methodHandler->GetMethodDef();
-    const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+    const auto instrumentationId = m_methodRewriter->GetInstrumentationId(moduleHandler, methodHandler);
     const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
     FunctionInfo* caller = methodHandler->GetFunctionInfo();
     FaultTolerantTokens* faultTolerantTokens = moduleHandler->GetModuleMetadata()->GetFaultTolerantTokens();
@@ -434,10 +434,10 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     ILRewriterWrapper rewriterWrapper(&rewriter);
     rewriterWrapper.SetILPosition(rewriter.GetILList()->m_pNext);
 
-    mdString instrumentationVersionIdToken;
+    mdString instrumentationIdToken;
     hr = moduleHandler->GetModuleMetadata()->metadata_emit->DefineUserString(
-        instrumentationVersion.c_str(), static_cast<ULONG>(instrumentationVersion.length()),
-        &instrumentationVersionIdToken);
+        instrumentationId.c_str(), static_cast<ULONG>(instrumentationId.length()),
+        &instrumentationIdToken);
 
     if (FAILED(hr))
     {
@@ -447,7 +447,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
         return hr;
     }
 
-    // static void AddSuccessfulInstrumentationVersion(IntPtr moduleId, int methodToken, string instrumentationVersion,
+    // static void AddSuccessfulInstrumentationId(IntPtr moduleId, int methodToken, string instrumentationId,
     // InstrumentingProducts products)
 
     if (sizeof(UINT_PTR) == 4) // 32-bit
@@ -460,7 +460,7 @@ HRESULT FaultTolerantRewriter::InjectSuccessfulInstrumentation(RejitHandlerModul
     }
 
     rewriterWrapper.LoadInt32(methodId);
-    rewriterWrapper.LoadStr(instrumentationVersionIdToken);
+    rewriterWrapper.LoadStr(instrumentationIdToken);
     rewriterWrapper.LoadInt32(static_cast<INT32>(instrumentingProduct));
     ILInstr* reportSuccessfulInstrumentation;
     faultTolerantTokens->WriteReportSuccessfulInstrumentation(&rewriterWrapper, &reportSuccessfulInstrumentation);
@@ -499,10 +499,10 @@ HRESULT FaultTolerantRewriter::RewriteInternal(RejitHandlerModule* moduleHandler
 
     if (FaultTolerantTracker::Instance()->IsKickoffMethod(moduleId, methodId))
     {
-        const auto instrumentationVersion = m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+        const auto instrumentationId = m_methodRewriter->GetInstrumentationId(moduleHandler, methodHandler);
         const auto instrumentingProduct = m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
 
-        if (FaultTolerantTracker::Instance()->IsInstrumentationVersionSucceeded(moduleId, methodId, instrumentationVersion, instrumentingProduct))
+        if (FaultTolerantTracker::Instance()->IsInstrumentationIdSucceeded(moduleId, methodId, instrumentationId, instrumentingProduct))
         {
             // Request Revert for the original method
             //std::vector<MethodIdentifier> requests = {{moduleId, methodId}};
@@ -587,8 +587,8 @@ InstrumentingProducts FaultTolerantRewriter::GetInstrumentingProduct(RejitHandle
     return m_methodRewriter->GetInstrumentingProduct(moduleHandler, methodHandler);
 }
 
-WSTRING FaultTolerantRewriter::GetInstrumentationVersion(RejitHandlerModule* moduleHandler,
+WSTRING FaultTolerantRewriter::GetInstrumentationId(RejitHandlerModule* moduleHandler,
                                                          RejitHandlerModuleMethod* methodHandler)
 {
-    return m_methodRewriter->GetInstrumentationVersion(moduleHandler, methodHandler);
+    return m_methodRewriter->GetInstrumentationId(moduleHandler, methodHandler);
 }

@@ -123,45 +123,45 @@ std::tuple<LPCBYTE, ULONG> fault_tolerant::FaultTolerantTracker::GetILBodyAndSiz
     return _methodBodies[methodIdentifier];
 }
 
-void fault_tolerant::FaultTolerantTracker::AddSuccessfulInstrumentationVersion(
-    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion,
+void fault_tolerant::FaultTolerantTracker::AddSuccessfulInstrumentationId(
+    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationId,
     trace::InstrumentingProducts products, std::shared_ptr<RejitHandler> rejit_handler)
 {
-    std::lock_guard lock(_successfulInstrumentationVersionsMutex);
+    std::lock_guard lock(_successfulInstrumentationIdsMutex);
 
     RequestRevert(moduleId, methodId, rejit_handler);
     RequestRejit(moduleId, methodId, rejit_handler);
 
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
 
-    auto [iter, _] = _successfulInstrumentationVersions.emplace(methodIdentifier, std::set<shared::WSTRING>());
-    iter->second.insert(instrumentationVersion);
+    auto [iter, _] = _successfulInstrumentationIds.emplace(methodIdentifier, std::set<shared::WSTRING>());
+    iter->second.insert(instrumentationId);
 }
 
-bool fault_tolerant::FaultTolerantTracker::IsInstrumentationVersionSucceeded(
-    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationVersion,
+bool fault_tolerant::FaultTolerantTracker::IsInstrumentationIdSucceeded(
+    ModuleID moduleId, mdMethodDef methodId, const shared::WSTRING& instrumentationId,
     trace::InstrumentingProducts products)
 {
-    std::lock_guard lock(_successfulInstrumentationVersionsMutex);
+    std::lock_guard lock(_successfulInstrumentationIdsMutex);
     
     const auto methodIdentifier = trace::MethodIdentifier(moduleId, methodId);
 
-    auto it = _successfulInstrumentationVersions.find(methodIdentifier);
+    auto it = _successfulInstrumentationIds.find(methodIdentifier);
 
-    if (it != _successfulInstrumentationVersions.end())
+    if (it != _successfulInstrumentationIds.end())
     {
-        return it->second.find(instrumentationVersion) != it->second.end();
+        return it->second.find(instrumentationId) != it->second.end();
     }
 
     return false;
 }
 
 bool fault_tolerant::FaultTolerantTracker::ShouldHeal(ModuleID moduleId, mdMethodDef methodId,
-                                                      const shared::WSTRING& instrumentationVersion,
+                                                      const shared::WSTRING& instrumentationId,
                                                       trace::InstrumentingProducts products,
                                                       std::shared_ptr<RejitHandler> rejit_handler)
 {
-    const auto shouldHeal = !IsInstrumentationVersionSucceeded(moduleId, methodId, instrumentationVersion, products);
+    const auto shouldHeal = !IsInstrumentationIdSucceeded(moduleId, methodId, instrumentationId, products);
 
     if (shouldHeal)
     {
