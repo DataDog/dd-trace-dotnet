@@ -542,71 +542,71 @@ internal class IntelligentTestRunnerClient
 
     public async Task<long> SendObjectsPackFileAsync(string commitSha, string[]? commitsToInclude, string[]? commitsToExclude)
     {
-        var sw = Stopwatch.StartNew();
-        try
+        Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
+
+        var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
+        if (packFilesObject is null || packFilesObject.Files.Length == 0)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
-            Log.Debug("ITR: Packing and sending delta of commits and tree objects...");
+            return 0;
+        }
 
-            var packFilesObject = await GetObjectsPackFileFromWorkingDirectoryAsync(commitsToInclude, commitsToExclude).ConfigureAwait(false);
-            if (packFilesObject is null || packFilesObject.Files.Length == 0)
+        var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
+        var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
+        Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
+        var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
+
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(packFilesObject.Files.Length);
+        long totalUploadSize = 0;
+        foreach (var packFile in packFilesObject.Files)
+        {
+            // Send PackFile content
+            Log.Information("ITR: Sending {PackFile}", packFile);
+            totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
+
+            // Delete temporal pack file
+            try
             {
-                return 0;
+                File.Delete(packFile);
             }
-
-            var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
-            var jsonPushedSha = JsonConvert.SerializeObject(new DataEnvelope<Data<object>>(new Data<object>(commitSha, CommitType, default), repository), SerializerSettings);
-            Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
-            var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
-
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(packFilesObject.Files.Length);
-            long totalUploadSize = 0;
-            foreach (var packFile in packFilesObject.Files)
+            catch (Exception ex)
             {
-                // Send PackFile content
-                Log.Information("ITR: Sending {PackFile}", packFile);
-                totalUploadSize += await WithRetries(InternalSendObjectsPackFileAsync, packFile, MaxRetries).ConfigureAwait(false);
-
-                // Delete temporal pack file
-                try
-                {
-                    File.Delete(packFile);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
-                }
+                Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
             }
+        }
 
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(totalUploadSize);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(totalUploadSize);
 
-            // Delete temporary folder after the upload
-            if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
+        // Delete temporary folder after the upload
+        if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
+        {
+            try
             {
-                try
-                {
-                    Directory.Delete(packFilesObject.TemporaryFolder, true);
-                }
-                catch (Exception ex)
-                {
-                    Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
-                }
+                Directory.Delete(packFilesObject.TemporaryFolder, true);
             }
-
-            Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
-            return totalUploadSize;
-
-            async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
+            catch (Exception ex)
             {
+                Log.Warning(ex, "ITR: Error deleting temporary folder: '{TemporaryFolder}'", packFilesObject.TemporaryFolder);
+            }
+        }
+
+        Log.Information("ITR: Total pack file upload: {TotalUploadSize} bytes", totalUploadSize);
+        return totalUploadSize;
+
+        async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
+        {
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
                 var request = _apiRequestFactory.Create(_packFileUrl);
                 SetRequestHeader(request, useApplicationHeader: false);
 
                 var multipartRequest = (IMultipartApiRequest)request;
                 using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
                 using var response = await multipartRequest.PostAsync(
-                    new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
-                .ConfigureAwait(false);
+                                                                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                                new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                                                           .ConfigureAwait(false);
                 var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
                 if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
                 {
@@ -617,10 +617,10 @@ internal class IntelligentTestRunnerClient
 
                 return new FileInfo(packFile).Length;
             }
-        }
-        finally
-        {
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackMs(sw.Elapsed.TotalMilliseconds);
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackMs(sw.Elapsed.TotalMilliseconds);
+            }
         }
     }
 
