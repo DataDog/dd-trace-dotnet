@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -13,15 +15,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 {
     internal class AzureServiceBusCommon
     {
-        private static readonly ConditionalWeakTable<object, object> ApplicationPropertiesToMessageMap = new();
+        private static readonly ConditionalWeakTable<object, object?> ApplicationPropertiesToMessageMap = new();
 
         // The message properties is consumed synchronously, so pass state using ThreadLocal
         [ThreadStatic]
 #pragma warning disable SA1401 // Fields should be private
-        internal static IDictionary<string, object> ActiveMessageProperties;
+        internal static IDictionary<string, object>? ActiveMessageProperties;
 #pragma warning restore SA1401 // Fields should be private
 
-        public static void SetMessage(object applicationProperties, object message)
+        public static void SetMessage(object applicationProperties, object? message)
         {
 #if NETCOREAPP3_1_OR_GREATER
             ApplicationPropertiesToMessageMap.AddOrUpdate(applicationProperties, message);
@@ -30,7 +32,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
 #endif
         }
 
-        public static bool TryGetMessage(object applicationProperties, out object message)
+        public static bool TryGetMessage(object applicationProperties, out object? message)
             => ApplicationPropertiesToMessageMap.TryGetValue(applicationProperties, out message);
 
         internal static long GetMessageSize<T>(T message)
