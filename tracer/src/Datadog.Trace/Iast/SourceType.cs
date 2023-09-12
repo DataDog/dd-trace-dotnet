@@ -21,6 +21,23 @@ internal static class SourceType
         return GetString((SourceTypeName)value);
     }
 
+    internal static string GetAsTag(SourceTypeName value)
+    => value switch
+    {
+        SourceTypeName.RequestParameterValue => "http_request_parameter",
+        SourceTypeName.RequestParameterName => "http_request_parameter_name",
+        SourceTypeName.RequestHeaderValue => "http_request_header",
+        SourceTypeName.RequestHeaderName => "http_request_header_name",
+        SourceTypeName.RequestPath => "http_request_path",
+        SourceTypeName.RequestBody => "http_request_body",
+        SourceTypeName.RequestQuery => "http_request_query",
+        SourceTypeName.RoutedParameterValue => "http_request_path_parameter",
+        SourceTypeName.MatrixParameter => "http_request_matrix_parameter",
+        SourceTypeName.CookieName => "http_cookie_name",
+        SourceTypeName.CookieValue => "http_cookie_value",
+        _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
+    };
+
     internal static string GetString(SourceTypeName value)
         => value switch
         {
