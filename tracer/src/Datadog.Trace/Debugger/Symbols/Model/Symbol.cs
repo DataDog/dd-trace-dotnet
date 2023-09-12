@@ -5,6 +5,7 @@
 
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
 
 namespace Datadog.Trace.Debugger.Symbols.Model;
 
@@ -17,7 +18,7 @@ internal record struct Symbol
     internal string Type { get; set; }
 
     [JsonProperty("symbol_type")]
-    [JsonConverter(typeof(StringEnumConverter))]
+    [JsonConverter(typeof(StringEnumConverter), converterParameters: typeof(SnakeCaseNamingStrategy))]
     internal SymbolType SymbolType { get; set; }
 
     [JsonProperty("line")]
