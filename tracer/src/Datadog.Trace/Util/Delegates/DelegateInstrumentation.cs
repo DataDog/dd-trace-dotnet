@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Reflection;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
@@ -15,8 +16,10 @@ namespace Datadog.Trace.Util.Delegates;
 
 #pragma warning disable SA1124
 
-internal class DelegateInstrumentation
+internal static class DelegateInstrumentation
 {
+    private static readonly ConcurrentDictionary<Type, Type> WrapperTypesCache = new();
+
     public static TDelegate Wrap<TDelegate, TCallbacks>(TDelegate? target, TCallbacks callbacks)
         where TDelegate : Delegate
         where TCallbacks : struct, ICallbacks
@@ -27,171 +30,157 @@ internal class DelegateInstrumentation
     {
         targetType = target?.GetType() ?? targetType;
         if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
-        var invokeMethod = targetType.GetMethod("Invoke");
-        var returnType = invokeMethod!.ReturnType;
-        var arguments = invokeMethod!.GetParameters();
-        switch (arguments.Length)
-        {
-            case 0:
-            {
-                if (returnType == typeof(void))
-                {
-                    var wrapperType = typeof(Action0Wrapper<,>).MakeGenericType(
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func0Wrapper<,,>).MakeGenericType(
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
 
-            case 1:
+        var wrapperType = WrapperTypesCache.GetOrAdd(
+            targetType,
+            tType =>
             {
-                if (returnType == typeof(void))
-                {
-                    var wrapperType = typeof(Action1Wrapper<,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func1Wrapper<,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
+                var invokeMethod = tType.GetMethod("Invoke");
+                var returnType = invokeMethod!.ReturnType;
+                var arguments = invokeMethod!.GetParameters();
 
-            case 2:
-            {
-                if (returnType == typeof(void))
+                switch (arguments.Length)
                 {
-                    var wrapperType = typeof(Action2Wrapper<,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func2Wrapper<,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
+                    case 0:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action0Wrapper<,>).MakeGenericType(
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func0Wrapper<,,>).MakeGenericType(
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
 
-            case 3:
-            {
-                if (returnType == typeof(void))
-                {
-                    var wrapperType = typeof(Action3Wrapper<,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func3Wrapper<,,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
+                    case 1:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action1Wrapper<,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func1Wrapper<,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
 
-            case 4:
-            {
-                if (returnType == typeof(void))
-                {
-                    var wrapperType = typeof(Action4Wrapper<,,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        arguments[3].ParameterType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func4Wrapper<,,,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        arguments[3].ParameterType,
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
+                    case 2:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action2Wrapper<,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func2Wrapper<,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
 
-            case 5:
-            {
-                if (returnType == typeof(void))
-                {
-                    var wrapperType = typeof(Action5Wrapper<,,,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        arguments[3].ParameterType,
-                        arguments[4].ParameterType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-                else
-                {
-                    var wrapperType = typeof(Func5Wrapper<,,,,,,,>).MakeGenericType(
-                        arguments[0].ParameterType,
-                        arguments[1].ParameterType,
-                        arguments[2].ParameterType,
-                        arguments[3].ParameterType,
-                        arguments[4].ParameterType,
-                        returnType,
-                        targetType,
-                        typeof(TCallbacks));
-                    var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
-                    return wrapper.Handler;
-                }
-            }
+                    case 3:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action3Wrapper<,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func3Wrapper<,,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
 
-            default:
-                ThrowHelper.ThrowNotSupportedException("The number of parameter is not supported!");
-                return default;
-        }
+                    case 4:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action4Wrapper<,,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                arguments[3].ParameterType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func4Wrapper<,,,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                arguments[3].ParameterType,
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
+
+                    case 5:
+                    {
+                        if (returnType == typeof(void))
+                        {
+                            return typeof(Action5Wrapper<,,,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                arguments[3].ParameterType,
+                                arguments[4].ParameterType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                        else
+                        {
+                            return typeof(Func5Wrapper<,,,,,,,>).MakeGenericType(
+                                arguments[0].ParameterType,
+                                arguments[1].ParameterType,
+                                arguments[2].ParameterType,
+                                arguments[3].ParameterType,
+                                arguments[4].ParameterType,
+                                returnType,
+                                targetType,
+                                typeof(TCallbacks));
+                        }
+                    }
+
+                    default:
+                        ThrowHelper.ThrowNotSupportedException("The number of parameter is not supported!");
+                        return default;
+                }
+            });
+
+        var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
+        return wrapper.Handler;
     }
 
     private abstract class Wrapper<TCallbacks>
