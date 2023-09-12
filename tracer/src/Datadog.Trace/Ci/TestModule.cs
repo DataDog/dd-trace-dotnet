@@ -15,6 +15,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci.Coverage;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -178,6 +179,9 @@ public sealed class TestModule
             // If a module doesn't have a fixed start time we reset it before running code
             span.ResetStartTime();
         }
+
+        // Record EventCreate telemetry metric
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Module);
     }
 
     /// <summary>
@@ -417,6 +421,9 @@ public sealed class TestModule
         }
 
         span.Finish(duration.Value);
+
+        // Record EventFinished telemetry metric
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Module);
 
         Current = null;
         CIVisibility.Log.Debug("### Test Module Closed: {Name} | {Status}", Name, Tags.Status);

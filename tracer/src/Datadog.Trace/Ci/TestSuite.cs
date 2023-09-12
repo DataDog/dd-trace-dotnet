@@ -8,6 +8,7 @@ using System;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -50,6 +51,9 @@ public sealed class TestSuite
             // If a module doesn't have a fixed start time we reset it before running code
             span.ResetStartTime();
         }
+
+        // Record EventCreate telemetry metric
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(module.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Suite);
     }
 
     /// <summary>
@@ -168,6 +172,9 @@ public sealed class TestSuite
         }
 
         span.Finish(duration.Value);
+
+        // Record EventFinished telemetry metric
+        TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Tags.Framework), MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Suite);
 
         Current = null;
         Module.RemoveSuite(Name);

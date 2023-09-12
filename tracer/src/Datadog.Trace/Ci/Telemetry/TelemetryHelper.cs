@@ -63,4 +63,37 @@ internal static class TelemetryHelper
             _ => MetricTags.CIVisibilityExitCodes.Unknown,
         };
     }
+
+    /// <summary>
+    /// Gets the CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark enum from the current data
+    /// </summary>
+    /// <param name="eventType">Event Type</param>
+    /// <param name="isBenchmark">True if is a benchmark event</param>
+    /// <returns>MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark</returns>
+    public static MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark? GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(MetricTags.CIVisibilityTestingEventType eventType, bool isBenchmark)
+    {
+        switch (eventType)
+        {
+            case MetricTags.CIVisibilityTestingEventType.Test:
+                return isBenchmark ?
+                           MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test_IsBenchmark :
+                           MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test;
+            case MetricTags.CIVisibilityTestingEventType.Suite:
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Suite;
+            case MetricTags.CIVisibilityTestingEventType.Module:
+                return MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Module;
+            case MetricTags.CIVisibilityTestingEventType.Session:
+            {
+                return CIEnvironmentValues.Instance switch
+                {
+                    { CodeOwners: not null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_HasCodeOwner_IsSupportedCi,
+                    { CodeOwners: not null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_HasCodeOwner_UnsupportedCi,
+                    { CodeOwners: null, IsCI: true } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_NoCodeOwner_IsSupportedCi,
+                    { CodeOwners: null, IsCI: false } => MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Session_NoCodeOwner_UnsupportedCi,
+                };
+            }
+        }
+
+        return null;
+    }
 }

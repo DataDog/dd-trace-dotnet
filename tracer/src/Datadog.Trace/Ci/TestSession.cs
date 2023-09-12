@@ -11,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
@@ -84,6 +85,14 @@ public sealed class TestSession
         {
             // If a module doesn't have a fixed start time we reset it before running code
             span.ResetStartTime();
+        }
+
+        // Record EventCreate telemetry metric
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+                MetricTags.CIVisibilityTestingEventType.Session,
+                framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(framework), eventTypeWithMetadata);
         }
     }
 
@@ -332,6 +341,14 @@ public sealed class TestSession
         }
 
         span.Finish(duration.Value);
+
+        // Record EventFinished telemetry metric
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+                MetricTags.CIVisibilityTestingEventType.Session,
+                Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(Framework), eventTypeWithMetadata);
+        }
 
         if (_environmentVariablesToRestore is { } envVars)
         {

@@ -10,6 +10,7 @@ using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.Sampling;
 using Datadog.Trace.Telemetry;
@@ -66,6 +67,14 @@ public sealed class Test
         {
             // If a test doesn't have a fixed start time we reset it before running the test code
             scope.Span.ResetStartTime();
+        }
+
+        // Record EventCreate telemetry metric
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+                MetricTags.CIVisibilityTestingEventType.Test,
+                module.Framework == CommonTags.TestingFrameworkNameBenchmarkDotNet) is { } eventTypeWithMetadata)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventCreated(TelemetryHelper.GetTelemetryTestingFrameworkEnum(module.Framework), eventTypeWithMetadata);
         }
     }
 
@@ -360,6 +369,7 @@ public sealed class Test
                 {
                     tags.SkippedByIntelligentTestRunner = "true";
                     Suite.Tags.AddIntelligentTestRunnerSkippingCount(1);
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test);
                 }
                 else
                 {
@@ -372,6 +382,14 @@ public sealed class Test
         // Finish
         scope.Span.Finish(duration.Value);
         scope.Dispose();
+
+        // Record EventFinished telemetry metric
+        if (TelemetryHelper.GetEventTypeWithCodeOwnerAndSupportedCiAndBenchmark(
+                MetricTags.CIVisibilityTestingEventType.Test,
+                tags.Type == TestTags.TypeBenchmark) is { } eventTypeWithMetadata)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEventFinished(TelemetryHelper.GetTelemetryTestingFrameworkEnum(tags.Framework), eventTypeWithMetadata);
+        }
 
         Current = null;
         CIVisibility.Log.Debug("######### Test Closed: {Name} ({Suite} | {Module}) | {Status}", Name, Suite.Name, Suite.Module.Name, tags.Status);
