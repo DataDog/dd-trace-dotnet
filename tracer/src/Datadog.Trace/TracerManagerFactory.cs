@@ -134,7 +134,7 @@ namespace Datadog.Trace
                 settings.ServiceVersionInternal,
                 gitMetadataTagsProvider);
 
-            telemetry ??= TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
+            telemetry ??= CreateTelemetryController(settings, discoveryService);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
 
             var security = Security.Instance;
@@ -195,6 +195,11 @@ namespace Datadog.Trace
                 GetSpanSampler(settings),
                 remoteConfigurationManager,
                 dynamicConfigurationManager);
+        }
+
+        protected virtual ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        {
+            return TelemetryFactory.Instance.CreateTelemetryController(settings, discoveryService);
         }
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
