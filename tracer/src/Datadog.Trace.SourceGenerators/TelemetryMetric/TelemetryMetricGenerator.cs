@@ -70,6 +70,13 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
                 "distribution" => Sources.CreateDistributionTelemetryCollectorPartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
                 _ => $"// Metric type: {enumDetails.MetricType} not currently supported",
             };
+            var baseSource = enumDetails.MetricType switch
+            {
+                "count" => Sources.CreateCountTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
+                "gauge" => Sources.CreateGaugeTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
+                "distribution" => Sources.CreateDistributionTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
+                _ => $"// Metric type: {enumDetails.MetricType} not currently supported",
+            };
             var interfaceSource = enumDetails.MetricType switch
             {
                 "count" => Sources.CreateCountITelemetryCollectorPartial(sb, in enumDetails, enumDictionary),
@@ -86,6 +93,7 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             };
 
             spc.AddSource($"{enumDetails.ShortName}Extensions.g.cs", SourceText.From(enumSource, Encoding.UTF8));
+            spc.AddSource($"MetricsTelemetryCollectorBase_{enumDetails.MetricType}.g.cs", SourceText.From(baseSource, Encoding.UTF8));
             spc.AddSource($"MetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
             spc.AddSource($"IMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(interfaceSource, Encoding.UTF8));
             spc.AddSource($"NullMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(nullSource, Encoding.UTF8));
