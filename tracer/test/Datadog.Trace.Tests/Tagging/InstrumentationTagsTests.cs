@@ -8,6 +8,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Redis;
 using Datadog.Trace.ServiceFabric;
 using Datadog.Trace.Tagging;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using Xunit;
 
@@ -497,6 +498,93 @@ namespace Datadog.Trace.Tests.Tagging
             tags.SetTag("peer.service", customService);
             tags.RemotingUri = uri;
             tags.RemotingServiceName = service;
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusTags_ReceiveMessagingOperation_ReturnsSpanKindConsumer()
+        {
+            var spanKind = "client";
+            var tags = new AzureServiceBusTags();
+
+            tags.SetTag("span.kind", spanKind);
+            tags.SetTag("messaging.operation", "publish");
+            tags.GetTag("span.kind").Should().Be(spanKind);
+
+            // Set messaging operation to invoke our custom behavior
+            tags.SetTag("messaging.operation", "receive");
+            tags.GetTag("span.kind").Should().Be("consumer");
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_NotSetForConsumer()
+        {
+            var sourceName = "source";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("span.kind", "consumer");
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().BeNull();
+            tags.PeerServiceSource.Should().BeNull();
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromMessagingDestinationName()
+        {
+            var destinationName = "destination";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().Be(destinationName);
+            tags.PeerServiceSource.Should().Be("messaging.destination.name");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromEitherMessagingSourceOrDestinationName()
+        {
+            var sourceName = "source";
+            var destinationName = "destination";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
+
+            tags.PeerService.Should().BeOneOf(sourceName, destinationName);
+            tags.PeerServiceSource.Should().BeOneOf("messaging.source.name", "messaging.destination.name");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_PopulatesFromCustom()
+        {
+            var customService = "client-service";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("peer.service", customService);
+
+            tags.PeerService.Should().Be(customService);
+            tags.PeerServiceSource.Should().Be("peer.service");
+            tags.GetTag(Tags.PeerServiceRemappedFrom).Should().BeNull();
+        }
+
+        [Fact]
+        public void AzureServiceBusV1Tags_PeerService_CustomTakesPrecedence()
+        {
+            var sourceName = "source";
+            var destinationName = "destination";
+            var customService = "client-service";
+            var tags = new AzureServiceBusV1Tags();
+
+            tags.SetTag("peer.service", customService);
+            tags.SetTag("messaging.source.name", sourceName); // Set via SetTag to mimic Activity usage
+            tags.SetTag("messaging.destination.name", destinationName); // Set via SetTag to mimic Activity usage
 
             tags.PeerService.Should().Be(customService);
             tags.PeerServiceSource.Should().Be("peer.service");
