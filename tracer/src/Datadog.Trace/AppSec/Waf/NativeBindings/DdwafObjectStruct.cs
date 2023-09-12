@@ -36,8 +36,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(16)]
         public long IntValue;
 
+        /// <summary>
+        /// Dont use non blittable type as we use unsafe to marshall/unmarshall for faster performances.
+        /// </summary>
         [FieldOffset(16)]
-        public bool BoolValue;
+        public byte ByteValue;
 
         [FieldOffset(16)]
         public double DoubleValue;
@@ -48,6 +51,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(32)]
         public DDWAF_OBJ_TYPE Type;
+
+        public bool BoolValue => ByteValue == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal object Decode()
