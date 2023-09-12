@@ -146,12 +146,12 @@ namespace Datadog.Trace.Ci.Agent
                 }
 
                 // Error handling block
-                if (!IsStatusCodeError(statusCode))
+                if (IsStatusCodeError(statusCode))
                 {
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint}", retryCount, _apiRequestFactory.Info(url));
+                        Log.Error<int, string, int>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint} | StatusCode: {StatusCode}", retryCount, _apiRequestFactory.Info(url), statusCode);
                         return statusCode;
                     }
 
@@ -162,6 +162,7 @@ namespace Datadog.Trace.Ci.Agent
                     }
 
                     // Execute retry delay
+                    Log.Debug<string, int>(exception, "An error occurred while sending events to {AgentEndpoint} | StatusCode: {StatusCode}", _apiRequestFactory.Info(url), statusCode);
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
