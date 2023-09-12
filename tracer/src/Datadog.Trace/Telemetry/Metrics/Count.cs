@@ -201,7 +201,7 @@ internal enum Count
     [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
 
     /// <summary>
-    /// Counts the number of taqinted objects after a request
+    /// Counts the number of tainted objects after a request
     /// </summary>
     [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
 
