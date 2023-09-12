@@ -34,13 +34,13 @@ internal class SymbolPdbExtractor : SymbolExtractor
             return methodScope;
         }
 
-        var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false);
+        var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false && sq.Line > 0);
         var startLine = firstSq.Line == 0 ? -1 : firstSq.Line;
         var typeSourceFile = firstSq.Document?.URL;
-        var lastSq = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false);
-        var endLine = lastSq.EndLine;
+        var lastSq = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false && sq.EndLine > 0);
+        var endLine = lastSq.EndLine == 0 ? -1 : lastSq.EndLine;
         var startColumn = firstSq.Column == 0 ? -1 : firstSq.Column;
-        var endColumn = lastSq.EndColumn;
+        var endColumn = lastSq.EndColumn == 0 ? -1 : lastSq.EndColumn;
 
         // locals
         var localsSymbol = GetLocalsSymbol(method, startLine, symbolMethod, out var localsCount);
