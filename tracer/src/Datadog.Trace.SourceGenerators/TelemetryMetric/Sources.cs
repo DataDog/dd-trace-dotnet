@@ -141,37 +141,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    var tag2EntryCount = enumDictionary[tagName2].Count;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int increment = 1)
-                            {
-                                var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                                Interlocked.Add(ref _buffer.Counts[index], increment);
-                            }
-                        """);
+                    WriteRecordCount(sb, in details, property, index, metric.Tag1FullyQualifiedName!, tagName2, enumDictionary[tagName2].Count);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int increment = 1)
-                            {
-                                var index = {{index}} + (int)tag;
-                                Interlocked.Add(ref _buffer.Counts[index], increment);
-                            }
-                        """);
+                    WriteRecordCount(sb, in details, property, index, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(int increment = 1)
-                            {
-                                Interlocked.Add(ref _buffer.Counts[{{index}}], increment);
-                            }
-                        """);
+                    WriteRecordCount(sb, details, property, index);
                 }
             }
         }
@@ -251,31 +229,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int increment = 1)
-                            {
-                            }
-                        """);
+                    WriteNoopCount(sb, details, property, metric.Tag1FullyQualifiedName!, tagName2);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int increment = 1)
-                            {
-                            }
-                        """);
+                    WriteNoopCount(sb, details, property, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(int increment = 1)
-                            {
-                            }
-                        """);
+                    WriteNoopCount(sb, details, property);
                 }
             }
         }
@@ -360,37 +322,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    var tag2EntryCount = enumDictionary[tagName2].Count;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int value)
-                            {
-                                var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                                Interlocked.Exchange(ref _buffer.Gauges[index], value);
-                            }
-                        """);
+                    WriteRecordGauge(sb, in details, property, index, metric.Tag1FullyQualifiedName!, tagName2, enumDictionary[tagName2].Count);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int value)
-                            {
-                                var index = {{index}} + (int)tag;
-                                Interlocked.Exchange(ref _buffer.Gauges[index], value);
-                            }
-                        """);
+                    WriteRecordGauge(sb, in details, property, index, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(int value)
-                            {
-                                Interlocked.Exchange(ref _buffer.Gauges[{{index}}], value);
-                            }
-                        """);
+                    WriteRecordGauge(sb, details, property, index);
                 }
             }
         }
@@ -470,31 +410,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int value)
-                            {
-                            }
-                        """);
+                    WriteNoopGauge(sb, details, property, metric.Tag1FullyQualifiedName!, tagName2);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int value)
-                            {
-                            }
-                        """);
+                    WriteNoopGauge(sb, details, property, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(int value)
-                            {
-                            }
-                        """);
+                    WriteNoopGauge(sb, details, property);
                 }
             }
         }
@@ -579,37 +503,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    var tag2EntryCount = enumDictionary[tagName2].Count;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, double value)
-                            {
-                                var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                                _buffer.Distributions[index].TryEnqueue(value);
-                            }
-                        """);
+                    WriteRecordDistribution(sb, in details, property, index, metric.Tag1FullyQualifiedName!, tagName2, enumDictionary[tagName2].Count);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, double value)
-                            {
-                                var index = {{index}} + (int)tag;
-                                _buffer.Distributions[index].TryEnqueue(value);
-                            }
-                        """);
+                    WriteRecordDistribution(sb, in details, property, index, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(double value)
-                            {
-                                _buffer.Distributions[{{index}}].TryEnqueue(value);
-                            }
-                        """);
+                    WriteRecordDistribution(sb, in details, property, index);
                 }
             }
         }
@@ -689,31 +591,15 @@ internal partial class Sources
 
                 if (metric.Tag2FullyQualifiedName is { } tagName2)
                 {
-                    var tagName1 = metric.Tag1FullyQualifiedName!;
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, double value)
-                            {
-                            }
-                        """);
+                    WriteNoopDistribution(sb, details, property, metric.Tag1FullyQualifiedName!, tagName2);
                 }
                 else if (metric.Tag1FullyQualifiedName is { } tagName)
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}({{tagName}} tag, double value)
-                            {
-                            }
-                        """);
+                    WriteNoopDistribution(sb, details, property, tagName);
                 }
                 else
                 {
-                    sb.AppendLine(
-                        $$"""
-                            public void Record{{details.ShortName}}{{property}}(double value)
-                            {
-                            }
-                        """);
+                    WriteNoopDistribution(sb, details, property);
                 }
             }
         }
@@ -861,5 +747,200 @@ internal partial class Sources
         }
 
         return sb.ToString();
+    }
+
+    private static void WriteRecordCount(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(int increment = 1)
+                  {
+                      Interlocked.Add(ref _buffer.Counts[{{index}}], increment);
+                  }
+              """);
+    }
+
+    private static void WriteRecordCount(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int increment = 1)
+                  {
+                      var index = {{index}} + (int)tag;
+                      Interlocked.Add(ref _buffer.Counts[index], increment);
+                  }
+              """);
+    }
+
+    private static void WriteRecordCount(StringBuilder sb,  in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName1, string tagName2, int tag2EntryCount)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int increment = 1)
+                  {
+                      var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
+                      Interlocked.Add(ref _buffer.Counts[index], increment);
+                  }
+              """);
+    }
+
+    private static void WriteRecordGauge(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(int value)
+                  {
+                      Interlocked.Exchange(ref _buffer.Gauges[{{index}}], value);
+                  }
+              """);
+    }
+
+    private static void WriteRecordGauge(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int value)
+                  {
+                      var index = {{index}} + (int)tag;
+                      Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                  }
+              """);
+    }
+
+    private static void WriteRecordGauge(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName1, string tagName2, int tag2EntryCount)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int value)
+                  {
+                      var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
+                      Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                  }
+              """);
+    }
+
+    private static void WriteRecordDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(double value)
+                  {
+                      _buffer.Distributions[{{index}}].TryEnqueue(value);
+                  }
+              """);
+    }
+
+    private static void WriteRecordDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, double value)
+                  {
+                      var index = {{index}} + (int)tag;
+                      _buffer.Distributions[index].TryEnqueue(value);
+                  }
+              """);
+    }
+
+    private static void WriteRecordDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, int index, string tagName1, string tagName2, int tag2EntryCount)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, double value)
+                  {
+                      var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
+                      _buffer.Distributions[index].TryEnqueue(value);
+                  }
+              """);
+    }
+
+    private static void WriteNoopCount(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(int increment = 1)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopCount(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int increment = 1)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopCount(StringBuilder sb,  in TelemetryMetricGenerator.EnumDetails details, string property, string tagName1, string tagName2)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int increment = 1)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopGauge(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(int value)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopGauge(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int value)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopGauge(StringBuilder sb,  in TelemetryMetricGenerator.EnumDetails details, string property, string tagName1, string tagName2)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int value)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}(double value)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, string tagName)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName}} tag, double value)
+                  {
+                  }
+              """);
+    }
+
+    private static void WriteNoopDistribution(StringBuilder sb, in TelemetryMetricGenerator.EnumDetails details, string property, string tagName1, string tagName2)
+    {
+        sb.AppendLine(
+            $$"""
+                  public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, double value)
+                  {
+                  }
+              """);
     }
 }
