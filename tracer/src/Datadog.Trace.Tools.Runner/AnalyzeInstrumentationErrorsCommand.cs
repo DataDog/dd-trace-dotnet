@@ -23,6 +23,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
     private readonly Option<int?> _pidOption = new("--pid", "Sets the process ID.");
     private readonly Option<string> _logDirectoryOption = new("--log-path", "Sets the instrumentation log folder path.");
     private readonly Option<string> _originalAssembliesOption = new("--original-assemblies", "Sets if the original assemblies has copied during the app running.");
+    private readonly Option<string> _assembliesToVerifyOption = new("--assemblies-to-verify", "Specify assembly names to verify separated by ';'.");
 
     public AnalyzeInstrumentationErrorsCommand()
         : base("analyze-instrumentation", "Analyze instrumentation errors")
@@ -31,6 +32,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         AddOption(_pidOption);
         AddOption(_logDirectoryOption);
         AddOption(_originalAssembliesOption);
+        AddOption(_assembliesToVerifyOption);
 
         AddExample("dd-trace analyze-instrumentation --process-name dotnet");
         AddExample("dd-trace analyze-instrumentation --pid 12345");
@@ -88,7 +90,14 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
             hasOriginalAssemblies = bool.TryParse(originalAssemblies, out hasOriginalAssemblies);
         }
 
-        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, copyOriginalModulesToDisk: hasOriginalAssemblies, modulesToVerify: null);
+        string[] modulesToVerify = null;
+        var assembliesToVerify = _assembliesToVerifyOption.GetValue(context);
+        if (!string.IsNullOrEmpty(assembliesToVerify))
+        {
+            modulesToVerify = assembliesToVerify.Split(';', StringSplitOptions.RemoveEmptyEntries);
+        }
+
+        var generatorArgs = new AssemblyGeneratorArgs(processLogDir, copyOriginalModulesToDisk: hasOriginalAssemblies, modulesToVerify: modulesToVerify);
 
         var exportedModulesPathsAndMethods = InstrumentedAssemblyGeneration.Generate(generatorArgs);
 
