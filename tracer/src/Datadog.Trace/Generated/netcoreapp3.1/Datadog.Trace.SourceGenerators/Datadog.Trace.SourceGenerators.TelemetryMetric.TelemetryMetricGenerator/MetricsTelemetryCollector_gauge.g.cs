@@ -21,33 +21,4 @@ internal partial class MetricsTelemetryCollector
     {
         Interlocked.Exchange(ref _buffer.Gauges[7], value);
     }
-
-    /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" /> values.
-    /// </summary>
-    private static AggregatedMetric[] GetGaugeBuffer()
-        => new AggregatedMetric[]
-        {
-            // stats_buckets, index = 0
-            new(null),
-            // instrumentations, index = 1
-            new(new[] { "component_name:calltarget" }),
-            new(new[] { "component_name:calltarget_derived" }),
-            new(new[] { "component_name:calltarget_interfaces" }),
-            new(new[] { "component_name:iast" }),
-            new(new[] { "component_name:iast_derived" }),
-            new(new[] { "component_name:iast_aspects" }),
-            // direct_log_queue.length, index = 7
-            new(null),
-        };
-
-    /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.Gauge" />.
-    /// Each value represents the number of unique entries in the buffer returned by <see cref="GetGaugeBuffer()" />
-    /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
-    /// </summary>
-    private static int[] GaugeEntryCounts { get; }
-        = new []{ 1, 6, 1, };
-
-    private const int _gaugesLength = 8;
 }
