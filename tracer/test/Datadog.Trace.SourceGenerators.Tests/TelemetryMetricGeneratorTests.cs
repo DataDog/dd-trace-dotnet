@@ -166,7 +166,7 @@ public class TelemetryMetricGeneratorTests
             [TelemetryMetricType("count")]
             public enum TestMetric
             { 
-                [TelemetryMetric("metric.zero")]
+                [TelemetryMetric("metric.zero", true, "civisibility")]
                 ZeroTagMetric,
 
                 [TelemetryMetric<LogLevel>("metric.one")]
@@ -241,6 +241,7 @@ public class TelemetryMetricGeneratorTests
                 public static string? GetNamespace(this MyTests.TestMetricNameSpace.TestMetric metric)
                     => metric switch
                     {
+                        MyTests.TestMetricNameSpace.TestMetric.ZeroTagMetric => "civisibility",
                         _ => null,
                     };
             }
@@ -341,6 +342,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
                 {
+                    Interlocked.Add(ref _buffer.Counts[0], increment);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int increment = 1)
@@ -423,7 +425,7 @@ public class TelemetryMetricGeneratorTests
             [TelemetryMetricType("gauge")]
             public enum TestMetric
             { 
-                [TelemetryMetric("metric.zero")]
+                [TelemetryMetric("metric.zero", true, "civisibility")]
                 ZeroTagMetric,
 
                 [TelemetryMetric<LogLevel>("metric.one")]
@@ -498,6 +500,7 @@ public class TelemetryMetricGeneratorTests
                 public static string? GetNamespace(this MyTests.TestMetricNameSpace.TestMetric metric)
                     => metric switch
                     {
+                        MyTests.TestMetricNameSpace.TestMetric.ZeroTagMetric => "civisibility",
                         _ => null,
                     };
             }
@@ -598,6 +601,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int value)
                 {
+                    Interlocked.Exchange(ref _buffer.Gauges[0], value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int value)
@@ -680,7 +684,7 @@ public class TelemetryMetricGeneratorTests
             [TelemetryMetricType("distribution")]
             public enum TestMetric
             { 
-                [TelemetryMetric("metric.zero")]
+                [TelemetryMetric("metric.zero", true, "civisibility")]
                 ZeroTagMetric,
 
                 [TelemetryMetric<LogLevel>("metric.one")]
@@ -755,6 +759,7 @@ public class TelemetryMetricGeneratorTests
                 public static string? GetNamespace(this MyTests.TestMetricNameSpace.TestMetric metric)
                     => metric switch
                     {
+                        MyTests.TestMetricNameSpace.TestMetric.ZeroTagMetric => "civisibility",
                         _ => null,
                     };
             }
@@ -855,6 +860,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(double value)
                 {
+                    _buffer.Distributions[0].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, double value)
