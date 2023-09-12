@@ -23,9 +23,9 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal class SymbolExtractor : IDisposable
     {
+        private const string Unknown = "UNKNOWN";
         private const MethodAttributes StaticFinalVirtual = MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.Virtual;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
-
         private readonly Dictionary<int, string> _methodAccess = new()
         {
             { 0x0001, "Private" },
@@ -90,9 +90,15 @@ namespace Datadog.Trace.Debugger.Symbols
 
         internal Model.Scope GetAssemblySymbol()
         {
+            var assemblyName = _module.Assembly.Name.String;
+            if (string.IsNullOrEmpty(assemblyName))
+            {
+                assemblyName = Unknown;
+            }
+
             var assemblyScope = new Model.Scope
             {
-                Name = _module.Assembly.Name,
+                Name = assemblyName,
                 ScopeType = SymbolType.Assembly,
                 SourceFile = _module.Location
             };
@@ -182,13 +188,13 @@ namespace Datadog.Trace.Debugger.Symbols
                     EndLine = classEndLine,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
-                    SourceFile = typeSourceFile ?? "UNKNOWN",
+                    SourceFile = typeSourceFile ?? Unknown,
                     LanguageSpecifics = classLanguageSpecifics
                 };
             }
             catch (Exception e)
             {
-                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", type.FullName ?? "UNKNOWN");
+                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", type.FullName ?? Unknown);
                 return false;
             }
 
@@ -305,13 +311,13 @@ namespace Datadog.Trace.Debugger.Symbols
                 var methodScope = CreateMethodScope(type, method);
                 typeSourceFile ??= methodScope.SourceFile;
 
-                if (classStartLine == -1 || methodScope.StartLine < classStartLine)
+                if (classStartLine == -1 || (methodScope.StartLine > 0 && methodScope.StartLine < classStartLine))
                 {
                     // not really first line but good enough for inner scopes (fields doesn't has line number anyway)
                     classStartLine = methodScope.StartLine;
                 }
 
-                if (methodScope.EndLine > classEndLine)
+                if (classEndLine == -1 || (methodScope.EndLine > 0 && methodScope.EndLine > classEndLine))
                 {
                     classEndLine = methodScope.EndLine + 1;
                 }
@@ -344,7 +350,8 @@ namespace Datadog.Trace.Debugger.Symbols
                 Name = method.Name.String,
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
-                Scopes = closureScopes
+                Scopes = closureScopes,
+                SourceFile = Unknown
             };
 
             return methodScope;
