@@ -15,7 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 
 internal readonly struct ServiceBusHeadersCollectionAdapter : IHeadersCollection
 {
-    private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<ServiceBusHeadersCollectionAdapter>();
     private readonly IDictionary<string, object> _properties;
 
     public ServiceBusHeadersCollectionAdapter(IDictionary<string, object> properties)
