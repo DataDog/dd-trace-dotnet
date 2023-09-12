@@ -5,6 +5,7 @@
 
 #nullable enable
 
+using System.Collections.Generic;
 using Datadog.Trace.Activity.DuckTypes;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus;
 using Datadog.Trace.Configuration;
@@ -38,8 +39,7 @@ namespace Datadog.Trace.Activity.Handlers
                 && dataStreamsManager.IsEnabled
                 && activity.Instance is not null
                 && activity.OperationName == "Message"
-                && AzureServiceBusCommon.ActiveMessageProperties is var applicationProperties
-                && applicationProperties is not null)
+                && AzureServiceBusCommon.ActiveMessageProperties.Value is IDictionary<string, object> applicationProperties)
             {
                 // Adding DSM to the send operation of IReadOnlyCollection<ServiceBusMessage>|ServiceBusMessageBatch - Step Three:
                 // If we can retrieve the active message properties object stored in the AsyncLocal field,

@@ -18,11 +18,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
     {
         private static readonly ConditionalWeakTable<object, object?> ApplicationPropertiesToMessageMap = new();
 
-        // The message properties is consumed synchronously, so pass state using ThreadLocal
-        [ThreadStatic]
-#pragma warning disable SA1401 // Fields should be private
-        internal static IDictionary<string, object>? ActiveMessageProperties;
-#pragma warning restore SA1401 // Fields should be private
+        internal static readonly AsyncLocal<IDictionary<string, object>?> ActiveMessageProperties = new();
 
         public static void SetMessage(object applicationProperties, object? message)
         {

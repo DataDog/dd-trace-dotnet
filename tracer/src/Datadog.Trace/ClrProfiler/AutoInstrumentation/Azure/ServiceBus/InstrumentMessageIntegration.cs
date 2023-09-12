@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
                 // the Azure Service Bus message. To access the active message that is being instrumented,
                 // save the active message properties object to an AsyncLocal field. This will limit
                 // our lookup to one AsyncLocal field and one static field
-                AzureServiceBusCommon.ActiveMessageProperties = properties;
+                AzureServiceBusCommon.ActiveMessageProperties.Value = properties;
             }
 
             return CallTargetState.GetDefault();
@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            AzureServiceBusCommon.ActiveMessageProperties = null;
+            AzureServiceBusCommon.ActiveMessageProperties.Value = null;
             return CallTargetReturn.GetDefault();
         }
     }
