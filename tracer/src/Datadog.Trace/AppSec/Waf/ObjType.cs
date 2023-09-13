@@ -17,5 +17,8 @@ namespace Datadog.Trace.AppSec.Waf
         String = 1 << 2,
         Array = 1 << 3,
         Map = 1 << 4,
+        Bool = 1 << 5,
+        Double = 1 << 6,
+        Null = 1 << 7
     }
 }

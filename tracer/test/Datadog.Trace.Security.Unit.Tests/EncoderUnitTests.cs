@@ -24,7 +24,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var target = new string('c', length);
 
         using var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
-        var result = Encoder.Decode(intermediate) as string;
+        var result = intermediate.InnerStruct.Decode() as string;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Length);
@@ -43,10 +43,10 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var target = Enumerable.Repeat((object)"test", length).ToList();
 
         using var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
-        var result = Encoder.Decode(intermediate) as object[];
+        var result = intermediate.InnerStruct.Decode() as List<object>;
 
         Assert.NotNull(result);
-        Assert.Equal(expectedLength, result.Length);
+        Assert.Equal(expectedLength, result.Count);
 
         Dispose(l);
     }
@@ -62,7 +62,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var target = Enumerable.Range(0, length).ToDictionary(x => x.ToString(), _ => (object)"test");
 
         using var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
-        var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
+        var result = intermediate.InnerStruct.Decode() as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, result.Count);
@@ -81,7 +81,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var target = MakeNestedList(length);
 
         using var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
-        var result = Encoder.Decode(intermediate) as object[];
+        var result = intermediate.InnerStruct.Decode() as List<object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedListDepth(result));
@@ -100,7 +100,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var target = MakeNestedMap(length);
 
         using var intermediate = Encoder.Encode(target, WafLibraryInvoker, l, applySafetyLimits: true);
-        var result = Encoder.Decode(intermediate) as Dictionary<string, object>;
+        var result = intermediate.InnerStruct.Decode() as Dictionary<string, object>;
 
         Assert.NotNull(result);
         Assert.Equal(expectedLength, CountNestedMapDepth(result));

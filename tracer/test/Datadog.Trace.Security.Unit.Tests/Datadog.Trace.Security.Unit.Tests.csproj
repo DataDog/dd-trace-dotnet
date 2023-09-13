@@ -25,6 +25,9 @@
   <ItemGroup>
     <None Remove="IAST\Tainted\evidence-redaction-suite.yml" />
     <EmbeddedResource Include="IAST\Tainted\evidence-redaction-suite.yml" />
+    <None Update="rule-set-withschema.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
   <ItemGroup>

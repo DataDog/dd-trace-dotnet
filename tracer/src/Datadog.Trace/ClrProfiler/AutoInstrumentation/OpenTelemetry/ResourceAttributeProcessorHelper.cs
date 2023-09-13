@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.OpenTelemetry
                 key = activity.Id;
             }
 
-            if (DefaultActivityHandler.ActivityMappingById.TryGetValue(key, out var activityMapping))
+            if (ActivityHandlerCommon.ActivityMappingById.TryGetValue(key, out var activityMapping))
             {
                 if (baseProcessor.ParentProvider is not null)
                 {

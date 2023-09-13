@@ -23,7 +23,6 @@
   "vulnerabilities": [
     {
       "type": "PATH_TRAVERSAL",
-      "hash": -466351658,
       
       "evidence": {
         "valueParts": [
