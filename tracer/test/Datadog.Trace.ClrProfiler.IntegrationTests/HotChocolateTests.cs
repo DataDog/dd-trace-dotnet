@@ -20,24 +20,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public class HotChocolateSchemaV0Tests : HotChocolateTests
     {
-        public HotChocolateSchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v0")
+        public HotChocolateSchemaV0Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v0")
         {
         }
     }
 
     public class HotChocolateSchemaV1Tests : HotChocolateTests
     {
-        public HotChocolateSchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v1")
+        public HotChocolateSchemaV1Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v1")
         {
         }
     }
 
     public abstract class HotChocolateTests : HotChocolateTestsBase
     {
-        public HotChocolateTests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
-            : base("HotChocolate", fixture, output, nameof(HotChocolateTests), metadataSchemaVersion)
+        public HotChocolateTests(ITestOutputHelper output, string metadataSchemaVersion)
+            : base("HotChocolate", output, nameof(HotChocolateTests), metadataSchemaVersion)
         {
         }
 
@@ -59,14 +59,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class HotChocolateTestsBase : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
+    public abstract class HotChocolateTestsBase : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
 
-        protected HotChocolateTestsBase(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
+        protected HotChocolateTestsBase(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
@@ -74,44 +74,35 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
-
-            Fixture = fixture;
-            Fixture.SetOutput(output);
-        }
-
-        protected AspNetCoreTestFixture Fixture { get; }
-
-        public override void Dispose()
-        {
-            Fixture.SetOutput(null);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsHotChocolate(metadataSchemaVersion);
 
         protected async Task RunSubmitsTraces(string packageVersion = "", bool usingWebsockets = false)
         {
+            using var fixture = new AspNetCoreTestFixture();
             SetInstrumentationVerification();
 
             var isExternalSpan = _metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
-            await Fixture.TryStartApp(this, packageVersion: packageVersion);
+            await fixture.TryStartApp(this, packageVersion: packageVersion);
             var testStart = DateTime.UtcNow;
-            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
+            var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
             ValidateIntegrationSpans(graphQLSpans, metadataSchemaVersion: "v0", expectedServiceName: clientSpanServiceName, isExternalSpan);
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
-            var versionSuffix = usingWebsockets ? string.Empty : GetSuffix(packageVersion, _metadataSchemaVersion);
+            var versionSuffix = usingWebsockets ? string.Empty : GetSuffix(packageVersion);
             await VerifyHelper.VerifySpans(spans, settings)
-                              .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
+                              .UseFileName($"{_testName}{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
-            VerifyInstrumentation(Fixture.Process);
+            VerifyInstrumentation(fixture.Process);
         }
 
         private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
@@ -192,24 +183,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private string GetSuffix(string packageVersion, string metadataSchemaVersion)
-        {
-            const string earlyVersion = ".Pre_13_1_0";
-            return (packageVersion, metadataSchemaVersion) switch
+        private string GetSuffix(string packageVersion)
+            => packageVersion switch
             {
-                (null or "", _) => earlyVersion, // not multi api, always pre_13_1_0
-#if NET6_0_OR_GREATER
-                // this makes no sense but we have to _reverse_ the conditions for v0/v1!
-                ({ } p, "v1") when new Version(p) >= new Version("13.1.0") => earlyVersion, // WHY?!?!
-                ({ } p, _) when new Version(p) >= new Version("13.1.0") => string.Empty,
-                (_, "v0") => string.Empty, // WHY?!?!
-                _ => earlyVersion,
-#else
-                ({ } p, _) when new Version(p) >= new Version("13.1.0") => string.Empty,
+                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
                 _ => ".Pre_13_1_0",
-#endif
             };
-        }
     }
 }
 
