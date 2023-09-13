@@ -331,7 +331,6 @@ internal static class MetricTags
 
     public enum CIVisibilityExitCodes
     {
-        [Description("")] None,
         [Description("exit_code:unknown")] Unknown,
         [Description("exit_code:-1")] ECMinus1,
         [Description("exit_code:1")] EC1,

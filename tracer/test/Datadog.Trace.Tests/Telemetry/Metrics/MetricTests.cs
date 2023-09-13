@@ -34,6 +34,16 @@ public class MetricTests
         { "init_time", new() { "total", "component" } }, // we only send one of these
     };
 
+    /// <summary>
+    /// The tags of the following metrics are ignored due to the difficulty to expose the actual values (it has an special enum to avoid generator limitations)
+    /// </summary>
+    private static readonly List<string> IgnoreTagsPermutationValidation = new()
+    {
+        "event_created",
+        "event_finished",
+        "git_requests.settings_response",
+    };
+
     [Fact]
     public void OnlyAllowedMetricsAreSubmitted()
     {
@@ -71,6 +81,11 @@ public class MetricTests
                 implementation.TagPermutations.Should().NotBeEmpty($"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
             }
 
+            if (IgnoreTagsPermutationValidation.IndexOf(implementation.Metric) != -1)
+            {
+                continue;
+            }
+
             // Check all our permutation are valid
             foreach (var permutation in implementation.TagPermutations)
             {
@@ -88,7 +103,7 @@ public class MetricTests
                                         ? expectedPrefixes.Count - (oneOfList.Count - 1)
                                         : expectedPrefixes.Count;
 
-                permutation.Should().HaveCount(expectedCount, $"{implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
+                permutation.Should().HaveCount(expectedCount, $"Received: {permutation.Length}, {implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
             }
         }
     }

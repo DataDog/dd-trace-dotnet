@@ -853,7 +853,7 @@ internal class IntelligentTestRunnerClient
         TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
         {
-            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.None);
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
             Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
         }
         else if (gitOutput.ExitCode != 0)
