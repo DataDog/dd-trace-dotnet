@@ -10,7 +10,6 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Microsoft.Web.Administration;
 using Microsoft.Win32;
 using Spectre.Console;
 
@@ -147,23 +146,28 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
 
             string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
+            string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
 
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
+            process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
 
-            bool isTracingUsingBundle = TracingWithBundle(corProfilerPathValue);
+            string?[] valuesToCheck = { corProfilerPathValue, corProfilerPathValue32, corProfilerPathValue64 };
+            var isTracingUsingBundle = TracingWithBundle(valuesToCheck, process.Id);
 
-            if (isTracingUsingBundle)
+            if (!ok && isTracingUsingBundle)
             {
                 AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
             }
-            else
+            else if (!ok)
             {
                 AnsiConsole.WriteLine(TracingWithInstaller);
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32", requiredOnLinux: false);
-                    ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64", requiredOnLinux: false);
+                    ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
+                    ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
 
                     if (!CheckRegistry(CheckWindowsInstallation(), registryService))
                     {
@@ -491,12 +495,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 or "1";
         }
 
-        private static bool TracingWithBundle(string? profilerPathValue)
+        private static bool TracingWithBundle(string?[] profilerPathValues, int processId)
         {
-            if (profilerPathValue is null)
-            {
-                return false;
-            }
+            Process process = Process.GetProcessById(processId);
+
+            // Get the file path of the main module (the .exe file)
+            string? filePath = process.MainModule?.FileName;
+            string? directoryPath = Path.GetDirectoryName(filePath);
 
             string[] expectedEndingsForBundleSetup =
             {
@@ -509,9 +514,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             foreach (var bundleSetupEnding in expectedEndingsForBundleSetup)
             {
-                if (profilerPathValue.EndsWith(bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                foreach (var profilerPath in profilerPathValues)
                 {
-                    return true;
+                    if (profilerPath is not null && profilerPath.Equals(directoryPath + bundleSetupEnding, StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
                 }
             }
 
