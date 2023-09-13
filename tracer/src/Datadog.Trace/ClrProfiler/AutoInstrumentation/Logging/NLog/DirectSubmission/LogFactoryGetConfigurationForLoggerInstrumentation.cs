@@ -72,8 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
         internal static void ConfigureLogsInjection(object loggingConfiguration)
         {
-            var loggingConfigurationProxy = loggingConfiguration.DuckCast<ILoggingConfigurationProxy>();
-            if (loggingConfigurationProxy.ConfiguredNamedTargets is not null)
+            if (loggingConfiguration.TryDuckCast<IBasicLoggingConfigurationProxy>(out var loggingConfigurationProxy))
             {
                 foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
                 {
