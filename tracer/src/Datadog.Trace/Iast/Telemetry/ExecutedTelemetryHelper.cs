@@ -26,14 +26,14 @@ internal class ExecutedTelemetryHelper
     private object _metricsLock = new();
 
     public static bool Enabled()
-        => _verbosityLevel <= IastMetricsVerbosityLevel.Information;
+        => _verbosityLevel >= IastMetricsVerbosityLevel.Information;
 
     public static bool EnabledDebug()
         => _verbosityLevel == IastMetricsVerbosityLevel.Debug;
 
     public void AddExecutedSink(IastInstrumentedSinks type)
     {
-        if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
+        if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
         {
             lock (_metricsLock)
             {
@@ -59,7 +59,7 @@ internal class ExecutedTelemetryHelper
 
     public void AddExecutedSource(IastInstrumentedSources type)
     {
-        if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
+        if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
         {
             lock (_metricsLock)
             {
@@ -98,7 +98,7 @@ internal class ExecutedTelemetryHelper
             ResetMetrics();
         }
 
-        if (_verbosityLevel <= IastMetricsVerbosityLevel.Information)
+        if (_verbosityLevel >= IastMetricsVerbosityLevel.Information)
         {
             TelemetryFactory.Metrics.RecordCountIastRequestTainted(taintedSize);
             tags.SetMetric(RequestTaintedTag, taintedSize);
