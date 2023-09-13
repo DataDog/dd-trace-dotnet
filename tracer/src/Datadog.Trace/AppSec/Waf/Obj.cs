@@ -14,8 +14,8 @@ namespace Datadog.Trace.AppSec.Waf
     {
         private IntPtr ptr;
         private DdwafObjectStruct innerObj;
-        private bool innerObjInitialized = false;
-        private bool disposed = false;
+        private bool innerObjInitialized;
+        private bool disposed;
 
         public Obj(IntPtr ptr) => this.ptr = ptr;
 
@@ -71,12 +71,12 @@ namespace Datadog.Trace.AppSec.Waf
 
         public IntPtr RawPtr => ptr;
 
-        public void Dispose(WafLibraryInvoker waf)
+        public void Dispose(WafLibraryInvoker libraryInvoker)
         {
-            if (waf != null)
+            if (libraryInvoker != null)
             {
                 var rawPtr = ptr;
-                waf.ObjectFreePtr(ref rawPtr);
+                libraryInvoker.ObjectFreePtr(ref rawPtr);
                 Dispose();
             }
         }

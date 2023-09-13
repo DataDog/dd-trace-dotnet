@@ -17,6 +17,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public DdwafObjectStruct Events;
         /** Array of actions generated, this is guaranteed to be an array **/
         public DdwafObjectStruct Actions;
+        /** Map containing all derived objects in the format (address, value) **/
+        public DdwafObjectStruct Derivatives;
         /** Total WAF runtime in nanoseconds **/
         public ulong TotalRuntime;
     }

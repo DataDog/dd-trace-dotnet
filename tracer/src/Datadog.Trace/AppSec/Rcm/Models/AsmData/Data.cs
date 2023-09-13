@@ -13,7 +13,7 @@ internal class Data
     /// <summary>
     /// Gets or sets an integer representing a UNIX timestamp. Past this timestamp, the entry is ignored. Without a timestamp a value never expires.
     /// </summary>
-    public long? Expiration { get; set; }
+    public ulong? Expiration { get; set; }
 
     public string? Value { get; set; }
 
