@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: aspnet_core.request,
     Resource: POST /graphql,
-    Service: Samples.GraphQL,
+    Service: Samples.GraphQL7,
     Type: web,
     Tags: {
       component: aspnet_core,
