@@ -13,7 +13,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 51;
+    public const int Length = 52;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -77,6 +77,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf => nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis => nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus => nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
+            Datadog.Trace.Configuration.IntegrationId.Random => nameof(Datadog.Trace.Configuration.IntegrationId.Random),
             _ => value.ToString(),
         };
 
@@ -141,6 +142,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf,
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
+            Datadog.Trace.Configuration.IntegrationId.Random,
         };
 
     /// <summary>
@@ -205,5 +207,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
+            nameof(Datadog.Trace.Configuration.IntegrationId.Random),
         };
 }
