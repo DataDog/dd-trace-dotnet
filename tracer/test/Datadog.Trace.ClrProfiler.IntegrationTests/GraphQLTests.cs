@@ -23,24 +23,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NETCOREAPP3_1_OR_GREATER
     public class GraphQL7SchemaV0Tests : GraphQL7Tests
     {
-        public GraphQL7SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v0")
+        public GraphQL7SchemaV0Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v0")
         {
         }
     }
 
     public class GraphQL7SchemaV1Tests : GraphQL7Tests
     {
-        public GraphQL7SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v1")
+        public GraphQL7SchemaV1Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v1")
         {
         }
     }
 
     public abstract class GraphQL7Tests : GraphQLTests
     {
-        public GraphQL7Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
-            : base("GraphQL7", fixture, output, nameof(GraphQL7Tests), metadataSchemaVersion)
+        public GraphQL7Tests(ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL7", output, nameof(GraphQL7Tests), metadataSchemaVersion)
         {
         }
 
@@ -67,24 +67,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL4SchemaV0Tests : GraphQL4Tests
     {
-        public GraphQL4SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v0")
+        public GraphQL4SchemaV0Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v0")
         {
         }
     }
 
     public class GraphQL4SchemaV1Tests : GraphQL4Tests
     {
-        public GraphQL4SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v1")
+        public GraphQL4SchemaV1Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v1")
         {
         }
     }
 
     public abstract class GraphQL4Tests : GraphQLTests
     {
-        public GraphQL4Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
-            : base("GraphQL4", fixture, output, nameof(GraphQL4Tests), metadataSchemaVersion)
+        public GraphQL4Tests(ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL4", output, nameof(GraphQL4Tests), metadataSchemaVersion)
         {
         }
 
@@ -105,24 +105,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL3SchemaV0Tests : GraphQL3Tests
     {
-        public GraphQL3SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v0")
+        public GraphQL3SchemaV0Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v0")
         {
         }
     }
 
     public class GraphQL3SchemaV1Tests : GraphQL3Tests
     {
-        public GraphQL3SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v1")
+        public GraphQL3SchemaV1Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v1")
         {
         }
     }
 
     public abstract class GraphQL3Tests : GraphQLTests
     {
-        public GraphQL3Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
-            : base("GraphQL3", fixture, output, nameof(GraphQL3Tests), metadataSchemaVersion)
+        public GraphQL3Tests(ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL3", output, nameof(GraphQL3Tests), metadataSchemaVersion)
         {
         }
 
@@ -136,24 +136,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
     public class GraphQL2SchemaV0Tests : GraphQL2Tests
     {
-        public GraphQL2SchemaV0Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v0")
+        public GraphQL2SchemaV0Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v0")
         {
         }
     }
 
     public class GraphQL2SchemaV1Tests : GraphQL2Tests
     {
-        public GraphQL2SchemaV1Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output)
-            : base(fixture, output, metadataSchemaVersion: "v1")
+        public GraphQL2SchemaV1Tests(ITestOutputHelper output)
+            : base(output, metadataSchemaVersion: "v1")
         {
         }
     }
 
     public abstract class GraphQL2Tests : GraphQLTests
     {
-        public GraphQL2Tests(AspNetCoreTestFixture fixture, ITestOutputHelper output, string metadataSchemaVersion)
-            : base("GraphQL", fixture, output, nameof(GraphQL2Tests), metadataSchemaVersion)
+        public GraphQL2Tests(ITestOutputHelper output, string metadataSchemaVersion)
+            : base("GraphQL", output, nameof(GraphQL2Tests), metadataSchemaVersion)
         {
         }
 
@@ -177,14 +177,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     }
 
     [UsesVerify]
-    public abstract class GraphQLTests : TracingIntegrationTest, IClassFixture<AspNetCoreTestFixture>
+    public abstract class GraphQLTests : TracingIntegrationTest
     {
         private const string ServiceVersion = "1.0.0";
 
         private readonly string _testName;
         private readonly string _metadataSchemaVersion;
 
-        protected GraphQLTests(string sampleAppName, AspNetCoreTestFixture fixture, ITestOutputHelper output, string testName, string metadataSchemaVersion)
+        protected GraphQLTests(string sampleAppName, ITestOutputHelper output, string testName, string metadataSchemaVersion)
             : base(sampleAppName, output)
         {
             SetServiceVersion(ServiceVersion);
@@ -192,32 +192,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
-
-            Fixture = fixture;
-            Fixture.SetOutput(output);
-        }
-
-        protected AspNetCoreTestFixture Fixture { get; }
-
-        public override void Dispose()
-        {
-            Fixture.SetOutput(null);
         }
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.IsGraphQL(metadataSchemaVersion);
 
         protected async Task RunSubmitsTraces(string testName = "SubmitsTraces", string packageVersion = "", bool usingWebsockets = false)
         {
+            using var fixture = new AspNetCoreTestFixture();
             var isExternalSpan = _metadataSchemaVersion == "v0";
             var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-graphql" : EnvironmentHelper.FullSampleName;
 
             SetInstrumentationVerification();
 
-            await Fixture.TryStartApp(this, packageVersion: packageVersion);
+            await fixture.TryStartApp(this, packageVersion: packageVersion);
             var testStart = DateTime.UtcNow;
-            var expectedSpans = await SubmitRequests(Fixture.HttpPort, usingWebsockets);
+            var expectedSpans = await SubmitRequests(fixture.HttpPort, usingWebsockets);
 
-            var spans = Fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
+            var spans = fixture.Agent.WaitForSpans(count: expectedSpans, minDateTime: testStart, returnAllOperations: true);
 
             var graphQLSpans = spans.Where(span => span.Type == "graphql");
             ValidateIntegrationSpans(graphQLSpans, _metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
@@ -237,7 +228,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName($"{_testName}.{testName}{fxSuffix}.Schema{_metadataSchemaVersion.ToUpper()}")
                               .DisableRequireUniquePrefix(); // all package versions should be the same
 
-            VerifyInstrumentation(Fixture.Process);
+            VerifyInstrumentation(fixture.Process);
         }
 
         private async Task<int> SubmitRequests(int aspNetCorePort, bool usingWebsockets)
