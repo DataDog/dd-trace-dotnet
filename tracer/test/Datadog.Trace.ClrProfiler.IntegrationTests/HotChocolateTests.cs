@@ -106,9 +106,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
 
+            var versionSuffix = usingWebsockets ? string.Empty : GetSuffix(packageVersion, _metadataSchemaVersion);
             await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{(usingWebsockets ? string.Empty : GetSuffix(packageVersion))}")
-                                  .DisableRequireUniquePrefix(); // all package versions should be the same
+                              .UseFileName($"HotChocolateTests{(usingWebsockets ? "Websockets" : string.Empty)}.SubmitsTraces.Schema{_metadataSchemaVersion.ToUpper()}{versionSuffix}")
+                              .DisableRequireUniquePrefix(); // all package versions should be the same
 
             VerifyInstrumentation(Fixture.Process);
         }
@@ -191,12 +192,24 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private string GetSuffix(string packageVersion)
-            => packageVersion switch
+        private string GetSuffix(string packageVersion, string metadataSchemaVersion)
+        {
+            const string earlyVersion = ".Pre_13_1_0";
+            return (packageVersion, metadataSchemaVersion) switch
             {
-                not (null or "") when new Version(packageVersion) >= new Version("13.1.0") => string.Empty,
+                (null or "", _) => earlyVersion, // not multi api, always pre_13_1_0
+#if NET6_0_OR_GREATER
+                // this makes no sense but we have to _reverse_ the conditions for v0/v1!
+                ({ } p, "v1") when new Version(p) >= new Version("13.1.0") => earlyVersion, // WHY?!?!
+                ({ } p, _) when new Version(p) >= new Version("13.1.0") => string.Empty,
+                (_, "v0") => string.Empty, // WHY?!?!
+                _ => earlyVersion,
+#else
+                ({ } p, _) when new Version(p) >= new Version("13.1.0") => string.Empty,
                 _ => ".Pre_13_1_0",
+#endif
             };
+        }
     }
 }
 
