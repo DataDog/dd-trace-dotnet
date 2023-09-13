@@ -62,7 +62,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        headers.Add(DataStreamsPropagationHeaders.PropagationKey, Convert.ToBase64String(PathwayContextEncoder.Encode(context)));
+        headers.Add(DataStreamsPropagationHeaders.PropagationKeyBase64, Convert.ToBase64String(PathwayContextEncoder.Encode(context)));
     }
 
     /// <summary>
@@ -76,7 +76,7 @@ internal class DataStreamsContextPropagator
     {
         if (headers is null) { ThrowHelper.ThrowArgumentNullException(nameof(headers)); }
 
-        var headerValues = headers.GetValues(DataStreamsPropagationHeaders.PropagationKey);
+        var headerValues = headers.GetValues(DataStreamsPropagationHeaders.PropagationKeyBase64);
         if (headerValues is string[] stringValues)
         {
             // Checking string[] allows to avoid the enumerator allocation.
