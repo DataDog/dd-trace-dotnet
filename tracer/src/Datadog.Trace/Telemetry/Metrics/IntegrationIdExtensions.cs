@@ -65,6 +65,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
+            IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }
