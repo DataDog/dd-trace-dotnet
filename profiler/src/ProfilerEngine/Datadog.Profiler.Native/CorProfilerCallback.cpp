@@ -1245,9 +1245,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
     if (_pThreadLifetimeProvider != nullptr)
     {
+        std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
         _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
     }
     return S_OK;

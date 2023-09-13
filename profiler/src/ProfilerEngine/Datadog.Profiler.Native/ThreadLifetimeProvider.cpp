@@ -24,31 +24,26 @@ ThreadLifetimeProvider::ThreadLifetimeProvider(
 
 void ThreadLifetimeProvider::OnThreadStart(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
 {
-    RawThreadLifetimeSample rawSample;
-    Init(rawSample);
-    rawSample.ThreadInfo = pThreadInfo;
-    rawSample.Kind = ThreadEventKind::Start;
-
-    Add(std::move(rawSample));
+    Add(CreateSample(pThreadInfo, ThreadEventKind::Start));
 }
 
 void ThreadLifetimeProvider::OnThreadStop(std::shared_ptr<ManagedThreadInfo> pThreadInfo)
 {
-    RawThreadLifetimeSample rawSample;
-    Init(rawSample);
-    rawSample.ThreadInfo = pThreadInfo;
-    rawSample.Kind = ThreadEventKind::Stop;
-
-    Add(std::move(rawSample));
+    Add(CreateSample(pThreadInfo, ThreadEventKind::Stop));
 }
 
-void ThreadLifetimeProvider::Init(RawThreadLifetimeSample& rawSample)
+RawThreadLifetimeSample ThreadLifetimeProvider::CreateSample(std::shared_ptr<ManagedThreadInfo> pThreadInfo, ThreadEventKind kind)
 {
+    RawThreadLifetimeSample rawSample;
     rawSample.Timestamp = GetCurrentTimestamp();
     rawSample.LocalRootSpanId = 0;
     rawSample.SpanId = 0;
     rawSample.AppDomainId = (AppDomainID) nullptr;
     rawSample.Stack.clear();
+    rawSample.ThreadInfo = std::move(pThreadInfo);
+    rawSample.Kind = kind;
+
+    return rawSample;
 }
 
 uint64_t ThreadLifetimeProvider::GetCurrentTimestamp()

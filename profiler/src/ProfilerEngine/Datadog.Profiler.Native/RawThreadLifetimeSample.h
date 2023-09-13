@@ -7,7 +7,7 @@
 
 class SampleValueTypeProvider;
 
-enum ThreadEventKind
+enum class ThreadEventKind
 {
     Start,
     Stop
