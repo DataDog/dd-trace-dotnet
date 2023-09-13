@@ -6,7 +6,7 @@
   "scopes": [
     {
       "scope_type": "assembly",
-      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "name": "Datadog.Trace.Tests",
       "start_line": 0,
       "end_line": 0,
       "scopes": [
@@ -36,7 +36,7 @@
                 {
                   "name": "enumerable",
                   "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 14
                 }
               ],
@@ -46,7 +46,7 @@
               "scope_type": "method",
               "name": ".ctor",
               "start_line": -1,
-              "end_line": 0,
+              "end_line": -1,
               "language_specifics": {
                 "return_type": "System.Void"
               },

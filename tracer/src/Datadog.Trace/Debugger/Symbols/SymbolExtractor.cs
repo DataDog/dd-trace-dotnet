@@ -311,13 +311,15 @@ namespace Datadog.Trace.Debugger.Symbols
                 var methodScope = CreateMethodScope(type, method);
                 typeSourceFile ??= methodScope.SourceFile;
 
-                if (classStartLine == -1 || (methodScope.StartLine > 0 && methodScope.StartLine < classStartLine))
+                if (methodScope.StartLine > 0 &&
+                    (classStartLine == -1 || methodScope.StartLine < classStartLine))
                 {
                     // not really first line but good enough for inner scopes (fields doesn't has line number anyway)
                     classStartLine = methodScope.StartLine;
                 }
 
-                if (classEndLine == -1 || (methodScope.EndLine > 0 && methodScope.EndLine > classEndLine))
+                if (methodScope.EndLine > 0 &&
+                    (classEndLine == -1 || methodScope.EndLine > classEndLine))
                 {
                     classEndLine = methodScope.EndLine + 1;
                 }
