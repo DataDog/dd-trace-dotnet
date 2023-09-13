@@ -6,7 +6,7 @@
   "scopes": [
     {
       "scope_type": "assembly",
-      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "name": "Datadog.Trace.Tests",
       "start_line": 0,
       "end_line": 0,
       "scopes": [
@@ -24,7 +24,7 @@
             {
               "name": "i",
               "type": "Int32",
-              "symbol_type": "Field",
+              "symbol_type": "field",
               "line": -1
             }
           ],
@@ -57,7 +57,7 @@
                 {
                   "name": "action",
                   "type": "System.Action",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 20
                 }
               ],
@@ -80,7 +80,7 @@
                     {
                       "name": "s",
                       "type": "System.Int32",
-                      "symbol_type": "Local",
+                      "symbol_type": "local",
                       "line": 22
                     }
                   ],

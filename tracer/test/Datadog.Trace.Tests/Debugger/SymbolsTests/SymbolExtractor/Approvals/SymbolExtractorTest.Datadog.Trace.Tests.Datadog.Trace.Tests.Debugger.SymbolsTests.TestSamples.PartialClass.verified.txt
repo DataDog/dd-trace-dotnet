@@ -6,7 +6,7 @@
   "scopes": [
     {
       "scope_type": "assembly",
-      "name": "Datadog.Trace.Tests, Version=1.0.0.0, Culture=neutral, PublicKeyToken=def86d061d0d2eeb",
+      "name": "Datadog.Trace.Tests",
       "start_line": 0,
       "end_line": 0,
       "scopes": [
@@ -24,13 +24,13 @@
             {
               "name": "_s",
               "type": "String",
-              "symbol_type": "Field",
+              "symbol_type": "field",
               "line": -1
             },
             {
               "name": "_s2",
               "type": "String",
-              "symbol_type": "Field",
+              "symbol_type": "field",
               "line": -1
             }
           ],
@@ -63,25 +63,25 @@
                 {
                   "name": "",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
-                  "symbol_type": "Arg",
+                  "symbol_type": "arg",
                   "line": -1
                 },
                 {
                   "name": "i",
                   "type": "System.Int32",
-                  "symbol_type": "Arg",
+                  "symbol_type": "arg",
                   "line": -1
                 },
                 {
                   "name": "rand",
                   "type": "System.Random",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 21
                 },
                 {
                   "name": "next",
                   "type": "System.Int32",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 21
                 }
               ],
@@ -102,25 +102,25 @@
                 {
                   "name": "",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
-                  "symbol_type": "Arg",
+                  "symbol_type": "arg",
                   "line": -1
                 },
                 {
                   "name": "i",
                   "type": "System.Int32",
-                  "symbol_type": "Arg",
+                  "symbol_type": "arg",
                   "line": -1
                 },
                 {
                   "name": "rand",
                   "type": "System.Random",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 15
                 },
                 {
                   "name": "next",
                   "type": "System.Int32",
-                  "symbol_type": "Local",
+                  "symbol_type": "local",
                   "line": 15
                 }
               ],
