@@ -46,6 +46,11 @@
     <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.37 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.200.37" />
 
+    <!-- Integration: Azure.Messaging.ServiceBus -->
+    <!-- Assembly: Azure.Messaging.ServiceBus -->
+    <!-- Latest package https://www.nuget.org/packages/Azure.Messaging.ServiceBus/7.16.1 -->
+    <PackageReference Include="Azure.Messaging.ServiceBus" Version="7.16.1" />
+
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.35.3 -->
