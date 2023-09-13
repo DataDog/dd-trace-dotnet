@@ -8,6 +8,7 @@
 using System;
 using System.Collections.Concurrent;
 using System.Reflection;
+using System.Reflection.Emit;
 using System.Runtime.ExceptionServices;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.CallTarget.Handlers.Continuations;
@@ -18,8 +19,6 @@ namespace Datadog.Trace.Util.Delegates;
 
 internal static class DelegateInstrumentation
 {
-    private static readonly ConcurrentDictionary<Type, Type> WrapperTypesCache = new();
-
     public static TDelegate Wrap<TDelegate, TCallbacks>(TDelegate? target, TCallbacks callbacks)
         where TDelegate : Delegate
         where TCallbacks : struct, ICallbacks
@@ -31,156 +30,197 @@ internal static class DelegateInstrumentation
         targetType = target?.GetType() ?? targetType;
         if (targetType is null) { ThrowHelper.ThrowArgumentNullException(nameof(targetType)); }
 
-        var wrapperType = WrapperTypesCache.GetOrAdd(
-            targetType,
-            tType =>
-            {
-                var invokeMethod = tType.GetMethod("Invoke");
-                var returnType = invokeMethod!.ReturnType;
-                var arguments = invokeMethod!.GetParameters();
+        var activatorHelper = ActivatorHelper<TCallbacks>.Cache.GetOrAdd(
+                              targetType,
+                              tType =>
+                              {
+                                  var invokeMethod = tType.GetMethod("Invoke");
+                                  var returnType = invokeMethod!.ReturnType;
+                                  var arguments = invokeMethod!.GetParameters();
 
-                switch (arguments.Length)
-                {
-                    case 0:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action0Wrapper<,>).MakeGenericType(
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func0Wrapper<,,>).MakeGenericType(
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                  switch (arguments.Length)
+                                  {
+                                      case 0:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action0Wrapper<,>).MakeGenericType(
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func0Wrapper<,,>).MakeGenericType(
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    case 1:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action1Wrapper<,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func1Wrapper<,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                      case 1:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action1Wrapper<,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func1Wrapper<,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    case 2:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action2Wrapper<,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func2Wrapper<,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                      case 2:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action2Wrapper<,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func2Wrapper<,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    case 3:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action3Wrapper<,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func3Wrapper<,,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                      case 3:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action3Wrapper<,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func3Wrapper<,,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    case 4:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action4Wrapper<,,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                arguments[3].ParameterType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func4Wrapper<,,,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                arguments[3].ParameterType,
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                      case 4:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action4Wrapper<,,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         arguments[3].ParameterType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func4Wrapper<,,,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         arguments[3].ParameterType,
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    case 5:
-                    {
-                        if (returnType == typeof(void))
-                        {
-                            return typeof(Action5Wrapper<,,,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                arguments[3].ParameterType,
-                                arguments[4].ParameterType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                        else
-                        {
-                            return typeof(Func5Wrapper<,,,,,,,>).MakeGenericType(
-                                arguments[0].ParameterType,
-                                arguments[1].ParameterType,
-                                arguments[2].ParameterType,
-                                arguments[3].ParameterType,
-                                arguments[4].ParameterType,
-                                returnType,
-                                targetType,
-                                typeof(TCallbacks));
-                        }
-                    }
+                                      case 5:
+                                      {
+                                          if (returnType == typeof(void))
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Action5Wrapper<,,,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         arguments[3].ParameterType,
+                                                                                         arguments[4].ParameterType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                          else
+                                          {
+                                              return new ActivatorHelper<TCallbacks>(typeof(Func5Wrapper<,,,,,,,>).MakeGenericType(
+                                                                                         arguments[0].ParameterType,
+                                                                                         arguments[1].ParameterType,
+                                                                                         arguments[2].ParameterType,
+                                                                                         arguments[3].ParameterType,
+                                                                                         arguments[4].ParameterType,
+                                                                                         returnType,
+                                                                                         tType,
+                                                                                         typeof(TCallbacks)));
+                                          }
+                                      }
 
-                    default:
-                        ThrowHelper.ThrowNotSupportedException("The number of parameter is not supported!");
-                        return default;
-                }
-            });
+                                      default:
+                                          ThrowHelper.ThrowNotSupportedException("The number of parameter is not supported!");
+                                          return default;
+                                  }
+                              });
 
-        var wrapper = (Wrapper<TCallbacks>)Activator.CreateInstance(wrapperType, target, callbacks)!;
+        var wrapper = activatorHelper.CreateInstance(target, callbacks);
         return wrapper.Handler;
+    }
+
+    private class ActivatorHelper<TCallbacks>
+        where TCallbacks : struct, ICallbacks
+    {
+        private static readonly ConcurrentDictionary<Type, ActivatorHelper<TCallbacks>> WrapperTypesCache = new();
+        private readonly Type _wrapperType;
+        private Func<Delegate?, TCallbacks, Wrapper<TCallbacks>> _activator;
+
+        public ActivatorHelper(Type wrapperType)
+        {
+            _wrapperType = wrapperType;
+            _activator = DefaultActivator;
+            Task.Run(CreateCustomActivator);
+        }
+
+        public static ConcurrentDictionary<Type, ActivatorHelper<TCallbacks>> Cache => WrapperTypesCache;
+
+        public Wrapper<TCallbacks> CreateInstance(Delegate? target, TCallbacks callbacks)
+            => _activator(target, callbacks);
+
+        private Wrapper<TCallbacks> DefaultActivator(Delegate? target, TCallbacks callbacks)
+            => (Wrapper<TCallbacks>)Activator.CreateInstance(_wrapperType, target, callbacks)!;
+
+        private void CreateCustomActivator()
+        {
+            var ctor = _wrapperType.GetConstructors()[0];
+            var createHeadersMethod = new DynamicMethod(
+                $"TypeActivator" + _wrapperType.Name,
+                typeof(Wrapper<TCallbacks>),
+                new[] { typeof(object), typeof(Delegate), typeof(TCallbacks) },
+                typeof(ActivatorHelper).Module,
+                true);
+
+            var il = createHeadersMethod.GetILGenerator();
+            il.Emit(OpCodes.Ldarg_1);
+            il.Emit(OpCodes.Ldarg_2);
+            il.Emit(OpCodes.Newobj, ctor);
+            il.Emit(OpCodes.Ret);
+            _activator = (Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>)createHeadersMethod.CreateDelegate(typeof(Func<Delegate?, TCallbacks, Wrapper<TCallbacks>>), _wrapperType);
+        }
     }
 
     private abstract class Wrapper<TCallbacks>
