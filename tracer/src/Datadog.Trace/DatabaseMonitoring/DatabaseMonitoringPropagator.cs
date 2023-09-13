@@ -6,6 +6,7 @@
 using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DatabaseMonitoring
@@ -18,7 +19,7 @@ namespace Datadog.Trace.DatabaseMonitoring
         private const string SqlCommentEnv = "dde";
         internal const string DbmPrefix = $"/*{SqlCommentSpanService}='";
 
-        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, SpanContext context, IntegrationId integrationId, out bool traceParentInjected)
+        internal static string PropagateSpanData(DbmPropagationLevel propagationStyle, string configuredServiceName, Span span, IntegrationId integrationId, out bool traceParentInjected)
         {
             traceParentInjected = false;
 
@@ -26,16 +27,17 @@ namespace Datadog.Trace.DatabaseMonitoring
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(context.ServiceNameInternal)).Append('\'');
+                var serviceName = (span.Tags is SqlV1Tags) ? (span.Tags as SqlV1Tags).PeerService : span.Context.ServiceNameInternal;
+                propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(serviceName)).Append('\'');
 
-                if (context.TraceContext?.Environment is { } envTag)
+                if (span.Context.TraceContext?.Environment is { } envTag)
                 {
                     propagatorStringBuilder.Append(',').Append(SqlCommentEnv).Append("='").Append(Uri.EscapeDataString(envTag)).Append('\'');
                 }
 
                 propagatorStringBuilder.Append(',').Append(SqlCommentRootService).Append("='").Append(Uri.EscapeDataString(configuredServiceName)).Append('\'');
 
-                if (context.TraceContext?.ServiceVersion is { } versionTag)
+                if (span.Context.TraceContext?.ServiceVersion is { } versionTag)
                 {
                     propagatorStringBuilder.Append(',').Append(SqlCommentVersion).Append("='").Append(Uri.EscapeDataString(versionTag)).Append('\'');
                 }
@@ -44,7 +46,7 @@ namespace Datadog.Trace.DatabaseMonitoring
                 if (propagationStyle == DbmPropagationLevel.Full && integrationId is not IntegrationId.SqlClient)
                 {
                     traceParentInjected = true;
-                    propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(context)).Append("'*/");
+                    propagatorStringBuilder.Append(',').Append(W3CTraceContextPropagator.TraceParentHeaderName).Append("='").Append(W3CTraceContextPropagator.CreateTraceParentHeader(span.Context)).Append("'*/");
                 }
                 else
                 {

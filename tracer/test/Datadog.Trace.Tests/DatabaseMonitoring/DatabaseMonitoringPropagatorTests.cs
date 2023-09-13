@@ -6,9 +6,11 @@
 using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.DatabaseMonitoring;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Sampling;
+using Datadog.Trace.Tagging;
 using FluentAssertions;
 using Moq;
 using Xunit;
@@ -18,16 +20,22 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
 {
     public class DatabaseMonitoringPropagatorTests
     {
-        private readonly Tracer _tracer;
+        private readonly Tracer _v0Tracer;
+        private readonly Tracer _v1Tracer;
         private readonly Mock<IAgentWriter> _writerMock;
 
         public DatabaseMonitoringPropagatorTests(ITestOutputHelper output)
         {
-            var settings = new TracerSettings();
+            var v0Settings = new TracerSettings();
             _writerMock = new Mock<IAgentWriter>();
             var samplerMock = new Mock<ITraceSampler>();
 
-            _tracer = new Tracer(settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+            _v0Tracer = new Tracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
+
+            var configSourceMock = new Mock<IConfigurationSource>();
+            configSourceMock.Setup(c => c.GetString(It.Is<string>(s => s.Equals(ConfigurationKeys.MetadataSchemaVersion)))).Returns(SchemaVersion.V1.ToString());
+            var v1Settings = new TracerSettings(configSourceMock.Object, new ConfigurationTelemetry());
+            _v1Tracer = new Tracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
         [Theory]
@@ -45,8 +53,10 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             IntegrationId integrationId;
             Enum.TryParse(integration, true, out integrationId);
 
-            var context = new SpanContext(traceId: (TraceId)7021887840877922076, spanId: 407003698947780173, samplingPriority: samplingPriority, serviceName: dbServiceName, "origin");
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", context, integrationId, out var traceParentInjectedValue);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span, integrationId, out var traceParentInjectedValue);
 
             traceParentInjectedValue.Should().Be(traceParentInjected);
             returnedComment.Should().Be(expectedComment);
@@ -60,12 +70,12 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("/*dddbs='Test.Service-mysql',ddps='Test.Service'*/", null, null)]
         public void ExpectedTagsInjected(string expectedComment, string env = null, string version = null)
         {
-            var span = _tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: "Test.Service-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = env;
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span.Context, IntegrationId.MySql, out bool traceParentInjected);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, "Test.Service", span, IntegrationId.MySql, out bool traceParentInjected);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
@@ -79,15 +89,34 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
         [InlineData("/*dddbs='Test.Service%20%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D-mysql',dde='te%23%27sti%2F%2Ang',ddps='Test.Service%20%21%23%24%25%26%27%28%29%2A%2B%2C%2F%3A%3B%3D%3F%40%5B%5D',ddpv='1.%2A0.0'*/", "Test.Service !#$%&'()*+,/:;=?@[]", "te#'sti/*ng", "1.*0.0")]
         public void ExpectedTagsEncoded(string expectedComment, string service, string env, string version)
         {
-            var span = _tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: $"{service}-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            var span = _v0Tracer.StartSpan(operationName: "mysql.query", parent: SpanContext.None, serviceName: $"{service}-mysql", traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
             span.Context.TraceContext.Environment = env;
             span.Context.TraceContext.ServiceVersion = version;
             span.SetTraceSamplingPriority(SamplingPriority.AutoKeep);
 
-            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span.Context, IntegrationId.MySql, out bool traceParentInjected);
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(DbmPropagationLevel.Service, service, span, IntegrationId.MySql, out bool traceParentInjected);
 
             // Always false since this test never runs for full mode
             traceParentInjected.Should().Be(false);
+            returnedComment.Should().Be(expectedComment);
+        }
+
+        [Theory]
+        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='dbname',ddps='Test.Service'*/", false, "dbname")]
+        public void ExpectedCommentInjectedV1(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment, bool traceParentInjected, string dbName)
+        {
+            DbmPropagationLevel dbmPropagationLevel;
+            Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
+
+            IntegrationId integrationId;
+            Enum.TryParse(integration, true, out integrationId);
+
+            var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
+            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+
+            var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span, integrationId, out var traceParentInjectedValue);
+
+            traceParentInjectedValue.Should().Be(traceParentInjected);
             returnedComment.Should().Be(expectedComment);
         }
     }
