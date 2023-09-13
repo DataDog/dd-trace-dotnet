@@ -215,6 +215,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(40, duckAbstract.PublicGetSetValueType);
             Assert.Equal(40, duckVirtual.PublicGetSetValueType);
 
+            duckInterface.PublicGetSetValueTypeWithType = ValueWithType<int>.Create(40, typeof(int));
+            Assert.Equal(40, duckInterface.PublicGetSetValueTypeWithType.Value);
+            Assert.Equal(typeof(int), duckInterface.PublicGetSetValueTypeWithType.Type);
+            Assert.Equal(40, duckAbstract.PublicGetSetValueTypeWithType.Value);
+            Assert.Equal(typeof(int), duckAbstract.PublicGetSetValueTypeWithType.Type);
+            Assert.Equal(40, duckVirtual.PublicGetSetValueTypeWithType.Value);
+            Assert.Equal(typeof(int), duckVirtual.PublicGetSetValueTypeWithType.Type);
+
             duckInterface.PublicGetSetValueType = 42;
             Assert.Equal(42, duckInterface.PublicGetSetValueType);
             Assert.Equal(42, duckAbstract.PublicGetSetValueType);
@@ -477,6 +485,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType
             Assert.Equal(41, duckStructCopy.InternalGetSetValueType);
             Assert.Equal(42, duckStructCopy.ProtectedGetSetValueType);
             Assert.Equal(43, duckStructCopy.PrivateGetSetValueType);
+
+            Assert.Equal(40, duckStructCopy.PublicGetSetValueTypeWithType.Value);
+            Assert.Equal(typeof(int), duckStructCopy.PublicGetSetValueTypeWithType.Type);
         }
 
         [Fact]

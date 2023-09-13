@@ -197,7 +197,7 @@ namespace Datadog.Trace.DuckTyping
 
             if (isValueWithType)
             {
-                il.Emit(OpCodes.Ldtoken, proxyMemberReturnType);
+                il.Emit(OpCodes.Ldtoken, returnType);
                 il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null!);
                 il.EmitCall(OpCodes.Call, originalProxyMemberReturnType.GetMethod("Create", BindingFlags.Static | BindingFlags.Public)!, null!);
             }

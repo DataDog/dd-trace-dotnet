@@ -29,7 +29,7 @@ public readonly struct ValueWithType<TProxy>
     /// </summary>
     /// <param name="value">Value of the proxy instance</param>
     /// <param name="type">Type of the original value</param>
-    internal ValueWithType(TProxy? value, Type type)
+    private ValueWithType(TProxy? value, Type type)
     {
         Value = value;
         Type = type;
