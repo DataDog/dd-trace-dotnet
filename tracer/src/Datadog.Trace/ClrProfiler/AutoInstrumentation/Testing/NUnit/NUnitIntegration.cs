@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 return null;
             }
 
-            var test = suite.CreateTest(testMethod.Name);
+            var test = suite.InternalCreateTest(testMethod.Name);
             ExistingTestCreation.GetOrCreateValue(currentTest.Instance!);
             string? skipReason = null;
 
@@ -331,7 +331,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             if (item.TestType == TestSuiteConst && GetTestSuiteFrom(item) is null && GetTestModuleFrom(item) is { } module)
             {
-                SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+                SetTestSuiteTo(item, module.InternalGetOrCreateSuite(item.FullName));
             }
 
             if (item.Tests is { Count: > 0 } tests)
@@ -364,7 +364,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 }
                 else if (GetTestModuleFrom(item) is { } module)
                 {
-                    suite = module.GetOrCreateSuite(item.FullName);
+                    suite = module.InternalGetOrCreateSuite(item.FullName);
                     suite.SetErrorInfo(exceptionType, testResult.Message, testResult.StackTrace);
                     suite.Tags.Status = TestTags.StatusFail;
                     SetTestSuiteTo(item, suite);

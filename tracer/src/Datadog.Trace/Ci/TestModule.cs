@@ -19,6 +19,7 @@ using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -144,7 +145,7 @@ public sealed class TestModule
             else
             {
                 Log.Information("A session cannot be found, creating a fake session as a parent of the module.");
-                _fakeSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
+                _fakeSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, null, startDate, false);
                 if (_fakeSession.Tags is { } fakeSessionTags)
                 {
                     tags.SessionId = fakeSessionTags.SessionId;
@@ -215,7 +216,19 @@ public sealed class TestModule
     /// </summary>
     /// <param name="name">Test module name</param>
     /// <returns>New test module instance</returns>
+    [PublicApi]
     public static TestModule Create(string name)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
+        return InternalCreate(name);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <returns>New test module instance</returns>
+    internal static TestModule InternalCreate(string name)
     {
         return new TestModule(name, null, null, null);
     }
@@ -227,7 +240,21 @@ public sealed class TestModule
     /// <param name="framework">Testing framework name</param>
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <returns>New test module instance</returns>
+    [PublicApi]
     public static TestModule Create(string name, string framework, string frameworkVersion)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
+        return InternalCreate(name, framework, frameworkVersion);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
+    /// <returns>New test module instance</returns>
+    internal static TestModule InternalCreate(string name, string framework, string frameworkVersion)
     {
         return new TestModule(name, framework, frameworkVersion, null);
     }
@@ -240,7 +267,22 @@ public sealed class TestModule
     /// <param name="frameworkVersion">Testing framework version</param>
     /// <param name="startDate">Test session start date</param>
     /// <returns>New test module instance</returns>
+    [PublicApi]
     public static TestModule Create(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Module);
+        return InternalCreate(name, framework, frameworkVersion, startDate);
+    }
+
+    /// <summary>
+    /// Create a new Test Module
+    /// </summary>
+    /// <param name="name">Test module name</param>
+    /// <param name="framework">Testing framework name</param>
+    /// <param name="frameworkVersion">Testing framework version</param>
+    /// <param name="startDate">Test session start date</param>
+    /// <returns>New test module instance</returns>
+    internal static TestModule InternalCreate(string name, string framework, string frameworkVersion, DateTimeOffset startDate)
     {
         return new TestModule(name, framework, frameworkVersion, startDate);
     }
@@ -455,9 +497,21 @@ public sealed class TestModule
     /// </summary>
     /// <param name="name">Name of the test suite</param>
     /// <returns>Test suite instance</returns>
+    [PublicApi]
     public TestSuite GetOrCreateSuite(string name)
     {
-        return GetOrCreateSuite(name, null);
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Suite);
+        return InternalGetOrCreateSuite(name, null);
+    }
+
+    /// <summary>
+    /// Create a new test suite for this session
+    /// </summary>
+    /// <param name="name">Name of the test suite</param>
+    /// <returns>Test suite instance</returns>
+    internal TestSuite InternalGetOrCreateSuite(string name)
+    {
+        return InternalGetOrCreateSuite(name, null);
     }
 
     /// <summary>
@@ -466,7 +520,20 @@ public sealed class TestModule
     /// <param name="name">Name of the test suite</param>
     /// <param name="startDate">Test suite start date</param>
     /// <returns>Test suite instance</returns>
+    [PublicApi]
     public TestSuite GetOrCreateSuite(string name, DateTimeOffset? startDate)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Suite);
+        return InternalGetOrCreateSuite(name, startDate);
+    }
+
+    /// <summary>
+    /// Create a new test suite for this session
+    /// </summary>
+    /// <param name="name">Name of the test suite</param>
+    /// <param name="startDate">Test suite start date</param>
+    /// <returns>Test suite instance</returns>
+    internal TestSuite InternalGetOrCreateSuite(string name, DateTimeOffset? startDate)
     {
         lock (_suites)
         {

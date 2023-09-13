@@ -9,6 +9,7 @@ using System.Threading;
 using Datadog.Trace.Ci.Tagging;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Ci.Telemetry;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 
@@ -186,7 +187,19 @@ public sealed class TestSuite
     /// </summary>
     /// <param name="name">Name of the test</param>
     /// <returns>Test instance</returns>
+    [PublicApi]
     public Test CreateTest(string name)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Test);
+        return InternalCreateTest(name);
+    }
+
+    /// <summary>
+    /// Create a new test for this suite
+    /// </summary>
+    /// <param name="name">Name of the test</param>
+    /// <returns>Test instance</returns>
+    internal Test InternalCreateTest(string name)
     {
         return new Test(this, name, null);
     }
@@ -197,7 +210,20 @@ public sealed class TestSuite
     /// <param name="name">Name of the test</param>
     /// <param name="startDate">Test start date</param>
     /// <returns>Test instance</returns>
+    [PublicApi]
     public Test CreateTest(string name, DateTimeOffset startDate)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityManualApiEvent(MetricTags.CIVisibilityTestingEventType.Test);
+        return InternalCreateTest(name, startDate);
+    }
+
+    /// <summary>
+    /// Create a new test for this suite
+    /// </summary>
+    /// <param name="name">Name of the test</param>
+    /// <param name="startDate">Test start date</param>
+    /// <returns>Test instance</returns>
+    internal Test InternalCreateTest(string name, DateTimeOffset startDate)
     {
         return new Test(this, name, startDate);
     }

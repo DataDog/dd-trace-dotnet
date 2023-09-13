@@ -34,7 +34,7 @@ internal static class MsTestIntegration
 
         if (TestSuite.Current is { } suite)
         {
-            var test = suite.CreateTest(testName);
+            var test = suite.InternalCreateTest(testName);
 
             // Get test parameters
             var methodParameters = testMethod.GetParameters();

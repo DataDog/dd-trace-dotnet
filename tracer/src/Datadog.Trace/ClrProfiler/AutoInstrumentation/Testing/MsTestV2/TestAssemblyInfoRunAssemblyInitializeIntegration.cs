@@ -56,7 +56,7 @@ public static class TestAssemblyInfoRunAssemblyInitializeIntegration
             instance.AssemblyCleanupMethod ??= EmptyCleanUpMethodInfo;
 
             CIVisibility.WaitForSkippableTaskToFinish();
-            var module = TestModule.Create(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
+            var module = TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameMsTestV2, frameworkVersion);
             TestAssemblyInfos.Add(instance.Instance, module);
             return new CallTargetState(null, module);
         }
