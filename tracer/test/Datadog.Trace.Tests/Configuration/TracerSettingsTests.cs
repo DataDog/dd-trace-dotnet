@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
@@ -784,7 +785,7 @@ namespace Datadog.Trace.Tests.Configuration
         [InlineData("test1,, ,test2", false, false, new[] { "TEST1", "TEST2" })]
         [InlineData("test1,, ,test2", true, true, new[] { "TEST1", "TEST2" })]
         [InlineData(null, true, true, new[] { "azuredefault" })]
-        [InlineData(null, false, true, new[] { "SERVERLESS" })]
+        [InlineData(null, false, true, new[] { "/2018-06-01/RUNTIME/INVOCATION/" })]
         [InlineData(null, false, false, new string[0])]
         [InlineData("", true, true, new string[0])]
         public void HttpClientExcludedUrlSubstrings(string value, bool isRunningInAppService, bool isRunningInLambda, string[] expected)
@@ -794,19 +795,14 @@ namespace Datadog.Trace.Tests.Configuration
                 expected = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Split(',').Select(s => s.Trim()).ToArray();
             }
 
-            var oldMetadata = Serverless.Metadata;
-
+            var previous = isRunningInLambda
+                               ? SetLambdaEnvironmentForTests("functionName", "serviceName::handlerName")
+                               : SetLambdaEnvironmentForTests(null, null);
             try
             {
                 var source = CreateConfigurationSource(
                     (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
                     (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
-
-                if (isRunningInLambda)
-                {
-                    var metadata = LambdaMetadata.CreateForTests(true, "functionName", "handlerName", "serviceName", "serverless");
-                    Serverless.SetMetadataTestsOnly(metadata);
-                }
 
                 var settings = new TracerSettings(source);
 
@@ -814,7 +810,10 @@ namespace Datadog.Trace.Tests.Configuration
             }
             finally
             {
-                Serverless.SetMetadataTestsOnly(oldMetadata);
+                foreach (var kvp in previous)
+                {
+                    System.Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
+                }
             }
         }
 
@@ -921,6 +920,22 @@ namespace Datadog.Trace.Tests.Configuration
             }
 
             Assert.Empty(statusCodes);
+        }
+
+        private Dictionary<string, string> SetLambdaEnvironmentForTests(
+            string functionName, string handlerName, [CallerFilePath] string extensionPath = null)
+        {
+            var previous = new Dictionary<string, string>
+            {
+                { LambdaMetadata.FunctionNameEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar) },
+                { LambdaMetadata.HandlerEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.HandlerEnvVar) },
+                { LambdaMetadata.ExtensionPathEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar) },
+            };
+
+            System.Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, functionName);
+            System.Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, handlerName);
+            System.Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, extensionPath);
+            return previous;
         }
     }
 }
