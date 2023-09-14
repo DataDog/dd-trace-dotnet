@@ -20,12 +20,11 @@ namespace Datadog.Trace.AppSec.Waf
 
         // the context handle should be locked, it is not safe for concurrent access and two
         // waf events may be processed at the same time due to code being run asynchronously
-        private readonly object _sync = new object();
         private readonly IntPtr _contextHandle;
 
         private readonly Waf _waf;
 
-        private readonly List<Obj> _argCache = new();
+        private readonly List<IntPtr> _argCache;
         private readonly Stopwatch _stopwatch;
         private readonly WafLibraryInvoker _wafLibraryInvoker;
 
@@ -39,6 +38,7 @@ namespace Datadog.Trace.AppSec.Waf
             _waf = waf;
             _wafLibraryInvoker = wafLibraryInvoker;
             _stopwatch = new Stopwatch();
+            _argCache = new(64);
         }
 
         ~Context() => Dispose(false);
@@ -78,13 +78,15 @@ namespace Datadog.Trace.AppSec.Waf
 
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
-            using var pwArgs = Encoder.Encode(addresses, _wafLibraryInvoker, _argCache, applySafetyLimits: true);
-            var rawArgs = pwArgs.RawPtr;
 
             DDWAF_RET_CODE code;
-            lock (_sync)
+            lock (_stopwatch)
             {
-                code = _waf.Run(_contextHandle, rawArgs, ref retNative, timeoutMicroSeconds);
+                var pool = Encoder.Pool;
+                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
+                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+                pool.Return(_argCache);
+                _argCache.Clear();
             }
 
             _stopwatch.Stop();
@@ -112,12 +114,7 @@ namespace Datadog.Trace.AppSec.Waf
 
             _disposed = true;
 
-            foreach (var arg in _argCache)
-            {
-                arg.Dispose();
-            }
-
-            lock (_sync)
+            lock (_stopwatch)
             {
                 _wafLibraryInvoker.ContextDestroy(_contextHandle);
             }
