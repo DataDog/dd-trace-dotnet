@@ -804,7 +804,7 @@ namespace Datadog.Trace.Tests.Configuration
 
                 if (isRunningInLambda)
                 {
-                    var metadata = Serverless.LambdaMetadata.CreateForTests(true, "functionName", "handlerName", "serviceName", "serverless");
+                    var metadata = LambdaMetadata.CreateForTests(true, "functionName", "handlerName", "serviceName", "serverless");
                     Serverless.SetMetadataTestsOnly(metadata);
                 }
 
