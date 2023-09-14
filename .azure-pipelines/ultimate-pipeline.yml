@@ -2808,6 +2808,39 @@ stages:
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 
+- stage: build_dd_dotnet_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/restore-working-directory.yml
+  
+    - script: tracer\build.cmd BuildDdDotnet
+      displayName: Build dd-dotnet
+
+    - publish: $(artifacts)/dd-dotnet/win-x64
+      displayName: Uploading dd-dotnet win-x64
+      artifact: dd-dotnet-win-x64
+
+
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, merge_commit_id]
@@ -2906,7 +2939,7 @@ stages:
         path: $(monitoringHome)
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and runner tools
+      displayName: Build Bundle NuGet and tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package

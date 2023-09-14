@@ -26,7 +26,8 @@ public static class Projects
 
     public const string DataDogThreadTest = "DataDogThreadTest";
 
-    public const string Tool = "Datadog.Trace.Tools.Runner";
+    public const string DdTrace = "Datadog.Trace.Tools.Runner";
+    public const string DdDotnet = "Datadog.Trace.Tools.dd_dotnet";
 
     public const string DebuggerIntegrationTests = "Datadog.Trace.Debugger.IntegrationTests";
     public const string DebuggerSamples = "Samples.Probes";

@@ -1,5 +1,7 @@
+using System.Globalization;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using Nuke.Common;
 using Nuke.Common.CI;
 using Nuke.Common.IO;
@@ -280,7 +282,7 @@ partial class Build : NukeBuild
         .Description("Builds and runs the osx integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildOsxIntegrationTests)
         .DependsOn(RunOsxIntegrationTests);
-    
+
     Target BuildAndRunToolArtifactTests => _ => _
        .Description("Builds and runs the tool artifacts tests")
        .DependsOn(CompileManagedTestHelpers)
@@ -320,6 +322,44 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
+    Target BuildDdDotnet => _ => _
+        .Unlisted()
+        .After(CreateBundleHome, ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
+                // .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3());
+
+            string rid;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                rid = "win-x64";
+            }
+            else
+            {
+                rid = (IsLinux, IsArm64) switch
+                {
+                    (true, false) => IsAlpine ? "linux-musl-x64" : "linux-x64",
+                    (true, true) => IsAlpine ? "linux-musl-arm64" : "linux-arm64",
+                    (false, false) => "osx-x64",
+                    (false, true) => "osx-arm64",
+                };
+            }
+
+            DotNetPublish(x => x
+                .SetProject(Solution.GetProject(Projects.DdDotnet))
+                // .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetFramework("net7.0")
+                .SetRuntime(rid)
+                .SetConfiguration(BuildConfiguration)
+               .SetOutput(MonitoringHomeDirectory / "dd-dotnet" / rid));
+        });
     Target BuildRunnerTool => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)
@@ -327,7 +367,7 @@ partial class Build : NukeBuild
         .Executes(() =>
         {
             DotNetBuild(x => x
-                .SetProjectFile(Solution.GetProject(Projects.Tool))
+                .SetProjectFile(Solution.GetProject(Projects.DdTrace))
                 .EnableNoRestore()
                 .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
@@ -344,7 +384,7 @@ partial class Build : NukeBuild
         {
             DotNetPack(x => x
                 // we have to restore and build dependencies to make sure we remove the pdb and xml files
-                .SetProject(Solution.GetProject(Projects.Tool))
+                .SetProject(Solution.GetProject(Projects.DdTrace))
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
@@ -360,13 +400,13 @@ partial class Build : NukeBuild
         .After(CreateBundleHome, ExtractDebugInfoLinux, PackRunnerToolNuget)
         .Executes(() =>
         {
-            var runtimes = new[] 
-            { 
-                (rid: "win-x86", archiveFormat: ".zip"),  
-                (rid: "win-x64", archiveFormat: ".zip"),  
-                (rid: "linux-x64", archiveFormat: ".tar.gz"),  
-                (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),  
-                (rid: "osx-x64", archiveFormat: ".tar.gz"),  
+            var runtimes = new[]
+            {
+                (rid: "win-x86", archiveFormat: ".zip"),
+                (rid: "win-x64", archiveFormat: ".zip"),
+                (rid: "linux-x64", archiveFormat: ".tar.gz"),
+                (rid: "linux-musl-x64", archiveFormat: ".tar.gz"),
+                (rid: "osx-x64", archiveFormat: ".tar.gz"),
                 (rid: "linux-arm64", archiveFormat: ".tar.gz"),
             }.Select(x => (x.rid, archive: ArtifactsDirectory / $"dd-trace-{x.rid}{x.archiveFormat}", output: ArtifactsDirectory / "tool" / x.rid))
              .ToArray();
@@ -375,7 +415,7 @@ partial class Build : NukeBuild
             runtimes.ForEach(runtime => DeleteFile(runtime.archive));
 
             DotNetPublish(x => x
-                .SetProject(Solution.GetProject(Projects.Tool))
+                .SetProject(Solution.GetProject(Projects.DdTrace))
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 // .EnableNoDependencies()
@@ -392,7 +432,7 @@ partial class Build : NukeBuild
                                 .SetRuntime(runtime.rid)));
 
             runtimes.ForEach(
-                x=> Compress(x.output, x.archive));  
+                x => Compress(x.output, x.archive));
         });
 
     Target RunBenchmarks => _ => _
@@ -418,7 +458,7 @@ partial class Build : NukeBuild
                     true => (TargetFramework.NETCOREAPP3_1, "net6.0"),
                     false => (TargetFramework.NET6_0, "net472 netcoreapp3.1 net6.0"),
                 };
-                
+
                 DotNetRun(s => s
                     .SetProjectFile(benchmarksProject)
                     .SetConfiguration(BuildConfiguration)
