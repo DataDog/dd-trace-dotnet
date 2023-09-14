@@ -5,12 +5,16 @@
 
 #include "OsSpecificApi.h"
 
+#include <cstdlib>
+#include <iostream>
+#include <chrono>
 #include <fstream>
 #include <string>
 #include <sstream>
 
 #include <errno.h>
 #include <fcntl.h>
+#include <mutex>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
@@ -33,7 +37,13 @@
 
 namespace OsSpecificApi {
 
-std::pair<DWORD, std::string> OsSpecificApi::GetLastErrorMessage()
+using namespace std::chrono_literals;
+
+// it's safe to cache it. According to the man sysconf, this value does
+// not change during the lifetime of the process.
+static auto ticks_per_second = sysconf(_SC_CLK_TCK);
+
+std::pair<DWORD, std::string> GetLastErrorMessage()
 {
     DWORD errorCode = errno;
     std::stringstream builder;
@@ -152,9 +162,6 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
         return false;
     }
 
-    // it's safe to cache it. According to the man sysconf, this value does
-    // not change during the lifetime of the process.
-    static auto ticks_per_second = sysconf(_SC_CLK_TCK);
     cpuTime = ((userTime + kernelTime) * 1000) / ticks_per_second;
     isRunning = (state == 'R') || (state == 'D') || (state == 'W');
     return true;
@@ -228,6 +235,118 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     }
 
     return threads;
+}
+
+std::chrono::seconds GetMachineBootTime()
+{
+    char statPath[] = "/proc/stat";
+
+    auto fd = open(statPath, O_RDONLY);
+
+    if (fd == -1)
+    {
+        return -1s;
+    }
+
+    on_leave { close(fd); };
+
+    // 1023 + 1 to ensure that the last char is a null one
+    // initialize the whole array slots to 0
+    char line[1024] = {0};
+    std::int64_t machineBootTime = -1;
+    std::int64_t length = 0;
+    while ((length = read(fd, line, sizeof(line) - 1)) != 0)
+    {
+        auto sv = std::string_view(line, length);
+        auto pos = sv.find("btime");
+        if (std::string_view::npos != pos)
+        {
+            auto pos2 = strchr(sv.data() + pos, ' ') + 1;
+            if (pos2 == nullptr)
+                break;
+
+            // skip whitespaces
+            pos2 = pos2 + strspn(pos2, " ");
+            machineBootTime = std::atoll(pos2);
+            break;
+        }
+    }
+
+    return std::chrono::seconds(machineBootTime);
+}
+
+std::chrono::seconds GetProcessStartTimeSinceBoot()
+{
+    char statPath[] = "/proc/self/stat";
+
+    auto fd = open(statPath, O_RDONLY);
+
+    if (fd == -1)
+    {
+        return -1s;
+    }
+
+    on_leave { close(fd); };
+
+    // 1023 + 1 to ensure that the last char is a null one
+    // initialize the whole array slots to 0
+    char line[1024] = {0};
+
+    auto length = read(fd, line, sizeof(line) - 1);
+    if (length <= 0)
+    {
+        return -1s;
+    }
+
+    uint8_t nbEltToSkip = 21;
+    uint8_t idx = 0;
+    auto* pos = line;
+    while (idx < nbEltToSkip)
+    {
+        pos = strchr(pos, ' ');
+        if (pos == nullptr)
+            break;
+
+        // skip whitespaces
+        pos = pos + strspn(pos, " ");
+
+        idx++;
+    }
+
+    if (pos == nullptr)
+    {
+        return -1s;
+    }
+
+    auto startTimeSinceBoot = atoll(pos);
+    return std::chrono::seconds(startTimeSinceBoot / ticks_per_second);
+}
+
+std::string GetProcessStartTime()
+{
+    // TODO see if we need to cache it later
+    // This function is called once every minute.
+    auto machineBootTime = GetMachineBootTime();
+    if (machineBootTime == -1s)
+    {
+        return "";
+    }
+
+    auto processStartTimeSinceBoot = GetProcessStartTimeSinceBoot();
+
+    if (processStartTimeSinceBoot == -1s)
+    {
+        return "";
+    }
+
+    auto time = (std::time_t)(machineBootTime.count() + processStartTimeSinceBoot.count());
+    auto tm = *std::gmtime(&time);
+
+    std::stringstream ss;
+    // This format is equivalent to ISO 8601 date and time: %Y-%m-%dT%%H:%M:%SZ
+    // Adding xxxxTxxxxZ to mimic what's done for windows. See OsSpecificAPI.cpp in windows folder
+    ss << std::put_time(&tm, "%FT%TZ");
+    return ss.str();
 }
 
 } // namespace OsSpecificApi

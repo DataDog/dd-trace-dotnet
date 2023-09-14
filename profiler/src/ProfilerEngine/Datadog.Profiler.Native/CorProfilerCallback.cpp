@@ -49,6 +49,7 @@
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "AllocationsRecorder.h"
+#include "MetadataProvider.h"
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -130,6 +131,17 @@ bool CorProfilerCallback::InitializeServices()
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
     auto valueTypeProvider = SampleValueTypeProvider();
+
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pThreadLifetimeProvider = RegisterService<ThreadLifetimeProvider>(
+            valueTypeProvider,
+            _pFrameStore.get(),
+            _pThreadsCpuManager,
+            _pAppDomainStore.get(),
+            pRuntimeIdStore,
+            _pConfiguration.get());
+    }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -311,6 +323,7 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
+        _pMetadataProvider.get(),
         _pAllocationsRecorder.get()
         );
 
@@ -318,7 +331,7 @@ bool CorProfilerCallback::InitializeServices()
         _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
     {
-        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider, _metricsRegistry);
 
         _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
     }
@@ -337,6 +350,11 @@ bool CorProfilerCallback::InitializeServices()
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
+
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pSamplesCollector->Register(_pThreadLifetimeProvider);
+    }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -696,7 +714,6 @@ void CorProfilerCallback::InspectProcessorInfo()
 
     SYSTEM_INFO systemInfo;
     GetNativeSystemInfo(&systemInfo);
-
     Log::Info("GetNativeSystemInfo results:"
               " wProcessorArchitecture=\"",
               SysInfoProcessorArchitectureToStr(systemInfo.wProcessorArchitecture), "\"",
@@ -820,15 +837,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     ConfigureDebugLog();
 
     _pConfiguration = std::make_unique<Configuration>();
-
+    _pMetadataProvider = std::make_unique<MetadataProvider>();
+    _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
     double coresThreshold = _pConfiguration->MinimumCores();
-    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
+    double cpuLimit = 0;
+    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold, cpuLimit))
     {
         Log::Warn("It is not safe to start the profiler. See previous log messages for more info.");
         return E_FAIL;
     }
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::CpuLimit, std::to_string(cpuLimit));
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::NbCores, std::to_string(OsSpecificApi::GetProcessorCount()));
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
@@ -871,6 +892,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::ClrVersion, _pRuntimeInfo->GetClrString());
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
@@ -1073,6 +1095,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
         _pLiveObjectsProvider->Stop();
     }
 
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        _pThreadLifetimeProvider->Stop();
+    }
+
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
@@ -1224,7 +1251,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    _pManagedThreadList->GetOrCreateThread(threadId);
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
+        _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
+    }
     return S_OK;
 }
 
@@ -1254,6 +1285,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
+
+        if (_pThreadLifetimeProvider != nullptr)
+        {
+            _pThreadLifetimeProvider->OnThreadStop(pThreadInfo);
+        }
     }
 
     return S_OK;

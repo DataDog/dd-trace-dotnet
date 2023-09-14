@@ -297,4 +297,35 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
     return result;
 }
 
+std::string GetProcessStartTime()
+{
+    HANDLE hProcess = ::GetCurrentProcess();
+    FILETIME creationTime;
+    FILETIME exitTime;
+    FILETIME userTime;
+    FILETIME kernelTime;
+    if (!::GetProcessTimes(hProcess, &creationTime, &exitTime, &kernelTime, &userTime))
+    {
+        return "";
+    }
+
+    SYSTEMTIME sCreationTime;
+    if (!::FileTimeToSystemTime(&creationTime, &sCreationTime))
+    {
+        return "";
+    }
+
+    std::stringstream builder;
+    builder
+        << sCreationTime.wYear
+        << "-" << std::setfill('0') << std::setw(2) << sCreationTime.wMonth
+        << "-" << std::setfill('0') << std::setw(2) << sCreationTime.wDay
+        << "T" << std::setfill('0') << std::setw(2) << sCreationTime.wHour
+        << ":" << std::setfill('0') << std::setw(2) << sCreationTime.wMinute
+        << ":" << std::setfill('0') << std::setw(2) << sCreationTime.wSecond
+        << "Z"; // for UTC
+    return builder.str();
+
+}
+
 } // namespace OsSpecificApi

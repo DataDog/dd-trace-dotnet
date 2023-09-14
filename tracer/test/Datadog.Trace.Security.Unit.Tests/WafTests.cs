@@ -12,6 +12,7 @@ using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Security.Unit.Tests.Utils;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
@@ -94,9 +95,27 @@ namespace Datadog.Trace.Security.Unit.Tests
         [InlineData("/.adsensepostnottherenonobook", "security_scanner", "crs-913-120")]
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
-        private void Execute(string address, object value, string flow, string rule)
+        [Fact]
+        public void SchemaExtraction()
+        {
+            Execute(
+                AddressesConstants.RequestBody,
+                new Dictionary<string, object> { { "property1", "/.adsensepostnottherenonobook" }, { "property2", 2 }, { "property3", 3.10 }, { "property4", true } },
+                "security_scanner",
+                "crs-913-120",
+                schemaExtraction: """{"server.request.body.schema":[{"property1":[8],"property2":[4],"property3":[16],"property4":[2]}]}""");
+        }
+
+        private void Execute(string address, object value, string flow, string rule, string schemaExtraction = null)
         {
             var args = new Dictionary<string, object> { { address, value } };
+            string embeddedRuleSetPath = null;
+            if (schemaExtraction is not null)
+            {
+                args.Add(AddressesConstants.WafContextSettings, new Dictionary<string, string> { { "extract-schema", "true" } });
+                embeddedRuleSetPath = "rule-set-withschema.json";
+            }
+
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
             {
                 args.Add(AddressesConstants.RequestUriRaw, "http://localhost:54587/");
@@ -107,12 +126,18 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: embeddedRuleSetPath);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
             result.ReturnCode.Should().Be(ReturnCode.Match);
+            if (schemaExtraction is not null)
+            {
+                var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);
+                serializedDerivatives.Should().BeJsonEquivalentTo(schemaExtraction);
+            }
+
             var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
             resultData.Rule.Tags.Type.Should().Be(flow);
             resultData.Rule.Id.Should().Be(rule);

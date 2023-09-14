@@ -18,6 +18,7 @@ namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 {
     private readonly TimeSpan _aggregationInterval;
+    private readonly Action? _aggregationNotification;
     private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
     private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private readonly Task _aggregateTask;
@@ -31,9 +32,10 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
     {
     }
 
-    internal MetricsTelemetryCollector(TimeSpan aggregationInterval)
+    internal MetricsTelemetryCollector(TimeSpan aggregationInterval, Action? aggregationNotification = null)
     {
         _aggregationInterval = aggregationInterval;
+        _aggregationNotification = aggregationNotification;
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
     }
 
@@ -296,6 +298,7 @@ internal partial class MetricsTelemetryCollector : IMetricsTelemetryCollector
 
             // The process may have exited, but we want to do a final aggregation before process end anyway
             AggregateMetrics();
+            _aggregationNotification?.Invoke();
 
             if (_processExit.Task.IsCompleted)
             {
