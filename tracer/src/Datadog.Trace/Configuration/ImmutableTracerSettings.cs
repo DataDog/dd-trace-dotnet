@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -155,6 +156,7 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
 
             IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
+            LambdaMetadata = settings.LambdaMetadata;
 
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
@@ -508,6 +510,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
         /// </summary>
         internal bool IsRunningInGCPFunctions { get; }
+
+        /// <summary>
+        /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
+        /// </summary>
+        internal LambdaMetadata LambdaMetadata { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
