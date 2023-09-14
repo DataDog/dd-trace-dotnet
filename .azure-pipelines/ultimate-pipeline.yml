@@ -706,7 +706,7 @@ stages:
       displayName: Uploading dd-dotnet win-x64
       artifact: dd-dotnet-win-x64
 
-- stage: build_dd_dotnet_linuxx
+- stage: build_dd_dotnet_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [merge_commit_id]
   variables:
