@@ -27,6 +27,7 @@ internal static class IastModule
     private const string OperationNamePathTraversal = "path_traversal";
     private const string OperationNameLdapInjection = "ldap_injection";
     private const string OperationNameSsrf = "ssrf";
+    private const string OperationNameWeakRandomness = "weak_randomness";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -60,6 +61,20 @@ internal static class IastModule
         catch (Exception ex)
         {
             Log.Error(ex, "Error while checking for SSRF.");
+            return null;
+        }
+    }
+
+    internal static Scope? OnWeakRandomness(string evidence)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
+            return GetScope(evidence, IntegrationId.Random, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for WeakRandomness.");
             return null;
         }
     }
