@@ -329,8 +329,6 @@ partial class Build : NukeBuild
         {
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
-                // .EnableNoRestore()
-                .EnableNoDependencies()
                 .SetConfiguration(BuildConfiguration)
                 .SetNoWarnDotNetCore3());
 
@@ -353,8 +351,6 @@ partial class Build : NukeBuild
 
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
-                // .EnableNoRestore()
-                .EnableNoDependencies()
                 .SetFramework("net7.0")
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
