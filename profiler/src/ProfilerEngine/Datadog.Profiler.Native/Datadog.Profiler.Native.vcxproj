@@ -247,6 +247,7 @@
     <ClInclude Include="IGarbageCollectionsListener.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
+    <ClInclude Include="IThreadLifetimeListener.h" />
     <ClInclude Include="IUpscaleProvider.h" />
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
@@ -256,6 +257,7 @@
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
+    <ClInclude Include="RawThreadLifetimeSample.h" />
     <ClInclude Include="SampleValueTypeProvider.h" />
     <ClInclude Include="ScopedHandle.h" />
     <ClInclude Include="StopTheWorldGCProvider.h" />
@@ -328,8 +330,10 @@
     <ClInclude Include="SumMetric.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
+    <ClInclude Include="ThreadLifetimeProvider.h" />
     <ClInclude Include="ThreadsCpuManager.h" />
     <ClInclude Include="CollectorBase.h" />
+    <ClInclude Include="TimelineSampleType.h" />
     <ClInclude Include="Timer.h" />
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="RawWallTimeSample.h" />
@@ -365,6 +369,7 @@
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
+    <ClCompile Include="RawThreadLifetimeSample.cpp" />
     <ClCompile Include="SampleValueTypeProvider.cpp" />
     <ClCompile Include="StopTheWorldGCProvider.cpp" />
     <ClCompile Include="GenericSampler.cpp" />
@@ -390,7 +395,9 @@
     <ClCompile Include="SumMetric.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
+    <ClCompile Include="ThreadLifetimeProvider.cpp" />
     <ClCompile Include="ThreadsCpuManager.cpp" />
+    <ClCompile Include="TimelineSampleType.cpp" />
     <ClCompile Include="Timer.Linux.cpp" />
     <ClCompile Include="Timer.Windows.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />

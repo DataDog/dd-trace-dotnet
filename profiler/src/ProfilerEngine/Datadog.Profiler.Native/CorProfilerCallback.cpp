@@ -131,6 +131,17 @@ bool CorProfilerCallback::InitializeServices()
 
     auto valueTypeProvider = SampleValueTypeProvider();
 
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pThreadLifetimeProvider = RegisterService<ThreadLifetimeProvider>(
+            valueTypeProvider,
+            _pFrameStore.get(),
+            _pThreadsCpuManager,
+            _pAppDomainStore.get(),
+            pRuntimeIdStore,
+            _pConfiguration.get());
+    }
+
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
         _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
@@ -337,6 +348,11 @@ bool CorProfilerCallback::InitializeServices()
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
+
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pSamplesCollector->Register(_pThreadLifetimeProvider);
+    }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -1073,6 +1089,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
         _pLiveObjectsProvider->Stop();
     }
 
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        _pThreadLifetimeProvider->Stop();
+    }
+
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
@@ -1224,7 +1245,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    _pManagedThreadList->GetOrCreateThread(threadId);
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
+        _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
+    }
     return S_OK;
 }
 
@@ -1254,6 +1279,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
+
+        if (_pThreadLifetimeProvider != nullptr)
+        {
+            _pThreadLifetimeProvider->OnThreadStop(pThreadInfo);
+        }
     }
 
     return S_OK;

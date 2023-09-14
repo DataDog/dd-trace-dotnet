@@ -68,6 +68,7 @@ Configuration::Configuration()
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
+    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
 }
@@ -158,6 +159,11 @@ bool Configuration::IsGcThreadsCpuTimeEnabled() const
 bool Configuration::IsHeapProfilingEnabled() const
 {
     return _isHeapProfilingEnabled;
+}
+
+bool Configuration::IsThreadLifetimeEnabled() const
+{
+    return _isThreadLifetimeEnabled;
 }
 
 int32_t Configuration::ContentionSampleLimit() const

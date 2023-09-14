@@ -39,8 +39,6 @@ public:
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
-
-private:
     std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId);
 
 private:
