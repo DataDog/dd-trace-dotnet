@@ -248,7 +248,7 @@ namespace Datadog.Trace.Ci.Agent
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadBytes);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
 
-            sw.Reset();
+            sw.Restart();
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
             var statusCode = await SendPayloadAsync(
                 payload,
