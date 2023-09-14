@@ -538,6 +538,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd-dotnet.ArtifactTests", "tracer\test\Datadog.Trace.Tools.dd-dotnet.ArtifactTests\Datadog.Trace.Tools.dd-dotnet.ArtifactTests.csproj", "{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd-dotnet.IntegrationTests", "tracer\test\Datadog.Trace.Tools.dd-dotnet.IntegrationTests\Datadog.Trace.Tools.dd-dotnet.IntegrationTests.csproj", "{A9632530-0FB8-4156-BD3C-DD432527768E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -1282,6 +1284,10 @@ Global
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A9632530-0FB8-4156-BD3C-DD432527768E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A9632530-0FB8-4156-BD3C-DD432527768E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A9632530-0FB8-4156-BD3C-DD432527768E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A9632530-0FB8-4156-BD3C-DD432527768E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1491,6 +1497,7 @@ Global
 		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{B28A33A4-C694-4514-BC30-2680605B0B3D} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{A9632530-0FB8-4156-BD3C-DD432527768E} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

@@ -275,6 +275,12 @@ namespace Datadog.Trace.Tools.dd_dotnet
 
             AnsiConsole.WriteLine("Running: {0} {1}", program, arguments);
 
+            if (Program.CallbackForTests != null)
+            {
+                Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
+                return;
+            }
+
             var processInfo = GetProcessStartInfo(program, Environment.CurrentDirectory, profilerEnvironmentVariables);
 
             if (!string.IsNullOrEmpty(arguments))

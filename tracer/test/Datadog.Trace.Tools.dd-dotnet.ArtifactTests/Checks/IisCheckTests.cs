@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
     public class IisCheckTests : TestHelper
     {
         public IisCheckTests(ITestOutputHelper output)
-            : base("AspNetCoreMvc31", output)
+            : base(GetSampleProjectName(), GetSampleProjectPath(), output)
         {
         }
 
@@ -31,32 +31,27 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         [InlineData(false)]
         public async Task WorkingApp(bool mixedRuntimes)
         {
+#if NETFRAMEWORK
+            if (mixedRuntimes)
+            {
+                // This test doesn't make sense on .NET Framework
+                throw new SkipException();
+            }
+#endif
             EnsureWindowsAndX64();
 
             var siteName = mixedRuntimes ? "sample/mixed" : "sample";
 
-            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+            using var iisFixture = await StartIisWithGac(GetAppType());
 
-            try
+            var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
+
+            if (mixedRuntimes)
             {
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
-
-                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
-
-                var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
-
-                if (mixedRuntimes)
-                {
-                    output.Should().Contain(Resources.IisMixedRuntimes);
-                }
-
-                output.Should().Contain(Resources.IisNoIssue);
+                output.Should().Contain(Resources.IisMixedRuntimes);
             }
-            finally
-            {
-                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
-            }
+
+            output.Should().Contain(Resources.IisNoIssue);
         }
 
         [SkippableFact]
@@ -67,51 +62,28 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             var siteName = "sample/nested/app";
 
-            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+            using var iisFixture = await StartIisWithGac(GetAppType());
+            var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
 
-            try
-            {
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
-
-                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
-
-                var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
-
-                output.Should().Contain(Resources.IisNoIssue);
-            }
-            finally
-            {
-                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
-            }
+            output.Should().Contain(Resources.IisNoIssue);
         }
 
+#if !NETFRAMEWORK
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
         public async Task OutOfProcess()
         {
             EnsureWindowsAndX64();
 
-            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+            using var iisFixture = await StartIisWithGac(IisAppType.AspNetCoreOutOfProcess);
 
-            try
-            {
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+            var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
-                using var iisFixture = await StartIis(IisAppType.AspNetCoreOutOfProcess);
-
-                var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
-
-                output.Should().Contain(Resources.OutOfProcess);
-                output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
-                output.Should().Contain(Resources.IisNoIssue);
-            }
-            finally
-            {
-                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
-            }
+            output.Should().Contain(Resources.OutOfProcess);
+            output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
+            output.Should().Contain(Resources.IisNoIssue);
         }
+#endif
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
@@ -119,7 +91,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+            using var iisFixture = await StartIis(GetAppType());
 
             var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
@@ -132,7 +104,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+            using var iisFixture = await StartIis(GetAppType());
 
             var output = await RunTool($"check iis dummySite {IisExpressOptions(iisFixture)}");
 
@@ -145,11 +117,40 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+            using var iisFixture = await StartIis(GetAppType());
 
             var output = await RunTool($"check iis sample/dummy {IisExpressOptions(iisFixture)}");
 
             output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
+        }
+
+        private static IisAppType GetAppType()
+        {
+#if NETFRAMEWORK
+            return IisAppType.AspNetIntegrated;
+#else
+            return IisAppType.AspNetCoreInProcess;
+#endif
+        }
+
+        private static string GetSampleProjectName()
+        {
+#if NET6_0_OR_GREATER
+            return "AspNetCoreMinimalApis";
+#elif NETFRAMEWORK
+            return "AspNetMvc5";
+#else
+            return "AspNetCoreMvc31";
+#endif
+        }
+
+        private static string GetSampleProjectPath()
+        {
+#if NETFRAMEWORK
+            return Path.Combine("test", "test-applications", "aspnet");
+#else
+            return null;
+#endif
         }
 
         private static string IisExpressOptions(IisFixture iisFixture)
@@ -159,21 +160,41 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
         private static void EnsureWindowsAndX64()
         {
-#if !NETCOREAPP3_1
-            // TODO: Find how to test on other targets
-            throw new SkipException();
-#else
+#if NETFRAMEWORK || (NETCOREAPP3_1_OR_GREATER && !NET5_0)
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
                 || IntPtr.Size != 8)
             {
                 throw new SkipException();
             }
+#else
+            throw new SkipException();
 #endif
+        }
+
+        private async Task<GacIisFixture> StartIisWithGac(IisAppType appType)
+        {
+            // GacFixture is not compatible with .NET Core, use the Nuke target instead
+            GacIisFixture.GacAdd();
+
+            try
+            {
+                return new GacIisFixture(await StartIis(appType));
+            }
+            catch
+            {
+                GacIisFixture.GacRemove();
+                throw;
+            }
         }
 
         private async Task<IisFixture> StartIis(IisAppType appType)
         {
-            var fixture = new IisFixture { ShutdownPath = "/shutdown" };
+            var fixture = new IisFixture { UseGac = false };
+
+            if (appType is IisAppType.AspNetCoreInProcess or IisAppType.AspNetCoreOutOfProcess)
+            {
+                fixture.ShutdownPath = "/shutdown";
+            }
 
             try
             {
@@ -217,6 +238,48 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var splitOutput = helper.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
 
             return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
+        }
+
+        private class GacIisFixture : IDisposable
+        {
+            private readonly IisFixture _fixture;
+
+            public GacIisFixture(IisFixture fixture)
+            {
+                _fixture = fixture;
+            }
+
+            public static implicit operator IisFixture(GacIisFixture fixture) => fixture._fixture;
+
+            public static void GacAdd()
+            {
+                RunNukeTask("GacAdd");
+            }
+
+            public static void GacRemove()
+            {
+                RunNukeTask("GacRemove");
+            }
+
+            public void Dispose()
+            {
+                _fixture.Dispose();
+
+                GacRemove();
+            }
+
+            private static void RunNukeTask(string task)
+            {
+                var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                var startInfo = new ProcessStartInfo("powershell", $"{buildPs1} {task} --framework net461")
+                {
+                    UseShellExecute = false
+                };
+
+                Process.Start(startInfo)!.WaitForExit();
+            }
         }
     }
 }

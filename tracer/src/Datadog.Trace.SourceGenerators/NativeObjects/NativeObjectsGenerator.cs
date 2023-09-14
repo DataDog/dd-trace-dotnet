@@ -58,7 +58,11 @@ internal unsafe class {typeName} : {interfaceName}
     public void Dispose()
     {
         GC.SuppressFinalize(this);
-        Release();
+
+        if (_implementation != IntPtr.Zero)
+        {
+            Release();
+        }
     }
 
     ~{typeName}()

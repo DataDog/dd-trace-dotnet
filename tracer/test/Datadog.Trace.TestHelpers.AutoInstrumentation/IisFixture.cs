@@ -24,13 +24,18 @@ namespace Datadog.Trace.TestHelpers
 
         public string VirtualApplicationPath { get; set; } = string.Empty;
 
+        public bool UseGac { get; set; } = true;
+
         public void TryStartIis(TestHelper helper, IisAppType appType)
         {
             lock (this)
             {
                 if (IisExpress.Process == null)
                 {
-                    AddAssembliesToGac();
+                    if (UseGac)
+                    {
+                        AddAssembliesToGac();
+                    }
 
                     var initialAgentPort = TcpPortProvider.GetOpenPort();
                     Agent = MockTracerAgent.Create(null, initialAgentPort);
@@ -84,7 +89,10 @@ namespace Datadog.Trace.TestHelpers
 
                     // If the operation fails, it could leave files in the GAC and impact the next tests
                     // Therefore, we don't wrap this in a try/catch
-                    RemoveAssembliesFromGac();
+                    if (UseGac)
+                    {
+                        RemoveAssembliesFromGac();
+                    }
                 }
             }
         }

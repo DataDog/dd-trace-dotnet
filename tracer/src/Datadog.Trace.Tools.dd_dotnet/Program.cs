@@ -15,6 +15,8 @@ namespace Datadog.Trace.Tools.dd_dotnet;
 
 internal class Program
 {
+    internal static Action<string, string, Dictionary<string, string>?>? CallbackForTests { get; set; }
+
     internal static int Main(string[] args)
     {
         // Disable QUIC support. It requires reflection (and thus increases the final size of the binary)
