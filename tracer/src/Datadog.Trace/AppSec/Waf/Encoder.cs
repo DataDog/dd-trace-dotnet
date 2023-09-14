@@ -31,7 +31,7 @@ namespace Datadog.Trace.AppSec.Waf
         {
             get
             {
-                if (_pool is not null)
+                if (_pool is { IsDisposed: false })
                 {
                     return _pool;
                 }

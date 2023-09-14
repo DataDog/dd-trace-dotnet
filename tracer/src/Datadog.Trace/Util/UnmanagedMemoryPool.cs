@@ -38,9 +38,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         Dispose();
     }
 
+    public bool IsDisposed => _isDisposed;
+
     public IntPtr Rent()
     {
-        if (_isDisposed)
+        if (IsDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -68,7 +70,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IntPtr block)
     {
-        if (_isDisposed)
+        if (IsDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -90,7 +92,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Return(IList<IntPtr> blocks)
     {
-        if (_isDisposed)
+        if (IsDisposed)
         {
             ThrowObjectDisposedException();
         }
@@ -129,7 +131,7 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public void Dispose()
     {
-        if (_isDisposed)
+        if (IsDisposed)
         {
             return;
         }

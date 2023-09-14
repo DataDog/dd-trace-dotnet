@@ -11,6 +11,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -100,10 +101,18 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             Execute(
                 AddressesConstants.RequestBody,
-                new Dictionary<string, object> { { "property1", "/.adsensepostnottherenonobook" }, { "property2", 2 }, { "property3", 3.10 }, { "property4", true } },
+                new Dictionary<string, object>
+                {
+                    { "property1", "/.adsensepostnottherenonobook" },
+                    { "property2", 2 },
+                    { "property3", 3.10 },
+                    { "property4", 5.10M },
+                    { "property5", true },
+                    { "property6", 10u }
+                },
                 "security_scanner",
                 "crs-913-120",
-                schemaExtraction: """{"server.request.body.schema":[{"property1":[8],"property2":[4],"property3":[16],"property4":[2]}]}""");
+                schemaExtraction: """{"server.request.body.schema":[{"property1":[8],"property2":[4],"property3":[16],"property4":[16],"property5":[2],"property6":[4] }]}""");
         }
 
         private void Execute(string address, object value, string flow, string rule, string schemaExtraction = null)
