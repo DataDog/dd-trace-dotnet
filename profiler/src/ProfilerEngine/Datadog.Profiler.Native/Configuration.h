@@ -59,6 +59,7 @@ public:
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
+    bool IsThreadLifetimeEnabled() const override;
     std::string const& GetGitRepositoryUrl() const override;
     std::string const& GetGitCommitSha() const override;
     bool IsInternalMetricsEnabled() const override;
@@ -103,6 +104,7 @@ private:
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
     bool _isHeapProfilingEnabled;
+    bool _isThreadLifetimeEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;

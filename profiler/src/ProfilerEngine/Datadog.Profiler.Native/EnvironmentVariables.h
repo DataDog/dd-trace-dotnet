@@ -58,4 +58,5 @@ public:
     inline static const shared::WSTRING DebugInfoEnabled            = WStr("DD_INTERNAL_PROFILING_DEBUG_INFO_ENABLED");
     inline static const shared::WSTRING GcThreadsCpuTimeEnabled     = WStr("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
     inline static const shared::WSTRING InternalMetricsEnabled      = WStr("DD_INTERNAL_METRICS_ENABLED");
+    inline static const shared::WSTRING ThreadLifetimeEnabled       = WStr("DD_INTERNAL_THREAD_LIFETIME_ENABLED");
 };

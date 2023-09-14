@@ -685,6 +685,26 @@ TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
 }
 
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
 TEST(ConfigurationTest, CheckGitMetadataIfNotSet)
 {
     auto configuration = Configuration{};

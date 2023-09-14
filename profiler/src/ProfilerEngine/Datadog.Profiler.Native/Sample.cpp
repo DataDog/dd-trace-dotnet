@@ -17,6 +17,8 @@ const std::string Sample::EndTimestampLabel = "end_timestamp_ns";
 
 // garbage collection related labels
 const std::string Sample::TimelineEventTypeLabel = "event";
+    const std::string Sample::TimelineEventTypeThreadStart = "thread start";
+    const std::string Sample::TimelineEventTypeThreadStop = "thread stop";
     const std::string Sample::TimelineEventTypeStopTheWorld = "stw";
     const std::string Sample::TimelineEventTypeGarbageCollection = "gc";
         const std::string Sample::GarbageCollectionReasonLabel = "gc reason";   // look at GCReason enumeration

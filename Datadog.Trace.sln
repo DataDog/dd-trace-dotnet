@@ -516,9 +516,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Security.AspNetCore2", "tracer\test\test-applications\security\Samples.Security.AspNetCore2\Samples.Security.AspNetCore2.csproj", "{C5E7978A-DE2A-4944-86DB-4721A110E720}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Trimming", "tracer\src\Datadog.Trace.Trimming\Datadog.Trace.Trimming.csproj", "{CEAC4ECE-1BFA-4C88-BED5-E4DE054D70A4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Trimming", "tracer\test\test-applications\integrations\Samples.Trimming\Samples.Trimming.csproj", "{289713D4-5259-4CC4-8CAA-DBF3BDCDCBC0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ActivitySampleHelper", "tracer\test\test-applications\integrations\dependency-libs\ActivitySampleHelper\ActivitySampleHelper.csproj", "{51AF3B29-D107-4E22-8A85-DF02A8A898E5}"
 EndProject
@@ -526,11 +526,13 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Probes.Unreferenced
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.LegacySecurityPolicy", "tracer\test\test-applications\regression\Sandbox.LegacySecurityPolicy\Sandbox.LegacySecurityPolicy.csproj", "{959E9599-8D99-43BC-8038-B91F76179C1C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeepNestedHierarchy", "tracer\test\test-applications\regression\DeepNestedHierarchy\DeepNestedHierarchy.csproj", "{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeepNestedHierarchy", "tracer\test\test-applications\regression\DeepNestedHierarchy\DeepNestedHierarchy.csproj", "{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Kinesis", "tracer\test\test-applications\integrations\Samples.AWS.Kinesis\Samples.AWS.Kinesis.csproj", "{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.AzureServiceBus\Samples.AzureServiceBus.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D5}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.DataStreams.AzureServiceBus\Samples.DataStreams.AzureServiceBus.csproj", "{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1264,6 +1266,10 @@ Global
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1470,6 +1476,7 @@ Global
 		{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B} = {498A300E-D036-49B7-A43D-821D1CAF11A5}
 		{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{BC44A41F-1BED-4438-9F66-0EA5607906D5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{56DE0D44-E9E5-48DA-BAEA-2934B1E28D4E} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

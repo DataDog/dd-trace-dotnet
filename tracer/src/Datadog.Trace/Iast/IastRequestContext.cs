@@ -45,7 +45,7 @@ internal class IastRequestContext
 
         if (_executedTelemetryHelper != null)
         {
-            _executedTelemetryHelper.GenerateMetricTags(span.Tags);
+            _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
         }
     }
 

@@ -32,6 +32,7 @@
 #include "ProxyMetric.h"
 #include "IAllocationsRecorder.h"
 #include "IMetadataProvider.h"
+#include "ThreadLifetimeProvider.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -232,6 +233,7 @@ private :
     StopTheWorldGCProvider* _pStopTheWorldProvider = nullptr;
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
+    ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
 
     std::vector<std::unique_ptr<IService>> _services;
 
