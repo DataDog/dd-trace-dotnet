@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -163,15 +163,17 @@
     Resource: POST /graphql/{*slug},
     Service: Samples.HotChocolate,
     Type: web,
+    Error: 1,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
       aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
+      error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /graphql/{**slug},
-      http.status_code: 400,
+      http.status_code: 500,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,

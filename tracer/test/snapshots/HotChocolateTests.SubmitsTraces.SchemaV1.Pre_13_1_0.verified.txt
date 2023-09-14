@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -36,7 +36,7 @@
     SpanId: Id_3,
     Name: graphql.execute,
     Resource: Query operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_2,
     Tags: {
@@ -53,11 +53,8 @@
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -163,15 +160,17 @@
     Resource: POST /graphql/{*slug},
     Service: Samples.HotChocolate,
     Type: web,
+    Error: 1,
     Tags: {
       aspnet_core.endpoint: Hot Chocolate GraphQL Pipeline,
       aspnet_core.route: /graphql/{**slug},
       component: aspnet_core,
       env: integration_tests,
+      error.msg: The HTTP response has status code 500.,
       http.method: POST,
       http.request.headers.host: localhost:00000,
       http.route: /graphql/{**slug},
-      http.status_code: 400,
+      http.status_code: 500,
       http.url: http://localhost:00000/graphql,
       http.useragent: testhelper,
       language: dotnet,
@@ -193,7 +192,7 @@
     SpanId: Id_12,
     Name: graphql.execute,
     Resource: Query Book,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_5,
     Tags: {
@@ -211,11 +210,8 @@ query Book {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -223,7 +219,7 @@ query Book {
     SpanId: Id_13,
     Name: graphql.execute,
     Resource: Mutation m,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_7,
     Tags: {
@@ -240,11 +236,8 @@ mutation m {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -252,7 +245,7 @@ mutation m {
     SpanId: Id_14,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_9,
     Error: 1,
@@ -285,11 +278,8 @@ errors: [
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   },
   {
@@ -297,7 +287,7 @@ errors: [
     SpanId: Id_15,
     Name: graphql.execute,
     Resource: Uncompleted operation,
-    Service: Samples.HotChocolate-graphql,
+    Service: Samples.HotChocolate,
     Type: graphql,
     ParentId: Id_11,
     Error: 1,
@@ -323,11 +313,8 @@ subscription NotImplementedSub {
   }
 },
       language: dotnet,
-      runtime-id: Guid_1,
-      span.kind: server
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      span.kind: server,
+      version: 1.0.0
     }
   }
 ]
