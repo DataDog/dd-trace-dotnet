@@ -19,8 +19,10 @@ public static class Projects
     public const string AppSecIntegrationTests = "Datadog.Trace.Security.IntegrationTests";
     public const string OpenTracingIntegrationTests = "Datadog.Trace.OpenTracing.IntegrationTests";
     public const string ClrProfilerIntegrationTests = "Datadog.Trace.ClrProfiler.IntegrationTests";
-    public const string ToolIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
-    public const string ToolArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
+    public const string DdTraceIntegrationTests = "Datadog.Trace.Tools.Runner.IntegrationTests";
+    public const string DdTraceArtifactsTests = "Datadog.Trace.Tools.Runner.ArtifactTests";
+    public const string DdDotnetIntegrationTests = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests";
+    public const string DdDotnetArtifactsTests = "Datadog.Trace.Tools.dd_dotnet.ArtifactTests";
 
     public const string DataDogThreadTest = "DataDogThreadTest";
 

@@ -170,7 +170,8 @@ partial class Build
     {
         Solution.GetProject(Projects.ClrProfilerIntegrationTests),
         Solution.GetProject(Projects.AppSecIntegrationTests),
-        Solution.GetProject(Projects.ToolIntegrationTests)
+        Solution.GetProject(Projects.DdTraceIntegrationTests),
+        Solution.GetProject(Projects.DdDotnetIntegrationTests)
     };
 
     TargetFramework[] TestingFrameworks =>
@@ -1907,7 +1908,7 @@ partial class Build
          .After(InstallDdTraceTool)
          .Executes(() =>
           {
-              DotnetBuild(Solution.GetProject(Projects.ToolArtifactsTests));
+              DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
           });
 
     Target RunToolArtifactTests => _ => _
@@ -1916,7 +1917,7 @@ partial class Build
        .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
-            var project = Solution.GetProject(Projects.ToolArtifactsTests);
+            var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
 
             DotNetTest(config => config
                 .SetProjectFile(project)
