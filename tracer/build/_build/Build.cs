@@ -354,7 +354,7 @@ partial class Build : NukeBuild
                 .SetFramework("net7.0")
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
-               .SetOutput(MonitoringHomeDirectory / "dd-dotnet" / rid));
+                .SetOutput(ArtifactsDirectory / "dd-dotnet" / rid));
         });
     Target BuildRunnerTool => _ => _
         .Unlisted()
