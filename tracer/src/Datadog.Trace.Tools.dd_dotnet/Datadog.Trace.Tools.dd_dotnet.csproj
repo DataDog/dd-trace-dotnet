@@ -32,6 +32,7 @@
     <IlcGenerateCompleteTypeMetadata>false</IlcGenerateCompleteTypeMetadata>-->
     <IlcOptimizationPreference>Size</IlcOptimizationPreference>
 
+    <StripSymbols>true</StripSymbols>
     <PublishLzmaCompressed>true</PublishLzmaCompressed>    
 
   </PropertyGroup>
