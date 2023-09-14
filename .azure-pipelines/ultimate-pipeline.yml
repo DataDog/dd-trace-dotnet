@@ -2831,7 +2831,6 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-    - template: steps/restore-working-directory.yml
   
     - script: tracer\build.cmd BuildDdDotnet
       displayName: Build dd-dotnet
