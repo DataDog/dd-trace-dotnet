@@ -15,16 +15,9 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation
 
         private static NativeCallTargetDefinition[] callTargetDefinitions = null;
 
-        internal static LambdaMetadata Metadata { get; private set; } = LambdaMetadata.Create();
-
-        internal static void SetMetadataTestsOnly(LambdaMetadata metadata)
+        internal static void InitIfNeeded(LambdaMetadata metadata)
         {
-            Metadata = metadata;
-        }
-
-        internal static void InitIfNeeded()
-        {
-            if (Metadata is { IsRunningInLambda: true, HandlerName: var handlerName })
+            if (metadata is { IsRunningInLambda: true, HandlerName: var handlerName })
             {
                 if (string.IsNullOrEmpty(handlerName))
                 {

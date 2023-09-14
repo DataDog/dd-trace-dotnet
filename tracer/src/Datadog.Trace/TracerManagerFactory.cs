@@ -363,7 +363,7 @@ namespace Datadog.Trace
                     return settings.AzureAppServiceMetadata.SiteName;
                 }
 
-                if (Serverless.Metadata is { IsRunningInLambda: true, ServiceName: var serviceName })
+                if (settings.LambdaMetadata is { IsRunningInLambda: true, ServiceName: var serviceName })
                 {
                     return serviceName;
                 }
