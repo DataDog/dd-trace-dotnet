@@ -674,6 +674,91 @@ stages:
         displayName: Publish NuGet packages
         artifact: nuget-packages
 
+
+- stage: build_dd_dotnet_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - script: tracer\build.cmd BuildDdDotnet
+      displayName: Build dd-dotnet
+
+    - publish: $(artifacts)/dd-dotnet/win-x64
+      displayName: Uploading dd-dotnet win-x64
+      artifact: dd-dotnet-win-x64
+
+- stage: build_dd_dotnet_linuxx
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos7:
+          name: centos7
+          baseImage: centos7
+          artifactSuffix: linux-x64
+          poolName: azure-linux-scale-set
+        alpine:
+          name: alpine
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+          poolName: azure-linux-scale-set
+        arm64:
+          name: arm64
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolname: aws-arm64-auto-scaling
+
+    pool:
+      name: $(poolName)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildDdDotnet"
+        retryCountForRunCommand: 1
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)
+      displayName: Uploading dd-dotnet $(artifactSuffix)
+      artifact: dd-dotnet-$(artifactSuffix)
+
 - stage: debug_builds
   dependsOn: [merge_commit_id]
   variables:
@@ -2806,39 +2891,6 @@ stages:
         PR_NUMBER: $(System.PullRequest.PullRequestNumber)
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
-
-
-- stage: build_dd_dotnet_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [build_dd_dotnet]
-
-  - job: build_dd_dotnet
-    timeoutInMinutes: 60 #default value
-
-    pool:
-      name: azure-windows-scale-set-3
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
-  
-    - script: tracer\build.cmd BuildDdDotnet
-      displayName: Build dd-dotnet
-
-    - publish: $(artifacts)/dd-dotnet/win-x64
-      displayName: Uploading dd-dotnet win-x64
-      artifact: dd-dotnet-win-x64
-
 
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
