@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.ComponentModel;
 
 namespace Datadog.Trace.DuckTyping;
 
@@ -12,6 +13,8 @@ namespace Datadog.Trace.DuckTyping;
 /// DuckType return value with original type
 /// </summary>
 /// <typeparam name="TProxy">Type of ducktype proxy</typeparam>
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public readonly struct ValueWithType<TProxy>
 {
     /// <summary>
