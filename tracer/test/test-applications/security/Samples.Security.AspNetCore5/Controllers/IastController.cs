@@ -179,7 +179,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
             }
 
-            if (query.InnerQuery !=null)
+            if (query.InnerQuery != null)
             {
                 return Query(query.InnerQuery);
             }
@@ -410,6 +410,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return Content($"Result: Not connected");
             }
+        }
+
+        [HttpGet("WeakRandomness")]
+        [Route("WeakRandomness")]
+        public ActionResult WeakRandomness()
+        {
+            return Content("Random number: " + (new Random()).Next().ToString(), "text/html");
         }
     }
 }
