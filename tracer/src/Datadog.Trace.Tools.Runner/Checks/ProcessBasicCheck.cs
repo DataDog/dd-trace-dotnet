@@ -10,7 +10,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
-using Microsoft.Win32;
+using Datadog.Trace.Tools.Runner.Checks.Windows;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
@@ -169,7 +169,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
                     ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
 
-                    if (!CheckRegistry(CheckWindowsInstallation(), registryService))
+                    if (!CheckRegistry(CheckWindowsInstallation(process.Id, registryService), registryService))
                     {
                         ok = false;
                     }
@@ -279,8 +279,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 else if (RuntimeInformation.OSArchitecture is Architecture.X64)
                 {
                     ok &= CheckClsid(registry, ClsidKey);
+
+                    if (new Version(tracerProgramVersion) < new Version("2.14.0.0"))
+                    {
+                        ok &= CheckClsid(registry, Clsid32Key);
+                    }
                 }
-                else if (new Version(tracerProgramVersion) < new Version("2.14.0.0") || RuntimeInformation.OSArchitecture is Architecture.X86)
+                else if (RuntimeInformation.OSArchitecture is Architecture.X86)
                 {
                     ok &= CheckClsid(registry, Clsid32Key);
                 }
@@ -526,58 +531,35 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return false;
         }
 
-        private static string? CheckWindowsInstallation()
+        private static string? CheckWindowsInstallation(int processId, IRegistryService? registryService = null)
         {
-            string? tracerVersion = null;
-            string? displayName = null;
+            registryService ??= new Windows.RegistryService();
 
-            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            const string datadog64BitProgram = "Datadog .NET Tracer 64-bit";
+            const string datadog32BitProgram = "Datadog .NET Tracer 32-bit";
+            const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+            const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
+
+            if (registryService.GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
             {
-                const string datadog64BitProgram = "Datadog .NET Tracer 64-bit";
-                const string datadog32BitProgram = "Datadog .NET Tracer 32-bit";
-
-                var registrySubKeys = new[] { @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall", @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall" };
-
-                foreach (var registryKey in registrySubKeys)
-                {
-                    using (var key = Registry.LocalMachine.OpenSubKey(registryKey))
-                    {
-                        if (key is not null)
-                        {
-                            foreach (var subKeyName in key.GetSubKeyNames())
-                            {
-                                var subKey = key.OpenSubKey(subKeyName);
-
-                                if (subKey?.GetValue("DisplayName") is datadog64BitProgram or datadog32BitProgram && displayName is null)
-                                {
-                                    displayName = (string?)subKey.GetValue("DisplayName");
-                                    tracerVersion = subKey.GetValue("VersionMajor") + "." + subKey.GetValue("VersionMinor");
-                                    break;
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (displayName is null)
-                {
-                    Utils.WriteError(TraceProgramNotFound);
-                }
-                else if (displayName is datadog64BitProgram)
-                {
-                    Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
-                }
-                else if (displayName is datadog32BitProgram)
-                {
-                    if (RuntimeInformation.OSArchitecture is Architecture.X64)
-                    {
-                        Utils.WriteError(WrongTracerArchitecture(datadog32BitProgram));
-                        return tracerVersion;
-                    }
-
-                    Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
-                }
+                Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
+                return tracerVersion;
             }
+
+            if (registryService.GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
+            {
+                Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
+                var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));
+
+                if (processBitness is 64)
+                {
+                    Utils.WriteError(WrongTracerArchitecture(datadog32BitProgram));
+                }
+
+                return tracerVersion;
+            }
+
+            Utils.WriteError(TraceProgramNotFound);
 
             return tracerVersion;
         }

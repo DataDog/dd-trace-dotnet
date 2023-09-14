@@ -38,6 +38,11 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return _ReadVariablesCore(process);
         }
 
+        public static int GetProcessBitness(Process process)
+        {
+            return _GetProcessBitness(process.Handle);
+        }
+
         private static Dictionary<string, string> _ReadVariablesCore(Process process)
         {
             int retryCount = 5;
@@ -338,7 +343,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             }
         }
 
-        private static int _GetProcessBitness(IntPtr hProcess)
+        internal static int _GetProcessBitness(IntPtr hProcess)
         {
             if (Environment.Is64BitOperatingSystem)
             {

@@ -143,7 +143,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string TracerProgramFound(string tracerProgramName) => $"{tracerProgramName} found in the installed programs.";
 
-        public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current machine is X64 Bit, make sure to install the 64-bit tracer instead.";
+        public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current process is 64 Bit, make sure to install the 64-bit tracer instead.";
 
         public static string AppPoolCheckFindings(string appPool) => $"Check did not pass, fix the configuration on the {appPool} AppPool:";
     }

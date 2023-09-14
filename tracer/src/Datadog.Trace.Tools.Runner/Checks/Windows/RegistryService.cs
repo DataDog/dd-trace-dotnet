@@ -41,5 +41,35 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 
             return registryKey?.GetValue(null) as string;
         }
+
+        public bool GetLocalMachineSubKeyVersion(string key, string displayName, out string? tracerVersion)
+        {
+            tracerVersion = null;
+            var versionFound = false;
+
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return versionFound;
+            }
+
+            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+
+            if (registryKey != null)
+            {
+                foreach (var subKeyName in registryKey.GetSubKeyNames())
+                {
+                    var subKey = registryKey.OpenSubKey(subKeyName);
+                    var subKeyDisplayName = subKey?.GetValue("DisplayName");
+
+                    if (subKeyDisplayName?.ToString() == displayName)
+                    {
+                        tracerVersion = subKey?.GetValue("VersionMajor") + "." + subKey?.GetValue("VersionMinor");
+                        versionFound = true;
+                    }
+                }
+            }
+
+            return versionFound;
+        }
     }
 }
