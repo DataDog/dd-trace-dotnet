@@ -365,6 +365,9 @@
     <ClInclude Include="IClrLifetime.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="IMetadataProvider.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
     <ClInclude Include="ThreadLifetimeProvider.h">
       <Filter>Threads</Filter>
     </ClInclude>
@@ -552,6 +555,9 @@
     </ClCompile>
     <ClCompile Include="RawExceptionSample.cpp">
       <Filter>Exceptions</Filter>
+    </ClCompile>
+    <ClCompile Include="MetadataProvider.cpp">
+      <Filter>Utils</Filter>
     </ClCompile>
     <ClCompile Include="ThreadLifetimeProvider.cpp">
       <Filter>Threads</Filter>

@@ -64,6 +64,7 @@ public:
     MOCK_METHOD(bool, IsThreadLifetimeEnabled, (), (const override));
     MOCK_METHOD(std::string const&, GetGitRepositoryUrl, (), (const override));
     MOCK_METHOD(std::string const&, GetGitCommitSha, (), (const override));
+    MOCK_METHOD(bool, IsInternalMetricsEnabled, (), (const override));
 };
 
 class MockExporter : public IExporter

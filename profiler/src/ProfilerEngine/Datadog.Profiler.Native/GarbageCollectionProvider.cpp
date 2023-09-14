@@ -71,6 +71,11 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
         _memoryPressureCountMetric->Incr();
     }
 
+    if ((generation == 2) && (isCompacting))
+    {
+        _compactingGen2CountMetric->Incr();
+    }
+
     RawGarbageCollectionSample rawSample;
     rawSample.Timestamp = endTimestamp;
     rawSample.LocalRootSpanId = 0;

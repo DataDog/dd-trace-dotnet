@@ -20,7 +20,8 @@
 #include "ICollector.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
-
+#include "MetricsRegistry.h"
+#include "MeanMaxMetric.h"
 #include "shared/src/native-src/string.h"
 
 // forward declarations
@@ -52,7 +53,8 @@ public:
         IManagedThreadList* pManagedThreadList,
         IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
-        ICollector<RawCpuSample>* pCpuTimeCollector
+        ICollector<RawCpuSample>* pCpuTimeCollector,
+        MetricsRegistry& metricsRegistry
         );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
@@ -91,6 +93,11 @@ private:
     std::unordered_map<shared::WSTRING, uint64_t> _encounteredStackCountsForDebug;
     std::chrono::nanoseconds _samplingPeriod;
     uint32_t _nbCores;
+    bool _isWalltimeEnabled;
+    bool _isCpuEnabled;
+    bool _areInternalMetricsEnabled;
+    std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
 
 private:
     void MainLoop();

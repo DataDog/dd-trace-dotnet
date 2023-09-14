@@ -71,6 +71,7 @@ Configuration::Configuration()
     _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
+    _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -269,6 +270,11 @@ bool Configuration::UseBacktrace2() const
 bool Configuration::IsAllocationRecorderEnabled() const
 {
     return _isAllocationRecorderEnabled;
+}
+
+bool Configuration::IsInternalMetricsEnabled() const
+{
+    return _isInternalMetricsEnabled;
 }
 
 

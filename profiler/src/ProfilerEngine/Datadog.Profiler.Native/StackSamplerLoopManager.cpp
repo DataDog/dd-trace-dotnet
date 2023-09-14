@@ -57,13 +57,16 @@ StackSamplerLoopManager::StackSamplerLoopManager(
     _pCodeHotspotsThreadList{pCodeHotspotThreadList},
     _pWallTimeCollector{pWallTimeCollector},
     _pCpuTimeCollector{pCpuTimeCollector},
-    _deadlockInterventionInProgress{0}
+    _deadlockInterventionInProgress{0},
+    _metricsRegistry{metricsRegistry}
 {
     _pCorProfilerInfo->AddRef();
     _pStackFramesCollector = OsSpecificApi::CreateNewStackFramesCollectorInstance(_pCorProfilerInfo, pConfiguration);
 
     _currentStatistics = std::make_unique<Statistics>();
     _statisticCollectionStartNs = OpSysTools::GetHighPrecisionNanoseconds();
+
+    _deadlockCountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_internal_deadlocks");
 }
 
 StackSamplerLoopManager::~StackSamplerLoopManager()
@@ -123,8 +126,8 @@ void StackSamplerLoopManager::RunStackSampling()
             _pManagedThreadList,
             _pCodeHotspotsThreadList,
             _pWallTimeCollector,
-            _pCpuTimeCollector
-            );
+            _pCpuTimeCollector,
+            _metricsRegistry);
         _pStackSamplerLoop = stackSamplerLoop;
     }
 }
@@ -284,7 +287,7 @@ void StackSamplerLoopManager::WatcherLoopIteration()
     }
 #endif
 
-    // TODO: update deadlock count metrics when available
+    _deadlockCountMetric->Incr();
     _currentStatistics->IncrDeadlockCount();
 
     PerformDeadlockIntervention(collectionDurationNs);
