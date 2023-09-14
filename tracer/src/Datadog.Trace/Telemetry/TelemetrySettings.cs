@@ -59,10 +59,10 @@ namespace Datadog.Trace.Telemetry
 
         public bool MetricsEnabled { get; }
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
-            => FromSource(source, telemetry, IsAgentAvailable);
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, ImmutableTracerSettings tracerSettings)
+            => FromSource(source, telemetry, IsAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan);
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, Func<bool?> isAgentAvailable)
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, Func<bool?> isAgentAvailable, bool isServerless)
         {
             string? configurationError = null;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -156,7 +156,16 @@ namespace Datadog.Trace.Telemetry
 
             // Currently disabled, will be flipped to true in later versions as part of the rollout
             // Also, will require v2 enabled
-            var metricsEnabled = config
+            bool metricsEnabled;
+            if (isServerless)
+            {
+                // disable metrics by default in serverless, because we can't guarantee the correctness
+                metricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.Telemetry.MetricsEnabled, false, ConfigurationOrigins.Default);
+            }
+            else
+            {
+                metricsEnabled = config
                                 .WithKeys(ConfigurationKeys.Telemetry.MetricsEnabled)
                                 .AsBool(
                                      defaultValue: v2Enabled,
@@ -172,6 +181,7 @@ namespace Datadog.Trace.Telemetry
                                                                   : configurationError + ", Cannot enable telemetry metrics unless telemetry V2 is enabled";
                                          return false;
                                      });
+            }
 
             return new TelemetrySettings(
                 telemetryEnabled,
