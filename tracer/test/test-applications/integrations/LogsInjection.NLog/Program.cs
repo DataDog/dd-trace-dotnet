@@ -92,6 +92,20 @@ namespace LogsInjection.NLog
                 {
                     target.FileName = Path.Combine(appDirectory, "log-jsonFile.log");
                 }
+
+                // ones without Log Injection stuff
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile2");
+                if (target is not null)
+                {
+                    target.FileName = Path.Combine(appDirectory, "log-textFile2.log");
+                }
+
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile2");
+                if (target is not null)
+                {
+                    target.FileName = Path.Combine(appDirectory, "log-jsonFile2.log");
+                }
+
                 LogManager.ReconfigExistingLoggers();
             }
 #endif
