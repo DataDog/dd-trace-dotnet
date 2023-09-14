@@ -30,7 +30,7 @@ RUN apk update \
         libintl \
         libssl1.1 \
         libstdc++ \
-        zlib \
+        zlib-dev \
         \
         # SDK dependencies
         curl \
