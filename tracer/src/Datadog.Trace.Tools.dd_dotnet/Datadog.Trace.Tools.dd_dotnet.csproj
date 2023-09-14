@@ -50,7 +50,7 @@
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
     <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="PublishAotCompressed" Version="1.0.1" />
+    <PackageReference Include="PublishAotCompressed" Version="42.42.42-dev" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>
 
