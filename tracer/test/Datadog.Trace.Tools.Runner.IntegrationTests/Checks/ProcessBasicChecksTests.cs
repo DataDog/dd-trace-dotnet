@@ -354,7 +354,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
             result.Should().BeTrue();
 
@@ -374,7 +374,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
             result.Should().BeFalse();
 
@@ -392,7 +392,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
             result.Should().BeFalse();
 
@@ -408,7 +408,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
             result.Should().BeFalse();
 
@@ -425,7 +425,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             using var console = ConsoleHelper.Redirect();
 
-            var result = ProcessBasicCheck.CheckRegistry(registryService);
+            var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
             result.Should().BeFalse();
 

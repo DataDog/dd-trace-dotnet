@@ -13,6 +13,16 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
 {
     internal class RegistryService : IRegistryService
     {
+        private readonly RegistryKey? _localMachine;
+
+        public RegistryService(RegistryKey? localMachine = null)
+        {
+            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                _localMachine = localMachine ?? Registry.LocalMachine;
+            }
+        }
+
         public string[] GetLocalMachineValueNames(string key)
         {
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
@@ -52,7 +62,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
                 return versionFound;
             }
 
-            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+            var registryKey = _localMachine?.OpenSubKey(key);
 
             if (registryKey != null)
             {
