@@ -51,9 +51,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// <param name="name">The name of the logger</param>
         /// <param name="configuration">The logging configuration</param>
         /// <returns>Calltarget state value</returns>
-        public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, TLoggingConfiguration configuration)
+        public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, ref TLoggingConfiguration configuration)
         {
+            if (instance.TryDuckCast<ILogFactoryProxy>(out var nlogLogFactory))
+            {
+                if (nlogLogFactory.IsDisposing)
+                {
+                    // if there is no configuration for NLog, we create our own
+                    // when we do this we need to set NLog.LogFactory.Configuration to the new TLoggingConfiguration that we create
+                    // When the .Configuration property is called it then goes and will close/dispose the "old" configuration (which was null)
+                    // Then this "instance" of the LogFactory is disposed of
+                    Log.Warning("Logfactory is disposing so not doing stuff!");
+                    return CallTargetState.GetDefault();
+                }
+            }
+
             var tracerManager = TracerManager.Instance;
+            bool setConfiguration = false;
+            if (configuration is null)
+            {
+                // TODO assuming that LoggingConfiguration is the same for all supported versions at the moment
+                // NLog had no configuration provided, so we'll need to create one
+                var loggingConfigurationType = Type.GetType("NLog.Config.LoggingConfiguration, NLog", throwOnError: false);
+                if (loggingConfigurationType is null)
+                {
+                    // TODO - is logging here the best route?
+                    Log.Warning("Failed to get NLog.Config.LoggingConfiguration Type");
+                    return CallTargetState.GetDefault();
+                }
+
+                var loggingConfigurationInstance = Activator.CreateInstance(loggingConfigurationType);
+                if (loggingConfigurationInstance is null)
+                {
+                    // TODO - is logging here the best route
+                    Log.Warning("Failed to create instance of NLog.Config.LoggingConfiguration Type");
+                    return CallTargetState.GetDefault();
+                }
+
+                // we need to update the configuration and then bail out of this function
+                if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy))
+                {
+                    setConfiguration = true;
+                    configuration = (TLoggingConfiguration)loggingConfigurationInstance;
+                    Log.Information("Setup custom NLog config");
+                }
+            }
 
             if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
             {
@@ -69,6 +111,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 {
                     // Not really generating a span, but the point is it's enabled and added
                     tracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.NLog);
+                }
+
+                if (wasAdded && setConfiguration)
+                {
+                    // we need to update the configuration and then bail out of this function
+                    if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy))
+                    {
+                        logFactoryProxy.Configuration = configuration;
+                        Log.Information("Setup custom NLog config");
+                    }
                 }
             }
 
