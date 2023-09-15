@@ -3029,7 +3029,7 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: tool_artifacts_tests_windows
-  dependsOn: [dotnet_tool, merge_commit_id, build_windows_tracer]
+  dependsOn: [dotnet_tool, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3164,6 +3164,12 @@ stages:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(Agent.TempDirectory)/runner
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet $(artifactSuffix)
+      inputs:
+        artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
@@ -3185,6 +3191,11 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunDdDotnetArtifactTests"
 
     - task: PublishTestResults@2
       displayName: publish test results
