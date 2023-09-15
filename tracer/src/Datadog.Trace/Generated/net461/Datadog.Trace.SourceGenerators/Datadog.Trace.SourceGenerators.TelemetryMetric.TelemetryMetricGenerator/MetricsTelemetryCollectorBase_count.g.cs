@@ -796,5 +796,5 @@ internal partial class MetricsTelemetryCollectorBase
     private static int[] CountEntryCounts { get; }
         = new []{ 4, 171, 57, 1, 3, 4, 2, 2, 4, 1, 1, 1, 22, 3, 2, 4, 4, 1, 22, 3, 2, 44, 6, 1, 57, 1, 22, 3, 1, 1, 5, 11, 1, 12, 1, 40, 40, 10, 10, 4, 1, 2, 10, 9, 63, 1, 5, 1, 5, 1, 5, 4, 1, 5, 1, 1, 4, 4, 4, 1, 1, };
 
-    private const int _countsLength = 713;
+    private const int CountLength = 713;
 }

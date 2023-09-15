@@ -75,5 +75,5 @@ internal partial class MetricsTelemetryCollectorBase
     private static int[] DistributionEntryCounts { get; }
         = new []{ 14, 2, 2, 2, 2, 9, 1, 1, 1, 1, 1, 1, 1, 1, };
 
-    private const int _distributionsLength = 39;
+    private const int DistributionLength = 39;
 }

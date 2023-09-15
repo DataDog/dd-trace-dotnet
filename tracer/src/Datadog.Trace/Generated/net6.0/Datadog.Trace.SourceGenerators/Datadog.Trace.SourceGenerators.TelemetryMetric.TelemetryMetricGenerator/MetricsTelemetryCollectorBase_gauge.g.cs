@@ -33,5 +33,5 @@ internal partial class MetricsTelemetryCollectorBase
     private static int[] GaugeEntryCounts { get; }
         = new []{ 1, 6, 1, };
 
-    private const int _gaugesLength = 8;
+    private const int GaugeLength = 8;
 }
