@@ -14,5 +14,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// </summary>
         /// <docgen category='Layout Options' order='10' />
         bool IncludeScopeProperties { get; set; }
+
+        [DuckField(Name = "_includeScopeProperties")]
+        bool IncludeScopePropertiesField { get; } // added in v5
     }
 }
