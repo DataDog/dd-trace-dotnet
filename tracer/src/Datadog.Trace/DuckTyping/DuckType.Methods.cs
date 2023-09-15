@@ -999,8 +999,15 @@ namespace Datadog.Trace.DuckTyping
                 Func<Type, Type, bool> needsDuckChainingFunc,
                 Func<LazyILGenerator, Type, Type, Type> addDuckChainIlFunc)
             {
-                // Check if the target method returns something
+                var isValueWithType = false;
+                var originalOuterMethodReturnType = outerMethodReturnType;
+                if (outerMethodReturnType.IsGenericType && outerMethodReturnType.GetGenericTypeDefinition() == typeof(ValueWithType<>))
+                {
+                    outerMethodReturnType = outerMethodReturnType.GenericTypeArguments[0];
+                    isValueWithType = true;
+                }
 
+                // Check if the target method returns something
                 if ((innerMethodReturnType == typeof(void) && outerMethodReturnType != typeof(void))
                  || (innerMethodReturnType != typeof(void) && outerMethodReturnType == typeof(void)))
                 {
@@ -1023,6 +1030,13 @@ namespace Datadog.Trace.DuckTyping
                         // If the type is not the expected type we try a conversion.
                         il.WriteSafeTypeConversion(currentReturnType, outerMethodReturnType);
                     }
+                }
+
+                if (isValueWithType)
+                {
+                    il.Emit(OpCodes.Ldtoken, innerMethodReturnType);
+                    il.EmitCall(OpCodes.Call, GetTypeFromHandleMethodInfo, null!);
+                    il.EmitCall(OpCodes.Call, originalOuterMethodReturnType.GetMethod("Create", BindingFlags.Static | BindingFlags.Public)!, null!);
                 }
 
                 il.Emit(OpCodes.Ret);
