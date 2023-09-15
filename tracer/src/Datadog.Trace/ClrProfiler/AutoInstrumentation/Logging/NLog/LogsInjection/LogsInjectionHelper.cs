@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
@@ -32,7 +33,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         ///     Adds necessary configuration elements to inject trace information in logs.
         /// </summary>
         /// <param name="loggingConfiguration">The NLog LoggingConfiguration to configure.</param>
-        public static void ConfigureLogsInjection(object loggingConfiguration)
+        /// <param name="assembly">The NLog Assembly to determine what kind of types/properties we have.</param>
+        public static void ConfigureLogsInjection(object loggingConfiguration, Assembly assembly)
         {
             if (loggingConfiguration == null)
             {
@@ -41,7 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             if (_nLogVersion is null)
             {
-                var assembly = loggingConfiguration.GetType().Assembly;
                 if (assembly is null)
                 {
                     Log.Warning("Failed to get the NLog Assembly in ConfigureLogsInjection");

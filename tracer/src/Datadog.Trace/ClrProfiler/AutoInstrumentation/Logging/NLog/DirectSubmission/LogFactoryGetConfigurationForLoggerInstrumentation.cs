@@ -6,8 +6,6 @@
 
 using System;
 using System.ComponentModel;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -70,10 +68,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             var tracerManager = TracerManager.Instance;
 
+            // extract the assembly here and the version
+            var assembly = typeof(TTarget).Assembly;
+
             // we don't want to do logs injection with our custom configuration that we create as there won't be any targets
             if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
             {
-                LogsInjectionHelper.ConfigureLogsInjection(configuration);
+                LogsInjectionHelper.ConfigureLogsInjection(configuration, assembly);
             }
 
             // if there isn't a configuration AND we have DirectLogSubmission enabled, create a configuration
