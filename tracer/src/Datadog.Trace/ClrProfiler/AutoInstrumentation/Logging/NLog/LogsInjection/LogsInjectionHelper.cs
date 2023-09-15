@@ -18,6 +18,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     internal static class LogsInjectionHelper
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper));
+        private static NLogVersion? _nLogVersion = null;
+
+        private enum NLogVersion
+        {
+            NLog50,
+            NLog45,
+            NLog43To45,
+            NLogPre43,
+        }
 
         /// <summary>
         ///     Adds necessary configuration elements to inject trace information in logs.
@@ -28,6 +37,35 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             if (loggingConfiguration == null)
             {
                 return;
+            }
+
+            if (_nLogVersion is null)
+            {
+                var assembly = loggingConfiguration.GetType().Assembly;
+                if (assembly is null)
+                {
+                    Log.Warning("Failed to get the NLog Assembly in ConfigureLogsInjection");
+                    return;
+                }
+
+                var targetWithContext = assembly.GetType("NLog.Targets.TargetWithContext");
+
+                if (targetWithContext?.GetProperty("IncludeScopeProperties") is not null)
+                {
+                    _nLogVersion = NLogVersion.NLog50;
+                }
+                else if (targetWithContext is not null)
+                {
+                    _nLogVersion = NLogVersion.NLog45;
+                }
+                else if (targetWithContext is null)
+                {
+                    // Type was added in NLog 4.3, so we can use it to safely determine the version
+                    var testType = assembly.GetType("NLog.Config.ExceptionRenderingFormat");
+                    _nLogVersion = testType is null ? NLogVersion.NLogPre43 : NLogVersion.NLog43To45;
+                }
+
+                Log.Information("Setting NLog version to {Version}", _nLogVersion.ToString());
             }
 
             if (!loggingConfiguration.TryDuckCast<IBasicLoggingConfigurationProxy>(out var loggingConfigurationProxy))
@@ -213,10 +251,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     }
                     else if (layout.TryDuckCast<ISimpleLayoutProxy>(out var simpleLayoutProxy))
                     {
-                        var currentVersion = simpleLayoutProxy.GetType().Assembly.GetName().Version;
-                        var v46 = new Version("4.6.0");
-
-                        bool useMdc = currentVersion < v46;
+                        bool useMdc = _nLogVersion == NLogVersion.NLogPre43 || _nLogVersion == NLogVersion.NLog43To45;
 
                         // hacky implementation to get everything in
                         if (!simpleLayoutProxy.Text.Contains("dd.env"))
