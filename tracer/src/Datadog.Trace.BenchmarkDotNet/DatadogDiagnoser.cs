@@ -24,7 +24,7 @@ public class DatadogDiagnoser : IDiagnoser
     /// <summary>
     /// Default DatadogDiagnoser instance
     /// </summary>
-    public static readonly DatadogDiagnoser Default = new();
+    public static readonly IDiagnoser Default = new DatadogDiagnoser();
 
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "Datadog" };
