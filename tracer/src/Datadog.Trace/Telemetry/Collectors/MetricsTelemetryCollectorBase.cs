@@ -96,9 +96,9 @@ internal abstract partial class MetricsTelemetryCollectorBase
         {
             var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
             AggregateMetric(buffer.PublicApiCounts, timestamp, aggregated.PublicApiCounts);
-            AggregateMetric(buffer.Counts, timestamp, aggregated.Counts);
-            AggregateMetric(buffer.Gauges, timestamp, aggregated.Gauges);
-            AggregateDistribution(buffer.Distributions, aggregated.Distributions);
+            AggregateMetric(buffer.Count, timestamp, aggregated.Counts);
+            AggregateMetric(buffer.Gauge, timestamp, aggregated.Gauges);
+            AggregateDistribution(buffer.Distribution, aggregated.Distributions);
         }
 
         // prepare the buffer for next time
@@ -418,21 +418,21 @@ internal abstract partial class MetricsTelemetryCollectorBase
     {
 #pragma warning disable SA1401 // fields should be private
         public readonly int[] PublicApiCounts;
-        public readonly int[] Counts;
-        public readonly int[] Gauges;
-        public readonly BoundedConcurrentQueue<double>[] Distributions;
+        public readonly int[] Count;
+        public readonly int[] Gauge;
+        public readonly BoundedConcurrentQueue<double>[] Distribution;
 
 #pragma warning restore SA1401
 
         public MetricBuffer()
         {
             PublicApiCounts = new int[PublicApiUsageExtensions.Length];
-            Counts = new int[_countsLength];
-            Gauges = new int[_gaugesLength];
-            Distributions = new BoundedConcurrentQueue<double>[_distributionsLength];
-            for (var i = _distributionsLength - 1; i >= 0; i--)
+            Count = new int[CountLength];
+            Gauge = new int[GaugeLength];
+            Distribution = new BoundedConcurrentQueue<double>[DistributionLength];
+            for (var i = DistributionLength - 1; i >= 0; i--)
             {
-                Distributions[i] = new BoundedConcurrentQueue<double>(queueLimit: 1000);
+                Distribution[i] = new BoundedConcurrentQueue<double>(queueLimit: 1000);
             }
         }
 
@@ -443,19 +443,19 @@ internal abstract partial class MetricsTelemetryCollectorBase
                 PublicApiCounts[i] = 0;
             }
 
-            for (var i = 0; i < Counts.Length; i++)
+            for (var i = 0; i < Count.Length; i++)
             {
-                Counts[i] = 0;
+                Count[i] = 0;
             }
 
-            for (var i = 0; i < Gauges.Length; i++)
+            for (var i = 0; i < Gauge.Length; i++)
             {
-                Gauges[i] = 0;
+                Gauge[i] = 0;
             }
 
-            for (var i = 0; i < Distributions.Length; i++)
+            for (var i = 0; i < Distribution.Length; i++)
             {
-                while (Distributions[i].TryDequeue(out _)) { }
+                while (Distribution[i].TryDequeue(out _)) { }
             }
         }
     }
