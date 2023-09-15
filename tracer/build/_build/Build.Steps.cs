@@ -1970,14 +1970,14 @@ partial class Build
          // for testing on linux.
          var sampleProjects = new List<AbsolutePath>
          {
-             TracerDirectory / "test/test-applications/integrations/Samples.Console/*.csproj",
-             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMinimalApis/*.csproj",
-             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMvc31/*.csproj"             
+             TracerDirectory / "test/test-applications/integrations/Samples.Console/Samples.Console.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMinimalApis/Samples.AspNetCoreMinimalApis.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMvc31/Samples.AspNetCoreMvc31.csproj"
          };
 
          if (IsWin)
          {
-             sampleProjects.Add(TracerDirectory / "test/test-applications/aspnet/Samples.AspNetMvc5/*.csproj");
+             sampleProjects.Add(TracerDirectory / "test/test-applications/aspnet/Samples.AspNetMvc5/Samples.AspNetMvc5.csproj");
          }
 
          // do the build and publish separately to avoid dependency issues
