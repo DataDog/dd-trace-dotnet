@@ -6,6 +6,7 @@
 using System;
 using System.Runtime.CompilerServices;
 using System.Threading;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util.Delegates;
 using FluentAssertions;
 using Xunit;
@@ -452,5 +453,40 @@ public class ActionInstrumentationTests
         callbacks.Count.Value = 0;
         DelegateInstrumentation.Wrap(null, typeof(Action<string, string, string, string, string>), callbacks).DynamicInvoke("Arg01", "Arg02", "Arg03", "Arg04", "Arg05");
         callbacks.Count.Value.Should().Be(2);
+    }
+
+    [Fact]
+    public void FromDucktypeValueWithTypeTest()
+    {
+        // With an actual delegate in the original type
+        var originalType = new OriginalType();
+        var proxyType = originalType.DuckCast<IProxyType>();
+        var callbacks = new Action1Callbacks();
+        originalType.MyDelegate = (arg1) => { callbacks.Count.Value++; };
+        originalType.MyDelegate.Should().NotBeNull();
+        proxyType.MyDelegate = proxyType.MyDelegate.Instrument(callbacks);
+
+        originalType.MyDelegate("Arg01");
+        callbacks.Count.Value.Should().Be(3);
+
+        // With Null value in the original type
+        originalType = new OriginalType();
+        originalType.MyDelegate.Should().BeNull();
+        proxyType = originalType.DuckCast<IProxyType>();
+        callbacks = new Action1Callbacks();
+        proxyType.MyDelegate = proxyType.MyDelegate.Instrument(callbacks);
+
+        originalType.MyDelegate("Arg01");
+        callbacks.Count.Value.Should().Be(2);
+    }
+
+    private class OriginalType
+    {
+        public CustomAction<string> MyDelegate { get; set; }
+    }
+
+    internal interface IProxyType
+    {
+        public ValueWithType<Delegate> MyDelegate { get; set; }
     }
 }
