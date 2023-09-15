@@ -140,6 +140,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountIastRequestTainted(int increment = 1)
+    {
+    }
+
     public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
     {
     }

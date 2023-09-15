@@ -203,7 +203,7 @@ internal enum Count
     /// <summary>
     /// Counts the number of tainted objects after a request
     /// </summary>
-    [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,#endregion
+    [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
 #endregion
 #region CIVisibility Namespace
 
