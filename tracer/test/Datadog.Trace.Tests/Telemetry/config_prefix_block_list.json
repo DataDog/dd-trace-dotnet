@@ -122,6 +122,8 @@
   "DD_AwsKinesis_",
   "DD_TRACE_AzureServiceBus_",
   "DD_AzureServiceBus_",
+  "DD_TRACE_Random_",
+  "DD_Random_",
   "trace.amqp_enabled",
   "trace.amqp_analytics_enabled",
   "trace.amqp_analytics_sample_rate",
