@@ -252,12 +252,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 false => UnTracedLogTypes.None,
             };
 
-            return new[] { _textFile, _textFile2, GetJsonTestFile(unTracedLogType) };
+            return new[] { _textFile, _textFile2, GetJsonTestFile(unTracedLogType), GetJsonTestFile2(unTracedLogType) };
         }
 
         private LogFileTest GetJsonTestFile(UnTracedLogTypes unTracedLogType) => new()
         {
             FileName = "log-jsonFile.log",
+            RegexFormat = @"""{0}"": {1}",
+            UnTracedLogTypes = unTracedLogType,
+            PropertiesUseSerilogNaming = false
+        };
+
+        private LogFileTest GetJsonTestFile2(UnTracedLogTypes unTracedLogType) => new()
+        {
+            FileName = "log-jsonFile2.log",
             RegexFormat = @"""{0}"": {1}",
             UnTracedLogTypes = unTracedLogType,
             PropertiesUseSerilogNaming = false
