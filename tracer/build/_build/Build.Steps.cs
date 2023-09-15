@@ -61,7 +61,7 @@ partial class Build
 
     AbsolutePath NativeBuildDirectory => RootDirectory / "obj";
 
-    const string LibDdwafVersion = "1.12.0";
+    const string LibDdwafVersion = "1.14.0";
 
     string[] OlderLibDdwafVersions = new [] {"1.3.0", "1.10.0"};
 
@@ -1151,7 +1151,8 @@ partial class Build
                 var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
     
                 var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
-                                             .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"));
+                                             .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
+                                             .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
     
                 var projects = includeIntegration
                     .Concat(includeSecurity)
@@ -1525,6 +1526,7 @@ partial class Build
             // These samples are currently skipped.
             var projectsToSkip = new[]
             {
+                "Samples.AzureServiceBus", // We are not running in CI because we haven't set up an emulator
                 "Samples.Msmq",  // Doesn't run on Linux
                 "Samples.Owin.WebApi2", // Doesn't run on Linux
                 "Samples.RateLimiter", // I think we _should_ run this one (assuming it has tests)

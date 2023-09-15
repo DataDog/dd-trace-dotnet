@@ -9,7 +9,7 @@ using Datadog.Profiler.IntegrationTests.Helpers;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Profiler.IntegrationTests
+namespace Datadog.Profiler.IntegrationTests.Timeline
 {
     public class TimelineTest
     {
@@ -40,7 +40,7 @@ namespace Datadog.Profiler.IntegrationTests
             Assert.True(CheckTimestampsAsLabelForAllSamples(runner.Environment.PprofDir));
         }
 
-        private bool CheckTimestampsAsLabelForAllSamples(String directory)
+        private bool CheckTimestampsAsLabelForAllSamples(string directory)
         {
             foreach (var profile in SamplesHelper.GetProfiles(directory))
             {

@@ -210,6 +210,7 @@ internal static class MetricTags
         [Description("integration_name:ssrf")]Ssrf,
         [Description("integration_name:ldap")]Ldap,
         [Description("integration_name:awskinesis")]AwsKinesis,
+        [Description("integration_name:azureservicebus")]AzureServiceBus,
     }
 
     public enum InstrumentationError

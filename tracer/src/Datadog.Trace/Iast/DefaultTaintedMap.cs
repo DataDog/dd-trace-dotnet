@@ -230,6 +230,11 @@ internal class DefaultTaintedMap : ITaintedMap
         return hash & _lengthMask;
     }
 
+    public int GetEstimatedSize()
+    {
+        return _entriesCount;
+    }
+
     // For testing only
     public List<ITaintedObject> GetListValues()
     {

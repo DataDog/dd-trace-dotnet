@@ -384,12 +384,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if NET6_0
                 new object[] { "11.3.8" },
                 new object[] { "12.21.0" },
-                new object[] { "13.5.0" },
+                new object[] { "13.5.1" },
 #endif
 #if NET7_0
                 new object[] { "11.3.8" },
                 new object[] { "12.21.0" },
-                new object[] { "13.5.0" },
+                new object[] { "13.5.1" },
 #endif
 #endif
             };

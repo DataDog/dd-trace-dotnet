@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
@@ -67,6 +68,12 @@ public class AppSecWafBenchmark
 
         var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
         var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.2.json"));
+
+        if (!initResult.Success || initResult.HasErrors)
+        {
+            throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
+        }
+
         Waf = initResult.Waf;
     }
 

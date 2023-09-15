@@ -67,6 +67,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
 
         // *
 
+        [Duck(Name = "PublicGetSetValueType")]
+        public virtual ValueWithType<int> PublicGetSetValueTypeWithType { get; set; }
+
+        // *
+
         public virtual int this[int index]
         {
             get => default;

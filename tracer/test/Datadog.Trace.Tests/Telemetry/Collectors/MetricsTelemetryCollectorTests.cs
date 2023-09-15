@@ -12,6 +12,7 @@ using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using Xunit.Abstractions;
 using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
@@ -19,7 +20,7 @@ namespace Datadog.Trace.Tests.Telemetry.Collectors;
 public class MetricsTelemetryCollectorTests
 {
     [Fact]
-    public void AggregatingMultipleTimes_GivesNoStats()
+    public async Task AggregatingMultipleTimes_GivesNoStats()
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.AggregateMetrics();
@@ -28,6 +29,7 @@ public class MetricsTelemetryCollectorTests
         var metrics = collector.GetMetrics();
         metrics.Metrics.Should().BeNull();
         metrics.Distributions.Should().BeNull();
+        await collector.DisposeAsync();
     }
 
     [Fact]
@@ -40,6 +42,7 @@ public class MetricsTelemetryCollectorTests
         var metrics = collector.GetMetrics();
         metrics.Metrics.Should().BeNull();
         metrics.Distributions.Should().BeNull();
+        await collector.DisposeAsync();
     }
 
     [Fact]
@@ -81,7 +84,7 @@ public class MetricsTelemetryCollectorTests
     [Theory]
     [InlineData(null)]
     [InlineData("1.2.3")]
-    public void AllMetricsAreReturned(string wafVersion)
+    public async Task AllMetricsAreReturned(string wafVersion)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
@@ -278,27 +281,40 @@ public class MetricsTelemetryCollectorTests
                 Namespace = NS.General,
             },
         });
+        await collector.DisposeAsync();
     }
 
     [Fact]
-    public void ShouldAggregateMetricsAutomatically()
+    public async Task ShouldAggregateMetricsAutomatically()
     {
         var aggregationPeriod = TimeSpan.FromMilliseconds(500);
+        var mutex = new ManualResetEventSlim();
 
-        var collector = new MetricsTelemetryCollector(aggregationPeriod);
-        // theoretically ~10 aggregations in this time period
+        var collector = new MetricsTelemetryCollector(
+            aggregationPeriod,
+            () =>
+            {
+                if (!mutex.IsSet)
+                {
+                    mutex.Set();
+                }
+            });
+
+        // theoretically ~4 aggregations in this time period
         var count = 0;
-        while (count < 50)
+        while (count < 20)
         {
             collector.RecordCountSpanFinished(1);
-            Thread.Sleep(100);
+            await Task.Delay(100);
             count++;
         }
 
+        mutex.Wait(TimeSpan.FromSeconds(60)).Should().BeTrue();
         var metrics = collector.GetMetrics();
         metrics.Metrics.Should()
                .ContainSingle(x => x.Metric == Count.SpanFinished.GetName())
                .Which.Points.Should()
                .NotBeEmpty(); // we expect ~10 points, but don't assert that number to avoid flakiness
+        await collector.DisposeAsync();
     }
 }

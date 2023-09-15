@@ -519,9 +519,7 @@
       "user_tags":[]
     },
     "request.tainted": {
-      "tags": [
-        "vulnerability_type"
-      ],
+      "tags": [],
       "metric_type": "count",
       "data_type": "values",
       "description": "Number of tainted values at the end of a request",

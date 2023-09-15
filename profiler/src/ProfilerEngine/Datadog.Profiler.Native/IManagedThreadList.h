@@ -22,4 +22,5 @@ public:
     virtual uint32_t CreateIterator() = 0;
     virtual std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
+    virtual std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) = 0;
 };

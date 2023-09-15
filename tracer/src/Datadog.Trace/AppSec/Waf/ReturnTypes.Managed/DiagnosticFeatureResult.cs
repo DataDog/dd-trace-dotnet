@@ -41,7 +41,7 @@ internal class DiagnosticFeatureResult
 
     private static IReadOnlyList<string> GetListKey(Dictionary<string, object> diagObject, string key)
     {
-        if (diagObject.TryGetValue(key, out var listObj) && listObj is object[] list)
+        if (diagObject.TryGetValue(key, out var listObj) && listObj is List<object> list)
         {
             return list.Cast<string>().ToList();
         }
