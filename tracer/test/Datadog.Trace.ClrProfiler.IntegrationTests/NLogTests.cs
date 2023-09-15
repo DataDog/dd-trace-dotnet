@@ -215,14 +215,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (context == ContextNone) { return; }
 
             // Skip for versions that don't support json
-            if (testFiles.Length < 4) { return; }
-
-            var test = testFiles[1];
-            var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
-            var logs = GetLogFileContents(logFilePath);
-            foreach (var log in logs)
+            foreach (var testFile in testFiles)
             {
-                log.Should().MatchRegex(string.Format(test.RegexFormat, CustomContextKey, $@"""{CustomContextValue}"""));
+                if (testFile.FileName.Contains("json"))
+                {
+                    var test = testFile; // jsonFile
+                    var logFilePath = Path.Combine(EnvironmentHelper.GetSampleApplicationOutputDirectory(packageVersion), test.FileName);
+                    var logs = GetLogFileContents(logFilePath);
+                    foreach (var log in logs)
+                    {
+                        log.Should().MatchRegex(string.Format(test.RegexFormat, CustomContextKey, $@"""{CustomContextValue}"""));
+                    }
+                }
             }
         }
 
@@ -252,7 +256,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 false => UnTracedLogTypes.None,
             };
 
-            return new[] { _textFile, _textFile2, GetJsonTestFile(unTracedLogType), GetJsonTestFile2(unTracedLogType) };
+            if (logsInjectionEnabled)
+            {
+                return new[] { _textFile, _textFile2, GetJsonTestFile(unTracedLogType), GetJsonTestFile2(unTracedLogType) };
+            }
+            else
+            {
+                return new[] { _textFile, GetJsonTestFile(unTracedLogType) };
+            }
         }
 
         private LogFileTest GetJsonTestFile(UnTracedLogTypes unTracedLogType) => new()
