@@ -76,11 +76,11 @@ internal class DatadogExporter : IExporter
                 if (!_testModules.TryGetValue(benchmarkModule.Key, out var testModule))
                 {
                     BenchmarkMetadata.GetTimes(benchmarkModule.Key, out var moduleStartTime, out var moduleEndTime);
-                    testModule = TestSession.CreateModule(
-                        benchmarkModule.Key.GetName().Name ?? "Session",
-                        "BenchmarkDotNet",
-                        version,
-                        startDate: moduleStartTime);
+                    var moduleName = benchmarkModule.Key.GetName().Name ?? "Module";
+                    var framework = "BenchmarkDotNet";
+                    testModule = moduleStartTime is null ?
+                                     TestSession.CreateModule(moduleName, framework, version) :
+                                     TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
                     _testModules[benchmarkModule.Key] = testModule;
                 }
 

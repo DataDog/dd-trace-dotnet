@@ -38,7 +38,7 @@ internal static class BenchmarkMetadata
     public static void SetStartTime(object key, DateTime dateTime)
     {
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
-        if (dateTime < value.StartTime)
+        if (value.StartTime is null || dateTime < value.StartTime)
         {
             value.StartTime = dateTime;
         }
@@ -47,13 +47,13 @@ internal static class BenchmarkMetadata
     public static void SetEndTime(object key, DateTime dateTime)
     {
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
-        if (dateTime > value.EndTime)
+        if (value.EndTime is null || dateTime > value.EndTime)
         {
             value.EndTime = dateTime;
         }
     }
 
-    public static void GetTimes(object key, out DateTime startTime, out DateTime endTime)
+    public static void GetTimes(object key, out DateTime? startTime, out DateTime? endTime)
     {
         var value = MetadataByBenchmark.GetOrAdd(key, @case => new());
         startTime = value.StartTime;
@@ -66,8 +66,8 @@ internal static class BenchmarkMetadata
 
         public ulong SpanId { get; set; }
 
-        public DateTime StartTime { get; set; } = DateTime.MaxValue;
+        public DateTime? StartTime { get; set; }
 
-        public DateTime EndTime { get; set; } = DateTime.MinValue;
+        public DateTime? EndTime { get; set; }
     }
 }

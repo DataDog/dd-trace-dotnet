@@ -203,7 +203,7 @@ public sealed class TestSuite
     /// <param name="traceId">Trace Id</param>
     /// <param name="spanId">Span Id</param>
     /// <returns>Test instance</returns>
-    internal Test InternalCreateTest(string name, DateTimeOffset startDate, TraceId traceId, ulong spanId)
+    internal Test InternalCreateTest(string name, DateTimeOffset? startDate, TraceId traceId, ulong spanId)
     {
         return new Test(this, name, startDate, traceId, spanId);
     }
