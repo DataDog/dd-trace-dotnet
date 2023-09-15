@@ -282,8 +282,8 @@ internal static class MetricTags
         [Description("event_type:suite")] Suite,
         [Description("event_type:module")] Module,
         [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
-        [Description("event_type:session;unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
-        [Description("event_type:session;has_codeowner;unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
         [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
     }
 
