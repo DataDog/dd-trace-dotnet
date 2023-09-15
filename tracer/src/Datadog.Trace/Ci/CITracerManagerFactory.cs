@@ -63,6 +63,11 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        protected override ITelemetryController CreateTelemetryController(ImmutableTracerSettings settings, IDiscoveryService discoveryService)
+        {
+            return TelemetryFactory.Instance.CreateCiVisibilityTelemetryController(settings, discoveryService);
+        }
+
         protected override IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
             return new CIGitMetadataTagsProvider();

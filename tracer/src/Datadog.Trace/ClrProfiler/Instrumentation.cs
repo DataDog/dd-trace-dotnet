@@ -136,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 InitializeTracer(sw);
 
-                InitializeServerless(sw);
+                InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
             }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler
 
             InitializeTracer(sw);
 
-            InitializeServerless(sw);
+            InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
 
             InitializeAppSecLegacy(sw);
 
@@ -403,11 +403,11 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
-        private static void InitializeServerless(Stopwatch sw)
+        private static void InitializeServerless(Stopwatch sw, LambdaMetadata metadata)
         {
             try
             {
-                Serverless.InitIfNeeded();
+                Serverless.InitIfNeeded(metadata);
             }
             catch (Exception ex)
             {
