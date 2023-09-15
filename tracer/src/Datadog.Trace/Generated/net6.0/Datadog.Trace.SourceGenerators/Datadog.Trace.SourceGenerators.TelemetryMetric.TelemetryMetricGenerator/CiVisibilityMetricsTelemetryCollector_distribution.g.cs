@@ -4,11 +4,9 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class MetricsTelemetryCollector
+internal partial class CiVisibilityMetricsTelemetryCollector
 {
     public void RecordDistributionInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
-        var index = 0 + (int)tag;
-        _buffer.Distributions[index].TryEnqueue(value);
     }
 }

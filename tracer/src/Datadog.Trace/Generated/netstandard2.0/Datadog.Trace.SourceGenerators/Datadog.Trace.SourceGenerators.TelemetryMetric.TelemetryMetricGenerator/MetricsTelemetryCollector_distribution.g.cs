@@ -11,37 +11,4 @@ internal partial class MetricsTelemetryCollector
         var index = 0 + (int)tag;
         _buffer.Distributions[index].TryEnqueue(value);
     }
-
-    /// <summary>
-    /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.Distribution" /> values.
-    /// </summary>
-    private static AggregatedDistribution[] GetDistributionBuffer()
-        => new AggregatedDistribution[]
-        {
-            // init_time, index = 0
-            new(new[] { "component:total" }),
-            new(new[] { "component:byref_pinvoke" }),
-            new(new[] { "component:calltarget_state_byref_pinvoke" }),
-            new(new[] { "component:traceattributes_pinvoke" }),
-            new(new[] { "component:managed" }),
-            new(new[] { "component:calltarget_defs_pinvoke" }),
-            new(new[] { "component:serverless" }),
-            new(new[] { "component:calltarget_derived_defs_pinvoke" }),
-            new(new[] { "component:calltarget_interface_defs_pinvoke" }),
-            new(new[] { "component:discovery_service" }),
-            new(new[] { "component:rcm" }),
-            new(new[] { "component:dynamic_instrumentation" }),
-            new(new[] { "component:tracemethods_pinvoke" }),
-            new(new[] { "component:iast" }),
-        };
-
-    /// <summary>
-    /// Gets an array of metric counts, indexed by integer value of the <see cref="Datadog.Trace.Telemetry.Metrics.Distribution" />.
-    /// Each value represents the number of unique entries in the buffer returned by <see cref="GetDistributionBuffer()" />
-    /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
-    /// </summary>
-    private static int[] DistributionEntryCounts { get; }
-        = new []{ 14, };
-
-    private const int _distributionsLength = 14;
 }

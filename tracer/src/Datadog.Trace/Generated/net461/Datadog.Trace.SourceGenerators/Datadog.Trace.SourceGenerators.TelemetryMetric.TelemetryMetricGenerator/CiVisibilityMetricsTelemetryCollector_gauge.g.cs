@@ -4,21 +4,17 @@
 using System.Threading;
 
 namespace Datadog.Trace.Telemetry;
-internal partial class MetricsTelemetryCollector
+internal partial class CiVisibilityMetricsTelemetryCollector
 {
     public void RecordGaugeStatsBuckets(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[0], value);
     }
 
     public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
     {
-        var index = 1 + (int)tag;
-        Interlocked.Exchange(ref _buffer.Gauges[index], value);
     }
 
     public void RecordGaugeDirectLogQueue(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[7], value);
     }
 }
