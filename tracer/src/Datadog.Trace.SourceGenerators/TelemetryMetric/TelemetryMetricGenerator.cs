@@ -100,11 +100,11 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             };
 
             spc.AddSource($"{enumDetails.ShortName}Extensions.g.cs", SourceText.From(enumSource, Encoding.UTF8));
-            spc.AddSource($"MetricsTelemetryCollectorBase_{enumDetails.MetricType}.g.cs", SourceText.From(baseSource, Encoding.UTF8));
-            spc.AddSource($"MetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
-            spc.AddSource($"CiVisibilityMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(ciVisibilitySource, Encoding.UTF8));
-            spc.AddSource($"IMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(interfaceSource, Encoding.UTF8));
-            spc.AddSource($"NullMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(nullSource, Encoding.UTF8));
+            spc.AddSource($"MetricsTelemetryCollectorBase_{enumDetails.ShortName}.g.cs", SourceText.From(baseSource, Encoding.UTF8));
+            spc.AddSource($"MetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
+            spc.AddSource($"CiVisibilityMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(ciVisibilitySource, Encoding.UTF8));
+            spc.AddSource($"IMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(interfaceSource, Encoding.UTF8));
+            spc.AddSource($"NullMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(nullSource, Encoding.UTF8));
 
             static Dictionary<string, EquatableArray<string>> GetEnumDictionary(in EnumDetails details)
             {

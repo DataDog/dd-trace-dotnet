@@ -98,7 +98,7 @@ public class TelemetryMetricGeneratorTests
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ };
 
-                private const int _countsLength = 0;
+                private const int TestMetricLength = 0;
             }
             """;
 
@@ -294,7 +294,7 @@ public class TelemetryMetricGeneratorTests
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 4, 12, 1, };
 
-                private const int _countsLength = 18;
+                private const int TestMetricLength = 18;
             }
             """;
 
@@ -309,24 +309,24 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[0], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[0], increment);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int increment = 1)
                 {
                     var index = 1 + (int)tag;
-                    Interlocked.Add(ref _buffer.Counts[index], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[index], increment);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int increment = 1)
                 {
                     var index = 5 + ((int)tag1 * 3) + (int)tag2;
-                    Interlocked.Add(ref _buffer.Counts[index], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[index], increment);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[17], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[17], increment);
                 }
             }
             """;
@@ -342,7 +342,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int increment = 1)
                 {
-                    Interlocked.Add(ref _buffer.Counts[0], increment);
+                    Interlocked.Add(ref _buffer.TestMetric[0], increment);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int increment = 1)
@@ -553,7 +553,7 @@ public class TelemetryMetricGeneratorTests
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 4, 12, 1, };
 
-                private const int _gaugesLength = 18;
+                private const int TestMetricLength = 18;
             }
             """;
 
@@ -568,24 +568,24 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[0], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[0], value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int value)
                 {
                     var index = 1 + (int)tag;
-                    Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[index], value);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, int value)
                 {
                     var index = 5 + ((int)tag1 * 3) + (int)tag2;
-                    Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[index], value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[17], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[17], value);
                 }
             }
             """;
@@ -601,7 +601,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(int value)
                 {
-                    Interlocked.Exchange(ref _buffer.Gauges[0], value);
+                    Interlocked.Exchange(ref _buffer.TestMetric[0], value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, int value)
@@ -812,7 +812,7 @@ public class TelemetryMetricGeneratorTests
                 private static int[] TestMetricEntryCounts { get; }
                     = new []{ 1, 4, 12, 1, };
 
-                private const int _distributionsLength = 18;
+                private const int TestMetricLength = 18;
             }
             """;
 
@@ -827,24 +827,24 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(double value)
                 {
-                    _buffer.Distributions[0].TryEnqueue(value);
+                    _buffer.TestMetric[0].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, double value)
                 {
                     var index = 1 + (int)tag;
-                    _buffer.Distributions[index].TryEnqueue(value);
+                    _buffer.TestMetric[index].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricTwoTagMetric(MyTests.TestMetricNameSpace.LogLevel tag1, MyTests.TestMetricNameSpace.ErrorType tag2, double value)
                 {
                     var index = 5 + ((int)tag1 * 3) + (int)tag2;
-                    _buffer.Distributions[index].TryEnqueue(value);
+                    _buffer.TestMetric[index].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricZeroAgainTagMetric(double value)
                 {
-                    _buffer.Distributions[17].TryEnqueue(value);
+                    _buffer.TestMetric[17].TryEnqueue(value);
                 }
             }
             """;
@@ -860,7 +860,7 @@ public class TelemetryMetricGeneratorTests
             {
                 public void RecordTestMetricZeroTagMetric(double value)
                 {
-                    _buffer.Distributions[0].TryEnqueue(value);
+                    _buffer.TestMetric[0].TryEnqueue(value);
                 }
 
                 public void RecordTestMetricOneTagMetric(MyTests.TestMetricNameSpace.LogLevel tag, double value)
@@ -929,6 +929,319 @@ public class TelemetryMetricGeneratorTests
         trees[4].Should().Be(expectedCiVisibility);
         trees[5].Should().Be(expectedInterface);
         trees[6].Should().Be(expectedNull);
+    }
+
+    [Fact]
+    public void CanGenerateForMultipleMetricsOfSameType()
+    {
+        const string input = """
+            using Datadog.Trace.SourceGenerators;
+            using System.ComponentModel;
+
+            namespace MyTests.TestMetricNameSpace;
+
+            [TelemetryMetricType("count")]
+            public enum Count
+            { 
+                [TelemetryMetric("metric.zero")]
+                ZeroTagMetric,
+            }
+
+            [TelemetryMetricType("count")]
+            public enum CountCi
+            { 
+                [TelemetryMetric("metric.other", true, "civisibility")]
+                OtherMetric,
+            }
+            """;
+
+        const string expectedCountEnum = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace MyTests.TestMetricNameSpace;
+            internal static partial class CountExtensions
+            {
+                /// <summary>
+                /// The number of separate metrics in the <see cref="MyTests.TestMetricNameSpace.Count" /> metric.
+                /// </summary>
+                public const int Length = 1;
+            
+                /// <summary>
+                /// Gets the metric name for the provided metric
+                /// </summary>
+                /// <param name="metric">The metric to get the name for</param>
+                /// <returns>The datadog metric name</returns>
+                public static string GetName(this MyTests.TestMetricNameSpace.Count metric)
+                    => metric switch
+                    {
+                        MyTests.TestMetricNameSpace.Count.ZeroTagMetric => "metric.zero",
+                        _ => null!,
+                    };
+            
+                /// <summary>
+                /// Gets whether the metric is a "common" metric, used by all tracers
+                /// </summary>
+                /// <param name="metric">The metric to check</param>
+                /// <returns>True if the metric is a "common" metric, used by all languages</returns>
+                public static bool IsCommon(this MyTests.TestMetricNameSpace.Count metric)
+                    => metric switch
+                    {
+                        _ => true,
+                    };
+            
+                /// <summary>
+                /// Gets the custom namespace for the provided metric
+                /// </summary>
+                /// <param name="metric">The metric to get the name for</param>
+                /// <returns>The datadog metric name</returns>
+                public static string? GetNamespace(this MyTests.TestMetricNameSpace.Count metric)
+                    => metric switch
+                    {
+                        _ => null,
+                    };
+            }
+            """;
+
+        const string expectedCountBase = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class MetricsTelemetryCollectorBase
+            {
+                /// <summary>
+                /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.Count" /> values.
+                /// </summary>
+                private static AggregatedMetric[] GetCountBuffer()
+                    => new AggregatedMetric[]
+                    {
+                        // metric.zero, index = 0
+                        new(null),
+                    };
+            
+                /// <summary>
+                /// Gets an array of metric counts, indexed by integer value of the <see cref="MyTests.TestMetricNameSpace.Count" />.
+                /// Each value represents the number of unique entries in the buffer returned by <see cref="GetCountBuffer()" />
+                /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
+                /// </summary>
+                private static int[] CountEntryCounts { get; }
+                    = new []{ 1, };
+            
+                private const int CountLength = 1;
+            }
+            """;
+
+        const string expectedCountCollector = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class MetricsTelemetryCollector
+            {
+                public void RecordCountZeroTagMetric(int increment = 1)
+                {
+                    Interlocked.Add(ref _buffer.Count[0], increment);
+                }
+            }
+            """;
+
+        const string expectedCountCiVisibility = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class CiVisibilityMetricsTelemetryCollector
+            {
+                public void RecordCountZeroTagMetric(int increment = 1)
+                {
+                }
+            }
+            """;
+
+        const string expectedCountInterface = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial interface IMetricsTelemetryCollector
+            {
+                public void RecordCountZeroTagMetric(int increment = 1);
+            }
+            """;
+
+        const string expectedCountNull = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class NullMetricsTelemetryCollector
+            {
+                public void RecordCountZeroTagMetric(int increment = 1)
+                {
+                }
+            }
+            """;
+
+        const string expectedCountCiEnum = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace MyTests.TestMetricNameSpace;
+            internal static partial class CountCiExtensions
+            {
+                /// <summary>
+                /// The number of separate metrics in the <see cref="MyTests.TestMetricNameSpace.CountCi" /> metric.
+                /// </summary>
+                public const int Length = 1;
+            
+                /// <summary>
+                /// Gets the metric name for the provided metric
+                /// </summary>
+                /// <param name="metric">The metric to get the name for</param>
+                /// <returns>The datadog metric name</returns>
+                public static string GetName(this MyTests.TestMetricNameSpace.CountCi metric)
+                    => metric switch
+                    {
+                        MyTests.TestMetricNameSpace.CountCi.OtherMetric => "metric.other",
+                        _ => null!,
+                    };
+            
+                /// <summary>
+                /// Gets whether the metric is a "common" metric, used by all tracers
+                /// </summary>
+                /// <param name="metric">The metric to check</param>
+                /// <returns>True if the metric is a "common" metric, used by all languages</returns>
+                public static bool IsCommon(this MyTests.TestMetricNameSpace.CountCi metric)
+                    => metric switch
+                    {
+                        _ => true,
+                    };
+            
+                /// <summary>
+                /// Gets the custom namespace for the provided metric
+                /// </summary>
+                /// <param name="metric">The metric to get the name for</param>
+                /// <returns>The datadog metric name</returns>
+                public static string? GetNamespace(this MyTests.TestMetricNameSpace.CountCi metric)
+                    => metric switch
+                    {
+                        MyTests.TestMetricNameSpace.CountCi.OtherMetric => "civisibility",
+                        _ => null,
+                    };
+            }
+            """;
+
+        const string expectedCountCiBase = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class MetricsTelemetryCollectorBase
+            {
+                /// <summary>
+                /// Creates the buffer for the <see cref="MyTests.TestMetricNameSpace.CountCi" /> values.
+                /// </summary>
+                private static AggregatedMetric[] GetCountCiBuffer()
+                    => new AggregatedMetric[]
+                    {
+                        // metric.other, index = 0
+                        new(null),
+                    };
+            
+                /// <summary>
+                /// Gets an array of metric counts, indexed by integer value of the <see cref="MyTests.TestMetricNameSpace.CountCi" />.
+                /// Each value represents the number of unique entries in the buffer returned by <see cref="GetCountCiBuffer()" />
+                /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
+                /// </summary>
+                private static int[] CountCiEntryCounts { get; }
+                    = new []{ 1, };
+            
+                private const int CountCiLength = 1;
+            }
+            """;
+
+        const string expectedCountCiCollector = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class MetricsTelemetryCollector
+            {
+                public void RecordCountCiOtherMetric(int increment = 1)
+                {
+                    Interlocked.Add(ref _buffer.CountCi[0], increment);
+                }
+            }
+            """;
+
+        const string expectedCountCiCiVisibility = """
+            // <auto-generated/>
+            #nullable enable
+            
+            using System.Threading;
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class CiVisibilityMetricsTelemetryCollector
+            {
+                public void RecordCountCiOtherMetric(int increment = 1)
+                {
+                    Interlocked.Add(ref _buffer.CountCi[0], increment);
+                }
+            }
+            """;
+
+        const string expectedCountCiInterface = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial interface IMetricsTelemetryCollector
+            {
+                public void RecordCountCiOtherMetric(int increment = 1);
+            }
+            """;
+
+        const string expectedCountCiNull = """
+            // <auto-generated/>
+            #nullable enable
+            
+            namespace Datadog.Trace.Telemetry;
+            internal partial class NullMetricsTelemetryCollector
+            {
+                public void RecordCountCiOtherMetric(int increment = 1)
+                {
+                }
+            }
+            """;
+        var (diagnostics, trees) = TestHelpers.GetGeneratedTrees<TelemetryMetricGenerator>(input);
+        using var scope = new AssertionScope();
+        diagnostics.Should().BeEmpty();
+        trees.Length.Should().Be(13);
+        // tree 0 is the attributes
+        trees[1].Should().Be(expectedCountEnum);
+        trees[2].Should().Be(expectedCountBase);
+        trees[3].Should().Be(expectedCountCollector);
+        trees[4].Should().Be(expectedCountCiVisibility);
+        trees[5].Should().Be(expectedCountInterface);
+        trees[6].Should().Be(expectedCountNull);
+
+        trees[7].Should().Be(expectedCountCiEnum);
+        trees[8].Should().Be(expectedCountCiBase);
+        trees[9].Should().Be(expectedCountCiCollector);
+        trees[10].Should().Be(expectedCountCiCiVisibility);
+        trees[11].Should().Be(expectedCountCiInterface);
+        trees[12].Should().Be(expectedCountCiNull);
     }
 
     [Theory]
