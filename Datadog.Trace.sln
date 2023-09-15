@@ -536,9 +536,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.DataStreams.AzureSe
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet", "tracer\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj", "{B28A33A4-C694-4514-BC30-2680605B0B3D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd-dotnet.ArtifactTests", "tracer\test\Datadog.Trace.Tools.dd-dotnet.ArtifactTests\Datadog.Trace.Tools.dd-dotnet.ArtifactTests.csproj", "{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.ArtifactTests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.ArtifactTests\Datadog.Trace.Tools.dd_dotnet.ArtifactTests.csproj", "{604CE6F2-9E90-4D0B-91CB-EBA06880A7D7}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd-dotnet.IntegrationTests", "tracer\test\Datadog.Trace.Tools.dd-dotnet.IntegrationTests\Datadog.Trace.Tools.dd-dotnet.IntegrationTests.csproj", "{A9632530-0FB8-4156-BD3C-DD432527768E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.IntegrationTests\Datadog.Trace.Tools.dd_dotnet.IntegrationTests.csproj", "{A9632530-0FB8-4156-BD3C-DD432527768E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
