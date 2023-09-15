@@ -1964,6 +1964,36 @@ partial class Build
      .Executes(() =>
      {
          DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests));
+
+         // Compile the required samples
+         // There's nothing specifically linux-y here, it's just that we only build a subset of projects
+         // for testing on linux.
+         var sampleProjects = new List<AbsolutePath>
+         {
+             TracerDirectory / "test/test-applications/integrations/Samples.Console/*.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMinimalApis/*.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMvc31/*.csproj"             
+         };
+
+         if (IsWin)
+         {
+             sampleProjects.Add(TracerDirectory / "test/test-applications/aspnet/Samples.AspNetMvc5/*.csproj");
+         }
+
+         // do the build and publish separately to avoid dependency issues
+
+         DotnetBuild(sampleProjects, framework: Framework, noRestore: false);
+
+         DotNetPublish(x => x
+                 .EnableNoRestore()
+                 .EnableNoBuild()
+                 .EnableNoDependencies()
+                 .SetConfiguration(BuildConfiguration)
+                 .SetFramework(Framework)
+                 .SetNoWarnDotNetCore3()
+                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+                 .CombineWith(sampleProjects, (c, project) => c
+                     .SetProject(project)));
      });
 
     Target RunToolArtifactTests => _ => _
