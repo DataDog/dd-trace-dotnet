@@ -4,13 +4,9 @@
 // </copyright>
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -19,7 +15,7 @@ using Xunit.Abstractions;
 
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
-namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
+namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 {
     public class AgentConnectivityCheckTests : ConsoleTestHelper
     {
@@ -149,32 +145,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             var output = await RunTool($"check agent http://localhost:{agent.Port}/");
 
             output.Should().Contain(AgentDetectionFailed);
-        }
-
-        private async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
-        {
-            var targetFolder = @"C:\git\dd-trace-dotnet-diag\tracer\src\Datadog.Trace.Tools.dd_dotnet\bin\Release\net8.0\win-x64\publish";
-            var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.exe" : "dd-dotnet");
-
-            var processStart = new ProcessStartInfo(executable, arguments)
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
-                UseShellExecute = false
-            };
-
-            foreach (var (key, value) in environmentVariables)
-            {
-                processStart.EnvironmentVariables[key] = value;
-            }
-
-            using var helper = new ProcessHelper(Process.Start(processStart));
-
-            await helper.Task;
-
-            var splitOutput = helper.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-            return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
         }
     }
 }

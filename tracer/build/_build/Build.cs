@@ -290,6 +290,12 @@ partial class Build : NukeBuild
        .DependsOn(BuildToolArtifactTests)
        .DependsOn(RunToolArtifactTests);
 
+    Target BuildAndRunDdDotnetArtifactTests => _ => _
+        .Description("Builds and runs the tool artifacts tests")
+        .DependsOn(CompileManagedTestHelpers)
+        .DependsOn(BuildDdDotnetArtifactTests)
+        .DependsOn(RunDdDotnetArtifactTests);
+
     Target PackNuGet => _ => _
         .Description("Creates the NuGet packages from the compiled src directory")
         .After(Clean, CompileManagedSrc)

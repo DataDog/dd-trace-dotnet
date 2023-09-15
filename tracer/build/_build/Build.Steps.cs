@@ -1911,6 +1911,14 @@ partial class Build
               DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
           });
 
+    Target BuildDdDotnetArtifactTests => _ => _
+     .Description("Builds the dd-dotnet artifacts tests")
+     .After(CompileManagedTestHelpers)
+     .Executes(() =>
+     {
+         DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests));
+     });
+
     Target RunToolArtifactTests => _ => _
        .Description("Runs the tool artifacts tests")
        .After(BuildToolArtifactTests)
@@ -1931,6 +1939,26 @@ partial class Build
                 .EnableTrxLogOutput(GetResultsDirectory(project))
                 .WithDatadogLogger());
         });
+
+    Target RunDdDotnetArtifactTests => _ => _
+       .Description("Runs the dd-dotnet artifacts tests")
+       .After(BuildDdDotnetArtifactTests)
+       .Executes(async () =>
+       {
+           var isDebugRun = await IsDebugRun();
+           var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+
+           DotNetTest(config => config
+                   .SetProjectFile(project)
+                   .SetConfiguration(BuildConfiguration)
+                   .EnableNoRestore()
+                   .EnableNoBuild()
+                   .SetIsDebugRun(isDebugRun)
+                   .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                   .SetLogsDirectory(TestLogsDirectory)
+                   .EnableTrxLogOutput(GetResultsDirectory(project))
+                   .WithDatadogLogger());
+       });
 
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")

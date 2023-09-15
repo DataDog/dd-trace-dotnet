@@ -11,97 +11,96 @@ using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
+namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks;
+
+public abstract class ConsoleTestHelper : ToolTestHelper
 {
-    public abstract class ConsoleTestHelper : TestHelper
+    protected ConsoleTestHelper(ITestOutputHelper output)
+        : base("Console", output)
     {
-        protected ConsoleTestHelper(ITestOutputHelper output)
-            : base("Console", output)
+    }
+
+    protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    {
+        return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
+    }
+
+    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    {
+        string sampleAppPath = environmentHelper.GetSampleApplicationPath();
+        var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
+        var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} wait" : "wait";
+
+        var processStart = new ProcessStartInfo(executable, args)
         {
+            UseShellExecute = false,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+
+        MockTracerAgent? agent = null;
+
+        if (enableProfiler)
+        {
+            agent = MockTracerAgent.Create(Output);
+
+            environmentHelper.SetEnvironmentVariables(
+                agent,
+                aspNetCorePort: 1000,
+                processStart.Environment);
         }
 
-        protected Task<ProcessHelper> StartConsole(bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+        foreach (var (key, value) in environmentVariables)
         {
-            return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
+            processStart.EnvironmentVariables[key] = value;
         }
 
-        protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+        var startedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        Action<string> callback = s =>
         {
-            string sampleAppPath = environmentHelper.GetSampleApplicationPath();
-            var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
-            var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} wait" : "wait";
-
-            var processStart = new ProcessStartInfo(executable, args)
+            if (s.StartsWith("Waiting"))
             {
-                UseShellExecute = false,
-                RedirectStandardError = true,
-                RedirectStandardOutput = true
-            };
-
-            MockTracerAgent? agent = null;
-
-            if (enableProfiler)
-            {
-                agent = MockTracerAgent.Create(Output);
-
-                environmentHelper.SetEnvironmentVariables(
-                    agent,
-                    aspNetCorePort: 1000,
-                    processStart.Environment);
+                startedTask.TrySetResult(true);
             }
+        };
 
-            foreach (var (key, value) in environmentVariables)
-            {
-                processStart.EnvironmentVariables[key] = value;
-            }
+        var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
 
-            var startedTask = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        var completed = await Task.WhenAny(
+                            helper.Task,
+                            startedTask.Task,
+                            Task.Delay(TimeSpan.FromSeconds(10)));
 
-            Action<string> callback = s =>
-            {
-                if (s.StartsWith("Waiting"))
-                {
-                    startedTask.TrySetResult(true);
-                }
-            };
-
-            var helper = new CustomProcessHelper(agent, Process.Start(processStart)!, callback);
-
-            var completed = await Task.WhenAny(
-                helper.Task,
-                startedTask.Task,
-                Task.Delay(TimeSpan.FromSeconds(10)));
-
-            if (completed == startedTask.Task)
-            {
-                return helper;
-            }
-
-            helper.Dispose();
-
-            if (completed == helper.Task)
-            {
-                throw new Exception("The target process unexpectedly exited");
-            }
-
-            throw new TimeoutException("Timeout when waiting for the target process to start");
+        if (completed == startedTask.Task)
+        {
+            return helper;
         }
 
-        private class CustomProcessHelper : ProcessHelper
+        helper.Dispose();
+
+        if (completed == helper.Task)
         {
-            private readonly MockTracerAgent? _agent;
+            throw new Exception("The target process unexpectedly exited");
+        }
 
-            public CustomProcessHelper(MockTracerAgent? agent, Process process, Action<string>? onDataReceived = null)
-                : base(process, onDataReceived)
-            {
-                _agent = agent;
-            }
+        throw new TimeoutException("Timeout when waiting for the target process to start");
+    }
 
-            public override void Dispose()
-            {
-                base.Dispose();
-                _agent?.Dispose();
-            }
+    private class CustomProcessHelper : ProcessHelper
+    {
+        private readonly MockTracerAgent? _agent;
+
+        public CustomProcessHelper(MockTracerAgent? agent, Process process, Action<string>? onDataReceived = null)
+            : base(process, onDataReceived)
+        {
+            _agent = agent;
+        }
+
+        public override void Dispose()
+        {
+            base.Dispose();
+            _agent?.Dispose();
         }
     }
 }

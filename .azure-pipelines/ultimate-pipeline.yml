@@ -3029,7 +3029,7 @@ stages:
       displayName: Add $(dotnetToolTag) build tag
 
 - stage: tool_artifacts_tests_windows
-  dependsOn: [dotnet_tool, merge_commit_id]
+  dependsOn: [dotnet_tool, merge_commit_id, build_windows_tracer]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3074,6 +3074,12 @@ stages:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet win-x64
+      inputs:
+        artifact: dd-dotnet-win-x64
+        path: $(monitoringHome)/win-x64
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.zip'
@@ -3087,6 +3093,11 @@ stages:
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests
+      displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 

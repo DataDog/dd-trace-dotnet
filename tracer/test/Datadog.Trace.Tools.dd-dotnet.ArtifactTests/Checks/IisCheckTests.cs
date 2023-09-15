@@ -6,7 +6,6 @@
 using System;
 using System.Diagnostics;
 using System.IO;
-using System.Linq;
 using System.Net.Http;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
@@ -16,270 +15,242 @@ using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
+namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks;
+
+public class IisCheckTests : ToolTestHelper
 {
-    public class IisCheckTests : TestHelper
+    public IisCheckTests(ITestOutputHelper output)
+        : base(GetSampleProjectName(), GetSampleProjectPath(), output)
     {
-        public IisCheckTests(ITestOutputHelper output)
-            : base(GetSampleProjectName(), GetSampleProjectPath(), output)
-        {
-        }
+    }
 
-        [SkippableTheory]
-        [Trait("RunOnWindows", "True")]
-        [InlineData(true)]
-        [InlineData(false)]
-        public async Task WorkingApp(bool mixedRuntimes)
-        {
+    [SkippableTheory]
+    [Trait("RunOnWindows", "True")]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task WorkingApp(bool mixedRuntimes)
+    {
 #if NETFRAMEWORK
-            if (mixedRuntimes)
-            {
-                // This test doesn't make sense on .NET Framework
-                throw new SkipException();
-            }
-#endif
-            EnsureWindowsAndX64();
-
-            var siteName = mixedRuntimes ? "sample/mixed" : "sample";
-
-            using var iisFixture = await StartIisWithGac(GetAppType());
-
-            var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
-
-            if (mixedRuntimes)
-            {
-                output.Should().Contain(Resources.IisMixedRuntimes);
-            }
-
-            output.Should().Contain(Resources.IisNoIssue);
-        }
-
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task NestedApp()
+        if (mixedRuntimes)
         {
-            EnsureWindowsAndX64();
-
-            var siteName = "sample/nested/app";
-
-            using var iisFixture = await StartIisWithGac(GetAppType());
-            var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
-
-            output.Should().Contain(Resources.IisNoIssue);
+            // This test doesn't make sense on .NET Framework
+            throw new SkipException();
         }
+#endif
+        EnsureWindowsAndX64();
+
+        var siteName = mixedRuntimes ? "sample/mixed" : "sample";
+
+        using var iisFixture = await StartIisWithGac(GetAppType());
+
+        var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
+
+        if (mixedRuntimes)
+        {
+            output.Should().Contain(Resources.IisMixedRuntimes);
+        }
+
+        output.Should().Contain(Resources.IisNoIssue);
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task NestedApp()
+    {
+        EnsureWindowsAndX64();
+
+        var siteName = "sample/nested/app";
+
+        using var iisFixture = await StartIisWithGac(GetAppType());
+        var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
+
+        output.Should().Contain(Resources.IisNoIssue);
+    }
 
 #if !NETFRAMEWORK
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task OutOfProcess()
-        {
-            EnsureWindowsAndX64();
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task OutOfProcess()
+    {
+        EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIisWithGac(IisAppType.AspNetCoreOutOfProcess);
+        using var iisFixture = await StartIisWithGac(IisAppType.AspNetCoreOutOfProcess);
 
-            var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+        var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
-            output.Should().Contain(Resources.OutOfProcess);
-            output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
-            output.Should().Contain(Resources.IisNoIssue);
-        }
+        output.Should().Contain(Resources.OutOfProcess);
+        output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
+        output.Should().Contain(Resources.IisNoIssue);
+    }
 #endif
 
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task NoGac()
-        {
-            EnsureWindowsAndX64();
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task NoGac()
+    {
+        EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(GetAppType());
+        using var iisFixture = await StartIis(GetAppType());
 
-            var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+        var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
-            output.Should().Contain(Resources.MissingGac);
-        }
+        output.Should().Contain(Resources.MissingGac);
+    }
 
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task ListSites()
-        {
-            EnsureWindowsAndX64();
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task ListSites()
+    {
+        EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(GetAppType());
+        using var iisFixture = await StartIis(GetAppType());
 
-            var output = await RunTool($"check iis dummySite {IisExpressOptions(iisFixture)}");
+        var output = await RunTool($"check iis dummySite {IisExpressOptions(iisFixture)}");
 
-            output.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
-        }
+        output.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
+    }
 
-        [SkippableFact]
-        [Trait("RunOnWindows", "True")]
-        public async Task ListApplications()
-        {
-            EnsureWindowsAndX64();
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task ListApplications()
+    {
+        EnsureWindowsAndX64();
 
-            using var iisFixture = await StartIis(GetAppType());
+        using var iisFixture = await StartIis(GetAppType());
 
-            var output = await RunTool($"check iis sample/dummy {IisExpressOptions(iisFixture)}");
+        var output = await RunTool($"check iis sample/dummy {IisExpressOptions(iisFixture)}");
 
-            output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
-        }
+        output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
+    }
 
-        private static IisAppType GetAppType()
-        {
+    private static IisAppType GetAppType()
+    {
 #if NETFRAMEWORK
             return IisAppType.AspNetIntegrated;
 #else
-            return IisAppType.AspNetCoreInProcess;
+        return IisAppType.AspNetCoreInProcess;
 #endif
-        }
+    }
 
-        private static string GetSampleProjectName()
-        {
+    private static string GetSampleProjectName()
+    {
 #if NET6_0_OR_GREATER
             return "AspNetCoreMinimalApis";
 #elif NETFRAMEWORK
             return "AspNetMvc5";
 #else
-            return "AspNetCoreMvc31";
+        return "AspNetCoreMvc31";
 #endif
-        }
+    }
 
-        private static string GetSampleProjectPath()
-        {
+    private static string GetSampleProjectPath()
+    {
 #if NETFRAMEWORK
             return Path.Combine("test", "test-applications", "aspnet");
 #else
-            return null;
+        return null;
 #endif
-        }
+    }
 
-        private static string IisExpressOptions(IisFixture iisFixture)
-        {
-            return $"--workerProcess {iisFixture.IisExpress.Process.Id} --iisConfigPath {iisFixture.IisExpress.ConfigFile}";
-        }
+    private static string IisExpressOptions(IisFixture iisFixture)
+    {
+        return $"--workerProcess {iisFixture.IisExpress.Process.Id} --iisConfigPath {iisFixture.IisExpress.ConfigFile}";
+    }
 
-        private static void EnsureWindowsAndX64()
-        {
+    private static void EnsureWindowsAndX64()
+    {
 #if NETFRAMEWORK || (NETCOREAPP3_1_OR_GREATER && !NET5_0)
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
-                || IntPtr.Size != 8)
-            {
-                throw new SkipException();
-            }
-#else
+        if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows)
+            || IntPtr.Size != 8)
+        {
             throw new SkipException();
+        }
+#else
+        throw new SkipException();
 #endif
+    }
+
+    private async Task<GacIisFixture> StartIisWithGac(IisAppType appType)
+    {
+        // GacFixture is not compatible with .NET Core, use the Nuke target instead
+        GacIisFixture.GacAdd();
+
+        try
+        {
+            return new GacIisFixture(await StartIis(appType));
+        }
+        catch
+        {
+            GacIisFixture.GacRemove();
+            throw;
+        }
+    }
+
+    private async Task<IisFixture> StartIis(IisAppType appType)
+    {
+        var fixture = new IisFixture { UseGac = false };
+
+        if (appType is IisAppType.AspNetCoreInProcess or IisAppType.AspNetCoreOutOfProcess)
+        {
+            fixture.ShutdownPath = "/shutdown";
         }
 
-        private async Task<GacIisFixture> StartIisWithGac(IisAppType appType)
+        try
         {
+            fixture.TryStartIis(this, appType);
+        }
+        catch (Exception)
+        {
+            fixture.Dispose();
+            throw;
+        }
+
+        // Send a request to initialize the app
+        using var httpClient = new HttpClient();
+        await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
+
+        return fixture;
+    }
+
+    private class GacIisFixture : IDisposable
+    {
+        private readonly IisFixture _fixture;
+
+        public GacIisFixture(IisFixture fixture)
+        {
+            _fixture = fixture;
+        }
+
+        public static implicit operator IisFixture(GacIisFixture fixture) => fixture._fixture;
+
+        public static void GacAdd()
+        {
+            RunNukeTask("GacAdd");
+        }
+
+        public static void GacRemove()
+        {
+            RunNukeTask("GacRemove");
+        }
+
+        public void Dispose()
+        {
+            _fixture.Dispose();
+
+            GacRemove();
+        }
+
+        private static void RunNukeTask(string task)
+        {
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
             // GacFixture is not compatible with .NET Core, use the Nuke target instead
-            GacIisFixture.GacAdd();
-
-            try
+            var startInfo = new ProcessStartInfo("powershell", $"{buildPs1} {task} --framework net461")
             {
-                return new GacIisFixture(await StartIis(appType));
-            }
-            catch
-            {
-                GacIisFixture.GacRemove();
-                throw;
-            }
-        }
-
-        private async Task<IisFixture> StartIis(IisAppType appType)
-        {
-            var fixture = new IisFixture { UseGac = false };
-
-            if (appType is IisAppType.AspNetCoreInProcess or IisAppType.AspNetCoreOutOfProcess)
-            {
-                fixture.ShutdownPath = "/shutdown";
-            }
-
-            try
-            {
-                fixture.TryStartIis(this, appType);
-            }
-            catch (Exception)
-            {
-                fixture.Dispose();
-                throw;
-            }
-
-            // Send a request to initialize the app
-            using var httpClient = new HttpClient();
-            await httpClient.GetAsync($"http://localhost:{fixture.HttpPort}/");
-
-            return fixture;
-        }
-
-        private async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
-        {
-            // TODO: point to the actual artifact
-            var targetFolder = @"C:\git\dd-trace-dotnet-diag\tracer\src\Datadog.Trace.Tools.dd_dotnet\bin\Release\net7.0\win-x64\publish";
-            var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.exe" : "dd-dotnet");
-
-            var processStart = new ProcessStartInfo(executable, arguments)
-            {
-                RedirectStandardError = true,
-                RedirectStandardOutput = true,
                 UseShellExecute = false
             };
 
-            foreach (var (key, value) in environmentVariables)
-            {
-                processStart.EnvironmentVariables[key] = value;
-            }
-
-            using var helper = new ProcessHelper(Process.Start(processStart));
-
-            await helper.Task;
-
-            var splitOutput = helper.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-            return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
-        }
-
-        private class GacIisFixture : IDisposable
-        {
-            private readonly IisFixture _fixture;
-
-            public GacIisFixture(IisFixture fixture)
-            {
-                _fixture = fixture;
-            }
-
-            public static implicit operator IisFixture(GacIisFixture fixture) => fixture._fixture;
-
-            public static void GacAdd()
-            {
-                RunNukeTask("GacAdd");
-            }
-
-            public static void GacRemove()
-            {
-                RunNukeTask("GacRemove");
-            }
-
-            public void Dispose()
-            {
-                _fixture.Dispose();
-
-                GacRemove();
-            }
-
-            private static void RunNukeTask(string task)
-            {
-                var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
-
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                var startInfo = new ProcessStartInfo("powershell", $"{buildPs1} {task} --framework net461")
-                {
-                    UseShellExecute = false
-                };
-
-                Process.Start(startInfo)!.WaitForExit();
-            }
+            Process.Start(startInfo)!.WaitForExit();
         }
     }
 }

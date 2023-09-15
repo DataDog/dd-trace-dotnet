@@ -8,13 +8,12 @@ using Xunit.Abstractions;
 
 [assembly: TestFramework("Datadog.Trace.Tools.Runner.ArtifactTests.CustomTestFramework", "Datadog.Trace.Tools.Runner.ArtifactTests")]
 
-namespace Datadog.Trace.Tools.Runner.ArtifactTests
+namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
+
+public class CustomTestFramework : TestHelpers.CustomTestFramework
 {
-    public class CustomTestFramework : TestHelpers.CustomTestFramework
+    public CustomTestFramework(IMessageSink messageSink)
+        : base(messageSink)
     {
-        public CustomTestFramework(IMessageSink messageSink)
-            : base(messageSink)
-        {
-        }
     }
 }
