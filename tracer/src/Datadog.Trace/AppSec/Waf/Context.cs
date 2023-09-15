@@ -83,10 +83,16 @@ namespace Datadog.Trace.AppSec.Waf
             lock (_stopwatch)
             {
                 var pool = Encoder.Pool;
-                var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
-                code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
-                pool.Return(_argCache);
-                _argCache.Clear();
+                try
+                {
+                    var pwArgs = Encoder.Encode(addresses, applySafetyLimits: true, argToFree: _argCache, pool: pool);
+                    code = _waf.Run(_contextHandle, ref pwArgs, ref retNative, timeoutMicroSeconds);
+                }
+                finally
+                {
+                    pool.Return(_argCache);
+                    _argCache.Clear();
+                }
             }
 
             _stopwatch.Stop();

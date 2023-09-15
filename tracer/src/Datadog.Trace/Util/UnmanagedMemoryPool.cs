@@ -12,6 +12,9 @@ using System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Util;
 
+/// <summary>
+/// Beware that this type is not thread safe and should be used with [ThreadStatic]
+/// </summary>
 internal unsafe class UnmanagedMemoryPool : IDisposable
 {
     private readonly IntPtr* _items;
@@ -40,6 +43,10 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
 
     public bool IsDisposed => _isDisposed;
 
+    /// <summary>
+    /// Beware that this method is not thread safe, and needs to be used with [ThreadStatic] in case of multiple thread scenarios
+    /// </summary>
+    /// <returns>Pointer to a memory block of size specified in the constructor</returns>
     public IntPtr Rent()
     {
         if (IsDisposed)
@@ -47,15 +54,13 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        var items = _items;
-        var length = _length;
-        for (var i = _initialSearchIndex; i < length; i++)
+        for (var i = _initialSearchIndex; i < _length; i++)
         {
-            var inst = items[i];
+            var inst = _items[i];
             if (inst != IntPtr.Zero)
             {
                 _initialSearchIndex = i + 1;
-                items[i] = IntPtr.Zero;
+                _items[i] = IntPtr.Zero;
                 return inst;
             }
         }
@@ -75,13 +80,11 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             ThrowObjectDisposedException();
         }
 
-        var items = _items;
-        var length = _length;
-        for (var i = 0; i < length; i++)
+        for (var i = 0; i < _length; i++)
         {
-            if (items[i] == IntPtr.Zero)
+            if (_items[i] == IntPtr.Zero)
             {
-                items[i] = block;
+                _items[i] = block;
                 _initialSearchIndex = 0;
                 return;
             }
@@ -102,14 +105,12 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             return;
         }
 
-        var items = _items;
-        var length = _length;
         var blockIndex = 0;
-        for (var i = 0; i < length; i++)
+        for (var i = 0; i < _length; i++)
         {
-            if (items[i] == IntPtr.Zero)
+            if (_items[i] == IntPtr.Zero)
             {
-                items[i] = blocks[blockIndex++];
+                _items[i] = blocks[blockIndex++];
                 if (blockIndex == blocks.Count)
                 {
                     _initialSearchIndex = 0;
@@ -136,14 +137,12 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
             return;
         }
 
-        var items = _items;
-        var length = _length;
-        for (var i = 0; i < length; i++)
+        for (var i = 0; i < _length; i++)
         {
-            if (items[i] != IntPtr.Zero)
+            if (_items[i] != IntPtr.Zero)
             {
-                Marshal.FreeCoTaskMem(items[i]);
-                items[i] = IntPtr.Zero;
+                Marshal.FreeCoTaskMem(_items[i]);
+                _items[i] = IntPtr.Zero;
             }
         }
 
