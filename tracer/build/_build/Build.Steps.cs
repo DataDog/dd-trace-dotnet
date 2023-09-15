@@ -1703,12 +1703,59 @@ partial class Build
             var integrationTestProjects =
                 TracerDirectory
                    .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests));
+                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
 
             DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
+        });
+
+    Target CompileLinuxDdDotnetIntegrationTests => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .After(CompileRegressionDependencyLibs)
+        .After(CompileDependencyLibs)
+        .After(CompileManagedTestHelpers)
+        .After(CompileSamplesLinuxOrOsx)
+        .After(CompileMultiApiPackageVersionSamples)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false);
+        });
+
+    Target RunLinuxDdDotnetIntegrationTests => _ => _
+        .After(CompileLinuxOrOsxIntegrationTests)
+        .Description("Runs the linux dd-dotnet integration tests")
+        .Requires(() => !IsWin)
+        .Executes(async () =>
+        {
+            var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
+
+            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureResultsDirectory(project);
+            
+            try
+            {
+                DotNetTest(config => config
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .EnableCrashDumps()
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetTestTargetPlatform(TargetPlatform)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .SetProjectFile(Projects.DdTraceIntegrationTests)
+                    .EnableTrxLogOutput(project)
+                    .WithDatadogLogger());
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
         });
 
     Target RunLinuxIntegrationTests => _ => _

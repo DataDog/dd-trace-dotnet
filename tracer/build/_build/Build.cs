@@ -256,6 +256,7 @@ partial class Build : NukeBuild
         .DependsOn(CompileSamplesLinuxOrOsx)
         .DependsOn(CompileMultiApiPackageVersionSamples)
         .DependsOn(CompileLinuxOrOsxIntegrationTests)
+        .DependsOn(CompileLinuxDdDotnetIntegrationTests)
         .DependsOn(BuildRunnerTool)
         .DependsOn(CopyServerlessArtifacts);
 
@@ -263,7 +264,8 @@ partial class Build : NukeBuild
         .Requires(() => !IsWin)
         .Description("Builds and runs the linux integration tests. Requires docker-compose dependencies")
         .DependsOn(BuildLinuxIntegrationTests)
-        .DependsOn(RunLinuxIntegrationTests);
+        .DependsOn(RunLinuxIntegrationTests)
+        .DependsOn(RunLinuxDdDotnetIntegrationTests);
 
     Target BuildOsxIntegrationTests => _ => _
         .Requires(() => IsOsx)
