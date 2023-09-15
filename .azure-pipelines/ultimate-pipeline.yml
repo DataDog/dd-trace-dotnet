@@ -1483,6 +1483,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - publish: tracer/build_data
       displayName: Uploading integration_tests_windows_msi tracer logs
@@ -1666,6 +1667,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -1843,6 +1845,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - script: |
         sudo chmod -R 644 tracer/build_data/dumps/* || true
@@ -2405,6 +2408,7 @@ stages:
           env:
             DD_LOGGER_DD_API_KEY: $(ddApiKey)
           condition: succeededOrFailed()
+          continueOnError: true
 
         - publish: tracer/build_data
           artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
@@ -2669,6 +2673,7 @@ stages:
         dockerComposeCommand: down
         projectName: ddtrace_$(Build.BuildNumber)
       condition: succeededOrFailed()
+      continueOnError: true
 
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
