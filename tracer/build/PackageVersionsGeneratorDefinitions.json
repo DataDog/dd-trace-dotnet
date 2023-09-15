@@ -1,8 +1,8 @@
 [
   {
     "IntegrationName": "AwsDynamoDb",
-    "SampleProjectName": "Samples.AWS.AwsDynamoDBv2",
-    "NugetPackageSearchName": "AWSSDK.AwsDynamoDBv2",
+    "SampleProjectName": "Samples.AWS.DynamoDBv2",
+    "NugetPackageSearchName": "AWSSDK.DynamoDBv2",
     "MinVersion": "3.0.0",
     "MaxVersionExclusive": "3.8.0",
     "SpecificVersions": [
