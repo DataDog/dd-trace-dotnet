@@ -214,9 +214,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     else if (layout.TryDuckCast<ISimpleLayoutProxy>(out var simpleLayoutProxy))
                     {
                         var currentVersion = simpleLayoutProxy.GetType().Assembly.GetName().Version;
-                        var v43 = new Version("4.3.0");
+                        var v46 = new Version("4.6.0");
 
-                        bool useMdc = currentVersion < v43;
+                        bool useMdc = currentVersion < v46;
 
                         // hacky implementation to get everything in
                         if (!simpleLayoutProxy.Text.Contains("dd.env"))
