@@ -19,7 +19,7 @@ namespace Datadog.Trace.BenchmarkDotNet;
 /// <summary>
 /// Datadog BenchmarkDotNet Diagnoser
 /// </summary>
-internal class DatadogDiagnoser : IDiagnoser
+public class DatadogDiagnoser : IDiagnoser
 {
     /// <summary>
     /// Default DatadogDiagnoser instance
