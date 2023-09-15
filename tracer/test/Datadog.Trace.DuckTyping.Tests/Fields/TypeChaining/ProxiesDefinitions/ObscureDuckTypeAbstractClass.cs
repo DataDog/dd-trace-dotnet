@@ -60,5 +60,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining.ProxiesDefinitions
 
         [DuckField(Name = "_privateSelfTypeField")]
         public abstract IDummyFieldObject PrivateSelfTypeField { get; set; }
+
+        // *
+
+        [DuckField(Name = "_publicSelfTypeField")]
+        public abstract ValueWithType<IDummyFieldObject> PublicSelfTypeFieldWithType { get; set; }
     }
 }
