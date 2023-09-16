@@ -330,7 +330,11 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary> Frees resources </summary>
-        public void Dispose() => _waf?.Dispose();
+        public void Dispose()
+        {
+            _waf?.Dispose();
+            Encoder.Pool.Dispose();
+        }
 
         internal void SetDebugEnabled(bool enabled)
         {
