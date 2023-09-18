@@ -24,6 +24,6 @@ public class RandomAspect
     [AspectMethodInsertAfter("System.Random::.ctor(System.Int32)")]
     public static void Init()
     {
-        IastModule.OnWeakRandomness(_evidenceValue);
+        // IastModule.OnWeakRandomness(_evidenceValue);
     }
 }
