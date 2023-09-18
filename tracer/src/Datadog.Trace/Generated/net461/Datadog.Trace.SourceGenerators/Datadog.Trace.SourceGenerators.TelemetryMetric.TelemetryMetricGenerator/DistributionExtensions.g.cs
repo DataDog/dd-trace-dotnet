@@ -7,7 +7,7 @@ internal static partial class DistributionExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Distribution" /> metric.
     /// </summary>
-    public const int Length = 14;
+    public const int Length = 0;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -17,20 +17,6 @@ internal static partial class DistributionExtensions
     public static string GetName(this Datadog.Trace.Telemetry.Metrics.Distribution metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Distribution.InitTime => "init_time",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadBytes => "endpoint_payload.bytes",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadRequestsMs => "endpoint_payload.requests_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadEventsCount => "endpoint_payload.events_count",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointEventsSerializationMs => "endpoint_payload.events_serialization_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitCommandMs => "git.command_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsSearchCommitsMs => "git_requests.search_commits_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackMs => "git_requests.objects_pack_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackBytes => "git_requests.objects_pack_bytes",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackFiles => "git_requests.objects_pack_files",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsSettingsMs => "git_requests.settings_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityITRSkippableTestsRequestMs => "itr_skippable_tests.request_ms",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityITRSkippableTestsResponseBytes => "itr_skippable_tests.response_bytes",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityCodeCoverageFiles => "code_coverage.files",
             _ => null!,
         };
 
@@ -53,20 +39,6 @@ internal static partial class DistributionExtensions
     public static string? GetNamespace(this Datadog.Trace.Telemetry.Metrics.Distribution metric)
         => metric switch
         {
-            Datadog.Trace.Telemetry.Metrics.Distribution.InitTime => "general",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadBytes => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadRequestsMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointPayloadEventsCount => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityEndpointEventsSerializationMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitCommandMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsSearchCommitsMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackBytes => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsObjectsPackFiles => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityGitRequestsSettingsMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityITRSkippableTestsRequestMs => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityITRSkippableTestsResponseBytes => "civisibility",
-            Datadog.Trace.Telemetry.Metrics.Distribution.CIVisibilityCodeCoverageFiles => "civisibility",
             _ => null,
         };
 }
