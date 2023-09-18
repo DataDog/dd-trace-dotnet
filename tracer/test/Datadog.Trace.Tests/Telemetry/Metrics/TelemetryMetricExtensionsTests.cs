@@ -24,7 +24,6 @@ public class TelemetryMetricExtensionsTests
           .Concat(GetEnums<CountShared>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<CountCIVisibility>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<Gauge>().Select(x => new object[] { x, x.GetName() }))
-          .Concat(GetEnums<Distribution>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<DistributionShared>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<DistributionCIVisibility>().Select(x => new object[] { x, x.GetName() }))
           .ToList();
