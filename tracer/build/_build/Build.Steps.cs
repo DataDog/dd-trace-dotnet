@@ -2026,6 +2026,7 @@ partial class Build
                    .SetProjectFile(project)
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
+                   .SetTargetPlatform(TargetPlatform)
                    .EnableNoRestore()
                    .EnableNoBuild()
                    .SetIsDebugRun(isDebugRun)

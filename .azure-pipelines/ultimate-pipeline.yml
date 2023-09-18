@@ -3102,7 +3102,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462 --TargetPlatform $(targetPlatform)
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -3161,7 +3161,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
-        artifact: linux-profiler-home-$(baseImage)
+        artifact: linux-profiler-home-$(name)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
