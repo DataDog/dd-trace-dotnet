@@ -6,6 +6,8 @@
 
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
@@ -41,6 +43,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryGetConfigurationForLoggerInstrumentation));
 
+        // TODO attempt to store the fact that we've configured a given configuration to not double configure
+        internal static ConditionalWeakTable<object, object> ConfigurationTable { get; } = new();
+
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -52,17 +57,42 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         /// <returns>Calltarget state value</returns>
         public static CallTargetState OnMethodBegin<TTarget, TLoggingConfiguration>(TTarget instance, string name, ref TLoggingConfiguration configuration)
         {
+            Log.Information("NLog configuration setup.");
+
             if (!instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy))
             {
-                Log.Warning("Failed to DuckCast the NLog LogFactory");
+                Log.Information("Failed to DuckCast the NLog LogFactory v4.3+ - attempting v4.3 and lower");
+            }
+
+            if (!instance.TryDuckCast<ILogFactoryPre43Proxy>(out var logFactoryPre43Proxy))
+            {
+                Log.Warning("Failed to DuckCast the NLog LogFactory pre 4.3.");
+            }
+
+            if (logFactoryPre43Proxy is null)
+            {
                 return CallTargetState.GetDefault();
             }
 
-            if (logFactoryProxy.IsDisposing)
+            if (configuration is null)
+            {
+                Log.Information("Configuration is null, will need to make new");
+            }
+
+            if (configuration is not null && ConfigurationTable.TryGetValue(configuration, out _))
+            {
+                Log.Information("We've already configured the configuration, so skipp");
+                return CallTargetState.GetDefault();
+            }
+
+            // TODO what to do when we don't have IsDisposing
+
+            if (logFactoryProxy is not null && logFactoryProxy.IsDisposing)
             {
                 // when logging is stopped (e.g., shutdown) the configuration will be set to null
                 // and this instrumentation will get hit again, so to avoid creating a new configuration
                 // and adding the Datadog Direct Submission target we just need to exit here.
+                Log.Information("Was disposing, so skipping");
                 return CallTargetState.GetDefault();
             }
 
@@ -74,6 +104,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             // we don't want to do logs injection with our custom configuration that we create as there won't be any targets
             if (tracerManager.Settings.LogsInjectionEnabledInternal && configuration is not null)
             {
+                Log.Information("Configuring NLog Logs Injection");
                 LogsInjectionHelper.ConfigureLogsInjection(configuration, assembly);
             }
 
@@ -82,6 +113,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is null)
             {
+                Log.Information("Creating a new configuration for direct log submission");
                 var loggingConfigurationInstance = Activator.CreateInstance(typeof(TLoggingConfiguration));
                 if (loggingConfigurationInstance is null)
                 {
@@ -99,22 +131,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 Log.Information("Created custom NLog configuration");
             }
 
+            if (configuration is not null)
+            {
+                ConfigurationTable.Add(configuration, new()); // TODO hack
+            }
+
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is not null)
             {
+                Log.Information("Setting up direct log submission for NLog");
                 // if configuration is not-null, we've already checked that NLog is enabled
                 var wasAdded = NLogCommon<TTarget>.AddDatadogTarget(configuration);
                 if (wasAdded)
                 {
+                    Log.Information("Added nLog direct log submission target");
                     // Not really generating a span, but the point is it's enabled and added
                     tracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.NLog);
                 }
 
                 if (wasAdded && setConfigurationRequired)
                 {
+                    Log.Information("Updating the nLog Configuration because we had to create our own.");
                     // this is necessary when we create our own configuration as the setter here
                     // does a lot of additional calls to initialize the new configuration.
-                    logFactoryProxy.Configuration = configuration;
+                    logFactoryPre43Proxy.Configuration = configuration;
                 }
             }
 

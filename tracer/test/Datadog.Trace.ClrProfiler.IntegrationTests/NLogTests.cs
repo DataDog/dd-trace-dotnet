@@ -51,6 +51,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
+        public enum ConfigFileType
+        {
+#pragma warning disable SA1602 // Enumeration items should be documented
+            None,
+            NoLogsInjection,
+            LogsInjection,
+            Both
+        }
+
+        public enum LogShipping
+        {
+            On,
+            Off
+#pragma warning restore SA1602 // Enumeration items should be documented
+        }
+
         public static IEnumerable<object[]> GetTestData()
         {
             var minScopeContext = new Version("5.0.0");
@@ -71,19 +87,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     version = new Version((string)item[0]);
                 }
 
-                yield return item.Concat(false).Concat(ContextNone);
-                yield return item.Concat(true).Concat(ContextNone);
+                yield return item.Concat(LogShipping.Off).Concat(ContextNone);
+                yield return item.Concat(LogShipping.On).Concat(ContextNone);
 
                 if (version >= minScopeContext)
                 {
-                    yield return item.Concat(false).Concat("ScopeContext");
-                    yield return item.Concat(true).Concat("ScopeContext");
+                    yield return item.Concat(LogShipping.Off).Concat("ScopeContext");
+                    yield return item.Concat(LogShipping.On).Concat("ScopeContext");
                 }
 
                 if (version >= minMdlc)
                 {
-                    yield return item.Concat(false).Concat("Mdlc");
-                    yield return item.Concat(true).Concat("Mdlc");
+                    yield return item.Concat(LogShipping.Off).Concat("Mdlc");
+                    yield return item.Concat(LogShipping.On).Concat("Mdlc");
                 }
             }
         }
@@ -93,12 +109,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
-        public void InjectsLogsWhenEnabled(string packageVersion, bool enableLogShipping, string context)
+        public void InjectsLogsWhenEnabled(string packageVersion, LogShipping enableLogShipping, string context)
         {
             SetEnvironmentVariable("DD_LOGS_INJECTION", "true");
             SetInstrumentationVerification();
             using var logsIntake = new MockLogsIntake();
-            if (enableLogShipping)
+            if (enableLogShipping == LogShipping.On)
             {
                 EnableDirectLogSubmission(logsIntake.Port, nameof(IntegrationId.NLog), nameof(InjectsLogsWhenEnabled));
             }
