@@ -1970,6 +1970,7 @@ partial class Build
          var sampleProjects = new List<AbsolutePath>
          {
              TracerDirectory / "test/test-applications/integrations/Samples.Console/Samples.Console.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.VersionConflict.1x/Samples.VersionConflict.1x.csproj"
          };
 
          if (!IsWin)
