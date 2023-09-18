@@ -27,8 +27,8 @@ namespace Datadog.Trace.DatabaseMonitoring
                 (propagationStyle is DbmPropagationLevel.Service or DbmPropagationLevel.Full))
             {
                 var propagatorStringBuilder = StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
-                var serviceName = (span.Tags is SqlV1Tags) ? (span.Tags as SqlV1Tags).PeerService : span.Context.ServiceNameInternal;
-                propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(serviceName)).Append('\'');
+                var dddbs = (span.Tags is SqlV1Tags sqlTags) ? sqlTags.PeerService : span.Context.ServiceNameInternal;
+                propagatorStringBuilder.Append(DbmPrefix).Append(Uri.EscapeDataString(dddbs)).Append('\'');
 
                 if (span.Context.TraceContext?.Environment is { } envTag)
                 {
