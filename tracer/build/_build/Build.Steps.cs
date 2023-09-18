@@ -2003,6 +2003,7 @@ partial class Build
             DotNetTest(config => config
                 .SetProjectFile(project)
                 .SetConfiguration(BuildConfiguration)
+                .SetFramework(Framework)
                 .EnableNoRestore()
                 .EnableNoBuild()
                 .SetIsDebugRun(isDebugRun)
