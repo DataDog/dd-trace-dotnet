@@ -3063,6 +3063,12 @@ stages:
     - template: steps/restore-working-directory.yml
 
     - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
       inputs:
         artifact: runner-dotnet-tool
@@ -3151,6 +3157,12 @@ stages:
     - template: steps/restore-working-directory.yml
       parameters:
         artifact: build-linux-$(name)-working-directory
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-$(baseImage)
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
