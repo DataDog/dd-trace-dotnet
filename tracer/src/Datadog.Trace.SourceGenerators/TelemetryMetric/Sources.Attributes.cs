@@ -27,13 +27,38 @@ internal partial class Sources
             /// Initializes a new instance of the <see cref="TelemetryMetricTypeAttribute"/> class.
             /// </summary>
             /// <param name="metricType">The type of the metric, e.g. Count, Gauge</param>
-            public TelemetryMetricTypeAttribute(string metricType) =>
-                this.MetricType = metricType;
+            public TelemetryMetricTypeAttribute(string metricType)
+                : this(metricType, false, true)
+            {
+            }
+
+            /// <summary>
+            /// Initializes a new instance of the <see cref="TelemetryMetricTypeAttribute"/> class.
+            /// </summary>
+            /// <param name="metricType">The type of the metric, e.g. Count, Gauge</param>
+            /// <param name="isCiVisibilityMetric">Should the metrics be emitted by the CI Visibility collector?</param>
+            /// <param name="isApmMetric">Should the metrics be emitted by the standard (APM) collector?</param>
+            public TelemetryMetricTypeAttribute(string metricType, bool isCiVisibilityMetric, bool isApmMetric)
+            {
+                MetricType = metricType;
+                IsCiVisibilityMetric = isCiVisibilityMetric;
+                IsApmMetric = isApmMetric;
+            }
 
             /// <summary>
             /// Gets the type of the metric the enum corresponds to
             /// </summary>
             public string MetricType { get; }
+
+            /// <summary>
+            /// Gets whether the metrics should be emitted by the CI Visibility collector.
+            /// </summary>
+            public bool IsCiVisibilityMetric { get; }
+
+            /// <summary>
+            /// Gets whether the metrics should be emitted by the standard collector.
+            /// </summary>
+            public bool IsApmMetric { get; }
         }
 
         /// <summary>
