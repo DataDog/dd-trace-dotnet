@@ -3179,7 +3179,11 @@ stages:
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
-      displayName: chmod
+      displayName: chmod dd-trace
+
+    - script: |
+        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:

@@ -1961,6 +1961,7 @@ partial class Build
     Target BuildDdDotnetArtifactTests => _ => _
      .Description("Builds the dd-dotnet artifacts tests")
      .After(CompileManagedTestHelpers)
+     .DependsOn(PublishIisSamples)
      .Executes(() =>
      {
          DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests));
@@ -1971,17 +1972,12 @@ partial class Build
              TracerDirectory / "test/test-applications/integrations/Samples.Console/Samples.Console.csproj",
          };
 
-         if (IsWin)
-         {
-             sampleProjects.Add(TracerDirectory / "test/test-applications/aspnet/Samples.AspNetMvc5/Samples.AspNetMvc5.csproj");
-         }
-         else
+         if (!IsWin)
          {
              sampleProjects.Add(TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMinimalApis/Samples.AspNetCoreMinimalApis.csproj");
          }
 
          // do the build and publish separately to avoid dependency issues
-
          DotnetBuild(sampleProjects, framework: Framework, noRestore: false);
 
          DotNetPublish(x => x
