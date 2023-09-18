@@ -12,7 +12,7 @@ namespace Datadog.Trace.Telemetry.Metrics;
 
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1134:Attributes should not share line", Justification = "It's easier to read")]
 [SuppressMessage("StyleCop.CSharp.ReadabilityRules", "SA1124:Do not use regions", Justification = "It's easier to read")]
-[TelemetryMetricType(TelemetryMetricType.Distribution)]
+[TelemetryMetricType(TelemetryMetricType.Distribution, isCiVisibilityMetric: true, isApmMetric: false)]
 internal enum DistributionCIVisibility
 {
     /// <summary>
