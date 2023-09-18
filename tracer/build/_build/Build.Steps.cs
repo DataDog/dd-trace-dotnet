@@ -1203,6 +1203,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
+        .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
@@ -1961,7 +1962,6 @@ partial class Build
     Target BuildDdDotnetArtifactTests => _ => _
      .Description("Builds the dd-dotnet artifacts tests")
      .After(CompileManagedTestHelpers)
-     .DependsOn(PublishIisSamples)
      .Executes(() =>
      {
          DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests));
