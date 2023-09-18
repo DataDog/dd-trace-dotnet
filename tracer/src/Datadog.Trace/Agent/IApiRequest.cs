@@ -10,6 +10,8 @@ namespace Datadog.Trace.Agent
 {
     internal interface IApiRequest
     {
+        bool UseGzip { get; set; }
+
         void AddHeader(string name, string value);
 
         Task<IApiResponse> GetAsync();

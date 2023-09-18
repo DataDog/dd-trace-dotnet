@@ -27,6 +27,8 @@ namespace Datadog.Trace.Agent.Transports
             _streamFactory = streamFactory;
         }
 
+        public bool UseGzip { get; set; }
+
         public void AddHeader(string name, string value)
         {
             _headers.Add(name, value);

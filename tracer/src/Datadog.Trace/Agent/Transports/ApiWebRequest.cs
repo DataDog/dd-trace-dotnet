@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO.Compression;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
@@ -28,6 +29,8 @@ namespace Datadog.Trace.Agent.Transports
         {
             _request = request;
         }
+
+        public bool UseGzip { get; set; }
 
         public void AddHeader(string name, string value)
         {
@@ -56,10 +59,18 @@ namespace Datadog.Trace.Agent.Transports
 
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
-            ResetRequest(method: "POST", contentType, contentEncoding);
-
-            using (var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false))
+            if (UseGzip)
             {
+                ResetRequest(method: "POST", contentType, "gzip");
+                using var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false);
+                using var gzipStream = new GZipStream(requestStream, CompressionLevel.Fastest, true);
+                await gzipStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+                await gzipStream.FlushAsync().ConfigureAwait(false);
+            }
+            else
+            {
+                ResetRequest(method: "POST", contentType, contentEncoding);
+                using var requestStream = await _request.GetRequestStreamAsync().ConfigureAwait(false);
                 await requestStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
             }
 

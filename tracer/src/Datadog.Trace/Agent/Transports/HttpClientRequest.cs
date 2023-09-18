@@ -6,6 +6,7 @@
 #if NETCOREAPP
 using System;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -34,6 +35,8 @@ namespace Datadog.Trace.Agent.Transports
             _getRequest = new HttpRequestMessage(HttpMethod.Get, endpoint);
             _uri = endpoint;
         }
+
+        public bool UseGzip { get; set; }
 
         public void AddHeader(string name, string value)
         {
@@ -83,12 +86,35 @@ namespace Datadog.Trace.Agent.Transports
         public async Task<IApiResponse> PostAsync(ArraySegment<byte> bytes, string contentType, string contentEncoding)
         {
             // re-create HttpContent on every retry because some versions of HttpClient always dispose of it, so we can't reuse.
-            using (var content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count))
+            HttpContent content = null;
+            try
             {
-                content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
-                if (!string.IsNullOrEmpty(contentEncoding))
+                if (UseGzip)
                 {
-                    content.Headers.ContentEncoding.Add(contentEncoding);
+                    var memoryStream = new MemoryStream(bytes.Count);
+                    using (var gzipStream = new GZipStream(memoryStream, CompressionLevel.Fastest, true))
+                    {
+                        await gzipStream.WriteAsync(bytes.Array, bytes.Offset, bytes.Count).ConfigureAwait(false);
+                        await gzipStream.FlushAsync().ConfigureAwait(false);
+                    }
+
+                    memoryStream.Position = 0;
+                    content = new StreamContent(memoryStream);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                    content.Headers.ContentEncoding.Add("gzip");
+                    if (!string.IsNullOrEmpty(contentEncoding))
+                    {
+                        content.Headers.ContentEncoding.Add(contentEncoding);
+                    }
+                }
+                else
+                {
+                    content = new ByteArrayContent(bytes.Array, bytes.Offset, bytes.Count);
+                    content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
+                    if (!string.IsNullOrEmpty(contentEncoding))
+                    {
+                        content.Headers.ContentEncoding.Add(contentEncoding);
+                    }
                 }
 
                 _postRequest.Content = content;
@@ -96,6 +122,10 @@ namespace Datadog.Trace.Agent.Transports
                 var response = await _client.SendAsync(_postRequest).ConfigureAwait(false);
 
                 return new HttpClientResponse(response);
+            }
+            finally
+            {
+                content?.Dispose();
             }
         }
 

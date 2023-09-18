@@ -28,6 +28,8 @@ internal class TestApiRequest : IApiRequest
         Endpoint = endpoint;
     }
 
+    public bool UseGzip { get; set; }
+
     public Uri Endpoint { get; }
 
     public Dictionary<string, string> ExtraHeaders { get; } = new();
