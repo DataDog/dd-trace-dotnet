@@ -104,6 +104,7 @@ namespace Datadog.Trace.Ci.Agent
                     }
                     else
                     {
+                        request.UseGzip = true;
                         request.AddHeader(ApiKeyHeader, CIVisibility.Settings.ApiKey);
                     }
                 }

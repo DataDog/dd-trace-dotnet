@@ -630,7 +630,6 @@ internal class IntelligentTestRunnerClient
 
     private void SetRequestHeader(IApiRequest request, bool useApplicationHeader)
     {
-        request.UseGzip = true;
         request.AddHeader(HttpHeaderNames.TraceId, _id);
         request.AddHeader(HttpHeaderNames.ParentId, _id);
         if (_useEvpProxy)

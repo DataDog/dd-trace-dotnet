@@ -15,6 +15,7 @@ using Datadog.Trace.AppSec;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Agent.Transports
 {
@@ -99,6 +100,11 @@ namespace Datadog.Trace.Agent.Transports
                     }
 
                     memoryStream.Position = 0;
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug("Sending {Bytes} bytes gzipped ({Uncompressed} uncompressed bytes).", memoryStream.Length.ToString("N0"), bytes.Count.ToString("N0"));
+                    }
+
                     content = new StreamContent(memoryStream);
                     content.Headers.ContentType = new MediaTypeHeaderValue(contentType);
                     content.Headers.ContentEncoding.Add("gzip");
