@@ -3057,7 +3057,7 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
@@ -3096,7 +3096,7 @@ stages:
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
-    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462
       displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -3195,7 +3195,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
-        command: "BuildAndRunDdDotnetArtifactTests"
+        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
     - task: PublishTestResults@2
       displayName: publish test results
