@@ -69,8 +69,12 @@ internal static class IastModule
     {
         try
         {
+            Log.Error("Before WeakRandomness.");
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.Random, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
+            Log.Error("Inside WeakRandomness.");
+            var t = GetScope(evidence, IntegrationId.Random, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
+            Log.Error("After WeakRandomness.");
+            return t;
         }
         catch (Exception ex)
         {
@@ -331,6 +335,7 @@ internal static class IastModule
         var stackFrame = frameInfo.StackFrame;
         var filename = stackFrame?.GetFileName();
         var line = string.IsNullOrEmpty(filename) ? 0 : (stackFrame?.GetFileLineNumber() ?? 0);
+        Log.Error("Stack WeakRandomness {Filename} {Line}.", filename, line.ToString());
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             new Location(
