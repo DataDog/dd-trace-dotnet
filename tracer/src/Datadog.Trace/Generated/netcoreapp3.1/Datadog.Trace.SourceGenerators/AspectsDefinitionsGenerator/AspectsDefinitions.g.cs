@@ -352,7 +352,7 @@ namespace Datadog.Trace.ClrProfiler
 "  [AspectMethodInsertBefore(\"System.IO.StreamWriter::.ctor(System.String,System.Boolean)\",\"\",[1],[False],[None],Propagation,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding)\",\"\",[2],[False],[None],Propagation,[])] ReviewPath(System.String)",
 "  [AspectMethodInsertBefore(\"System.IO.StreamWriter::.ctor(System.String,System.Boolean,System.Text.Encoding,System.Int32)\",\"\",[3],[False],[None],Propagation,[])] ReviewPath(System.String)",
-"[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib\",[None],Sink,[WeakRandomness])] Datadog.Trace.Iast.Aspects.RandomAspect",
+"[AspectClass(\"mscorlib,System.Runtime.Extensions,System.Runtime\",[None],Sink,[WeakRandomness])] Datadog.Trace.Iast.Aspects.RandomAspect",
 "  [AspectMethodInsertAfter(\"System.Random::.ctor()\",\"\",[0],[False],[None],Propagation,[])] Init()",
 "  [AspectMethodInsertAfter(\"System.Random::.ctor(System.Int32)\",\"\",[0],[False],[None],Propagation,[])] Init()",
 "[AspectClass(\"mscorlib,netstandard,System.Private.CoreLib,System.Runtime\",[StringOptimization],Propagation,[])] Datadog.Trace.Iast.Aspects.System.StringAspects",

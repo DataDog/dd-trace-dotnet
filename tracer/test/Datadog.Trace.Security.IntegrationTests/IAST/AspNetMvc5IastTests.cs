@@ -151,14 +151,13 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
-    [InlineData(AddressesConstants.RequestQuery, "SqlInjection", "/Iast/SqlQuery?username=Vicent", null)]
-    public async Task TestIastSqlInjectionRequest(string test, string vulnerabilityName, string url, string body)
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SqlQuery?username=Vicent", null)]
+    public async Task TestIastSqlInjectionRequest(string test, string url, string body)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var filename = _enableIast ? "Iast." + vulnerabilityName + ".AspNetMvc5.IastEnabled" :
-            "Iast." + vulnerabilityName + ".AspNetMvc5.IastDisabled";
+        var filename = _enableIast ? "Iast.SqlInjection.AspNetMvc5.IastEnabled" : "Iast.SqlInjection.AspNetMvc5.IastDisabled";
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)

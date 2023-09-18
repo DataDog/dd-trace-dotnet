@@ -41,6 +41,7 @@ public class RandomTests : InstrumentationTestsBase
     public void GivenARandomInstance_WhenCallingNext_VulnerabilityIsReported2()
     {
         var ret = new Random().Next(11);
+        ret.Should().BeInRange(0, 11);
         AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
     }
 
@@ -48,6 +49,7 @@ public class RandomTests : InstrumentationTestsBase
     public void GivenARandomInstance_WhenCallingNext_VulnerabilityIsReported3()
     {
         var ret = new Random().Next(11, 556);
+        ret.Should().BeInRange(11, 556);
         AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
     }
 
