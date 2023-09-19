@@ -7,12 +7,12 @@
 
 using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
+using Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks;
 using Xunit.Abstractions;
 
-namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks;
+namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests;
 
 public abstract class ConsoleTestHelper : ToolTestHelper
 {
@@ -26,11 +26,11 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         return StartConsole(EnvironmentHelper, enableProfiler, environmentVariables);
     }
 
-    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    protected (string Executable, string Args) PrepareSampleApp(EnvironmentHelper environmentHelper)
     {
-        string sampleAppPath = environmentHelper.GetSampleApplicationPath();
+        var sampleAppPath = environmentHelper.GetSampleApplicationPath();
         var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
-        var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} wait" : "wait";
+        var args = EnvironmentHelper.IsCoreClr() ? sampleAppPath : string.Empty;
 
         // this is nasty, but it's the only way I could find to force
         // a .NET Framework exe to run in 32 bit if required
@@ -40,6 +40,15 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         {
             ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
         }
+
+        return (executable, args);
+    }
+
+    protected async Task<ProcessHelper> StartConsole(EnvironmentHelper environmentHelper, bool enableProfiler, params (string Key, string Value)[] environmentVariables)
+    {
+        var (executable, args) = PrepareSampleApp(environmentHelper);
+
+        args += " wait";
 
         var processStart = new ProcessStartInfo(executable, args)
         {

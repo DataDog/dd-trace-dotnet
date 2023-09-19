@@ -28,6 +28,19 @@ public abstract class ToolTestHelper : TestHelper
 
     protected async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
     {
+        var process = RunToolInteractive(arguments, environmentVariables);
+
+        using var helper = new ProcessHelper(process);
+
+        await helper.Task;
+
+        var splitOutput = (helper.StandardOutput + helper.ErrorOutput).Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+        return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
+    }
+
+    protected Process RunToolInteractive(string arguments, params (string Key, string Value)[] environmentVariables)
+    {
         var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
         {
             ("win", _, _) => "win-x64",
@@ -44,6 +57,7 @@ public abstract class ToolTestHelper : TestHelper
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
+            RedirectStandardInput = true,
             UseShellExecute = false
         };
 
@@ -52,12 +66,6 @@ public abstract class ToolTestHelper : TestHelper
             processStart.EnvironmentVariables[key] = value;
         }
 
-        using var helper = new ProcessHelper(Process.Start(processStart));
-
-        await helper.Task;
-
-        var splitOutput = helper.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-        return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
+        return Process.Start(processStart);
     }
 }
