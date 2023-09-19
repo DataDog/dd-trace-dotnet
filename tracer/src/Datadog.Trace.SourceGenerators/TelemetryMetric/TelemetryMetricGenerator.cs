@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -53,10 +54,14 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
 
         context.RegisterSourceOutput(
             validEnums,
-            static (spc, source) => Execute(in source, spc));
+            static (spc, source) => GenerateEnumSpecificCollectors(in source, spc));
+
+        context.RegisterSourceOutput(
+            validEnums.Collect(),
+            static (spc, source) => GenerateAggregateCollectors(in source, spc));
     }
 
-    private static void Execute(in EnumDetails enumDetails, SourceProductionContext spc)
+    private static void GenerateEnumSpecificCollectors(in EnumDetails enumDetails, SourceProductionContext spc)
     {
         var sb = new StringBuilder();
         var enumDictionary = GetEnumDictionary(in enumDetails);
@@ -143,6 +148,16 @@ public class TelemetryMetricGenerator : IIncrementalGenerator
 
             return (locations, entryCounts);
         }
+    }
+
+    private static void GenerateAggregateCollectors(in ImmutableArray<EnumDetails> enumDetails, SourceProductionContext spc)
+    {
+        var sb = new StringBuilder();
+        var collectorSource = Sources.CreateAggregateTelemetryCollectorPartial(sb, in enumDetails);
+        var ciVisibilitySource = Sources.CreateAggregateCiVisibilityTelemetryCollectorPartial(sb, in enumDetails);
+
+        spc.AddSource($"MetricsTelemetryCollector.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
+        spc.AddSource($"CiVisibilityMetricsTelemetryCollector.g.cs", SourceText.From(ciVisibilitySource, Encoding.UTF8));
     }
 
     private static Result<(EnumDetails EnumDetails, bool IsValid)> GetTypeToGenerate(
