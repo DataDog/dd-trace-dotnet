@@ -172,36 +172,45 @@ namespace Datadog.Trace.Ci.Agent
 
         private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
-            byte[] payloadArray;
-            if (!payload.UseEvpProxy)
+            ArraySegment<byte> payloadArraySegment;
+            MemoryStream agentlessMemoryStream = null;
+            try
             {
-                // If we are in agentless mode (no EVP Proxy) then we use gzip compression, supported by the intake
-                var mStream = new MemoryStream();
-                int originalSize;
-                using (var gzipStream = new GZipStream(mStream, CompressionLevel.Fastest, true))
+                if (!payload.UseEvpProxy)
                 {
-                    originalSize = payload.WriteTo(gzipStream);
+                    // If we are in agentless mode (no EVP Proxy) then we use gzip compression, supported by the intake
+                    agentlessMemoryStream = new MemoryStream();
+                    int uncompressedSize;
+                    using (var gzipStream = new GZipStream(agentlessMemoryStream, CompressionLevel.Fastest, true))
+                    {
+                        uncompressedSize = payload.WriteTo(gzipStream);
+                    }
+
+                    agentlessMemoryStream.TryGetBuffer(out payloadArraySegment);
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0"), uncompressedSize.ToString("N0"));
+                    }
+                }
+                else
+                {
+                    payloadArraySegment = new ArraySegment<byte>(payload.ToArray());
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0"));
+                    }
                 }
 
-                payloadArray = mStream.ToArray();
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArray.Length.ToString("N0"), originalSize.ToString("N0"));
-                }
+                await SendPayloadAsync(
+                        payload,
+                        static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
+                        payloadArraySegment)
+                   .ConfigureAwait(false);
             }
-            else
+            finally
             {
-                payloadArray = payload.ToArray();
-                if (Log.IsEnabled(LogEventLevel.Debug))
-                {
-                    Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
-                }
+                agentlessMemoryStream?.Dispose();
             }
-
-            await SendPayloadAsync(
-                payload,
-                static (request, payload, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
-                payloadArray).ConfigureAwait(false);
         }
 
         private async Task SendPayloadAsync(MultipartPayload payload)
