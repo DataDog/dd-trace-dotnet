@@ -59,6 +59,7 @@ public class AppSecWafBenchmark
             throw new DirectoryNotFoundException($"The Path: '{path}' doesn't exist.");
         }
 
+        Environment.SetEnvironmentVariable("DD_TRACE_LOGGING_RATE", "60");
         Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", path);
         var libInitResult = WafLibraryInvoker.Initialize();
         if (!libInitResult.Success)
