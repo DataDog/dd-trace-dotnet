@@ -31,10 +31,13 @@ public class RunCommandTests : ConsoleTestHelper
 
         var commandLine = $"run {startInfo.Executable} --dd-env TestEnv --dd-service TestService --dd-version TestVersion";
 
-        var output = await RunTool(commandLine);
+        var (standardOutput, errorOutput, exitCode) = await RunTool(commandLine);
 
-        output.Should().Contain("Profiler attached: True")
+        standardOutput.Should().Contain("Profiler attached: True")
             .And.NotContain("Args:");
+
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(0);
     }
 #endif
 
@@ -49,13 +52,16 @@ public class RunCommandTests : ConsoleTestHelper
         // dd-env is an argument for the target application and therefore shouldn't set the DD_ENV variable
         var commandLine = $"run --agent-url http://localhost:{agent.Port} --dd-service TestService --dd-env TestEnv --dd-version TestVersion -- {startInfo.Executable} {startInfo.Args} traces 5 --dd-env test";
 
-        var output = await RunTool(commandLine);
+        var (standardOutput, errorOutput, exitCode) = await RunTool(commandLine);
 
         using var scope = new AssertionScope();
+        scope.AddReportable("StandardOutput", standardOutput);
+        scope.AddReportable("ErrorOutput", errorOutput);
+        scope.AddReportable("ExitCode", exitCode.ToString());
 
-        scope.AddReportable("output", output);
-
-        output.Should().Contain("Args: traces 5 --dd-env test");
+        standardOutput.Should().Contain("Args: traces 5 --dd-env test");
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(0);
 
         var spans = agent.WaitForSpans(5);
 
@@ -98,7 +104,9 @@ public class RunCommandTests : ConsoleTestHelper
     [Trait("RunOnWindows", "True")]
     public async Task EmptyCommand()
     {
-        var output = await RunTool("run --tracer-home dummyFolder --agent-url http://localhost:1111");
-        output.Should().Contain("Empty command");
+        var (_, errorOutput, exitCode) = await RunTool("run --tracer-home dummyFolder --agent-url http://localhost:1111");
+
+        errorOutput.Should().Contain("Empty command");
+        exitCode.Should().Be(1);
     }
 }

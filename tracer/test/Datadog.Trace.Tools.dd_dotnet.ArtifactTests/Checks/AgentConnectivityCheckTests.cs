@@ -39,9 +39,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: true, environmentVariables);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, _) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
+            standardOutput.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
+            errorOutput.Should().BeEmpty();
         }
 
         [SkippableFact]
@@ -55,9 +56,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             using var helper = await StartConsole(enableProfiler: true, ("DD_TRACE_AGENT_URL", url));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().Contain(ConnectToEndpointFormat(url, "HTTP"));
+            standardOutput.Should().Contain(ConnectToEndpointFormat(url, "HTTP"));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -73,9 +76,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             agent.Version = null;
             using var helper = await StartConsole(enableProfiler: true, ("DD_TRACE_AGENT_URL", url));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().Contain(AgentDetectionFailed);
+            standardOutput.Should().Contain(AgentDetectionFailed);
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 #endif
 
@@ -83,11 +88,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
         [Trait("RunOnWindows", "True")]
         public async Task NoAgent()
         {
-            var output = await RunTool($"check agent http://fakeurl/");
+            var (standardOutput, errorOutput, exitCode) = await RunTool("check agent http://fakeurl/");
 
             // Note for future maintainers: this assertion needs to be changed to something smarter
             // if the error message stops being at the end of the string
-            output.Should().Contain(ErrorDetectingAgent("http://fakeurl/", string.Empty));
+            standardOutput.Should().Contain(ErrorDetectingAgent("http://fakeurl/", string.Empty));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -98,9 +105,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             agent.RequestReceived += (_, e) => e.Value.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
 
-            var output = await RunTool($"check agent http://localhost:{agent.Port}/");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check agent http://localhost:{agent.Port}/");
 
-            output.Should().Contain(WrongStatusCodeFormat((int)HttpStatusCode.InternalServerError));
+            standardOutput.Should().Contain(WrongStatusCodeFormat((int)HttpStatusCode.InternalServerError));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -112,9 +121,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
             agent.Version = expectedVersion;
 
-            var output = await RunTool($"check agent http://localhost:{agent.Port}/");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check agent http://localhost:{agent.Port}/");
 
-            output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+            standardOutput.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 
 #if NETCOREAPP3_1_OR_GREATER
@@ -129,9 +140,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             using var agent = MockTracerAgent.Create(Output, new UnixDomainSocketConfig(tracesUdsPath, null));
             agent.Version = expectedVersion;
 
-            var output = await RunTool($"check agent unix://{tracesUdsPath}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check agent unix://{tracesUdsPath}");
 
-            output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+            standardOutput.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 #endif
 
@@ -142,9 +155,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             using var agent = MockTracerAgent.Create(Output, TcpPortProvider.GetOpenPort());
             agent.Version = null;
 
-            var output = await RunTool($"check agent http://localhost:{agent.Port}/");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check agent http://localhost:{agent.Port}/");
 
-            output.Should().Contain(AgentDetectionFailed);
+            standardOutput.Should().Contain(AgentDetectionFailed);
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
     }
 }

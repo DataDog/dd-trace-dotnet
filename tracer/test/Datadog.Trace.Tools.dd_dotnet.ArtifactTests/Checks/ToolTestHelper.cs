@@ -26,7 +26,7 @@ public abstract class ToolTestHelper : TestHelper
     {
     }
 
-    protected async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
+    protected async Task<(string StandardOutput, string ErrorOutput, int ExitCode)> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
     {
         var process = RunToolInteractive(arguments, environmentVariables);
 
@@ -34,9 +34,13 @@ public abstract class ToolTestHelper : TestHelper
 
         await helper.Task;
 
-        var splitOutput = (helper.StandardOutput + helper.ErrorOutput).Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+        return (SplitOutput(helper.StandardOutput), SplitOutput(helper.ErrorOutput), helper.Process.ExitCode);
 
-        return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
+        static string SplitOutput(string output)
+        {
+            var lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            return string.Join(" ", lines.Select(o => o.TrimEnd()));
+        }
     }
 
     protected Process RunToolInteractive(string arguments, params (string Key, string Value)[] environmentVariables)
