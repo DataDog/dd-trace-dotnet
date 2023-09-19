@@ -7,8 +7,8 @@ call install_timeit.cmd
 set DOTNET_ROOT=
 
 :: Run x64
-dotnet timeit Contention.windows.x64.json
+dotnet timeit Contention.windows.json --variable arch=x64
 
 :: Run x86
-dotnet timeit Contention.windows.x86.json
+dotnet timeit Contention.windows.json --variable arch=x86
 
