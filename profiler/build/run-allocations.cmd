@@ -7,8 +7,8 @@ call install_timeit.cmd
 set DOTNET_ROOT=
 
 :: Run x64
-dotnet timeit Allocations.windows.x64.json
+dotnet timeit Allocations.windows.json --variable arch=x64
 
 :: Run x86
-dotnet timeit Allocations.windows.x86.json
+dotnet timeit Allocations.windows.json --variable arch=x86
 
