@@ -182,29 +182,29 @@ namespace LogsInjection.NLog
             // Hacks for the fact the NLog on Linux just can't do anything right
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                var target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile");
+                var target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile-withInject");
                 if (target is not null)
                 {
-                    target.FileName = Path.Combine(appDirectory, "log-textFile.log");
+                    target.FileName = Path.Combine(appDirectory, "log-textFile-withInject.log");
                 }
 
-                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile");
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile-withInject");
                 if (target is not null)
                 {
-                    target.FileName = Path.Combine(appDirectory, "log-jsonFile.log");
+                    target.FileName = Path.Combine(appDirectory, "log-jsonFile-withInject.log");
                 }
 
                 // ones without Log Injection stuff
-                target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile2");
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile-noInject");
                 if (target is not null)
                 {
-                    target.FileName = Path.Combine(appDirectory, "log-textFile2.log");
+                    target.FileName = Path.Combine(appDirectory, "log-textFile-noInject.log");
                 }
 
-                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile2");
+                target = (FileTarget)LogManager.Configuration.FindTargetByName("jsonFile-noInject");
                 if (target is not null)
                 {
-                    target.FileName = Path.Combine(appDirectory, "log-jsonFile2.log");
+                    target.FileName = Path.Combine(appDirectory, "log-jsonFile-noInject.log");
                 }
 
                 LogManager.ReconfigExistingLoggers();
