@@ -32,9 +32,9 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
 
             _v0Tracer = new Tracer(v0Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
 
-            var configSourceMock = new Mock<IConfigurationSource>();
-            configSourceMock.Setup(c => c.GetString(It.Is<string>(s => s.Equals(ConfigurationKeys.MetadataSchemaVersion)))).Returns(SchemaVersion.V1.ToString());
-            var v1Settings = new TracerSettings(configSourceMock.Object, new ConfigurationTelemetry());
+            var v1Settings = TracerSettings.Create(
+                new() { { ConfigurationKeys.MetadataSchemaVersion, SchemaVersion.V1.ToString() } });
+
             _v1Tracer = new Tracer(v1Settings, _writerMock.Object, samplerMock.Object, scopeManager: null, statsd: null);
         }
 
@@ -101,18 +101,19 @@ namespace Datadog.Trace.Tests.DatabaseMonitoring
             returnedComment.Should().Be(expectedComment);
         }
 
-        [Theory]
-        [InlineData("Service", SamplingPriorityValues.AutoReject, "npgsql", "Test.Service-postgres", "/*dddbs='dbname',ddps='Test.Service'*/", false, "dbname")]
-        public void ExpectedCommentInjectedV1(string propagationMode, int? samplingPriority, string integration, string dbServiceName, string expectedComment, bool traceParentInjected, string dbName)
+        [Fact]
+        public void ExpectedCommentInjectedV1()
         {
-            DbmPropagationLevel dbmPropagationLevel;
-            Enum.TryParse(propagationMode, true, out dbmPropagationLevel);
-
-            IntegrationId integrationId;
-            Enum.TryParse(integration, true, out integrationId);
+            var dbmPropagationLevel = DbmPropagationLevel.Service;
+            var integrationId = IntegrationId.Npgsql;
+            var samplingPriority = SamplingPriority.AutoReject;
+            var dbServiceName = "Test.Service-postgres";
+            var expectedComment = "/*dddbs='dbname',ddps='Test.Service'*/";
+            var traceParentInjected = false;
+            var dbName = "dbname";
 
             var span = _v1Tracer.StartSpan(tags: new SqlV1Tags() { DbName = dbName }, operationName: "mysql.query", parent: SpanContext.None, serviceName: dbServiceName, traceId: (TraceId)7021887840877922076, spanId: 407003698947780173);
-            span.SetTraceSamplingPriority((SamplingPriority)samplingPriority.Value);
+            span.SetTraceSamplingPriority(samplingPriority);
 
             var returnedComment = DatabaseMonitoringPropagator.PropagateSpanData(dbmPropagationLevel, "Test.Service", span, integrationId, out var traceParentInjectedValue);
 
