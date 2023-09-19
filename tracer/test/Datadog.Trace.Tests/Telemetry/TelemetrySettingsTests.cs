@@ -296,27 +296,12 @@ namespace Datadog.Trace.Tests.Telemetry
 
         [Theory]
         [InlineData("0", false)]
-        [InlineData(null, false)]
-        [InlineData("", false)]
-        [InlineData("1", true)]
-        public void V2Enabled_DisabledByDefault(string value, bool expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
-
-            settings.V2Enabled.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData("0", false)]
         [InlineData(null, true)]
         [InlineData("", true)]
         [InlineData("1", true)]
-        public void V2Enabled_EnabledByDefaultInAas(string value, bool expected)
+        public void V2Enabled_EnabledByDefault(string value, bool expected)
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, "1"),
-                (ConfigurationKeys.Telemetry.V2Enabled, value));
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
 
             settings.V2Enabled.Should().Be(expected);

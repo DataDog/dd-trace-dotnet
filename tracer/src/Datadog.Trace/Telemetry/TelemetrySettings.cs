@@ -144,18 +144,12 @@ namespace Datadog.Trace.Telemetry
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
 
-            var isRunningInAzureAppService = config
-                                        .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-                                        .AsBool(false);
-
-            // Currently enabled by default in AAS, will be flipped to true for all in later versions as part of the rollout
-            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(defaultValue: isRunningInAzureAppService);
+            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(defaultValue: true);
 
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
-            // Currently disabled, will be flipped to true in later versions as part of the rollout
-            // Also, will require v2 enabled
+            // Requires v2 enabled
             bool metricsEnabled;
             if (isServerless)
             {
