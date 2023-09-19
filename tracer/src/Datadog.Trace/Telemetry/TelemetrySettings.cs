@@ -60,7 +60,7 @@ namespace Datadog.Trace.Telemetry
         public bool MetricsEnabled { get; }
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, ImmutableTracerSettings tracerSettings)
-            => FromSource(source, telemetry, IsAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan);
+            => FromSource(source, telemetry, IsAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan || tracerSettings.IsRunningInGCPFunctions);
 
         public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, Func<bool?> isAgentAvailable, bool isServerless)
         {
