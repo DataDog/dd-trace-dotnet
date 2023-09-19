@@ -7,6 +7,7 @@
 
 using System;
 using System.Diagnostics;
+using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Xunit.Abstractions;
@@ -30,6 +31,15 @@ public abstract class ConsoleTestHelper : ToolTestHelper
         string sampleAppPath = environmentHelper.GetSampleApplicationPath();
         var executable = EnvironmentHelper.IsCoreClr() ? environmentHelper.GetSampleExecutionSource() : sampleAppPath;
         var args = EnvironmentHelper.IsCoreClr() ? $"{sampleAppPath} wait" : "wait";
+
+        // this is nasty, but it's the only way I could find to force
+        // a .NET Framework exe to run in 32 bit if required
+        if (EnvironmentTools.IsWindows()
+         && !EnvironmentHelper.IsCoreClr()
+         && !EnvironmentTools.IsTestTarget64BitProcess())
+        {
+            ProfilerHelper.SetCorFlags(executable, Output, !EnvironmentTools.IsTestTarget64BitProcess());
+        }
 
         var processStart = new ProcessStartInfo(executable, args)
         {
