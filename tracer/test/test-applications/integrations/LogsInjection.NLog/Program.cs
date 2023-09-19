@@ -180,7 +180,9 @@ namespace LogsInjection.NLog
 #endif
 #if NETCOREAPP
             // Hacks for the fact the NLog on Linux just can't do anything right
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            // When on ConfigurationType.None LogManager.Configuration is going to be null - so need to skip
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows) &&
+                configType != ConfigurationType.None)
             {
                 var target = (FileTarget)LogManager.Configuration.FindTargetByName("textFile-withInject");
                 if (target is not null)
