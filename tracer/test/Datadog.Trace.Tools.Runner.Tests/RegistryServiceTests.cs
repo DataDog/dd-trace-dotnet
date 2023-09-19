@@ -7,7 +7,6 @@ using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using Datadog.Trace.Tools.Runner.Checks.Windows;
 using FluentAssertions;
-using Microsoft.Win32;
 using Moq;
 using Xunit;
 
@@ -25,33 +24,46 @@ namespace Datadog.Trace.Tools.Runner.Tests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public void GetLocalMachineSubKeyVersion_ReturnsVersion()
+        public void GetLocalMachineSubKeyVersion()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
             // Mock data to check
             const string testKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
             const string displayName = "TestDisplayName";
             const string versionMajor = "1";
             const string versionMinor = "0";
 
-            // Creating mock registry
-            var mockRegistryKey = new Mock<RegistryKey>();
-            mockRegistryKey.Setup(key => key.GetSubKeyNames()).Returns(new[] { "SubKey1" });
+            var registryService = MockRegistryService(testKey, displayName);
+            var result = registryService.GetLocalMachineSubKeyVersion(testKey, displayName, out var tracerVersion);
 
-            var mockSubKey = new Mock<RegistryKey>();
-            mockSubKey.Setup(key => key.GetValue("DisplayName")).Returns(displayName);
-            mockSubKey.Setup(key => key.GetValue("VersionMajor")).Returns(versionMajor);
-            mockSubKey.Setup(key => key.GetValue("VersionMinor")).Returns(versionMinor);
+            result.Should().BeTrue();
+            tracerVersion.Should().Be(versionMajor + "." + versionMinor);
+        }
 
-            var mockLocalMachine = new Mock<RegistryKey>();
-            mockLocalMachine.Setup(key => key.OpenSubKey(testKey)).Returns(mockRegistryKey.Object);
+        private static IRegistryService MockRegistryService(string key, string displayName)
+        {
+            var registryService = new Mock<IRegistryService>();
+            const string testKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
 
-            // Passing mock registry and checking output of method
-            var registryService = new RegistryService(mockLocalMachine.Object);
-            bool versionFound = registryService.GetLocalMachineSubKeyVersion(testKey, displayName, out string tracerVersion);
+            registryService.Setup(r => r.GetLocalMachineSubKeyVersion(
+                                      It.Is<string>(k => k == key),
+                                      It.Is<string>(d => d == displayName),
+                                      out It.Ref<string>.IsAny))
+                           .Callback((string keyName, string nameValue, out string version) =>
+                            {
+                                if (testKey == keyName && nameValue == "TestDisplayName")
+                                {
+                                    version = "1.0";
+                                }
+                                else
+                                {
+                                    version = null;
+                                }
+                            })
+                           .Returns(true);
 
-            Assert.True(versionFound);
-            Assert.Equal($"{versionMajor}.{versionMinor}", tracerVersion);
+            return registryService.Object;
         }
     }
 }
