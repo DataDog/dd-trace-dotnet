@@ -1964,7 +1964,7 @@ partial class Build
      .After(CompileManagedTestHelpers)
      .Executes(() =>
      {
-         DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests));
+         DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests), Framework);
 
          // Compile the required samples
          var sampleProjects = new List<AbsolutePath>
@@ -1982,15 +1982,15 @@ partial class Build
          DotnetBuild(sampleProjects, framework: Framework, noRestore: false);
 
          DotNetPublish(x => x
-                 .EnableNoRestore()
-                 .EnableNoBuild()
-                 .EnableNoDependencies()
-                 .SetConfiguration(BuildConfiguration)
-                 .SetFramework(Framework)
-                 .SetNoWarnDotNetCore3()
-                 .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
-                 .CombineWith(sampleProjects, (c, project) => c
-                     .SetProject(project)));
+            .EnableNoRestore()
+            .EnableNoBuild()
+            .EnableNoDependencies()
+            .SetConfiguration(BuildConfiguration)
+            .SetFramework(Framework)
+            .SetNoWarnDotNetCore3()
+            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+            .CombineWith(sampleProjects, (c, project) => c
+                .SetProject(project)));
      });
 
     Target RunToolArtifactTests => _ => _
@@ -2026,7 +2026,7 @@ partial class Build
                    .SetProjectFile(project)
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
-                   .SetTargetPlatform(TargetPlatform)
+                   .SetTestTargetPlatform(TargetPlatform)
                    .EnableNoRestore()
                    .EnableNoBuild()
                    .SetIsDebugRun(isDebugRun)
