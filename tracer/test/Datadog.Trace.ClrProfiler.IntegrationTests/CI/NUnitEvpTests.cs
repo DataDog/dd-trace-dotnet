@@ -24,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitEvpTests : TestHelper
     {
-        private const int ExpectedTestCount = 31;
+        private const int ExpectedTestCount = 32;
         private const int ExpectedTestSuiteCount = 9;
 
         private const string TestBundleName = "Samples.NUnitTests";

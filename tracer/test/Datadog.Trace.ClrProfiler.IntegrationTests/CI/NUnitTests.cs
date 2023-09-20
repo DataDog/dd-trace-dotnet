@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const int ExpectedSpanCount = 31;
+        private const int ExpectedSpanCount = 32;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static string[] _testSuiteNames =
