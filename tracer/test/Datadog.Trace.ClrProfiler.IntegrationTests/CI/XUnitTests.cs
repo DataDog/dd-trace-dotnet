@@ -123,6 +123,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanExists(targetSpan, TestTags.Command);
                             AssertTargetSpanExists(targetSpan, TestTags.CommandWorkingDirectory);
 
+                            // Unskippable data
+                            AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "false");
+                            AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
+
                             // check specific test span
                             switch (targetSpan.Tags[TestTags.Name])
                             {
