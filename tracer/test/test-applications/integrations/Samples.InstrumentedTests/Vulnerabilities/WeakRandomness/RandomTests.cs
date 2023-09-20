@@ -33,6 +33,13 @@ public class RandomTests : InstrumentationTestsBase
     [Fact]
     public void GivenARandomInstance_WhenCallingConstructor_VulnerabilityIsReported()
     {
+        _ = new Random(33);
+        AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
+    }
+
+    [Fact]
+    public void GivenARandomInstance_WhenCallingConstructor_VulnerabilityIsReported2()
+    {
         _ = new Random();
         AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
     }
@@ -48,7 +55,7 @@ public class RandomTests : InstrumentationTestsBase
     [Fact]
     public void GivenARandomInstance_WhenCallingNext_VulnerabilityIsReported3()
     {
-        var ret = new Random().Next(11, 556);
+        var ret = new Random(55).Next(11, 556);
         ret.Should().BeInRange(11, 556);
         AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
     }
@@ -57,7 +64,7 @@ public class RandomTests : InstrumentationTestsBase
     [Fact]
     public void GivenARandomInstance_WhenCallingNextInt64_VulnerabilityIsReported()
     {
-        var ret = new Random().NextInt64(34,44);
+        var ret = new Random(55).NextInt64(34,44);
         ret.Should().BeInRange(34, 44);
         AssertVulnerable("WEAK_RANDOMNESS", evidenceTainted: false);
     }

@@ -77,7 +77,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf => nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis => nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus => nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
-            Datadog.Trace.Configuration.IntegrationId.Random => nameof(Datadog.Trace.Configuration.IntegrationId.Random),
+            Datadog.Trace.Configuration.IntegrationId.SystemRandom => nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             _ => value.ToString(),
         };
 
@@ -142,7 +142,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.Ssrf,
             Datadog.Trace.Configuration.IntegrationId.AwsKinesis,
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
-            Datadog.Trace.Configuration.IntegrationId.Random,
+            Datadog.Trace.Configuration.IntegrationId.SystemRandom,
         };
 
     /// <summary>
@@ -207,6 +207,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.Ssrf),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsKinesis),
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
-            nameof(Datadog.Trace.Configuration.IntegrationId.Random),
+            nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
         };
 }

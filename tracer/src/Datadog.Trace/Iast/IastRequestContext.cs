@@ -50,9 +50,9 @@ internal class IastRequestContext
                 _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
             }
         }
-        catch
+        catch (Exception ex)
         {
-            Log.Error("Error in IAST AddIastVulnerabilitiesToSpan");
+            Log.Error(ex, "Error in IAST AddIastVulnerabilitiesToSpan");
         }
     }
 

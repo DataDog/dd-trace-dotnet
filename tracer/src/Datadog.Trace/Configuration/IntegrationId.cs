@@ -63,6 +63,6 @@ namespace Datadog.Trace.Configuration
         Ssrf,
         AwsKinesis,
         AzureServiceBus,
-        Random,
+        SystemRandom,
     }
 }

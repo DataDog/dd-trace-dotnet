@@ -70,7 +70,7 @@ internal static class IastModule
         try
         {
             OnExecutedSinkTelemetry(IastInstrumentedSinks.WeakRandomness);
-            return GetScope(evidence, IntegrationId.Random, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
+            return GetScope(evidence, IntegrationId.SystemRandom, VulnerabilityTypeName.WeakRandomness, OperationNameWeakRandomness, false);
         }
         catch (Exception ex)
         {

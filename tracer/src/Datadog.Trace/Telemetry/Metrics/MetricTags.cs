@@ -211,7 +211,7 @@ internal static class MetricTags
         [Description("integration_name:ldap")]Ldap,
         [Description("integration_name:awskinesis")]AwsKinesis,
         [Description("integration_name:azureservicebus")]AzureServiceBus,
-        [Description("integration_name:random")] Random,
+        [Description("integration_name:systemrandom")] SystemRandom,
     }
 
     public enum InstrumentationError
