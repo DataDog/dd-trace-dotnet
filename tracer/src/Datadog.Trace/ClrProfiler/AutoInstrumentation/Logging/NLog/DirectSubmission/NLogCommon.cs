@@ -43,31 +43,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             try
             {
                 var nlogAssembly = typeof(TTarget).Assembly;
+                _nLogVersion = NLogVersionHelper<TTarget>.Version;
                 _targetType = nlogAssembly.GetType("NLog.Targets.TargetWithContext");
-                if (_targetType?.GetProperty("IncludeScopeProperties") is not null)
+                if (_nLogVersion == NLogVersion.NLog50)
                 {
-                    _nLogVersion = NLogVersion.NLog50;
                     _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogV5Target(
-                                                             TracerManager.Instance.DirectLogSubmission.Sink,
-                                                             TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+                                         TracerManager.Instance.DirectLogSubmission.Sink,
+                                         TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
                     return;
                 }
 
-                if (_targetType is not null)
+                if (_nLogVersion == NLogVersion.NLog45)
                 {
-                    _nLogVersion = NLogVersion.NLog45;
-
                     _targetProxy = CreateNLogTargetProxy(new DirectSubmissionNLogTarget(
-                                                             TracerManager.Instance.DirectLogSubmission.Sink,
-                                                             TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
+                                         TracerManager.Instance.DirectLogSubmission.Sink,
+                                         TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel));
                     return;
                 }
 
                 _targetType = nlogAssembly.GetType("NLog.Targets.Target");
-
-                // Type was added in NLog 4.3, so we can use it to safely determine the version
-                var testType = nlogAssembly.GetType("NLog.Config.ExceptionRenderingFormat");
-                _nLogVersion = testType is null ? NLogVersion.NLogPre43 : NLogVersion.NLog43To45;
 
                 TryGetMdcProxy(nlogAssembly, out _hasMappedDiagnosticsContext, out _isModernMappedDiagnosticsContext, out _mdc, out _mdcLegacy);
                 TryGetMdlcProxy(nlogAssembly, out _hasMappedDiagnosticsLogicalContext, out _isModernMappedDiagnosticsLogicalContext, out _mdlc, out _mdlcLegacy);
@@ -87,14 +81,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 _targetType = null;
                 _targetProxy = null;
             }
-        }
-
-        private enum NLogVersion
-        {
-            NLog50,
-            NLog45,
-            NLog43To45,
-            NLogPre43,
         }
 
         public static bool AddDatadogTarget(object loggingConfiguration)
