@@ -123,10 +123,11 @@ internal static class XUnitIntegration
 
     internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
     {
+        isUnskippable = false;
+        isForcedRun = false;
+
         if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
         {
-            isUnskippable = false;
-            isForcedRun = false;
             return false;
         }
 
