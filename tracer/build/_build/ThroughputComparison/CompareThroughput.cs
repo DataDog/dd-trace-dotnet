@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -155,6 +154,7 @@ public class CompareThroughput
                 ("appsec_noattack.json", CrankScenario.NoAttack),
                 ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking),
                 ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
+                ("appsec_iast_enabled_full.json", CrankScenario.IastFull),
             }
         ),
     };
@@ -203,6 +203,7 @@ public class CompareThroughput
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
+        IastFull
     }
 }
 
