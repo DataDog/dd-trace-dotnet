@@ -45,6 +45,9 @@ if [ "$1" = "linux" ]; then
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_attack_blocking.json"
 
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_default --profile linux --json appsec_iast_enabled_default.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_default --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_enabled_default.json"
+
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_full --profile linux --json appsec_iast_enabled_full.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_full --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_iast_enabled_full.json"
 
