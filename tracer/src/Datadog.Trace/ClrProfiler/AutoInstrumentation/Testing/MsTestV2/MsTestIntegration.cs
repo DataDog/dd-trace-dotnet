@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -63,6 +64,15 @@ internal static class MsTestIntegration
             {
                 test.SetTraits(testTraits);
             }
+            else
+            {
+                testTraits = null;
+            }
+
+            // Unskippable tests
+            ShouldSkip(testMethodInfo, out var isUnskippable, out var isForcedRun, testTraits);
+            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
 
             // Set test method
             test.SetTestMethodInfo(testMethod);
@@ -151,9 +161,12 @@ internal static class MsTestIntegration
         return testProperties;
     }
 
-    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo)
+    internal static bool ShouldSkip<TTestMethod>(TTestMethod testMethodInfo, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>> traits = null)
         where TTestMethod : ITestMethod
     {
+        isUnskippable = false;
+        isForcedRun = false;
+
         if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
@@ -161,6 +174,10 @@ internal static class MsTestIntegration
 
         var testClass = testMethodInfo.TestClassName;
         var testMethod = testMethodInfo.MethodInfo;
-        return Common.ShouldSkip(testClass ?? string.Empty, testMethod?.Name ?? string.Empty, testMethodInfo.Arguments, testMethod?.GetParameters());
+        var itrShouldSkip = Common.ShouldSkip(testClass ?? string.Empty, testMethod?.Name ?? string.Empty, testMethodInfo.Arguments, testMethod?.GetParameters());
+        traits ??= GetTraits(testMethod);
+        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isForcedRun = itrShouldSkip && isUnskippable;
+        return itrShouldSkip && !isUnskippable;
     }
 }

@@ -83,17 +83,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             // Get traits
+            Dictionary<string, List<string>>? traits = null;
             if (testMethodProperties != null)
             {
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
-
-                Dictionary<string, List<string>>? traits = null;
                 ExtractTraits(currentTest, ref traits);
                 if (traits?.Count > 0)
                 {
                     test.SetTraits(traits);
                 }
             }
+
+            // Unskippable test
+            ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
+            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
 
             // Test code and code owners
             test.SetTestMethodInfo(testMethod);
@@ -258,8 +262,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
         }
 
-        internal static bool ShouldSkip(ITest currentTest)
+        internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
         {
+            isUnskippable = false;
+            isForcedRun = false;
+
             if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
             {
                 return false;
@@ -267,7 +274,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-            return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+            var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+            if (traits is null)
+            {
+                ExtractTraits(currentTest, ref traits);
+            }
+
+            isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+            isForcedRun = itrShouldSkip && isUnskippable;
+            return itrShouldSkip && !isUnskippable;
         }
 
         internal static void WriteSetUpOrTearDownError(ICompositeWorkItem compositeWorkItem, string exceptionType)

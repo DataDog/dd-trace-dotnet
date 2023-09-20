@@ -52,7 +52,7 @@ public static class TestMethodRunnerExecuteIntegration
             {
                 if (unitTestResult.Outcome is UnitTestResultOutcome.Inconclusive or UnitTestResultOutcome.NotRunnable or UnitTestResultOutcome.Ignored)
                 {
-                    if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo))
+                    if (!MsTestIntegration.ShouldSkip(instance.TestMethodInfo, out _, out _))
                     {
                         // This instrumentation catches all tests being ignored
                         MsTestIntegration.OnMethodBegin(instance.TestMethodInfo, instance.GetType())?

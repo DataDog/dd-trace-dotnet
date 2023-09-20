@@ -50,7 +50,7 @@ public static class NUnitWorkItemPerformWorkIntegration
                 case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
                     NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
                     break;
-                case "TestMethod" when NUnitIntegration.ShouldSkip(item):
+                case "TestMethod" when NUnitIntegration.ShouldSkip(item, out _, out _):
                     var testMethod = item.Method.MethodInfo;
                     Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
                     item.RunState = RunState.Ignored;

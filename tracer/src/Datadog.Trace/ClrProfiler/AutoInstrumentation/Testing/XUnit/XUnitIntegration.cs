@@ -63,12 +63,21 @@ internal static class XUnitIntegration
         {
             test.SetTraits(traits);
         }
+        else
+        {
+            traits = null;
+        }
 
         // Test code and code owners
         if (testMethod is not null)
         {
             test.SetTestMethodInfo(testMethod);
         }
+
+        // Unskippable tests support
+        ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
+        test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+        test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
 
         // Telemetry
         Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -112,15 +121,21 @@ internal static class XUnitIntegration
         }
     }
 
-    internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
+    internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
     {
         if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
         {
+            isUnskippable = false;
+            isForcedRun = false;
             return false;
         }
 
         var testClass = runnerInstance.TestClass;
         var testMethod = runnerInstance.TestMethod;
-        return Common.ShouldSkip(testClass?.ToString() ?? string.Empty, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        var itrShouldSkip = Common.ShouldSkip(testClass?.ToString() ?? string.Empty, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        traits ??= runnerInstance.TestCase.Traits;
+        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isForcedRun = itrShouldSkip && isUnskippable;
+        return itrShouldSkip && !isUnskippable;
     }
 }
