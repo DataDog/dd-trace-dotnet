@@ -36,14 +36,6 @@ internal class Iast
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
 
-        if (_settings.Enabled)
-        {
-            Log.Information("IAST is enabled.");
-        }
-        else
-        {
-            Log.Information("IAST is disabled.");
-        }
     }
 
     internal IastSettings Settings => _settings;
