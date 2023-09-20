@@ -65,6 +65,9 @@ public abstract class ToolTestHelper : TestHelper
             UseShellExecute = false
         };
 
+        // Prevent Spectre.Console from inserting fancy control codes
+        processStart.EnvironmentVariables["TERM"] = string.Empty;
+
         foreach (var (key, value) in environmentVariables)
         {
             processStart.EnvironmentVariables[key] = value;
