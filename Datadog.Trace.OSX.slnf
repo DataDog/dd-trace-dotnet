@@ -122,6 +122,7 @@
       "tracer\\test\\test-applications\\integrations\\Samples.WebRequest.NetFramework20\\Samples.WebRequest.NetFramework20.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.WebRequest\\Samples.WebRequest.csproj",
       "tracer\\test\\test-applications\\integrations\\Samples.XUnitTests\\Samples.XUnitTests.csproj",
+      "tracer\\test\\test-applications\\integrations\\dependency-libs\\ActivitySampleHelper\\ActivitySampleHelper.csproj",
       "tracer\\test\\test-applications\\integrations\\dependency-libs\\LogsInjectionHelper.VersionConflict\\LogsInjectionHelper.VersionConflict.csproj",
       "tracer\\test\\test-applications\\integrations\\dependency-libs\\LogsInjectionHelper\\LogsInjectionHelper.csproj",
       "tracer\\test\\test-applications\\integrations\\dependency-libs\\PluginApplication\\PluginApplication.csproj",
