@@ -4,6 +4,7 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
@@ -134,6 +135,26 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
         }
 #endif
+
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task DetectVersionNamedPipes()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.Platform(SkipOn.PlatformValue.Linux);
+
+            const string expectedVersion = "7.66.55";
+
+            var tracesPipeName = $"trace-{Guid.NewGuid()}";
+            var metricsPipeName = $"trace-{Guid.NewGuid()}";
+
+            using var agent = MockTracerAgent.Create(Output, new WindowsPipesConfig(tracesPipeName, metricsPipeName));
+            agent.Version = expectedVersion;
+
+            var output = await RunTool($"check agent", ("DD_TRACE_PIPE_NAME", tracesPipeName));
+
+            output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+        }
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
