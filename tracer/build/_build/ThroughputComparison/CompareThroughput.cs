@@ -114,6 +114,7 @@ public class CompareThroughput
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
         CrankScenario.AttackBlocking => "Blocking",
+        CrankScenario.IastFull => "IAST full",
         _ => throw new NotImplementedException(),
     };
 
