@@ -19,13 +19,21 @@ namespace Datadog.Trace.TestHelpers
     {
         private readonly TaskCompletionSource<bool> _errorTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly TaskCompletionSource<bool> _outputTask = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
         private readonly StringBuilder _outputBuffer = new();
         private readonly StringBuilder _errorBuffer = new();
 
         public ProcessHelper(Process process, Action<string> onDataReceived = null, Action<string> onErrorReceived = null)
         {
-            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task);
+            Task = Task.WhenAll(_outputTask.Task, _errorTask.Task, _processExit.Task);
 
+            Task.Factory.StartNew(
+                () =>
+                {
+                    process.WaitForExit();
+                    _processExit.TrySetResult(true);
+                },
+                TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(() => DrainOutput(process.StandardOutput, _outputBuffer, _outputTask, onDataReceived), TaskCreationOptions.LongRunning);
             Task.Factory.StartNew(() => DrainOutput(process.StandardError, _errorBuffer, _errorTask, onErrorReceived ?? onDataReceived), TaskCreationOptions.LongRunning);
 
