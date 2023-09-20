@@ -216,8 +216,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
 
                             // Unskippable data
-                            AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
-                            AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
 
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
@@ -308,6 +311,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "Test05" when suite.Contains("SetupError"):
                                 case "IsNull" when suite.Contains("SetupError"):
                                     CheckSetupErrorTest(targetTest);
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetTest);
                                     break;
                             }
 

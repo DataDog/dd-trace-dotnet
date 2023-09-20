@@ -121,6 +121,12 @@ namespace Samples.NUnitTests
         public void SkipByITRSimulation()
         {
         }
+
+        [Test]
+        [Property("datadog_itr_unskippable", null)]
+        public void UnskippableTest()
+        {
+        }
     }
 
     [TestFixture("Test01")]

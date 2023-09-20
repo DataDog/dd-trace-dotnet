@@ -62,17 +62,23 @@ internal static class MsTestIntegration
             // Get traits
             if (GetTraits(testMethod) is { } testTraits)
             {
+                // Unskippable tests
+                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+                {
+                    ShouldSkip(testMethodInfo, out var isUnskippable, out var isForcedRun, testTraits);
+                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                    testTraits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+                }
+
                 test.SetTraits(testTraits);
             }
-            else
+            else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
             {
-                testTraits = null;
+                // Unskippable tests
+                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
             }
-
-            // Unskippable tests
-            ShouldSkip(testMethodInfo, out var isUnskippable, out var isForcedRun, testTraits);
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
 
             // Set test method
             test.SetTestMethodInfo(testMethod);

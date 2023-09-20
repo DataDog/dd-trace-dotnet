@@ -88,16 +88,30 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             {
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
                 ExtractTraits(currentTest, ref traits);
-                if (traits?.Count > 0)
-                {
-                    test.SetTraits(traits);
-                }
             }
 
-            // Unskippable test
-            ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
-            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+            if (traits?.Count > 0)
+            {
+                // Unskippable test
+                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+                {
+                    ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
+                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                    traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+                }
+
+                test.SetTraits(traits);
+            }
+            else
+            {
+                // Unskippable test
+                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+                {
+                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
+                }
+            }
 
             // Test code and code owners
             test.SetTestMethodInfo(testMethod);

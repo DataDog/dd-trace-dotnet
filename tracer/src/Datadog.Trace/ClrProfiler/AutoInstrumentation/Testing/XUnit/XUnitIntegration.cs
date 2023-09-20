@@ -61,11 +61,22 @@ internal static class XUnitIntegration
         // Get traits
         if (runnerInstance.TestCase.Traits is { } traits)
         {
+            // Unskippable tests support
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
+                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+            }
+
             test.SetTraits(traits);
         }
-        else
+        else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
         {
-            traits = null;
+            // Unskippable tests support
+            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
         }
 
         // Test code and code owners
@@ -73,11 +84,6 @@ internal static class XUnitIntegration
         {
             test.SetTestMethodInfo(testMethod);
         }
-
-        // Unskippable tests support
-        ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
-        test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
-        test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
 
         // Telemetry
         Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
