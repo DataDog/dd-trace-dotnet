@@ -81,17 +81,23 @@ public class AppSecWafBenchmark
     public IEnumerable<NestedMap> Source()
     {
         yield return MakeNestedMap(10);
+        yield return MakeNestedMap(20);
         yield return MakeNestedMap(100);
-        yield return MakeNestedMap(1000);
     }
 
     public IEnumerable<NestedMap> SourceWithAttack()
     {
         yield return MakeNestedMap(10, true);
+        yield return MakeNestedMap(20, true);
         yield return MakeNestedMap(100, true);
-        yield return MakeNestedMap(1000, true);
     }
 
+    /// <summary>
+    /// Generates dummy arguments for the waf
+    /// </summary>
+    /// <param name="nestingDepth">Encoder.cs respects WafConstants.cs limits to process arguments with a max depth of 20 so above depth 20, there shouldn't be much difference of performances.</param>
+    /// <param name="withAttack">an attack present in arguments can slow down waf's run</param>
+    /// <returns></returns>
     private static NestedMap MakeNestedMap(int nestingDepth, bool withAttack = false)
     {
         var root = new Dictionary<string, object>();
