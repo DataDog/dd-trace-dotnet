@@ -51,6 +51,12 @@ if [ "$1" = "linux" ]; then
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_full --profile linux --json appsec_iast_enabled_full.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_full --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_iast_enabled_full.json"
 
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_disabled_vulnerability --profile linux --json appsec_iast_disabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_disabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_disabled_vulnerability.json"
+	
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_vulnerability --profile linux --json appsec_iast_enabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_enabled_vulnerability.json"	
+
 else
     echo "Unknown argument $1"
     exit 1
