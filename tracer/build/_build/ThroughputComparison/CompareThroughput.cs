@@ -116,6 +116,8 @@ public class CompareThroughput
         CrankScenario.AttackBlocking => "Blocking",
         CrankScenario.IastDefault => "IAST default",
         CrankScenario.IastFull => "IAST full",
+        CrankScenario.IastVulnerabilityDisabled => "IAST disabled vulnerable",
+        CrankScenario.IastVulnerabilityEnabled => "IAST full vulnerable",
         _ => throw new NotImplementedException(),
     };
 
@@ -159,6 +161,8 @@ public class CompareThroughput
                 ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
                 ("appsec_iast_enabled_default.json", CrankScenario.IastDefault),
                 ("appsec_iast_enabled_full.json", CrankScenario.IastFull),
+                ("appsec_iast_disabled_vulnerability.json", CrankScenario.IastVulnerabilityDisabled),
+                ("appsec_iast_enabled_vulnerability.json", CrankScenario.IastVulnerabilityEnabled),
             }
         ),
     };
@@ -208,7 +212,9 @@ public class CompareThroughput
         AttackNoBlocking,
         AttackBlocking,
         IastDefault,
-        IastFull
+        IastFull,
+        IastVulnerabilityDisabled,
+        IastVulnerabilityEnabled,
     }
 }
 
