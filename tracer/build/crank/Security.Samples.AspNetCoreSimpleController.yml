@@ -85,6 +85,22 @@ scenarios:
         duration: 240
         serverPort: 5000
         path: /hello
+
+  appsec_iast_enabled_default:
+    application:
+      job: server
+      environmentVariables:
+        COR_ENABLE_PROFILING: 1
+        CORECLR_ENABLE_PROFILING: 1
+        DD_APPSEC_ENABLED: false
+        DD_IAST_ENABLED: true
+    load:
+      job: bombardier
+      variables:
+        warmup: 30
+        duration: 240
+        serverPort: 5000
+        path: /hello        
         
   appsec_iast_enabled_full:
     application:

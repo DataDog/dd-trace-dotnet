@@ -114,6 +114,7 @@ public class CompareThroughput
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
         CrankScenario.AttackBlocking => "Blocking",
+        CrankScenario.IastDefault => "IAST default",
         CrankScenario.IastFull => "IAST full",
         _ => throw new NotImplementedException(),
     };
@@ -156,6 +157,7 @@ public class CompareThroughput
                 ("appsec_noattack.json", CrankScenario.NoAttack),
                 ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking),
                 ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
+                ("appsec_iast_enabled_default.json", CrankScenario.IastDefault),
                 ("appsec_iast_enabled_full.json", CrankScenario.IastFull),
             }
         ),
@@ -205,6 +207,7 @@ public class CompareThroughput
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
+        IastDefault,
         IastFull
     }
 }
