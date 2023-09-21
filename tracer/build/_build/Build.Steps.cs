@@ -810,6 +810,7 @@ partial class Build
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
                     "createLogPath.sh",
+                    "dd-dotnet",
                     "netstandard2.0/",
                     "netcoreapp3.1/",
                     "net6.0/",

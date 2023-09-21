@@ -399,7 +399,7 @@ stages:
       artifact: linux-profiler-symbols-$(baseImage)
 
 - stage: package_linux
-  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -415,8 +415,10 @@ stages:
       matrix:
         centos7:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -437,6 +439,16 @@ stages:
       inputs:
         artifact: linux-profiler-home-$(baseImage)
         path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet $(artifactSuffix)
+      inputs:
+        artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)
+
+    - script: |
+        chmod +x $(monitoringHome)/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -539,7 +551,7 @@ stages:
       artifact: linux-profiler-symbols-arm64
 
 - stage: package_arm64
-  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -570,6 +582,12 @@ stages:
       displayName: Download profiler arm64 native binary
       inputs:
         artifact: linux-profiler-home-arm64
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-arm64
+      inputs:
+        artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)
 
     - template: steps/run-in-docker.yml
@@ -628,7 +646,7 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [ build_windows_tracer, build_windows_profiler, merge_commit_id]
+  dependsOn: [ build_windows_tracer, build_windows_profiler, build_dd_dotnet_windows, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
