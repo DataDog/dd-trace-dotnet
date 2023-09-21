@@ -221,7 +221,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                     new CheckIisSettings { SiteName = "sample" },
+                     new Datadog.Trace.Tools.Runner.CheckIisSettings { SiteName = "sample" },
                      iisFixture.IisExpress.ConfigFile,
                      iisFixture.IisExpress.Process.Id,
                      BrokenMockRegistryService());
