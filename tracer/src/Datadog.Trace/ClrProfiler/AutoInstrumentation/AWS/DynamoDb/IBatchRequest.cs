@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
+using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 {
@@ -15,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
         /// <summary>
         /// Gets or sets the RequestItems of a Batch request.
         /// </summary>
-        IDictionary<string, object> RequestItems { get; set; }
+        IDictionary RequestItems { get; set; }
     }
 }
