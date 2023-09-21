@@ -8,13 +8,13 @@
 #include "ManagedThreadList.h"
 #include "ManagedThreadInfo.h"
 
-
 void CreateThread(ManagedThreadList& threadsList, ThreadID threadId, HANDLE handle = NULL)
 {
-    threadsList.GetOrCreateThread(threadId);
+    threadsList.GetOrCreate(threadId);
     // for simplicity, use the ThreadID as OS Thread Id
     threadsList.SetThreadOsInfo(threadId, (DWORD)threadId, handle);
 }
+
 TEST(ManagedThreadListTest, CheckAdd)
 {
     ManagedThreadList threads(nullptr);
@@ -286,4 +286,13 @@ TEST(ManagedThreadListTest, CheckMultipleIterators)
     t2.join();
 
     ASSERT_TRUE(true);
+}
+
+TEST(ManagedThreadListTest, CheckRegisterThreadTwice)
+{
+    ManagedThreadList threads(nullptr);
+    auto thread = std::make_shared<ManagedThreadInfo>(1);
+
+    ASSERT_TRUE(threads.RegisterThread(thread));
+    ASSERT_FALSE(threads.RegisterThread(thread));
 }

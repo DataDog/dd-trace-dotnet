@@ -72,7 +72,8 @@ StackSamplerLoop::StackSamplerLoop(
     _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
     _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
     _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
-    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()}
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
+    _isStopped{false}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -89,9 +90,6 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread, ThreadName);
-
     if(_areInternalMetricsEnabled)
     {
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
@@ -101,8 +99,7 @@ StackSamplerLoop::StackSamplerLoop(
 
 StackSamplerLoop::~StackSamplerLoop()
 {
-    this->RequestShutdown();
-    this->Join();
+    Stop();
 
     ICorProfilerInfo4* corProfilerInfo = _pCorProfilerInfo;
     if (corProfilerInfo != nullptr)
@@ -112,28 +109,41 @@ StackSamplerLoop::~StackSamplerLoop()
     }
 }
 
-void StackSamplerLoop::Join()
+const char* StackSamplerLoop::GetName()
 {
-    std::thread* pLoopThread = _pLoopThread;
-    if (pLoopThread != nullptr)
+    return "StackSamplerLoop";
+}
+
+bool StackSamplerLoop::Start()
+{
+    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
+    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
+
+    return true;
+}
+
+bool StackSamplerLoop::Stop()
+{
+    // allow multiple calls to Stop()
+    auto wasStopped = std::exchange(_isStopped, true);
+    if (wasStopped)
     {
-        // race condition if the Manager just terminated our thread
+        return true;
+    }
+
+    _shutdownRequested = true;
+    if (_pLoopThread != nullptr)
+    {
         try
         {
-            pLoopThread->join();
+            _pLoopThread->join();
         }
         catch (const std::exception&)
         {
         }
-
-        delete pLoopThread;
-        _pLoopThread = nullptr;
     }
-}
 
-void StackSamplerLoop::RequestShutdown()
-{
-    _shutdownRequested = true;
+    return true;
 }
 
 void StackSamplerLoop::MainLoop()
