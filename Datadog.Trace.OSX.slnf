@@ -42,6 +42,7 @@
       "tracer\\test\\test-applications\\debugger\\Samples.Probes\\Samples.Probes.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.External\\Samples.Probes.External.csproj",
       "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.TestRuns\\Samples.Probes.TestRuns.csproj",
+      "tracer\\test\\test-applications\\debugger\\dependency-libs\\Samples.Probes.Unreferenced.External\\Samples.Probes.Unreferenced.External.csproj",
       "tracer\\test\\test-applications\\instrumentation\\CallTargetNativeTest\\CallTargetNativeTest.csproj",
       "tracer\\test\\test-applications\\instrumentation\\Datadog.Tracer.Native.Checks\\Datadog.Tracer.Native.Checks.csproj",
       "tracer\\test\\test-applications\\integrations\\LogsInjection.ILogger.VersionConflict.2x\\LogsInjection.ILogger.VersionConflict.2x.csproj",
