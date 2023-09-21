@@ -654,6 +654,12 @@ stages:
           artifact: windows-profiler-home
           path: $(monitoringHome)
 
+      - task: DownloadPipelineArtifact@2
+        displayName: Download dd-dotnet win-x64
+        inputs:
+          artifact: dd-dotnet-win-x64
+          path: $(monitoringHome)
+
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
         retryCountOnTaskFailure: 1
@@ -3084,7 +3090,7 @@ stages:
       displayName: Download dd-dotnet win-x64
       inputs:
         artifact: dd-dotnet-win-x64
-        path: $(monitoringHome)/win-x64
+        path: $(monitoringHome)
 
     - task: ExtractFiles@1
       inputs:
@@ -3180,7 +3186,7 @@ stages:
       displayName: Download dd-dotnet $(artifactSuffix)
       inputs:
         artifact: dd-dotnet-$(artifactSuffix)
-        path: $(monitoringHome)/$(artifactSuffix)
+        path: $(monitoringHome)
 
     - task: ExtractFiles@1
       inputs:
@@ -3194,7 +3200,7 @@ stages:
       displayName: chmod dd-trace
 
     - script: |
-        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+        chmod +x $(monitoringHome)/dd-dotnet
       displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml

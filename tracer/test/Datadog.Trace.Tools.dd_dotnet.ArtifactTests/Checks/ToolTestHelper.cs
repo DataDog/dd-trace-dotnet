@@ -28,17 +28,7 @@ public abstract class ToolTestHelper : TestHelper
 
     protected async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
     {
-        var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
-        {
-            ("win", _, _) => "win-x64",
-            ("linux", "Arm64", _) => "linux-arm64",
-            ("linux", "X64", false) => "linux-x64",
-            ("linux", "X64", true) => "linux-musl-x64",
-            _ => throw new PlatformNotSupportedException()
-        };
-
-        var targetFolder = Path.Combine(EnvironmentHelper.MonitoringHome, rid);
-        var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.exe" : "dd-dotnet");
+        var executable = Path.Combine(EnvironmentHelper.MonitoringHome, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.exe" : "dd-dotnet");
 
         var processStart = new ProcessStartInfo(executable, arguments)
         {
