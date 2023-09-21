@@ -4,12 +4,14 @@
 // </copyright>
 
 using System;
+using System.Diagnostics;
 using System.Text;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -18,11 +20,13 @@ namespace Datadog.Trace.Ci.Agent.Payloads
     internal class CICodeCoveragePayload : MultipartPayload
     {
         private readonly IFormatterResolver _formatterResolver;
+        private readonly Stopwatch _serializationWatch;
 
         public CICodeCoveragePayload(CIVisibilitySettings settings, int maxItemsPerPayload = DefaultMaxItemsPerPayload, int maxBytesPerPayload = DefaultMaxBytesPerPayload, IFormatterResolver formatterResolver = null)
             : base(settings, maxItemsPerPayload, maxBytesPerPayload, formatterResolver)
         {
             _formatterResolver = formatterResolver ?? CIFormatterResolver.Instance;
+            _serializationWatch = new Stopwatch();
 
             // We call reset here to add the dummy event
             Reset();
@@ -46,6 +50,14 @@ namespace Datadog.Trace.Ci.Agent.Payloads
             var eventInBytes = MessagePackSerializer.Serialize(new CoveragePayload(eventsBuffer), _formatterResolver);
             CIVisibility.Log.Debug<int, int>("CICodeCoveragePayload: Serialized {Count} test code coverage as a single multipart item with {Size} bytes.", eventsBuffer.Count, eventInBytes.Length);
             return new MultipartFormItem($"coverage{index}", MimeTypes.MsgPack, $"filecoverage{index}.msgpack", new ArraySegment<byte>(eventInBytes));
+        }
+
+        public override bool TryProcessEvent(IEvent @event)
+        {
+            _serializationWatch.Restart();
+            var success = base.TryProcessEvent(@event);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(TelemetryEndpoint, _serializationWatch.Elapsed.TotalMilliseconds);
+            return success;
         }
 
         public override void Reset()

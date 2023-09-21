@@ -65,16 +65,6 @@ internal abstract class CoverageEventHandler
                 TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageFinished(telemetryTestingFramework, MetricTags.CIVisibilityCoverageLibrary.Custom);
             }
 
-            if (sessionEndData is Models.Tests.TestCoverage testCoverage)
-            {
-                if (testCoverage.Files is null || testCoverage.Files.Count == 0)
-                {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageIsEmpty();
-                }
-
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(testCoverage.Files?.Count ?? 0);
-            }
-
             return sessionEndData;
         }
 

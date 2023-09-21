@@ -184,8 +184,6 @@ namespace Datadog.Trace.Ci.Agent
 
             try
             {
-                var sw = Stopwatch.StartNew();
-
                 if (!payload.UseEvpProxy)
                 {
                     // If we are in agentless mode (no EVP Proxy) then we use gzip compression, supported by the intake
@@ -211,8 +209,7 @@ namespace Datadog.Trace.Ci.Agent
                     }
                 }
 
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
-                sw.Restart();
+                var sw = Stopwatch.StartNew();
 
                 var statusCode = await SendPayloadAsync(
                         payload,
@@ -235,9 +232,7 @@ namespace Datadog.Trace.Ci.Agent
 
         private async Task SendPayloadAsync(MultipartPayload payload)
         {
-            var sw = Stopwatch.StartNew();
             var payloadArray = payload.ToArray();
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointEventsSerializationMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
             var payloadBytes = 0;
             foreach (var multipartFormItem in payloadArray)
             {
@@ -248,7 +243,7 @@ namespace Datadog.Trace.Ci.Agent
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadBytes);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
 
-            sw.Restart();
+            var sw = Stopwatch.StartNew();
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
             var statusCode = await SendPayloadAsync(
                 payload,

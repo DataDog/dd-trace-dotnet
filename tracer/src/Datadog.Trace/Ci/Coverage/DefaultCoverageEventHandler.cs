@@ -103,8 +103,11 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
                 }
             }
 
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(fileDictionary?.Count ?? 0);
+
             if (fileDictionary is null || fileDictionary.Count == 0)
             {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageIsEmpty();
                 return null;
             }
 
