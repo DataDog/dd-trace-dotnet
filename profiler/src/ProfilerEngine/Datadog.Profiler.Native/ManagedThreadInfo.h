@@ -86,7 +86,7 @@ public:
     inline std::string GetProfileThreadName();
 
 #ifdef LINUX
-    inline void SetSharedMemory(int* memoryArea);
+    inline void SetSharedMemory(volatile int* memoryArea);
     inline void MarkAsInterrupted();
 #endif
     inline bool CanBeInterrupted() const;
@@ -132,7 +132,7 @@ private:
     // This establishes a simple communication channel between the profiler and this library
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
-    int* _sharedMemoryArea;
+    volatile int* _sharedMemoryArea;
 };
 
 std::string ManagedThreadInfo::GetProfileThreadId()
@@ -410,7 +410,7 @@ inline void ManagedThreadInfo::MarkAsInterrupted()
     }
 }
 
-inline void ManagedThreadInfo::SetSharedMemory(int* memoryArea)
+inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
 {
     _sharedMemoryArea = memoryArea;
 }

@@ -14,7 +14,7 @@
 thread_local std::shared_ptr<ManagedThreadInfo> managedThreadInfo = nullptr;
 SystemCallsShield* SystemCallsShield::Instance = nullptr;
 
-extern "C" int (*volatile dd_set_shared_memory)(int*) __attribute__((weak));
+extern "C" int (*volatile dd_set_shared_memory)(volatile int*) __attribute__((weak));
 
 // check if this symbol is present to know if the wrapper is loaded
 extern "C" unsigned long long dd_inside_wrapped_functions() __attribute__((weak));
@@ -75,7 +75,7 @@ void SystemCallsShield::Unregister()
     }
 }
 
-int SystemCallsShield::SetSharedMemory(int* state)
+int SystemCallsShield::SetSharedMemory(volatile int* state)
 {
     auto current = Instance;
     if (current == nullptr)
@@ -86,7 +86,7 @@ int SystemCallsShield::SetSharedMemory(int* state)
     return current->SetSharedMemoryOnThreadInfo(state);
 }
 
-int SystemCallsShield::SetSharedMemoryOnThreadInfo(int* state)
+int SystemCallsShield::SetSharedMemoryOnThreadInfo(volatile int* state)
 {
     auto& threadInfo = managedThreadInfo;
 

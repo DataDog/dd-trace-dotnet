@@ -26,7 +26,7 @@
 #endif
 #endif
 
-extern int (*volatile dd_set_shared_memory)(int*);
+extern int (*volatile dd_set_shared_memory)(volatile int*);
 
 int is_interrupted_by_profiler(int rc, int error_code, int interrupted_by_profiler);
-int __dd_set_shared_memory(int* mem);
+int __dd_set_shared_memory(volatile int* mem);

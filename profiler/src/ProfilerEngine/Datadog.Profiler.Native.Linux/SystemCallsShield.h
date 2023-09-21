@@ -28,10 +28,10 @@ public:
 
 private:
     static SystemCallsShield* Instance;
-    static int SetSharedMemory(int* state);
+    static int SetSharedMemory(volatile int* state);
     static bool ShouldEnable(IConfiguration* configuration);
 
-    int SetSharedMemoryOnThreadInfo(int* state);
+    int SetSharedMemoryOnThreadInfo(volatile int* state);
 
     bool _isEnabled;
 };
