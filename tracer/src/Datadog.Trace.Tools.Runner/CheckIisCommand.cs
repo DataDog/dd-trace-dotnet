@@ -252,12 +252,12 @@ namespace Datadog.Trace.Tools.Runner
 
                 foreach (var variable in foundVariables)
                 {
-                    Utils.WriteError("- " + WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
+                    Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
                 }
 
                 foreach (var profilerPath in foundPathVariables)
                 {
-                    Utils.WriteError("- " + WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
+                    Utils.WriteError(WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
                 }
             }
         }

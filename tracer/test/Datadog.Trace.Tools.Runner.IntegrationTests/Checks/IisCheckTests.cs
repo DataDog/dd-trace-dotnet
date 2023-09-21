@@ -203,6 +203,42 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task WronglyConfiguredAppPool()
+        {
+            EnsureWindowsAndX64();
+
+            var siteName = "sample";
+
+            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+
+            try
+            {
+                // GacFixture is not compatible with .NET Core, use the Nuke target instead
+                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+
+                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+
+                using var console = ConsoleHelper.Redirect();
+
+                var result = await CheckIisCommand.ExecuteAsync(
+                                 new CheckIisSettings { SiteName = siteName },
+                                 iisFixture.IisExpress.ConfigFile,
+                                 iisFixture.IisExpress.Process.Id,
+                                 BrokenMockRegistryService());
+
+                result.Should().Be(1);
+                console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
+                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
+                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
+            }
+            finally
+            {
+                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
+            }
+        }
+
         private static void EnsureWindowsAndX64()
         {
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
@@ -219,6 +255,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 .Returns(Array.Empty<string>());
             registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
                 .Returns(EnvironmentHelper.GetNativeLoaderPath());
+
+            return registryService.Object;
+        }
+
+        private static IRegistryService BrokenMockRegistryService()
+        {
+            var registryService = new Mock<IRegistryService>();
+            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
+                           .Returns(Array.Empty<string>());
+            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
+                           .Returns(string.Empty);
 
             return registryService.Object;
         }

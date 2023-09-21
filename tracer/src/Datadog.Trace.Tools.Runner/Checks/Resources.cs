@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             var expectedProfiler = RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
                 ? "Datadog.Trace.ClrProfiler.Native.dll" : "Datadog.Trace.ClrProfiler.Native.so";
 
-            return $"The environment variable {environmentVariable} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'";
+            return $"- The environment variable {environmentVariable} was set to '{actualProfiler}' but it should point to '{expectedProfiler}'";
         }
 
         private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
