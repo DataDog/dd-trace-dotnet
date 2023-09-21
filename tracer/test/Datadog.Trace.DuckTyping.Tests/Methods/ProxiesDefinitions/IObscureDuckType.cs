@@ -63,5 +63,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         bool TryGetPrivateReferenceObject(ref object obj);
 
         IDummyFieldObject Bypass(IDummyFieldObject obj);
+
+        [Duck(Name = "Sum")]
+        ValueWithType<int> SumReturnValueWithType(int a, int b);
+
+        [Duck(Name = "Bypass")]
+        ValueWithType<IDummyFieldObject> BypassReturnValueWithType(IDummyFieldObject obj);
     }
 }

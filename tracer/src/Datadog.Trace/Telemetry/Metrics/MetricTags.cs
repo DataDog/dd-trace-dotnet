@@ -207,7 +207,10 @@ internal static class MetricTags
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
-        [Description("integration_name:ssrf")] Ssrf,
+        [Description("integration_name:ssrf")]Ssrf,
+        [Description("integration_name:ldap")]Ldap,
+        [Description("integration_name:awskinesis")]AwsKinesis,
+        [Description("integration_name:azureservicebus")]AzureServiceBus,
     }
 
     public enum InstrumentationError
@@ -228,5 +231,38 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+    }
+
+    [EnumExtensions]
+    public enum IastInstrumentedSources
+    {
+        [Description("source_type:http.request.body")] RequestBody = 0,
+        [Description("source_type:http.request.path")] RequestPath = 1,
+        [Description("source_type:http.request.parameter.name")] RequestParameterName = 2,
+        [Description("source_type:http.request.parameter")] RequestParameterValue = 3,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue = 4,
+        [Description("source_type:http.request.header")] RequestHeaderValue = 5,
+        [Description("source_type:http.request.header.name")] RequestHeaderName = 6,
+        [Description("source_type:http.request.query")] RequestQuery = 7,
+        [Description("source_type:http.cookie.name")] CookieName = 8,
+        [Description("source_type:http.cookie.value")] CookieValue = 9,
+        [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
+    }
+
+    [EnumExtensions]
+    public enum IastInstrumentedSinks
+    {
+        [Description("vulnerability_type:none")] None = 0,
+        [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
+        [Description("vulnerability_type:weak_hash")] WeakHash = 2,
+        [Description("vulnerability_type:sql_injection")] SqlInjection = 3,
+        [Description("vulnerability_type:command_injection")] CommandInjection = 4,
+        [Description("vulnerability_type:path_traversal")] PathTraversal = 5,
+        [Description("vulnerability_type:ldap_injection")] LdapInjection = 6,
+        [Description("vulnerability_type:ssrf")] Ssrf = 7,
+        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect = 8,
+        [Description("vulnerability_type:insecure_cookie")] InsecureCookie = 9,
+        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
+        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
     }
 }

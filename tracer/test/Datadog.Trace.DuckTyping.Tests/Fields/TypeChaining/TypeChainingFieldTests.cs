@@ -206,6 +206,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.TypeChaining
             Assert.Equal(42, duckAbstract.PublicSelfTypeField.MagicNumber);
             Assert.Equal(42, duckVirtual.PublicSelfTypeField.MagicNumber);
 
+            duckInterface.PublicSelfTypeFieldWithType = ValueWithType<IDummyFieldObject>.Create(newDummy, null!);
+            Assert.Equal(42, duckInterface.PublicSelfTypeFieldWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckInterface.PublicSelfTypeFieldWithType.Type);
+            Assert.Equal(42, duckAbstract.PublicSelfTypeFieldWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckAbstract.PublicSelfTypeFieldWithType.Type);
+            Assert.Equal(42, duckVirtual.PublicSelfTypeFieldWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckVirtual.PublicSelfTypeFieldWithType.Type);
+
             // *
             newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalSelfTypeField = newDummy;

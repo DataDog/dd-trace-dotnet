@@ -65,4 +65,12 @@ internal partial interface IMetricsTelemetryCollector
     public void RecordCountWafUpdates(int increment = 1);
 
     public void RecordCountWafRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.WafAnalysis tag, int increment = 1);
+
+    public void RecordCountIastExecutedSources(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources tag, int increment = 1);
+
+    public void RecordCountIastExecutedPropagations(int increment = 1);
+
+    public void RecordCountIastExecutedSinks(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks tag, int increment = 1);
+
+    public void RecordCountIastRequestTainted(int increment = 1);
 }

@@ -21,11 +21,15 @@ profiles:
           DD_TRACE_DEBUG: 0
           DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
           DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
+          DD_TRACE_LOG_DIRECTORY: ".\\logs\\"
         options:
           requiredOperatingSystem: windows
           requiredArchitecture: x64
           buildFiles:
           - "../../tracer-home-win/**;{{ windowsProfilerPath }}\\{{ commit_hash }}\\tracer-home-win"
+          downloadFiles:
+          - ".\\logs\\*"
+          downloadFilesOutput: "results/logs/"
       load:
         endpoints:
           - http://localhost:5010
@@ -48,11 +52,15 @@ profiles:
           DD_TRACE_DEBUG: 0
           DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
           DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
+          DD_TRACE_LOG_DIRECTORY: "./logs"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: x64
           buildFiles:
           - "../../tracer-home-linux/**;{{ linuxProfilerPath }}/{{ commit_hash }}/tracer-home-linux"
+          downloadFiles: 
+          - "./logs/*"
+          downloadFilesOutput: "results/"
       load:
         endpoints:
           - http://localhost:5010
@@ -131,11 +139,15 @@ profiles:
           DD_TRACE_DEBUG: 0
           DD_INTERNAL_TELEMETRY_V2_ENABLED: "{{ telemetry_v2 }}"
           DD_TELEMETRY_METRICS_ENABLED: "{{ enable_metrics }}"
+          DD_TRACE_LOG_DIRECTORY: "./logs"
         options:
           requiredOperatingSystem: linux
           requiredArchitecture: arm64
           buildFiles:
           - "../../tracer-home-linux-arm64/**;{{ linuxArm64ProfilerPath }}/{{ commit_hash }}/tracer-home-linux-arm64"
+          downloadFiles:
+          - "./logs/*"
+          downloadFilesOutput: "results/"
       load:
         endpoints:
           - http://localhost:5010

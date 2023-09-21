@@ -6,6 +6,9 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.DirectoryServices;
+using System.DirectoryServices.AccountManagement;
+using System.DirectoryServices.Protocols;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -14,10 +17,12 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using DirectoryEntry = System.DirectoryServices.DirectoryEntry;
 
 namespace Datadog.Trace.Security.IntegrationTests.Iast;
 
@@ -74,6 +79,10 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(WebClient), null, null, true)]
     [InlineData(typeof(Uri), null, new string[] { "Boolean CheckSchemeName(System.String)", "Boolean IsHexEncoding(System.String, Int32)", "Char HexUnescape(System.String, Int32 ByRef)", "System.UriHostNameType CheckHostName(System.String)", "Boolean op_Equality(System.Uri, System.Uri)", "Boolean op_Inequality(System.Uri, System.Uri)", "Int32 Compare(System.Uri, System.Uri, System.UriComponents, System.UriFormat, System.StringComparison)", "Boolean IsWellFormedUriString(System.String, System.UriKind)", "Boolean IsBaseOf(System.Uri)" }, true)]
     [InlineData(typeof(UriBuilder), null, new string[] { "set_Fragment(System.String)", "get_Fragment(System.String)", "set_Scheme(System.String)", "get_Scheme(System.String)", "set_UserName(System.String)", "get_UserName(System.String)", "set_Password(System.String)", "get_Password(System.String)" }, true)]
+    [InlineData(typeof(DirectoryEntry), null, new string[] { "Void Rename(System.String)", "Void RefreshCache(System.String[])", "Void MoveTo(System.DirectoryServices.DirectoryEntry, System.String)", "Void InvokeSet(System.String, System.Object[])", "System.Object InvokeGet(System.String)", "System.Object Invoke(System.String)", "System.Object Invoke(System.String, System.Object[])", "Boolean Exists(System.String)", "System.DirectoryServices.DirectoryEntry CopyTo(System.DirectoryServices.DirectoryEntry, System.String)", "Void set_Username(System.String)", "Void set_Password(System.String)", "Void .ctor(System.Object)" }, true)]
+    [InlineData(typeof(DirectorySearcher), null, new string[] { "Void set_AttributeScopeQuery(System.String)" }, true)]
+    [InlineData(typeof(PrincipalContext), null, new string[] { "Void .ctor(System.DirectoryServices.AccountManagement.ContextType, System.String)", "Boolean ValidateCredentials(System.String, System.String, System.DirectoryServices.AccountManagement.ContextOptions)", "Boolean ValidateCredentials(System.String, System.String)" }, true)]
+    [InlineData(typeof(SearchRequest), null, new string[] { "Void .ctor(System.String, System.Xml.XmlDocument, System.DirectoryServices.Protocols.SearchScope, System.String[])", "void set_RequestId(System.String)", "void set_DistinguishedName(System.String)" }, true)]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestMethodsAspectCover(Type typeToCheck, string methodToCheck, string[] overloadsToExclude = null, bool excludeParameterlessMethods = false)
@@ -188,6 +197,10 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(WebRequest))]
     [InlineData(typeof(WebClient))]
     [InlineData(typeof(UriBuilder))]
+    [InlineData(typeof(DirectoryEntry))]
+    [InlineData(typeof(DirectorySearcher))]
+    [InlineData(typeof(PrincipalContext))]
+    [InlineData(typeof(SearchRequest))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)
@@ -248,6 +261,7 @@ public class IastInstrumentationUnitTests : TestHelper
                 }
             }
 #endif
+            SetEnvironmentVariable(ConfigurationKeys.CIVisibility.Enabled, "0"); // without this key, ci visibility is enabled for the samples, which we don't really want
             SetEnvironmentVariable("DD_TRACE_LOG_DIRECTORY", logDirectory);
             SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "0");
             ProcessResult processResult = RunDotnetTestSampleAndWaitForExit(agent, arguments: arguments, forceVsTestParam: true);

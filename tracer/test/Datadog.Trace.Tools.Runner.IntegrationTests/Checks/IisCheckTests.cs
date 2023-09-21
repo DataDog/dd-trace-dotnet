@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                    new CheckIisSettings { SiteName = siteName },
+                    siteName,
                     iisFixture.IisExpress.ConfigFile,
                     iisFixture.IisExpress.Process.Id,
                     MockRegistryService());
@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                                 new CheckIisSettings { SiteName = siteName },
+                                 siteName,
                                  iisFixture.IisExpress.ConfigFile,
                                  iisFixture.IisExpress.Process.Id,
                                  MockRegistryService());
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                    new CheckIisSettings { SiteName = "sample" },
+                    "sample",
                     iisFixture.IisExpress.ConfigFile,
                     iisFixture.IisExpress.Process.Id,
                     MockRegistryService());
@@ -151,7 +151,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             using var console = ConsoleHelper.Redirect();
 
             var result = await CheckIisCommand.ExecuteAsync(
-                new CheckIisSettings { SiteName = "sample" },
+                "sample",
                 iisFixture.IisExpress.ConfigFile,
                 iisFixture.IisExpress.Process.Id,
                 MockRegistryService());
@@ -172,7 +172,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             using var console = ConsoleHelper.Redirect();
 
             var result = await CheckIisCommand.ExecuteAsync(
-                new CheckIisSettings { SiteName = "dummySite" },
+                "dummySite",
                 iisFixture.IisExpress.ConfigFile,
                 iisFixture.IisExpress.Process.Id,
                 MockRegistryService());
@@ -193,7 +193,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             using var console = ConsoleHelper.Redirect();
 
             var result = await CheckIisCommand.ExecuteAsync(
-                new CheckIisSettings { SiteName = "sample/dummy" },
+                "sample/dummy",
                 iisFixture.IisExpress.ConfigFile,
                 iisFixture.IisExpress.Process.Id,
                 MockRegistryService());

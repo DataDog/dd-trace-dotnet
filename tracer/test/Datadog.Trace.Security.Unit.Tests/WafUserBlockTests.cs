@@ -31,6 +31,8 @@ namespace Datadog.Trace.Security.Unit.Tests
             var configurationStatus = new ConfigurationStatus(string.Empty) { RulesDataByFile = { ["test"] = rulesData!.ToArray() } };
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesDataKey);
             var res = initResult.Waf!.UpdateWafFromConfigurationStatus(configurationStatus);
+            res.Success.Should().BeTrue();
+            res.HasErrors.Should().BeFalse();
             using var context = waf.CreateContext()!;
             var result = context.Run(
                 new Dictionary<string, object> { { AddressesConstants.UserId, "user3" } },

@@ -398,7 +398,7 @@ std::string OpSysTools::GetProcessName()
     return fs::path(pathName).filename().string();
 #elif MACOS
     const int32_t length = 260;
-    char* buffer = new char[length];
+    char buffer[length] = {'\0'};
     proc_name(getpid(), buffer, length);
     return std::string(buffer);
 #else
@@ -409,11 +409,12 @@ std::string OpSysTools::GetProcessName()
 #endif
 }
 
-bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
+bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
 {
 #if defined(_WINDOWS) || defined(DD_SANITIZERS)
     // Today we do not have any specific check before starting the profiler on Windows.
     // And also when we compile for sanitizers tests (Address and Undefined behavior sanitizers)
+    cpuLimit = 0;
     return true;
 #else
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
@@ -475,8 +476,6 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold)
 
         return false;
     }
-
-    double cpuLimit;
 
     if (CGroup::GetCpuLimit(&cpuLimit))
     {

@@ -91,6 +91,8 @@ namespace ServiceBus.Minimal.MassTransit
             {
                 await busControl.StopAsync(TimeSpan.FromSeconds(30));
             }
+
+            Console.WriteLine("App completed successfully");
         }
 
         static async Task SendMessagesAsync(IServiceProvider provider, int jobCount = 10, int activeThreshold = 10, int? delayInSeconds = null)

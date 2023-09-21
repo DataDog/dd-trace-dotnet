@@ -30,12 +30,13 @@ public class Linq2DbTests : InstrumentationTestsBase, IDisposable
         dataConnection = new TestDb(dbConnection.ConnectionString);
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         dataConnection.Close();
         dataConnection = null;
         dbConnection.Close();
         dbConnection = null;
+        base.Dispose();
     }
 
     [Fact]

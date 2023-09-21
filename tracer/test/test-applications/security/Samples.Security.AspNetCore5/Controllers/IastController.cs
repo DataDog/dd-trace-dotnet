@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
@@ -259,7 +261,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch
             {
-                return Content("The provided file could not be opened");
+                return Content("The provided file " + file + " could not be opened");
             }
         }
 
@@ -367,6 +369,47 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.Secure = true;
 
             return cookieOptions;
+        }
+
+#if NET5_0_OR_GREATER
+        [SupportedOSPlatform("windows")]
+#endif
+        [HttpGet("LDAP")]
+        [Route("LDAP")]
+        public ActionResult Ldap(string path, string userName)
+        {
+            try
+            {
+                DirectoryEntry entry = null;
+                try
+                {
+                    var directoryEntryPath = !string.IsNullOrEmpty(path) ? path : "LDAP://fakeorg";
+                    entry = new DirectoryEntry(directoryEntryPath, string.Empty, string.Empty, AuthenticationTypes.None);
+                }
+                catch
+                {
+                    entry = new DirectoryEntry();
+                }
+                DirectorySearcher search = new DirectorySearcher(entry);
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    search.Filter = "(uid=" + userName + ")";
+                }
+                var result = search.FindAll();
+
+                string resultString = string.Empty;
+
+                for (int i = 0; i < result.Count; i++)
+                {
+                    resultString += result[i].Path + Environment.NewLine;
+                }
+
+                return Content($"Result: " + resultString);
+            }
+            catch
+            {
+                return Content($"Result: Not connected");
+            }
         }
     }
 }

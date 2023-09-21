@@ -19,6 +19,7 @@ class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
 class ISampledAllocationsListener;
+class SampleValueTypeProvider;
 
 
 class AllocationsProvider
@@ -27,11 +28,20 @@ class AllocationsProvider
     public IAllocationsListener
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     AllocationsProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
+        ICorProfilerInfo4* pCorProfilerInfo,
+        IManagedThreadList* pManagedThreadList,
+        IFrameStore* pFrameStore,
+        IThreadsCpuManager* pThreadsCpuManager,
+        IAppDomainStore* pAppDomainStore,
+        IRuntimeIdStore* pRuntimeIdStore,
+        IConfiguration* pConfiguration,
+        ISampledAllocationsListener* pListener,
+        MetricsRegistry& metricsRegistry);
+
+    AllocationsProvider(
+        std::vector<SampleValueTypeProvider::Offset> valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
@@ -50,6 +60,8 @@ public:
                       uint64_t allocationAmount) override;
 
 private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
+
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;
     IFrameStore* _pFrameStore;

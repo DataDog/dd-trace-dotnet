@@ -3,20 +3,37 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
+using Datadog.Trace.Logging;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner
 {
     internal static class CIConfiguration
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIConfiguration));
+
         public static bool SetupCIEnvironmentVariables(Dictionary<string, string> environmentVariables, CIName? ci)
         {
+            Log.Information("Detecting CI provider...");
             ci ??= AutodetectCi();
 
             switch (ci)
             {
                 case CIName.AzurePipelines:
+                    Log.Information("Setting up the environment variables for auto-instrumentation for Azure Pipelines.");
+                    // Excluding powershell.exe and DTAExecutionHost.exe due to interference in the azure agent making that subsequence script tasks fail.
+                    if (environmentVariables.TryGetValue("DD_PROFILER_EXCLUDE_PROCESSES", out var excludeProcesses))
+                    {
+                        excludeProcesses += ";DTAExecutionHost.exe;powershell.exe";
+                    }
+                    else
+                    {
+                        excludeProcesses = "DTAExecutionHost.exe;powershell.exe";
+                    }
+
+                    environmentVariables["DD_PROFILER_EXCLUDE_PROCESSES"] = excludeProcesses;
                     SetupAzureEnvironmentVariables(environmentVariables);
                     return true;
             }
@@ -29,7 +46,13 @@ namespace Datadog.Trace.Tools.Runner
         {
             foreach (var item in environmentVariables)
             {
-                AnsiConsole.WriteLine($"##vso[task.setvariable variable={item.Key}]{item.Value}");
+                // Declaring variables for Azure Pipelines
+                // https://learn.microsoft.com/en-gb/azure/devops/pipelines/scripts/logging-commands?view=azure-devops&tabs=bash#setvariable-initialize-or-modify-the-value-of-a-variable
+
+                // We cannot use `AnsiConsole.WriteLine` due to the word wrapping and text handling in spectre console that affects the azure command, so we use the normal `Console.WriteLine` instead.
+                // See https://github.com/spectreconsole/spectre.console/issues/1122
+
+                Console.WriteLine($"##vso[task.setvariable variable={item.Key};]{item.Value}");
             }
         }
 

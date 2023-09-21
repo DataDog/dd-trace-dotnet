@@ -15,8 +15,7 @@ namespace Datadog.Trace.Tests.Telemetry;
 public class TelemetryControllerV2SchedulerTests
 {
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(60);
-    private static readonly TimeSpan AggregateInterval = TimeSpan.FromSeconds(10);
-    private static readonly TimeSpan HalfOfAggregateInterval = TimeSpan.FromSeconds(5);
+    private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
     private static readonly Task NeverComplete = Task.Delay(Timeout.Infinite);
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly SimpleClock _clock = new();
@@ -25,7 +24,7 @@ public class TelemetryControllerV2SchedulerTests
 
     public TelemetryControllerV2SchedulerTests()
     {
-        _scheduler = new TelemetryControllerV2.Scheduler(FlushInterval, AggregateInterval, _processExit, _clock, _delayFactory);
+        _scheduler = new TelemetryControllerV2.Scheduler(FlushInterval, _processExit, _clock, _delayFactory);
     }
 
     [Fact]
@@ -34,160 +33,65 @@ public class TelemetryControllerV2SchedulerTests
         _scheduler = GetScheduler();
 
         // t = 0; should not send initially
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse();
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
 
-        // we expect the aggregate flush delay, but we'll stop it before that happens
+        // we expect an infinite flush interval, because initialization is not complete
+        // we'll fast-forward to 5s for now
         var mutex = new ManualResetEventSlim();
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += HalfOfAggregateInterval;
+            delay.Should().Be(Timeout.InfiniteTimeSpan);
+            _clock.UtcNow += FiveSeconds;
             mutex.Set();
             return NeverComplete;
         };
 
         var waitTask = _scheduler.WaitForNextInterval();
+        waitTask.IsFaulted.Should().BeFalse();
         _scheduler.SetTracerInitialized();
         mutex.Wait();
 
         await waitTask;
 
         // t = 5s;
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse(); // delay not expired;
-        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // triggered by first initialization;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // triggered by first initialization, Next flush at 65s
 
-        // wait for the next loop - delay should be HalfOfAggregateInterval
+        // wait for the next loop - delay should be FlushInterval
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(HalfOfAggregateInterval);
-            _clock.UtcNow += HalfOfAggregateInterval;
+            delay.Should().Be(FlushInterval);
+            _clock.UtcNow += FlushInterval;
             return Task.CompletedTask;
         };
 
         await _scheduler.WaitForNextInterval();
 
-        // t = 10s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        // standard aggregation delay now
-        _delayFactory.Task = delay =>
-        {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += AggregateInterval;
-            return Task.CompletedTask;
-        };
-        await _scheduler.WaitForNextInterval();
-
-        // t = 20s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        await _scheduler.WaitForNextInterval();
-        // t = 30s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        await _scheduler.WaitForNextInterval();
-        // t = 40s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        await _scheduler.WaitForNextInterval();
-        // t = 50s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        await _scheduler.WaitForNextInterval();
-        // t = 60s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
-
-        // expect a 5s delay now
-        _delayFactory.Task = delay =>
-        {
-            delay.Should().Be(HalfOfAggregateInterval);
-            _clock.UtcNow += HalfOfAggregateInterval;
-            return Task.CompletedTask;
-        };
-
-        await _scheduler.WaitForNextInterval();
         // t = 65s;
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse(); // delay not expired, next aggregate at 70s;
-        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // Flush time, next flush at 125s!
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
 
-        await _scheduler.WaitForNextInterval();
-        // t = 70s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // next flush at 125s
+        await _scheduler.WaitForNextInterval(); // next flush at 125s
 
-        // standard aggregation delay again
-        _delayFactory.Task = delay =>
-        {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += AggregateInterval;
-            return Task.CompletedTask;
-        };
-
-        await _scheduler.WaitForNextInterval();
-
-        // t = 80s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // next flush at 125s
+        // t = 125s;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
 
         // we'll interrupt the next delay with a process exit signal
         mutex.Reset();
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(AggregateInterval);
+            delay.Should().Be(FlushInterval);
             // Partial clock advancement
-            _clock.UtcNow += HalfOfAggregateInterval;
+            _clock.UtcNow += FiveSeconds;
             mutex.Set();
             return NeverComplete;
         };
 
         waitTask = _scheduler.WaitForNextInterval();
+        waitTask.IsFaulted.Should().BeFalse();
         _processExit.TrySetResult(true);
         mutex.Wait();
         await waitTask;
 
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // final flush
         _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // final flush
-    }
-
-    [Fact]
-    public async Task AggregatesMetricsWhenClockExpires()
-    {
-        // should not send initially
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse();
-
-        _delayFactory.Task = delay =>
-        {
-            _clock.UtcNow += delay;
-            return Task.CompletedTask;
-        };
-
-        await _scheduler.WaitForNextInterval();
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue();
-
-        // increment by _almost_ the required time
-        _delayFactory.Task = delay =>
-        {
-            _clock.UtcNow += delay.Subtract(TimeSpan.FromSeconds(1));
-            return Task.CompletedTask;
-        };
-        await _scheduler.WaitForNextInterval();
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse();
-
-        // ok, the final second
-        _delayFactory.Task = delay =>
-        {
-            _clock.UtcNow += TimeSpan.FromSeconds(1);
-            return Task.CompletedTask;
-        };
-        await _scheduler.WaitForNextInterval();
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue();
     }
 
     [Fact]
@@ -225,15 +129,14 @@ public class TelemetryControllerV2SchedulerTests
         _scheduler = GetScheduler();
 
         // t = 0; should not send initially
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse();
         _scheduler.ShouldFlushTelemetry.Should().BeFalse();
 
-        // for simplicity, advance the clock and set tracer initialized at the same time
+        // partial advancement
         var mutex = new ManualResetEventSlim();
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += AggregateInterval;
+            delay.Should().Be(Timeout.InfiniteTimeSpan);
+            _clock.UtcNow += FiveSeconds;
             mutex.Set();
             return NeverComplete;
         };
@@ -244,51 +147,49 @@ public class TelemetryControllerV2SchedulerTests
 
         await waitTask;
 
-        // t = 10s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate
+        // t = 5s;
         _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // triggered by first initialization
 
         // wait for the next loop
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += AggregateInterval;
+            delay.Should().Be(FlushInterval);
+            _clock.UtcNow += FiveSeconds;
             return Task.CompletedTask;
         };
 
         await _scheduler.WaitForNextInterval();
 
-        // t = 20s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 70s;
+        // t = 10s;
+        _scheduler.ShouldFlushTelemetry.Should().BeFalse(); // Next flush at 65s;
 
-        // change flush interval to be same as metric interval
+        // change flush interval to be every 5 seconds
         // note that this doesn't reset the "last run" time, which means the scheduler will try to run immediately
-        _scheduler.SetFlushInterval(AggregateInterval);
+        _scheduler.SetFlushInterval(FiveSeconds);
         _delayFactory.Task = _ => throw new Exception("Unexpectedly created a delay task"); // this shouldn't be called
 
         await _scheduler.WaitForNextInterval();
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
 
-        // t = 20s;
-        _scheduler.ShouldAggregateMetrics.Should().BeFalse(); // we're still at the same time as far as the scheduler is concerned, so no expiry
-        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // missed the timer, so run now
-
-        // Back to normal now
+        // wait for the next loop
         _delayFactory.Task = delay =>
         {
-            delay.Should().Be(AggregateInterval);
-            _clock.UtcNow += AggregateInterval;
+            delay.Should().Be(FiveSeconds);
+            _clock.UtcNow += FiveSeconds;
             return Task.CompletedTask;
         };
+
+        // t = 15s;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
+
         await _scheduler.WaitForNextInterval();
 
-        // t = 30s;
-        _scheduler.ShouldAggregateMetrics.Should().BeTrue(); // delay expired, aggregate time;
-        _scheduler.ShouldFlushTelemetry.Should().BeTrue(); // timer expired, flush time;
+        // t = 20s;
+        _scheduler.ShouldFlushTelemetry.Should().BeTrue();
     }
 
     private TelemetryControllerV2.Scheduler GetScheduler()
-        => new(FlushInterval, AggregateInterval, _processExit, _clock, _delayFactory);
+        => new(FlushInterval, _processExit, _clock, _delayFactory);
 
     private class DelayFactory : TelemetryControllerV2.Scheduler.IDelayFactory
     {

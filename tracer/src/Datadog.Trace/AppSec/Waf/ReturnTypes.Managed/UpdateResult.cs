@@ -6,58 +6,25 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(Obj? diagObject, bool success, bool unusableRules = false)
+        internal UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false)
         {
             if (diagObject != null)
             {
-                Dictionary<string, object>? rules = null;
-                if (diagObject.ArgsType == ObjType.Invalid)
-                {
-                    Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf didn't provide a valid diagnostics object at initialization, most likely due to an older waf version < 1.11.0" } };
-                }
-                else
-                {
-                    var diagnosticsData = (Dictionary<string, object>)Encoder.Decode(diagObject);
-                    if (diagnosticsData.Count > 0)
-                    {
-                        object? rulesObj = null;
-                        var valueExist = diagnosticsData.TryGetValue("rules", out rulesObj);
-                        if (!valueExist)
-                        {
-                            valueExist = diagnosticsData.TryGetValue("rules_override", out rulesObj);
-                            if (!valueExist)
-                            {
-                                Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules or rule_overrides" } };
-                            }
-                        }
+                var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
 
-                        if (rulesObj != null)
-                        {
-                            rules = rulesObj as Dictionary<string, object>;
-                            if (rules == null)
-                            {
-                                Errors = new Dictionary<string, object> { { "diagnostics-error", "Waf could not provide diagnostics on rules as a dictionary key-value" } };
-                            }
-                        }
+                FailedToLoadRules = reportedDiag.FailedCount;
+                LoadedRules = reportedDiag.LoadedCount;
+                Errors = reportedDiag.Errors;
+                RuleFileVersion = reportedDiag.RulesetVersion;
 
-                        if (diagnosticsData.TryGetValue("ruleset_version", out var ruleFileVersion))
-                        {
-                            RuleFileVersion = Convert.ToString(ruleFileVersion);
-                        }
-                    }
-                }
-
-                FailedToLoadRules = (ushort)(rules != null ? ((object[])rules["failed"]).Length : 0);
-                LoadedRules = (ushort)(rules != null ? ((object[])rules["loaded"]).Length : 0);
-                Errors = Errors ?? (Dictionary<string, object>)rules!["errors"];
-
-                if (Errors != null && Errors.Count > 0)
+                if (Errors is { Count: > 0 })
                 {
                     HasErrors = true;
                     ErrorMessage = JsonConvert.SerializeObject(Errors);
@@ -83,12 +50,12 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 
         internal string? ErrorMessage { get; }
 
-        internal bool? HasErrors { get; }
+        internal bool HasErrors { get; }
 
         internal string? RuleFileVersion { get; }
 
-        public static UpdateResult FromUnusableRules() => new UpdateResult(null, false, true);
+        public static UpdateResult FromUnusableRules() => new(null, false, true);
 
-        public static UpdateResult FromFailed() => new UpdateResult(null, false);
+        public static UpdateResult FromFailed() => new(null, false);
     }
 }

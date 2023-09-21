@@ -17,11 +17,12 @@ using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class InstrumentationTestsBase
+public class InstrumentationTestsBase : IDisposable
 {
     private object _iastRequestContext;
     private object _traceContext;
     private object _taintedObjects;
+    private IDisposable Scope;
     private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
     private static readonly Type _taintedObjectType = Type.GetType("Datadog.Trace.Iast.TaintedObject, Datadog.Trace");
     private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
@@ -53,6 +54,7 @@ public class InstrumentationTestsBase
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -70,9 +72,9 @@ public class InstrumentationTestsBase
     public InstrumentationTestsBase()
     {
         AssertInstrumented();
-        var scope = SampleHelpers.GetActiveScope();
-        scope.Should().NotBeNull();
-        var span = _spanProperty.Invoke(scope, Array.Empty<object>());
+        Scope = SampleHelpers.CreateScope("IAST test");
+        Scope.Should().NotBeNull();
+        var span = _spanProperty.Invoke(Scope, Array.Empty<object>());
         span.Should().NotBeNull();
         _setSpanTypeProperty.Invoke(span, new object[] { "web" });
         var context = _contextProperty.Invoke(span, Array.Empty<object>());
@@ -82,6 +84,11 @@ public class InstrumentationTestsBase
         _iastRequestContext = _iastRequestContextProperty.Invoke(_traceContext, Array.Empty<object>());
         _taintedObjects = _taintedObjectsField.GetValue(_iastRequestContext);
         _taintedObjects.Should().NotBeNull();
+    }
+
+    public virtual void Dispose()
+    {
+        Scope?.Dispose();
     }
 
     protected string AddTaintedString(string tainted)
@@ -185,6 +192,13 @@ public class InstrumentationTestsBase
         {
             var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
             var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+            var line = _lineProperty.Invoke(locationProperty, Array.Empty<object>());
+
+            if (line != null)
+            {
+                ((int)line).Should().BeGreaterThan(0);
+            }
+
             locations?.Add(path.ToString());
 
             if (!string.IsNullOrEmpty(path as string))

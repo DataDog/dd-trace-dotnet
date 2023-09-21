@@ -10,7 +10,7 @@
 #include "cor.h"
 #include "corprof.h"
 #include "ManagedThreadInfo.h"
-
+#include "SampleValueTypeProvider.h"
 
 class Sample;
 
@@ -27,7 +27,7 @@ public:
     RawSample& operator=(RawSample&& other) noexcept;
 
     // set values and additional labels on target sample
-    virtual void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const = 0;
+    virtual void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffset) const = 0;
 
 public:
     std::uint64_t Timestamp;        // _unixTimeUtc;

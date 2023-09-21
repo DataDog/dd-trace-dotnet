@@ -28,10 +28,6 @@ public class OracleTests : InstrumentationTestsBase, IDisposable
         _querySafe = "SELECT * from Books where Title = '" + _notTaintedValue + "'";
     }
 
-    public void Dispose()
-    {
-    }
-
     // We exclude the tests that only pass when using a real MySql Connection
     // These tests have been left here for local testing purposes with MySql installed
 

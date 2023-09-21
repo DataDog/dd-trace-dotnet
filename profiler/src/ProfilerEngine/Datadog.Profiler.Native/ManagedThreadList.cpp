@@ -14,7 +14,6 @@ ManagedThreadList::ManagedThreadList(ICorProfilerInfo4* pCorProfilerInfo) :
 {
     _threads.reserve(MinBufferSize);
     _lookupByClrThreadId.reserve(MinBufferSize);
-    _lookupByProfilerThreadInfoId.reserve(MinBufferSize);
 
     // in case of tests, this could be null
     if (_pCorProfilerInfo != nullptr)
@@ -29,7 +28,6 @@ ManagedThreadList::~ManagedThreadList()
 
     _threads.clear();
     _lookupByClrThreadId.clear();
-    _lookupByProfilerThreadInfoId.clear();
 
     ICorProfilerInfo4* pCorProfilerInfo = _pCorProfilerInfo;
     if (pCorProfilerInfo != nullptr)
@@ -72,7 +70,6 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrTh
         _threads.push_back(pInfo);
 
         _lookupByClrThreadId[clrThreadId] = pInfo;
-        _lookupByProfilerThreadInfoId[pInfo->GetProfilerThreadInfoId()] = pInfo;
     }
 
     return pInfo;
@@ -138,7 +135,6 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
             // remove it from the storage and index
             _threads.erase(i);
             _lookupByClrThreadId.erase(pInfo->GetClrThreadId());
-            _lookupByProfilerThreadInfoId.erase(pInfo->GetProfilerThreadInfoId());
 
             // iterators might need to be updated
             UpdateIterators(pos);
@@ -151,7 +147,7 @@ bool ManagedThreadList::UnregisterThread(ThreadID clrThreadId, std::shared_ptr<M
         pos++;
     }
 
-    Log::Debug("ManagedThreadList: thread ", std::dec, clrThreadId, " cannot be unregister because not in the list");
+    Log::Debug("ManagedThreadList: thread 0x", std::hex, clrThreadId, std::dec, " cannot be unregister because not in the list");
     return false;
 }
 
@@ -225,18 +221,24 @@ std::shared_ptr<ManagedThreadInfo> ManagedThreadList::LoopNext(uint32_t iterator
     }
 
     uint32_t pos = _iterators[iterator];
-    std::shared_ptr<ManagedThreadInfo> pInfo = _threads[pos];
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
 
-    // move the iterator to the next thread
-    if (pos < activeThreadCount - 1)
+    auto startPos = pos;
+    do
     {
-        pos++;
-    }
-    else // go back to the first thread if the end is reached
-    {
-        pos = 0;
-    }
+        pInfo = _threads[pos];
+        // move the iterator to the next thread and loop
+        // back to the first thread if the end is reached
+        pos = (pos + 1) % activeThreadCount;
+    } while (startPos != pos &&
+        (pInfo->GetOsThreadHandle() == static_cast<HANDLE>(NULL) || pInfo->GetOsThreadHandle() == INVALID_HANDLE_VALUE));
+
     _iterators[iterator] = pos;
+
+    if (startPos == pos)
+    {
+        return nullptr;
+    }
 
     return pInfo;
 }
@@ -261,6 +263,7 @@ HRESULT ManagedThreadList::TryGetCurrentThreadInfo(std::shared_ptr<ManagedThread
         return E_FAIL;
     }
 
+    std::lock_guard<std::recursive_mutex> lock(_mutex);
     pThreadInfo = FindByClrId(clrThreadId);
     if (pThreadInfo != nullptr)
     {
@@ -296,14 +299,13 @@ bool ManagedThreadList::RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThre
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);
 
-    auto it = _lookupByClrThreadId.find(pThreadInfo->GetClrThreadId());
-    if (it == _lookupByClrThreadId.cend())
+    bool inserted;
+    std::tie(std::ignore, inserted) = _lookupByClrThreadId.emplace(pThreadInfo->GetClrThreadId(), pThreadInfo);
+
+    if (inserted)
     {
         // not registered yet
-
         _threads.push_back(pThreadInfo);
-        _lookupByClrThreadId[pThreadInfo->GetClrThreadId()] = pThreadInfo;
-        _lookupByProfilerThreadInfoId[pThreadInfo->GetProfilerThreadInfoId()] = pThreadInfo;
 
         return true;
     }

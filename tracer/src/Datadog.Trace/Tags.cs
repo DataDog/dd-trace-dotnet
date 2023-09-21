@@ -279,6 +279,21 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The message source name.
+        /// </summary>
+        internal const string MessagingSourceName = "messaging.source.name";
+
+        /// <summary>
+        /// The message destination name.
+        /// </summary>
+        internal const string MessagingDestinationName = "messaging.destination.name";
+
+        /// <summary>
+        /// The messaging operation.
+        /// </summary>
+        internal const string MessagingOperation = "messaging.operation";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";
@@ -396,6 +411,11 @@ namespace Datadog.Trace
         /// The queue URL associated with the AWS SDK span.
         /// </summary>
         internal const string AwsQueueUrl = "aws.queue.url";
+
+        /// <summary>
+        /// The stream name associated with the AWS SDK Kinesis span.
+        /// </summary>
+        internal const string StreamName = "streamname";
 
         /// <summary>
         /// Configures Trace Analytics.
@@ -623,6 +643,10 @@ namespace Datadog.Trace
         internal const string ServiceRemotingInvocationId = "service-fabric.service-remoting.invocation-id";
 
         internal const string ProcessEnvironmentVariables = "cmd.environment_variables";
+        internal const string ProcessComponent = "cmd.component";
+        internal const string ProcessCommandExec = "cmd.exec";
+        internal const string ProcessCommandShell = "cmd.shell";
+        internal const string ProcessTruncated = "cmd.truncated";
 
         internal const string TagPropagationError = "_dd.propagation_error";
 
@@ -630,6 +654,11 @@ namespace Datadog.Trace
         /// Marks a span as injected when DBM comment has the traceParent on it
         /// </summary>
         internal const string DbmTraceInjected = "_dd.dbm_trace_injected";
+
+        /// <summary>
+        /// Holds the original value for Service when Service is overriden after span creation
+        /// </summary>
+        internal const string BaseService = "_dd.base_service";
 
         internal static class User
         {

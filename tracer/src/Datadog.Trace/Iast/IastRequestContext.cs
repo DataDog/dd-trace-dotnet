@@ -11,9 +11,11 @@ using System.Web;
 #if !NETFRAMEWORK
 using Microsoft.AspNetCore.Http;
 #endif
-using System.Xml.Linq;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Metrics;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast;
 
@@ -25,6 +27,7 @@ internal class IastRequestContext
     private TaintedObjects _taintedObjects = new();
     private bool _routedParametersAdded = false;
     private bool _querySourcesAdded = false;
+    private ExecutedTelemetryHelper? _executedTelemetryHelper = ExecutedTelemetryHelper.Enabled() ? new ExecutedTelemetryHelper() : null;
 
     internal static void AddIastDisabledFlagToSpan(Span span)
     {
@@ -38,6 +41,11 @@ internal class IastRequestContext
         if (_vulnerabilityBatch != null)
         {
             span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+        }
+
+        if (_executedTelemetryHelper != null)
+        {
+            _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
         }
     }
 
@@ -74,6 +82,7 @@ internal class IastRequestContext
 
     private void AddExtractedBody(object bodyExtracted, string? key)
     {
+        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
         if (bodyExtracted != null)
         {
             // We get either string, List<object> or Dictionary<string, object>
@@ -130,6 +139,7 @@ internal class IastRequestContext
     {
         if (!_routedParametersAdded)
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RoutedParameterValue);
             if (routeData != null)
             {
                 foreach (var item in routeData)
@@ -161,6 +171,18 @@ internal class IastRequestContext
     {
         if (!_querySourcesAdded)
         {
+            if (_executedTelemetryHelper is { } helper)
+            {
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+            }
+
             if (request.QueryString != null)
             {
                 foreach (var key in request.QueryString.AllKeys)
@@ -223,6 +245,18 @@ internal class IastRequestContext
 
         if (!_querySourcesAdded)
         {
+            if (_executedTelemetryHelper is { } helper)
+            {
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestParameterValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderName);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestHeaderValue);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieName);
+                helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+            }
+
             if (request.Query != null)
             {
                 foreach (var item in request.Query)
@@ -281,7 +315,22 @@ internal class IastRequestContext
 
     private void AddHeaderData(string name, string value)
     {
-        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeader), name, value));
+        _taintedObjects.TaintInputString(value, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderValue), name, value));
         _taintedObjects.TaintInputString(name, new Source(SourceType.GetByte(SourceTypeName.RequestHeaderName), name, null));
+    }
+
+    internal void OnExecutedSinkTelemetry(IastInstrumentedSinks sink)
+    {
+        _executedTelemetryHelper?.AddExecutedSink(sink);
+    }
+
+    internal void OnExecutedSourceTelemetry(IastInstrumentedSources source)
+    {
+        _executedTelemetryHelper?.AddExecutedSource(source);
+    }
+
+    internal void OnExecutedPropagationTelemetry()
+    {
+        _executedTelemetryHelper?.AddExecutedPropagation();
     }
 }

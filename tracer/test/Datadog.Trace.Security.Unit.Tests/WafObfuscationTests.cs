@@ -51,7 +51,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 using var context = waf.CreateContext();
                 var result = context.Run(args, 1_000_000);
                 result.ReturnCode.Should().Be(ReturnCode.Match);
-
+                result.Data.Should().NotBeNull();
                 var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
                 resultData.RuleMatches[0].Parameters[0].Address.Should().Be(AddressesConstants.RequestQuery);
                 resultData.RuleMatches[0].Parameters[0].Highlight[0].Should().Be(expectedHighlight);

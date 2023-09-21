@@ -7,14 +7,19 @@
 #include "ISamplesProvider.h"
 #include "IThreadInfo.h"
 #include "NativeThreadsCpuProviderBase.h"
+#include "MetricsRegistry.h"
+#include "MeanMaxMetric.h"
 
 class GCThreadsCpuProvider : public NativeThreadsCpuProviderBase
 {
 public:
-    GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider);
+    GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry);
 
     // Inherited via ISamplesProvider
     const char* GetName() override;
+
+protected:
+    void OnCpuDuration(std::uint64_t cpuTime) override;
 
 private:
     bool IsGcThread(std::shared_ptr<IThreadInfo> const& thread);
@@ -23,4 +28,5 @@ private:
 
     std::vector<std::shared_ptr<IThreadInfo>> _gcThreads;
     std::uint8_t _number_of_attempts = 0;
+    std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
 };

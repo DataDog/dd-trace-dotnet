@@ -6,8 +6,11 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Aerospike;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -92,6 +95,36 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             }
 
             return scope;
+        }
+
+        private static long GetMessageSize<T>(T message)
+            where T : IMessage
+        {
+            if (((IDuckType)message).Instance is null)
+            {
+                return 0;
+            }
+
+            var size = MessageSizeHelper.TryGetSize(message.Key);
+            size += MessageSizeHelper.TryGetSize(message.Value);
+
+            if (message.Headers == null)
+            {
+                return size;
+            }
+
+            for (var i = 0; i < message.Headers.Count; i++)
+            {
+                var header = message.Headers[i];
+                size += Encoding.UTF8.GetByteCount(header.Key);
+                var value = header.GetValueBytes();
+                if (value != null)
+                {
+                    size += value.Length;
+                }
+            }
+
+            return size;
         }
 
         internal static Scope CreateConsumerScope(
@@ -234,7 +267,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                                            ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                            : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+                        span.SetDataStreamsCheckpoint(
+                            dataStreamsManager,
+                            CheckpointKind.Consume,
+                            edgeTags,
+                            GetMessageSize(message),
+                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs);
                     }
                 }
             }
@@ -311,7 +349,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                    // produce is always the start of the edge, so defaultEdgeStartMs is always 0
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }

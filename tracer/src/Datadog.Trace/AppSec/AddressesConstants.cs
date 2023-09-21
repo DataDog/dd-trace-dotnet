@@ -27,5 +27,6 @@ namespace Datadog.Trace.AppSec
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
 
         public const string UserId = "usr.id";
+        public const string WafContextSettings = "waf.context.settings";
     }
 }

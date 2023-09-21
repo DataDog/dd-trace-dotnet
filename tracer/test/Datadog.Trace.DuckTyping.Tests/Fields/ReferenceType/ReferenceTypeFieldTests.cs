@@ -206,6 +206,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType
             Assert.Equal("40", duckAbstract.PublicReferenceTypeField);
             Assert.Equal("40", duckVirtual.PublicReferenceTypeField);
 
+            duckInterface.PublicReferenceTypeFieldWithType = ValueWithType<string>.Create("40", typeof(string));
+            Assert.Equal("40", duckInterface.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckInterface.PublicReferenceTypeFieldWithType.Type);
+            Assert.Equal("40", duckAbstract.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckAbstract.PublicReferenceTypeFieldWithType.Type);
+            Assert.Equal("40", duckVirtual.PublicReferenceTypeFieldWithType.Value);
+            Assert.Equal(typeof(string), duckVirtual.PublicReferenceTypeFieldWithType.Type);
+
             duckInterface.PublicReferenceTypeField = "42";
             Assert.Equal("42", duckInterface.PublicReferenceTypeField);
             Assert.Equal("42", duckAbstract.PublicReferenceTypeField);

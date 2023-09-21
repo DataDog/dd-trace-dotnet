@@ -6,7 +6,8 @@
 using System;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using System.Net.Sockets;
+using System.IO;
+using System.IO.Compression;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
@@ -48,13 +49,13 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private static async Task<bool> SendPayloadAsync<T>(Func<IApiRequest, T, Task<IApiResponse>> senderFunc, IApiRequest request, T state, bool finalTry)
+        private static async Task<bool> SendPayloadAsync<T>(Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, IApiRequest request, EventPlatformPayload payload, T state, bool finalTry)
         {
             IApiResponse response = null;
 
             try
             {
-                response = await senderFunc(request, state).ConfigureAwait(false);
+                response = await senderFunc(request, payload, state).ConfigureAwait(false);
 
                 // Attempt a retry if the status code is not SUCCESS
                 if (response.StatusCode is < 200 or >= 300)
@@ -83,7 +84,7 @@ namespace Datadog.Trace.Ci.Agent
             return true;
         }
 
-        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, T, Task<IApiResponse>> senderFunc, T state)
+        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
@@ -119,7 +120,7 @@ namespace Datadog.Trace.Ci.Agent
 
                 try
                 {
-                    success = await SendPayloadAsync(senderFunc, request, state, isFinalTry).ConfigureAwait(false);
+                    success = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
                 }
                 catch (MultipartApiRequestNotSupported mReqEx)
                 {
@@ -171,16 +172,45 @@ namespace Datadog.Trace.Ci.Agent
 
         private async Task SendPayloadAsync(CIVisibilityProtocolPayload payload)
         {
-            var payloadArray = payload.ToArray();
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            ArraySegment<byte> payloadArraySegment;
+            MemoryStream agentlessMemoryStream = null;
+            try
             {
-                Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArray.Length.ToString("N0"));
-            }
+                if (!payload.UseEvpProxy)
+                {
+                    // If we are in agentless mode (no EVP Proxy) then we use gzip compression, supported by the intake
+                    agentlessMemoryStream = new MemoryStream();
+                    int uncompressedSize;
+                    using (var gzipStream = new GZipStream(agentlessMemoryStream, CompressionLevel.Fastest, true))
+                    {
+                        uncompressedSize = payload.WriteTo(gzipStream);
+                    }
 
-            await SendPayloadAsync(
-                payload,
-                static (request, payloadBytes) => request.PostAsync(new ArraySegment<byte>(payloadBytes), MimeTypes.MsgPack),
-                payloadArray).ConfigureAwait(false);
+                    agentlessMemoryStream.TryGetBuffer(out payloadArraySegment);
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug<int, string, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes... ({Uncompressed} bytes uncompressed)", payload.Count, payloadArraySegment.Count.ToString("N0"), uncompressedSize.ToString("N0"));
+                    }
+                }
+                else
+                {
+                    payloadArraySegment = new ArraySegment<byte>(payload.ToArray());
+                    if (Log.IsEnabled(LogEventLevel.Debug))
+                    {
+                        Log.Debug<int, string>("Sending ({NumberOfTraces} events) {BytesValue} bytes...", payload.Count, payloadArraySegment.Count.ToString("N0"));
+                    }
+                }
+
+                await SendPayloadAsync(
+                        payload,
+                        static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
+                        payloadArraySegment)
+                   .ConfigureAwait(false);
+            }
+            finally
+            {
+                agentlessMemoryStream?.Dispose();
+            }
         }
 
         private async Task SendPayloadAsync(MultipartPayload payload)
@@ -188,7 +218,7 @@ namespace Datadog.Trace.Ci.Agent
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
             await SendPayloadAsync(
                 payload,
-                static (request, payloadArray) =>
+                static (request, payload, payloadArray) =>
                 {
                     if (request is IMultipartApiRequest multipartRequest)
                     {
@@ -201,7 +231,7 @@ namespace Datadog.Trace.Ci.Agent
                 payload.ToArray()).ConfigureAwait(false);
         }
 
-        internal class MultipartApiRequestNotSupported : NotSupportedException
+        private class MultipartApiRequestNotSupported : NotSupportedException
         {
             public MultipartApiRequestNotSupported()
                 : base("Sender doesn't support IMultipartApiRequest.")

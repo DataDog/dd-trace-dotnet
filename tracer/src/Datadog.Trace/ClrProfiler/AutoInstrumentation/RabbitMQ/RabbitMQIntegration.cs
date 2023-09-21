@@ -5,9 +5,11 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -88,10 +90,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             };
         }
 
-        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        internal static long GetHeadersSize(IDictionary<string, object> headers)
+        {
+            if (headers == null)
+            {
+                return 0;
+            }
+
+            long size = 0;
+            foreach (var pair in headers)
+            {
+                size += Encoding.UTF8.GetByteCount(pair.Key);
+                size += MessageSizeHelper.TryGetSize(pair.Value);
+            }
+
+            return size;
+        }
+
+        internal static void SetDataStreamsCheckpointOnProduce(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers, int messageSize)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
             {
                 return;
             }
@@ -103,7 +122,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                                    // exchange can be empty for "direct"
                                    new[] { "direction:out", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" } :
                                    new[] { "direction:out", $"exchange:{tags.Exchange}", $"has_routing_key:{!string.IsNullOrEmpty(tags.RoutingKey)}", "type:rabbitmq" };
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetHeadersSize(headers) + messageSize, 0);
                 dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, headersAdapter);
             }
             catch (Exception ex)
@@ -112,10 +131,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             }
         }
 
-        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers)
+        internal static void SetDataStreamsCheckpointOnConsume(Tracer tracer, Span span, RabbitMQTags tags, IDictionary<string, object> headers, int messageSize, long messageTimestamp)
         {
             var dataStreamsManager = tracer.TracerManager.DataStreamsManager;
-            if (dataStreamsManager == null || !dataStreamsManager.IsEnabled || headers == null)
+            if (dataStreamsManager == null || headers == null || !dataStreamsManager.IsEnabled)
             {
                 return;
             }
@@ -126,7 +145,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 var edgeTags = new[] { "direction:in", $"topic:{tags.Queue ?? tags.RoutingKey}", "type:rabbitmq" };
                 var pathwayContext = dataStreamsManager.ExtractPathwayContext(headersAdapter);
                 span.Context.MergePathwayContext(pathwayContext);
-                span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+                span.SetDataStreamsCheckpoint(
+                    dataStreamsManager,
+                    CheckpointKind.Consume,
+                    edgeTags,
+                    GetHeadersSize(headers) + messageSize,
+                    messageTimestamp);
             }
             catch (Exception ex)
             {
@@ -174,7 +198,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 tags.MessageSize = body?.Length.ToString() ?? "0";
             }
 
-            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(Tracer.Instance, scope.Span, tags, basicProperties?.Headers);
+            var timeInQueue = basicProperties != null && basicProperties.Timestamp.UnixTime != 0 ? DateTimeOffset.UtcNow.ToUnixTimeMilliseconds() - basicProperties.Timestamp.UnixTime : 0;
+            RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
+                Tracer.Instance,
+                scope.Span,
+                tags,
+                basicProperties?.Headers,
+                body?.Length ?? 0,
+                timeInQueue);
             return new CallTargetState(scope);
         }
 

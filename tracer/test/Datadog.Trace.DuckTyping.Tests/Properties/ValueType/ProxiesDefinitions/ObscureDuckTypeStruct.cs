@@ -29,5 +29,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ValueType.ProxiesDefinitions
         public int InternalGetSetValueType;
         public int ProtectedGetSetValueType;
         public int PrivateGetSetValueType;
+
+        [Duck(Name = "PublicGetSetValueType")]
+        public ValueWithType<int> PublicGetSetValueTypeWithType;
     }
 }

@@ -59,76 +59,105 @@ namespace Datadog.Trace.Telemetry
         public static TelemetryFactory CreateFactory() => new();
 
         public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config), discoveryService);
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings), discoveryService, useCiVisibilityTelemetry: false);
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService)
+        public ITelemetryController CreateCiVisibilityTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings), discoveryService, useCiVisibilityTelemetry: true);
+
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
         {
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
-            if (settings.TelemetryEnabled)
+
+            // we assume telemetry can't switch between enabled/disabled
+            if (!settings.TelemetryEnabled)
             {
-                try
-                {
-                    var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.ExporterInternal);
-
-                    if (!telemetryTransports.HasTransports)
-                    {
-                        log.Debug("Telemetry collection disabled: no available transports");
-                        return NullTelemetryController.Instance;
-                    }
-
-                    LazyInitializer.EnsureInitialized(
-                        ref _dependencies,
-                        () => settings.DependencyCollectionEnabled
-                                  ? new DependencyTelemetryCollector()
-                                  : NullDependencyTelemetryCollector.Instance);
-
-                    // we assume we never flip between v1 and v2
-                    if (!settings.V2Enabled)
-                    {
-                        // if we're not using V2, we don't need the config collector
-                        var oldConfig = Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
-                        if (oldConfig is ConfigurationTelemetry config)
-                        {
-                            config.Clear();
-                        }
-                    }
-
-                    // if this changes, we will "lose" startup metrics, but unlikely to happen
-                    if (!settings.MetricsEnabled)
-                    {
-                        // if we're not using metrics, we don't need the metrics collector
-                        log.Debug("Telemetry metrics collection disabled");
-                        var oldMetrics = Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
-                        if (oldMetrics is MetricsTelemetryCollector metrics)
-                        {
-                            // "clears" all the data stored so far
-                            metrics.Clear();
-                        }
-                    }
-
-                    // Making assumptions that we never switch from v1 to v2
-                    // so we don't need to "clean up" the collectors.
-                    if (settings.V2Enabled)
-                    {
-                        log.Debug("Creating telemetry controller v2");
-                        return CreateV2Controller(telemetryTransports, settings, discoveryService);
-                    }
-                    else
-                    {
-                        log.Debug("Creating telemetry controller v1");
-                        return CreateV1Controller(telemetryTransports, settings);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    log.Warning(ex, "Telemetry collection disabled: error initializing telemetry");
-                    return NullTelemetryController.Instance;
-                }
+                log.Debug("Telemetry collection disabled");
+                DisableTelemetry();
+                return NullTelemetryController.Instance;
             }
 
-            log.Debug("Telemetry collection disabled");
-            return NullTelemetryController.Instance;
+            try
+            {
+                var telemetryTransports = TelemetryTransportFactory.Create(settings, tracerSettings.ExporterInternal);
+
+                if (!telemetryTransports.HasTransports)
+                {
+                    log.Debug("Telemetry collection disabled: no available transports");
+                    DisableTelemetry();
+                    return NullTelemetryController.Instance;
+                }
+
+                LazyInitializer.EnsureInitialized(
+                    ref _dependencies,
+                    () => settings.DependencyCollectionEnabled
+                              ? new DependencyTelemetryCollector()
+                              : NullDependencyTelemetryCollector.Instance);
+
+                // if this changes, we will "lose" startup metrics, but unlikely to happen
+                if (!settings.MetricsEnabled)
+                {
+                    // if we're not using metrics, we don't need the metrics collector
+                    log.Debug("Telemetry metrics collection disabled");
+                    DisableMetricsCollector();
+                }
+                else if (useCiVisibilityTelemetry)
+                {
+                    log.Debug("CI Visibility telemetry metrics collection enabled");
+                    // This would lose any metrics added up to this point
+                    ReplaceMetricsCollector(new CiVisibilityMetricsTelemetryCollector());
+                }
+
+                // Making assumptions that we never switch from v1 to v2
+                // so we don't need to "clean up" the collectors.
+                if (settings.V2Enabled)
+                {
+                    log.Debug("Creating telemetry controller v2");
+                    return CreateV2Controller(telemetryTransports, settings, discoveryService);
+                }
+                else
+                {
+                    DisableConfigCollector();
+                    log.Debug("Creating telemetry controller v1");
+                    return CreateV1Controller(telemetryTransports, settings);
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warning(ex, "Telemetry collection disabled: error initializing telemetry");
+                DisableTelemetry();
+                return NullTelemetryController.Instance;
+            }
+        }
+
+        private static void DisableTelemetry()
+        {
+            DisableMetricsCollector();
+            DisableConfigCollector();
+        }
+
+        private static void DisableMetricsCollector()
+            => ReplaceMetricsCollector(NullMetricsTelemetryCollector.Instance);
+
+        private static void ReplaceMetricsCollector(IMetricsTelemetryCollector newCollector)
+        {
+            var oldMetrics = Interlocked.Exchange(ref _metrics, newCollector);
+            if (oldMetrics is MetricsTelemetryCollectorBase metrics)
+            {
+                // "clears" all the data stored so far
+                metrics.Clear();
+            }
+        }
+
+        private static void DisableConfigCollector()
+        {
+            // if we're not using V2, we don't need the config collector
+            var oldConfig = Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
+            if (oldConfig is ConfigurationTelemetry config)
+            {
+                // "clears" all the data stored so far
+                config.Clear();
+            }
         }
 
         private ITelemetryController CreateV1Controller(

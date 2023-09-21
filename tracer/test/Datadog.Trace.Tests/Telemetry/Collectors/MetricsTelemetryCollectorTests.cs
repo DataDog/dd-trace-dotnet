@@ -5,23 +5,88 @@
 
 using System;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
+using Xunit.Abstractions;
 using NS = Datadog.Trace.Telemetry.MetricNamespaceConstants;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
 public class MetricsTelemetryCollectorTests
 {
+    [Fact]
+    public async Task AggregatingMultipleTimes_GivesNoStats()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        collector.AggregateMetrics();
+        collector.AggregateMetrics();
+        collector.AggregateMetrics();
+        var metrics = collector.GetMetrics();
+        metrics.Metrics.Should().BeNull();
+        metrics.Distributions.Should().BeNull();
+        await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task WithoutAggregation_HasNoStats()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        collector.Record(PublicApiUsage.Tracer_Configure);
+        await Task.Delay(TimeSpan.FromSeconds(1));
+        // Shouldn't have any stats, as no aggregation
+        var metrics = collector.GetMetrics();
+        metrics.Metrics.Should().BeNull();
+        metrics.Distributions.Should().BeNull();
+        await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task AggregatesOnShutdown()
+    {
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        collector.Record(PublicApiUsage.Tracer_Configure);
+        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 22);
+
+        await collector.DisposeAsync();
+        var metrics = collector.GetMetrics();
+
+        metrics.Metrics.Should().BeEquivalentTo(new[]
+        {
+            new
+            {
+                Metric = "public_api",
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { PublicApiUsage.Tracer_Configure.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
+            },
+        });
+
+        metrics.Distributions.Should().BeEquivalentTo(new[]
+        {
+            new
+            {
+                Metric = Distribution.InitTime.GetName(),
+                Tags = new[] { "component:managed" },
+                Points = new[] {  22 },
+                Common = true,
+                Namespace = NS.General,
+            },
+        });
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData("1.2.3")]
-    public void AllMetricsAreReturned(string wafVersion)
+    public async Task AllMetricsAreReturned(string wafVersion)
     {
-        var collector = new MetricsTelemetryCollector();
+        var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Ctor);
@@ -60,6 +125,7 @@ public class MetricsTelemetryCollectorTests
         }
 
         using var scope = new AssertionScope();
+        scope.FormattingOptions.MaxLines = 1000;
 
         var metrics = collector.GetMetrics();
 
@@ -215,5 +281,40 @@ public class MetricsTelemetryCollectorTests
                 Namespace = NS.General,
             },
         });
+        await collector.DisposeAsync();
+    }
+
+    [Fact]
+    public async Task ShouldAggregateMetricsAutomatically()
+    {
+        var aggregationPeriod = TimeSpan.FromMilliseconds(500);
+        var mutex = new ManualResetEventSlim();
+
+        var collector = new MetricsTelemetryCollector(
+            aggregationPeriod,
+            () =>
+            {
+                if (!mutex.IsSet)
+                {
+                    mutex.Set();
+                }
+            });
+
+        // theoretically ~4 aggregations in this time period
+        var count = 0;
+        while (count < 20)
+        {
+            collector.RecordCountSpanFinished(1);
+            await Task.Delay(100);
+            count++;
+        }
+
+        mutex.Wait(TimeSpan.FromSeconds(60)).Should().BeTrue();
+        var metrics = collector.GetMetrics();
+        metrics.Metrics.Should()
+               .ContainSingle(x => x.Metric == Count.SpanFinished.GetName())
+               .Which.Points.Should()
+               .NotBeEmpty(); // we expect ~10 points, but don't assert that number to avoid flakiness
+        await collector.DisposeAsync();
     }
 }

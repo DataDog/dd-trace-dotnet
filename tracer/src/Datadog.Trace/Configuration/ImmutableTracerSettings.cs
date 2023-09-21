@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging.DirectSubmission;
@@ -155,9 +156,12 @@ namespace Datadog.Trace.Configuration
             IsRunningInAzureFunctionsConsumptionPlan = settings.IsRunningInAzureFunctionsConsumptionPlan;
 
             IsRunningInGCPFunctions = settings.IsRunningInGCPFunctions;
+            LambdaMetadata = settings.LambdaMetadata;
 
             TraceId128BitGenerationEnabled = settings.TraceId128BitGenerationEnabled;
             TraceId128BitLoggingEnabled = settings.TraceId128BitLoggingEnabled;
+
+            CommandsCollectionEnabled = settings.CommandsCollectionEnabled;
 
             static string? GetExplicitSettingOrTag(string? explicitSetting, IDictionary<string, string> globalTags, string tag)
             {
@@ -508,6 +512,11 @@ namespace Datadog.Trace.Configuration
         internal bool IsRunningInGCPFunctions { get; }
 
         /// <summary>
+        /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
+        /// </summary>
+        internal LambdaMetadata LambdaMetadata { get; }
+
+        /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
         /// </summary>
         internal DbmPropagationLevel DbmPropagationMode { get; }
@@ -524,6 +533,12 @@ namespace Datadog.Trace.Configuration
         /// even if we are not generating them.
         /// </summary>
         internal bool TraceId128BitLoggingEnabled { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer will send the shell commands of
+        /// the "command_execution" integration to the agent.
+        /// </summary>
+        internal bool CommandsCollectionEnabled { get; }
 
         /// <summary>
         /// Gets the AAS settings. Guaranteed not <c>null</c> when <see cref="IsRunningInAzureAppService"/> is not <c>null</c>

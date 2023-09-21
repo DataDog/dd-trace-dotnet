@@ -13,19 +13,22 @@
 #include "IThreadsCpuManager.h"
 #include "Log.h"
 #include "OsSpecificApi.h"
+#include "SampleValueTypeProvider.h"
+#include "TimelineSampleType.h"
+
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
 
 
 StopTheWorldGCProvider::StopTheWorldGCProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueOffset, GarbageCollectionProvider::SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }
 

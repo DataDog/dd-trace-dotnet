@@ -50,7 +50,8 @@ StackSamplerLoop::StackSamplerLoop(
     IManagedThreadList* pManagedThreadList,
     IManagedThreadList* pCodeHotspotThreadList,
     ICollector<RawWallTimeSample>* pWallTimeCollector,
-    ICollector<RawCpuSample>* pCpuTimeCollector)
+    ICollector<RawCpuSample>* pCpuTimeCollector,
+    MetricsRegistry& metricsRegistry)
     :
     _pCorProfilerInfo{pCorProfilerInfo},
     _pConfiguration{pConfiguration},
@@ -68,7 +69,11 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime{0},
     _walltimeThreadsThreshold{pConfiguration->WalltimeThreadsThreshold()},
     _cpuThreadsThreshold{pConfiguration->CpuThreadsThreshold()},
-    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()}
+    _codeHotspotsThreadsThreshold{pConfiguration->CodeHotspotsThreadsThreshold()},
+    _isWalltimeEnabled{pConfiguration->IsWallTimeProfilingEnabled()},
+    _isCpuEnabled{pConfiguration->IsCpuProfilingEnabled()},
+    _areInternalMetricsEnabled{pConfiguration->IsInternalMetricsEnabled()},
+    _isStopped{false}
 {
     _nbCores = OsSpecificApi::GetProcessorCount();
     Log::Info("Processor cores = ", _nbCores);
@@ -85,14 +90,16 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    _pLoopThread = new std::thread(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread, ThreadName);
+    if(_areInternalMetricsEnabled)
+    {
+        _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
+        _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_cpu_iterations_duration");
+    }
 }
 
 StackSamplerLoop::~StackSamplerLoop()
 {
-    this->RequestShutdown();
-    this->Join();
+    Stop();
 
     ICorProfilerInfo4* corProfilerInfo = _pCorProfilerInfo;
     if (corProfilerInfo != nullptr)
@@ -102,28 +109,41 @@ StackSamplerLoop::~StackSamplerLoop()
     }
 }
 
-void StackSamplerLoop::Join()
+const char* StackSamplerLoop::GetName()
 {
-    std::thread* pLoopThread = _pLoopThread;
-    if (pLoopThread != nullptr)
+    return "StackSamplerLoop";
+}
+
+bool StackSamplerLoop::Start()
+{
+    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
+    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
+
+    return true;
+}
+
+bool StackSamplerLoop::Stop()
+{
+    // allow multiple calls to Stop()
+    auto wasStopped = std::exchange(_isStopped, true);
+    if (wasStopped)
     {
-        // race condition if the Manager just terminated our thread
+        return true;
+    }
+
+    _shutdownRequested = true;
+    if (_pLoopThread != nullptr)
+    {
         try
         {
-            pLoopThread->join();
+            _pLoopThread->join();
         }
         catch (const std::exception&)
         {
         }
-
-        delete pLoopThread;
-        _pLoopThread = nullptr;
     }
-}
 
-void StackSamplerLoop::RequestShutdown()
-{
-    _shutdownRequested = true;
+    return true;
 }
 
 void StackSamplerLoop::MainLoop()
@@ -165,20 +185,49 @@ void StackSamplerLoop::MainLoop()
 
 void StackSamplerLoop::MainLoopIteration()
 {
+    int64_t timestampNanosecs1 = 0;
+    int64_t timestampNanosecs2 = 0;
+
     // In each iteration, a few threads are sampled to compute wall time.
-    if (_pConfiguration->IsWallTimeProfilingEnabled())
+    if (_isWalltimeEnabled)
     {
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
+        }
+
         // First we collect threads that have trace context to increase the chance to get
         CodeHotspotIteration();
         // Then we collect threads that do not have trace context
         WalltimeProfilingIteration();
+
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
+            _walltimeDurationMetric->Add(static_cast<double>(timestampNanosecs2 - timestampNanosecs1));
+        }
     }
 
     // When CPU profiling is enabled, most of the threads are scanned
     // and if they are currently running, they are sampled.
-    if (_pConfiguration->IsCpuProfilingEnabled())
+    if (_isCpuEnabled)
     {
+        if (_areInternalMetricsEnabled)
+        {
+            // avoid an unnecessary call to OpSysTools::GetHighPrecisionTimestamp() if possible
+            if (timestampNanosecs2 == 0)
+            {
+                timestampNanosecs2 = OpSysTools::GetHighPrecisionTimestamp();
+            }
+        }
+
         CpuProfilingIteration();
+
+        if (_areInternalMetricsEnabled)
+        {
+            timestampNanosecs1 = OpSysTools::GetHighPrecisionTimestamp();
+            _cpuDurationMetric->Add(static_cast<double>(timestampNanosecs1 - timestampNanosecs2));
+        }
     }
 }
 
@@ -476,8 +525,6 @@ void StackSamplerLoop::CollectOneThreadStackSample(
 
     UpdateStatistics(hrCollectStack, countCollectedStackFrames);
 
-    LogEncounteredStackSnapshotResultStatistics(thisSampleTimestampNanosecs);
-
     // Store stack-walk results into the results buffer:
     PersistStackSnapshotResults(pStackSnapshotResult, pThreadInfo, profilingType);
 }
@@ -541,110 +588,6 @@ int64_t StackSamplerLoop::ComputeWallTime(int64_t currentTimestampNs, int64_t pr
         // this should never happen
         // count at least one sampling period
         return static_cast<int64_t>(_samplingPeriod.count());
-    }
-}
-
-void StackSamplerLoop::LogEncounteredStackSnapshotResultStatistics(int64_t thisSampleTimestampNanosecs, bool useStdOutInsteadOfLog)
-{
-    // TODO: clean-up all this...
-    //
-
-    if ((_lastStackSnapshotResultsStats_LogTimestampNS != 0) && (thisSampleTimestampNanosecs - _lastStackSnapshotResultsStats_LogTimestampNS < StackSamplerLoop_StackSnapshotResultsStats_LogPeriodNS))
-    {
-        return;
-    }
-
-    if (!(useStdOutInsteadOfLog || Log::IsDebugEnabled()))
-    {
-        return;
-    }
-
-    // We avoid printing the '%' char because every time we pipe the string through a formatter, it gets reduced.
-    constexpr const char* PercentWord = "Percent";
-
-    // Log total stacks collected:
-    uint64_t timeSinceLastLogMS = (0 == _lastStackSnapshotResultsStats_LogTimestampNS)
-                                           ? 0
-                                           : (thisSampleTimestampNanosecs - _lastStackSnapshotResultsStats_LogTimestampNS) / 1000000;
-
-    _lastStackSnapshotResultsStats_LogTimestampNS = thisSampleTimestampNanosecs;
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Total Collected Stacks Count: " << _totalStacksCollectedCount << ". Time since last Stack Snapshot Result-Statistic Log: " << timeSinceLastLogMS << " ms.";
-    }
-    else
-    {
-        Log::Info("Total Collected Stacks Count: ", _totalStacksCollectedCount,
-                  ". Time since last Stack Snapshot Result-Statistic Log: ", timeSinceLastLogMS, " ms.");
-    }
-
-    // Order HResults by their frequency for easier-to-read output:
-    std::multimap<uint64_t, HRESULT> orderedStackSnapshotHRs;
-    uint64_t cumHrFreq = 0;
-    std::unordered_map<HRESULT, uint64_t>::iterator iterHRs = _encounteredStackSnapshotHRs.begin();
-    while (iterHRs != _encounteredStackSnapshotHRs.end())
-    {
-        orderedStackSnapshotHRs.insert(std::pair<uint64_t, HRESULT>(iterHRs->second, iterHRs->first));
-        cumHrFreq += iterHRs->second;
-        iterHRs++;
-    }
-
-    // Log Stack Collection HResult frequency distribution:
-    std::string outBuff;
-    auto iterOrderedHRs = orderedStackSnapshotHRs.rbegin();
-    while (iterOrderedHRs != orderedStackSnapshotHRs.rend())
-    {
-        uint64_t freq = iterOrderedHRs->first;
-        HRESULT hr = iterOrderedHRs->second;
-        std::stringstream builder;
-        builder << "    " << HResultConverter::ToChars(hr) << " (0x" << std::hex << hr << "): " << std::dec << freq << " (" << std::setprecision(2) << (freq * 100.0 / cumHrFreq) << " %)\n";
-        outBuff.append(builder.str());
-        iterOrderedHRs++;
-    }
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Distribution of encountered stack snapshot collection HResults: \n"
-                  << outBuff.c_str();
-    }
-    else
-    {
-        Log::Info("Distribution of encountered stack snapshot collection HResults: \n", outBuff.c_str());
-    }
-
-    // Order stack depths by their frame counts for easier-to-read output:
-    decltype(_encounteredStackSnapshotDepths) orderedStackSnapshotDepths;
-    uint64_t cumDepthFreq = 0;
-    auto iterDepths = _encounteredStackSnapshotDepths.begin();
-    while (iterDepths != _encounteredStackSnapshotDepths.end())
-    {
-        orderedStackSnapshotDepths.insert(std::make_pair(iterDepths->first, iterDepths->second));
-        cumDepthFreq += iterDepths->second;
-        iterDepths++;
-    }
-
-    // Log Stack Depth frequency distribution:
-    outBuff.clear();
-    auto iterOrderedDepths = orderedStackSnapshotDepths.begin();
-    while (iterOrderedDepths != orderedStackSnapshotDepths.end())
-    {
-        auto freq = iterOrderedDepths->second;
-        auto depth = iterOrderedDepths->first;
-        std::stringstream builder;
-        builder << "    " << std::setw(4) << depth << " frames: " << freq << " \t\t(" << std::setw(5) << std::setprecision(2) << (freq * 100.0 / cumDepthFreq) << " " << PercentWord << ")\n";
-        outBuff.append(builder.str());
-        iterOrderedDepths++;
-    }
-
-    if (useStdOutInsteadOfLog)
-    {
-        std::cout << "Distribution of encountered stack snapshot frame counts: \n"
-                  << outBuff.c_str();
-    }
-    else
-    {
-        Log::Info("Distribution of encountered stack snapshot frame counts: \n", outBuff.c_str());
     }
 }
 

@@ -5,23 +5,38 @@
 #nullable enable
 
 using System;
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.CommandLine.Parsing;
 using System.Threading.Tasks;
-using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
-using Spectre.Console.Cli;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class CheckAgentCommand : AsyncCommand<CheckAgentSettings>
+    internal class CheckAgentCommand : Command
     {
-        public override async Task<int> ExecuteAsync(CommandContext context, CheckAgentSettings settings)
+        private readonly Argument<string?> _urlArgument = new("url") { Arity = ArgumentArity.ZeroOrOne };
+
+        public CheckAgentCommand()
+            : base("agent")
+        {
+            AddArgument(_urlArgument);
+
+            AddValidator(Validate);
+
+            this.SetHandler(ExecuteAsync);
+        }
+
+        private async Task ExecuteAsync(InvocationContext context)
         {
             ExporterSettings configuration;
 
-            if (settings.Url == null)
+            var url = _urlArgument.GetValue(context);
+
+            if (url == null)
             {
                 // Try to autodetect the agent settings
                 configuration = new ExporterSettings(new EnvironmentConfigurationSourceInternal(), NullConfigurationTelemetry.Instance);
@@ -30,19 +45,35 @@ namespace Datadog.Trace.Tools.Runner
             }
             else
             {
-                configuration = new ExporterSettings(source: null, NullConfigurationTelemetry.Instance) { AgentUriInternal = new Uri(settings.Url) };
+                configuration = new ExporterSettings(source: null, NullConfigurationTelemetry.Instance) { AgentUriInternal = new Uri(url) };
             }
 
             var result = await AgentConnectivityCheck.RunAsync(new ImmutableExporterSettings(configuration, true)).ConfigureAwait(false);
 
             if (!result)
             {
-                return 1;
+                context.ExitCode = 1;
+                return;
             }
 
             Utils.WriteSuccess("Connected successfully to the Agent.");
+        }
 
-            return 0;
+        private void Validate(CommandResult commandResult)
+        {
+            var url = commandResult.GetValueForArgument(_urlArgument);
+
+            if (url != null)
+            {
+                try
+                {
+                    _ = new Uri(url);
+                }
+                catch (UriFormatException ex)
+                {
+                    commandResult.ErrorMessage = ex.Message;
+                }
+            }
         }
     }
 }

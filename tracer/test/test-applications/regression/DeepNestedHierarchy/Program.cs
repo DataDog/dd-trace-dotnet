@@ -23,6 +23,7 @@ using (Samples.SampleHelpers.CreateScope("Test scope"))
 {
 }
 
+Console.WriteLine("App completed successfully");
 return 0;
 
 // These types are placeholders to build a deep nested hierarchy,

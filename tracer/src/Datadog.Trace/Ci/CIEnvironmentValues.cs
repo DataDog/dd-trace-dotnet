@@ -868,6 +868,11 @@ namespace Datadog.Trace.Ci
             IsCI = true;
             Provider = "bitbucket";
             Repository = EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketGitSshOrigin);
+            if (string.IsNullOrEmpty(Repository))
+            {
+                Repository = EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketGitHttpsOrigin);
+            }
+
             Commit = EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketCommit);
             Branch = EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketBranch);
             Tag = EnvironmentHelpers.GetEnvironmentVariable(Constants.BitBucketTag);
@@ -1238,6 +1243,7 @@ namespace Datadog.Trace.Ci
             // BitBucket CI Environment variables
             public const string BitBucketCommit = "BITBUCKET_COMMIT";
             public const string BitBucketGitSshOrigin = "BITBUCKET_GIT_SSH_ORIGIN";
+            public const string BitBucketGitHttpsOrigin = "BITBUCKET_GIT_HTTP_ORIGIN";
             public const string BitBucketBranch = "BITBUCKET_BRANCH";
             public const string BitBucketTag = "BITBUCKET_TAG";
             public const string BitBucketCloneDir = "BITBUCKET_CLONE_DIR";

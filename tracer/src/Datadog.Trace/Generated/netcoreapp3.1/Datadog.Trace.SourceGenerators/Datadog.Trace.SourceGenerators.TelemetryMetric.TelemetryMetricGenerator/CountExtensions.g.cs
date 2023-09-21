@@ -7,7 +7,7 @@ internal static partial class CountExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.Count" /> metric.
     /// </summary>
-    public const int Length = 31;
+    public const int Length = 35;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -44,10 +44,14 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogLogs => "direct_log_logs",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiRequests => "direct_log_api.requests",
             Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiResponses => "direct_log_api.responses",
-            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors.responses",
+            Datadog.Trace.Telemetry.Metrics.Count.DirectLogApiErrors => "direct_log_api.errors",
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "waf.init",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "waf.updates",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "waf.requests",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "executed.source",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "executed.propagation",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "executed.sink",
+            Datadog.Trace.Telemetry.Metrics.Count.IastRequestTainted => "request.tainted",
             _ => null!,
         };
 
@@ -82,6 +86,10 @@ internal static partial class CountExtensions
             Datadog.Trace.Telemetry.Metrics.Count.WafInit => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafUpdates => "appsec",
             Datadog.Trace.Telemetry.Metrics.Count.WafRequests => "appsec",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSources => "iast",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedPropagations => "iast",
+            Datadog.Trace.Telemetry.Metrics.Count.IastExecutedSinks => "iast",
+            Datadog.Trace.Telemetry.Metrics.Count.IastRequestTainted => "iast",
             _ => null,
         };
 }

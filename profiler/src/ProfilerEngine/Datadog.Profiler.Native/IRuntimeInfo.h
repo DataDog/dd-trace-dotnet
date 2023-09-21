@@ -14,6 +14,7 @@ public:
     virtual uint16_t GetDotnetMajorVersion() const  = 0;
     virtual uint16_t GetDotnetMinorVersion() const = 0;
     virtual std::string GetOs() const = 0;
+    virtual std::string GetClrString() const = 0;
 
-// TODO: add OS details when needed
+    // TODO: add OS details when needed
 };

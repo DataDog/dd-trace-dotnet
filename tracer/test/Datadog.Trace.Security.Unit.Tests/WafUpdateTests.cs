@@ -13,6 +13,7 @@ using Datadog.Trace.AppSec.Rcm.Models.AsmDd;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.Initialization;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.Security.Unit.Tests.Utils;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
@@ -29,6 +30,8 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void RulesUpdate()
         {
+            GlobalSettings.SetDebugEnabled(true);
+
             var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
@@ -70,6 +73,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
             var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
@@ -77,6 +81,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, false);
 
@@ -85,6 +90,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, false);
             Execute(waf, attackParts2, true);
 
@@ -93,7 +99,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             configurationStatus.RulesOverridesByFile["test"] = ruleOverrides.ToArray();
             result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
             result.Success.Should().BeTrue();
-            result.Success.Should().BeTrue();
+            result.HasErrors.Should().BeFalse();
             Execute(waf, attackParts1, true);
             Execute(waf, attackParts2, true);
         }
@@ -122,6 +128,7 @@ namespace Datadog.Trace.Security.Unit.Tests
                 configurationStatus.IncomingUpdateState.WafKeysToApply.Add(ConfigurationStatus.WafRulesOverridesKey);
                 var result = waf!.UpdateWafFromConfigurationStatus(configurationStatus);
                 result.Success.Should().BeTrue();
+                result.HasErrors.Should().BeFalse();
                 Execute(waf, attackParts1, true, "block");
                 Execute(waf, attackParts2, true);
             }

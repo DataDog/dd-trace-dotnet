@@ -238,6 +238,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "AnalyzePipelineCriticalPath",
               "AssignLabelsToPullRequest",
               "AssignPullRequestToMilestone",
               "BuildAndRunDebuggerIntegrationTests",
@@ -375,6 +376,7 @@
               "RunDotNetSample",
               "RunExplorationTests",
               "RunIisSample",
+              "RunInstrumentationGenerator",
               "RunLinuxIntegrationTests",
               "RunManagedUnitTests",
               "RunNativeLoaderTestsLinux",
@@ -427,6 +429,7 @@
           "items": {
             "type": "string",
             "enum": [
+              "AnalyzePipelineCriticalPath",
               "AssignLabelsToPullRequest",
               "AssignPullRequestToMilestone",
               "BuildAndRunDebuggerIntegrationTests",
@@ -564,6 +567,7 @@
               "RunDotNetSample",
               "RunExplorationTests",
               "RunIisSample",
+              "RunInstrumentationGenerator",
               "RunLinuxIntegrationTests",
               "RunManagedUnitTests",
               "RunNativeLoaderTestsLinux",

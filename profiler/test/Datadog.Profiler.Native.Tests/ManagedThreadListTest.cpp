@@ -8,13 +8,19 @@
 #include "ManagedThreadList.h"
 #include "ManagedThreadInfo.h"
 
+void CreateThread(ManagedThreadList& threadsList, ThreadID threadId, HANDLE handle = NULL)
+{
+    threadsList.GetOrCreate(threadId);
+    // for simplicity, use the ThreadID as OS Thread Id
+    threadsList.SetThreadOsInfo(threadId, (DWORD)threadId, handle);
+}
 
 TEST(ManagedThreadListTest, CheckAdd)
 {
     ManagedThreadList threads(nullptr);
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
+    CreateThread(threads, 1);
+    CreateThread(threads, 2);
+    CreateThread(threads, 3);
 
     ASSERT_EQ(threads.Count(), 3);
 }
@@ -22,9 +28,9 @@ TEST(ManagedThreadListTest, CheckAdd)
 TEST(ManagedThreadListTest, CheckRemove)
 {
     ManagedThreadList threads(nullptr);
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
+    CreateThread(threads, 1);
+    CreateThread(threads, 2);
+    CreateThread(threads, 3);
 
     ASSERT_EQ(threads.Count(), 3);
 
@@ -46,9 +52,9 @@ TEST(ManagedThreadListTest, CheckLoopNext)
     ManagedThreadList threads(nullptr);
     auto iterator = threads.CreateIterator();
 
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
 
     // check iterator
     std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
@@ -76,15 +82,16 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenAdd)
 {
     ManagedThreadList threads(nullptr);
     auto iterator = threads.CreateIterator();
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
+
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
 
     // add during iteration
     std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
     pInfo = threads.LoopNext(iterator);
-    threads.GetOrCreateThread(4);
+    CreateThread(threads, 4, (HANDLE)4);
 
     pInfo = threads.LoopNext(iterator);
     ASSERT_TRUE(pInfo != nullptr);
@@ -98,11 +105,11 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
 {
     ManagedThreadList threads(nullptr);
     auto iterator = threads.CreateIterator();
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
-    threads.GetOrCreateThread(4);
-    threads.GetOrCreateThread(5);
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
+    CreateThread(threads, 4, (HANDLE)4);
+    CreateThread(threads, 5, (HANDLE)5);
 
     std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
@@ -143,13 +150,67 @@ TEST(ManagedThreadListTest, CheckLoopNextWhenRemove)
     //                    ^
 }
 
+TEST(ManagedThreadListTest, CheckLoopNextSkipThreadWithInvalidHandle)
+{
+    ManagedThreadList threads(nullptr);
+    auto iterator = threads.CreateIterator();
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    // Thread 3 has no valid HANDLE
+    CreateThread(threads, 3);
+    CreateThread(threads, 4, (HANDLE)4);
+    CreateThread(threads, 5, (HANDLE)5);
+
+    std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
+
+    //
+    // see what happens when an element is removed after and before the current position
+    //    1   2   3   4   5
+    //    ^
+    pInfo = threads.LoopNext(iterator);
+    ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 1);
+
+    //    1   2   3   4   5
+    //        ^
+    pInfo = threads.LoopNext(iterator);
+    ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 2);
+
+    // The next call to LoopNext will go directly to thread 4,
+    // because thread 3 has an invalid HANDLE
+    //    1   2   3   4   5
+    //                ^
+    pInfo = threads.LoopNext(iterator);
+    ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 4);
+
+    //    1   2   3   4   5
+    //                    ^
+    pInfo = threads.LoopNext(iterator);
+    ASSERT_TRUE(pInfo != nullptr);
+    ASSERT_EQ(pInfo->GetClrThreadId(), 5);
+}
+
+TEST(ManagedThreadListTest, CheckLoopNextReturnNullptrIfNoThreadWithValidHandle)
+{
+    ManagedThreadList threads(nullptr);
+    auto iterator = threads.CreateIterator();
+    CreateThread(threads, 1);
+    CreateThread(threads, 2, INVALID_HANDLE_VALUE);
+    CreateThread(threads, 3);
+    CreateThread(threads, 4, INVALID_HANDLE_VALUE);
+
+    ASSERT_EQ(nullptr, threads.LoopNext(iterator));
+}
+
 TEST(ManagedThreadListTest, CheckLoopNextWhenRemoveLastThread)
 {
     ManagedThreadList threads(nullptr);
     auto iterator = threads.CreateIterator();
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
 
     std::shared_ptr<ManagedThreadInfo> pInfo = nullptr;
     pInfo = threads.LoopNext(iterator);
@@ -209,11 +270,12 @@ void WorkOnIterator(MultipleIteratorsParams* parameters)
 TEST(ManagedThreadListTest, CheckMultipleIterators)
 {
     ManagedThreadList threads(nullptr);
-    threads.GetOrCreateThread(1);
-    threads.GetOrCreateThread(2);
-    threads.GetOrCreateThread(3);
-    threads.GetOrCreateThread(4);
-    threads.GetOrCreateThread(5);
+    CreateThread(threads, 1, (HANDLE)1);
+    CreateThread(threads, 2, (HANDLE)2);
+    CreateThread(threads, 3, (HANDLE)3);
+    CreateThread(threads, 4, (HANDLE)4);
+    CreateThread(threads, 5, (HANDLE)5);
+
     MultipleIteratorsParams params1(threads, threads.CreateIterator());
     MultipleIteratorsParams params2(threads, threads.CreateIterator());
 
@@ -224,4 +286,13 @@ TEST(ManagedThreadListTest, CheckMultipleIterators)
     t2.join();
 
     ASSERT_TRUE(true);
+}
+
+TEST(ManagedThreadListTest, CheckRegisterThreadTwice)
+{
+    ManagedThreadList threads(nullptr);
+    auto thread = std::make_shared<ManagedThreadInfo>(1);
+
+    ASSERT_TRUE(threads.RegisterThread(thread));
+    ASSERT_FALSE(threads.RegisterThread(thread));
 }

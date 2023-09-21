@@ -19,7 +19,7 @@ internal static partial class GaugeExtensions
         {
             Datadog.Trace.Telemetry.Metrics.Gauge.StatsBuckets => "stats_buckets",
             Datadog.Trace.Telemetry.Metrics.Gauge.Instrumentations => "instrumentations",
-            Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue",
+            Datadog.Trace.Telemetry.Metrics.Gauge.DirectLogQueue => "direct_log_queue.length",
             _ => null!,
         };
 

@@ -44,10 +44,12 @@
 #include "RuntimeIdStore.h"
 #include "RuntimeInfo.h"
 #include "Sample.h"
+#include "SampleValueTypeProvider.h"
 #include "StackSamplerLoopManager.h"
 #include "ThreadsCpuManager.h"
 #include "WallTimeProvider.h"
 #include "AllocationsRecorder.h"
+#include "MetadataProvider.h"
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
@@ -128,35 +130,33 @@ bool CorProfilerCallback::InitializeServices()
 
     auto* pRuntimeIdStore = RegisterService<RuntimeIdStore>();
 
-    // Each sample contains a vector of values.
-    // The list of a provider value definitions is available statically.
-    // Based on previous providers list, an offset in the values vector is computed and passed to the provider constructor.
-    // So a provider knows which value slot can be used to store its value(s).
-    uint32_t valuesOffset = 0;
-    std::vector<SampleValueType> sampleTypeDefinitions;
+    auto valueTypeProvider = SampleValueTypeProvider();
+
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pThreadLifetimeProvider = RegisterService<ThreadLifetimeProvider>(
+            valueTypeProvider,
+            _pFrameStore.get(),
+            _pThreadsCpuManager,
+            _pAppDomainStore.get(),
+            pRuntimeIdStore,
+            _pConfiguration.get());
+    }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
-        auto valueTypes = WallTimeProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pWallTimeProvider = RegisterService<WallTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        _pWallTimeProvider = RegisterService<WallTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
     }
 
     if (_pConfiguration->IsCpuProfilingEnabled())
     {
-        auto valueTypes = CpuTimeProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
-        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valuesOffset, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
+        _pCpuTimeProvider = RegisterService<CpuTimeProvider>(valueTypeProvider, _pThreadsCpuManager, _pFrameStore.get(), _pAppDomainStore.get(), pRuntimeIdStore, _pConfiguration.get());
     }
 
     if (_pConfiguration->IsExceptionProfilingEnabled())
     {
-        auto valueTypes = ExceptionsProvider::SampleTypeDefinitions;
-        sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
         _pExceptionsProvider = RegisterService<ExceptionsProvider>(
-            valuesOffset,
+            valueTypeProvider,
             _pCorProfilerInfo,
             _pManagedThreadList,
             _pFrameStore.get(),
@@ -165,7 +165,6 @@ bool CorProfilerCallback::InitializeServices()
             _pAppDomainStore.get(),
             pRuntimeIdStore,
             _metricsRegistry);
-        valuesOffset += static_cast<uint32_t>(valueTypes.size());
     }
 
     // _pCorProfilerInfoEvents must have been set for any CLR events-based profiler to work
@@ -176,10 +175,8 @@ bool CorProfilerCallback::InitializeServices()
         {
             if (_pCorProfilerInfoLiveHeap != nullptr)
             {
-                auto valueTypes = LiveObjectsProvider::SampleTypeDefinitions;
-                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
                 _pLiveObjectsProvider = RegisterService<LiveObjectsProvider>(
-                    valuesOffset,
+                    valueTypeProvider,
                     _pCorProfilerInfoLiveHeap,
                     _pManagedThreadList,
                     _pFrameStore.get(),
@@ -188,12 +185,9 @@ bool CorProfilerCallback::InitializeServices()
                     pRuntimeIdStore,
                     _pConfiguration.get(),
                     _metricsRegistry);
-                valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
-                valueTypes = AllocationsProvider::SampleTypeDefinitions;
-                sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
                 _pAllocationsProvider = RegisterService<AllocationsProvider>(
-                    valuesOffset,
+                    valueTypeProvider,
                     _pCorProfilerInfo,
                     _pManagedThreadList,
                     _pFrameStore.get(),
@@ -204,7 +198,6 @@ bool CorProfilerCallback::InitializeServices()
                     _pLiveObjectsProvider,
                     _metricsRegistry
                     );
-                valuesOffset += static_cast<uint32_t>(valueTypes.size());
 
                 if (!_pConfiguration->IsAllocationProfilingEnabled())
                 {
@@ -220,10 +213,8 @@ bool CorProfilerCallback::InitializeServices()
         // check for allocations profiling only (without heap profiling)
         if (_pConfiguration->IsAllocationProfilingEnabled() && (_pAllocationsProvider == nullptr))
         {
-            auto valueTypes = AllocationsProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pAllocationsProvider = RegisterService<AllocationsProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -234,15 +225,12 @@ bool CorProfilerCallback::InitializeServices()
                 nullptr, // no listener
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         if (_pConfiguration->IsContentionProfilingEnabled())
         {
-            auto valueTypes = ContentionProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pContentionProvider = RegisterService<ContentionProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pCorProfilerInfo,
                 _pManagedThreadList,
                 _pFrameStore.get(),
@@ -252,16 +240,12 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
 
         if (_pConfiguration->IsGarbageCollectionProfilingEnabled())
         {
-            // Use the same value type for timeline
-            auto valueTypes = GarbageCollectionProvider::SampleTypeDefinitions;
-            sampleTypeDefinitions.insert(sampleTypeDefinitions.end(), valueTypes.cbegin(), valueTypes.cend());
             _pStopTheWorldProvider = RegisterService<StopTheWorldGCProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
@@ -269,7 +253,7 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get()
                 );
             _pGarbageCollectionProvider = RegisterService<GarbageCollectionProvider>(
-                valuesOffset,
+                valueTypeProvider,
                 _pFrameStore.get(),
                 _pThreadsCpuManager,
                 _pAppDomainStore.get(),
@@ -277,7 +261,6 @@ bool CorProfilerCallback::InitializeServices()
                 _pConfiguration.get(),
                 _metricsRegistry
                 );
-            valuesOffset += static_cast<uint32_t>(valueTypes.size());
         }
         else
         {
@@ -311,6 +294,7 @@ bool CorProfilerCallback::InitializeServices()
 
     // Avoid iterating twice on all providers in order to inject this value in each constructor
     // and store it in CollectorBase so it can be used in TransformRawSample (where the sample is created)
+    auto const& sampleTypeDefinitions = valueTypeProvider.GetValueTypes();
     Sample::ValuesCount = sampleTypeDefinitions.size();
 
     // compute enabled profilers based on configuration and receivable CLR events
@@ -333,12 +317,13 @@ bool CorProfilerCallback::InitializeServices()
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
-        std::move(sampleTypeDefinitions),
+        sampleTypeDefinitions,
         _pConfiguration.get(),
         _pApplicationStore,
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
+        _pMetadataProvider.get(),
         _pAllocationsRecorder.get()
         );
 
@@ -346,7 +331,7 @@ bool CorProfilerCallback::InitializeServices()
         _pCpuTimeProvider != nullptr &&
         _pRuntimeInfo->GetDotnetMajorVersion() >= 5)
     {
-        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider);
+        _gcThreadsCpuProvider = std::make_unique<GCThreadsCpuProvider>(_pCpuTimeProvider, _metricsRegistry);
 
         _pExporter->RegisterProcessSamplesProvider(_gcThreadsCpuProvider.get());
     }
@@ -365,6 +350,11 @@ bool CorProfilerCallback::InitializeServices()
         _pThreadsCpuManager,
         _pExporter.get(),
         _metricsSender.get());
+
+    if (_pConfiguration->IsThreadLifetimeEnabled())
+    {
+        _pSamplesCollector->Register(_pThreadLifetimeProvider);
+    }
 
     if (_pConfiguration->IsWallTimeProfilingEnabled())
     {
@@ -724,7 +714,6 @@ void CorProfilerCallback::InspectProcessorInfo()
 
     SYSTEM_INFO systemInfo;
     GetNativeSystemInfo(&systemInfo);
-
     Log::Info("GetNativeSystemInfo results:"
               " wProcessorArchitecture=\"",
               SysInfoProcessorArchitectureToStr(systemInfo.wProcessorArchitecture), "\"",
@@ -848,15 +837,19 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     ConfigureDebugLog();
 
     _pConfiguration = std::make_unique<Configuration>();
-
+    _pMetadataProvider = std::make_unique<MetadataProvider>();
+    _pMetadataProvider->Initialize();
     PrintEnvironmentVariables();
 
     double coresThreshold = _pConfiguration->MinimumCores();
-    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold))
+    double cpuLimit = 0;
+    if (!OpSysTools::IsSafeToStartProfiler(coresThreshold, cpuLimit))
     {
         Log::Warn("It is not safe to start the profiler. See previous log messages for more info.");
         return E_FAIL;
     }
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::CpuLimit, std::to_string(cpuLimit));
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::NbCores, std::to_string(OsSpecificApi::GetProcessorCount()));
 
     // Log some important environment info:
     CorProfilerCallback::InspectProcessorInfo();
@@ -899,6 +892,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     _pRuntimeInfo = std::make_unique<RuntimeInfo>(major, minor, (runtimeType == COR_PRF_DESKTOP_CLR));
+    _pMetadataProvider->Add(MetadataProvider::SectionRuntimeSettings, MetadataProvider::ClrVersion, _pRuntimeInfo->GetClrString());
 
     // CLR events-based profilers need ICorProfilerInfo12 (i.e. .NET 5+) to setup the communication.
     // If no such provider is enabled, no need to trigger it.
@@ -1101,6 +1095,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Shutdown()
         _pLiveObjectsProvider->Stop();
     }
 
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        _pThreadLifetimeProvider->Stop();
+    }
+
     // dump all threads time
     _pThreadsCpuManager->LogCpuTimes();
 
@@ -1252,7 +1251,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadCreated(ThreadID threadId)
         return S_OK;
     }
 
-    _pManagedThreadList->GetOrCreateThread(threadId);
+    if (_pThreadLifetimeProvider != nullptr)
+    {
+        std::shared_ptr<ManagedThreadInfo> pThreadInfo = _pManagedThreadList->GetOrCreate(threadId);
+        _pThreadLifetimeProvider->OnThreadStart(pThreadInfo);
+    }
     return S_OK;
 }
 
@@ -1282,6 +1285,11 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
         // The docs require that we do not allow to destroy a thread while it is being stack-walked.
         // TO ensure this, SetThreadDestroyed(..) acquires the StackWalkLock associated with this ThreadInfo.
         pThreadInfo->SetThreadDestroyed();
+
+        if (_pThreadLifetimeProvider != nullptr)
+        {
+            _pThreadLifetimeProvider->OnThreadStop(pThreadInfo);
+        }
     }
 
     return S_OK;

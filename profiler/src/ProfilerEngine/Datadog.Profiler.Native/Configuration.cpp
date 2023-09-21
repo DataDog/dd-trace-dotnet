@@ -68,8 +68,10 @@ Configuration::Configuration()
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
+    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
+    _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -158,6 +160,11 @@ bool Configuration::IsGcThreadsCpuTimeEnabled() const
 bool Configuration::IsHeapProfilingEnabled() const
 {
     return _isHeapProfilingEnabled;
+}
+
+bool Configuration::IsThreadLifetimeEnabled() const
+{
+    return _isThreadLifetimeEnabled;
 }
 
 int32_t Configuration::ContentionSampleLimit() const
@@ -263,6 +270,11 @@ bool Configuration::UseBacktrace2() const
 bool Configuration::IsAllocationRecorderEnabled() const
 {
     return _isAllocationRecorderEnabled;
+}
+
+bool Configuration::IsInternalMetricsEnabled() const
+{
+    return _isInternalMetricsEnabled;
 }
 
 
