@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Threading;
 using System.Threading.Tasks;
 using Amazon.Runtime;
@@ -14,7 +14,7 @@ namespace Samples.AWS.DynamoDBv2
             var dynamoDBClient = GetAmazonDynamoDBClient();
 
 #if NETFRAMEWORK
-                // SyncHelpers.StartDynamoDBTasks(dynamoDBClient);
+            SyncHelpers.StartDynamoDBTasks(dynamoDBClient);
 #endif
             await AsyncHelpers.StartDynamoDBTasks(dynamoDBClient);
         }
