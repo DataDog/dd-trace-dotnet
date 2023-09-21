@@ -3995,6 +3995,8 @@ stages:
         DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
         DD_API_KEY: $(ddApiKey)
         DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_SITE: datadoghq.com
+        DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
 
@@ -4071,6 +4073,8 @@ stages:
         DD_ENV: CI
         DD_API_KEY: $(ddApiKey)
         DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_SITE: datadoghq.com
+        DD_PROFILING_AGENTLESS: 1
         DD_CIVISIBILITY_LOGS_ENABLED: 0
         DD_CIVISIBILITY_ITR_ENABLED: 0
 
