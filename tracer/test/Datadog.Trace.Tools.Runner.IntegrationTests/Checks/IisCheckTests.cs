@@ -221,10 +221,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                     new Datadog.Trace.Tools.Runner.CheckIisSettings { SiteName = "sample" },
-                     iisFixture.IisExpress.ConfigFile,
-                     iisFixture.IisExpress.Process.Id,
-                     BrokenMockRegistryService());
+                                 "sample",
+                                 iisFixture.IisExpress.ConfigFile,
+                                 iisFixture.IisExpress.Process.Id,
+                                 BrokenMockRegistryService());
 
                 result.Should().Be(1);
                 console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
