@@ -3915,7 +3915,7 @@ stages:
 
 - stage: profiler_execution_benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_profiler, merge_commit_id]
+  dependsOn: [merge_commit_id, build_windows_profiler, build_linux_profiler]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -3931,22 +3931,22 @@ stages:
           sampleName: Computer01
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent1
-          framework: net6.0
+          framework: net7.0
         Exceptions:
           sampleName: ExceptionGenerator
           testName: exceptions
           poolName: ProfilerExecBenchAgent2
-          framework: net6.0
+          framework: net7.0
         Contention:
           sampleName: Computer01
           testName: contention
           poolName: ProfilerExecBenchAgent3
-          framework: net6.0
+          framework: net7.0
         Allocations:
           sampleName: Computer01
           testName: allocations
           poolName: ProfilerExecBenchAgent4
-          framework: net6.0
+          framework: net7.0
         LiveHeap:
           sampleName: Computer01
           testName: liveheap
@@ -4007,7 +4007,83 @@ stages:
 
     - publish: "$(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks"
       displayName: Publish results
-      artifact: profiler_execution_time_benchmarks_windows_x64_$(sampleName)_$(System.JobAttempt)
+      artifact: profiler_execution_time_benchmarks_windows_x64_$(testName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Linux
+    strategy:
+      matrix:
+        Cpu_Walltime:
+          sampleName: Computer01
+          testName: cpu-walltime
+          poolName: ProfilerExecBenchAgent6
+          framework: net7.0
+        #Exceptions:
+        #  sampleName: ExceptionGenerator
+        #  testName: exceptions
+        #  poolName: ProfilerExecBenchAgent2
+        #  framework: net6.0
+        #Contention:
+        #  sampleName: Computer01
+        #  testName: contention
+        #  poolName: ProfilerExecBenchAgent3
+        #  framework: net6.0
+        #Allocations:
+        #  sampleName: Computer01
+        #  testName: allocations
+        #  poolName: ProfilerExecBenchAgent4
+        #  framework: net6.0
+        #LiveHeap:
+        #  sampleName: Computer01
+        #  testName: liveheap
+        #  poolName: ProfilerExecBenchAgent5
+        #  framework: net7.0
+    pool:
+      name: $(poolName)
+    timeoutInMinutes: 30 #default value
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-centos7
+        path: $(monitoringHome)
+      retryCountOnTaskFailure: 5
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release -f $(framework) -p:Platform=x64 -p:CheckEolTargetFramework=false'
+        workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
+      displayName: 'dotnet build Release x64 $(sampleName)'
+
+    - script: ./run-$(testName).sh
+      workingDirectory: $(System.DefaultWorkingDirectory)/profiler/build/
+      displayName: Execute $(testName) benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+        cp $(System.DefaultWorkingDirectory)/profiler/build/jsonexporter_*.json $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks"
+      displayName: Publish results
+      artifact: profiler_execution_time_benchmarks_linux_x64_$(testName)_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
 
