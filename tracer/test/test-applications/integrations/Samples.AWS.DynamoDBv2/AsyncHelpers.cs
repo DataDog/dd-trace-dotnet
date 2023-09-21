@@ -32,7 +32,7 @@ namespace Samples.AWS.DynamoDBv2
                 
                 await PutItemsAsync(dynamoDBClient);
                 await GetItemsAsync(dynamoDBClient);
-                await DeleteItemAsync(dynamoDBClient);
+                await DeleteItemsAsync(dynamoDBClient);
 
                 await DeleteTableAsync(dynamoDBClient);
 
@@ -43,7 +43,28 @@ namespace Samples.AWS.DynamoDBv2
 
         public static async Task CreateTableAsync(AmazonDynamoDBClient dynamoDBClient)
         {
-            var createTableRequest = new CreateTableRequest { TableName = TableName };
+            var schema = new List<KeySchemaElement>
+            {
+                new() { AttributeName = "id", KeyType = "HASH" },
+                new() { AttributeName = "name", KeyType = "RANGE" }
+            };
+            var definitions = new List<AttributeDefinition>
+            {
+                new() { AttributeName = "id", AttributeType = "S" },
+                new() { AttributeName = "name", AttributeType = "S" }
+            };
+            var throughput = new ProvisionedThroughput
+            {
+                ReadCapacityUnits = 20,
+                WriteCapacityUnits = 50
+            };
+            var createTableRequest = new CreateTableRequest
+            {
+                TableName = TableName,
+                KeySchema = schema,
+                ProvisionedThroughput = throughput,
+                AttributeDefinitions = definitions
+            };
 
             var response = await dynamoDBClient.CreateTableAsync(createTableRequest);
             Console.WriteLine($"CreateTableAsync(CreateTableRequest) HTTP status code: {response.HttpStatusCode}");
@@ -81,14 +102,14 @@ namespace Samples.AWS.DynamoDBv2
         {
             var person = new Dictionary<string, AttributeValue>
             {
-                ["id"] = new() { S = Guid.NewGuid().ToString() },
+                ["id"] = new() { S = "1" },
                 ["name"] = new() { S = "Jordan" },
                 ["lastname"] = new() { S = "González Bustamante" },
                 ["city"] = new() { S = "NYC" }
             };
             var pokemon = new Dictionary<string, AttributeValue>
             {
-                ["id"] = new() { S = Guid.NewGuid().ToString() },
+                ["id"] = new() { S = "2" },
                 ["pid"] = new() { N = "393" },
                 ["name"] = new() { S = "Piplup" },
                 ["type"] = new() { S = "water" }
@@ -114,8 +135,8 @@ namespace Samples.AWS.DynamoDBv2
         {
             var key = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Jordan" },
-                ["city"] = new() { S = "NYC" }
+                ["id"] = new() { S = "1" },
+                ["name"] = new() { S = "Jordan" }
             };
             
             var getItemRequest = new GetItemRequest
@@ -132,13 +153,13 @@ namespace Samples.AWS.DynamoDBv2
         {
             var person = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Jordan" },
-                ["city"] = new() { S = "NYC" }
+                ["id"] = new() { S = "1" },
+                ["name"] = new() { S = "Jordan" }
             };
             var pokemon = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Piplup" },
-                ["type"] = new() { S = "water" }
+                ["id"] = new() { S = "2" },
+                ["name"] = new() { S = "Piplup" }
             };
             var keysAndAttributes = new KeysAndAttributes
             {
@@ -164,8 +185,8 @@ namespace Samples.AWS.DynamoDBv2
         {
             var key = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Jordan" },
-                ["city"] = new() { S = "NYC" }
+                ["id"] = new() { S = "1" },
+                ["name"] = new() { S = "Jordan" }
             };
             
             var deleteItemRequest = new DeleteItemRequest
@@ -182,13 +203,13 @@ namespace Samples.AWS.DynamoDBv2
         {
             var person = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Jordan" },
-                ["city"] = new() { S = "NYC" }
+                ["id"] = new() { S = "1" },
+                ["name"] = new() { S = "Jordan" }
             };
             var pokemon = new Dictionary<string, AttributeValue>
             {
+                ["id"] = new() { S = "2" },
                 ["name"] = new() { S = "Piplup" },
-                ["type"] = new() { S = "water" }
             };
             var writeRequestList = new List<WriteRequest>
             {
@@ -212,8 +233,8 @@ namespace Samples.AWS.DynamoDBv2
         {
             var key = new Dictionary<string, AttributeValue>
             {
-                ["name"] = new() { S = "Jordan" },
-                ["city"] = new() { S = "NYC" }
+                ["id"] = new() { S = "1" },
+                ["name"] = new() { S = "Jordan" }
             };
 
             var updates = new Dictionary<string, AttributeValueUpdate>
