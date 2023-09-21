@@ -55,7 +55,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             // TableName tagging only when batch is from one table.
             // Allocation is needed here due to RequestItems being
-            // Dictionary<string, Amazon.DynamoDBv2.Model.KeysAndAttributes>
+            // Dictionary<System.String, List<Amazon.DynamoDBv2.Model.WriteRequest>>
             var keys = request.RequestItems.Keys;
             foreach (var key in keys)
             {
