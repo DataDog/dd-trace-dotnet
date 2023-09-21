@@ -180,19 +180,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             layout.Attributes.Add(newAttribute);
         }
 
-        private static string CreateSimpleLayoutText(string attribute, bool addComma = true)
+        private static string CreateSimpleLayoutText(string attribute)
         {
             var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
-            string result;
-            if (useMdc)
-            {
-                result = "," + attribute + @": ""${mdc:item=" + attribute + @"}""";
-            }
-            else
-            {
-                result = "," + attribute + @": ""${mdlc:item=" + attribute + @"}""";
-            }
-
+            var context = useMdc ? "mdc" : "mdlc";
+            // example where attribute == dd.trace_id -> ` dd.trace_id: "${mdc:item=dd.trace_id}"`
+            var result = " " + attribute + @": ""${" + $"{context}" + ":item=" + attribute + @"}""";
             return result;
         }
 
@@ -229,7 +222,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             if (!string.IsNullOrEmpty(text))
             {
-                simpleLayoutProxy.Text += "{" + text + "}";
+                simpleLayoutProxy.Text += "{" + text + " }";
             }
         }
     }
