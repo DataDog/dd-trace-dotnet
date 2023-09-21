@@ -116,8 +116,8 @@ public class CompareThroughput
         CrankScenario.AttackBlocking => "Blocking",
         CrankScenario.IastDefault => "IAST default",
         CrankScenario.IastFull => "IAST full",
-        CrankScenario.IastVulnerabilityDisabled => "IAST disabled vulnerable",
-        CrankScenario.IastVulnerabilityEnabled => "IAST full vulnerable",
+        CrankScenario.IastVulnerabilityDisabled => "Base vuln",
+        CrankScenario.IastVulnerabilityEnabled => "IAST vuln",
         _ => throw new NotImplementedException(),
     };
 
