@@ -47,18 +47,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
 
             var scope = AwsDynamoDbCommon.CreateScope(Tracer.Instance, Operation, out AwsDynamoDbTags tags);
 
-            if (request.RequestItems.Keys.Count != 1)
+            if (request.RequestItems.Count != 1)
             {
                 return new CallTargetState(scope);
             }
 
             // TableName tagging only when batch is from one table.
-            // Allocation is needed here due to RequestItems being
-            // Dictionary<string, Amazon.DynamoDBv2.Model.KeysAndAttributes>
-            var keys = request.RequestItems.Keys;
-            foreach (var key in keys)
+            var iterator = request.RequestItems.GetEnumerator();
+            while (iterator.MoveNext())
             {
-                var tableName = key as string;
+                var tableName = iterator.Key as string;
                 tags.TableName = tableName;
                 var span = scope.Span;
                 span.ResourceName = $"{span.ResourceName} {tableName}";
