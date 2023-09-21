@@ -1,44 +1,45 @@
+#if NETFRAMEWORK
+
 using System;
 using System.Collections.Generic;
 using System.Threading;
-using System.Threading.Tasks;
 using Amazon.DynamoDBv2;
 using Amazon.DynamoDBv2.Model;
 
 namespace Samples.AWS.DynamoDBv2
 {
-    static class AsyncHelpers
+    static class SyncHelpers
     {
 
         private const string TableName = "MyTableName";
 
-        public static async Task StartDynamoDBTasks(AmazonDynamoDBClient dynamoDBClient)
+        public static void StartDynamoDBTasks(AmazonDynamoDBClient dynamoDBClient)
         {
-            Console.WriteLine("Beginning Async methods");
-            using (var scope = SampleHelpers.CreateScope("async-methods"))
+            Console.WriteLine("Beginning Sync methods");
+            using (var scope = SampleHelpers.CreateScope("sync-methods"))
             {
-                await CreateTableAsync(dynamoDBClient);
+                CreateTable(dynamoDBClient);
 
                 // Needed in order to allow DynamoDB Table to be in
                 // Ready status.
                 Thread.Sleep(1000);
-                await PutItemAsync(dynamoDBClient);
-                await GetItemAsync(dynamoDBClient);
-                await UpdateItemAsync(dynamoDBClient);
-                await DeleteItemAsync(dynamoDBClient);
+                PutItem(dynamoDBClient);
+                GetItem(dynamoDBClient);
+                UpdateItem(dynamoDBClient);
+                DeleteItem(dynamoDBClient);
                 
-                await PutItemsAsync(dynamoDBClient);
-                await GetItemsAsync(dynamoDBClient);
-                await DeleteItemsAsync(dynamoDBClient);
+                PutItems(dynamoDBClient);
+                GetItems(dynamoDBClient);
+                DeleteItems(dynamoDBClient);
 
-                await DeleteTableAsync(dynamoDBClient);
+                DeleteTable(dynamoDBClient);
 
                 // Needed in order to allow DynamoDB Table to be deleted
                 Thread.Sleep(1000);
             }
         }
 
-        public static async Task CreateTableAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void CreateTable(AmazonDynamoDBClient dynamoDBClient)
         {
             var schema = new List<KeySchemaElement>
             {
@@ -63,19 +64,19 @@ namespace Samples.AWS.DynamoDBv2
                 AttributeDefinitions = definitions
             };
 
-            var response = await dynamoDBClient.CreateTableAsync(createTableRequest);
-            Console.WriteLine($"CreateTableAsync(CreateTableRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.CreateTable(createTableRequest);
+            Console.WriteLine($"CreateTable(CreateTableRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task DeleteTableAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void DeleteTable(AmazonDynamoDBClient dynamoDBClient)
         {
             var deleteStreamRequest = new DeleteTableRequest { TableName = TableName };
 
-            var response = await dynamoDBClient.DeleteTableAsync(deleteStreamRequest);
-            Console.WriteLine($"DeleteTableAsync(DeleteTableRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.DeleteTable(deleteStreamRequest);
+            Console.WriteLine($"DeleteTable(DeleteTableRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task PutItemAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void PutItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var item = new Dictionary<string, AttributeValue>
             {
@@ -91,11 +92,11 @@ namespace Samples.AWS.DynamoDBv2
                 Item = item,
             };
 
-            var response = await dynamoDBClient.PutItemAsync(putItemRequest);
-            Console.WriteLine($"PutItemAsync(PutItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.PutItem(putItemRequest);
+            Console.WriteLine($"PutItem(PutItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task PutItemsAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void PutItems(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -124,11 +125,11 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            var response = await dynamoDBClient.BatchWriteItemAsync(batchWriteItemRequest);
-            Console.WriteLine($"BatchWriteItemAsync(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.BatchWriteItem(batchWriteItemRequest);
+            Console.WriteLine($"BatchWriteItem(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task GetItemAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void GetItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var key = new Dictionary<string, AttributeValue>
             {
@@ -142,11 +143,11 @@ namespace Samples.AWS.DynamoDBv2
                 Key = key
             };
             
-            var response = await dynamoDBClient.GetItemAsync(getItemRequest);
-            Console.WriteLine($"GetItemAsync(GetItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.GetItem(getItemRequest);
+            Console.WriteLine($"GetItem(GetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
         
-        public static async Task GetItemsAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void GetItems(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -174,11 +175,11 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            var response = await dynamoDBClient.BatchGetItemAsync(batchWriteItemRequest);
-            Console.WriteLine($"BatchGetItemAsync(BatchGetItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.BatchGetItem(batchWriteItemRequest);
+            Console.WriteLine($"BatchGetItem(BatchGetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task DeleteItemAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void DeleteItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var key = new Dictionary<string, AttributeValue>
             {
@@ -192,11 +193,11 @@ namespace Samples.AWS.DynamoDBv2
                 Key = key
             };
             
-            var response = await dynamoDBClient.DeleteItemAsync(deleteItemRequest);
-            Console.WriteLine($"DeleteItemAsync(DeleteItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.DeleteItem(deleteItemRequest);
+            Console.WriteLine($"DeleteItem(DeleteItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
         
-        public static async Task DeleteItemsAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void DeleteItems(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -222,11 +223,11 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            var response = await dynamoDBClient.BatchWriteItemAsync(batchWriteItemRequest);
-            Console.WriteLine($"BatchWriteItemAsync(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.BatchWriteItem(batchWriteItemRequest);
+            Console.WriteLine($"BatchWriteItem(BatchWriteItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
         
-        public static async Task UpdateItemAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static void UpdateItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var key = new Dictionary<string, AttributeValue>
             {
@@ -250,8 +251,9 @@ namespace Samples.AWS.DynamoDBv2
                 AttributeUpdates = updates
             };
             
-            var response = await dynamoDBClient.UpdateItemAsync(updateItemRequest);
-            Console.WriteLine($"UpdateItemAsync(UpdateItemRequest) HTTP status code: {response.HttpStatusCode}");
+            var response = dynamoDBClient.UpdateItem(updateItemRequest);
+            Console.WriteLine($"UpdateItem(UpdateItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
     }
 }
+#endif
