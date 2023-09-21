@@ -25,7 +25,7 @@
               "name": "i",
               "type": "Int32",
               "symbol_type": "static_field",
-              "line": -1
+              "line": 0
             }
           ],
           "scopes": [

@@ -45,10 +45,12 @@
             {
               "scope_type": "method",
               "name": ".ctor",
-              "start_line": -1,
-              "end_line": -1,
+              "start_line": 0,
+              "end_line": 2147483647,
               "language_specifics": {
-                "return_type": "System.Void"
+                "return_type": "System.Void",
+                "start_column": 0,
+                "end_column": 0
               },
               "scopes": []
             }
