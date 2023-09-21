@@ -90,9 +90,6 @@ StackSamplerLoop::StackSamplerLoop(
     _iteratorCpuTime = _pManagedThreadList->CreateIterator();
     _iteratorCodeHotspot = _pCodeHotspotsThreadList->CreateIterator();
 
-    _pLoopThread = std::make_unique<std::thread>(&StackSamplerLoop::MainLoop, this);
-    OpSysTools::SetNativeThreadName(_pLoopThread.get(), ThreadName);
-
     if(_areInternalMetricsEnabled)
     {
         _walltimeDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_internal_walltime_iterations_duration");
