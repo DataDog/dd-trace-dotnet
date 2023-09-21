@@ -35,12 +35,12 @@ internal class SymbolPdbExtractor : SymbolExtractor
         }
 
         var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false && sq.Line > 0);
-        var startLine = firstSq.Line == 0 ? -1 : firstSq.Line;
+        var startLine = firstSq.Line == 0 ? UnknownStartLine : firstSq.Line;
         var typeSourceFile = firstSq.Document?.URL;
         var lastSq = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false && sq.EndLine > 0);
-        var endLine = lastSq.EndLine == 0 ? -1 : lastSq.EndLine;
-        var startColumn = firstSq.Column == 0 ? -1 : firstSq.Column;
-        var endColumn = lastSq.EndColumn == 0 ? -1 : lastSq.EndColumn;
+        var endLine = lastSq.EndLine == 0 ? UnknownEndLineEntireScope : lastSq.EndLine;
+        var startColumn = firstSq.Column == 0 ? UnknownStartLine : firstSq.Column;
+        var endColumn = lastSq.EndColumn == 0 ? UnknownEndLine : lastSq.EndColumn;
 
         // locals
         var localsSymbol = GetLocalsSymbol(method, startLine, symbolMethod, out var localsCount);
@@ -90,7 +90,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     continue;
                 }
 
-                var line = -1;
+                var line = UnknownEndLineEntireScope;
                 for (var m = 0; m < symbolMethod.SequencePoints.Count; m++)
                 {
                     if (symbolMethod.SequencePoints[m].Offset >= currentScope.StartOffset)

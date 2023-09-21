@@ -25,13 +25,13 @@
               "name": "_s",
               "type": "String",
               "symbol_type": "field",
-              "line": -1
+              "line": 0
             },
             {
               "name": "_s2",
               "type": "String",
               "symbol_type": "field",
-              "line": -1
+              "line": 0
             }
           ],
           "scopes": [
@@ -64,13 +64,13 @@
                   "name": "",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
                   "symbol_type": "arg",
-                  "line": -1
+                  "line": 0
                 },
                 {
                   "name": "i",
                   "type": "System.Int32",
                   "symbol_type": "arg",
-                  "line": -1
+                  "line": 0
                 },
                 {
                   "name": "rand",
@@ -103,13 +103,13 @@
                   "name": "",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
                   "symbol_type": "arg",
-                  "line": -1
+                  "line": 0
                 },
                 {
                   "name": "i",
                   "type": "System.Int32",
                   "symbol_type": "arg",
-                  "line": -1
+                  "line": 0
                 },
                 {
                   "name": "rand",
