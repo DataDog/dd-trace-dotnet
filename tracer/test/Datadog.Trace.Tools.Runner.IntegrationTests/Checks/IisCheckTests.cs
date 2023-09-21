@@ -209,8 +209,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            var siteName = "sample";
-
             var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
 
             try
@@ -223,10 +221,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 var result = await CheckIisCommand.ExecuteAsync(
-                                 new CheckIisSettings { SiteName = siteName },
-                                 iisFixture.IisExpress.ConfigFile,
-                                 iisFixture.IisExpress.Process.Id,
-                                 BrokenMockRegistryService());
+                     new CheckIisSettings { SiteName = "sample" },
+                     iisFixture.IisExpress.ConfigFile,
+                     iisFixture.IisExpress.Process.Id,
+                     BrokenMockRegistryService());
 
                 result.Should().Be(1);
                 console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
