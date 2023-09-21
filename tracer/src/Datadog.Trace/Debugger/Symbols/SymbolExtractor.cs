@@ -99,11 +99,17 @@ namespace Datadog.Trace.Debugger.Symbols
                 assemblyName = Unknown;
             }
 
+            var assemblyPath = _module.Location;
+            if (string.IsNullOrEmpty(assemblyPath))
+            {
+                assemblyPath = Unknown;
+            }
+
             var assemblyScope = new Model.Scope
             {
                 Name = assemblyName,
                 ScopeType = SymbolType.Assembly,
-                SourceFile = _module.Location
+                SourceFile = assemblyPath,
             };
 
             return assemblyScope;
