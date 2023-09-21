@@ -132,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
         {
-            if (currentTest.Instance is null)
+            if (currentTest?.Instance is null)
             {
                 return;
             }
@@ -142,33 +142,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 ExtractTraits(currentTest.Parent, ref traits);
             }
 
-            if (currentTest.Properties is { Keys: { Count: > 0 } } properties)
+            if (currentTest.Properties is { } properties)
             {
-                foreach (var key in properties.Keys)
+                var keys = properties.Keys;
+                if (keys?.Count > 0)
                 {
-                    if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
+                    foreach (var key in keys)
                     {
-                        continue;
-                    }
-
-                    var value = properties[key];
-                    if (value is not null)
-                    {
-                        traits ??= new();
-                        if (!traits.TryGetValue(key, out var lstValues))
+                        if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
                         {
-                            lstValues = new List<string>();
-                            traits[key] = lstValues;
+                            continue;
                         }
 
-                        foreach (var valObj in value)
+                        var value = properties[key];
+                        if (value is not null)
                         {
-                            if (valObj is null)
+                            traits ??= new();
+                            if (!traits.TryGetValue(key, out var lstValues))
                             {
-                                continue;
+                                lstValues = new List<string>();
+                                traits[key] = lstValues;
                             }
 
-                            lstValues.Add(valObj.ToString() ?? string.Empty);
+                            foreach (var valObj in value)
+                            {
+                                if (valObj is null)
+                                {
+                                    continue;
+                                }
+
+                                lstValues.Add(valObj.ToString() ?? string.Empty);
+                            }
                         }
                     }
                 }

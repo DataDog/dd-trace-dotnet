@@ -123,7 +123,7 @@ namespace Samples.NUnitTests
         }
 
         [Test]
-        [Property("datadog_itr_unskippable", null)]
+        [Property("datadog_itr_unskippable", "")]
         public void UnskippableTest()
         {
         }
