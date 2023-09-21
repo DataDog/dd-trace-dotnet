@@ -186,19 +186,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             string result;
             if (useMdc)
             {
-                result = " " + attribute + @": ""${mdc:item=" + attribute + @"}""";
-                if (addComma)
-                {
-                    result += ",";
-                }
+                result = "," + attribute + @": ""${mdc:item=" + attribute + @"}""";
             }
             else
             {
-                result = " " + attribute + @": ""${mdlc:item=" + attribute + @"}""";
-                if (addComma)
-                {
-                    result += ",";
-                }
+                result = "," + attribute + @": ""${mdlc:item=" + attribute + @"}""";
             }
 
             return result;
@@ -207,31 +199,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         private static void ConfigureSimpleLayout(ISimpleLayoutProxy simpleLayoutProxy)
         {
             var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
+            string text = string.Empty;
 
             // hacky implementation to get everything in
             if (!simpleLayoutProxy.Text.Contains(Environment))
             {
-                simpleLayoutProxy.Text += CreateSimpleLayoutText(Environment);
+                text += CreateSimpleLayoutText(Environment);
             }
 
             if (!simpleLayoutProxy.Text.Contains(Service))
             {
-                simpleLayoutProxy.Text += CreateSimpleLayoutText(Service);
+                text += CreateSimpleLayoutText(Service);
             }
 
             if (!simpleLayoutProxy.Text.Contains(Version))
             {
-                simpleLayoutProxy.Text += CreateSimpleLayoutText(Version);
+                text += CreateSimpleLayoutText(Version);
             }
 
             if (!simpleLayoutProxy.Text.Contains(TraceId))
             {
-                simpleLayoutProxy.Text += CreateSimpleLayoutText(TraceId);
+                text += CreateSimpleLayoutText(TraceId);
             }
 
             if (!simpleLayoutProxy.Text.Contains(SpanId))
             {
-                simpleLayoutProxy.Text += CreateSimpleLayoutText(SpanId);
+                text += CreateSimpleLayoutText(SpanId);
+            }
+
+            if (!string.IsNullOrEmpty(text))
+            {
+                simpleLayoutProxy.Text += "{" + text + "}";
             }
         }
     }
