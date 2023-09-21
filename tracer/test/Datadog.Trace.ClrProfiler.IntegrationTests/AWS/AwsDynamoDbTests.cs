@@ -21,7 +21,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
     public class AwsDynamoDbTests : TracingIntegrationTest
     {
         public AwsDynamoDbTests(ITestOutputHelper output)
-            : base("AWS.DynamoDb", output)
+            : base("AWS.DynamoDBv2", output)
         {
         }
 
