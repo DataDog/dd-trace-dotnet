@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitEvpTests : TestHelper
     {
-        private const int ExpectedTestCount = 32;
-        private const int ExpectedTestSuiteCount = 9;
+        private const int ExpectedTestCount = 33;
+        private const int ExpectedTestSuiteCount = 10;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static readonly string[] _testSuiteNames =
@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             "Samples.NUnitTests.TestSetupError",
             "Samples.NUnitTests.TestTearDownError",
             "Samples.NUnitTests.TestTearDown2Error",
+            "Samples.NUnitTests.UnSkippableSuite",
         };
 
         public NUnitEvpTests(ITestOutputHelper output)

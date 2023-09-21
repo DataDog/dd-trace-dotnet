@@ -115,4 +115,13 @@ namespace Samples.XUnitTests
         {
         }
     }
+
+    [Trait("datadog_itr_unskippable", null)]
+    public class UnSkippableSuite
+    {
+        [Fact]
+        public void UnskippableTest()
+        {
+        }
+    }
 }

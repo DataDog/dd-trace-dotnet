@@ -23,7 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 15;
+        private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
+        private const int ExpectedSpanCount = 16;
 
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -86,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, TestSuiteName, UnSkippableSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);

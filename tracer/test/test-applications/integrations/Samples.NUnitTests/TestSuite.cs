@@ -223,4 +223,13 @@ namespace Samples.NUnitTests
             throw new Exception("TearDown exception.");
         }
     }
+
+    [Property("datadog_itr_unskippable", "")]
+    public class UnSkippableSuite
+    {
+        [Test]
+        public void UnskippableTest()
+        {
+        }
+    }
 }
