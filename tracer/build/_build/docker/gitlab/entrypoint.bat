@@ -28,7 +28,7 @@ cd c:\mnt\
 mklink /d dd-trace-dotnet C:\mnt
 mklink /d _build C:\_build
 
-dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader PackageTracerHome ZipSymbols SignDlls SignMsi --Artifacts "build-out\%CI_JOB_ID%"
+dotnet run --project tracer/build/_build/_build.csproj -- Info Clean BuildTracerHome BuildProfilerHome BuildNativeLoader BuildDdDotnet PackageTracerHome ZipSymbols SignDlls SignMsi --Artifacts "build-out\%CI_JOB_ID%"
 
 IF %ERRORLEVEL% NEQ 0 EXIT /B %ERRORLEVEL%
 

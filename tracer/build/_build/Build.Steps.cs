@@ -583,6 +583,17 @@ partial class Build
            }
        });
 
+    Target PublishDdDotnetSymbolsWindows => _ => _
+      .Unlisted()
+      .OnlyWhenStatic(() => IsWin)
+      .After(BuildDdDotnet, PublishManagedTracer)
+      .Executes(() =>
+      {
+          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-trace-dotnet.pdb";
+          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-trace-dotnet.pdb";
+          CopyFile(source, dest, FileExistsPolicy.Overwrite);
+      });
+
     Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -702,6 +713,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome)
         .DependsOn(PublishNativeSymbolsWindows)
+        .DependsOn(PublishDdDotnetSymbolsWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -1155,7 +1167,7 @@ partial class Build
                 var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
-    
+
                 var projects = includeIntegration
                     .Concat(includeSecurity)
                     .Select(x => Solution.GetProject(x))

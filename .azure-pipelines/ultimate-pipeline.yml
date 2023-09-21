@@ -726,9 +726,13 @@ stages:
     - script: tracer\build.cmd BuildDdDotnet
       displayName: Build dd-dotnet
 
-    - publish: $(artifacts)/dd-dotnet/win-x64
+    - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.exe
       displayName: Uploading dd-dotnet win-x64
       artifact: dd-dotnet-win-x64
+
+    - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.pdb
+      displayName: Uploading dd-dotnet win-x64 symbols
+      artifact: dd-dotnet-symbols-win-x64
 
 - stage: build_dd_dotnet_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -779,9 +783,13 @@ stages:
         command: "Clean BuildDdDotnet"
         retryCountForRunCommand: 1
 
-    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
       displayName: Uploading dd-dotnet $(artifactSuffix)
       artifact: dd-dotnet-$(artifactSuffix)
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet.dbg
+      displayName: Uploading dd-dotnet $(artifactSuffix) symbols
+      artifact: dd-dotnet-$(artifactSuffix)-symbols
 
 - stage: debug_builds
   dependsOn: [merge_commit_id]
@@ -3431,6 +3439,24 @@ stages:
           displayName: Download linux tracer Arm64 symbols
           inputs:
             artifact: linux-tracer-symbols-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-x64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-musl-x64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-arm64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - bash: |
