@@ -23,7 +23,7 @@ namespace Samples.Computer01
             {
                 (_serverHostname, _serverPort) = uri.IndexOf(':') switch
                 {
-                    var colonIdx when colonIdx > -1 => (uri[..colonIdx], int.Parse(uri.AsSpan(colonIdx + 1))),
+                    var colonIdx when colonIdx > -1 => (uri[..colonIdx], int.Parse(uri[(colonIdx + 1)..])),
                     _ => (uri, 389)
                 };
             }

@@ -77,12 +77,13 @@ void SystemCallsShield::Unregister()
 
 int SystemCallsShield::SetSharedMemory(int* state)
 {
-    if (Instance == nullptr)
+    auto current = Instance;
+    if (current == nullptr)
     {
         return 0;
     }
 
-    return Instance->SetSharedMemoryOnThreadInfo(state);
+    return current->SetSharedMemoryOnThreadInfo(state);
 }
 
 int SystemCallsShield::SetSharedMemoryOnThreadInfo(int* state)

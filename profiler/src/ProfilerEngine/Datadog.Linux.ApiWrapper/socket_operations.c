@@ -33,7 +33,7 @@
         {                                                                         \
             __dd_real_##name = dlsym(RTLD_NEXT, #name);                           \
         }                                                                         \
-        int interrupted_by_profiler = 0;                                          \
+        volatile int interrupted_by_profiler = 0;                                 \
         __dd_set_shared_memory(&interrupted_by_profiler);                         \
         return_type rc;                                                           \
         do                                                                        \
