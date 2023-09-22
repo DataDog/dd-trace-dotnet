@@ -266,6 +266,16 @@ bool LinuxStackFramesCollector::CanCollect(int32_t threadId, pid_t processId) co
     return currentThreadInfo != nullptr && currentThreadInfo->GetOsThreadId() == threadId && processId == _processId;
 }
 
+void LinuxStackFramesCollector::MarkAsInterrupted()
+{
+    auto* currentThreadInfo = _pCurrentCollectionThreadInfo;
+
+    if (currentThreadInfo != nullptr)
+    {
+        currentThreadInfo->MarkAsInterrupted();
+    }
+}
+
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
     // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
@@ -284,6 +294,8 @@ bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, sigi
         // sampling in progress
         if (pCollectorInstance != nullptr)
         {
+            pCollectorInstance->MarkAsInterrupted();
+
             // There can be a race:
             // The sampling thread has sent the signal and is waiting, but another SIGUSR1 signal was sent
             // by another thread and is handled before the one sent by the sampling thread.
