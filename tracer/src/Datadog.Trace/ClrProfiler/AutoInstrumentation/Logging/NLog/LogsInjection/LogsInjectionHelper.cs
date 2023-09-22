@@ -182,40 +182,48 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             return result;
         }
 
+        private static string CreateSimpleLayoutContextText(string attribute)
+        {
+            var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
+            var context = useMdc ? "mdc" : "mdlc";
+            return @": ""${" + $"{context}" + ":item=" + attribute + @"}""";
+        }
+
         private static void ConfigureSimpleLayout(ISimpleLayoutProxy simpleLayoutProxy)
         {
+            // does the current layout have any "mdc" or "mdlc" stuff for logs injection already
+            // if so, don't add to it
+            var envContext = CreateSimpleLayoutContextText(Environment);
+            var serviceContext = CreateSimpleLayoutContextText(Service);
+            var versionContext = CreateSimpleLayoutContextText(Version);
+            var traceIdContext = CreateSimpleLayoutContextText(TraceId);
+            var spanIdContext = CreateSimpleLayoutContextText(SpanId);
+
+            var hasEnvironment = simpleLayoutProxy.Text.Contains(envContext);
+            var hasService = simpleLayoutProxy.Text.Contains(serviceContext);
+            var hasVersion = simpleLayoutProxy.Text.Contains(versionContext);
+            var hasTraceId = simpleLayoutProxy.Text.Contains(traceIdContext);
+            var hasSpanId = simpleLayoutProxy.Text.Contains(spanIdContext);
+
+            if (hasEnvironment ||
+                hasService ||
+                hasVersion ||
+                hasTraceId ||
+                hasSpanId)
+            {
+                Log.Information("Not reconfiguring an NLogs SimpleLayout for logs injection because it looks like it already is.");
+                return;
+            }
+
             var text = string.Empty;
 
-            // hacky implementation to get everything in
-            if (!simpleLayoutProxy.Text.Contains(Environment))
-            {
-                text += CreateSimpleLayoutText(Environment);
-            }
+            text += CreateSimpleLayoutText(Environment);
+            text += CreateSimpleLayoutText(Service);
+            text += CreateSimpleLayoutText(Version);
+            text += CreateSimpleLayoutText(TraceId);
+            text += CreateSimpleLayoutText(SpanId);
 
-            if (!simpleLayoutProxy.Text.Contains(Service))
-            {
-                text += CreateSimpleLayoutText(Service);
-            }
-
-            if (!simpleLayoutProxy.Text.Contains(Version))
-            {
-                text += CreateSimpleLayoutText(Version);
-            }
-
-            if (!simpleLayoutProxy.Text.Contains(TraceId))
-            {
-                text += CreateSimpleLayoutText(TraceId);
-            }
-
-            if (!simpleLayoutProxy.Text.Contains(SpanId))
-            {
-                text += CreateSimpleLayoutText(SpanId);
-            }
-
-            if (!string.IsNullOrEmpty(text))
-            {
-                simpleLayoutProxy.Text += " {" + text + " }";
-            }
+            simpleLayoutProxy.Text += " {" + text + " }";
         }
     }
 }
