@@ -128,7 +128,7 @@ namespace Samples.Computer01
             }
             catch (OperationCanceledException)
             {
-                Console.WriteLine($"[Error] The {operationName} operation was cancelled because it reached the 2s timeout.");
+                Console.WriteLine($"[Error] The {operationName} operation was cancelled because it reached the {_operationErrorTimeout.Seconds}s timeout.");
             }
             catch (Exception e)
             {
