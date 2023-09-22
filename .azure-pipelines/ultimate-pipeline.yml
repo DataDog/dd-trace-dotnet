@@ -2687,7 +2687,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2729,10 +2729,17 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_PROFILING_ENABLED: true
         DD_API_KEY: $(ddApiKey)
 
     - publish: tracer/build_data/benchmarks
@@ -2905,12 +2912,16 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and runner tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build Bundle and Benchmark NuGet and runner tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/benchmark
+      displayName: Uploading Benchmark package
+      artifact: benchmark-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
@@ -3300,6 +3311,12 @@ stages:
           displayName: Download bundle nuget package
           inputs:
             artifact: bundle-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download benchmark nuget package
+          inputs:
+            artifact: benchmark-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
         # runner tool

@@ -72,6 +72,7 @@ partial class Build
     AbsolutePath TestsDirectory => TracerDirectory / "test";
     AbsolutePath BundleHomeDirectory => Solution.GetProject(Projects.DatadogTraceBundle).Directory / "home";
     AbsolutePath DatadogTraceDirectory => Solution.GetProject(Projects.DatadogTrace).Directory;
+    AbsolutePath BenchmarkHomeDirectory => Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet).Directory / "home";
 
     readonly TargetFramework[] AppTrimmingTFMs = { TargetFramework.NETCOREAPP3_1, TargetFramework.NET6_0 };
 
@@ -156,7 +157,6 @@ partial class Build
         Solution.GetProject(Projects.DatadogTrace),
         Solution.GetProject(Projects.DatadogTraceOpenTracing),
         Solution.GetProject(Projects.DatadogTraceAnnotations),
-        Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet),
         Solution.GetProject(Projects.DatadogTraceTrimming),
     };
 
@@ -669,6 +669,33 @@ partial class Build
 
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
+        });
+
+    Target CreateBenchmarkIntegrationHome => _ => _
+        .Unlisted()
+        .After(BuildTracerHome)
+        .After(BuildProfilerHome)
+        .After(BuildNativeLoader)
+        .Executes(() =>
+        {
+            // clean directory of everything except the text files
+            BenchmarkHomeDirectory
+               .GlobFiles("*.*")
+               .Where(filepath => Path.GetExtension(filepath) != ".txt")
+               .ForEach(DeleteFile);
+            // Copy existing files from tracer home to the Benchmark location
+            var requiredFiles = new[]
+            {
+                "Datadog.Profiler.Native.dll",
+                "Datadog.Trace.ClrProfiler.Native.dll",
+                "Datadog.Profiler.Native.so",
+                "Datadog.Trace.ClrProfiler.Native.so",
+                "loader.conf",
+            };
+            CopyDirectoryRecursively(MonitoringHomeDirectory, BenchmarkHomeDirectory, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite, excludeFile: info =>
+            {
+                return Array.FindIndex(requiredFiles, s => s == info.Name) == -1;
+            });
         });
 
     Target ExtractDebugInfoLinux => _ => _

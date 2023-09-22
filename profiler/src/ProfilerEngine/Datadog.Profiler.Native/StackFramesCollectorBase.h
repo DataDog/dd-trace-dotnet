@@ -57,4 +57,7 @@ private:
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
+
+    // CI Visibility BenchmarkDotNet support
+    std::atomic<std::uint64_t> _isCiVisibilitySpanId = -1;
 };

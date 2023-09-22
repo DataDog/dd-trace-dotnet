@@ -6,7 +6,6 @@ using BenchmarkDotNet.Running;
 using Datadog.Trace.BenchmarkDotNet;
 using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
-using Benchmarks.Trace.DatadogProfiler;
 using Benchmarks.Trace.Jetbrains;
 
 namespace Benchmarks.Trace
@@ -25,6 +24,7 @@ namespace Benchmarks.Trace
             const string jetBrainsDotMemory = "-jetbrains:dotmemory";
             const string datadogProfiler = "-datadog:profiler";
 
+            bool? useDatadogProfiler = null;
             if (args?.Any(a => a == jetBrainsDotTrace) == true)
             {
                 Console.WriteLine("Setting Jetbrains trace collection... (could take time downloading collector binaries)");
@@ -47,10 +47,10 @@ namespace Benchmarks.Trace
             {
                 Console.WriteLine("Setting Datadog Profiler...");
                 args = args.Where(a => a != datadogProfiler).ToArray();
-                config = config.WithDatadogProfiler();
+                useDatadogProfiler = true;
             }
             
-            config = config.WithDatadog()
+            config = config.WithDatadog(useDatadogProfiler)
                            .AddExporter(JsonExporter.FullCompressed);
             
             var agentName = Environment.GetEnvironmentVariable("AGENT_NAME");

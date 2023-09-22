@@ -13,4 +13,5 @@ public:
     inline static const shared::WSTRING DebugLogEnabled = WStr("DD_TRACE_DEBUG");
     inline static const shared::WSTRING IncludeProcessNames = WStr("DD_PROFILER_PROCESSES");
     inline static const shared::WSTRING ExcludeProcessNames = WStr("DD_PROFILER_EXCLUDE_PROCESSES");
+    inline static const shared::WSTRING InternalRuntimeId = WStr("DD_INTERNAL_CIVISIBILITY_RUNTIMEID");
 };

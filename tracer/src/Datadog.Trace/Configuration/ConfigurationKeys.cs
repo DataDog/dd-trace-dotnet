@@ -508,6 +508,16 @@ namespace Datadog.Trace.Configuration
             /// Configuration key for setting the external code coverage file path
             /// </summary>
             public const string ExternalCodeCoveragePath = "DD_CIVISIBILITY_EXTERNAL_CODE_COVERAGE_PATH";
+
+            /// <summary>
+            /// Internal configuration key for setting the SpanId from parent process
+            /// </summary>
+            public const string InternalSpanId = "DD_INTERNAL_CIVISIBILITY_SPANID";
+
+            /// <summary>
+            /// Internal configuration key for setting the RuntimeId from parent process
+            /// </summary>
+            public const string InternalRuntimeId = "DD_INTERNAL_CIVISIBILITY_RUNTIMEID";
         }
 
         /// <summary>

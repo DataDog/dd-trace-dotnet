@@ -3,8 +3,11 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
+
+#include "shared/src/native-src/util.h"
 
 #include <assert.h>
 #include <chrono>
@@ -106,6 +109,27 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
+    if (_isCiVisibilitySpanId == -1)
+    {
+        const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
+        if (internalCIVisibilitySpanId.empty())
+        {
+            _isCiVisibilitySpanId = 0;
+        }
+        else
+        {
+            _isCiVisibilitySpanId = std::stoull(shared::ToString(internalCIVisibilitySpanId));
+        }
+    }
+
+    const std::uint64_t isCiVisibilitySpanId = _isCiVisibilitySpanId;
+    if (isCiVisibilitySpanId > 0)
+    {
+        _pStackSnapshotResult->SetLocalRootSpanId(isCiVisibilitySpanId);
+        _pStackSnapshotResult->SetSpanId(isCiVisibilitySpanId);
+        return true;
+    }
+    
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
     if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())
