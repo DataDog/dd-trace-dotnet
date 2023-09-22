@@ -214,7 +214,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             if (!string.IsNullOrEmpty(text))
             {
-                simpleLayoutProxy.Text += "{" + text + " }";
+                simpleLayoutProxy.Text += " {" + text + " }";
             }
         }
     }
