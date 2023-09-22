@@ -789,7 +789,7 @@ stages:
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet.dbg
       displayName: Uploading dd-dotnet $(artifactSuffix) symbols
-      artifact: dd-dotnet-$(artifactSuffix)-symbols
+      artifact: dd-dotnet-symbols-$(artifactSuffix)
 
 - stage: debug_builds
   dependsOn: [merge_commit_id]
