@@ -4026,21 +4026,21 @@ stages:
           testName: exceptions
           poolName: ProfilerExecBenchAgent7
           framework: net7.0
-        #Contention:
-        #  sampleName: Computer01
-        #  testName: contention
-        #  poolName: ProfilerExecBenchAgent3
-        #  framework: net6.0
-        #Allocations:
-        #  sampleName: Computer01
-        #  testName: allocations
-        #  poolName: ProfilerExecBenchAgent4
-        #  framework: net6.0
-        #LiveHeap:
-        #  sampleName: Computer01
-        #  testName: liveheap
-        #  poolName: ProfilerExecBenchAgent5
-        #  framework: net7.0
+        Contention:
+          sampleName: Computer01
+          testName: contention
+          poolName: ProfilerExecBenchAgent8
+          framework: net7.0
+        Allocations:
+          sampleName: Computer01
+          testName: allocations
+          poolName: ProfilerExecBenchAgent9
+          framework: net7.0
+        LiveHeap:
+          sampleName: Computer01
+          testName: liveheap
+          poolName: ProfilerExecBenchAgent10
+          framework: net7.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value

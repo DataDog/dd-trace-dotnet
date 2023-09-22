@@ -4,5 +4,5 @@
 
 export PATH=~/.dotnet/tools/:$PATH
 
-dotnet timeit Exceptions.linux.json
+dotnet timeit Allocations.linux.json
 
