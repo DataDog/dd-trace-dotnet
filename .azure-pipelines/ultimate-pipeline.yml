@@ -2195,7 +2195,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)

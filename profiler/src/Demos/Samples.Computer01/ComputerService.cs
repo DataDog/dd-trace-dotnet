@@ -43,6 +43,11 @@ namespace Samples.Computer01
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
 
+#if NET5_0_OR_GREATER
+        private OpenLdapCrash _openldapCrash;
+        private SocketTimeout _socketTest;
+#endif
+
         public void StartService(Scenario scenario, int nbThreads, int parameter)
         {
             _scenario = scenario;
@@ -146,6 +151,15 @@ namespace Samples.Computer01
                 case Scenario.MethodSignature:
                     StartMethodsSignature();
                     break;
+
+#if NET5_0_OR_GREATER
+                case Scenario.OpenLdapCrash:
+                    StartOpenLdapCrash();
+                    break;
+                case Scenario.SocketTimeout:
+                    StartSocketTimeout();
+                    break;
+#endif
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
@@ -251,6 +265,15 @@ namespace Samples.Computer01
                 case Scenario.MethodSignature:
                     StopMethodsSignature();
                     break;
+
+#if NET5_0_OR_GREATER
+                case Scenario.OpenLdapCrash:
+                    StopOpenLdapCrash();
+                    break;
+                case Scenario.SocketTimeout:
+                    _socketTest.Stop();
+                    break;
+#endif
             }
         }
 
@@ -362,6 +385,14 @@ namespace Samples.Computer01
                         RunMethodsSignature();
                         break;
 
+#if NET5_0_OR_GREATER
+                    case Scenario.OpenLdapCrash:
+                        RunOpenLdapCrash();
+                        break;
+                    case Scenario.SocketTimeout:
+                        RunSocketTimeout();
+                        break;
+#endif
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -521,6 +552,20 @@ namespace Samples.Computer01
             _methodsSignature.Start();
         }
 
+#if NET5_0_OR_GREATER
+        private void StartOpenLdapCrash()
+        {
+            _openldapCrash = new OpenLdapCrash();
+            _openldapCrash.Start();
+        }
+
+        private void StartSocketTimeout()
+        {
+            _socketTest = new SocketTimeout();
+            _socketTest.Start();
+        }
+#endif
+
         private void StopComputer()
         {
             using (_computer)
@@ -590,6 +635,11 @@ namespace Samples.Computer01
         {
             _linuxSignalHandler.Stop();
         }
+
+        private void StpSocketTimeout()
+        {
+            _socketTest.Stop();
+        }
 #endif
 
         private void StopGarbageCollections()
@@ -636,6 +686,13 @@ namespace Samples.Computer01
         {
             _methodsSignature.Stop();
         }
+
+#if NET5_0_OR_GREATER
+        private void StopOpenLdapCrash()
+        {
+            _openldapCrash.Stop();
+        }
+#endif
 
         private void RunComputer()
         {
@@ -778,6 +835,20 @@ namespace Samples.Computer01
             var methodsSignature = new MethodsSignature();
             methodsSignature.Run();
         }
+
+#if NET5_0_OR_GREATER
+        private void RunOpenLdapCrash()
+        {
+            var openldapCrash = new OpenLdapCrash();
+            openldapCrash.Run();
+        }
+
+        private void RunSocketTimeout()
+        {
+            var socketTest = new SocketTimeout();
+            socketTest.Run();
+        }
+#endif
 
         public class MySpecialClassA
         {

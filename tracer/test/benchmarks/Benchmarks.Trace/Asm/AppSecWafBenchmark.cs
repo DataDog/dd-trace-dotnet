@@ -59,6 +59,7 @@ public class AppSecWafBenchmark
             throw new DirectoryNotFoundException($"The Path: '{path}' doesn't exist.");
         }
 
+        Environment.SetEnvironmentVariable("DD_TRACE_LOGGING_RATE", "60");
         Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", path);
         var libInitResult = WafLibraryInvoker.Initialize();
         if (!libInitResult.Success)
@@ -80,17 +81,23 @@ public class AppSecWafBenchmark
     public IEnumerable<NestedMap> Source()
     {
         yield return MakeNestedMap(10);
+        yield return MakeNestedMap(20);
         yield return MakeNestedMap(100);
-        yield return MakeNestedMap(1000);
     }
 
     public IEnumerable<NestedMap> SourceWithAttack()
     {
         yield return MakeNestedMap(10, true);
+        yield return MakeNestedMap(20, true);
         yield return MakeNestedMap(100, true);
-        yield return MakeNestedMap(1000, true);
     }
 
+    /// <summary>
+    /// Generates dummy arguments for the waf
+    /// </summary>
+    /// <param name="nestingDepth">Encoder.cs respects WafConstants.cs limits to process arguments with a max depth of 20 so above depth 20, there shouldn't be much difference of performances.</param>
+    /// <param name="withAttack">an attack present in arguments can slow down waf's run</param>
+    /// <returns></returns>
     private static NestedMap MakeNestedMap(int nestingDepth, bool withAttack = false)
     {
         var root = new Dictionary<string, object>();

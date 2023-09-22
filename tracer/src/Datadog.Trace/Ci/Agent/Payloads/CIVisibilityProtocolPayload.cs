@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.IO;
 using Datadog.Trace.Ci.Agent.MessagePack;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Vendors.MessagePack;
@@ -35,5 +36,12 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         public override void Reset() => _events.Clear();
 
         public byte[] ToArray() => MessagePackSerializer.Serialize(this, _formatterResolver);
+
+        public int WriteTo(Stream stream)
+        {
+            var buffer = MessagePackSerializer.SerializeUnsafe(this, _formatterResolver);
+            stream.Write(buffer.Array, buffer.Offset, buffer.Count);
+            return buffer.Count;
+        }
     }
 }

@@ -18,7 +18,6 @@ namespace Datadog.Profiler.SmokeTests
     {
         private readonly ITestOutputHelper _output;
         private readonly TransportType _transportType;
-        private readonly int _minimumExpectedPprofsCount = 2; // 1 empty and at least one normal
 
         private readonly TestApplicationRunner _testApplicationRunner;
 
@@ -44,6 +43,8 @@ namespace Datadog.Profiler.SmokeTests
             _transportType = transportType;
             _testApplicationRunner = new TestApplicationRunner(appName, framework, appAssembly, output, commandLine);
         }
+
+        public int MinimumExpectedNbPprofFiles { get; set; } = 2;
 
         internal EnvironmentHelper EnvironmentHelper
         {
@@ -115,12 +116,12 @@ namespace Datadog.Profiler.SmokeTests
         private void CheckPprofFiles()
         {
             var pprofFiles = Directory.EnumerateFiles(EnvironmentHelper.PprofDir, "*.pprof", SearchOption.AllDirectories).ToList();
-            Assert.True(pprofFiles.Count >= _minimumExpectedPprofsCount, $"The number of pprof files was not greater than or equal to {_minimumExpectedPprofsCount}. Actual value {pprofFiles.Count}");
+            Assert.True(pprofFiles.Count >= MinimumExpectedNbPprofFiles, $"The number of pprof files was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {pprofFiles.Count}");
         }
 
         private void CheckAgent(MockDatadogAgent agent)
         {
-            Assert.True(agent.NbCallsOnProfilingEndpoint >= _minimumExpectedPprofsCount, $"The number of calls to the agent was not greater than or equal to {_minimumExpectedPprofsCount}. Actual value {agent.NbCallsOnProfilingEndpoint}");
+            Assert.True(agent.NbCallsOnProfilingEndpoint >= MinimumExpectedNbPprofFiles, $"The number of calls to the agent was not greater than or equal to {MinimumExpectedNbPprofFiles}. Actual value {agent.NbCallsOnProfilingEndpoint}");
         }
 
         private bool LogFileContainsErrorMessage(string logFile)
