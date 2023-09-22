@@ -58,5 +58,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             // or we couldn't populate it completely (some tags is better than no tags)
             return scope;
         }
+
+        public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags tags, Scope scope)
+            where TBatchRequest : IBatchRequest
+        {
+            if (request.RequestItems.Count != 1)
+            {
+                return;
+            }
+
+            // TableName tagging only when batch is from one table.
+            var iterator = request.RequestItems.GetEnumerator();
+            while (iterator.MoveNext())
+            {
+                var tableName = iterator.Key as string;
+                if (tableName == null)
+                {
+                    continue;
+                }
+
+                tags.TableName = tableName;
+                var span = scope.Span;
+                span.ResourceName = $"{span.ResourceName} {tableName}";
+            }
+        }
     }
 }
