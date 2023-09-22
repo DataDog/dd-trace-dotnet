@@ -242,8 +242,8 @@ public class DatadogDiagnoser : IDiagnoser
         environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
         environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
-        environment[ConfigurationKeys.CIVisibility.InternalRuntimeId] = RuntimeId.Get();
-        environment[ConfigurationKeys.CIVisibility.InternalSpanId] = spanId.ToString();
+        environment["DD_INTERNAL_CIVISIBILITY_RUNTIMEID"] = RuntimeId.Get();
+        environment["DD_INTERNAL_CIVISIBILITY_SPANID"] = spanId.ToString();
 
         const string profilerEnabled = "DD_PROFILING_ENABLED";
         if (!environment.TryGetValue(profilerEnabled, out _))

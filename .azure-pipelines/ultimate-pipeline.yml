@@ -2716,7 +2716,7 @@ stages:
         BenchmarkAgent7:
           agent: "BenchmarkAgent7"
 
-    timeoutInMinutes: 30
+    timeoutInMinutes: 45
     pool:
       name: $(agent)
 
