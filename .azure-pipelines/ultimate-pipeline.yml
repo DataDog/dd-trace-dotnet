@@ -4021,11 +4021,11 @@ stages:
           testName: cpu-walltime
           poolName: ProfilerExecBenchAgent6
           framework: net7.0
-        #Exceptions:
-        #  sampleName: ExceptionGenerator
-        #  testName: exceptions
-        #  poolName: ProfilerExecBenchAgent2
-        #  framework: net6.0
+        Exceptions:
+          sampleName: ExceptionGenerator
+          testName: exceptions
+          poolName: ProfilerExecBenchAgent7
+          framework: net7.0
         #Contention:
         #  sampleName: Computer01
         #  testName: contention
