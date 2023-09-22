@@ -101,7 +101,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             var containsService = false;
             var containsEnv = false;
 
-            // hacky implementation to bruteforce attributes
             foreach (var attribute in layoutWithAttributes.Attributes)
             {
                 if (!attribute.TryDuckCast<IJsonAttributeProxy>(out var jsonAttributeProxy))
@@ -157,13 +156,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
         {
-            // TODO move null check out of this probably; can they be null?
-            if (_simpleLayoutType is null || _jsonAttributeType is null)
-            {
-                Log.Warning("Can't add logs injection to NLog JSON attribute type as we couldn't find the types.");
-                return;
-            }
-
             var newSimpleLayout = Activator.CreateInstance(_simpleLayoutType, new object[] { @"${mdc:item=" + $"{attribute}" + "}" });
             if (newSimpleLayout is null)
             {
@@ -192,8 +184,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static void ConfigureSimpleLayout(ISimpleLayoutProxy simpleLayoutProxy)
         {
-            var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
-            string text = string.Empty;
+            var text = string.Empty;
 
             // hacky implementation to get everything in
             if (!simpleLayoutProxy.Text.Contains(Environment))
