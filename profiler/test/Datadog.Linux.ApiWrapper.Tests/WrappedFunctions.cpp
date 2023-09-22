@@ -7,6 +7,9 @@
 #include <dlfcn.h>
 #include <link.h>
 #include <pthread.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <unistd.h>
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
@@ -37,6 +40,16 @@ INSTANTIATE_TEST_SUITE_P(
 #endif
         (void*)::dl_iterate_phdr,
         (void*)::dlopen,
-        (void*)::dladdr));
+        (void*)::dladdr,
+        (void*)::accept,
+        (void*)::accept4,
+        (void*)::recv,
+        (void*)::recvfrom,
+        (void*)::recvmsg,
+        (void*)::recvmmsg,
+        (void*)::connect,
+        (void*)::send,
+        (void*)::sendto,
+        (void*)::sendmsg));
 
 } // namespace WrappedFunctionsTest

@@ -59,6 +59,7 @@ public:
     inline static const shared::WSTRING GcThreadsCpuTimeEnabled     = WStr("DD_INTERNAL_GC_THREADS_CPUTIME_ENABLED");
     inline static const shared::WSTRING InternalMetricsEnabled      = WStr("DD_INTERNAL_METRICS_ENABLED");
     inline static const shared::WSTRING ThreadLifetimeEnabled       = WStr("DD_INTERNAL_THREAD_LIFETIME_ENABLED");
+    inline static const shared::WSTRING SystemCallsShieldEnabled    = WStr("DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED");
 
     inline static const shared::WSTRING InternalCIVisibilitySpanId  = WStr("DD_INTERNAL_CIVISIBILITY_SPANID");
 };

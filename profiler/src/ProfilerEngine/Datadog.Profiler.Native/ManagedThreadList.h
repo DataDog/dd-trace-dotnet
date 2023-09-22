@@ -30,7 +30,6 @@ public:
     const char* GetName() override;
     bool Start() override;
     bool Stop() override;
-    bool GetOrCreateThread(ThreadID clrThreadId) override;
     bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
     bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
@@ -39,7 +38,7 @@ public:
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
-    std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId);
+    std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) override;
 
 private:
     const char* _serviceName = "ManagedThreadList";
