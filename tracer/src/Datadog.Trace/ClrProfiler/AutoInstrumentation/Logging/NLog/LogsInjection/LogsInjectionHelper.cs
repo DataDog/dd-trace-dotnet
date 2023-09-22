@@ -47,17 +47,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 return;
             }
 
-            // TODO I think we'll always have these?
             _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
             if (_jsonAttributeType is null)
             {
                 Log.Warning("Failed to find NLog JsonAttribute type.");
+                return;
             }
 
             _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
             if (_simpleLayoutType is null)
             {
                 Log.Warning("Failed to find NLog SimpleLayoutType type.");
+                return;
             }
 
             ConfigureTargets(loggingConfigurationProxy.ConfiguredNamedTargets);
