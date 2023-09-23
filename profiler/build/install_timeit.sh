@@ -1,2 +1,2 @@
-#!/usr/bin/bash
-dotnet tool update -g timeitsharp --version 0.0.15
+#!/usr/bin/env bash
+dotnet tool update -g timeitsharp --version 0.0.16

@@ -1,6 +1,6 @@
-#!/usr/bin/bash
+#!/usr/bin/env bash
 
-/bin/bash ./install_timeit.sh
+./install_timeit.sh
 
 export PATH=~/.dotnet/tools/:$PATH
 
