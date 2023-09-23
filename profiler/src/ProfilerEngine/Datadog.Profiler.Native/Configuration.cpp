@@ -73,6 +73,10 @@ Configuration::Configuration()
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
     _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
+    // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
+    // But on Linux, it's std::uint64_t == unsigned long (=> 0ul)and it fails to compile.
+    // Here we create a 0 value of type std::uint64_t which will succeed the compilation
+    _internalCIVisibilitySpanId = GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -278,6 +282,11 @@ bool Configuration::IsInternalMetricsEnabled() const
     return _isInternalMetricsEnabled;
 }
 
+std::uint64_t Configuration::GetCIVisibilitySpanId() const
+{
+    return _internalCIVisibilitySpanId;
+}
+
 fs::path Configuration::GetApmBaseDirectory()
 {
 #ifdef _WINDOWS
@@ -371,8 +380,7 @@ std::string const& Configuration::GetGitCommitSha() const
 
 bool TryParse(shared::WSTRING const& s, int32_t& result)
 {
-    auto str = shared::ToString(s);
-    if (str == "")
+    if (s.empty())
     {
         result = 0;
         return false;
@@ -380,7 +388,29 @@ bool TryParse(shared::WSTRING const& s, int32_t& result)
 
     try
     {
-        result = std::stoi(str);
+        result = std::stoi(shared::ToString(s));
+        return true;
+    }
+    catch (std::exception const&)
+    {
+        // TODO log
+    }
+    result = 0;
+    return false;
+}
+
+bool TryParse(shared::WSTRING const& s, uint64_t& result)
+{
+    if (s.empty())
+    {
+        result = 0;
+        return false;
+    }
+
+    try
+    {
+        auto str = shared::ToString(s);
+        result = std::stoull(str);
         return true;
     }
     catch (std::exception const&)
@@ -498,6 +528,11 @@ bool convert_to(shared::WSTRING const& s, shared::WSTRING& result)
 }
 
 bool convert_to(shared::WSTRING const& s, int32_t& result)
+{
+    return TryParse(s, result);
+}
+
+bool convert_to(shared::WSTRING const& s, uint64_t& result)
 {
     return TryParse(s, result);
 }

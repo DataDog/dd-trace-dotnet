@@ -3,23 +3,23 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "Configuration.h"
 #include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
-
-#include "shared/src/native-src/util.h"
 
 #include <assert.h>
 #include <chrono>
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase()
+StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration)
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
     _pCurrentCollectionThreadInfo = nullptr;
     _isCurrentCollectionAbortRequested.store(false);
+    _ciVisibilitySpanId = _configuration->GetCIVisibilitySpanId();
 }
 
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
@@ -109,27 +109,13 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
-    if (_isCiVisibilitySpanId == -1)
+    if (_ciVisibilitySpanId > 0)
     {
-        const auto internalCIVisibilitySpanId = ::shared::GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId);
-        if (internalCIVisibilitySpanId.empty())
-        {
-            _isCiVisibilitySpanId = 0;
-        }
-        else
-        {
-            _isCiVisibilitySpanId = std::stoull(shared::ToString(internalCIVisibilitySpanId));
-        }
-    }
-
-    const std::uint64_t isCiVisibilitySpanId = _isCiVisibilitySpanId;
-    if (isCiVisibilitySpanId > 0)
-    {
-        _pStackSnapshotResult->SetLocalRootSpanId(isCiVisibilitySpanId);
-        _pStackSnapshotResult->SetSpanId(isCiVisibilitySpanId);
+        _pStackSnapshotResult->SetLocalRootSpanId(_ciVisibilitySpanId);
+        _pStackSnapshotResult->SetSpanId(_ciVisibilitySpanId);
         return true;
     }
-    
+
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
     if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())

@@ -64,6 +64,7 @@ public:
     std::string const& GetGitCommitSha() const override;
     bool IsInternalMetricsEnabled() const override;
     bool IsSystemCallsShieldEnabled() const override;
+    std::uint64_t GetCIVisibilitySpanId() const override;
 
 private:
     static tags ExtractUserTags();
@@ -143,4 +144,5 @@ private:
     bool _isDebugInfoEnabled;
     bool _isInternalMetricsEnabled;
     bool _isSystemCallsShieldEnabled;
+    std::uint64_t _internalCIVisibilitySpanId;
 };

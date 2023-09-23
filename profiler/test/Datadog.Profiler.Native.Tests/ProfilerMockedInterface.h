@@ -66,6 +66,7 @@ public:
     MOCK_METHOD(std::string const&, GetGitCommitSha, (), (const override));
     MOCK_METHOD(bool, IsInternalMetricsEnabled, (), (const override));
     MOCK_METHOD(bool, IsSystemCallsShieldEnabled, (), (const override));
+    MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
 };
 
 class MockExporter : public IExporter

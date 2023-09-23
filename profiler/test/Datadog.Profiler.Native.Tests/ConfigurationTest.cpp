@@ -756,3 +756,23 @@ TEST(ConfigurationTest, CheckSystemCallsShieldIsDisabledIfEnvVarSetToFalse)
     auto expectedValue = false;
     ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
 }
+
+TEST(ConfigurationTest, CheckCIVisibilityDefaultValueIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityValueIfSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("12345678909"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 12345678909ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityValueIfSetTo0)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
+}
