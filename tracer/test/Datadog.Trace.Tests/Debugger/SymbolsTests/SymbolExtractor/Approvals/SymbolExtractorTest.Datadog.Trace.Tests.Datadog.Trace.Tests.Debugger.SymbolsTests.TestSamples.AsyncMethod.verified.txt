@@ -56,6 +56,33 @@
                     }
                   ],
                   "scopes": []
+                },
+                {
+                  "scope_type": "closure",
+                  "name": "GetTime",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                  "start_line": 14,
+                  "end_line": 25,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ],
+                    "annotations": [
+                      "Final Virtual"
+                    ],
+                    "return_type": "System.Void",
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "result",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 14
+                    }
+                  ],
+                  "scopes": []
                 }
               ]
             },
@@ -63,7 +90,7 @@
               "scope_type": "method",
               "name": ".ctor",
               "start_line": 0,
-              "end_line": 2147483647,
+              "end_line": 0,
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 0,
