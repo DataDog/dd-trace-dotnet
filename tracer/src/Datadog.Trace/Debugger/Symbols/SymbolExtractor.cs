@@ -426,19 +426,27 @@ namespace Datadog.Trace.Debugger.Symbols
                 return null;
             }
 
-            var generatedMethodName = generatedMethod.Name.String;
-            if (generatedMethodName[0] != '<')
+            if (generatedMethod.CustomDebugInfos.FirstOrDefault(cdi => cdi is PdbAsyncMethodCustomDebugInfo) is PdbAsyncMethodCustomDebugInfo asyncMethodCustomDebugInfo)
             {
-                return null;
+                if (!method.Name.String.Equals(asyncMethodCustomDebugInfo.KickoffMethod.Name.String))
+                {
+                    return null;
+                }
             }
-
-            var notGeneratedMethodName = generatedMethodName.Substring(1, generatedMethodName.IndexOf('>') - 1);
-            if (!method.Name.String.Equals(notGeneratedMethodName))
+            else
             {
-                return null;
-            }
+                var generatedMethodName = generatedMethod.Name.String;
+                if (generatedMethodName[0] != '<')
+                {
+                    return null;
+                }
 
-            // todo: check state machine to add fields even if there is not pdb?
+                var notGeneratedMethodName = generatedMethodName.Substring(1, generatedMethodName.IndexOf('>') - 1);
+                if (!method.Name.String.Equals(notGeneratedMethodName))
+                {
+                    return null;
+                }
+            }
 
             var closureMethodScope = CreateMethodScope(nestedType, generatedMethod);
             closureMethodScope.Name = method.Name.String;

@@ -151,9 +151,19 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     Array.Copy(localsSymbol, 0, allLocals, 0, localsCount);
                 }
 
+                var localName = field.Name.String;
+                if (localName[0] == '<')
+                {
+                    var endNameIndex = localName.IndexOf('>');
+                    if (endNameIndex > 1)
+                    {
+                        localName = localName.Substring(1, endNameIndex - 1);
+                    }
+                }
+
                 allLocals[localsCount] = new Symbol
                 {
-                    Name = field.Name.String,
+                    Name = localName,
                     Type = field.FieldType.FullName,
                     SymbolType = SymbolType.Local,
                     Line = startLine

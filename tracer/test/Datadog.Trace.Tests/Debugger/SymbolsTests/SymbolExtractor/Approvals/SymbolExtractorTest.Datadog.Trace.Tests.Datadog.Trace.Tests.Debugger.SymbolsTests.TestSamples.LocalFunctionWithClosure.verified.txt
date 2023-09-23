@@ -72,7 +72,7 @@
               "scope_type": "method",
               "name": ".ctor",
               "start_line": 0,
-              "end_line": 2147483647,
+              "end_line": 0,
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 0,
