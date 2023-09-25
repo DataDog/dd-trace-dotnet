@@ -44,7 +44,7 @@
     }
   ],
   "processName": "./Samples.ExceptionGenerator",
-  "processArguments": "--scenario 5 --iterations 200",
+  "processArguments": "--scenario 5 --iterations 100",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.ExceptionGenerator/net7.0",
   "environmentVariables": {
