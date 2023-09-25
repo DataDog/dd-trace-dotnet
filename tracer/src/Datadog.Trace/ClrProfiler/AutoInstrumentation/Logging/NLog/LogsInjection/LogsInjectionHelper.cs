@@ -50,14 +50,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
             if (_jsonAttributeType is null)
             {
-                Log.Warning("Failed to find NLog JsonAttribute type.");
-                return;
+                // for example: v2.1 doesn't have this so this might not exist
+                Log.Warning("Failed to find NLog JsonAttribute type");
             }
 
             _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
             if (_simpleLayoutType is null)
             {
-                Log.Warning("Failed to find NLog SimpleLayoutType type.");
+                // every version we support should have this
+                Log.Warning("Failed to find NLog SimpleLayoutType type");
                 return;
             }
 
@@ -95,6 +96,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static void ConfigureJson4Layout(IJsonLayout4Proxy layoutWithAttributes)
         {
+            if (_jsonAttributeType is null)
+            {
+                Log.Warning("Can't configure NLog JsonLayout as the JsonAttribute wasn't found in NLog.");
+                return;
+            }
+
             var containsTraceId = false;
             var containsSpanId = false;
             var containsVersion = false;
