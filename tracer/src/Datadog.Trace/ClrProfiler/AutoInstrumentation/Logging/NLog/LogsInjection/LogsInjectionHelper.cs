@@ -135,30 +135,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 }
             }
 
-            if (!containsEnv)
+            if (containsEnv ||
+                containsTraceId ||
+                containsSpanId ||
+                containsVersion ||
+                containsService)
             {
-                AddAttributeToJson4Layout(layoutWithAttributes, Environment);
+                Log.Information("Not reconfiguring an NLog JsonLayout for logs injection because it looks like it already is.");
+                return;
             }
 
-            if (!containsTraceId)
-            {
-                AddAttributeToJson4Layout(layoutWithAttributes, TraceId);
-            }
-
-            if (!containsSpanId)
-            {
-                AddAttributeToJson4Layout(layoutWithAttributes, SpanId);
-            }
-
-            if (!containsVersion)
-            {
-                AddAttributeToJson4Layout(layoutWithAttributes, Version);
-            }
-
-            if (!containsService)
-            {
-                AddAttributeToJson4Layout(layoutWithAttributes, Service);
-            }
+            AddAttributeToJson4Layout(layoutWithAttributes, Environment);
+            AddAttributeToJson4Layout(layoutWithAttributes, TraceId);
+            AddAttributeToJson4Layout(layoutWithAttributes, SpanId);
+            AddAttributeToJson4Layout(layoutWithAttributes, Version);
+            AddAttributeToJson4Layout(layoutWithAttributes, Service);
         }
 
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
