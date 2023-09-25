@@ -1,3 +1,3 @@
 @echo off
 
-dotnet tool update -g timeitsharp --version 0.0.16
+dotnet tool update -g timeitsharp --version 0.0.17
