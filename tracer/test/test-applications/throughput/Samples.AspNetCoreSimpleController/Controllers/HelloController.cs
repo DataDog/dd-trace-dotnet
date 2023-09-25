@@ -36,7 +36,7 @@ namespace Samples.AspNetCoreSimpleController.Controllers
             var finalPath = (currentPath + relativePath).Trim();
             StringBuilder sb = new StringBuilder();
             sb.Append(" ").Append(filter).Append(" ");
-            filter = sb.ToString().Replace(" ", "*").Replace("*", " ").Trim();
+            filter = sb.ToString().Trim();
 
             //vulnerability
             var files = System.IO.Directory.GetFiles(finalPath, filter);
