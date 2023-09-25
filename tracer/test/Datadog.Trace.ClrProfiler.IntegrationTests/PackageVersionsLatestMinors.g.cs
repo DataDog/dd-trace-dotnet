@@ -813,7 +813,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "13.2.1" },
                 new object[] { "13.3.3" },
                 new object[] { "13.4.0" },
-                new object[] { "13.5.0" },
+                new object[] { "13.5.1" },
 #endif
 #if NET7_0
                 new object[] { "11.0.9" },
@@ -847,7 +847,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "13.2.1" },
                 new object[] { "13.3.3" },
                 new object[] { "13.4.0" },
-                new object[] { "13.5.0" },
+                new object[] { "13.5.1" },
 #endif
 #endif
             };

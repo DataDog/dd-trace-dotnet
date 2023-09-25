@@ -13,7 +13,6 @@
 class IManagedThreadList : public IService
 {
 public:
-    virtual bool GetOrCreateThread(ThreadID clrThreadId) = 0;
     virtual bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) = 0;
     virtual bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
     virtual bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) = 0;
@@ -22,4 +21,5 @@ public:
     virtual uint32_t CreateIterator() = 0;
     virtual std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) = 0;
     virtual HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) = 0;
+    virtual std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) = 0;
 };

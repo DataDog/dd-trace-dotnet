@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "RuntimeInfo.h"
+#include <sstream>
 
 RuntimeInfo::RuntimeInfo(uint16_t dotnetMajor, uint16_t dotnetMinor, bool isFramework)
     :
@@ -34,4 +35,23 @@ uint16_t RuntimeInfo::GetDotnetMinorVersion() const
 std::string RuntimeInfo::GetOs() const
 {
     return _os;
+}
+
+std::string RuntimeInfo::GetClrString() const
+{
+    // runtime_version:
+    //    framework-4.8
+    //    core-6.0
+    std::stringstream buffer;
+    if (_isFramework)
+    {
+        buffer << "framework";
+    }
+    else
+    {
+        buffer << "core";
+    }
+    buffer << "-" << std::dec << _dotnetMajor << "." << _dotnetMinor;
+
+    return buffer.str();
 }

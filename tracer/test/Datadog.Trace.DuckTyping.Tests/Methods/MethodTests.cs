@@ -34,6 +34,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Equal(20, duckAbstract.Sum(10, 10));
             Assert.Equal(20, duckVirtual.Sum(10, 10));
 
+            // ValueWithType
+            Assert.Equal(20, duckInterface.SumReturnValueWithType(10, 10).Value);
+            Assert.Equal(typeof(int), duckInterface.SumReturnValueWithType(10, 10).Type);
+            Assert.Equal(20, duckAbstract.SumReturnValueWithType(10, 10).Value);
+            Assert.Equal(typeof(int), duckAbstract.SumReturnValueWithType(10, 10).Type);
+            Assert.Equal(20, duckVirtual.SumReturnValueWithType(10, 10).Value);
+            Assert.Equal(typeof(int), duckVirtual.SumReturnValueWithType(10, 10).Type);
+
             // Float
             Assert.Equal(20f, duckInterface.Sum(10f, 10f));
             Assert.Equal(20f, duckAbstract.Sum(10f, 10f));
@@ -64,6 +72,14 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods
             Assert.Equal(dummy.MagicNumber, duckInterface.Bypass(dummyInt).MagicNumber);
             Assert.Equal(dummy.MagicNumber, duckAbstract.Bypass(dummyInt).MagicNumber);
             Assert.Equal(dummy.MagicNumber, duckVirtual.Bypass(dummyInt).MagicNumber);
+
+            // ValueWithType
+            Assert.Equal(dummy.MagicNumber, duckInterface.BypassReturnValueWithType(dummyInt).Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckInterface.BypassReturnValueWithType(dummyInt).Type);
+            Assert.Equal(dummy.MagicNumber, duckAbstract.BypassReturnValueWithType(dummyInt).Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckAbstract.BypassReturnValueWithType(dummyInt).Type);
+            Assert.Equal(dummy.MagicNumber, duckVirtual.BypassReturnValueWithType(dummyInt).Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckVirtual.BypassReturnValueWithType(dummyInt).Type);
         }
 
         [Theory]

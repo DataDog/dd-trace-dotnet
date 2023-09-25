@@ -41,7 +41,7 @@ namespace Datadog.Trace.Tests
         {
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, string.Empty);
             string path = Directory.GetCurrentDirectory() + "/invalid";
-            var res = Serverless.LambdaMetadata.Create(path);
+            var res = LambdaMetadata.Create(path);
             res.IsRunningInLambda.Should().BeFalse();
         }
 
@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tests
         {
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, "my-test-function");
             string path = Directory.GetCurrentDirectory() + "/invalid";
-            var res = Serverless.LambdaMetadata.Create(path);
+            var res = LambdaMetadata.Create(path);
             res.IsRunningInLambda.Should().BeFalse();
         }
 
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, string.Empty);
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
-            var res = Serverless.LambdaMetadata.Create(existingFile);
+            var res = LambdaMetadata.Create(existingFile);
             res.IsRunningInLambda.Should().BeFalse();
         }
 
@@ -70,7 +70,7 @@ namespace Datadog.Trace.Tests
             Environment.SetEnvironmentVariable(FunctionNameEnvVar, "my-test-function");
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
-            var res = Serverless.LambdaMetadata.Create(existingFile);
+            var res = LambdaMetadata.Create(existingFile);
             res.IsRunningInLambda.Should().BeTrue();
             res.FunctionName.Should().Be("my-test-function");
         }
@@ -86,7 +86,7 @@ namespace Datadog.Trace.Tests
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
 
-            var res = Serverless.LambdaMetadata.Create(existingFile);
+            var res = LambdaMetadata.Create(existingFile);
 
             res.IsRunningInLambda.Should().BeTrue();
             res.FunctionName.Should().Be("my-test-function");
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tests
             string currentDirectory = Directory.GetCurrentDirectory();
             string existingFile = Directory.GetFiles(currentDirectory)[0];
 
-            var res = Serverless.LambdaMetadata.Create(existingFile);
+            var res = LambdaMetadata.Create(existingFile);
 
             res.IsRunningInLambda.Should().BeTrue();
             res.FunctionName.Should().Be("my-test-function");

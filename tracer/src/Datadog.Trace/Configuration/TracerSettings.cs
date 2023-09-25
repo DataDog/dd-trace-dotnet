@@ -354,6 +354,8 @@ namespace Datadog.Trace.Configuration
 
             IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
 
+            LambdaMetadata = LambdaMetadata.Create();
+
             StatsComputationEnabledInternal = config
                                      .WithKeys(ConfigurationKeys.StatsComputationEnabled)
                                      .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
@@ -362,7 +364,7 @@ namespace Datadog.Trace.Configuration
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(
                                         IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
-                                        Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+                                        LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
@@ -842,6 +844,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in Google Cloud Functions
         /// </summary>
         internal bool IsRunningInGCPFunctions { get; }
+
+        /// <summary>
+        /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
+        /// </summary>
+        internal LambdaMetadata LambdaMetadata { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries

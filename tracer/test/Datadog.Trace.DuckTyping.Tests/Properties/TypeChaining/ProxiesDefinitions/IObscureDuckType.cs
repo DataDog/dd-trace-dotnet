@@ -50,5 +50,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
         // *
 
         IDummyFieldObject PrivateDummyGetSetSelfType { get; set; }
+
+        // *
+        [Duck(Name = "PublicGetSetSelfType")]
+        ValueWithType<IDummyFieldObject> PublicGetSetSelfTypeWithType { get; set; }
     }
 }

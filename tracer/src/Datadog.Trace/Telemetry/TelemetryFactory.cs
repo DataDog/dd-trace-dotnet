@@ -59,9 +59,12 @@ namespace Datadog.Trace.Telemetry
         public static TelemetryFactory CreateFactory() => new();
 
         public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
-            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config), discoveryService);
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings), discoveryService, useCiVisibilityTelemetry: false);
 
-        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService)
+        public ITelemetryController CreateCiVisibilityTelemetryController(ImmutableTracerSettings tracerSettings, IDiscoveryService discoveryService)
+            => CreateTelemetryController(tracerSettings, TelemetrySettings.FromSource(GlobalConfigurationSource.Instance, Config, tracerSettings), discoveryService, useCiVisibilityTelemetry: true);
+
+        public ITelemetryController CreateTelemetryController(ImmutableTracerSettings tracerSettings, TelemetrySettings settings, IDiscoveryService discoveryService, bool useCiVisibilityTelemetry)
         {
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
@@ -98,6 +101,12 @@ namespace Datadog.Trace.Telemetry
                     log.Debug("Telemetry metrics collection disabled");
                     DisableMetricsCollector();
                 }
+                else if (useCiVisibilityTelemetry)
+                {
+                    log.Debug("CI Visibility telemetry metrics collection enabled");
+                    // This would lose any metrics added up to this point
+                    ReplaceMetricsCollector(new CiVisibilityMetricsTelemetryCollector());
+                }
 
                 // Making assumptions that we never switch from v1 to v2
                 // so we don't need to "clean up" the collectors.
@@ -128,9 +137,12 @@ namespace Datadog.Trace.Telemetry
         }
 
         private static void DisableMetricsCollector()
+            => ReplaceMetricsCollector(NullMetricsTelemetryCollector.Instance);
+
+        private static void ReplaceMetricsCollector(IMetricsTelemetryCollector newCollector)
         {
-            var oldMetrics = Interlocked.Exchange(ref _metrics, NullMetricsTelemetryCollector.Instance);
-            if (oldMetrics is MetricsTelemetryCollector metrics)
+            var oldMetrics = Interlocked.Exchange(ref _metrics, newCollector);
+            if (oldMetrics is MetricsTelemetryCollectorBase metrics)
             {
                 // "clears" all the data stored so far
                 metrics.Clear();

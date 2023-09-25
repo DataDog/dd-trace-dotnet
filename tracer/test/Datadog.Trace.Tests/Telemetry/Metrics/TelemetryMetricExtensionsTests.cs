@@ -91,21 +91,21 @@ public class TelemetryMetricExtensionsTests
     [Fact]
     public void MustHaveValidTagsForEveryCount()
     {
-        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetCountBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetCountBuffer", BindingFlags.Static | BindingFlags.NonPublic);
         CheckTagsAreValid(keys);
     }
 
     [Fact]
     public void MustHaveValidTagsForEveryGauge()
     {
-        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetGaugeBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetGaugeBuffer", BindingFlags.Static | BindingFlags.NonPublic);
         CheckTagsAreValid(keys);
     }
 
     [Fact]
     public void MustHaveValidTagsForEveryDistribution()
     {
-        var keys = typeof(MetricsTelemetryCollector).GetMethod("GetDistributionBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetDistributionBuffer", BindingFlags.Static | BindingFlags.NonPublic);
         CheckTagsAreValid(keys);
     }
 

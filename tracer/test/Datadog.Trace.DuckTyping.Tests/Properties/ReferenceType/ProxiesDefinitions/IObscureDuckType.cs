@@ -50,6 +50,15 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType.ProxiesDefinit
         [Duck(Name = "PublicStaticGetSetReferenceType")]
         string PublicStaticOnlySet { set; }
 
+        [Duck(Name = "PublicStaticGetSetReferenceType")]
+        ValueWithType<string> PublicStaticOnlySetWithType { set; }
+
+        [Duck(Name = "PublicStaticGetSetReferenceType")]
+        string PublicStaticOnlyGet { get; }
+
+        [Duck(Name = "PublicStaticGetSetReferenceType")]
+        ValueWithType<string> PublicStaticOnlyGetWithType { get; }
+
         // *
 
         string this[string index] { get; set; }

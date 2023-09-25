@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Environments;
 using BenchmarkDotNet.Exporters;
@@ -23,6 +24,8 @@ namespace Datadog.Trace.BenchmarkDotNet;
 /// </summary>
 internal class DatadogExporter : IExporter
 {
+    private readonly Dictionary<Assembly, TestModule> _testModules = new();
+
     /// <summary>
     /// Default DatadogExporter instance
     /// </summary>
@@ -43,26 +46,12 @@ internal class DatadogExporter : IExporter
     private DatadogExporter()
     {
         TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", DateTime.UtcNow, false);
-        var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
-        TestModule = TestSession.CreateModule(
-            Assembly.GetEntryAssembly()?.GetName().Name ?? "Session",
-            "BenchmarkDotNet",
-            version);
-        LifetimeManager.Instance.AddAsyncShutdownTask(
-            async () =>
-            {
-                await TestModule.CloseAsync().ConfigureAwait(false);
-                TestSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
-                await TestSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail).ConfigureAwait(false);
-            });
     }
 
     /// <inheritdoc />
     public string Name => nameof(DatadogExporter);
 
     internal TestSession TestSession { get; }
-
-    internal TestModule TestModule { get; }
 
     /// <inheritdoc />
     public void ExportToLog(Summary summary, ILogger logger)
@@ -72,197 +61,181 @@ internal class DatadogExporter : IExporter
     /// <inheritdoc />
     public IEnumerable<string> ExportToFiles(Summary summary, ILogger consoleLogger)
     {
-        var testSession = TestSession;
-        Dictionary<Type, TestSuiteWithEndDate> testSuites = new();
+        var version = typeof(IDiagnoser).Assembly?.GetName().Version?.ToString() ?? "unknown";
         Exception? exception = null;
-
-        try
+        if (summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
         {
-            foreach (var report in summary.Reports)
+            var groupedReports = summary.Reports
+                                        .Where(r => r?.BenchmarkCase?.Descriptor?.Type is not null)
+                                        .GroupBy(i => i.BenchmarkCase.Descriptor.Type)
+                                        .GroupBy(t => t.Key.Assembly);
+
+            foreach (var benchmarkModule in groupedReports)
             {
-                var benchmarkStartDate = DateTime.MinValue;
-                var benchmarkEndDate = DateTime.MinValue;
-
-                if (report?.BenchmarkCase?.Descriptor is { Type: { } type } descriptor && summary.HostEnvironmentInfo is { CpuInfo.Value: { } cpuInfo } hostEnvironmentInfo)
+                // This method is called multiple times, so it's possible that the test module has been already created.
+                if (!_testModules.TryGetValue(benchmarkModule.Key, out var testModule))
                 {
-                    if (report.Metrics is { } metrics)
+                    BenchmarkMetadata.GetTimes(benchmarkModule.Key, out var moduleStartTime, out var moduleEndTime);
+                    var moduleName = benchmarkModule.Key.GetName().Name ?? "Module";
+                    var framework = "BenchmarkDotNet";
+                    testModule = moduleStartTime is null ?
+                                     TestSession.CreateModule(moduleName, framework, version) :
+                                     TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
+                    _testModules[benchmarkModule.Key] = testModule;
+                }
+
+                foreach (var benchmarkSuite in benchmarkModule)
+                {
+                    BenchmarkMetadata.GetTimes(benchmarkSuite.Key, out var suiteStartTime, out var suiteEndTime);
+                    var testSuite = testModule.GetOrCreateSuite(benchmarkSuite.Key.FullName ?? "Suite", suiteStartTime);
+
+                    foreach (var benchmarkTest in benchmarkSuite)
                     {
-                        foreach (var metric in metrics)
+                        try
                         {
-                            if (metric.Key == "StartDate")
+                            var benchmarkCase = benchmarkTest.BenchmarkCase;
+                            BenchmarkMetadata.GetTimes(benchmarkCase, out var testStartTime, out var testEndTime);
+                            var descriptor = benchmarkCase.Descriptor;
+
+                            var testName = descriptor.WorkloadMethod.Name;
+                            if (benchmarkCase.HasParameters)
                             {
-                                benchmarkStartDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
+                                testName += benchmarkCase.Parameters.DisplayInfo;
                             }
-                            else if (metric.Key == "EndDate")
+
+                            // The Job Id can contain random values: https://github.com/dotnet/BenchmarkDotNet/blob/ec429af22e3c03aedb4c1b813287ef330aed50a2/src/BenchmarkDotNet/Jobs/JobIdGenerator.cs#L18
+                            // Example:
+                            //      Job-WISXTD(Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s)
+                            // We use the description as part of the configuration facets.
+                            // The configuration facets are used by CI Visibility to create a fingerprint of the test.
+                            // Random values here means a new test fingerprint every time, so there's no way to track the same
+                            // test in multiple executions. So because of that, we need to remove the random part of the description.
+                            // In this case we remove the job name and keep the information between the parethesis.
+                            var description = benchmarkCase.Job?.DisplayInfo;
+                            if (description is not null)
                             {
-                                benchmarkEndDate = new DateTime((long)metric.Value.Value, DateTimeKind.Utc);
+                                var matchCollections = new Regex(@"\(([^\(\)]+)\)").Matches(description);
+                                if (matchCollections.Count > 0)
+                                {
+                                    // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
+                                    description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
+                                }
+                                else if (description?.StartsWith("Job-") == true)
+                                {
+                                    // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
+                                    description = null;
+                                }
                             }
-                        }
-                    }
 
-                    if (!testSuites.TryGetValue(type, out var testSuiteWithEndDate))
-                    {
-                        testSuiteWithEndDate = new TestSuiteWithEndDate(TestModule.GetOrCreateSuite(type.FullName ?? "Suite", benchmarkStartDate), benchmarkEndDate);
-                        testSuites[type] = testSuiteWithEndDate;
-                    }
+                            BenchmarkMetadata.GetIds(benchmarkCase, out var traceId, out var spanId);
 
-                    var testName = descriptor.WorkloadMethod.Name;
-                    if (report.BenchmarkCase.HasParameters)
-                    {
-                        testName += report.BenchmarkCase.Parameters.DisplayInfo;
-                    }
+                            var test = testSuite.InternalCreateTest(testName, testStartTime, traceId, spanId);
+                            test.SetTestMethodInfo(descriptor.WorkloadMethod);
+                            test.SetBenchmarkMetadata(
+                                new BenchmarkHostInfo
+                                {
+                                    ProcessorName = ProcessorBrandStringHelper.Prettify(cpuInfo),
+                                    ProcessorCount = cpuInfo.PhysicalProcessorCount,
+                                    PhysicalCoreCount = cpuInfo.PhysicalCoreCount,
+                                    LogicalCoreCount = cpuInfo.LogicalCoreCount,
+                                    ProcessorMaxFrequencyHertz = cpuInfo.MaxFrequency?.Hertz,
+                                    OsVersion = hostEnvironmentInfo.OsVersion?.Value,
+                                    RuntimeVersion = hostEnvironmentInfo.RuntimeVersion,
+                                    ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
+                                    ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
+                                },
+                                new BenchmarkJobInfo { Description = description, Platform = benchmarkCase.Job?.Environment?.Platform.ToString(), RuntimeName = benchmarkCase.Job?.Environment?.Runtime?.Name, RuntimeMoniker = benchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker });
 
-                    // The Job Id can contain random values: https://github.com/dotnet/BenchmarkDotNet/blob/ec429af22e3c03aedb4c1b813287ef330aed50a2/src/BenchmarkDotNet/Jobs/JobIdGenerator.cs#L18
-                    // Example:
-                    //      Job-WISXTD(Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s)
-                    // We use the description as part of the configuration facets.
-                    // The configuration facets are used by CI Visibility to create a fingerprint of the test.
-                    // Random values here means a new test fingerprint every time, so there's no way to track the same
-                    // test in multiple executions. So because of that, we need to remove the random part of the description.
-                    // In this case we remove the job name and keep the information between the parethesis.
-                    var description = report.BenchmarkCase.Job?.DisplayInfo;
-                    if (description is not null)
-                    {
-                        var matchCollections = new Regex(@"\(([^\(\)]+)\)").Matches(description);
-                        if (matchCollections.Count > 0)
-                        {
-                            // In the example: Runtime=.NET Framework 4.7.2, Toolchain=net472, IterationTime=2.0000 s
-                            description = string.Join(", ", matchCollections.OfType<Match>().Select(x => x.Groups[1].Value));
-                        }
-                        else if (description?.StartsWith("Job-") == true)
-                        {
-                            // If we cannot extract the description but we know there's a random Id, we prefer to skip the description value.
-                            description = null;
-                        }
-                    }
-
-                    var testMethod = testSuiteWithEndDate.Suite.CreateTest(testName, benchmarkStartDate);
-                    testMethod.SetTestMethodInfo(descriptor.WorkloadMethod);
-                    testMethod.SetBenchmarkMetadata(
-                        new BenchmarkHostInfo
-                        {
-                            ProcessorName = ProcessorBrandStringHelper.Prettify(cpuInfo),
-                            ProcessorCount = cpuInfo.PhysicalProcessorCount,
-                            PhysicalCoreCount = cpuInfo.PhysicalCoreCount,
-                            LogicalCoreCount = cpuInfo.LogicalCoreCount,
-                            ProcessorMaxFrequencyHertz = cpuInfo.MaxFrequency?.Hertz,
-                            OsVersion = hostEnvironmentInfo.OsVersion?.Value,
-                            RuntimeVersion = hostEnvironmentInfo.RuntimeVersion,
-                            ChronometerFrequencyHertz = hostEnvironmentInfo.ChronometerFrequency.Hertz,
-                            ChronometerResolution = hostEnvironmentInfo.ChronometerResolution.Nanoseconds
-                        },
-                        new BenchmarkJobInfo
-                        {
-                            Description = description,
-                            Platform = report.BenchmarkCase.Job?.Environment?.Platform.ToString(),
-                            RuntimeName = report.BenchmarkCase.Job?.Environment?.Runtime?.Name,
-                            RuntimeMoniker = report.BenchmarkCase.Job?.Environment?.Runtime?.MsBuildMoniker
-                        });
-
-                    if (report.BenchmarkCase.HasParameters)
-                    {
-                        var testParameters = new TestParameters
-                        {
-                            Arguments = new Dictionary<string, object>(),
-                            Metadata = new Dictionary<string, object>()
-                        };
-                        foreach (var parameter in report.BenchmarkCase.Parameters.Items)
-                        {
-                            var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);
-                            if (testParameters.Arguments.TryGetValue(parameter.Name, out var currentValue))
+                            if (benchmarkCase.HasParameters)
                             {
-                                testParameters.Arguments[parameter.Name] += $"{currentValue}, {parameterValue}";
+                                var testParameters = new TestParameters { Arguments = new Dictionary<string, object>(), Metadata = new Dictionary<string, object>() };
+                                foreach (var parameter in benchmarkCase.Parameters.Items)
+                                {
+                                    var parameterValue = ClrProfiler.AutoInstrumentation.Testing.Common.GetParametersValueData(parameter.Value);
+                                    if (testParameters.Arguments.TryGetValue(parameter.Name, out var currentValue))
+                                    {
+                                        testParameters.Arguments[parameter.Name] += $"{currentValue}, {parameterValue}";
+                                    }
+                                    else
+                                    {
+                                        testParameters.Arguments[parameter.Name] = parameterValue;
+                                    }
+                                }
+
+                                testParameters.Metadata[TestTags.MetadataTestName] = benchmarkCase.DisplayInfo ?? string.Empty;
+                                test.SetParameters(testParameters);
                             }
-                            else
+
+                            if (benchmarkTest.ResultStatistics is { } statistics)
                             {
-                                testParameters.Arguments[parameter.Name] = parameterValue;
+                                double p90 = 0, p95 = 0, p99 = 0;
+                                if (statistics.Percentiles is { } percentiles)
+                                {
+                                    p90 = percentiles.P90;
+                                    p95 = percentiles.P95;
+                                    p99 = percentiles.Percentile(99);
+                                }
+
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.Duration,
+                                    "Duration of the benchmark",
+                                    new BenchmarkDiscreteStats(
+                                        statistics.N,
+                                        statistics.Max,
+                                        statistics.Min,
+                                        statistics.Mean,
+                                        statistics.Median,
+                                        statistics.StandardDeviation,
+                                        statistics.StandardError,
+                                        statistics.Kurtosis,
+                                        statistics.Skewness,
+                                        p99,
+                                        p95,
+                                        p90));
+
+                                test.SetTag("benchmark.runs", statistics.N);
                             }
+
+                            if (benchmarkCase?.Config?.HasMemoryDiagnoser() == true)
+                            {
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.GarbageCollectorGen0,
+                                    "Garbage collector Gen0 count",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen0Collections }));
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.GarbageCollectorGen1,
+                                    "Garbage collector Gen1 count",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen1Collections }));
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.GarbageCollectorGen2,
+                                    "Garbage collector Gen2 count",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.Gen2Collections }));
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.MemoryTotalOperations,
+                                    "Memory total operations count",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.TotalOperations }));
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.MeanHeapAllocations,
+                                    "Bytes allocated per operation",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.GetBytesAllocatedPerOperation(benchmarkCase) }));
+                                test.AddBenchmarkData(
+                                    BenchmarkMeasureType.TotalHeapAllocations,
+                                    "Total Bytes allocated",
+                                    BenchmarkDiscreteStats.GetFrom(new double[] { benchmarkTest.GcStats.GetTotalAllocatedBytes(true) }));
+                            }
+
+                            test.Close(benchmarkTest.Success ? TestStatus.Pass : TestStatus.Fail, testEndTime - testStartTime);
                         }
-
-                        testParameters.Metadata[TestTags.MetadataTestName] = report.BenchmarkCase.DisplayInfo ?? string.Empty;
-                        testMethod.SetParameters(testParameters);
-                    }
-
-                    if (report.ResultStatistics is { } statistics)
-                    {
-                        double p90 = 0, p95 = 0, p99 = 0;
-                        if (statistics.Percentiles is { } percentiles)
+                        catch (Exception testException)
                         {
-                            p90 = percentiles.P90;
-                            p95 = percentiles.P95;
-                            p99 = percentiles.Percentile(99);
+                            testSuite.SetErrorInfo(testException);
+                            consoleLogger.WriteLine(LogKind.Error, testException.ToString());
                         }
-
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.Duration,
-                            "Duration of the benchmark",
-                            new BenchmarkDiscreteStats(
-                                statistics.N,
-                                statistics.Max,
-                                statistics.Min,
-                                statistics.Mean,
-                                statistics.Median,
-                                statistics.StandardDeviation,
-                                statistics.StandardError,
-                                statistics.Kurtosis,
-                                statistics.Skewness,
-                                p99,
-                                p95,
-                                p90));
-
-                        testMethod.SetTag("benchmark.runs", statistics.N);
                     }
 
-                    if (report.BenchmarkCase?.Config?.HasMemoryDiagnoser() == true)
-                    {
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.GarbageCollectorGen0,
-                            "Garbage collector Gen0 count",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.Gen0Collections }));
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.GarbageCollectorGen1,
-                            "Garbage collector Gen1 count",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.Gen1Collections }));
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.GarbageCollectorGen2,
-                            "Garbage collector Gen2 count",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.Gen2Collections }));
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.MemoryTotalOperations,
-                            "Memory total operations count",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.TotalOperations }));
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.MeanHeapAllocations,
-                            "Bytes allocated per operation",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.GetBytesAllocatedPerOperation(report.BenchmarkCase) }));
-                        testMethod.AddBenchmarkData(
-                            BenchmarkMeasureType.TotalHeapAllocations,
-                            "Total Bytes allocated",
-                            BenchmarkDiscreteStats.GetFrom(new double[] { report.GcStats.GetTotalAllocatedBytes(true) }));
-                    }
-
-                    testMethod.Close(report.Success ? TestStatus.Pass : TestStatus.Fail, benchmarkEndDate - benchmarkStartDate);
-                    if (testSuiteWithEndDate.EndDate < benchmarkEndDate)
-                    {
-                        testSuiteWithEndDate.EndDate = benchmarkEndDate;
-                    }
+                    testSuite.Close(suiteEndTime - suiteStartTime);
                 }
             }
-
-            foreach (var item in testSuites)
-            {
-                item.Value.Suite.Close(item.Value.EndDate - item.Value.Suite.StartTime);
-            }
-        }
-        catch (Exception ex)
-        {
-            exception = ex;
-            consoleLogger.WriteLine(LogKind.Error, ex.ToString());
-        }
-
-        if (exception is not null)
-        {
-            testSession.SetErrorInfo(exception);
         }
 
         if (exception is not null)
@@ -270,19 +243,21 @@ internal class DatadogExporter : IExporter
             return new[] { "Datadog Exporter error: " + exception };
         }
 
-        return new[] { "Datadog Exporter ran successfully." };
+        return new[] { $"Datadog Exporter ran successfully." };
     }
 
-    private class TestSuiteWithEndDate
+    internal async Task DisposeTestSessionAndModules()
     {
-        public TestSuiteWithEndDate(TestSuite suite, DateTime endDate)
+        foreach (var kv in _testModules)
         {
-            Suite = suite;
-            EndDate = endDate;
+            BenchmarkMetadata.GetTimes(kv.Key, out var moduleStartTime, out var moduleEndTime);
+            await kv.Value.CloseAsync(moduleEndTime - moduleStartTime).ConfigureAwait(false);
         }
 
-        public TestSuite Suite { get; }
+        _testModules.Clear();
 
-        public DateTime EndDate { get; set; }
+        var testSession = TestSession;
+        testSession.Tags.CommandExitCode = Environment.ExitCode.ToString();
+        await testSession.CloseAsync(Environment.ExitCode == 0 ? TestStatus.Pass : TestStatus.Fail, DateTime.UtcNow - testSession.StartTime).ConfigureAwait(false);
     }
 }

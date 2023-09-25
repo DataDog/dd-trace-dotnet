@@ -1020,3 +1020,66 @@ internal class DirectSubmissionLoggerProvider
     // ...
 }
 ```
+
+## `ValueWithType<T>` struct
+
+Sometimes we need to get to know the original type of a value we are ducktyping, normally this can be done by just calling `.GetType()` over the returned instance value.
+But when there's no instance because the returned ducktyped value is `null` there's no way to extract the original type.
+
+For those cases we can use the `ValueWithType<T>` struct. This will tell the ducktyping machinary to return the value together with the original declared Type of the value.
+
+For example:
+
+```csharp
+public interface IProxyMyHandler
+{
+    string Name { get; set; }
+
+    IProxyMyHandlerConfiguration Configuration { get; }
+}
+public interface IProxyMyHandlerConfiguration
+{
+    int MaxConnections { get; set; }
+}
+```
+
+If the `Configuration` is null then we don't know the original type of configuration, but if we change the proxy to:
+
+```csharp
+public interface IProxyMyHandler
+{
+    string Name { get; set; }
+
+    ValueWithType<IProxyMyHandlerConfiguration> Configuration { get; }
+}
+public interface IProxyMyHandlerConfiguration
+{
+    int MaxConnections { get; set; }
+}
+```
+
+Then we can do:
+
+1. `Configuration.Value`: to retrieve the value as the previous interface. (This works with reference types, values types and duckchaining)
+2. `Configuration.Type`: to retrieve the original declared type of the `Configuration` property in the original class.
+
+The structure of the `ValueWithType<T>` class is very simple:
+
+```csharp
+public readonly struct ValueWithType<TProxy>
+{
+    /// <summary>
+    /// Gets the value
+    /// </summary>
+    public readonly TProxy? Value;
+
+    /// <summary>
+    /// Gets the Type of the value
+    /// </summary>
+    public readonly Type Type;
+}
+```
+
+This is specially useful when we are ducktyping a `Delegate` class for instrumentation. We will need to get the type of the delegate if the instance is null in order to create a new delegate that follows the same signature. Using this method, the delegate type can be retrieved with `.Type` field.
+
+*Note:* This struct can be used as PropertyType, FieldType or Method ReturnType in the proxy definition.

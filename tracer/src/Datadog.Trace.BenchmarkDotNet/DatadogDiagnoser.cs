@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using BenchmarkDotNet.Analysers;
-using BenchmarkDotNet.Columns;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Engines;
 using BenchmarkDotNet.Exporters;
@@ -27,9 +26,6 @@ public class DatadogDiagnoser : IDiagnoser
     /// </summary>
     public static readonly IDiagnoser Default = new DatadogDiagnoser();
 
-    private long? _startDateTimeOffset;
-    private long? _endDateTimeOffset;
-
     /// <inheritdoc />
     public IEnumerable<string> Ids { get; } = new[] { "Datadog" };
 
@@ -40,36 +36,36 @@ public class DatadogDiagnoser : IDiagnoser
     public IEnumerable<IAnalyser> Analysers { get; } = Array.Empty<IAnalyser>();
 
     /// <inheritdoc />
-    public RunMode GetRunMode(BenchmarkCase benchmarkCase)
-    {
-        return RunMode.NoOverhead;
-    }
+    public RunMode GetRunMode(BenchmarkCase benchmarkCase) => RunMode.NoOverhead;
 
     /// <inheritdoc />
-    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase)
-    {
-        return false;
-    }
+    public bool RequiresBlockingAcknowledgments(BenchmarkCase benchmarkCase) => false;
 
     /// <inheritdoc />
     public void Handle(HostSignal signal, DiagnoserActionParameters parameters)
     {
-        if (signal == HostSignal.BeforeProcessStart)
+        var utcNow = DateTime.UtcNow;
+        switch (signal)
         {
-            _startDateTimeOffset = DateTime.UtcNow.Ticks;
-        }
-        else if (signal == HostSignal.AfterProcessExit)
-        {
-            _endDateTimeOffset = DateTime.UtcNow.Ticks;
+            case HostSignal.BeforeAnythingElse:
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase, utcNow);
+                break;
+            case HostSignal.BeforeProcessStart:
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type.Assembly, utcNow);
+                BenchmarkMetadata.SetStartTime(parameters.BenchmarkCase.Descriptor.Type, utcNow);
+                break;
+            case HostSignal.AfterProcessExit:
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase.Descriptor.Type.Assembly, utcNow);
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase.Descriptor.Type, utcNow);
+                break;
+            case HostSignal.AfterAll:
+                BenchmarkMetadata.SetEndTime(parameters.BenchmarkCase, utcNow);
+                break;
         }
     }
 
     /// <inheritdoc />
-    public IEnumerable<Metric> ProcessResults(DiagnoserResults results)
-    {
-        yield return new Metric(new DateTimeOffSetMetricDescriptor("StartDate"), _startDateTimeOffset ?? 0d);
-        yield return new Metric(new DateTimeOffSetMetricDescriptor("EndDate"), _endDateTimeOffset ?? 0d);
-    }
+    public IEnumerable<Metric> ProcessResults(DiagnoserResults results) => Array.Empty<Metric>();
 
     /// <inheritdoc />
     public void DisplayResults(ILogger logger)
@@ -77,29 +73,5 @@ public class DatadogDiagnoser : IDiagnoser
     }
 
     /// <inheritdoc />
-    public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters)
-    {
-        yield break;
-    }
-
-    private class DateTimeOffSetMetricDescriptor : IMetricDescriptor
-    {
-        public DateTimeOffSetMetricDescriptor(string id) => Id = id;
-
-        public string Id { get; }
-
-        public string DisplayName => Id;
-
-        public string Legend => Id;
-
-        public string NumberFormat => "0";
-
-        public UnitType UnitType => UnitType.Time;
-
-        public string Unit => "ticks";
-
-        public bool TheGreaterTheBetter => false;
-
-        public int PriorityInCategory => 0;
-    }
+    public IEnumerable<ValidationError> Validate(ValidationParameters validationParameters) => Array.Empty<ValidationError>();
 }

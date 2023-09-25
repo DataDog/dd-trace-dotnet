@@ -1,4 +1,4 @@
-﻿// <copyright file="DataStreamsManager.cs" company="Datadog">
+// <copyright file="DataStreamsManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -92,6 +92,39 @@ internal class DataStreamsManager
         if (context is not null)
         {
             DataStreamsContextPropagator.Instance.Inject(context.Value, headers);
+            return;
+        }
+
+        // This shouldn't happen normally, as you should call SetCheckpoint before calling InjectPathwayContext
+        // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
+        // you will hit this code path
+        Log.Debug("Attempted to inject null pathway context");
+    }
+
+    /// <summary>
+    /// Trys to extract a <see cref="PathwayContext"/>, from the provided <paramref name="headers"/>
+    /// If data streams is disabled, or no pathway is present, returns null.
+    /// </summary>
+    public PathwayContext? ExtractPathwayContextAsBase64String<TCarrier>(TCarrier headers)
+        where TCarrier : IHeadersCollection
+        => IsEnabled ? DataStreamsContextPropagator.Instance.ExtractAsBase64String(headers) : null;
+
+    /// <summary>
+    /// Injects a <see cref="PathwayContext"/> into headers
+    /// </summary>
+    /// <param name="context">The pathway context to inject</param>
+    /// <param name="headers">The header collection to inject the headers into</param>
+    public void InjectPathwayContextAsBase64String<TCarrier>(PathwayContext? context, TCarrier headers)
+        where TCarrier : IHeadersCollection
+    {
+        if (!IsEnabled)
+        {
+            return;
+        }
+
+        if (context is not null)
+        {
+            DataStreamsContextPropagator.Instance.InjectAsBase64String(context.Value, headers);
             return;
         }
 
