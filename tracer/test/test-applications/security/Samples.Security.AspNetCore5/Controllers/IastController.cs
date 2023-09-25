@@ -272,6 +272,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.Secure = false;
             Response.Cookies.Append("insecureKey", "insecureValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending InsecureCookie");
         }
 
@@ -282,6 +283,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.HttpOnly = false;
             Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending NoHttpOnlyCookie");
         }
 
@@ -292,6 +294,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.SameSite = SameSiteMode.None;
             Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             var cookieOptionsLax = GetDefaultCookieOptionsInstance();
             cookieOptionsLax.SameSite = SameSiteMode.Lax;
             Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
@@ -328,6 +331,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.HttpOnly = false;
             cookieOptions.Secure = false;
             Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
         }
 
