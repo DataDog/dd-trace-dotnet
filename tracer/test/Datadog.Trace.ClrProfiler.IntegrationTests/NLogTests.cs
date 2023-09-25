@@ -132,40 +132,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     version = new Version((string)item[0]);
                 }
 
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.Both);
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.NoLogsInjection);
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.None);
-
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.Both);
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.NoLogsInjection);
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.None);
-
-                if (version >= minScopeContext)
+                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
                 {
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.None);
+                    if ((DirectLogSubmission)agentless == DirectLogSubmission.Disable)
+                    {
+                        continue;
+                    }
 
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.None);
-                }
+                    foreach (var configType in Enum.GetValues(typeof(ConfigurationType)))
+                    {
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
 
-                if (version >= minMdlc)
-                {
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.None);
+                        if (version >= minScopeContext)
+                        {
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType);
+                        }
 
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.None);
+                        if (version >= minMdlc)
+                        {
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType);
+                        }
+                    }
                 }
             }
         }
@@ -190,34 +177,65 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                     version = new Version((string)item[0]);
                 }
 
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.Both);
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.NoLogsInjection);
-                yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
-
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.Both);
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.NoLogsInjection);
-                yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
-
-                if (version >= minScopeContext)
+                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
                 {
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
+                    foreach (var configType in Enum.GetValues(typeof(ConfigurationType)))
+                    {
+                        if ((ConfigurationType)configType == ConfigurationType.None)
+                        {
+                            // if we don't have a config there won't be any targets to inject logs to
+                            continue;
+                        }
 
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
+                        yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
+
+                        if (version >= minScopeContext)
+                        {
+                            yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(configType);
+                        }
+
+                        if (version >= minMdlc)
+                        {
+                            yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(configType);
+                        }
+                    }
+                }
+            }
+        }
+
+        public static IEnumerable<object[]> DoesNotInjectLogsWhenDisabledTestData()
+        {
+            var minScopeContext = new Version("5.0.0");
+            var minMdlc = new Version("4.6.0");
+            foreach (var item in PackageVersions.NLog)
+            {
+                Version version;
+                var defaultSamples = (string)item[0] == string.Empty;
+                if (defaultSamples)
+                {
+                    // LogsInjection.NLog uses different versions depending on framework
+                    version = EnvironmentHelper.IsCoreClr() ?
+                                  new Version("5.0.0") :
+                                  new Version("2.1.0");
+                }
+                else
+                {
+                    version = new Version((string)item[0]);
                 }
 
-                if (version >= minMdlc)
+                foreach (var agentless in Enum.GetValues(typeof(DirectLogSubmission)))
                 {
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Enable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
+                    yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(ConfigurationType.LogsInjection);
 
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.Both);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.NoLogsInjection);
-                    yield return item.Concat(DirectLogSubmission.Disable).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
+                    if (version >= minScopeContext)
+                    {
+                        yield return item.Concat(agentless).Concat(LoggingContext.ScopeContext).Concat(ConfigurationType.LogsInjection);
+                    }
+
+                    if (version >= minMdlc)
+                    {
+                        yield return item.Concat(agentless).Concat(LoggingContext.Mdlc).Concat(ConfigurationType.LogsInjection);
+                    }
                 }
             }
         }
@@ -254,7 +272,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         }
 
         [SkippableTheory]
-        [MemberData(nameof(GetTestDataLogsInjection))]
+        [MemberData(nameof(DoesNotInjectLogsWhenDisabledTestData))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
         [Trait("SupportsInstrumentationVerification", "True")]
