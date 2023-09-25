@@ -287,7 +287,6 @@ public class DatadogDiagnoser : IDiagnoser
             environment[profilerHeapEnabled] = "1";
         }
 
-        environment["DD_PROFILING_UPLOAD_PERIOD"] = "30";
         environment["DD_INTERNAL_PROFILING_SAMPLING_RATE"] = "5";
         environment["DD_PROFILING_AGENTLESS"] = CIVisibility.Settings.Agentless ? "1" : "0";
         environment["DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED "] = "1";
