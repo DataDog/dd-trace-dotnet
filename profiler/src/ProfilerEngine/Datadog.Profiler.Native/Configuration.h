@@ -81,7 +81,7 @@ private:
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
-    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
+    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
     static int32_t ExtractWallTimeThreadsThreshold();
     static int32_t ExtractCpuThreadsThreshold();
     static int32_t ExtractCodeHotspotsThreadsThreshold();

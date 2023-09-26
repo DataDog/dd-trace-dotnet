@@ -73,10 +73,17 @@ Configuration::Configuration()
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
     _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
+
+    // Check if we are in CI Visibility mode with a test SpanId
     // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
     // But on Linux, it's std::uint64_t == unsigned long (=> 0ul)and it fails to compile.
     // Here we create a 0 value of type std::uint64_t which will succeed the compilation
     _internalCIVisibilitySpanId = GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
+    if (_internalCIVisibilitySpanId > 0)
+    {
+        // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
+        _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
+    }
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -433,10 +440,10 @@ std::chrono::seconds Configuration::ExtractUploadInterval()
     return GetDefaultUploadInterval();
 }
 
-std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate()
+std::chrono::nanoseconds Configuration::ExtractCpuWallTimeSamplingRate(int minimum)
 {
     // default sampling rate is 9 ms; could be changed via env vars but down to a minimum of 5 ms
-    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 9), 5);
+    int64_t rate = std::max(GetEnvironmentValue(EnvironmentVariables::CpuWallTimeSamplingRate, 9), minimum);
     rate *= 1000000;
     return std::chrono::nanoseconds(rate);
 }
