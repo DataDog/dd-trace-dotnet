@@ -21,8 +21,12 @@ public class TelemetryMetricExtensionsTests
 {
     public static IEnumerable<object[]> AllEnums
         => GetEnums<Count>().Select(x => new object[] { x, x.GetName() })
+          .Concat(GetEnums<CountShared>().Select(x => new object[] { x, x.GetName() }))
+          .Concat(GetEnums<CountCIVisibility>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<Gauge>().Select(x => new object[] { x, x.GetName() }))
           .Concat(GetEnums<Distribution>().Select(x => new object[] { x, x.GetName() }))
+          .Concat(GetEnums<DistributionShared>().Select(x => new object[] { x, x.GetName() }))
+          .Concat(GetEnums<DistributionCIVisibility>().Select(x => new object[] { x, x.GetName() }))
           .ToList();
 
     public static IEnumerable<object[]> IntegrationIds
@@ -88,24 +92,18 @@ public class TelemetryMetricExtensionsTests
         }
     }
 
-    [Fact]
-    public void MustHaveValidTagsForEveryCount()
+    [Theory]
+    [InlineData(typeof(MetricsTelemetryCollector), nameof(Count))]
+    [InlineData(typeof(MetricsTelemetryCollector), nameof(CountShared))]
+    [InlineData(typeof(MetricsTelemetryCollector), nameof(Gauge))]
+    [InlineData(typeof(MetricsTelemetryCollector), nameof(DistributionShared))]
+    [InlineData(typeof(CiVisibilityMetricsTelemetryCollector), nameof(CountShared))]
+    [InlineData(typeof(CiVisibilityMetricsTelemetryCollector), nameof(CountCIVisibility))]
+    [InlineData(typeof(CiVisibilityMetricsTelemetryCollector), nameof(DistributionShared))]
+    [InlineData(typeof(CiVisibilityMetricsTelemetryCollector), nameof(DistributionCIVisibility))]
+    public void MustHaveValidTagsForEveryMetric(Type collectorType, string enumType)
     {
-        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetCountBuffer", BindingFlags.Static | BindingFlags.NonPublic);
-        CheckTagsAreValid(keys);
-    }
-
-    [Fact]
-    public void MustHaveValidTagsForEveryGauge()
-    {
-        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetGaugeBuffer", BindingFlags.Static | BindingFlags.NonPublic);
-        CheckTagsAreValid(keys);
-    }
-
-    [Fact]
-    public void MustHaveValidTagsForEveryDistribution()
-    {
-        var keys = typeof(MetricsTelemetryCollectorBase).GetMethod("GetDistributionBuffer", BindingFlags.Static | BindingFlags.NonPublic);
+        var keys = collectorType.GetMethod($"Get{enumType}Buffer", BindingFlags.Static | BindingFlags.NonPublic);
         CheckTagsAreValid(keys);
     }
 

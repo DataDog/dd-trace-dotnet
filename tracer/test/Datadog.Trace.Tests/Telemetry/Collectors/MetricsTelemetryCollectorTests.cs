@@ -50,7 +50,7 @@ public class MetricsTelemetryCollectorTests
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 22);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 22);
 
         await collector.DisposeAsync();
         var metrics = collector.GetMetrics();
@@ -72,7 +72,7 @@ public class MetricsTelemetryCollectorTests
         {
             new
             {
-                Metric = Distribution.InitTime.GetName(),
+                Metric = DistributionShared.InitTime.GetName(),
                 Tags = new[] { "component:managed" },
                 Points = new[] {  22 },
                 Common = true,
@@ -84,23 +84,25 @@ public class MetricsTelemetryCollectorTests
     [Theory]
     [InlineData(null)]
     [InlineData("1.2.3")]
-    public async Task AllMetricsAreReturned(string wafVersion)
+    public async Task AllMetricsAreReturned_ForMetricsTelemetryCollector(string wafVersion)
     {
         var collector = new MetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Configure);
         collector.Record(PublicApiUsage.Tracer_Ctor);
         collector.RecordCountSpanFinished(15);
-        collector.RecordCountIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
+        collector.RecordCountSharedIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
         collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
         collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
         collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
         collector.RecordCountWafInit(4);
         collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
         collector.RecordGaugeStatsBuckets(234);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 52);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 52);
+
+        // These aren't applicable in non-ci visibility
         collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
         collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
         collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
@@ -114,8 +116,10 @@ public class MetricsTelemetryCollectorTests
         collector.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.New, 2);
         collector.RecordGaugeStatsBuckets(15);
         collector.RecordGaugeDirectLogQueue(7);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 22);
-        collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, 15);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 22);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, 15);
+
+        // These aren't applicable in non-ci visibility
         collector.RecordDistributionCIVisibilityGitCommandMs(MetricTags.CIVisibilityCommands.PackObjects, 125);
 
         collector.AggregateMetrics();
@@ -168,7 +172,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Count.IntegrationsError.GetName(),
+                Metric = CountShared.IntegrationsError.GetName(),
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "integration_name:aerospike", "error_type:invoker" },
@@ -256,10 +260,145 @@ public class MetricsTelemetryCollectorTests
                 Common = false,
                 Namespace = (string)null,
             },
+        });
+
+        metrics.Distributions.Should().BeEquivalentTo(new[]
+        {
             new
             {
-                Metric = Count.CIVisibilityITRSkipped.GetName(),
-                Points = new[] { new { Value = 123 } },
+                Metric = DistributionShared.InitTime.GetName(),
+                Tags = new[] { "component:total" },
+                Points = new[] { 23, 46 },
+                Common = true,
+                Namespace = NS.General,
+            },
+            new
+            {
+                Metric = DistributionShared.InitTime.GetName(),
+                Tags = new[] { "component:managed" },
+                Points = new[] {  52, 22 },
+                Common = true,
+                Namespace = NS.General,
+            },
+            new
+            {
+                Metric = DistributionShared.InitTime.GetName(),
+                Tags = new[] { "component:rcm" },
+                Points = new[] {  15 },
+                Common = true,
+                Namespace = NS.General,
+            },
+        });
+        await collector.DisposeAsync();
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData("1.2.3")]
+    public async Task AllMetricsAreReturned_ForCiVisibilityCollector(string wafVersion)
+    {
+        var collector = new CiVisibilityMetricsTelemetryCollector(Timeout.InfiniteTimeSpan);
+        collector.Record(PublicApiUsage.Tracer_Configure);
+        collector.Record(PublicApiUsage.Tracer_Configure);
+        collector.Record(PublicApiUsage.Tracer_Ctor);
+        collector.RecordCountSharedIntegrationsError(MetricTags.IntegrationName.Aerospike, MetricTags.InstrumentationError.Invoker);
+
+        // These aren't recorded for ci visibility
+        collector.RecordCountSpanFinished(15);
+        collector.RecordCountSpanCreated(MetricTags.IntegrationName.Aerospike);
+        collector.RecordCountSpanDropped(MetricTags.DropReason.P0Drop, 23);
+        collector.RecordCountLogCreated(MetricTags.LogLevel.Debug, 3);
+        collector.RecordCountWafInit(4);
+        collector.RecordCountWafRequests(MetricTags.WafAnalysis.Normal, 5);
+        collector.RecordGaugeStatsBuckets(234);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 23);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Total, 46);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 52);
+
+        // these ones are
+        collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
+        collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
+
+        collector.AggregateMetrics();
+
+        collector.Record(PublicApiUsage.Tracer_Ctor);
+        collector.Record(PublicApiUsage.Tracer_Ctor);
+        collector.Record(PublicApiUsage.TracerSettings_Build);
+
+        // These aren't recorded for ci visibility
+        collector.RecordCountSpanFinished(3);
+        collector.RecordCountTraceSegmentCreated(MetricTags.TraceContinuation.New, 2);
+        collector.RecordGaugeStatsBuckets(15);
+        collector.RecordGaugeDirectLogQueue(7);
+
+        // these ones are
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Managed, 22);
+        collector.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, 15);
+        collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 3);
+        collector.RecordDistributionCIVisibilityGitCommandMs(MetricTags.CIVisibilityCommands.PackObjects, 125);
+
+        collector.AggregateMetrics();
+
+        var expectedWafTag = "waf_version:unknown";
+
+        if (wafVersion is not null)
+        {
+            collector.SetWafVersion(wafVersion);
+            expectedWafTag = $"waf_version:{wafVersion}";
+        }
+
+        using var scope = new AssertionScope();
+        scope.FormattingOptions.MaxLines = 1000;
+
+        var metrics = collector.GetMetrics();
+
+        var metrics2 = collector.GetMetrics();
+        metrics2.Metrics.Should().BeNull();
+        metrics2.Distributions.Should().BeNull();
+
+        metrics.Metrics.Should().BeEquivalentTo(new[]
+        {
+            new
+            {
+                Metric = "public_api",
+                Points = new[] { new { Value = 2 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { PublicApiUsage.Tracer_Configure.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
+            },
+            new
+            {
+                Metric = "public_api",
+                Points = new[] { new { Value = 1 }, new { Value = 2 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { PublicApiUsage.Tracer_Ctor.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
+            },
+            new
+            {
+                Metric = "public_api",
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { PublicApiUsage.TracerSettings_Build.ToStringFast() },
+                Common = false,
+                Namespace = (string)null,
+            },
+            new
+            {
+                Metric = CountShared.IntegrationsError.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "integration_name:aerospike", "error_type:invoker" },
+                Common = true,
+                Namespace = (string)null,
+            },
+            new
+            {
+                Metric = CountCIVisibility.ITRSkipped.GetName(),
+                Points = new[] { new { Value = 123 }, new { Value = 3 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "event_type:test" },
                 Common = true,
@@ -267,7 +406,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Count.CIVisibilityEventCreated.GetName(),
+                Metric = CountCIVisibility.EventCreated.GetName(),
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "test_framework:xunit", "event_type:test" },
@@ -276,7 +415,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Count.CIVisibilityEventFinished.GetName(),
+                Metric = CountCIVisibility.EventFinished.GetName(),
                 Points = new[] { new { Value = 1 } },
                 Type = TelemetryMetricType.Count,
                 Tags = new[] { "test_framework:xunit", "event_type:test" },
@@ -289,7 +428,7 @@ public class MetricsTelemetryCollectorTests
         {
             new
             {
-                Metric = Distribution.InitTime.GetName(),
+                Metric = DistributionShared.InitTime.GetName(),
                 Tags = new[] { "component:total" },
                 Points = new[] { 23, 46 },
                 Common = true,
@@ -297,7 +436,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Distribution.InitTime.GetName(),
+                Metric = DistributionShared.InitTime.GetName(),
                 Tags = new[] { "component:managed" },
                 Points = new[] {  52, 22 },
                 Common = true,
@@ -305,7 +444,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Distribution.InitTime.GetName(),
+                Metric = DistributionShared.InitTime.GetName(),
                 Tags = new[] { "component:rcm" },
                 Points = new[] {  15 },
                 Common = true,
@@ -313,7 +452,7 @@ public class MetricsTelemetryCollectorTests
             },
             new
             {
-                Metric = Distribution.CIVisibilityGitCommandMs.GetName(),
+                Metric = DistributionCIVisibility.GitCommandMs.GetName(),
                 Tags = new[] { "command:pack_objects" },
                 Points = new[] {  125 },
                 Common = true,
