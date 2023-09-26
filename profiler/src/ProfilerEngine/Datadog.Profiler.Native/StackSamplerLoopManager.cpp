@@ -2,6 +2,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "StackSamplerLoopManager.h"
+
 #include "IClrLifetime.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -10,8 +11,8 @@
 using namespace std::chrono_literals;
 
 constexpr std::chrono::milliseconds DeadlockDetectionInterval = 1s;
-constexpr std::chrono::milliseconds StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs = 500ms;
-constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(StackSamplerLoopManager_MaxExpectedStackSampleCollectionDurationMs);
+constexpr std::chrono::milliseconds MaxExpectedStackSampleCollectionDurationMs = 500ms;
+constexpr std::chrono::nanoseconds CollectionDurationThresholdNs = std::chrono::nanoseconds(MaxExpectedStackSampleCollectionDurationMs);
 
 #ifdef NDEBUG
 constexpr std::chrono::milliseconds StatsAggregationPeriodMs = 30000ms;
@@ -89,8 +90,8 @@ const char* StackSamplerLoopManager::GetName()
 
 bool StackSamplerLoopManager::Start()
 {
-    this->RunStackSampling();
-    this->RunWatcher();
+    RunStackSampling();
+    RunWatcher();
 
     return true;
 }
@@ -104,7 +105,8 @@ bool StackSamplerLoopManager::Stop()
     }
     _isStopped = true;
 
-    GracefulShutdownStackSampling();
+    _pStackSamplerLoop->Stop();
+
     ShutdownWatcher();
 
     return true;
@@ -112,55 +114,34 @@ bool StackSamplerLoopManager::Stop()
 
 void StackSamplerLoopManager::RunStackSampling()
 {
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop == nullptr)
-    {
-        assert(_pStackFramesCollector != nullptr);
+    _pStackSamplerLoop = std::make_unique<StackSamplerLoop>(
+        _pCorProfilerInfo,
+        _pConfiguration,
+        _pStackFramesCollector.get(),
+        this,
+        _pThreadsCpuManager,
+        _pManagedThreadList,
+        _pCodeHotspotsThreadList,
+        _pWallTimeCollector,
+        _pCpuTimeCollector,
+        _metricsRegistry);
 
-        stackSamplerLoop = new StackSamplerLoop(
-            _pCorProfilerInfo,
-            _pConfiguration,
-            _pStackFramesCollector.get(),
-            this,
-            _pThreadsCpuManager,
-            _pManagedThreadList,
-            _pCodeHotspotsThreadList,
-            _pWallTimeCollector,
-            _pCpuTimeCollector,
-            _metricsRegistry);
-        _pStackSamplerLoop = stackSamplerLoop;
-    }
-}
-
-void StackSamplerLoopManager::GracefulShutdownStackSampling()
-{
-    StackSamplerLoop* stackSamplerLoop = _pStackSamplerLoop;
-    if (stackSamplerLoop != nullptr)
-    {
-        stackSamplerLoop->RequestShutdown();
-        stackSamplerLoop->Join();
-        delete stackSamplerLoop;
-        _pStackSamplerLoop = nullptr;
-    }
+    _pStackSamplerLoop->Start();
 }
 
 void StackSamplerLoopManager::RunWatcher()
 {
-    _pWatcherThread = new std::thread(&StackSamplerLoopManager::WatcherLoop, this);
-    OpSysTools::SetNativeThreadName(_pWatcherThread, WatcherThreadName);
+    _pWatcherThread = std::make_unique<std::thread>(&StackSamplerLoopManager::WatcherLoop, this);
+    OpSysTools::SetNativeThreadName(_pWatcherThread.get(), WatcherThreadName);
 }
 
 void StackSamplerLoopManager::ShutdownWatcher()
 {
-    std::thread* pWatcherThread = _pWatcherThread;
-    if (pWatcherThread != nullptr)
+    if (_pWatcherThread != nullptr)
     {
         _isWatcherShutdownRequested = true;
 
-        pWatcherThread->join();
-
-        delete pWatcherThread;
-        _pWatcherThread = nullptr;
+        _pWatcherThread->join();
     }
 }
 

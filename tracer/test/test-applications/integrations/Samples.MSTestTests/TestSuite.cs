@@ -105,5 +105,11 @@ namespace Samples.MSTestTests
         {
             Assert.AreEqual(expectedResult, xValue / yValue);
         }
+
+        [TestMethod]
+        [TestProperty("datadog_itr_unskippable", null)]
+        public void UnskippableTest()
+        {
+        }
     }
 }

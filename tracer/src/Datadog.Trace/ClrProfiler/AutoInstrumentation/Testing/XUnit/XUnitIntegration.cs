@@ -61,7 +61,22 @@ internal static class XUnitIntegration
         // Get traits
         if (runnerInstance.TestCase.Traits is { } traits)
         {
+            // Unskippable tests support
+            if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+            {
+                ShouldSkip(ref runnerInstance, out var isUnskippable, out var isForcedRun, traits);
+                test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+            }
+
             test.SetTraits(traits);
+        }
+        else if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+        {
+            // Unskippable tests support
+            test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+            test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
         }
 
         // Test code and code owners
@@ -112,8 +127,11 @@ internal static class XUnitIntegration
         }
     }
 
-    internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance)
+    internal static bool ShouldSkip(ref TestRunnerStruct runnerInstance, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
     {
+        isUnskippable = false;
+        isForcedRun = false;
+
         if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
         {
             return false;
@@ -121,6 +139,10 @@ internal static class XUnitIntegration
 
         var testClass = runnerInstance.TestClass;
         var testMethod = runnerInstance.TestMethod;
-        return Common.ShouldSkip(testClass?.ToString() ?? string.Empty, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        var itrShouldSkip = Common.ShouldSkip(testClass?.ToString() ?? string.Empty, testMethod?.Name ?? string.Empty, runnerInstance.TestMethodArguments, testMethod?.GetParameters());
+        traits ??= runnerInstance.TestCase.Traits;
+        isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+        isForcedRun = itrShouldSkip && isUnskippable;
+        return itrShouldSkip && !isUnskippable;
     }
 }

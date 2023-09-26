@@ -120,7 +120,7 @@ public class EncoderUnitTests : WafLibraryRequiredTest
         var root = new Dictionary<string, object>();
         var map = root;
 
-        for (int i = 0; i < nestingDepth; i++)
+        for (var i = 0; i < nestingDepth; i++)
         {
             var nextMap = new Dictionary<string, object>();
             map.Add("item", nextMap);

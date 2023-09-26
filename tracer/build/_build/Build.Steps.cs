@@ -1731,7 +1731,7 @@ partial class Build
         .After(CompileLinuxOrOsxIntegrationTests)
         .Description("Runs the linux dd-dotnet integration tests")
         .Requires(() => !IsWin)
-        .Executes(async () =>
+        .Executes(() =>
         {
             var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
 

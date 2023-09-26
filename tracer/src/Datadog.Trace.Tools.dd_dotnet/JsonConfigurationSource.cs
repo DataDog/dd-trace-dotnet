@@ -16,7 +16,7 @@ internal class JsonConfigurationSource : IConfigurationSource
 
     public JsonConfigurationSource(string json)
     {
-        _document = JsonDocument.Parse(json);
+        _document = JsonDocument.Parse(json, new JsonDocumentOptions { AllowTrailingCommas = true });
     }
 
     internal static JsonConfigurationSource? TryLoadJsonConfigurationFile(IConfigurationSource configurationSource, string? baseDirectory)

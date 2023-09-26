@@ -83,15 +83,33 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
 
             // Get traits
+            Dictionary<string, List<string>>? traits = null;
             if (testMethodProperties != null)
             {
                 skipReason = (string)testMethodProperties.Get(SkipReasonKey);
-
-                Dictionary<string, List<string>>? traits = null;
                 ExtractTraits(currentTest, ref traits);
-                if (traits?.Count > 0)
+            }
+
+            if (traits?.Count > 0)
+            {
+                // Unskippable test
+                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
                 {
-                    test.SetTraits(traits);
+                    ShouldSkip(currentTest, out var isUnskippable, out var isForcedRun, traits);
+                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, isUnskippable ? "true" : "false");
+                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, isForcedRun ? "true" : "false");
+                    traits.Remove(IntelligentTestRunnerTags.UnskippableTraitName);
+                }
+
+                test.SetTraits(traits);
+            }
+            else
+            {
+                // Unskippable test
+                if (CIVisibility.Settings.IntelligentTestRunnerEnabled)
+                {
+                    test.SetTag(IntelligentTestRunnerTags.UnskippableTag, "false");
+                    test.SetTag(IntelligentTestRunnerTags.ForcedRunTag, "false");
                 }
             }
 
@@ -114,7 +132,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
         private static void ExtractTraits(ITest currentTest, ref Dictionary<string, List<string>>? traits)
         {
-            if (currentTest.Instance is null)
+            if (currentTest?.Instance is null)
             {
                 return;
             }
@@ -124,33 +142,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
                 ExtractTraits(currentTest.Parent, ref traits);
             }
 
-            if (currentTest.Properties is { Keys: { Count: > 0 } } properties)
+            if (currentTest.Properties is { } properties)
             {
-                foreach (var key in properties.Keys)
+                var keys = properties.Keys;
+                if (keys?.Count > 0)
                 {
-                    if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
+                    foreach (var key in keys)
                     {
-                        continue;
-                    }
-
-                    var value = properties[key];
-                    if (value is not null)
-                    {
-                        traits ??= new();
-                        if (!traits.TryGetValue(key, out var lstValues))
+                        if (key is SkipReasonKey or "_APPDOMAIN" or "_JOINTYPE" or "_PID" or "_PROVIDERSTACKTRACE")
                         {
-                            lstValues = new List<string>();
-                            traits[key] = lstValues;
+                            continue;
                         }
 
-                        foreach (var valObj in value)
+                        var value = properties[key];
+                        if (value is not null)
                         {
-                            if (valObj is null)
+                            traits ??= new();
+                            if (!traits.TryGetValue(key, out var lstValues))
                             {
-                                continue;
+                                lstValues = new List<string>();
+                                traits[key] = lstValues;
                             }
 
-                            lstValues.Add(valObj.ToString() ?? string.Empty);
+                            foreach (var valObj in value)
+                            {
+                                if (valObj is null)
+                                {
+                                    continue;
+                                }
+
+                                lstValues.Add(valObj.ToString() ?? string.Empty);
+                            }
                         }
                     }
                 }
@@ -258,8 +280,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             }
         }
 
-        internal static bool ShouldSkip(ITest currentTest)
+        internal static bool ShouldSkip(ITest currentTest, out bool isUnskippable, out bool isForcedRun, Dictionary<string, List<string>>? traits = null)
         {
+            isUnskippable = false;
+            isForcedRun = false;
+
             if (CIVisibility.Settings.IntelligentTestRunnerEnabled != true)
             {
                 return false;
@@ -267,7 +292,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
 
             var testMethod = currentTest.Method.MethodInfo;
             var testSuite = testMethod.DeclaringType?.FullName ?? string.Empty;
-            return Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+            var itrShouldSkip = Common.ShouldSkip(testSuite, testMethod.Name, currentTest.Arguments, testMethod.GetParameters());
+            if (traits is null)
+            {
+                ExtractTraits(currentTest, ref traits);
+            }
+
+            isUnskippable = traits?.TryGetValue(IntelligentTestRunnerTags.UnskippableTraitName, out _) == true;
+            isForcedRun = itrShouldSkip && isUnskippable;
+            return itrShouldSkip && !isUnskippable;
         }
 
         internal static void WriteSetUpOrTearDownError(ICompositeWorkItem compositeWorkItem, string exceptionType)
