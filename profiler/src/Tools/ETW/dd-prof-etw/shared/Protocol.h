@@ -1,3 +1,6 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 #pragma once
 
 #include <cstdint>
@@ -122,7 +125,9 @@ inline bool IsMessageValid(IpcHeader* pMessage)
 {
     if (memcmp(&DD_Ipc_Magic_V1, pMessage->Magic, sizeof(DD_Ipc_Magic_V1)) != 0)
     {
+#ifdef _DEBUG
         std::cout << "Invalid Magic signature...\n";
+#endif
         return false;
     }
 
@@ -132,10 +137,12 @@ inline bool IsMessageValid(IpcHeader* pMessage)
 inline HANDLE CheckEndpoint(const std::string& pipeName, DWORD timeoutMS)
 {
     bool success = ::WaitNamedPipeA(pipeName.c_str(), timeoutMS);
+#ifdef _DEBUG
     if (!success)
     {
         std::cout << "Timeout when trying to connect to" << pipeName << "...\n";
     }
+#endif
 
     HANDLE hPipe = ::CreateFileA(
         pipeName.c_str(),

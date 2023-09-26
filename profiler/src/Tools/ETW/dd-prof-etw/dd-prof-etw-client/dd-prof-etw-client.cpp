@@ -1,3 +1,6 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 // Inspired by https://github.com/zodiacon/Win10SysProgBookSamples/blob/master/Chapter18/CalculatorSvr/CalculatorSvr.cpp
 // Another implementation without using ThreadPool API - https://learn.microsoft.com/en-us/windows/win32/ipc/multithreaded-pipe-server
 #include <windows.h>
@@ -8,6 +11,9 @@
 #include <string>
 
 #include "..\shared\Protocol.h"
+#include "..\shared\IpcClient.h"
+#include "..\shared\IpcServer.h"
+#include "..\shared\EtwEventsHandler.h"
 
 bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe)
 {
@@ -56,6 +62,8 @@ bool WriteErrorResponse(HANDLE hPipe)
         return false;
     }
     ::FlushFileBuffers(hPipe);
+
+    return true;
 }
 
 bool WriteSuccessResponse(HANDLE hPipe)
@@ -67,6 +75,8 @@ bool WriteSuccessResponse(HANDLE hPipe)
         return false;
     }
     ::FlushFileBuffers(hPipe);
+
+    return true;
 }
 
 bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize)
@@ -133,33 +143,6 @@ void ProcessEvents(HANDLE hPipe)
     DWORD readSize;
     for (;;)
     {
-        //if (!::ReadFile(hPipe, buffer.get(), bufferSize, &read, nullptr) || read == 0)
-        //{
-        //    auto lastError = ::GetLastError();
-        //    if (lastError == ERROR_BROKEN_PIPE)
-        //    {
-        //        std::cout << "Disconnected client...\n";
-        //    }
-        //    else
-        //    {
-        //        std::cout << "Error reading from pipe (" << lastError << ")...\n ";
-        //    }
-
-        //    break;
-        //}
-
-        //if (!IsMessageValid(message))
-        //{
-        //    DWORD written;
-        //    if (!::WriteFile(hPipe, &ErrorResponse, sizeof(ErrorResponse), &written, nullptr))
-        //    {
-        //        printf("Failed to send error response...\n");
-        //        continue;
-        //    }
-        //    ::FlushFileBuffers(hPipe);
-
-        //    break;
-        //}
         if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
         {
             break;
@@ -299,6 +282,65 @@ void SendRegistrationCommand(HANDLE hPipe, int pid, bool add)
 
 }
 
+void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
+{
+    RegistrationProcessMessage message;
+    if (add)
+    {
+        SetupRegisterCommand(message, pid);
+    }
+    else
+    {
+        SetupUnregisterCommand(message, pid);
+    }
+
+    auto code = pClient->Send(&message, sizeof(message));
+    if (code != NamedPipesCode::Success)
+    {
+        ShowLastError("Failed to write to pipe", code);
+        return;
+    }
+
+    IpcHeader response;
+    code = pClient->Read(&response, sizeof(response));
+    if (code == NamedPipesCode::Success)
+    {
+        if (add)
+        {
+            std::cout << "Registered!\n";
+        }
+        else
+        {
+            std::cout << "Unregistered!\n";
+        }
+    }
+    else
+    {
+        if (code == NamedPipesCode::NotConnected)
+        {
+            // expected after unregistration (i.e. !add) because the pipe will be closed by the Agent
+            if (add)
+            {
+                std::cout << "Pipe no more connected: registration failed...\n";
+            }
+        }
+        else
+        {
+            ShowLastError("Failed to read result", code);
+
+            if (add)
+            {
+                std::cout << "Registration failed...\n";
+            }
+            else
+            {
+                std::cout << "Unregistration failed...\n";
+            }
+        }
+    }
+}
+
+
 int main(int argc, char* argv[])
 {
     int pid = -1;
@@ -320,28 +362,52 @@ int main(int argc, char* argv[])
     std::cout << "\n";
 
     // start the server part to receive proxied ETW events
-    StartServerAsync(pid);
+    //StartServerAsync(pid);
 
-    std::string pipeName = "\\\\.\\pipe\\";
+    std::stringstream buffer;
+    buffer << "\\\\.\\pipe\\DD_ETW_CLIENT_";
+    buffer << pid;
+    std::string pipeName = buffer.str();
+    std::cout << "Exposing " << pipeName << "\n";
+
+    auto handler = std::make_unique<EtwEventsHandler>();
+    auto server = IpcServer::StartAsync(
+        pipeName,
+        handler.get(),
+        (1 << 16) + sizeof(IpcHeader),
+        sizeof(SuccessResponse),
+        16,
+        500
+        );
+    if (server == nullptr)
+    {
+        std::cout << "Error creating the server to receive CLR events...\n";
+        return -1;
+    }
+
+    // create the client part to send the registration command
+    pipeName = "\\\\.\\pipe\\";
     pipeName += pipe;
     std::cout << "Contacting " << pipeName << "...\n";
 
-    // 500 ms timeout but should we use the server-defined one?
-    // NMPWAIT_USE_DEFAULT_WAIT in that case
-    HANDLE hPipe = CheckEndpoint(pipeName, 500);
-    if (hPipe == INVALID_HANDLE_VALUE)
+    auto client = IpcClient::Connect(pipeName, 500);
+    if (client == nullptr)
     {
-        return ShowLastError("Impossible to connect to the ETW server...");
+        std::cout << "Impossible to connect to the ETW server...\n";
+        return -2;
     }
 
-    SendRegistrationCommand(hPipe, pid, true);
+    SendRegistrationCommand(client.get(), pid, true);
 
     std::cout << "Press ENTER to unregister...\n";
     std::string input;
     std::getline(std::cin, input);
-    SendRegistrationCommand(hPipe, pid, false);
 
-    ::CloseHandle(hPipe);
+    SendRegistrationCommand(client.get(), pid, false);
+
+    client->Disconnect();
+    handler->Stop();
+    server->Stop();
 
     return 0;
 }

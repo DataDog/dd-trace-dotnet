@@ -127,7 +127,13 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\shared\IpcClient.cpp" />
+    <ClCompile Include="..\shared\IpcServer.cpp" />
     <ClCompile Include="dd-prof-etw-collector.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\shared\IpcClient.h" />
+    <ClInclude Include="..\shared\IpcServer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

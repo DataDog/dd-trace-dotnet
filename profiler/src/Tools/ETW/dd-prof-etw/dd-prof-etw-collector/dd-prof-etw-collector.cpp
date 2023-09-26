@@ -1,3 +1,6 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
+
 // Inspired by https://github.com/zodiacon/Win10SysProgBookSamples/blob/master/Chapter18/CalculatorSvr/CalculatorSvr.cpp
 // Another implementation without using ThreadPool API - https://learn.microsoft.com/en-us/windows/win32/ipc/multithreaded-pipe-server
 #include <windows.h>
@@ -7,6 +10,7 @@
 #include <string>
 
 #include "..\shared\Protocol.h"
+#include "..\shared\IpcClient.h"
 
 
 bool ParseCommandLine(int argc, char* argv[], char*& pipe)
@@ -59,6 +63,32 @@ bool IsSuccessResponse(HANDLE hPipe)
     return (response.ResponseCode == (uint8_t)ResponseId::OK);
 }
 
+bool IsSuccessResponse(IpcClient* client)
+{
+    IpcHeader response;
+    auto code = client->Read(&response, sizeof(response));
+    if (code != NamedPipesCode::Success)
+    {
+        if (code == NamedPipesCode::MissingData)
+        {
+            std::cout << "invalid response size\n";
+        }
+        else
+        {
+            std::cout << "Failed to get response...\n";
+        }
+
+        return false;
+    }
+
+    if (!IsMessageValid(&response))
+    {
+        return false;
+    }
+
+    return (response.ResponseCode == (uint8_t)ResponseId::OK);
+}
+
 void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
     int pid = reinterpret_cast<int>(context);
@@ -68,59 +98,44 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
     sBuffer << "\\\\.\\pipe\\DD_ETW_CLIENT_";
     sBuffer << pid;
     std::string pipeName = sBuffer.str();
-    HANDLE hPipe = CheckEndpoint(pipeName, 500);
-    if (hPipe == INVALID_HANDLE_VALUE)
+
+    auto client = IpcClient::Connect(pipeName, 500);
+    if (client == nullptr)
     {
-        ShowLastError("Impossible to connect to the profiled application...");
+        std::cout << "Impossible to connect to the profiled application on " << pipeName << "\n";
         return;
     }
 
     std::cout << "Connected to " << pipeName << "\n ";
 
-
     // send messages with different sizes and payload
     auto buffer = std::make_unique<byte[]>((1 << 16) + sizeof(IpcHeader));
     ClrEventsMessage* pMessage = reinterpret_cast<ClrEventsMessage*>(buffer.get());
 
-    DWORD written;
-    DWORD messageSize;
-
-    SetupSendEventsCommand(pMessage, 1024);
-    messageSize = pMessage->Size;
-    buffer[sizeof(IpcHeader)] = 1;
-    if (!::WriteFile(hPipe, pMessage, messageSize, &written, nullptr))
+    for (uint8_t i = 1; i <= 8; i++)
     {
-        ShowLastError("Failed to send CLR events...");
-        ::CloseHandle(hPipe);
-        return;
-    }
-    ::FlushFileBuffers(hPipe);
+        SetupSendEventsCommand(pMessage, 1024 * i);
+        uint16_t messageSize = pMessage->Size;
+        buffer[sizeof(IpcHeader)] = i;
 
-    if (!IsSuccessResponse(hPipe))
-    {
-        std::cout << "Error after sending CLR events\n ";
-        return;
-    }
+        auto code = client->Send(pMessage, messageSize);
+        if (code != NamedPipesCode::Success)
+        {
+            std::cout << "Failed to send CLR events...\n";
+            return;
+        }
 
-    SetupSendEventsCommand(pMessage, 2048);
-    messageSize = pMessage->Size;
-    buffer[sizeof(IpcHeader)] = 2;
-    if (!::WriteFile(hPipe, pMessage, messageSize, &written, nullptr))
-    {
-        ShowLastError("Failed to send CLR events...");
-        ::CloseHandle(hPipe);
-        return;
-    }
-    ::FlushFileBuffers(hPipe);
-
-    if (!IsSuccessResponse(hPipe))
-    {
-        std::cout << "Error after sending CLR events\n ";
-        return;
+        // TODO: fire and forget
+        //if (!IsSuccessResponse(client.get()))
+        //{
+        //    std::cout << "Error from the CLR events receiver...\n ";
+        //    return;
+        //}
     }
 
-    // TODO: sync with the unregister command to stop the pipe only at that time
-    //::CloseHandle(hPipe);
+
+    std::cout << "Disconnecting from " << pipeName << "\n ";
+    client->Disconnect();
 }
 
 void SendClrEventsAsync(int pid)
@@ -135,7 +150,7 @@ void CALLBACK CommandCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
     uint8_t buffer[sizeof(RegistrationProcessMessage)];
     auto hPipe = static_cast<HANDLE>(context);
-    uint64_t unregisteredPid = -1;
+    uint64_t unregisteredPid = 0;
 
     DWORD read;
     for (;;)
@@ -192,7 +207,7 @@ void CALLBACK CommandCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
             printf("Failed to send result!\n");
             continue;
         }
-   }
+    }
 
     std::cout << "Disconnecting from " << unregisteredPid << "\n";
     ::DisconnectNamedPipe(hPipe);
