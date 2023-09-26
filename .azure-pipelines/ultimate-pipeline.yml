@@ -444,10 +444,10 @@ stages:
       displayName: Download dd-dotnet $(artifactSuffix)
       inputs:
         artifact: dd-dotnet-$(artifactSuffix)
-        path: $(monitoringHome)
+        path: $(monitoringHome)/$(artifactSuffix)
 
     - script: |
-        chmod +x $(monitoringHome)/dd-dotnet
+        chmod +x $(monitoringHome)/dd-dotnet.sh && chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
       displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
@@ -588,7 +588,11 @@ stages:
       displayName: Download dd-dotnet linux-arm64
       inputs:
         artifact: dd-dotnet-linux-arm64
-        path: $(monitoringHome)
+        path: $(monitoringHome)/linux-arm64
+
+    - script: |
+        chmod +x $(monitoringHome)/dd-dotnet.sh && chmod +x $(monitoringHome)/linux-arm64/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
