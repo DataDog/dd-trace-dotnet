@@ -12,6 +12,7 @@
     <PackageReference Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.5" />
     <PackageReference Include="SQLitePCLRaw.core" Version="2.1.5" />
     <PackageReference Include="System.Data.SQLite" Version="1.0.117" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
   </ItemGroup>
 
   <ItemGroup>
@@ -42,17 +43,20 @@
     <PackageReference Include="System.DirectoryServices" Version="5.0.0" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="5.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="5.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="3.0.3" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net7.0' OR '$(TargetFramework)'=='net6.0'">
     <PackageReference Include="System.DirectoryServices" Version="7.0.1" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="7.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="7.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="6.0.22" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net5.0'">
     <PackageReference Include="System.DirectoryServices" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.Protocols" Version="6.0.0" />
     <PackageReference Include="System.DirectoryServices.AccountManagement" Version="6.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.NewtonsoftJson" Version="5.0.17" />
   </ItemGroup>
 </Project>

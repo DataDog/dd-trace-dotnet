@@ -1,9 +1,11 @@
+using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
+using Newtonsoft.Json;
 #if NET7_0_OR_GREATER
 using Microsoft.EntityFrameworkCore;
 #endif
@@ -14,6 +16,7 @@ using Samples.Security.AspNetCore5.Data;
 using Samples.Security.AspNetCore5.Endpoints;
 using Samples.Security.AspNetCore5.IdentityStores;
 using SQLitePCL;
+using Newtonsoft.Json.Serialization;
 
 namespace Samples.Security.AspNetCore5
 {
@@ -29,7 +32,17 @@ namespace Samples.Security.AspNetCore5
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddControllersWithViews();
+            var useNs = Environment.GetEnvironmentVariable("USE_NS").ToLower() == "true";
+
+            if (useNs)
+            {
+                services.AddControllersWithViews().AddNewtonsoftJson();
+            }
+            else
+            { 
+                services.AddControllersWithViews();
+            }
+
             if (Configuration.GetValue<bool>("CreateDb"))
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));

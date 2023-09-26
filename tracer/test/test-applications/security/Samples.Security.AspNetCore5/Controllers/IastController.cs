@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -188,7 +189,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Route("ExecuteQueryFromBodyText")]
-        [Consumes("text/plain")]
         public ActionResult ExecuteQueryFromBodyText([FromBody] string query)
         {
             try
@@ -210,6 +210,30 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content($"No query or username was provided");
+        }
+
+        [Route("ExecuteQueryFromBodySerializeManual")]
+        public ActionResult ExecuteQueryFromBodySerializeManual(string queryjson)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(queryjson))
+                {
+                    var query = JsonConvert.DeserializeObject<QueryData>(queryjson);
+                    return Query(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query was provided");
         }
 
         [HttpGet("ExecuteCommandFromCookie")]
