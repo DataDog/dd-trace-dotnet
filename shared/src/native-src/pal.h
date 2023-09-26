@@ -85,6 +85,9 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
     // on Windows WSTRING == wstring
     return (program_data_path / TLoggerPolicy::folder_path / file_name).wstring();
 #else
+    bool isAas = false;
+    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(WStr("DD_AZURE_APP_SERVICES")), isAas) && isAas)
+        return WStr("/home/datadog");
     return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
 #endif
 }
