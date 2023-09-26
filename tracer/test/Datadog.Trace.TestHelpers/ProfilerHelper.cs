@@ -83,7 +83,7 @@ namespace Datadog.Trace.TestHelpers
             return process;
         }
 
-        private static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
+        public static void SetCorFlags(string executable, ITestOutputHelper output, bool require32Bit)
         {
             var corFlagsExe = _corFlagsExe;
             var setBit = require32Bit ? "/32BITREQ+" : "/32BITREQ-";

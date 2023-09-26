@@ -674,6 +674,91 @@ stages:
         displayName: Publish NuGet packages
         artifact: nuget-packages
 
+
+- stage: build_dd_dotnet_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - script: tracer\build.cmd BuildDdDotnet
+      displayName: Build dd-dotnet
+
+    - publish: $(artifacts)/dd-dotnet/win-x64
+      displayName: Uploading dd-dotnet win-x64
+      artifact: dd-dotnet-win-x64
+
+- stage: build_dd_dotnet_linux
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos7:
+          name: centos7
+          baseImage: centos7
+          artifactSuffix: linux-x64
+          poolName: azure-linux-scale-set
+        alpine:
+          name: alpine
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+          poolName: azure-linux-scale-set
+        arm64:
+          name: arm64
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolname: aws-arm64-auto-scaling
+
+    pool:
+      name: $(poolName)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildDdDotnet"
+        retryCountForRunCommand: 1
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)
+      displayName: Uploading dd-dotnet $(artifactSuffix)
+      artifact: dd-dotnet-$(artifactSuffix)
+
 - stage: debug_builds
   dependsOn: [merge_commit_id]
   variables:
@@ -2807,7 +2892,6 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, merge_commit_id]
@@ -2906,7 +2990,7 @@ stages:
         path: $(monitoringHome)
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and runner tools
+      displayName: Build Bundle NuGet and tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
@@ -2973,10 +3057,16 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -2989,6 +3079,12 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet win-x64
+      inputs:
+        artifact: dd-dotnet-win-x64
+        path: $(monitoringHome)/win-x64
 
     - task: ExtractFiles@1
       inputs:
@@ -3003,6 +3099,11 @@ stages:
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462 --TargetPlatform $(targetPlatform)
+      displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -3058,6 +3159,12 @@ stages:
         artifact: build-linux-$(name)-working-directory
 
     - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-$(name)
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
       inputs:
         artifact: runner-dotnet-tool
@@ -3069,6 +3176,12 @@ stages:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(Agent.TempDirectory)/runner
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet $(artifactSuffix)
+      inputs:
+        artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
@@ -3078,7 +3191,11 @@ stages:
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
-      displayName: chmod
+      displayName: chmod dd-trace
+
+    - script: |
+        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3090,6 +3207,11 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
     - task: PublishTestResults@2
       displayName: publish test results

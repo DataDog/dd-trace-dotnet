@@ -66,7 +66,7 @@ namespace Datadog.Trace.TestHelpers
 
                 try
                 {
-                    onDataReceived(line);
+                    onDataReceived?.Invoke(line);
                 }
                 catch (Exception)
                 {
