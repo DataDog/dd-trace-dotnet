@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -18,9 +19,12 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Processors;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
@@ -171,7 +175,7 @@ internal class IntelligentTestRunnerClient
             // We need to check if the git clone is a shallow one before uploading anything.
             // In the case is a shallow clone we need to reconfigure it to upload the git tree
             // without blobs so no content will be downloaded.
-            var gitRevParseShallowOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse --is-shallow-repository", _workingDirectory)).ConfigureAwait(false);
+            var gitRevParseShallowOutput = await RunGitCommandAsync("rev-parse --is-shallow-repository", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
             if (gitRevParseShallowOutput is null)
             {
                 Log.Warning("ITR: 'git rev-parse --is-shallow-repository' command is null");
@@ -181,7 +185,7 @@ internal class IntelligentTestRunnerClient
             if (gitRevParseShallowOutput.Output.IndexOf("true", StringComparison.OrdinalIgnoreCase) > -1)
             {
                 // The git repo is a shallow clone, we need to double check if there are more than just 1 commit in the logs.
-                var gitShallowLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=oneline -n 2", _workingDirectory)).ConfigureAwait(false);
+                var gitShallowLogOutput = await RunGitCommandAsync("log --format=oneline -n 2", MetricTags.CIVisibilityCommands.CheckShallow).ConfigureAwait(false);
                 if (gitShallowLogOutput is null)
                 {
                     Log.Warning("ITR: 'git log --format=oneline -n 2' command is null");
@@ -196,12 +200,12 @@ internal class IntelligentTestRunnerClient
                     // Just one commit SHA. Fetching previous commits
                     // git config --default origin --get clone.defaultRemoteName
                     // git rev-parse HEAD
-                    var originNameOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --default origin --get clone.defaultRemoteName", _workingDirectory)).ConfigureAwait(false);
+                    var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
                     var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
-                    var headOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "rev-parse HEAD", _workingDirectory)).ConfigureAwait(false);
+                    var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
                     var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
                     Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                    await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", $"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", _workingDirectory)).ConfigureAwait(false);
+                    await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
                 }
             }
         }
@@ -210,7 +214,7 @@ internal class IntelligentTestRunnerClient
             Log.Error(ex, "Error detecting and reconfiguring git repository for shallow clone.");
         }
 
-        var gitLogOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "log --format=%H -n 1000 --since=\"1 month ago\"", _workingDirectory)).ConfigureAwait(false);
+        var gitLogOutput = await RunGitCommandAsync("log --format=%H -n 1000 --since=\"1 month ago\"", MetricTags.CIVisibilityCommands.GetLocalCommits).ConfigureAwait(false);
         if (gitLogOutput is null)
         {
             Log.Warning("ITR: 'git log...' command is null");
@@ -277,26 +281,48 @@ internal class IntelligentTestRunnerClient
 
         async Task<SettingsResponse> InternalGetSettingsAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_settingsUrl);
-            SetRequestHeader(request, useApplicationHeader: true);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
+                var request = _apiRequestFactory.Create(_settingsUrl);
+                SetRequestHeader(request, useApplicationHeader: true);
+
+                if (Log.IsEnabled(LogEventLevel.Debug))
+                {
+                    Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
+                }
+
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return default;
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
+                var settingsResponse = deserializedResult.Data?.Attributes ?? default;
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsResponse(settingsResponse switch
+                {
+                    { CodeCoverage: true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipEnabled,
+                    { CodeCoverage: true, TestsSkipping: !true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageEnabled_ItrSkipDisabled,
+                    { CodeCoverage: !true, TestsSkipping: true } => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipEnabled,
+                    _ => MetricTags.CIVisibilityITRSettingsResponse.CoverageDisabled_ItrSkipDisabled,
+                });
+                return settingsResponse;
             }
-
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
+            finally
             {
-                return default;
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSettingsMs(sw.Elapsed.TotalMilliseconds);
             }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataEnvelope<Data<SettingsResponse>?>>(responseContent);
-            return deserializedResult.Data?.Attributes ?? default;
         }
     }
 
@@ -345,66 +371,83 @@ internal class IntelligentTestRunnerClient
 
         async Task<SkippableTest[]> InternalGetSkippableTestsAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_skippableTestsUrl);
-            SetRequestHeader(request, useApplicationHeader: true);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
-            }
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequest();
+                var request = _apiRequestFactory.Create(_skippableTestsUrl);
+                SetRequestHeader(request, useApplicationHeader: true);
 
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
-            {
-                return Array.Empty<SkippableTest>();
-            }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent);
-            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-            {
-                return Array.Empty<SkippableTest>();
-            }
-
-            var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
-            var customConfigurations = _customConfigurations;
-            for (var i = 0; i < deserializedResult.Data.Length; i++)
-            {
-                var includeItem = true;
-                var item = deserializedResult.Data[i].Attributes;
-                if (item.Configurations?.Custom is { } itemCustomConfiguration)
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    if (customConfigurations is null)
-                    {
-                        continue;
-                    }
+                    Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
+                }
 
-                    foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return Array.Empty<SkippableTest>();
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<SkippableTest>>>(responseContent!);
+                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                {
+                    return Array.Empty<SkippableTest>();
+                }
+
+                var testAttributes = new List<SkippableTest>(deserializedResult.Data.Length);
+                var customConfigurations = _customConfigurations;
+                for (var i = 0; i < deserializedResult.Data.Length; i++)
+                {
+                    var includeItem = true;
+                    var item = deserializedResult.Data[i].Attributes;
+                    if (item.Configurations?.Custom is { } itemCustomConfiguration)
                     {
-                        if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
-                            rsCustomConfigurationItem.Value != customConfigValue)
+                        if (customConfigurations is null)
                         {
-                            includeItem = false;
-                            break;
+                            continue;
+                        }
+
+                        foreach (var rsCustomConfigurationItem in itemCustomConfiguration)
+                        {
+                            if (!customConfigurations.TryGetValue(rsCustomConfigurationItem.Key, out var customConfigValue) ||
+                                rsCustomConfigurationItem.Value != customConfigValue)
+                            {
+                                includeItem = false;
+                                break;
+                            }
                         }
                     }
+
+                    if (includeItem)
+                    {
+                        testAttributes.Add(item);
+                    }
                 }
 
-                if (includeItem)
+                if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
                 {
-                    testAttributes.Add(item);
+                    Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
                 }
-            }
 
-            if (Log.IsEnabled(LogEventLevel.Debug) && deserializedResult.Data.Length != testAttributes.Count)
+                var totalSkippableTests = testAttributes.ToArray();
+                TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsResponseTests(totalSkippableTests.Length);
+                return totalSkippableTests;
+            }
+            finally
             {
-                Log.Debug("ITR: JSON Filtered = {Json}", JsonConvert.SerializeObject(testAttributes));
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsRequestMs(sw.Elapsed.TotalMilliseconds);
             }
-
-            return testAttributes.ToArray();
         }
     }
 
@@ -440,46 +483,60 @@ internal class IntelligentTestRunnerClient
 
         async Task<string[]> InternalSearchCommitAsync(byte[] state, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_searchCommitsUrl);
-            SetRequestHeader(request, useApplicationHeader: false);
-
-            if (Log.IsEnabled(LogEventLevel.Debug))
+            var sw = Stopwatch.StartNew();
+            try
             {
-                Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
-            }
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
+                var request = _apiRequestFactory.Create(_searchCommitsUrl);
+                SetRequestHeader(request, useApplicationHeader: false);
 
-            using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
-
-            Log.Debug("ITR: JSON RS = {Json}", responseContent);
-            if (string.IsNullOrEmpty(responseContent))
-            {
-                return Array.Empty<string>();
-            }
-
-            var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
-            if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            var stringArray = new string[deserializedResult.Data.Length];
-            for (var i = 0; i < deserializedResult.Data.Length; i++)
-            {
-                var value = deserializedResult.Data[i].Id;
-                if (value is not null)
+                if (Log.IsEnabled(LogEventLevel.Debug))
                 {
-                    if (ShaRegex.Matches(value).Count != 1)
-                    {
-                        ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
-                    }
-
-                    stringArray[i] = value;
+                    Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
                 }
-            }
 
-            return stringArray;
+                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
+                }
+
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                Log.Debug("ITR: JSON RS = {Json}", responseContent);
+                if (string.IsNullOrEmpty(responseContent))
+                {
+                    return Array.Empty<string>();
+                }
+
+                var deserializedResult = JsonConvert.DeserializeObject<DataArrayEnvelope<Data<object>>>(responseContent);
+                if (deserializedResult.Data is null || deserializedResult.Data.Length == 0)
+                {
+                    return Array.Empty<string>();
+                }
+
+                var stringArray = new string[deserializedResult.Data.Length];
+                for (var i = 0; i < deserializedResult.Data.Length; i++)
+                {
+                    var value = deserializedResult.Data[i].Id;
+                    if (value is not null)
+                    {
+                        if (ShaRegex.Matches(value).Count != 1)
+                        {
+                            ThrowHelper.ThrowException($"The value '{value}' is not a valid Sha.");
+                        }
+
+                        stringArray[i] = value;
+                    }
+                }
+
+                return stringArray;
+            }
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(sw.Elapsed.TotalMilliseconds);
+            }
         }
     }
 
@@ -498,6 +555,7 @@ internal class IntelligentTestRunnerClient
         Log.Debug("ITR: JSON RQ = {Json}", jsonPushedSha);
         var jsonPushedShaBytes = Encoding.UTF8.GetBytes(jsonPushedSha);
 
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(packFilesObject.Files.Length);
         long totalUploadSize = 0;
         foreach (var packFile in packFilesObject.Files)
         {
@@ -515,6 +573,8 @@ internal class IntelligentTestRunnerClient
                 Log.Warning(ex, "ITR: Error deleting pack file: '{PackFile}'", packFile);
             }
         }
+
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(totalUploadSize);
 
         // Delete temporary folder after the upload
         if (!string.IsNullOrEmpty(packFilesObject.TemporaryFolder))
@@ -534,19 +594,33 @@ internal class IntelligentTestRunnerClient
 
         async Task<long> InternalSendObjectsPackFileAsync(string packFile, bool finalTry)
         {
-            var request = _apiRequestFactory.Create(_packFileUrl);
-            SetRequestHeader(request, useApplicationHeader: false);
+            var sw = Stopwatch.StartNew();
+            try
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
+                var request = _apiRequestFactory.Create(_packFileUrl);
+                SetRequestHeader(request, useApplicationHeader: false);
 
-            var multipartRequest = (IMultipartApiRequest)request;
-            using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var response = await multipartRequest.PostAsync(
-                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
-            .ConfigureAwait(false);
-            var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-            CheckResponseStatusCode(response, responseContent, finalTry);
+                var multipartRequest = (IMultipartApiRequest)request;
+                using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var response = await multipartRequest.PostAsync(
+                                                                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                                new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                                                           .ConfigureAwait(false);
+                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPackErrors(errorType);
+                }
 
-            return new FileInfo(packFile).Length;
+                CheckResponseStatusCode(response, responseContent, finalTry);
+
+                return new FileInfo(packFile).Length;
+            }
+            finally
+            {
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitRequestsObjectsPackMs(sw.Elapsed.TotalMilliseconds);
+            }
         }
     }
 
@@ -559,7 +633,7 @@ internal class IntelligentTestRunnerClient
         var temporaryPath = Path.GetTempFileName();
 
         var getObjectsArguments = "rev-list --objects --no-object-names --filter=blob:none --since=\"1 month ago\" HEAD " + string.Join(" ", commitsToExclude.Select(c => "^" + c)) + " " + string.Join(" ", commitsToInclude);
-        var getObjectsCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getObjectsArguments, _workingDirectory)).ConfigureAwait(false);
+        var getObjectsCommand = await RunGitCommandAsync(getObjectsArguments, MetricTags.CIVisibilityCommands.GetObjects).ConfigureAwait(false);
         if (string.IsNullOrEmpty(getObjectsCommand?.Output))
         {
             // If not objects has been returned we skip the pack + upload.
@@ -569,7 +643,7 @@ internal class IntelligentTestRunnerClient
 
         Log.Debug("ITR: Packing objects...");
         var getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-        var packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+        var packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
         if (packObjectsResultCommand is null)
         {
             Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -592,7 +666,7 @@ internal class IntelligentTestRunnerClient
 
                 temporaryPath = Path.Combine(temporaryFolder, Path.GetFileName(temporaryPath));
                 getPacksArguments = $"pack-objects --compression=9 --max-pack-size={MaxPackFileSizeInMb}m \"{temporaryPath}\"";
-                packObjectsResultCommand = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", getPacksArguments, _workingDirectory), getObjectsCommand!.Output).ConfigureAwait(false);
+                packObjectsResultCommand = await RunGitCommandAsync(getPacksArguments, MetricTags.CIVisibilityCommands.PackObjects, getObjectsCommand!.Output).ConfigureAwait(false);
                 if (packObjectsResultCommand is null)
                 {
                     Log.Warning("ITR: 'git pack-objects...' command is null");
@@ -650,7 +724,7 @@ internal class IntelligentTestRunnerClient
         }
     }
 
-    private void CheckResponseStatusCode(IApiResponse response, string responseContent, bool finalTry)
+    private void CheckResponseStatusCode(IApiResponse response, string? responseContent, bool finalTry)
     {
         // Check if the rate limit header was received.
         if (response.StatusCode == 429 &&
@@ -670,7 +744,7 @@ internal class IntelligentTestRunnerClient
         {
             if (finalTry)
             {
-                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent);
+                Log.Error<int, string>("ITR: Request failed with status code {StatusCode} and message: {ResponseContent}", response.StatusCode, responseContent ?? string.Empty);
             }
 
             throw new WebException($"Status: {response.StatusCode}, Content: {responseContent}");
@@ -756,14 +830,8 @@ internal class IntelligentTestRunnerClient
             return repository;
         }
 
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "config --get remote.origin.url", _workingDirectory)).ConfigureAwait(false);
-        if (gitOutput is null)
-        {
-            Log.Warning("ITR: 'git config --get remote.origin.url' command is null");
-            return string.Empty;
-        }
-
-        return gitOutput.Output.Replace("\n", string.Empty);
+        var gitOutput = await RunGitCommandAsync("config --get remote.origin.url", MetricTags.CIVisibilityCommands.GetRepository).ConfigureAwait(false);
+        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
     }
 
     private async Task<string> GetBranchNameAsync()
@@ -773,14 +841,27 @@ internal class IntelligentTestRunnerClient
             return branch;
         }
 
-        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", "branch --show-current", _workingDirectory)).ConfigureAwait(false);
+        var gitOutput = await RunGitCommandAsync("branch --show-current", MetricTags.CIVisibilityCommands.GetBranch).ConfigureAwait(false);
+        return gitOutput?.Output.Replace("\n", string.Empty) ?? string.Empty;
+    }
+
+    private async Task<ProcessHelpers.CommandOutput?> RunGitCommandAsync(string arguments, MetricTags.CIVisibilityCommands ciVisibilityCommand, string? input = null)
+    {
+        TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommand(ciVisibilityCommand);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        var gitOutput = await ProcessHelpers.RunCommandAsync(new ProcessHelpers.Command("git", arguments, _workingDirectory), input).ConfigureAwait(false);
+        TelemetryFactory.Metrics.RecordDistributionCIVisibilityGitCommandMs(ciVisibilityCommand, sw.Elapsed.TotalMilliseconds);
         if (gitOutput is null)
         {
-            Log.Warning("ITR: 'git branch --show-current' command is null");
-            return string.Empty;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(ciVisibilityCommand, MetricTags.CIVisibilityExitCodes.Unknown);
+            Log.Warning("ITR: 'git {Arguments}' command is null", arguments);
+        }
+        else if (gitOutput.ExitCode != 0)
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityGitCommandErrors(MetricTags.CIVisibilityCommands.GetRepository, TelemetryHelper.GetTelemetryExitCodeFromExitCode(gitOutput.ExitCode));
         }
 
-        return gitOutput.Output.Replace("\n", string.Empty);
+        return gitOutput;
     }
 
     private readonly struct DataEnvelope<T>

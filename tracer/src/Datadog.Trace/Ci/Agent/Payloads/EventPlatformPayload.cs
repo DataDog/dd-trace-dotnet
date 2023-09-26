@@ -5,6 +5,7 @@
 
 using System;
 using Datadog.Trace.Ci.Configuration;
+using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Ci.Agent.Payloads
@@ -37,6 +38,11 @@ namespace Datadog.Trace.Ci.Agent.Payloads
         /// Gets Event-Platform path
         /// </summary>
         public abstract string EventPlatformPath { get; }
+
+        /// <summary>
+        /// Gets the Telemetry endpoint enum
+        /// </summary>
+        public abstract MetricTags.CIVisibilityEndpoints TelemetryEndpoint { get; }
 
         /// <summary>
         /// Gets or sets the Payload url

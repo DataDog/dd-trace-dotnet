@@ -30,7 +30,7 @@ internal static class XUnitIntegration
         }
 
         var testMethod = runnerInstance.TestMethod;
-        var test = testSuite.CreateTest(testMethod?.Name ?? string.Empty);
+        var test = testSuite.InternalCreateTest(testMethod?.Name ?? string.Empty);
 
         // Get test parameters
         var testMethodArguments = runnerInstance.TestMethodArguments;

@@ -5,4 +5,30 @@ namespace Datadog.Trace.Telemetry;
 internal partial interface IMetricsTelemetryCollector
 {
     public void RecordDistributionInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value);
+
+    public void RecordDistributionCIVisibilityEndpointPayloadBytes(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value);
+
+    public void RecordDistributionCIVisibilityEndpointPayloadRequestsMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value);
+
+    public void RecordDistributionCIVisibilityEndpointPayloadEventsCount(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value);
+
+    public void RecordDistributionCIVisibilityEndpointEventsSerializationMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, double value);
+
+    public void RecordDistributionCIVisibilityGitCommandMs(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, double value);
+
+    public void RecordDistributionCIVisibilityGitRequestsSearchCommitsMs(double value);
+
+    public void RecordDistributionCIVisibilityGitRequestsObjectsPackMs(double value);
+
+    public void RecordDistributionCIVisibilityGitRequestsObjectsPackBytes(double value);
+
+    public void RecordDistributionCIVisibilityGitRequestsObjectsPackFiles(double value);
+
+    public void RecordDistributionCIVisibilityGitRequestsSettingsMs(double value);
+
+    public void RecordDistributionCIVisibilityITRSkippableTestsRequestMs(double value);
+
+    public void RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(double value);
+
+    public void RecordDistributionCIVisibilityCodeCoverageFiles(double value);
 }
