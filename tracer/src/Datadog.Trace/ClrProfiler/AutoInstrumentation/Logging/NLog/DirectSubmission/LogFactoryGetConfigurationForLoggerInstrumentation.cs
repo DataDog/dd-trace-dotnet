@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
         private static NLogVersion? _version;
 
         // TODO attempt to store the fact that we've configured a given configuration to not double configure
-        internal static ConditionalWeakTable<object, object> ConfigurationTable { get; } = new();
+        internal static ConditionalWeakTable<object, object?> ConfigurationTable { get; } = new();
 
         /// <summary>
         /// OnMethodBegin callback
@@ -128,8 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             if (configuration is not null && logFactoryProxy is null)
             {
-                // TODO hack not sure what to do here really
-                ConfigurationTable.Add(configuration, new());
+                ConfigurationTable.Add(configuration, null);
             }
 
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
