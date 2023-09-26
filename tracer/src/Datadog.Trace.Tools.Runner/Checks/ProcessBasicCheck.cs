@@ -174,6 +174,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
                         ok = false;
                     }
                 }
+                else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    CheckLinuxInstallation();
+                }
             }
 
             // Running non-blocker checks after confirming setup was done correctly
@@ -562,6 +566,49 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Utils.WriteError(TraceProgramNotFound);
 
             return tracerVersion;
+        }
+
+        internal static void CheckLinuxInstallation()
+        {
+            string archFolder;
+            var directoryPath = "/opt/datadog/";
+
+            if (RuntimeInformation.OSArchitecture == Architecture.X64)
+            {
+                archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
+            }
+            else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            {
+                archFolder = "linux-arm64";
+            }
+            else
+            {
+                Utils.WriteError($"Error: Linux {RuntimeInformation.OSArchitecture} architecture is not supported.");
+                return;
+            }
+
+            try
+            {
+                if (!Directory.Exists(directoryPath + archFolder))
+                {
+                    string[] directories = Directory.GetDirectories(directoryPath);
+
+                    // Iterate through directories and filter based on the starting string
+                    foreach (string directory in directories)
+                    {
+                        DirectoryInfo dirInfo = new DirectoryInfo(directory);
+                        if (dirInfo.Name.StartsWith("linux-", StringComparison.OrdinalIgnoreCase))
+                        {
+                            Utils.WriteError($"Unable to find expected {archFolder} folder, found {dirInfo.Name} instead, make sure to use the correct installer.");
+                            return;
+                        }
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(ex.Message);
+            }
         }
     }
 }
