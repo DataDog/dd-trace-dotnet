@@ -398,7 +398,7 @@ std::string OpSysTools::GetProcessName()
     return fs::path(pathName).filename().string();
 #elif MACOS
     const int32_t length = 260;
-    char* buffer = new char[length];
+    char buffer[length] = {'\0'};
     proc_name(getpid(), buffer, length);
     return std::string(buffer);
 #else

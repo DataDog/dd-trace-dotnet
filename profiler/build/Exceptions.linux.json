@@ -4,14 +4,14 @@
   "count": 10,
   "scenarios": [
     {
-      "name": "Baseline_liveheap",
+      "name": "Baseline_exception",
       "environmentVariables": {
         "CORECLR_ENABLE_PROFILING": "0",
         "COR_ENABLE_PROFILING": "0"
       }
     },
     {
-      "name": "Profiler_no_liveheap",
+      "name": "Profiler_no_exception",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
@@ -21,36 +21,36 @@
       }
     },
     {
-      "name": "Profiler_liveheap",
+      "name": "Profiler_exceptions",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "0",
         "DD_PROFILING_CPU_ENABLED": "0",
-        "DD_PROFILING_HEAP_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
         "DD_TRACE_ENABLED" : "0"
       }
     },
     {
-      "name": "Profiler_liveheap_cpu_walltime",
+      "name": "Profiler_exceptions_cpu_walltime",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
         "DD_PROFILING_ENABLED": "1",
         "DD_PROFILING_WALLTIME_ENABLED": "1",
         "DD_PROFILING_CPU_ENABLED": "1",
-        "DD_PROFILING_HEAP_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
         "DD_TRACE_ENABLED" : "0"
       }
     }
   ],
-  "processName": "dotnet",
-  "processArguments": "Samples.Computer01.dll --scenario 13 --iterations 25 --param 500",
+  "processName": "./Samples.ExceptionGenerator",
+  "processArguments": "--scenario 5 --iterations 100",
   "processTimeout": 15,
-  "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.Computer01/net7.0",
+  "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.ExceptionGenerator/net7.0",
   "environmentVariables": {
     "CORECLR_ENABLE_PROFILING": "1",
-    "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-    "CORECLR_PROFILER_PATH_64": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Trace.ClrProfiler.Native.so",
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Profiler.Native.so",
     "LD_PRELOAD": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
     "DD_PROFILING_METRICS_FILEPATH": "metrics.json"
   },

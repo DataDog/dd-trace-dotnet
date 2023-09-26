@@ -25,7 +25,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedTestCount = 14;
+        private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
+        private const int ExpectedTestCount = 16;
 
         public XUnitEvpTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -97,14 +98,16 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                     {
                         // Check the tests, suites and modules count
                         Assert.Equal(ExpectedTestCount, tests.Count);
-                        Assert.Single(testSuites);
+                        Assert.Equal(2, testSuites.Count);
                         Assert.Single(testModules);
-                        var testSuite = testSuites[0];
+                        var testSuite = testSuites.First(suite => suite.Resource == TestSuiteName);
+                        var unskippableTestSuite = testSuites.First(suite => suite.Resource == UnSkippableSuiteName);
                         var testModule = testModules[0];
 
                         // Check Suite
-                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId));
+                        Assert.True(tests.All(t => t.TestSuiteId == testSuite.TestSuiteId || t.TestSuiteId == unskippableTestSuite.TestSuiteId));
                         testSuite.TestModuleId.Should().Be(testModule.TestModuleId);
+                        unskippableTestSuite.TestModuleId.Should().Be(testModule.TestModuleId);
 
                         // ITR tags inside the test suite
                         testSuite.Metrics.Should().Contain(IntelligentTestRunnerTags.SkippingCount, 1);
@@ -120,6 +123,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                         // Check Session
                         tests.Should().OnlyContain(t => t.TestSessionId == testSuite.TestSessionId);
                         testSuite.TestSessionId.Should().Be(testModule.TestSessionId);
+                        unskippableTestSuite.TestSessionId.Should().Be(testModule.TestSessionId);
                         testModule.TestSessionId.Should().Be(sessionId);
 
                         // ***************************************************************************
@@ -143,7 +147,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetTest, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetTest, TestTags.Suite, TestSuiteName, UnSkippableSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetTest, TestTags.Type, TestTags.TypeTest);
@@ -176,6 +180,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Check Session data
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
                             AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
+
+                            // Unskippable data
+                            if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
 
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
@@ -244,6 +255,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetTest);
                                     break;
                             }
 
