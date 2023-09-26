@@ -2,7 +2,6 @@ using System.Security.Cryptography;
 using System.Web.Mvc;
 using System.Data.SQLite;
 using System;
-using System.Text;
 using Samples.Security.Data;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -11,10 +10,24 @@ using System.Web;
 using Microsoft.Ajax.Utilities;
 using System.Net.Http;
 using System.DirectoryServices;
-using System.Net.PeerToPeer;
+using System.Collections.Generic;
 
 namespace Samples.Security.AspNetCore5.Controllers
 {
+    public class QueryData
+    {
+        public string Query { get; set; }
+        public int IntField { get; set; }
+
+        public List<string> Arguments { get; set; }
+
+        public Dictionary<string, string> StringMap { get; set; }
+
+        public string[] StringArrayArguments { get; set; }
+
+        public QueryData InnerQuery { get; set; }
+    }
+
     [Route("[controller]")]
     public class IastController : Controller
     {
@@ -96,6 +109,82 @@ namespace Samples.Security.AspNetCore5.Controllers
             {
                 return new HttpStatusCodeResult(HttpStatusCode.InternalServerError, IastControllerHelper.ToFormattedString(ex));
             }
+        }
+
+        [Route("ExecuteQueryFromBodyQueryData")]
+        public ActionResult ExecuteQueryFromBodyQueryData(QueryData queryInstance)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                return Query(queryInstance);
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+        }
+
+        private ActionResult Query(QueryData query)
+        {
+            if (!string.IsNullOrEmpty(query?.Query))
+            {
+                return ExecuteQuery(query.Query);
+            }
+
+            if (query?.Arguments != null)
+            {
+                foreach (var value in query.Arguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+            if (query?.StringArrayArguments != null)
+            {
+                foreach (var value in query.StringArrayArguments)
+                {
+                    if (!string.IsNullOrEmpty(value))
+                    {
+                        return ExecuteQuery(value);
+                    }
+                }
+            }
+
+            if (query?.StringMap != null)
+            {
+                foreach (var value in query.StringMap)
+                {
+                    if (!string.IsNullOrEmpty(value.Value))
+                    {
+                        return ExecuteQuery(value.Value);
+                    }
+                    if (!string.IsNullOrEmpty(value.Key))
+                    {
+                        return ExecuteQuery(value.Key);
+                    }
+                }
+            }
+
+            if (query?.InnerQuery != null)
+            {
+                return Query(query.InnerQuery);
+            }
+
+            return Content($"No query or username was provided");
+        }
+
+        private ActionResult ExecuteQuery(string query)
+        {
+            var rname = new SQLiteCommand(query, dbConnection).ExecuteScalar();
+            return Content($"Result: " + rname);
         }
 
         [Route("ExecuteCommandFromCookie")]
