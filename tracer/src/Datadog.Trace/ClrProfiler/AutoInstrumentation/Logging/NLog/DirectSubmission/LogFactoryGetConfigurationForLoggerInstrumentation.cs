@@ -65,9 +65,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 return CallTargetState.GetDefault();
             }
 
-            _ = instance.TryDuckCast<ILogFactoryPre43Proxy>(out var logFactoryPre43Proxy);
-
-            if (logFactoryPre43Proxy is null)
+            if (!instance.TryDuckCast<ILogFactoryPre43Proxy>(out var logFactoryPre43Proxy))
             {
                 Log.Warning("Failed to DuckCast the log factory for NLog - Agentless logging and logs injection for NLog won't be functional.");
                 return CallTargetState.GetDefault();
@@ -84,9 +82,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 return CallTargetState.GetDefault();
             }
 
-            _ = instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy);
-
-            if (logFactoryProxy is not null && logFactoryProxy.IsDisposing)
+            if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy) && logFactoryProxy.IsDisposing)
             {
                 // when logging is stopped (e.g., shutdown) the configuration will be set to null
                 // and this instrumentation will get hit again, so to avoid creating a new configuration
