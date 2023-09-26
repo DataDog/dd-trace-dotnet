@@ -379,12 +379,12 @@ public sealed class Test
                 break;
         }
 
-        if (tags.Unskippable == "true" || tags.Unskippable?.ToLowerInvariant() == "true")
+        if (tags.Unskippable is not null && string.Equals(tags.Unskippable, "true", StringComparison.OrdinalIgnoreCase))
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
         }
 
-        if (tags.ForcedRun == "true" || tags.ForcedRun?.ToLowerInvariant() == "true")
+        if (tags.ForcedRun is not null && string.Equals(tags.ForcedRun, "true", StringComparison.OrdinalIgnoreCase))
         {
             TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
         }
