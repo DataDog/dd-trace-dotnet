@@ -18,12 +18,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     /// </summary>
     internal static class LogsInjectionHelper<TTarget>
     {
-        private const string TraceId = "dd.trace_id";
-        private const string SpanId = "dd.span_id";
-        private const string Environment = "dd.env";
-        private const string Version = "dd.version";
-        private const string Service = "dd.service";
-
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
         private static Type _jsonAttributeType;
         private static Type _simpleLayoutType;
@@ -115,19 +109,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
                 switch (jsonAttributeProxy.Name)
                 {
-                    case Environment:
+                    case CorrelationIdentifier.EnvKey:
                         containsEnv = true;
                         continue;
-                    case Service:
+                    case CorrelationIdentifier.ServiceKey:
                         containsService = true;
                         continue;
-                    case Version:
+                    case CorrelationIdentifier.VersionKey:
                         containsVersion = true;
                         continue;
-                    case TraceId:
+                    case CorrelationIdentifier.TraceIdKey:
                         containsTraceId = true;
                         continue;
-                    case SpanId:
+                    case CorrelationIdentifier.SpanIdKey:
                         containsSpanId = true;
                         continue;
                 }
@@ -142,11 +136,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 return;
             }
 
-            AddAttributeToJson4Layout(layoutWithAttributes, Environment);
-            AddAttributeToJson4Layout(layoutWithAttributes, TraceId);
-            AddAttributeToJson4Layout(layoutWithAttributes, SpanId);
-            AddAttributeToJson4Layout(layoutWithAttributes, Version);
-            AddAttributeToJson4Layout(layoutWithAttributes, Service);
+            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.EnvKey);
+            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.TraceIdKey);
+            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.SpanIdKey);
+            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.VersionKey);
+            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.ServiceKey);
         }
 
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
@@ -188,11 +182,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             // does the current layout have any "mdc" or "mdlc" stuff for logs injection already
             // if so, don't add to it
-            var envContext = CreateSimpleLayoutContextText(Environment);
-            var serviceContext = CreateSimpleLayoutContextText(Service);
-            var versionContext = CreateSimpleLayoutContextText(Version);
-            var traceIdContext = CreateSimpleLayoutContextText(TraceId);
-            var spanIdContext = CreateSimpleLayoutContextText(SpanId);
+            var envContext = CreateSimpleLayoutContextText(CorrelationIdentifier.EnvKey);
+            var serviceContext = CreateSimpleLayoutContextText(CorrelationIdentifier.ServiceKey);
+            var versionContext = CreateSimpleLayoutContextText(CorrelationIdentifier.VersionKey);
+            var traceIdContext = CreateSimpleLayoutContextText(CorrelationIdentifier.TraceIdKey);
+            var spanIdContext = CreateSimpleLayoutContextText(CorrelationIdentifier.SpanIdKey);
 
             var hasEnvironment = simpleLayoutProxy.Text.Contains(envContext);
             var hasService = simpleLayoutProxy.Text.Contains(serviceContext);
@@ -211,11 +205,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
             var text = string.Empty;
 
-            text += CreateSimpleLayoutText(Environment);
-            text += CreateSimpleLayoutText(Service);
-            text += CreateSimpleLayoutText(Version);
-            text += CreateSimpleLayoutText(TraceId);
-            text += CreateSimpleLayoutText(SpanId);
+            text += CreateSimpleLayoutText(CorrelationIdentifier.EnvKey);
+            text += CreateSimpleLayoutText(CorrelationIdentifier.ServiceKey);
+            text += CreateSimpleLayoutText(CorrelationIdentifier.VersionKey);
+            text += CreateSimpleLayoutText(CorrelationIdentifier.TraceIdKey);
+            text += CreateSimpleLayoutText(CorrelationIdentifier.SpanIdKey);
 
             simpleLayoutProxy.Text += " {" + text + " }";
         }
