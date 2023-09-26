@@ -369,8 +369,15 @@ partial class Build : NukeBuild
                 .SetOutput(publishFolder));
 
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
+            CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
 
-            CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
+            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+
+            if (IsLinux)
+            {
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+            }
         });
     Target BuildRunnerTool => _ => _
         .Unlisted()

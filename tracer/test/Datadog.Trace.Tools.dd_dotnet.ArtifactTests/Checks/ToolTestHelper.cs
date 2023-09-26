@@ -54,8 +54,7 @@ public abstract class ToolTestHelper : TestHelper
             _ => throw new PlatformNotSupportedException()
         };
 
-        var targetFolder = Path.Combine(EnvironmentHelper.MonitoringHome, rid);
-        var executable = Path.Combine(targetFolder, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.exe" : "dd-dotnet");
+        var executable = Path.Combine(EnvironmentHelper.MonitoringHome, RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "dd-dotnet.cmd" : "dd-dotnet.sh");
 
         var processStart = new ProcessStartInfo(executable, arguments)
         {

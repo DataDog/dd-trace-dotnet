@@ -235,6 +235,8 @@ EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B}"
 	ProjectSection(SolutionItems) = preProject
 		tracer\build\artifacts\createLogPath.sh = tracer\build\artifacts\createLogPath.sh
+		tracer\build\artifacts\dd-dotnet.cmd = tracer\build\artifacts\dd-dotnet.cmd
+		tracer\build\artifacts\dd-dotnet.sh = tracer\build\artifacts\dd-dotnet.sh
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "benchmarks", "benchmarks", "{E5439139-6F94-44FA-9590-C32FCC1C7A93}"
