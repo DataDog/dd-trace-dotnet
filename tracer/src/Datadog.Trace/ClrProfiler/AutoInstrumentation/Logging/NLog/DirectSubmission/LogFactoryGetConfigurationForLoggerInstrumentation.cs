@@ -88,7 +88,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             if (configuration is not null && ConfigurationTable.TryGetValue(configuration, out _))
             {
-                Log.Debug("We've created a configuration already for NLog - skipping.");
                 return CallTargetState.GetDefault();
             }
 
@@ -97,7 +96,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 // when logging is stopped (e.g., shutdown) the configuration will be set to null
                 // and this instrumentation will get hit again, so to avoid creating a new configuration
                 // and adding the Datadog Direct Submission target we just need to exit here.
-                Log.Debug("NLog LogFactory was being disposed so skipping the logging configuration instrumentations.");
                 return CallTargetState.GetDefault();
             }
 
@@ -112,7 +110,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is null)
             {
-                Log.Debug("NLog configuration was null - creating one to allow Direct Log Submission");
                 var loggingConfigurationInstance = Activator.CreateInstance(typeof(TLoggingConfiguration));
                 if (loggingConfigurationInstance is null)
                 {
@@ -127,7 +124,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 //       to hook everything up correctly for this newly created configuration
                 //       but first we need to create and add the direct logs submission target
                 configuration = (TLoggingConfiguration)loggingConfigurationInstance;
-                Log.Debug("Created custom NLog configuration");
             }
 
             if (configuration is not null && logFactoryProxy is null)
@@ -139,19 +135,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is not null)
             {
-                Log.Debug("Setting up direct log submission for NLog");
                 // if configuration is not-null, we've already checked that NLog is enabled
                 var wasAdded = NLogCommon<TTarget>.AddDatadogTarget(configuration);
                 if (wasAdded)
                 {
-                    Log.Debug("Added NLog direct log submission target");
                     // Not really generating a span, but the point is it's enabled and added
                     tracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.NLog);
                 }
 
                 if (wasAdded && setConfigurationRequired)
                 {
-                    Log.Debug("Setting NLog LogFactory.Configuration to the Configuration we created for direct log submission.");
                     // the setter here does a lot of initialization of the configuration and the targets
                     logFactoryPre43Proxy.Configuration = configuration;
                 }

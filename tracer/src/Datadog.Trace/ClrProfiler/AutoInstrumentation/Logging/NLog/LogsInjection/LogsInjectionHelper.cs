@@ -141,7 +141,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 containsVersion ||
                 containsService)
             {
-                Log.Information("Not reconfiguring an NLog JsonLayout for logs injection because it looks like it already is.");
                 return;
             }
 
@@ -209,7 +208,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 hasTraceId ||
                 hasSpanId)
             {
-                Log.Information("Not reconfiguring an NLogs SimpleLayout for logs injection because it looks like it already is.");
                 return;
             }
 
