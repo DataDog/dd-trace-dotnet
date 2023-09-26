@@ -270,7 +270,7 @@ namespace Datadog.Trace.Tools.Runner
             TestSession session = null;
             if (createTestSession)
             {
-                session = TestSession.GetOrCreate(command, null, null, null, true);
+                session = TestSession.InternalGetOrCreate(command, null, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
 
@@ -321,7 +321,6 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 context.ExitCode = exitCode;
-                return;
             }
             catch (Exception ex)
             {

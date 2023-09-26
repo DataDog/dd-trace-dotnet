@@ -265,4 +265,86 @@ internal static class MetricTags
         [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
         [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
     }
+
+    public enum CIVisibilityTestFramework
+    {
+        [Description("test_framework:xunit")] XUnit,
+        [Description("test_framework:nunit")] NUnit,
+        [Description("test_framework:mstest")] MSTest,
+        [Description("test_framework:benchmarkdotnet")] BenchmarkDotNet,
+        [Description("test_framework:unknown")] Unknown,
+    }
+
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+    }
+
+    public enum CIVisibilityCoverageLibrary
+    {
+        [Description("library:custom")] Custom,
+        [Description("library:unknown")] Unknown,
+    }
+
+    public enum CIVisibilityTestingEventType
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session,
+    }
+
+    public enum CIVisibilityEndpoints
+    {
+        [Description("endpoint:test_cycle")] TestCycle,
+        [Description("endpoint:code_coverage")] CodeCoverage,
+    }
+
+    public enum CIVisibilityErrorType
+    {
+        [Description("error_type:timeout")] Timeout,
+        [Description("error_type:network")] Network,
+        [Description("error_type:status_code")] StatusCode,
+        [Description("error_type:status_code_4xx_response")] StatusCode4xx,
+        [Description("error_type:status_code_5xx_response")] StatusCode5xx,
+    }
+
+    public enum CIVisibilityCommands
+    {
+        [Description("command:get_repository")] GetRepository,
+        [Description("command:get_branch")] GetBranch,
+        [Description("command:get_remote")] GetRemote,
+        [Description("command:get_head")] GetHead,
+        [Description("command:check_shallow")] CheckShallow,
+        [Description("command:unshallow")] Unshallow,
+        [Description("command:get_local_commits")] GetLocalCommits,
+        [Description("command:get_objects")] GetObjects,
+        [Description("command:pack_objects")] PackObjects,
+    }
+
+    public enum CIVisibilityExitCodes
+    {
+        [Description("exit_code:unknown")] Unknown,
+        [Description("exit_code:-1")] ECMinus1,
+        [Description("exit_code:1")] EC1,
+        [Description("exit_code:2")] EC2,
+        [Description("exit_code:127")] EC127,
+        [Description("exit_code:128")] EC128,
+        [Description("exit_code:129")] EC129,
+    }
+
+    public enum CIVisibilityITRSettingsResponse
+    {
+        [Description("")] CoverageDisabled_ItrSkipDisabled,
+        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
+        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
+        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
+    }
 }

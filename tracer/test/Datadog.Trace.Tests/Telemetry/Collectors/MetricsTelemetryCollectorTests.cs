@@ -101,6 +101,9 @@ public class MetricsTelemetryCollectorTests
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 23);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Total, 46);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 52);
+        collector.RecordCountCIVisibilityITRSkipped(MetricTags.CIVisibilityTestingEventType.Test, 123);
+        collector.RecordCountCIVisibilityEventCreated(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
+        collector.RecordCountCIVisibilityEventFinished(MetricTags.CIVisibilityTestFramework.XUnit, MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark.Test);
 
         collector.AggregateMetrics();
 
@@ -113,6 +116,7 @@ public class MetricsTelemetryCollectorTests
         collector.RecordGaugeDirectLogQueue(7);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Managed, 22);
         collector.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, 15);
+        collector.RecordDistributionCIVisibilityGitCommandMs(MetricTags.CIVisibilityCommands.PackObjects, 125);
 
         collector.AggregateMetrics();
 
@@ -252,6 +256,33 @@ public class MetricsTelemetryCollectorTests
                 Common = false,
                 Namespace = (string)null,
             },
+            new
+            {
+                Metric = Count.CIVisibilityITRSkipped.GetName(),
+                Points = new[] { new { Value = 123 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "event_type:test" },
+                Common = true,
+                Namespace = NS.CIVisibility,
+            },
+            new
+            {
+                Metric = Count.CIVisibilityEventCreated.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "test_framework:xunit", "event_type:test" },
+                Common = true,
+                Namespace = NS.CIVisibility,
+            },
+            new
+            {
+                Metric = Count.CIVisibilityEventFinished.GetName(),
+                Points = new[] { new { Value = 1 } },
+                Type = TelemetryMetricType.Count,
+                Tags = new[] { "test_framework:xunit", "event_type:test" },
+                Common = true,
+                Namespace = NS.CIVisibility,
+            },
         });
 
         metrics.Distributions.Should().BeEquivalentTo(new[]
@@ -279,6 +310,14 @@ public class MetricsTelemetryCollectorTests
                 Points = new[] {  15 },
                 Common = true,
                 Namespace = NS.General,
+            },
+            new
+            {
+                Metric = Distribution.CIVisibilityGitCommandMs.GetName(),
+                Tags = new[] { "command:pack_objects" },
+                Points = new[] {  125 },
+                Common = true,
+                Namespace = NS.CIVisibility,
             },
         });
         await collector.DisposeAsync();

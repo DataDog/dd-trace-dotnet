@@ -21,12 +21,19 @@ namespace Datadog.Trace.Tests.Telemetry.Metrics;
 
 public class MetricTests
 {
-    private static readonly Dictionary<string, List<string>> IgnoredTagsByMetricName = new()
+    private static readonly Dictionary<string, string[]> IgnoredTagsByMetricName = new()
     {
-        { "waf.init", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.updates", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.requests", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "spans_finished", new() { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "waf.init", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+    };
+
+    private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
+    {
+        { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
+        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled" } },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
@@ -61,9 +68,9 @@ public class MetricTests
             // check that we have the same number of tags as expected
             // this isn't correct for some tags, but it's true of most,
             // so we assert it and have an exception list where it's not required
-            var expectedPrefixes = IgnoredTagsByMetricName.TryGetValue(expectedMetric.Metric, out var ignored)
-                                       ? expectedMetric.TagPrefixes.Except(ignored).ToList()
-                                       : expectedMetric.TagPrefixes;
+            var ignoredPrefixes = IgnoredTagsByMetricName.TryGetValue(expectedMetric.Metric, out var ignored) ? ignored : Array.Empty<string>();
+            var optionalPrefixes = OptionalTagsByMetricName.TryGetValue(expectedMetric.Metric, out var optional) ? optional : Array.Empty<string>();
+            var expectedPrefixes = expectedMetric.TagPrefixes.Except(ignoredPrefixes).Except(optionalPrefixes).ToList();
 
             // if we have any expected prefixes, we should expect some permutations
             if (expectedPrefixes.Count > 0)
@@ -71,24 +78,42 @@ public class MetricTests
                 implementation.TagPermutations.Should().NotBeEmpty($"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
             }
 
+            // if (IgnoreTagsPermutationValidation.IndexOf(implementation.Metric) != -1)
+            // {
+            //     continue;
+            // }
+
             // Check all our permutation are valid
             foreach (var permutation in implementation.TagPermutations)
             {
-                var permutationPrefixes = permutation.Select(
-                    tag => tag.IndexOf(':') is var i and >= 0
-                               ? tag.Substring(0, i)
-                               : tag);
+                var permutationPrefixes = permutation
+                                         .Select(
+                                              tag => tag.IndexOf(':') is var i and >= 0
+                                                         ? tag.Substring(0, i)
+                                                         : tag)
+                                         .Except(optionalPrefixes)
+                                         .Where(x => !string.IsNullOrEmpty(x))
+                                         .ToList();
 
-                permutationPrefixes.Should()
-                                   .OnlyContain(prefix => expectedPrefixes.Contains(prefix), $"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})")
-                                   .And.OnlyHaveUniqueItems();
+                if (permutationPrefixes.Count == 0)
+                {
+                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count);
+                }
+                else
+                {
+                    permutationPrefixes
+                       .Should()
+                       .OnlyContain(prefix => expectedPrefixes.Contains(prefix), $"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})")
+                       .And.OnlyHaveUniqueItems();
 
-                // for "one of" cases we only expect to send one of the specified tags, so reduce the expected count
-                var expectedCount = OneOfTagsByMetricName.TryGetValue(expectedMetric.Metric, out var oneOfList)
-                                        ? expectedPrefixes.Count - (oneOfList.Count - 1)
-                                        : expectedPrefixes.Count;
+                    // for "one of" cases we only expect to send one of the specified tags, so reduce the expected count
+                    var expectedCount = OneOfTagsByMetricName.TryGetValue(expectedMetric.Metric, out var oneOfList)
+                                            ? expectedPrefixes.Count - (oneOfList.Count - 1)
+                                            : expectedPrefixes.Count;
 
-                permutation.Should().HaveCount(expectedCount, $"{implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
+                    var permutationExcludingOptional = permutation.Except(optionalPrefixes);
+                    permutationExcludingOptional.Should().HaveCount(expectedCount, $"Received: {permutation.Length}, {implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
+                }
             }
         }
     }

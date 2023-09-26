@@ -27,6 +27,44 @@ internal partial class MetricsTelemetryCollectorBase
             new(new[] { "component:dynamic_instrumentation" }),
             new(new[] { "component:tracemethods_pinvoke" }),
             new(new[] { "component:iast" }),
+            // endpoint_payload.bytes, index = 14
+            new(new[] { "endpoint:test_cycle" }),
+            new(new[] { "endpoint:code_coverage" }),
+            // endpoint_payload.requests_ms, index = 16
+            new(new[] { "endpoint:test_cycle" }),
+            new(new[] { "endpoint:code_coverage" }),
+            // endpoint_payload.events_count, index = 18
+            new(new[] { "endpoint:test_cycle" }),
+            new(new[] { "endpoint:code_coverage" }),
+            // endpoint_payload.events_serialization_ms, index = 20
+            new(new[] { "endpoint:test_cycle" }),
+            new(new[] { "endpoint:code_coverage" }),
+            // git.command_ms, index = 22
+            new(new[] { "command:get_repository" }),
+            new(new[] { "command:get_branch" }),
+            new(new[] { "command:get_remote" }),
+            new(new[] { "command:get_head" }),
+            new(new[] { "command:check_shallow" }),
+            new(new[] { "command:unshallow" }),
+            new(new[] { "command:get_local_commits" }),
+            new(new[] { "command:get_objects" }),
+            new(new[] { "command:pack_objects" }),
+            // git_requests.search_commits_ms, index = 31
+            new(null),
+            // git_requests.objects_pack_ms, index = 32
+            new(null),
+            // git_requests.objects_pack_bytes, index = 33
+            new(null),
+            // git_requests.objects_pack_files, index = 34
+            new(null),
+            // git_requests.settings_ms, index = 35
+            new(null),
+            // itr_skippable_tests.request_ms, index = 36
+            new(null),
+            // itr_skippable_tests.response_bytes, index = 37
+            new(null),
+            // code_coverage.files, index = 38
+            new(null),
         };
 
     /// <summary>
@@ -35,7 +73,7 @@ internal partial class MetricsTelemetryCollectorBase
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionEntryCounts { get; }
-        = new []{ 14, };
+        = new []{ 14, 2, 2, 2, 2, 9, 1, 1, 1, 1, 1, 1, 1, 1, };
 
-    private const int _distributionsLength = 14;
+    private const int _distributionsLength = 39;
 }
