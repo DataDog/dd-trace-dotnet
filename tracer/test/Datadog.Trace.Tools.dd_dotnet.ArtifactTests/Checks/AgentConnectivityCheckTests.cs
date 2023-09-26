@@ -164,9 +164,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             using var agent = MockTracerAgent.Create(Output, new WindowsPipesConfig(tracesPipeName, metricsPipeName));
             agent.Version = expectedVersion;
 
-            var output = await RunTool($"check agent", ("DD_TRACE_PIPE_NAME", tracesPipeName));
+            var (standardOutput, _, _) = await RunTool($"check agent", ("DD_TRACE_PIPE_NAME", tracesPipeName));
 
-            output.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
+            standardOutput.Should().Contain(DetectedAgentVersionFormat(expectedVersion));
         }
 
         [SkippableFact]
