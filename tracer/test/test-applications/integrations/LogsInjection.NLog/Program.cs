@@ -166,8 +166,7 @@ namespace LogsInjection.NLog
                 case ConfigurationType.None:
                     break;
                 case ConfigurationType.NoLogsInjection:
-                    LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.Pre40.NoLogsInjection.config"));
-                    break;
+                    throw new InvalidOperationException("The pre NLOG_4_0 configurations don't have JSON support so no auto-configured logs injection either.");
                 case ConfigurationType.LogsInjection:
                     LogManager.Configuration = new XmlLoggingConfiguration(Path.Combine(appDirectory, "Configurations", "NLog.Pre40.WithLogsInjection.config"));
                     break;

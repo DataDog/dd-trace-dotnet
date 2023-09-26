@@ -36,15 +36,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             PropertiesUseSerilogNaming = false
         };
 
-        private readonly LogFileTest _textFileNoInjection = new()
-        {
-            FileName = "log-textFile-noInject.log",
-            RegexFormat = @"{0}: {1}",
-            // txt format can't conditionally add properties
-            UnTracedLogTypes = UnTracedLogTypes.EmptyProperties,
-            PropertiesUseSerilogNaming = false
-        };
-
         public NLogTests(ITestOutputHelper output)
             : base(output, "LogsInjection.NLog")
         {
@@ -141,6 +132,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                     foreach (var configType in Enum.GetValues(typeof(ConfigurationType)))
                     {
+                        if ((ConfigurationType)configType == ConfigurationType.NoLogsInjection && version < new Version("4.0.0"))
+                        {
+                            continue; // pre 4.0.0 doesn't have JSON support
+                        }
+
                         yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
 
                         if (version >= minScopeContext)
@@ -185,6 +181,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         {
                             // if we don't have a config there won't be any targets to inject logs to
                             continue;
+                        }
+
+                        if ((ConfigurationType)configType == ConfigurationType.NoLogsInjection && version < new Version("4.0.0"))
+                        {
+                            continue; // pre 4.0.0 doesn't have JSON support
                         }
 
                         yield return item.Concat(agentless).Concat(LoggingContext.None).Concat(configType);
@@ -403,17 +404,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             if (version < new Version("4.0.0"))
             {
                 // pre 4.0 can't write to json file
-                if (configType == ConfigurationType.Both)
+                if (configType == ConfigurationType.Both || configType == ConfigurationType.LogsInjection)
                 {
-                    return new[] { _textFileWithInjection, _textFileNoInjection };
+                    return new[] { _textFileWithInjection };
                 }
                 else if (configType == ConfigurationType.NoLogsInjection)
                 {
-                    return new[] { _textFileNoInjection };
-                }
-                else if (configType == ConfigurationType.LogsInjection)
-                {
-                    return new[] { _textFileWithInjection };
+                    throw new Exception("NLog versions below 4.0.0 don't have JSON, so no automated logs injection");
                 }
             }
 
@@ -427,7 +424,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             if (logsInjectionEnabled && configType == ConfigurationType.Both)
             {
-                return new[] { _textFileWithInjection, _textFileNoInjection, GetJsonTestFile(unTracedLogType), GetJsonTestFileNoInjection(unTracedLogType) };
+                return new[] { _textFileWithInjection, GetJsonTestFile(unTracedLogType), GetJsonTestFileNoInjection(unTracedLogType) };
             }
             else if (logsInjectionEnabled && configType == ConfigurationType.LogsInjection)
             {
@@ -435,7 +432,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
             else if (logsInjectionEnabled && configType == ConfigurationType.NoLogsInjection)
             {
-                return new[] {  _textFileNoInjection, GetJsonTestFileNoInjection(unTracedLogType) };
+                return new[] {  GetJsonTestFileNoInjection(unTracedLogType) };
             }
             else
             {
