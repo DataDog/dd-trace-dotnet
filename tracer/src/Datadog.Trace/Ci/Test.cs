@@ -379,6 +379,16 @@ public sealed class Test
                 break;
         }
 
+        if (tags.Unskippable == "true" || tags.Unskippable?.ToLowerInvariant() == "true")
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityITRUnskippable(MetricTags.CIVisibilityTestingEventType.Test);
+        }
+
+        if (tags.ForcedRun == "true" || tags.ForcedRun?.ToLowerInvariant() == "true")
+        {
+            TelemetryFactory.Metrics.RecordCountCIVisibilityITRForcedRun(MetricTags.CIVisibilityTestingEventType.Test);
+        }
+
         // Finish
         scope.Span.Finish(duration.Value);
         scope.Dispose();
