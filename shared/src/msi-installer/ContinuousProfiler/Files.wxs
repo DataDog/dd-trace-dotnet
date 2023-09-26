@@ -27,14 +27,5 @@
         </File>
       </Component>
     </ComponentGroup>
-
-	<ComponentGroup Id="dd_dotnet" Directory="INSTALLFOLDER">
-		<Component>
-			<File Id="dd_dotnet"
-			    Source="$(var.MonitoringHomeDirectory)\dd-dotnet.exe"
-			    Checksum="yes">
-			</File>
-		</Component>
-	</ComponentGroup>
   </Fragment>
 </Wix>
