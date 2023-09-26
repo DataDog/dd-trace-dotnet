@@ -23,7 +23,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
     {
         private const string TestBundleName = "Samples.XUnitTests";
         private const string TestSuiteName = "Samples.XUnitTests.TestSuite";
-        private const int ExpectedSpanCount = 14;
+        private const string UnSkippableSuiteName = "Samples.XUnitTests.UnSkippableSuite";
+        private const int ExpectedSpanCount = 16;
 
         public XUnitTests(ITestOutputHelper output)
             : base("XUnitTests", output)
@@ -86,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetSpan, TestTags.Module, TestBundleName);
 
                             // check the suite name
-                            AssertTargetSpanEqual(targetSpan, TestTags.Suite, TestSuiteName);
+                            AssertTargetSpanAnyOf(targetSpan, TestTags.Suite, TestSuiteName, UnSkippableSuiteName);
 
                             // check the test type
                             AssertTargetSpanEqual(targetSpan, TestTags.Type, TestTags.TypeTest);
@@ -122,6 +123,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             // Session data
                             AssertTargetSpanExists(targetSpan, TestTags.Command);
                             AssertTargetSpanExists(targetSpan, TestTags.CommandWorkingDirectory);
+
+                            // Unskippable data
+                            if (targetSpan.Tags[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
 
                             // check specific test span
                             switch (targetSpan.Tags[TestTags.Name])
@@ -190,6 +198,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 1, yValue: 0, expectedResult: 2)\"},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 2, yValue: 0, expectedResult: 4)\"},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
                                         "{\"metadata\":{\"test_name\":\"SimpleErrorParameterizedTest(xValue: 3, yValue: 0, expectedResult: 6)\"},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetSpan);
                                     break;
                             }
 

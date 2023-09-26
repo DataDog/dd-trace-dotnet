@@ -63,6 +63,18 @@ namespace Datadog.Trace.Ci.Tagging
 #else
         private static readonly byte[] SkippedByIntelligentTestRunnerBytes = new byte[] { 179, 116, 101, 115, 116, 46, 115, 107, 105, 112, 112, 101, 100, 95, 98, 121, 95, 105, 116, 114 };
 #endif
+        // UnskippableBytes = MessagePack.Serialize("test.itr.unskippable");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> UnskippableBytes => new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
+#else
+        private static readonly byte[] UnskippableBytes = new byte[] { 180, 116, 101, 115, 116, 46, 105, 116, 114, 46, 117, 110, 115, 107, 105, 112, 112, 97, 98, 108, 101 };
+#endif
+        // ForcedRunBytes = MessagePack.Serialize("test.itr.forced_run");
+#if NETCOREAPP
+        private static ReadOnlySpan<byte> ForcedRunBytes => new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
+#else
+        private static readonly byte[] ForcedRunBytes = new byte[] { 179, 116, 101, 115, 116, 46, 105, 116, 114, 46, 102, 111, 114, 99, 101, 100, 95, 114, 117, 110 };
+#endif
 
         public override string? GetTag(string key)
         {
@@ -75,6 +87,8 @@ namespace Datadog.Trace.Ci.Tagging
                 "test.traits" => Traits,
                 "test.skip_reason" => SkipReason,
                 "test.skipped_by_itr" => SkippedByIntelligentTestRunner,
+                "test.itr.unskippable" => Unskippable,
+                "test.itr.forced_run" => ForcedRun,
                 _ => base.GetTag(key),
             };
         }
@@ -103,6 +117,12 @@ namespace Datadog.Trace.Ci.Tagging
                     break;
                 case "test.skipped_by_itr": 
                     SkippedByIntelligentTestRunner = value;
+                    break;
+                case "test.itr.unskippable": 
+                    Unskippable = value;
+                    break;
+                case "test.itr.forced_run": 
+                    ForcedRun = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -145,6 +165,16 @@ namespace Datadog.Trace.Ci.Tagging
             if (SkippedByIntelligentTestRunner is not null)
             {
                 processor.Process(new TagItem<string>("test.skipped_by_itr", SkippedByIntelligentTestRunner, SkippedByIntelligentTestRunnerBytes));
+            }
+
+            if (Unskippable is not null)
+            {
+                processor.Process(new TagItem<string>("test.itr.unskippable", Unskippable, UnskippableBytes));
+            }
+
+            if (ForcedRun is not null)
+            {
+                processor.Process(new TagItem<string>("test.itr.forced_run", ForcedRun, ForcedRunBytes));
             }
 
             base.EnumerateTags(ref processor);
@@ -198,6 +228,20 @@ namespace Datadog.Trace.Ci.Tagging
             {
                 sb.Append("test.skipped_by_itr (tag):")
                   .Append(SkippedByIntelligentTestRunner)
+                  .Append(',');
+            }
+
+            if (Unskippable is not null)
+            {
+                sb.Append("test.itr.unskippable (tag):")
+                  .Append(Unskippable)
+                  .Append(',');
+            }
+
+            if (ForcedRun is not null)
+            {
+                sb.Append("test.itr.forced_run (tag):")
+                  .Append(ForcedRun)
                   .Append(',');
             }
 
