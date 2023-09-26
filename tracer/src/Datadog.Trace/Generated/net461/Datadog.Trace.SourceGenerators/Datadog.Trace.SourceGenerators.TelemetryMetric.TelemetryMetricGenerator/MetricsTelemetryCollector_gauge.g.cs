@@ -8,17 +8,17 @@ internal partial class MetricsTelemetryCollector
 {
     public void RecordGaugeStatsBuckets(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[0], value);
+        Interlocked.Exchange(ref _buffer.Gauge[0], value);
     }
 
     public void RecordGaugeInstrumentations(Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationComponent tag, int value)
     {
         var index = 1 + (int)tag;
-        Interlocked.Exchange(ref _buffer.Gauges[index], value);
+        Interlocked.Exchange(ref _buffer.Gauge[index], value);
     }
 
     public void RecordGaugeDirectLogQueue(int value)
     {
-        Interlocked.Exchange(ref _buffer.Gauges[7], value);
+        Interlocked.Exchange(ref _buffer.Gauge[7], value);
     }
 }

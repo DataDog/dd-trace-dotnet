@@ -109,7 +109,7 @@ internal partial class Sources
           .Append(
                $$"""
 
-                   private const int _countsLength = {{entryCounts.Sum()}};
+                   private const int {{details.ShortName}}Length = {{entryCounts.Sum()}};
                }
                """);
 
@@ -353,7 +353,7 @@ internal partial class Sources
           .Append(
                $$"""
 
-                   private const int _gaugesLength = {{entryCounts.Sum()}};
+                   private const int {{details.ShortName}}Length = {{entryCounts.Sum()}};
                }
                """);
 
@@ -597,7 +597,7 @@ internal partial class Sources
           .Append(
                $$"""
 
-                   private const int _distributionsLength = {{entryCounts.Sum()}};
+                   private const int {{details.ShortName}}Length = {{entryCounts.Sum()}};
                }
                """);
 
@@ -944,7 +944,7 @@ internal partial class Sources
             $$"""
                   public void Record{{details.ShortName}}{{property}}(int increment = 1)
                   {
-                      Interlocked.Add(ref _buffer.Counts[{{index}}], increment);
+                      Interlocked.Add(ref _buffer.{{details.ShortName}}[{{index}}], increment);
                   }
               """);
     }
@@ -956,7 +956,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int increment = 1)
                   {
                       var index = {{index}} + (int)tag;
-                      Interlocked.Add(ref _buffer.Counts[index], increment);
+                      Interlocked.Add(ref _buffer.{{details.ShortName}}[index], increment);
                   }
               """);
     }
@@ -968,7 +968,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int increment = 1)
                   {
                       var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                      Interlocked.Add(ref _buffer.Counts[index], increment);
+                      Interlocked.Add(ref _buffer.{{details.ShortName}}[index], increment);
                   }
               """);
     }
@@ -979,7 +979,7 @@ internal partial class Sources
             $$"""
                   public void Record{{details.ShortName}}{{property}}(int value)
                   {
-                      Interlocked.Exchange(ref _buffer.Gauges[{{index}}], value);
+                      Interlocked.Exchange(ref _buffer.{{details.ShortName}}[{{index}}], value);
                   }
               """);
     }
@@ -991,7 +991,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName}} tag, int value)
                   {
                       var index = {{index}} + (int)tag;
-                      Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                      Interlocked.Exchange(ref _buffer.{{details.ShortName}}[index], value);
                   }
               """);
     }
@@ -1003,7 +1003,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, int value)
                   {
                       var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                      Interlocked.Exchange(ref _buffer.Gauges[index], value);
+                      Interlocked.Exchange(ref _buffer.{{details.ShortName}}[index], value);
                   }
               """);
     }
@@ -1014,7 +1014,7 @@ internal partial class Sources
             $$"""
                   public void Record{{details.ShortName}}{{property}}(double value)
                   {
-                      _buffer.Distributions[{{index}}].TryEnqueue(value);
+                      _buffer.{{details.ShortName}}[{{index}}].TryEnqueue(value);
                   }
               """);
     }
@@ -1026,7 +1026,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName}} tag, double value)
                   {
                       var index = {{index}} + (int)tag;
-                      _buffer.Distributions[index].TryEnqueue(value);
+                      _buffer.{{details.ShortName}}[index].TryEnqueue(value);
                   }
               """);
     }
@@ -1038,7 +1038,7 @@ internal partial class Sources
                   public void Record{{details.ShortName}}{{property}}({{tagName1}} tag1, {{tagName2}} tag2, double value)
                   {
                       var index = {{index}} + ((int)tag1 * {{tag2EntryCount}}) + (int)tag2;
-                      _buffer.Distributions[index].TryEnqueue(value);
+                      _buffer.{{details.ShortName}}[index].TryEnqueue(value);
                   }
               """);
     }
