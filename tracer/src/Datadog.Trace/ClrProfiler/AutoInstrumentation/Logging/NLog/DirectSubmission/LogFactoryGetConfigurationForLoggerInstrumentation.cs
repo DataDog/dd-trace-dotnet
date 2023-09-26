@@ -42,7 +42,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     public class LogFactoryGetConfigurationForLoggerInstrumentation
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryGetConfigurationForLoggerInstrumentation));
-        private static NLogVersion? _version;
 
         // TODO attempt to store the fact that we've configured a given configuration to not double configure
         internal static ConditionalWeakTable<object, object?> ConfigurationTable { get; } = new();
@@ -66,12 +65,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 return CallTargetState.GetDefault();
             }
 
-            if (_version is null)
-            {
-                _version = NLogVersionHelper<TTarget>.Version;
-            }
-
-            _ = instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy);
             _ = instance.TryDuckCast<ILogFactoryPre43Proxy>(out var logFactoryPre43Proxy);
 
             if (logFactoryPre43Proxy is null)
@@ -90,6 +83,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             {
                 return CallTargetState.GetDefault();
             }
+
+            _ = instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy);
 
             if (logFactoryProxy is not null && logFactoryProxy.IsDisposing)
             {

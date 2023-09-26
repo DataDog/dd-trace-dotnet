@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
@@ -24,7 +25,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         private const string Service = "dd.service";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
-        private static NLogVersion _version;
         private static Type _jsonAttributeType;
         private static Type _simpleLayoutType;
 
@@ -38,8 +38,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
             {
                 return;
             }
-
-            _version = NLogVersionHelper<TTarget>.Version;
 
             if (!loggingConfiguration.TryDuckCast<IBasicLoggingConfigurationProxy>(out var loggingConfigurationProxy))
             {
@@ -172,7 +170,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static string CreateSimpleLayoutText(string attribute)
         {
-            var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
+            var useMdc = NLogCommon<TTarget>.Version == NLogVersion.NLogPre43 || NLogCommon<TTarget>.Version == NLogVersion.NLog43To45;
             var context = useMdc ? "mdc" : "mdlc";
             // example where attribute == dd.trace_id -> ` dd.trace_id: "${mdc:item=dd.trace_id}"`
             var result = " " + attribute + @": ""${" + $"{context}" + ":item=" + attribute + @"}""";
@@ -181,7 +179,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static string CreateSimpleLayoutContextText(string attribute)
         {
-            var useMdc = _version == NLogVersion.NLogPre43 || _version == NLogVersion.NLog43To45;
+            var useMdc = NLogCommon<TTarget>.Version == NLogVersion.NLogPre43 || NLogCommon<TTarget>.Version == NLogVersion.NLog43To45;
             var context = useMdc ? "mdc" : "mdlc";
             return @": ""${" + $"{context}" + ":item=" + attribute + @"}""";
         }
