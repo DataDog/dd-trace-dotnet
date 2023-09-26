@@ -110,20 +110,27 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
              && configuration is null)
             {
-                var loggingConfigurationInstance = Activator.CreateInstance(typeof(TLoggingConfiguration));
-                if (loggingConfigurationInstance is null)
+                object? loggingConfigurationInstance = null;
+
+                try
                 {
-                    Log.Warning("Failed to create instance of NLog.Config.LoggingConfiguration Type");
-                    return CallTargetState.GetDefault();
+                    loggingConfigurationInstance = Activator.CreateInstance(typeof(TLoggingConfiguration));
+                }
+                catch (Exception ex)
+                {
+                    Log.Error("Failed to create new instance of NLog's LoggingConfiguration: {Message}", ex.Message);
                 }
 
-                setConfigurationRequired = true;
+                if (loggingConfigurationInstance is not null)
+                {
+                    setConfigurationRequired = true;
 
-                // update the "ref" configuration passed to us with the new one
-                // Note: we need to call LogFactory.Configuration's setter as well to allow NLog
-                //       to hook everything up correctly for this newly created configuration
-                //       but first we need to create and add the direct logs submission target
-                configuration = (TLoggingConfiguration)loggingConfigurationInstance;
+                    // update the "ref" configuration passed to us with the new one
+                    // Note: we need to call LogFactory.Configuration's setter as well to allow NLog
+                    //       to hook everything up correctly for this newly created configuration
+                    //       but first we need to create and add the direct logs submission target
+                    configuration = (TLoggingConfiguration)loggingConfigurationInstance;
+                }
             }
 
             if (configuration is not null && logFactoryProxy is null)
