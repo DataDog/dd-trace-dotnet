@@ -111,6 +111,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        // Uses JavaScriptSerializer
         [Route("ExecuteQueryFromBodyQueryData")]
         public ActionResult ExecuteQueryFromBodyQueryData(QueryData queryInstance)
         {
