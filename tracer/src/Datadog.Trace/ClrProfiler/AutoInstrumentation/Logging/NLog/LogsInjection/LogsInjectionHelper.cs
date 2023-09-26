@@ -39,12 +39,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 return;
             }
 
+            // this is not available in older versions of NLog (e.g., v2.1 doesn't have JSON support)
             _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
-            if (_jsonAttributeType is null)
-            {
-                // for example: v2.1 doesn't have this so this might not exist
-                Log.Warning("Failed to find NLog JsonAttribute type");
-            }
 
             _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
             if (_simpleLayoutType is null)
