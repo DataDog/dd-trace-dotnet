@@ -89,7 +89,6 @@ services:
     ports:
     - "127.0.0.1:6391:6379"
 
-
 # Dependencies
   localstack:
     image: localstack/localstack
@@ -318,6 +317,19 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
+  openldap:
+    image: osixia/openldap:latest
+    ports:
+      - "389:369"
+      - "636:636"
+    hostname: openldap-server
+    environment:
+      LDAP_ORGANISATION: "Datadog"
+      LDAP_DOMAIN: "dd-trace-dotnet.com"
+      LDAP_ADMIN_PASSWORD: "Passw0rd"
+      LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
+
+
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
   IntegrationTests.IIS:
@@ -407,7 +419,10 @@ services:
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
       - DD_TELEMETRY_METRICS_ENABLED
+      - LDAP_SERVER=openldap-server:389
     hostname: integrationtests
+    depends_on:
+      - openldap
 
   IntegrationTests:
     build:

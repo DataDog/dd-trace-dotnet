@@ -422,7 +422,12 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
 
     buffer->CopyInstructionPointers(ips);
 
+    // Disable this check on Alpine due to flackyness
+    // Libunwind randomly fails with unw_backtrace2 (from a signal handler)
+    // but unw_backtrace
+#ifndef DD_ALPINE
     ValidateCallstack(ips);
+#endif
 
     // now the custmer handler must not work
     EXPECT_FALSE(WasCallbackCalled());

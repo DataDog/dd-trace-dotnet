@@ -43,14 +43,16 @@ public class IisCheckTests : ToolTestHelper
 
         using var iisFixture = await StartIisWithGac(GetAppType());
 
-        var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
 
         if (mixedRuntimes)
         {
-            output.Should().Contain(Resources.IisMixedRuntimes);
+            standardOutput.Should().Contain(Resources.IisMixedRuntimes);
         }
 
-        output.Should().Contain(Resources.IisNoIssue);
+        standardOutput.Should().Contain(Resources.IisNoIssue);
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(0);
     }
 
     [SkippableFact]
@@ -62,9 +64,11 @@ public class IisCheckTests : ToolTestHelper
         var siteName = "sample/nested/app";
 
         using var iisFixture = await StartIisWithGac(GetAppType());
-        var output = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis {siteName} {IisExpressOptions(iisFixture)}");
 
-        output.Should().Contain(Resources.IisNoIssue);
+        standardOutput.Should().Contain(Resources.IisNoIssue);
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(0);
     }
 
 #if !NETFRAMEWORK
@@ -76,11 +80,14 @@ public class IisCheckTests : ToolTestHelper
 
         using var iisFixture = await StartIisWithGac(IisAppType.AspNetCoreOutOfProcess);
 
-        var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
-        output.Should().Contain(Resources.OutOfProcess);
-        output.Should().NotContain(Resources.AspNetCoreProcessNotFound);
-        output.Should().Contain(Resources.IisNoIssue);
+        standardOutput.Should().Contain(Resources.OutOfProcess)
+            .And.NotContain(Resources.AspNetCoreProcessNotFound)
+            .And.Contain(Resources.IisNoIssue);
+
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(0);
     }
 #endif
 
@@ -92,9 +99,11 @@ public class IisCheckTests : ToolTestHelper
 
         using var iisFixture = await StartIis(GetAppType());
 
-        var output = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 
-        output.Should().Contain(Resources.MissingGac);
+        standardOutput.Should().Contain(Resources.MissingGac);
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(1);
     }
 
     [SkippableFact]
@@ -105,9 +114,11 @@ public class IisCheckTests : ToolTestHelper
 
         using var iisFixture = await StartIis(GetAppType());
 
-        var output = await RunTool($"check iis dummySite {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis dummySite {IisExpressOptions(iisFixture)}");
 
-        output.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
+        standardOutput.Should().Contain(Resources.CouldNotFindIisApplication("dummySite", "/"));
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(1);
     }
 
     [SkippableFact]
@@ -118,9 +129,11 @@ public class IisCheckTests : ToolTestHelper
 
         using var iisFixture = await StartIis(GetAppType());
 
-        var output = await RunTool($"check iis sample/dummy {IisExpressOptions(iisFixture)}");
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample/dummy {IisExpressOptions(iisFixture)}");
 
-        output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
+        standardOutput.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
+        errorOutput.Should().BeEmpty();
+        exitCode.Should().Be(1);
     }
 
     private static IisAppType GetAppType()

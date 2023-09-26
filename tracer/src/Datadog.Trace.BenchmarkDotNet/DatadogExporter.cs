@@ -45,7 +45,7 @@ internal class DatadogExporter : IExporter
 
     private DatadogExporter()
     {
-        TestSession = TestSession.GetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, "BenchmarkDotNet", DateTime.UtcNow, false);
+        TestSession = TestSession.InternalGetOrCreate(Environment.CommandLine, Environment.CurrentDirectory, CommonTags.TestingFrameworkNameBenchmarkDotNet, DateTime.UtcNow, false);
     }
 
     /// <inheritdoc />
@@ -77,17 +77,17 @@ internal class DatadogExporter : IExporter
                 {
                     BenchmarkMetadata.GetTimes(benchmarkModule.Key, out var moduleStartTime, out var moduleEndTime);
                     var moduleName = benchmarkModule.Key.GetName().Name ?? "Module";
-                    var framework = "BenchmarkDotNet";
+                    var framework = CommonTags.TestingFrameworkNameBenchmarkDotNet;
                     testModule = moduleStartTime is null ?
-                                     TestSession.CreateModule(moduleName, framework, version) :
-                                     TestSession.CreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
+                                     TestSession.InternalCreateModule(moduleName, framework, version) :
+                                     TestSession.InternalCreateModule(moduleName, framework, version, startDate: moduleStartTime.Value);
                     _testModules[benchmarkModule.Key] = testModule;
                 }
 
                 foreach (var benchmarkSuite in benchmarkModule)
                 {
                     BenchmarkMetadata.GetTimes(benchmarkSuite.Key, out var suiteStartTime, out var suiteEndTime);
-                    var testSuite = testModule.GetOrCreateSuite(benchmarkSuite.Key.FullName ?? "Suite", suiteStartTime);
+                    var testSuite = testModule.InternalGetOrCreateSuite(benchmarkSuite.Key.FullName ?? "Suite", suiteStartTime);
 
                     foreach (var benchmarkTest in benchmarkSuite)
                     {

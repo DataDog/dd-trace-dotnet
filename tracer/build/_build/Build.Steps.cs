@@ -1975,6 +1975,7 @@ partial class Build
     Target BuildDdDotnetArtifactTests => _ => _
      .Description("Builds the dd-dotnet artifacts tests")
      .After(CompileManagedTestHelpers)
+     .Requires(() => Framework)
      .Executes(() =>
      {
          DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests), Framework);

@@ -36,8 +36,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
         private const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
-        private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
-
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
         {
@@ -50,7 +48,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: false);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, _) = await RunTool($"check process {helper.Process.Id}");
 
 #if NETFRAMEWORK
             const string expectedOutput = NetFrameworkRuntime;
@@ -58,7 +56,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             const string expectedOutput = NetCoreRuntime;
 #endif
 
-            output.Should().Contain(expectedOutput);
+            standardOutput.Should().Contain(expectedOutput);
+            errorOutput.Should().BeEmpty();
         }
 
         [SkippableFact]
@@ -69,10 +68,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             var environmentHelper = new EnvironmentHelper("VersionConflict.1x", typeof(TestHelper), Output);
             using var helper = await StartConsole(environmentHelper, enableProfiler: true);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().Contain(VersionConflict);
-            output.Should().Contain(MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }).Replace(Environment.NewLine, " "));
+            standardOutput.Should().ContainAll(
+                VersionConflict,
+                MultipleTracers(new[] { "1.29.0.0", TracerConstants.AssemblyVersion }).Replace(Environment.NewLine, " "));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -82,25 +84,30 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: false);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().ContainAll(
+            standardOutput.Should().ContainAll(
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"),
+                EnvironmentVariableNotSet("DD_DOTNET_TRACER_HOME"));
+
+            standardOutput.Should().ContainAll(
                 WrongEnvironmentVariableFormat(CorProfilerKey, Profilerid, null),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", null));
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 // The variable is not required on Windows because the path is set through the registry
-                output.Should().NotContain(EnvironmentVariableNotSet(CorProfilerPathKey));
+                standardOutput.Should().NotContain(EnvironmentVariableNotSet(CorProfilerPathKey));
             }
             else
             {
-                output.Should().Contain(EnvironmentVariableNotSet(CorProfilerPathKey));
+                standardOutput.Should().Contain(EnvironmentVariableNotSet(CorProfilerPathKey));
             }
+
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -118,9 +125,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 (CorProfilerPath32Key, "dummyPath"),
                 (CorProfilerPath64Key, "dummyPath"));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
-            output.Should().ContainAll(
+            standardOutput.Should().ContainAll(
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
@@ -135,6 +142,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -144,21 +154,23 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
             using var helper = await StartConsole(enableProfiler: true);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
             using var scope = new AssertionScope();
-            scope.AddReportable("Output", output);
+            scope.AddReportable("StandardOutput", standardOutput);
+            scope.AddReportable("ErrorOutput", errorOutput);
+            scope.AddReportable("ExitCode", exitCode.ToString());
 
-            output.Should().Contain(
+            standardOutput.Should().Contain(
                 TracerVersion(TracerConstants.AssemblyVersion),
                 ContinuousProfilerNotSet);
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
+                standardOutput.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
-            output.Should().NotContainAny(
+            standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
                 "DD_DOTNET_TRACER_HOME",
@@ -167,6 +179,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 CorProfilerPathKey,
                 CorProfilerPath32Key,
                 CorProfilerPath64Key);
+
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 
         [SkippableFact]
@@ -196,16 +211,18 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                                    ("DD_PROFILING_ENABLED", "1"),
                                    ("LD_PRELOAD", apiWrapperPath));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
             using var scope = new AssertionScope();
-            scope.AddReportable("Output", output);
+            scope.AddReportable("StandardOutput", standardOutput);
+            scope.AddReportable("ErrorOutput", errorOutput);
+            scope.AddReportable("ExitCode", exitCode.ToString());
 
-            output.Should().ContainAll(
+            standardOutput.Should().ContainAll(
                 TracerVersion(TracerConstants.AssemblyVersion),
                 ContinuousProfilerEnabled);
 
-            output.Should().NotContainAny(
+            standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
                 ContinuousProfilerNotSet,
@@ -217,6 +234,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 CorProfilerPathKey,
                 CorProfilerPath32Key,
                 CorProfilerPath64Key);
+
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(0);
         }
 
 #if !NETFRAMEWORK
@@ -230,13 +250,17 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                                    ("DD_PROFILING_ENABLED", "1"),
                                    ("LD_PRELOAD", "/dummyPath"));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
             using var scope = new AssertionScope();
-            scope.AddReportable("Output", output);
+            scope.AddReportable("StandardOutput", standardOutput);
+            scope.AddReportable("ErrorOutput", errorOutput);
+            scope.AddReportable("ExitCode", exitCode.ToString());
 
-            output.Should().NotContain(ApiWrapperNotFound("/dummyPath"));
-            output.Should().Contain(Resources.WrongLdPreload("/dummyPath"));
+            standardOutput.Should().NotContain(ApiWrapperNotFound("/dummyPath"))
+                .And.Contain(Resources.WrongLdPreload("/dummyPath"));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 
         [SkippableFact]
@@ -249,13 +273,17 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                                    ("DD_PROFILING_ENABLED", "1"),
                                    ("LD_PRELOAD", "/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
             using var scope = new AssertionScope();
-            scope.AddReportable("Output", output);
+            scope.AddReportable("StandardOutput", standardOutput);
+            scope.AddReportable("ErrorOutput", errorOutput);
+            scope.AddReportable("ExitCode", exitCode.ToString());
 
-            output.Should().Contain(ApiWrapperNotFound("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
-            output.Should().NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+            standardOutput.Should().Contain(ApiWrapperNotFound("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"))
+                .And.NotContain(Resources.WrongLdPreload("/dummyPath/Datadog.Linux.ApiWrapper.x64.so"));
+            errorOutput.Should().BeEmpty();
+            exitCode.Should().Be(1);
         }
 #endif
 
@@ -271,23 +299,27 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             using var helper = await StartConsole(enableProfiler: true, environmentVariables);
 
-            var output = await RunTool($"check process {helper.Process.Id}");
+            var (standardOutput, errorOutput, exitCode) = await RunTool($"check process {helper.Process.Id}");
 
             using var scope = new AssertionScope();
-            scope.AddReportable("Output", output);
+            scope.AddReportable("StandardOutput", standardOutput);
+            scope.AddReportable("ErrorOutput", errorOutput);
+            scope.AddReportable("ExitCode", exitCode.ToString());
 
             if (enabled == null)
             {
-                output.Should().Contain(ContinuousProfilerNotSet);
+                standardOutput.Should().Contain(ContinuousProfilerNotSet);
             }
             else if (enabled == true)
             {
-                output.Should().Contain(ContinuousProfilerEnabled);
+                standardOutput.Should().Contain(ContinuousProfilerEnabled);
             }
             else
             {
-                output.Should().Contain(ContinuousProfilerDisabled);
+                standardOutput.Should().Contain(ContinuousProfilerDisabled);
             }
+
+            errorOutput.Should().BeEmpty();
         }
 
         private static bool IsAlpine()

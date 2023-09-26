@@ -45,12 +45,12 @@ public static class NUnitWorkItemPerformWorkIntegration
                     var assemblyName = itemAssembly.Assembly?.GetName().Name ?? string.Empty;
                     var frameworkVersion = item.Type.Assembly.GetName().Version?.ToString() ?? string.Empty;
                     CIVisibility.WaitForSkippableTaskToFinish();
-                    NUnitIntegration.SetTestModuleTo(item, TestModule.Create(assemblyName, "NUnit", frameworkVersion));
+                    NUnitIntegration.SetTestModuleTo(item, TestModule.InternalCreate(assemblyName, CommonTags.TestingFrameworkNameNUnit, frameworkVersion));
                     break;
                 case "TestFixture" when NUnitIntegration.GetTestSuiteFrom(item) is null && NUnitIntegration.GetTestModuleFrom(item) is { } module:
-                    NUnitIntegration.SetTestSuiteTo(item, module.GetOrCreateSuite(item.FullName));
+                    NUnitIntegration.SetTestSuiteTo(item, module.InternalGetOrCreateSuite(item.FullName));
                     break;
-                case "TestMethod" when NUnitIntegration.ShouldSkip(item):
+                case "TestMethod" when NUnitIntegration.ShouldSkip(item, out _, out _):
                     var testMethod = item.Method.MethodInfo;
                     Common.Log.Debug("ITR: Test skipped: {Class}.{Name}", testMethod.DeclaringType?.FullName, testMethod.Name);
                     item.RunState = RunState.Ignored;

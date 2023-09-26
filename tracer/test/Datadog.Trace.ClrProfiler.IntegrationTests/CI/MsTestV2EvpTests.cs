@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             var tests = new List<MockCIVisibilityTest>();
             var testSuites = new List<MockCIVisibilityTestSuite>();
             var testModules = new List<MockCIVisibilityTestModule>();
-            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 14 : 16;
+            var expectedTestCount = version.CompareTo(new Version("2.2.5")) < 0 ? 15 : 17;
 
             var sessionId = RandomIdGenerator.Shared.NextSpanId();
             var sessionCommand = "test command";
@@ -170,6 +170,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
                             AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
 
+                            // Unskippable data
+                            if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
+
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
                             {
@@ -237,6 +244,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                         "{\"metadata\":{},\"arguments\":{\"xValue\":\"1\",\"yValue\":\"0\",\"expectedResult\":\"2\"}}",
                                         "{\"metadata\":{},\"arguments\":{\"xValue\":\"2\",\"yValue\":\"0\",\"expectedResult\":\"4\"}}",
                                         "{\"metadata\":{},\"arguments\":{\"xValue\":\"3\",\"yValue\":\"0\",\"expectedResult\":\"6\"}}");
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetTest);
                                     break;
                             }
 

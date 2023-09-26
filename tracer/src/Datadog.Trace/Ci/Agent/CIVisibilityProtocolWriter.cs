@@ -12,6 +12,7 @@ using Datadog.Trace.Ci.Agent.Payloads;
 using Datadog.Trace.Ci.Configuration;
 using Datadog.Trace.Ci.EventModel;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.MessagePack;
 
@@ -107,6 +108,7 @@ namespace Datadog.Trace.Ci.Agent
             try
             {
                 _eventQueue.Add(@event);
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEventsEnqueueForSerialization();
             }
             catch (Exception ex)
             {

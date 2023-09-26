@@ -143,4 +143,108 @@ internal partial class NullMetricsTelemetryCollector
     public void RecordCountIastRequestTainted(int increment = 1)
     {
     }
+
+    public void RecordCountCIVisibilityEventCreated(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityEventFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageStarted(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageFinished(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestFramework tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCoverageLibrary tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityManualApiEvent(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityEventsEnqueueForSerialization(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityEndpointPayloadRequests(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityEndpointPayloadRequestsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitCommandErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityExitCodes tag2, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSearchCommits(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSearchCommitsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsObjectsPack(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsObjectsPackErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettings(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettingsErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityGitRequestsSettingsResponse(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityITRSettingsResponse tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsRequest(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsRequestErrors(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityErrorType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsResponseTests(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRSkippableTestsResponseSuites(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRSkipped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRUnskippable(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityITRForcedRun(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityTestingEventType tag, int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageIsEmpty(int increment = 1)
+    {
+    }
+
+    public void RecordCountCIVisibilityCodeCoverageErrors(int increment = 1)
+    {
+    }
 }
