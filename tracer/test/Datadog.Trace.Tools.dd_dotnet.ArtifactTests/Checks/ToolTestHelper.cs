@@ -26,7 +26,24 @@ public abstract class ToolTestHelper : TestHelper
     {
     }
 
-    protected async Task<string> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
+    protected async Task<(string StandardOutput, string ErrorOutput, int ExitCode)> RunTool(string arguments, params (string Key, string Value)[] environmentVariables)
+    {
+        var process = RunToolInteractive(arguments, environmentVariables);
+
+        using var helper = new ProcessHelper(process);
+
+        await helper.Task;
+
+        return (SplitOutput(helper.StandardOutput), SplitOutput(helper.ErrorOutput), helper.Process.ExitCode);
+
+        static string SplitOutput(string output)
+        {
+            var lines = output.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+            return string.Join(" ", lines.Select(o => o.TrimEnd()));
+        }
+    }
+
+    protected Process RunToolInteractive(string arguments, params (string Key, string Value)[] environmentVariables)
     {
         var rid = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentHelper.IsAlpine()) switch
         {
@@ -44,20 +61,18 @@ public abstract class ToolTestHelper : TestHelper
         {
             RedirectStandardError = true,
             RedirectStandardOutput = true,
+            RedirectStandardInput = true,
             UseShellExecute = false
         };
+
+        // Prevent Spectre.Console from inserting fancy control codes
+        processStart.EnvironmentVariables["TERM"] = string.Empty;
 
         foreach (var (key, value) in environmentVariables)
         {
             processStart.EnvironmentVariables[key] = value;
         }
 
-        using var helper = new ProcessHelper(Process.Start(processStart));
-
-        await helper.Task;
-
-        var splitOutput = helper.StandardOutput.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
-
-        return string.Join(" ", splitOutput.Select(o => o.TrimEnd()));
+        return Process.Start(processStart);
     }
 }
