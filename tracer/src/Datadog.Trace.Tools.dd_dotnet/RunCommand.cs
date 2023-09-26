@@ -273,8 +273,6 @@ namespace Datadog.Trace.Tools.dd_dotnet
                 return;
             }
 
-            AnsiConsole.WriteLine("Running: {0} {1}", program, arguments);
-
             if (Program.CallbackForTests != null)
             {
                 Program.CallbackForTests(program, arguments, profilerEnvironmentVariables);
