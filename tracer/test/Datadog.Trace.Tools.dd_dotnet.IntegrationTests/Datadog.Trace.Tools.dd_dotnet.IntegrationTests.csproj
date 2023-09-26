@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFrameworks>net7.0</TargetFrameworks>
+    <NoWarn>SA1300</NoWarn>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="applicationHost.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Datadog.Trace.Tools.dd_dotnet\Datadog.Trace.Tools.dd_dotnet.csproj" />
+    <PackageReference Include="StrongNamer" Version="0.2.5" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />
+    <!-- Note, not referencing coverlet.collector because it has file locking issues -->
+    <!-- Somebody should look into that... -->
+    <PackageReference Remove="coverlet.collector" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+
+</Project>

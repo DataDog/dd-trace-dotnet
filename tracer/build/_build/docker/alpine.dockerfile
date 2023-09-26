@@ -30,7 +30,7 @@ RUN apk update \
         libintl \
         libssl1.1 \
         libstdc++ \
-        zlib \
+        zlib-dev \
         \
         # SDK dependencies
         curl \
@@ -54,6 +54,7 @@ RUN apk update \
         gdb \
         musl-dbg \
         cppcheck \
+        build-base \
         libldap \
     && gem install --version 1.6.0 --user-install git \
     && gem install --version 2.7.6 dotenv \

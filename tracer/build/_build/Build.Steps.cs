@@ -63,7 +63,7 @@ partial class Build
 
     const string LibDdwafVersion = "1.14.0";
 
-    string[] OlderLibDdwafVersions = new [] {"1.3.0", "1.10.0"};
+    string[] OlderLibDdwafVersions = new[] { "1.3.0", "1.10.0" };
 
     AbsolutePath LibDdwafDirectory(string libDdwafVersion = null) => (NugetPackageDirectory ?? RootDirectory / "packages") / $"libddwaf.{libDdwafVersion ?? LibDdwafVersion}";
 
@@ -170,7 +170,8 @@ partial class Build
     {
         Solution.GetProject(Projects.ClrProfilerIntegrationTests),
         Solution.GetProject(Projects.AppSecIntegrationTests),
-        Solution.GetProject(Projects.ToolIntegrationTests)
+        Solution.GetProject(Projects.DdTraceIntegrationTests),
+        Solution.GetProject(Projects.DdDotnetIntegrationTests)
     };
 
     TargetFramework[] TestingFrameworks =>
@@ -180,7 +181,7 @@ partial class Build
 
     bool HaveIntegrationsChanged =>
         GetGitChangedFiles(baseBranch: "origin/master")
-           .Any(s => new []
+           .Any(s => new[]
             {
                 "tracer/src/Datadog.Trace/Generated/net461/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
                 "tracer/src/Datadog.Trace/Generated/netstandard2.0/Datadog.Trace.SourceGenerators/Datadog.Trace.SourceGenerators.InstrumentationDefinitions.InstrumentationDefinitionsGenerator",
@@ -452,35 +453,35 @@ partial class Build
         .After(DownloadLibDdwaf)
         .Executes(() =>
         {
-          if (IsWin)
-          {
-              foreach (var architecture in WafWindowsArchitectureFolders)
-              {
-                  var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
-                  var dest = MonitoringHomeDirectory / architecture;
-                  CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-              }
-          }
-          else if (IsLinux)
-          {
-              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-              var (destArch, _) = GetUnixArchitectureAndExtension();
+            if (IsWin)
+            {
+                foreach (var architecture in WafWindowsArchitectureFolders)
+                {
+                    var source = LibDdwafDirectory() / "runtimes" / architecture / "native" / "ddwaf.dll";
+                    var dest = MonitoringHomeDirectory / architecture;
+                    CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+                }
+            }
+            else if (IsLinux)
+            {
+                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+                var (destArch, _) = GetUnixArchitectureAndExtension();
 
-              var ddwafFileName = $"libddwaf.{ext}";
+                var ddwafFileName = $"libddwaf.{ext}";
 
-              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-              var dest = MonitoringHomeDirectory / destArch;
-              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-          }
-          else if (IsOsx)
-          {
-              var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
-              var ddwafFileName = $"libddwaf.{ext}";
+                var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
+                var dest = MonitoringHomeDirectory / destArch;
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            }
+            else if (IsOsx)
+            {
+                var (sourceArch, ext) = GetLibDdWafUnixArchitectureAndExtension();
+                var ddwafFileName = $"libddwaf.{ext}";
 
-              var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
-              var dest = MonitoringHomeDirectory / "osx";
-              CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
-          }
+                var source = LibDdwafDirectory() / "runtimes" / sourceArch / "native" / ddwafFileName;
+                var dest = MonitoringHomeDirectory / "osx";
+                CopyFileToDirectory(source, dest, FileExistsPolicy.Overwrite);
+            }
         });
 
     Target CopyNativeFilesForAppSecUnitTests => _ => _
@@ -799,7 +800,7 @@ partial class Build
             loaderConfContents = Regex.Replace(
                 input: loaderConfContents,
                 pattern: @";(linux-.*?);\.\/Datadog\.",
-                replacement:$@";$1;./{arch}/Datadog.");
+                replacement: $@";$1;./{arch}/Datadog.");
             File.WriteAllText(assetsDirectory / FileNames.LoaderConf, contents: loaderConfContents);
 
             // Copy createLogPath.sh script and set the permissions
@@ -1176,7 +1177,7 @@ partial class Build
                 var includeIntegration = TracerDirectory.GlobFiles("test/test-applications/integrations/**/*.csproj");
                 // Don't build aspnet full framework sample in this step
                 var includeSecurity = TracerDirectory.GlobFiles("test/test-applications/security/*/*.csproj");
-    
+
                 var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
@@ -1194,7 +1195,7 @@ partial class Build
                         _ => true,
                     }
                 );
-    
+
                 // /nowarn:NU1701 - Package 'x' was restored using '.NETFramework,Version=v4.6.1' instead of the project target framework '.NETCoreApp,Version=v2.1'.
                 DotNetBuild(config => config
                     .SetConfiguration(BuildConfiguration)
@@ -1206,7 +1207,7 @@ partial class Build
                         // we have to build this one for all frameworks (because of reasons)
                         .When(!project.Name.Contains("MultiDomainHost"), x => x.SetFramework(Framework))
                         .SetProjectFile(project)));
-    
+
                 var projectsToPublish = includeIntegration
                    .Select(x => Solution.GetProject(x))
                    .Where(x => x.Name switch
@@ -1214,14 +1215,14 @@ partial class Build
                         "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
                         _ => false,
                     });
-    
+
                 var rid = IsArm64 ? "win-arm64" : "win-x64";
                 DotNetPublish(config => config
                    .SetConfiguration(BuildConfiguration)
                    .SetFramework(Framework)
                    .SetRuntime(rid)
                    .CombineWith(projectsToPublish, (s, project) => s.SetProject(project)));
-                }
+            }
         });
 
     Target PublishIisSamples => _ => _
@@ -1229,6 +1230,7 @@ partial class Build
         .After(CompileManagedTestHelpers)
         .After(CompileRegressionSamples)
         .After(CompileFrameworkReproductions)
+        .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
             var aspnetFolder = TestsDirectory / "test-applications" / "aspnet";
@@ -1604,10 +1606,10 @@ partial class Build
                     (_, null) => true,
                     (_, { } p) when p.Name.Contains("Samples.AspNetCoreRazorPages") => true, // always have to build this one
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 })
-                .Where(x => 
+                .Where(x =>
                            x.project?.Name switch
                                   {
                                       var name when projectsToSkip.Contains(name) => false,
@@ -1650,7 +1652,7 @@ partial class Build
                     (null, _) => true,
                     (_, null) => true,
                     (_, { } p) when !string.IsNullOrWhiteSpace(SampleName) => p.Name.Contains(SampleName, StringComparison.OrdinalIgnoreCase),
-                    (false, {} p) => p.RequiresDockerDependency() == DockerDependencyType.None,
+                    (false, { } p) => p.RequiresDockerDependency() == DockerDependencyType.None,
                     (true, { } p) => p.RequiresDockerDependency() != DockerDependencyType.None,
                 });
 
@@ -1729,12 +1731,59 @@ partial class Build
             var integrationTestProjects =
                 TracerDirectory
                    .GlobFiles("test/*.IntegrationTests/*.csproj")
-                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests));
+                   .Where(path => !((string)path).Contains(Projects.DebuggerIntegrationTests))
+                   .Where(path => !((string)path).Contains(Projects.DdDotnetIntegrationTests));
 
             DotnetBuild(integrationTestProjects, framework: Framework, noRestore: false);
 
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.ClrProfilerIntegrationTests);
             IntegrationTestLinuxOrOsxProfilerDirFudge(Projects.AppSecIntegrationTests);
+        });
+
+    Target CompileLinuxDdDotnetIntegrationTests => _ => _
+        .Unlisted()
+        .After(CompileManagedSrc)
+        .After(CompileRegressionDependencyLibs)
+        .After(CompileDependencyLibs)
+        .After(CompileManagedTestHelpers)
+        .After(CompileSamplesLinuxOrOsx)
+        .After(CompileMultiApiPackageVersionSamples)
+        .Requires(() => MonitoringHomeDirectory != null)
+        .Executes(() =>
+        {
+            DotnetBuild(Solution.GetProject(Projects.DdDotnetIntegrationTests), noRestore: false);
+        });
+
+    Target RunLinuxDdDotnetIntegrationTests => _ => _
+        .After(CompileLinuxOrOsxIntegrationTests)
+        .Description("Runs the linux dd-dotnet integration tests")
+        .Requires(() => !IsWin)
+        .Executes(() =>
+        {
+            var project = Solution.GetProject(Projects.DdTraceIntegrationTests);
+
+            EnsureExistingDirectory(TestLogsDirectory);
+            EnsureResultsDirectory(project);
+
+            try
+            {
+                DotNetTest(config => config
+                    .SetConfiguration(BuildConfiguration)
+                    .EnableNoRestore()
+                    .EnableNoBuild()
+                    .EnableCrashDumps()
+                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                    .SetTestTargetPlatform(TargetPlatform)
+                    .SetLogsDirectory(TestLogsDirectory)
+                    .When(CodeCoverage, ConfigureCodeCoverage)
+                    .SetProjectFile(Projects.DdTraceIntegrationTests)
+                    .EnableTrxLogOutput(project)
+                    .WithDatadogLogger());
+            }
+            finally
+            {
+                CopyDumpsToBuildData();
+            }
         });
 
     Target RunLinuxIntegrationTests => _ => _
@@ -1796,7 +1845,7 @@ partial class Build
                     .EnableNoRestore()
                     .EnableNoBuild()
                     .SetFramework(Framework)
-					 //.WithMemoryDumpAfter(timeoutInMinutes: 30)
+                    //.WithMemoryDumpAfter(timeoutInMinutes: 30)
                     .EnableCrashDumps()
                     .SetFilter(filter)
                     .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
@@ -1846,7 +1895,7 @@ partial class Build
                 true => $"(Category!=LinuxUnsupported)&(Category!=Lambda)&(Category!=AzureFunctions){dockerFilter}{armFilter}",
             };
 
-            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform) "arm64" : TargetPlatform;
+            var targetPlatform = IsArm64 ? (MSBuildTargetPlatform)"arm64" : TargetPlatform;
 
             try
             {
@@ -1934,8 +1983,42 @@ partial class Build
          .After(InstallDdTraceTool)
          .Executes(() =>
           {
-              DotnetBuild(Solution.GetProject(Projects.ToolArtifactsTests));
+              DotnetBuild(Solution.GetProject(Projects.DdTraceArtifactsTests));
           });
+
+    Target BuildDdDotnetArtifactTests => _ => _
+     .Description("Builds the dd-dotnet artifacts tests")
+     .After(CompileManagedTestHelpers)
+     .Executes(() =>
+     {
+         DotnetBuild(Solution.GetProject(Projects.DdDotnetArtifactsTests), Framework);
+
+         // Compile the required samples
+         var sampleProjects = new List<AbsolutePath>
+         {
+             TracerDirectory / "test/test-applications/integrations/Samples.Console/Samples.Console.csproj",
+             TracerDirectory / "test/test-applications/integrations/Samples.VersionConflict.1x/Samples.VersionConflict.1x.csproj"
+         };
+
+         if (!IsWin)
+         {
+             sampleProjects.Add(TracerDirectory / "test/test-applications/integrations/Samples.AspNetCoreMinimalApis/Samples.AspNetCoreMinimalApis.csproj");
+         }
+
+         // do the build and publish separately to avoid dependency issues
+         DotnetBuild(sampleProjects, framework: Framework, noRestore: false);
+
+         DotNetPublish(x => x
+            .EnableNoRestore()
+            .EnableNoBuild()
+            .EnableNoDependencies()
+            .SetConfiguration(BuildConfiguration)
+            .SetFramework(Framework)
+            .SetNoWarnDotNetCore3()
+            .When(!string.IsNullOrEmpty(NugetPackageDirectory), o => o.SetPackageDirectory(NugetPackageDirectory))
+            .CombineWith(sampleProjects, (c, project) => c
+                .SetProject(project)));
+     });
 
     Target RunToolArtifactTests => _ => _
        .Description("Runs the tool artifacts tests")
@@ -1943,7 +2026,7 @@ partial class Build
        .Executes(async () =>
         {
             var isDebugRun = await IsDebugRun();
-            var project = Solution.GetProject(Projects.ToolArtifactsTests);
+            var project = Solution.GetProject(Projects.DdTraceArtifactsTests);
 
             DotNetTest(config => config
                 .SetProjectFile(project)
@@ -1957,6 +2040,28 @@ partial class Build
                 .EnableTrxLogOutput(GetResultsDirectory(project))
                 .WithDatadogLogger());
         });
+
+    Target RunDdDotnetArtifactTests => _ => _
+       .Description("Runs the dd-dotnet artifacts tests")
+       .After(BuildDdDotnetArtifactTests)
+       .Executes(async () =>
+       {
+           var isDebugRun = await IsDebugRun();
+           var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+
+           DotNetTest(config => config
+                   .SetProjectFile(project)
+                   .SetConfiguration(BuildConfiguration)
+                   .SetFramework(Framework)
+                   .SetTestTargetPlatform(TargetPlatform)
+                   .EnableNoRestore()
+                   .EnableNoBuild()
+                   .SetIsDebugRun(isDebugRun)
+                   .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                   .SetLogsDirectory(TestLogsDirectory)
+                   .EnableTrxLogOutput(GetResultsDirectory(project))
+                   .WithDatadogLogger());
+       });
 
     Target CopyServerlessArtifacts => _ => _
        .Description("Copies monitoring-home into the serverless artifacts directory")
@@ -2007,7 +2112,7 @@ partial class Build
                             sb.AppendLine($"      <type fullname=\"{type.Type}\" />");
                         }
                     }
-                
+
                     sb.AppendLine("""   </assembly>""");
                 }
             }
@@ -2026,7 +2131,7 @@ partial class Build
                 {
                     throw new FileNotFoundException($"Error extracting types for trimming support. Assembly file was not found. Path: {dllPath}", dllPath);
                 }
-                
+
                 // Open dll to extract all referenced types from the assembly (TypeRef table)
                 using var asmDefinition = Mono.Cecil.AssemblyDefinition.ReadAssembly(dllPath);
                 var lst = new List<(string Assembly, string Type)>(asmDefinition.MainModule.GetTypeReferences().Select(t => (t.Scope.Name, t.FullName)));
@@ -2095,7 +2200,7 @@ partial class Build
                 }
             }
         });
-    
+
     Target CheckBuildLogsForErrors => _ => _
        .Unlisted()
        .Description("Reads the logs from build_data and checks for error lines")
@@ -2149,12 +2254,12 @@ partial class Build
                knownPatterns.Add(new(@".*Error loading all cor profiler class factories\.", RegexOptions.Compiled));
            }
 
-            // profiler occasionally throws this if shutting down
-            knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
-            // profiler throws this on .NET 7 - currently allowed
-            knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
-            // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
-            knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
+           // profiler occasionally throws this if shutting down
+           knownPatterns.Add(new(@".*LinuxStackFramesCollector::CollectStackSampleImplementation: Unable to send signal .*Error code: No such process", RegexOptions.Compiled));
+           // profiler throws this on .NET 7 - currently allowed
+           knownPatterns.Add(new(@".*Profiler call failed with result Unspecified-Failure \(80131351\): pInfo..GetModuleInfo\(moduleId, nullptr, 0, nullptr, nullptr, .assemblyId\)", RegexOptions.Compiled));
+           // avoid any issue with CLR events that are not supported before 5.1 or .NET Framework
+           knownPatterns.Add(new(@".*Event-based profilers \(Allocation, LockContention\) are not supported for", RegexOptions.Compiled));
 
            CheckLogsForErrors(knownPatterns, allFilesMustExist: true, minLogLevel: LogLevel.Warning);
        });
@@ -2222,7 +2327,7 @@ partial class Build
         foreach (var erroredFile in allErrors)
         {
             var errors = erroredFile.Where(x => !ContainsCanary(x)).ToList();
-            if(errors.Any())
+            if (errors.Any())
             {
                 Logger.Information("");
                 Logger.Error($"Found errors in log file '{erroredFile.Key}':");
@@ -2233,7 +2338,7 @@ partial class Build
             }
 
             var canaries = erroredFile.Where(ContainsCanary).ToList();
-            if(canaries.Any())
+            if (canaries.Any())
             {
                 Logger.Information("");
                 Logger.Error($"Found usage of canary environment variable in log file '{erroredFile.Key}':");
@@ -2248,12 +2353,12 @@ partial class Build
 
         bool IsProblematic(ParsedLogLine logLine)
         {
-            if(ContainsCanary(logLine))
+            if (ContainsCanary(logLine))
             {
                 return true;
             }
 
-            if(logLine.Level < minLogLevel)
+            if (logLine.Level < minLogLevel)
             {
                 return false;
             }
@@ -2574,7 +2679,7 @@ partial class Build
         bool noDependencies = true
         )
     {
-        DotnetBuild(new [] { project.Path }, framework, noRestore, noDependencies);
+        DotnetBuild(new[] { project.Path }, framework, noRestore, noDependencies);
     }
 
     private void DotnetBuild(
