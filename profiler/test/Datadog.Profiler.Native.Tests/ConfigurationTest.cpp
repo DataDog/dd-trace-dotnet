@@ -786,7 +786,7 @@ TEST(ConfigurationTest, CheckCIVisibilitySpanIdDefaultValueIfNotSet)
 TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSet)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("12345678909"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("12345678909"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 12345678909ull);
 }
@@ -794,7 +794,7 @@ TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSet)
 TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSetTo0)
 {
     EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
-    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("0"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("0"));
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
 }
