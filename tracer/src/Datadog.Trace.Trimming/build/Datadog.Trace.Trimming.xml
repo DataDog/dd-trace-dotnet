@@ -46,6 +46,12 @@
    <assembly fullname="Microsoft.AspNetCore.Mvc.Abstractions">
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ActionDescriptor" />
       <type fullname="Microsoft.AspNetCore.Mvc.Abstractions.ParameterDescriptor" />
+      <type fullname="Microsoft.AspNetCore.Mvc.ActionContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.ActionExecutedContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.ActionExecutingContext" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.IActionFilter" />
+      <type fullname="Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata" />
+      <type fullname="Microsoft.AspNetCore.Mvc.IActionResult" />
       <type fullname="Microsoft.AspNetCore.Mvc.Routing.AttributeRouteInfo" />
    </assembly>
    <assembly fullname="Microsoft.AspNetCore.Mvc.Core" />

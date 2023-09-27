@@ -6,6 +6,7 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ContinuousProfiler;
@@ -134,18 +135,21 @@ namespace Datadog.Trace
             {
                 Profiler.Instance.ContextTracker.SetEndpoint(span.RootSpanId, span.ResourceName);
 
-                if (Iast.Iast.Instance.Settings.Enabled)
+                var iastInstance = Iast.Iast.Instance;
+                if (iastInstance.Settings.Enabled)
                 {
                     if (_iastRequestContext is { } iastRequestContext)
                     {
                         iastRequestContext.AddIastVulnerabilitiesToSpan(span);
-                        OverheadController.Instance.ReleaseRequest();
+                        iastInstance.OverheadController.ReleaseRequest();
                     }
                     else
                     {
                         IastRequestContext.AddIastDisabledFlagToSpan(span);
                     }
                 }
+
+                Security.Instance.ApiSecurity.ReleaseRequest();
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
