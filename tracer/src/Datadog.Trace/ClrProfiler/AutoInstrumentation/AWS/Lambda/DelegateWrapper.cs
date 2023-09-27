@@ -116,7 +116,7 @@ internal class DelegateWrapper
             {
                 try
                 {
-                    response = Callbacks?.AfterDelegate?.Invoke(Target.Target, argument, (TReturn)response!, exception);
+                    response = Callbacks?.AfterDelegate?.Invoke(Target.Target, argument, (Task<TReturn>)response!, exception);
                 }
                 catch (Exception e)
                 {

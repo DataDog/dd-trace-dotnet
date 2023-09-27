@@ -4,10 +4,18 @@
 // </copyright>
 
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.DuckTyping;
+// using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 
@@ -25,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
     IntegrationName = IntegrationName)]
 public class HandlerWrapperSetHandlerIntegration
 {
-    private const string IntegrationName = nameof(IntegrationId.AwsSdk);
+    private const string IntegrationName = nameof(IntegrationId.AwsLambda);
     private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
 
     /// <summary>
@@ -47,21 +55,60 @@ public class HandlerWrapperSetHandlerIntegration
             BeforeDelegate = (sender,  arg) =>
             {
                 Serverless.Debug("DelegateWrapper Running BeforeDelegate");
-                state = LambdaCommon.StartInvocationOneParameter(RequestBuilder, arg);
+                // state = LambdaCommon.StartInvocationOneParameter(RequestBuilder, arg);
+                try
+                {
+                    Console.WriteLine($"ARG_TYPE {arg.GetType()}");
+                    var proxyInstance = arg.DuckCast<IInvocationRequest>();
+                    Console.WriteLine($"is requestProxyInstance okay? {proxyInstance != null}");
+                    Console.WriteLine($"is InputStream okay? {proxyInstance.InputStream != null}");
+                    Console.WriteLine($"is LambdaContext okay? {proxyInstance.LambdaContext != null}");
+                    Console.WriteLine($"is ClientContext okay? {proxyInstance.LambdaContext?.ClientContext?.Custom != null}");
+                    var reader = new StreamReader(proxyInstance.InputStream, Encoding.UTF8, leaveOpen: true);
+                    string json = reader.ReadToEnd();
+                    proxyInstance.InputStream.Seek(0, SeekOrigin.Begin);
+                    var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), json, proxyInstance.LambdaContext?.ClientContext?.Custom);
+                    state = new CallTargetState(scope);
+                    // using (MemoryStream memoryStream = new MemoryStream())
+                    // {
+                    //     byte[] buffer = new byte[1024]; // You can adjust the buffer size as needed
+                    //     int bytesRead;
+                    //     while ((bytesRead = proxyInstance.InputStream.Read(buffer, 0, buffer.Length)) > 0)
+                    //     {
+                    //         memoryStream.Write(buffer, 0, bytesRead);
+                    //     }
+                    //
+                    //     var inputString = Convert.ToBase64String(memoryStream.ToArray());
+                    //     var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), inputString, proxyInstance.LambdaContext?.ClientContext?.Custom);
+                    //
+                    //     state = new CallTargetState(scope);
+                    // }
+                }
+                catch (Exception ex)
+                {
+                    Serverless.Error("Could not send payload to the extension", ex);
+                    Console.WriteLine(ex.StackTrace);
+                }
             },
 
             AfterDelegate = (sender, arg, returnValue, exception) =>
             {
                 Serverless.Debug("DelegateWrapper Running AfterDelegate");
                 Console.WriteLine($"returnValue AfterDelegate {returnValue}");
-                LambdaCommon.EndInvocationSync(returnValue, exception, state.Scope, RequestBuilder);
                 return returnValue;
             },
 
             AfterDelegateAsync = (sender, arg, returnValue, exception) =>
             {
-                LambdaCommon.EndInvocationSync(returnValue, exception, state.Scope, RequestBuilder);
                 Console.WriteLine($"returnValue ASYNC {returnValue}");
+                var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
+                Console.WriteLine($"is responseProxyInstance okay? {proxyInstance != null}");
+                Console.WriteLine($"is InputStream okay? {proxyInstance.OutputStream != null}");
+                var reader = new StreamReader(proxyInstance.OutputStream, Encoding.UTF8, leaveOpen: true);
+                string json = reader.ReadToEnd();
+                Console.WriteLine($"returnValue json {json}");
+                proxyInstance.OutputStream.Seek(0, SeekOrigin.Begin);
+                LambdaCommon.EndInvocationSync(json, exception, state.Scope, RequestBuilder);
             }
         });
         handler = wrapper.Handler;

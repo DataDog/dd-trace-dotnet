@@ -13,7 +13,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 51;
+    public const int Length = 52;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.
@@ -54,6 +54,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AwsSdk => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             Datadog.Trace.Configuration.IntegrationId.AwsSqs => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             Datadog.Trace.Configuration.IntegrationId.AwsSns => nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
+            Datadog.Trace.Configuration.IntegrationId.AwsLambda => nameof(Datadog.Trace.Configuration.IntegrationId.AwsLambda),
             Datadog.Trace.Configuration.IntegrationId.ILogger => nameof(Datadog.Trace.Configuration.IntegrationId.ILogger),
             Datadog.Trace.Configuration.IntegrationId.Aerospike => nameof(Datadog.Trace.Configuration.IntegrationId.Aerospike),
             Datadog.Trace.Configuration.IntegrationId.AzureFunctions => nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions),
@@ -118,6 +119,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AwsSdk,
             Datadog.Trace.Configuration.IntegrationId.AwsSqs,
             Datadog.Trace.Configuration.IntegrationId.AwsSns,
+            Datadog.Trace.Configuration.IntegrationId.AwsLambda,
             Datadog.Trace.Configuration.IntegrationId.ILogger,
             Datadog.Trace.Configuration.IntegrationId.Aerospike,
             Datadog.Trace.Configuration.IntegrationId.AzureFunctions,
@@ -182,6 +184,7 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSdk),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSqs),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsSns),
+            nameof(Datadog.Trace.Configuration.IntegrationId.AwsLambda),
             nameof(Datadog.Trace.Configuration.IntegrationId.ILogger),
             nameof(Datadog.Trace.Configuration.IntegrationId.Aerospike),
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureFunctions),
