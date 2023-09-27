@@ -76,6 +76,7 @@ Configuration::Configuration()
 
     // Check CI Visibility mode
     _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
+    _internalCIVisibilitySpanId = uint64_t{0};
     if (_isCIVisibilityEnabled)
     {
         // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
