@@ -92,7 +92,9 @@ WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
         ss << dis(gen);
     }
 
-    return WSTRING(ss.str());
+    std::wstring temp = ss.str();
+    WSTRING converted(temp.begin(), temp.end());
+    return converted;
 }
 
 /**

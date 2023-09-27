@@ -386,9 +386,15 @@ WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleH
         return EmptyWStr;
     }
 
-    return  WStr("M") + std::to_wstring(methodProbes.size()) + 
-            WStr("L") + std::to_wstring(lineProbes.size()) +
-            WStr("S") + std::to_wstring(spanOnMethodProbes.size());
+    std::wstringstream instrumentationIdStream;
+    instrumentationIdStream << WStr("M") << methodProbes.size() << WStr("L") << lineProbes.size() << WStr("S")
+                            << spanOnMethodProbes.size();
+
+    // Convert std::wstring to WSTRING
+    std::wstring temp = instrumentationIdStream.str();
+    WSTRING converted(temp.begin(), temp.end());
+
+    return converted;
 }
 
 /// <summary>

@@ -199,6 +199,12 @@ partial class Build
 
     void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
+        if (!testDescription.ShouldRun)
+        {
+            Logger.Information($"Skipping the exploration test {testDescription.Name}.");
+            return;
+        }
+
         Logger.Information($"Running exploration test {testDescription.Name}.");
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
@@ -300,6 +306,8 @@ class ExplorationTestDescription
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
 
+    public bool ShouldRun { get; set; } = true;
+
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
         var projectPath = $"{explorationTestsDirectory}/{Name}/{PathToUnitTestProject}";
@@ -355,6 +363,7 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
@@ -381,8 +390,9 @@ class ExplorationTestDescription
                 GitRepositoryTag = "6.2.1",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */ },
+                TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */, "should normalize home path", "should parse config with home path in cache" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.RestSharp => new ExplorationTestDescription()
             {

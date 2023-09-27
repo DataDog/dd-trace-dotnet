@@ -83,7 +83,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
     if (caller->type.isGeneric)
     {
         isGenericOrNestedType = true;
-        int number = std::stoi(caller->type.name.substr(caller->type.name.find(L'`') + 1));
+        std::string str(caller->type.name.begin(), caller->type.name.end());
+        int number = std::stoi(str.substr(str.find('`') + 1));
         argGenericCount += number;
     }
 
@@ -93,7 +94,8 @@ HRESULT FaultTolerantRewriter::ApplyKickoffInstrumentation(RejitHandlerModule* m
         if (currentType->isGeneric)
         {
             isGenericOrNestedType = true;
-            int number = std::stoi(currentType->name.substr(currentType->name.find(L'`') + 1));
+            std::string str(currentType->name.begin(), currentType->name.end());
+            int number = std::stoi(str.substr(str.find('`') + 1));
             argGenericCount += number;
         }
 

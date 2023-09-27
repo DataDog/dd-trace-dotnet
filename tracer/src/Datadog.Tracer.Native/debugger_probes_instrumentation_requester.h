@@ -30,7 +30,7 @@ private:
     bool is_debugger_enabled = false;
 
     static bool IsCoreLibOr3rdParty(const WSTRING& assemblyName);
-    static std::wstring GenerateRandomProbeId();
+    static WSTRING GenerateRandomProbeId();
 
     void RemoveProbes(debugger::DebuggerRemoveProbesDefinition* removeProbes, int removeProbesLength,
                       std::set<MethodIdentifier>& revertRequests);
