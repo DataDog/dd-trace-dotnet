@@ -423,7 +423,9 @@ public sealed class TestModule
             if (!CIVisibility.HasSkippableTests())
             {
                 // Adds the global code coverage percentage to the module
-                SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
+                var codeCoveragePercentage = globalCoverage.GetTotalPercentage();
+                SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
+                _fakeSession?.SetTag(CodeCoverageTags.PercentageOfTotalLines, codeCoveragePercentage);
             }
 
             // If the code coverage path environment variable is set, we store the json file
@@ -459,7 +461,9 @@ public sealed class TestModule
 
         if (CIVisibility.Settings.CodeCoverageEnabled.HasValue)
         {
-            span.SetTag(CodeCoverageTags.Enabled, CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false");
+            var value = CIVisibility.Settings.CodeCoverageEnabled.Value ? "true" : "false";
+            span.SetTag(CodeCoverageTags.Enabled, value);
+            _fakeSession?.SetTag(CodeCoverageTags.Enabled, value);
         }
 
         span.Finish(duration.Value);
