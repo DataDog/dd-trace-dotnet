@@ -118,6 +118,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        //It uses Newtonsoft by default for netcore 2.1
         [Route("ExecuteQueryFromBodyQueryData")]
         public ActionResult ExecuteQueryFromBodyQueryData([FromBody] QueryData query)
         {

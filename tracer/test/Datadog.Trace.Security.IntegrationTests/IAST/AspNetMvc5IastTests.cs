@@ -242,10 +242,28 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteQueryFromBodyQueryData", "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
+    public async Task TestRequestBodyTainting(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.RequestBodyTest.AspNetMvc5.IastEnabled" : "Iast.RequestBodyTest.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
     [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen", null)]
     public async Task TestIastLdapRequest(string test, string url, string body)
     {
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });

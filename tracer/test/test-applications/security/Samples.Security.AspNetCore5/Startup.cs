@@ -32,7 +32,8 @@ namespace Samples.Security.AspNetCore5
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            var useNs = Environment.GetEnvironmentVariable("USE_NS").ToLower() == "true";
+            var useNs = Environment.GetEnvironmentVariable("USE_NS").ToLower() == "true"
+                || Environment.GetEnvironmentVariable("USE_NS") == "1";
 
             if (useNs)
             {
