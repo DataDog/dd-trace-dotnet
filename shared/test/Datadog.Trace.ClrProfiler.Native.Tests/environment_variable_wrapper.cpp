@@ -1,4 +1,4 @@
-#include "EnvironmentVariable.h"
+#include "environment_variable_wrapper.h"
 #include "../../src/native-src/util.h"
 
 EnvironmentVariable::EnvironmentVariable(const ::shared::WSTRING& name, const ::shared::WSTRING& value) :

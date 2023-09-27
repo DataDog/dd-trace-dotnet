@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "EnvironmentVariable.h"
+#include "environment_variable_wrapper.h"
 
 #include "../../src/native-src/pal.h"
 #include "../../src/native-src/dd_filesystem.hpp"

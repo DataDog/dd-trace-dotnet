@@ -33,7 +33,7 @@
     <ClCompile Include="runtimeid_store.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="EnvironmentVariable.cpp">
+    <ClCompile Include="environment_variable_wrapper.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
   </ItemGroup>
@@ -51,7 +51,7 @@
     <ClInclude Include="test_cor_profiler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="EnvironmentVariable.h">
+    <ClInclude Include="environment_variable_wrapper.h">
       <Filter>Helpers</Filter>
     </ClInclude>
   </ItemGroup>
