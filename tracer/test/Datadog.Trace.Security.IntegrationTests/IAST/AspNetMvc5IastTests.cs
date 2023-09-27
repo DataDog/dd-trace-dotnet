@@ -247,7 +247,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spans = await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
         var filename = _enableIast ? "Iast.RequestBodyTest.AspNetMvc5.IastEnabled" : "Iast.RequestBodyTest.AspNetMvc5.IastDisabled";
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();

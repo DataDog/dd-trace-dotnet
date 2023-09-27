@@ -79,6 +79,7 @@ internal class IastRequestContext
                 bodyExtracted = ObjectExtractor.Extract(body);
             }
 
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
             AddExtractedBody(bodyExtracted, null);
         }
         catch
@@ -89,7 +90,6 @@ internal class IastRequestContext
 
     private void AddExtractedBody(object bodyExtracted, string? key)
     {
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
         if (bodyExtracted != null)
         {
             // We get either string, List<object> or Dictionary<string, object>
