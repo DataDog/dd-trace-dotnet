@@ -648,7 +648,7 @@ partial class Build
     Target BuildMsi => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, BuildDdDotnet)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -733,7 +733,7 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHome => _ => _
+    Target ZipMonitoringHome => _ => _       
        .DependsOn(ZipMonitoringHomeWindows)
        .DependsOn(ZipMonitoringHomeLinux)
        .DependsOn(ZipMonitoringHomeOsx);
@@ -741,6 +741,7 @@ partial class Build
     Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, SignDlls)
+        .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -809,8 +810,8 @@ partial class Build
 
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, BuildDdDotnet)
-        .DependsOn(PrepareMonitoringHomeLinux)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .DependsOn(PrepareMonitoringHomeLinux, BuildDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>

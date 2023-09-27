@@ -3,6 +3,12 @@
 # Get the directory of the script
 DIR=$(dirname "$0")
 
+# Check the OS
+OS_NAME="$(uname -s)"
+if [ "$OS_NAME" != "Linux" ]; then
+    echo "This script is intended for Linux systems only. Current system is $OS_NAME."
+    exit 1
+fi
 
 # Read the /etc/os-release to detect distribution
 if [ -f /etc/os-release ]; then

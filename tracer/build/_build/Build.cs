@@ -178,7 +178,6 @@ partial class Build : NukeBuild
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
-        .DependsOn(CopyDdDotnet)
         .DependsOn(ZipMonitoringHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);

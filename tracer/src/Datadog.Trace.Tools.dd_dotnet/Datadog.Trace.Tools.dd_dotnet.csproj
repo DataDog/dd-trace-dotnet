@@ -37,6 +37,7 @@
     <!-- Don't enable LZMA on Alpine because it randomly crashes with exit code 127
          We should check the UPX changelog whenever we upgrade to see if there's any relevant fix -->
     <PublishLzmaCompressed Condition="'$(RuntimeIdentifier)' != 'linux-musl-x64'">true</PublishLzmaCompressed>    
+
   </PropertyGroup>
 
   <ItemGroup>
