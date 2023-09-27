@@ -37,9 +37,7 @@ namespace Datadog.Trace.Ci;
 internal class IntelligentTestRunnerClient
 {
     private const string ApiKeyHeader = "DD-API-KEY";
-    private const string ApplicationKeyHeader = "DD-APPLICATION-KEY";
     private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
-    private const string EvpNeedsApplicationKeyHeader = "X-Datadog-NeedsAppKey";
 
     private const int MaxRetries = 5;
     private const int MaxPackFileSizeInMb = 3;
@@ -237,11 +235,6 @@ internal class IntelligentTestRunnerClient
     public async Task<SettingsResponse> GetSettingsAsync(bool skipFrameworkInfo = false)
     {
         Log.Debug("ITR: Getting settings...");
-        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
-        {
-            Log.Error("ITR: Error getting settings: Application key is missing.");
-        }
-
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var branchName = await _getBranchNameTask.ConfigureAwait(false);
@@ -286,7 +279,7 @@ internal class IntelligentTestRunnerClient
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettings();
                 var request = _apiRequestFactory.Create(_settingsUrl);
-                SetRequestHeader(request, useApplicationHeader: true);
+                SetRequestHeader(request);
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
@@ -329,11 +322,6 @@ internal class IntelligentTestRunnerClient
     public async Task<SkippableTest[]> GetSkippableTestsAsync()
     {
         Log.Debug("ITR: Getting skippable tests...");
-        if (!_useEvpProxy && string.IsNullOrEmpty(_settings.ApplicationKey))
-        {
-            Log.Error("ITR: Error getting skippable tests: Application key is missing.");
-        }
-
         var framework = FrameworkDescription.Instance;
         var repository = await _getRepositoryUrlTask.ConfigureAwait(false);
         var currentShaCommand = await _getShaTask.ConfigureAwait(false);
@@ -376,7 +364,7 @@ internal class IntelligentTestRunnerClient
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequest();
                 var request = _apiRequestFactory.Create(_skippableTestsUrl);
-                SetRequestHeader(request, useApplicationHeader: true);
+                SetRequestHeader(request);
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
@@ -488,7 +476,7 @@ internal class IntelligentTestRunnerClient
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommits();
                 var request = _apiRequestFactory.Create(_searchCommitsUrl);
-                SetRequestHeader(request, useApplicationHeader: false);
+                SetRequestHeader(request);
 
                 if (Log.IsEnabled(LogEventLevel.Debug))
                 {
@@ -599,7 +587,7 @@ internal class IntelligentTestRunnerClient
             {
                 TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPack();
                 var request = _apiRequestFactory.Create(_packFileUrl);
-                SetRequestHeader(request, useApplicationHeader: false);
+                SetRequestHeader(request);
 
                 var multipartRequest = (IMultipartApiRequest)request;
                 using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -702,25 +690,17 @@ internal class IntelligentTestRunnerClient
         return new ObjectPackFilesResult(lstFiles.ToArray(), temporaryFolder);
     }
 
-    private void SetRequestHeader(IApiRequest request, bool useApplicationHeader)
+    private void SetRequestHeader(IApiRequest request)
     {
         request.AddHeader(HttpHeaderNames.TraceId, _id);
         request.AddHeader(HttpHeaderNames.ParentId, _id);
         if (_useEvpProxy)
         {
             request.AddHeader(EvpSubdomainHeader, "api");
-            if (useApplicationHeader)
-            {
-                request.AddHeader(EvpNeedsApplicationKeyHeader, "true");
-            }
         }
         else
         {
             request.AddHeader(ApiKeyHeader, _settings.ApiKey);
-            if (useApplicationHeader)
-            {
-                request.AddHeader(ApplicationKeyHeader, _settings.ApplicationKey);
-            }
         }
     }
 
