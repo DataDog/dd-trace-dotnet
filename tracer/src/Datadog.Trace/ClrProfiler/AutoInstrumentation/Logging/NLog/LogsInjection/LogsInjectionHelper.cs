@@ -149,18 +149,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
         {
             var newSimpleLayout = Activator.CreateInstance(_simpleLayoutType, new object[] { @"${mdc:item=" + $"{attribute}" + "}" });
-            if (newSimpleLayout is null)
-            {
-                Log.Warning("Failed to create DD Service attribute for NLog");
-                return;
-            }
-
             var newAttribute = Activator.CreateInstance(_jsonAttributeType, new object[] { attribute, newSimpleLayout });
-            if (newAttribute is null)
-            {
-                Log.Warning("Failed to create NLog Attribute for DD Service");
-                return;
-            }
 
             layout.Attributes.Add(newAttribute);
         }
