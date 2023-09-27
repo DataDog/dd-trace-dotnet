@@ -346,7 +346,7 @@ namespace Datadog.Trace.Tools.Runner
                             globalCoverage is not null)
                         {
                             // Adds the global code coverage percentage to the session
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
                         }
                     }
                     else
@@ -366,8 +366,18 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the OpenCover format.
 
                                     // Adds the global code coverage percentage to the session
+                                    var coveragePercentage = Math.Round(seqCovValue, 2);
+                                    if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
+                                    {
+                                        coveragePercentage = 0;
+                                    }
+                                    else if (double.IsPositiveInfinity(coveragePercentage))
+                                    {
+                                        coveragePercentage = 100;
+                                    }
+
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
                                 else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
@@ -376,8 +386,18 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the Cobertura format.
 
                                     // Adds the global code coverage percentage to the session
+                                    var coveragePercentage = Math.Round(lineRateValue * 100, 2);
+                                    if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
+                                    {
+                                        coveragePercentage = 0;
+                                    }
+                                    else if (double.IsPositiveInfinity(coveragePercentage))
+                                    {
+                                        coveragePercentage = 100;
+                                    }
+
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                                 }
                                 else

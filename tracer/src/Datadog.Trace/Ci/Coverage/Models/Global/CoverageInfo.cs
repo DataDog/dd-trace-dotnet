@@ -66,6 +66,14 @@ internal abstract class CoverageInfo
         }
 
         _data = new[] { Math.Round((executed / total) * 100, 2), total, executed };
+        if (double.IsNaN(_data[0]) || double.IsNegativeInfinity(_data[0]))
+        {
+            _data[0] = 0;
+        }
+        else if (double.IsPositiveInfinity(_data[0]))
+        {
+            _data[0] = 100;
+        }
     }
 
     protected void ClearData()
@@ -86,5 +94,20 @@ internal abstract class CoverageInfo
                 component.ClearData();
             }
         }
+    }
+
+    public double GetTotalPercentage()
+    {
+        var coveragePercentage = Data[0];
+        if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
+        {
+            coveragePercentage = 0;
+        }
+        else if (double.IsPositiveInfinity(coveragePercentage))
+        {
+            coveragePercentage = 100;
+        }
+
+        return coveragePercentage;
     }
 }

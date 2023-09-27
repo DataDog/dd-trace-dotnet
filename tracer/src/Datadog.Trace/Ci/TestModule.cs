@@ -423,7 +423,7 @@ public sealed class TestModule
             if (!CIVisibility.HasSkippableTests())
             {
                 // Adds the global code coverage percentage to the module
-                span.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
             }
 
             // If the code coverage path environment variable is set, we store the json file
