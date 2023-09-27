@@ -77,13 +77,7 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
                 "distribution" => Sources.CreateDistributionCiVisibilityTelemetryCollectorPartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
                 _ => $"// Metric type: {enumDetails.MetricType} not currently supported",
             };
-            var baseSource = enumDetails.MetricType switch
-            {
-                "count" => Sources.CreateCountTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
-                "gauge" => Sources.CreateGaugeTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
-                "distribution" => Sources.CreateDistributionTelemetryCollectorBasePartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
-                _ => $"// Metric type: {enumDetails.MetricType} not currently supported",
-            };
+
             var interfaceSource = enumDetails.MetricType switch
             {
                 "count" => Sources.CreateCountITelemetryCollectorPartial(sb, in enumDetails, enumDictionary),
@@ -93,18 +87,17 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             };
             var nullSource = enumDetails.MetricType switch
             {
-                "count" => Sources.CreateCountNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary),
-                "gauge" => Sources.CreateGaugeNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary),
-                "distribution" => Sources.CreateDistributionNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary),
+                "count" => Sources.CreateCountNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
+                "gauge" => Sources.CreateGaugeNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
+                "distribution" => Sources.CreateDistributionNullTelemetryCollectorPartial(sb, in enumDetails, enumDictionary, metricsToLocation, entryCounts),
                 _ => $"// Metric type: {enumDetails.MetricType} not currently supported",
             };
 
             spc.AddSource($"{enumDetails.ShortName}Extensions.g.cs", SourceText.From(enumSource, Encoding.UTF8));
-            spc.AddSource($"MetricsTelemetryCollectorBase_{enumDetails.MetricType}.g.cs", SourceText.From(baseSource, Encoding.UTF8));
-            spc.AddSource($"MetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
-            spc.AddSource($"CiVisibilityMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(ciVisibilitySource, Encoding.UTF8));
-            spc.AddSource($"IMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(interfaceSource, Encoding.UTF8));
-            spc.AddSource($"NullMetricsTelemetryCollector_{enumDetails.MetricType}.g.cs", SourceText.From(nullSource, Encoding.UTF8));
+            spc.AddSource($"MetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(collectorSource, Encoding.UTF8));
+            spc.AddSource($"CiVisibilityMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(ciVisibilitySource, Encoding.UTF8));
+            spc.AddSource($"IMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(interfaceSource, Encoding.UTF8));
+            spc.AddSource($"NullMetricsTelemetryCollector_{enumDetails.ShortName}.g.cs", SourceText.From(nullSource, Encoding.UTF8));
 
             static Dictionary<string, EquatableArray<string>> GetEnumDictionary(in EnumDetails details)
             {
@@ -166,6 +159,8 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             ct.ThrowIfCancellationRequested();
 
             string? metricType = null;
+            bool isCiAppMetric = false;
+            bool isApmMetric = true;
             bool hasMisconfiguredInput = false;
             List<DiagnosticInfo>? diagnostics = null;
 
@@ -173,10 +168,18 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             {
                 if ((attributeData.AttributeClass?.Name == "TelemetryMetricTypeAttribute"
                   || attributeData.AttributeClass?.Name == "TelemetryMetricType")
-                 && attributeData.AttributeClass.ToDisplayString() == TelemetryMetricTypeAttributeFullName
-                 && attributeData.ConstructorArguments is { Length: 1 } args)
+                 && attributeData.AttributeClass.ToDisplayString() == TelemetryMetricTypeAttributeFullName)
                 {
-                    metricType = args[0].Value as string ?? args[0].Value?.ToString();
+                    if (attributeData.ConstructorArguments is { Length: >= 1 } args)
+                    {
+                        metricType = args[0].Value as string ?? args[0].Value?.ToString();
+                    }
+
+                    if (attributeData.ConstructorArguments is { Length: 3 } multiArgs)
+                    {
+                        isCiAppMetric = (args[1].Value as bool?) ?? false;
+                        isApmMetric = (args[2].Value as bool?) ?? true;
+                    }
 
                     if (string.IsNullOrEmpty(metricType))
                     {
@@ -293,6 +296,8 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
                      ns: enumNameSpace,
                      fullyQualifiedName: fullyQualifiedName,
                      metricType: metricType!,
+                     isCiAppMetric: isCiAppMetric,
+                     isApmMetric: isApmMetric,
                      names: new(members.ToArray()),
                      tagValues: new(entries)), true),
                 errors);
@@ -342,11 +347,13 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
             public readonly string ShortName;
             public readonly string FullyQualifiedName;
             public readonly string MetricType;
+            public readonly bool IsCiAppMetric;
+            public readonly bool IsApmMetric;
             public readonly string Namespace;
             public readonly EquatableArray<(string Property, MetricDetails Value)> Names;
             public readonly EquatableArray<(string TagType, EquatableArray<string> Entries)> TagValues;
 
-            public EnumDetails(string shortName, string fullyQualifiedName, string metricType, string ns, EquatableArray<(string Property, MetricDetails Value)> names, EquatableArray<(string TagType, EquatableArray<string> Entries)> tagValues)
+            public EnumDetails(string shortName, string fullyQualifiedName, string metricType, bool isCiAppMetric, bool isApmMetric, string ns, EquatableArray<(string Property, MetricDetails Value)> names, EquatableArray<(string TagType, EquatableArray<string> Entries)> tagValues)
             {
                 ShortName = shortName;
                 FullyQualifiedName = fullyQualifiedName;
@@ -354,6 +361,8 @@ namespace Datadog.Trace.SourceGenerators.TelemetryMetric
                 Namespace = ns;
                 Names = names;
                 TagValues = tagValues;
+                IsCiAppMetric = isCiAppMetric;
+                IsApmMetric = isApmMetric;
             }
         }
 

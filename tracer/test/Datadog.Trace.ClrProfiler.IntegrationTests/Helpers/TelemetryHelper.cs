@@ -88,28 +88,20 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static void AssertConfiguration(this MockTelemetryAgent telemetry, string key) => telemetry.AssertConfiguration(key, value: null);
 
-        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Count metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, string metric, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.ToArray();
-            return GetMetricData(allData, metric.GetName(), tag1, tag2, tag3);
+            return GetMetricData(allData, metric, tag1, tag2, tag3);
         }
 
-        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricDataPoints(this MockTelemetryAgent telemetry, Gauge metric, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<DistributionMetricData> GetDistributions(this MockTelemetryAgent telemetry, string distribution, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
             var allData = telemetry.Telemetry.ToArray();
-            return GetMetricData(allData, metric.GetName(), tag1, tag2, tag3);
-        }
-
-        internal static IEnumerable<DistributionMetricData> GetDistributions(this MockTelemetryAgent telemetry, Distribution distribution, string tag1 = null, string tag2 = null, string tag3 = null)
-        {
-            telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
-
-            var allData = telemetry.Telemetry.ToArray();
-            return GetDistributions(allData, distribution.GetName(), tag1, tag2, tag3);
+            return GetDistributions(allData, distribution, tag1, tag2, tag3);
         }
 
         internal static void AssertConfiguration(ICollection<TelemetryWrapper> allData, string key, object value = null)

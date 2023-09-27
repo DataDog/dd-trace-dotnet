@@ -122,28 +122,34 @@ public class MetricTests
     {
         var results = new List<ImplementedMetricAndTags>();
 
-        results.AddRange(GetCounts());
-        var counts = results.Count;
-        results.AddRange(GetGauges());
-        var gauges = results.Count - counts;
-        results.AddRange(GetDistributions());
-        var distributions = results.Count - gauges;
+        var allMetrics = new[]
+        {
+            GetValues<Count>(TelemetryMetricType.Count, x => (((Count)x).GetName(), ((Count)x).GetNamespace(), ((Count)x).IsCommon())),
+            GetValues<CountShared>(TelemetryMetricType.Count, x => (((CountShared)x).GetName(), ((CountShared)x).GetNamespace(), ((CountShared)x).IsCommon())),
+            GetValues<CountCIVisibility>(TelemetryMetricType.Count, x => (((CountCIVisibility)x).GetName(), ((CountCIVisibility)x).GetNamespace(), ((CountCIVisibility)x).IsCommon())),
+            GetValues<Gauge>(TelemetryMetricType.Gauge, x => (((Gauge)x).GetName(), ((Gauge)x).GetNamespace(), ((Gauge)x).IsCommon())),
+            GetValues<Distribution>(TelemetryMetricType.Distribution, x => (((Distribution)x).GetName(), ((Distribution)x).GetNamespace(), ((Distribution)x).IsCommon())),
+            GetValues<DistributionShared>(TelemetryMetricType.Distribution, x => (((DistributionShared)x).GetName(), ((DistributionShared)x).GetNamespace(), ((DistributionShared)x).IsCommon())),
+            GetValues<DistributionCIVisibility>(TelemetryMetricType.Distribution, x => (((DistributionCIVisibility)x).GetName(), ((DistributionCIVisibility)x).GetNamespace(), ((DistributionCIVisibility)x).IsCommon())),
+        };
 
-        results.Should().NotBeEmpty();
-        counts.Should().NotBe(0);
-        gauges.Should().NotBe(0);
-        distributions.Should().NotBe(0);
+        foreach (var metrics in allMetrics)
+        {
+            results.AddRange(metrics);
+        }
+
         return results;
 
-        static IEnumerable<ImplementedMetricAndTags> GetCounts()
+        static IEnumerable<ImplementedMetricAndTags> GetValues<T>(
+            string type,
+            Func<object, (string Name, string NameSpace, bool IsCommon)> getDetails)
+            where T : Enum
         {
-            var metricType = typeof(Count);
+            var metricType = typeof(T);
             var allMetrics = Enum.GetValues(metricType);
-            foreach (Count metric in allMetrics)
+            foreach (var metric in allMetrics)
             {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
+                var (metricName, metricNamespace, isCommon) = getDetails(metric);
                 if (isCommon && metricNamespace is null)
                 {
                     metricNamespace = MetricNamespaceConstants.Tracer;
@@ -151,47 +157,7 @@ public class MetricTests
 
                 var member = metricType.GetField(metric.ToString());
                 var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Count, tags);
-            }
-        }
-
-        static IEnumerable<ImplementedMetricAndTags> GetGauges()
-        {
-            var metricType = typeof(Gauge);
-            var allMetrics = Enum.GetValues(metricType);
-            foreach (Gauge metric in allMetrics)
-            {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
-                if (isCommon && metricNamespace is null)
-                {
-                    metricNamespace = MetricNamespaceConstants.Tracer;
-                }
-
-                var member = metricType.GetField(metric.ToString());
-                var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Gauge, tags);
-            }
-        }
-
-        static IEnumerable<ImplementedMetricAndTags> GetDistributions()
-        {
-            var metricType = typeof(Distribution);
-            var allMetrics = Enum.GetValues(metricType);
-            foreach (Distribution metric in allMetrics)
-            {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
-                if (isCommon && metricNamespace is null)
-                {
-                    metricNamespace = MetricNamespaceConstants.Tracer;
-                }
-
-                var member = metricType.GetField(metric.ToString());
-                var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Distribution, tags);
+                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, type, tags);
             }
         }
 
