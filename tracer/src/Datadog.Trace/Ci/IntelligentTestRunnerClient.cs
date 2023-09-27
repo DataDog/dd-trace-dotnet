@@ -228,7 +228,7 @@ internal class IntelligentTestRunnerClient
 
                         // originName = git config --default origin --get clone.defaultRemoteName
                         // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
-                        headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name @{upstream}", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+                        headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
                         head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
 
                         // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
