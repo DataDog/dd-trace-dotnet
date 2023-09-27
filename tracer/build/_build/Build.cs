@@ -178,6 +178,7 @@ partial class Build : NukeBuild
         .Description("Builds NuGet packages, MSIs, and zip files, from already built source")
         .After(Clean, BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CopyDdDotnet)
         .DependsOn(ZipMonitoringHome)
         .DependsOn(BuildMsi)
         .DependsOn(PackNuGet);
@@ -296,6 +297,7 @@ partial class Build : NukeBuild
         .Description("Builds and runs the tool artifacts tests")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(BuildDdDotnetArtifactTests)
+        .DependsOn(CopyDdDotnet)
         .DependsOn(RunDdDotnetArtifactTests);
 
     Target PackNuGet => _ => _
@@ -370,14 +372,6 @@ partial class Build : NukeBuild
 
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
             CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
-
-            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
-            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
-
-            if (IsLinux)
-            {
-                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
-            }
         });
     Target BuildRunnerTool => _ => _
         .Unlisted()

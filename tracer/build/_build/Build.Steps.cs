@@ -709,6 +709,19 @@ partial class Build
             }
         });
 
+    Target CopyDdDotnet => _ => _
+        .After(BuildDdDotnet)
+        .Executes(() =>
+        {
+            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
+            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+
+            if (IsLinux)
+            {
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+            }
+        });
+
     Target ZipSymbols => _ => _
         .Unlisted()
         .After(BuildTracerHome)
@@ -738,6 +751,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(CopyDdDotnet)
         .Requires(() => Version)
         .Executes(() =>
         {
@@ -795,7 +809,7 @@ partial class Build
 
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, BuildDdDotnet)
         .DependsOn(PrepareMonitoringHomeLinux)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
