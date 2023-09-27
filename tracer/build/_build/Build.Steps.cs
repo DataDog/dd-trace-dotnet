@@ -2045,6 +2045,7 @@ partial class Build
     Target RunDdDotnetArtifactTests => _ => _
        .Description("Runs the dd-dotnet artifacts tests")
        .After(BuildDdDotnetArtifactTests)
+       .After(CopyDdDotnet)
        .Executes(async () =>
        {
            var isDebugRun = await IsDebugRun();
