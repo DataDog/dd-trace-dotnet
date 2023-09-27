@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
@@ -65,15 +66,7 @@ internal abstract class CoverageInfo
             }
         }
 
-        _data = new[] { Math.Round((executed / total) * 100, 2), total, executed };
-        if (double.IsNaN(_data[0]) || double.IsNegativeInfinity(_data[0]))
-        {
-            _data[0] = 0;
-        }
-        else if (double.IsPositiveInfinity(_data[0]))
-        {
-            _data[0] = 100;
-        }
+        _data = new[] { Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed };
     }
 
     protected void ClearData()
@@ -98,16 +91,6 @@ internal abstract class CoverageInfo
 
     public double GetTotalPercentage()
     {
-        var coveragePercentage = Data[0];
-        if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
-        {
-            coveragePercentage = 0;
-        }
-        else if (double.IsPositiveInfinity(coveragePercentage))
-        {
-            coveragePercentage = 100;
-        }
-
-        return coveragePercentage;
+        return Data[0].ToValidPercentage();
     }
 }

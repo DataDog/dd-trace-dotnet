@@ -15,6 +15,7 @@ using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -366,16 +367,7 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the OpenCover format.
 
                                     // Adds the global code coverage percentage to the session
-                                    var coveragePercentage = Math.Round(seqCovValue, 2);
-                                    if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
-                                    {
-                                        coveragePercentage = 0;
-                                    }
-                                    else if (double.IsPositiveInfinity(coveragePercentage))
-                                    {
-                                        coveragePercentage = 100;
-                                    }
-
+                                    var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
                                     session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
@@ -386,16 +378,7 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the Cobertura format.
 
                                     // Adds the global code coverage percentage to the session
-                                    var coveragePercentage = Math.Round(lineRateValue * 100, 2);
-                                    if (double.IsNaN(coveragePercentage) || double.IsNegativeInfinity(coveragePercentage))
-                                    {
-                                        coveragePercentage = 0;
-                                    }
-                                    else if (double.IsPositiveInfinity(coveragePercentage))
-                                    {
-                                        coveragePercentage = 100;
-                                    }
-
+                                    var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
                                     session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
