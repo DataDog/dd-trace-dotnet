@@ -37,9 +37,7 @@ namespace Datadog.Trace.Ci;
 internal class IntelligentTestRunnerClient
 {
     private const string ApiKeyHeader = "DD-API-KEY";
-    private const string ApplicationKeyHeader = "DD-APPLICATION-KEY";
     private const string EvpSubdomainHeader = "X-Datadog-EVP-Subdomain";
-    private const string EvpNeedsApplicationKeyHeader = "X-Datadog-NeedsAppKey";
 
     private const int MaxRetries = 5;
     private const int MaxPackFileSizeInMb = 3;
