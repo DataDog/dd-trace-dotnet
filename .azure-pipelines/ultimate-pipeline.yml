@@ -4186,7 +4186,7 @@ stages:
         debugger_poc:
           WEBLOG_VARIANT: "poc"
           SCENARIO: DEBUGGER_SCENARIOS
-        DEBUGGER_uds:
+        debugger_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: DEBUGGER_SCENARIOS
 
