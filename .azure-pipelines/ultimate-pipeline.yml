@@ -4305,6 +4305,12 @@ stages:
         remainder_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+        debugger_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: DEBUGGER_SCENARIOS
+        debugger_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: DEBUGGER_SCENARIOS
 
     steps:
       - checkout: none
