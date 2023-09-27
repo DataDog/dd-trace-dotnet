@@ -196,14 +196,57 @@ internal class IntelligentTestRunnerClient
                 if (shallowLogArray.Length == 1)
                 {
                     // Just one commit SHA. Fetching previous commits
+
+                    ProcessHelpers.CommandOutput? gitUnshallowOutput;
+
+                    // ***
+                    // Let's try to unshallow the repo:
+                    // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)`
+                    // ***
+
                     // git config --default origin --get clone.defaultRemoteName
-                    // git rev-parse HEAD
                     var originNameOutput = await RunGitCommandAsync("config --default origin --get clone.defaultRemoteName", MetricTags.CIVisibilityCommands.GetRemote).ConfigureAwait(false);
                     var originName = originNameOutput?.Output?.Replace("\n", string.Empty).Trim() ?? "origin";
+
+                    // git rev-parse HEAD
                     var headOutput = await RunGitCommandAsync("rev-parse HEAD", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
                     var head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+
+                    // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse HEAD)
                     Log.Information("ITR: The current repo is a shallow clone, refetching data for {OriginName}|{Head}", originName, head);
-                    await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                    gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+
+                    if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                    {
+                        // ***
+                        // The previous command has a drawback: if the local HEAD is a commit that has not been pushed to the remote, it will fail.
+                        // If this is the case, we fallback to: `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})`
+                        // This command will attempt to use the tracked branch for the current branch in order to unshallow.
+                        // ***
+
+                        // originName = git config --default origin --get clone.defaultRemoteName
+                        // git rev-parse --abbrev-ref --symbolic-full-name @{upstream}
+                        headOutput = await RunGitCommandAsync("rev-parse --abbrev-ref --symbolic-full-name \"@{upstream}\"", MetricTags.CIVisibilityCommands.GetHead).ConfigureAwait(false);
+                        head = headOutput?.Output?.Replace("\n", string.Empty).Trim() ?? await _getBranchNameTask.ConfigureAwait(false);
+
+                        // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName) $(git rev-parse --abbrev-ref --symbolic-full-name @{upstream})
+                        Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 1 for {OriginName}|{Head}", originName, head);
+                        gitUnshallowOutput = await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName} {head}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                    }
+
+                    if (gitUnshallowOutput is null || gitUnshallowOutput.ExitCode != 0)
+                    {
+                        // ***
+                        // It could be that the CI is working on a detached HEAD or maybe branch tracking hasn’t been set up.
+                        // In that case, this command will also fail, and we will finally fallback to we just unshallow all the things:
+                        // `git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)`
+                        // ***
+
+                        // originName = git config --default origin --get clone.defaultRemoteName
+                        // git fetch --shallow-since="1 month ago" --update-shallow --filter="blob:none" --recurse-submodules=no $(git config --default origin --get clone.defaultRemoteName)
+                        Log.Information("ITR: Previous unshallow command failed, refetching data with fallback 2 for {OriginName}", originName);
+                        await RunGitCommandAsync($"fetch --shallow-since=\"1 month ago\" --update-shallow --filter=\"blob:none\" --recurse-submodules=no {originName}", MetricTags.CIVisibilityCommands.Unshallow).ConfigureAwait(false);
+                    }
                 }
             }
         }
