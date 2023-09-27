@@ -6,13 +6,12 @@
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.SourceGenerators.EnumExtensions;
 using Datadog.Trace.SourceGenerators.EnumExtensions.Diagnostics;
 using Datadog.Trace.SourceGenerators.Helpers;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-
-namespace Datadog.Trace.SourceGenerators.EnumExtensions;
 
 /// <inheritdoc />
 [Generator]

@@ -39,6 +39,22 @@
 
   </PropertyGroup>
 
+  <PropertyGroup>
+    <!-- Persist the source generator (and other) files to disk -->
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <GeneratedFolder>Generated</GeneratedFolder>
+    <!-- We only have a single target framework, so don't need to include the TFM in the path here    -->
+    <CompilerGeneratedFilesOutputPath>$(GeneratedFolder)</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Don't include source generator output in the compilation - this is implicitly included anyway.
+    the */** trick here ensures that there's at least one subdirectory, which indicates the files comes
+    from a source generator as opposed to something that is coming from some other tool. -->
+    <Compile Remove="$(GeneratedFolder)/*/**/*.cs" />
+    <Compile Update="Configuration\ConfigurationKeys.*.cs" DependentUpon="ConfigurationKeys.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <Compile Include="..\Datadog.Trace\Agent\TracesTransportType.cs" Link="TracesTransportType.cs" />
     <Compile Include="..\Datadog.Trace\Configuration\ConfigurationKeys.cs" Link="ConfigurationKeys.cs" />
@@ -58,7 +74,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Datadog.Trace.SourceGenerators\Datadog.Trace.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Datadog.Trace.Tools.dd_dotnet.SourceGenerators\Datadog.Trace.Tools.dd_dotnet.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
