@@ -23,7 +23,6 @@ namespace Datadog.Trace.Ci.Configuration
             Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
             Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
-            ApplicationKey = config.WithKeys(ConfigurationKeys.ApplicationKey).AsRedactedString();
             Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
             AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
@@ -72,11 +71,6 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Api Key to use in Agentless mode
         /// </summary>
         public string? ApiKey { get; private set; }
-
-        /// <summary>
-        /// Gets the Application Key to use in ITR
-        /// </summary>
-        public string? ApplicationKey { get; private set; }
 
         /// <summary>
         /// Gets the Datadog site
@@ -163,11 +157,10 @@ namespace Datadog.Trace.Ci.Configuration
             TestsSkippingEnabled = value;
         }
 
-        internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? applicationKey, string? agentlessUrl)
+        internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)
         {
             Agentless = enabled;
             ApiKey = apiKey;
-            ApplicationKey = applicationKey;
             AgentlessUrl = agentlessUrl;
         }
 

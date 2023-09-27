@@ -63,7 +63,6 @@ namespace Datadog.Trace.Tools.Runner
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var apiKey = ciVisibilitySettings.ApiKey;
-            var applicationKey = ciVisibilitySettings.ApplicationKey;
 
             var customApiKey = _apiKeyOption.GetValue(context);
 
@@ -107,7 +106,7 @@ namespace Datadog.Trace.Tools.Runner
             var uploadRepositoryChangesTask = Task.CompletedTask;
 
             // Set Agentless configuration from the command line options
-            ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
+            ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, ciVisibilitySettings.AgentlessUrl);
 
             if (!string.IsNullOrEmpty(agentUrl))
             {
@@ -161,21 +160,15 @@ namespace Datadog.Trace.Tools.Runner
                     Log.Debug("RunCiCommand: EVP proxy was detected.");
                 }
 
-                // If we have api and application key, and the code coverage or the tests skippable environment variables
+                // If we have api, and the code coverage or the tests skippable environment variables
                 // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
-                var useConfigurationApi = !agentless || !string.IsNullOrEmpty(applicationKey);
-                if (!useConfigurationApi)
-                {
-                    Log.Debug("RunCiCommand: Application key is empty, call to configuration api skipped.");
-                }
-                else if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
                     Log.Debug("RunCiCommand: Intelligent test runner is disabled, call to configuration api skipped.");
                 }
 
                 // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
-                if (useConfigurationApi
-                 && ciVisibilitySettings.IntelligentTestRunnerEnabled
+                if (ciVisibilitySettings.IntelligentTestRunnerEnabled
                  && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                 {
                     try
