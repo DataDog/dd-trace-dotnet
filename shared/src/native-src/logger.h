@@ -137,9 +137,7 @@ std::shared_ptr<spdlog::logger> Logger::CreateInternalLogger()
 template <class TLoggerPolicy>
 std::string Logger::GetLogPath(const std::string& file_name_suffix)
 {
-    auto path = ::shared::ToString(::shared::GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
-
-    const auto log_path = fs::path(path);
+    const auto log_path = fs::path(::shared::GetDatadogLogFilePath<TLoggerPolicy>(file_name_suffix));
 
     if (log_path.has_parent_path())
     {
@@ -151,7 +149,7 @@ std::string Logger::GetLogPath(const std::string& file_name_suffix)
         }
     }
 
-    return path;
+    return log_path.string();
 }
 
 template <class T>

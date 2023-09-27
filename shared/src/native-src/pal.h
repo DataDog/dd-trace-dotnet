@@ -14,15 +14,15 @@
 #endif
 
 #if MACOS
-#include <libproc.h>
 #include <crt_externs.h>
+#include <libproc.h>
 #endif
 
 #include <type_traits>
 
-#include "dd_filesystem.hpp"
 #include "../../../shared/src/native-src/string.h" // NOLINT
 #include "../../../shared/src/native-src/util.h"
+#include "dd_filesystem.hpp"
 // namespace fs is an alias defined in "dd_filesystem.hpp"
 
 namespace shared
@@ -39,7 +39,38 @@ struct has_deprecated_log_folder<T, decltype(T::logging_environment::deprecated_
 };
 
 template <class TLoggerPolicy>
-inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix)
+inline fs::path GetDefaultLogDir()
+{
+    bool isAas = false;
+    TryParseBooleanEnvironmentValue(GetEnvironmentValue(WStr("DD_AZURE_APP_SERVICES")), isAas);
+
+    if (isAas)
+    {
+#ifdef _WINDOWS
+        return WStr("C:\\home\\LogFiles\\datadog\\");
+#else
+        return WStr("/home/LogFiles/datadog/");
+#endif
+    }
+
+#ifdef _WIN32
+
+    fs::path program_data_path;
+    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
+
+    if (program_data_path.empty())
+    {
+        program_data_path = WStr(R"(C:\ProgramData)");
+    }
+
+    return program_data_path / TLoggerPolicy::folder_path;
+#else
+    return ToWSTRING("/var/log/datadog/dotnet/");
+#endif
+}
+
+template <class TLoggerPolicy>
+inline fs::path GetDatadogLogFilePath(const std::string& file_name_suffix)
 {
     const auto file_name = TLoggerPolicy::file_name + file_name_suffix + ".log";
 
@@ -49,8 +80,7 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
     {
         // check for deprecated env var first
         directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::deprecated_log_directory);
-        if (directory.empty())
-            directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
+        if (directory.empty()) directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
     }
     else
         directory = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_directory);
@@ -73,23 +103,7 @@ inline shared::WSTRING GetDatadogLogFilePath(const std::string& file_name_suffix
         return path;
     }
 
-#ifdef _WIN32
-    fs::path program_data_path;
-    program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
-
-    if (program_data_path.empty())
-    {
-        program_data_path = WStr(R"(C:\ProgramData)");
-    }
-
-    // on Windows WSTRING == wstring
-    return (program_data_path / TLoggerPolicy::folder_path / file_name).wstring();
-#else
-    bool isAas = false;
-    if (TryParseBooleanEnvironmentValue(GetEnvironmentValue(WStr("DD_AZURE_APP_SERVICES")), isAas) && isAas)
-        return WStr("/home/datadog");
-    return ToWSTRING("/var/log/datadog/dotnet/" + file_name);
-#endif
+    return GetDefaultLogDir<TLoggerPolicy>() / file_name;
 }
 
 inline WSTRING GetCurrentProcessName()
@@ -121,8 +135,9 @@ inline WSTRING GetCurrentProcessCommandLine()
 #elif MACOS
     std::string name;
     int argCount = *_NSGetArgc();
-    char ** arguments = *_NSGetArgv();
-    for (int i = 0; i < argCount; i++) {
+    char** arguments = *_NSGetArgv();
+    for (int i = 0; i < argCount; i++)
+    {
         char* currentArg = arguments[i];
         name = name + " " + std::string(currentArg);
     }
