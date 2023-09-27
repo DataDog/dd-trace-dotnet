@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tools.Runner
                     Log.Debug("RunCiCommand: EVP proxy was detected.");
                 }
 
-                // If we have api, and the code coverage or the tests skippable environment variables
+                // If we have an api key, and the code coverage or the tests skippable environment variables
                 // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
                 if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
