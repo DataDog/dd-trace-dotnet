@@ -583,6 +583,17 @@ partial class Build
            }
        });
 
+    Target PublishDdDotnetSymbolsWindows => _ => _
+      .Unlisted()
+      .OnlyWhenStatic(() => IsWin)
+      .After(BuildDdDotnet, PublishManagedTracer)
+      .Executes(() =>
+      {
+          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-trace-dotnet.pdb";
+          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-trace-dotnet.pdb";
+          CopyFile(source, dest, FileExistsPolicy.Overwrite);
+      });
+
     Target PublishNativeTracerWindows => _ => _
         .Unlisted()
         .OnlyWhenStatic(() => IsWin)
@@ -637,7 +648,7 @@ partial class Build
     Target BuildMsi => _ => _
         .Unlisted()
         .Description("Builds the .msi files from the repo")
-        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
+        .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, BuildDdDotnet)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -698,17 +709,31 @@ partial class Build
             }
         });
 
+    Target CopyDdDotnet => _ => _
+        .After(BuildDdDotnet)
+        .Executes(() =>
+        {
+            var script = IsWin ? "dd-dotnet.cmd" : "dd-dotnet.sh";
+            CopyFileToDirectory(BuildDirectory / "artifacts" / script, MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+
+            if (IsLinux)
+            {
+                Chmod.Value.Invoke("+x " + MonitoringHomeDirectory / script);
+            }
+        });
+
     Target ZipSymbols => _ => _
         .Unlisted()
         .After(BuildTracerHome)
         .DependsOn(PublishNativeSymbolsWindows)
+        .DependsOn(PublishDdDotnetSymbolsWindows)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHome => _ => _
+    Target ZipMonitoringHome => _ => _       
        .DependsOn(ZipMonitoringHomeWindows)
        .DependsOn(ZipMonitoringHomeLinux)
        .DependsOn(ZipMonitoringHomeOsx);
@@ -716,6 +741,7 @@ partial class Build
     Target ZipMonitoringHomeWindows => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader, SignDlls)
+        .DependsOn(CopyDdDotnet)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -726,6 +752,7 @@ partial class Build
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
         .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(CopyDdDotnet)
         .Requires(() => Version)
         .Executes(() =>
         {
@@ -784,7 +811,7 @@ partial class Build
     Target ZipMonitoringHomeLinux => _ => _
         .Unlisted()
         .After(BuildTracerHome, BuildProfilerHome, BuildNativeLoader)
-        .DependsOn(PrepareMonitoringHomeLinux)
+        .DependsOn(PrepareMonitoringHomeLinux, BuildDdDotnet)
         .OnlyWhenStatic(() => IsLinux)
         .Requires(() => Version)
         .Executes(() =>
@@ -810,6 +837,7 @@ partial class Build
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
                     "createLogPath.sh",
+                    "dd-dotnet.sh",
                     "netstandard2.0/",
                     "netcoreapp3.1/",
                     "net6.0/",
@@ -1154,7 +1182,7 @@ partial class Build
                 var exclude = TracerDirectory.GlobFiles("test/test-applications/integrations/dependency-libs/**/*.csproj")
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/debugger/dependency-libs/**/*.csproj"))
                                              .Concat(TracerDirectory.GlobFiles("test/test-applications/integrations/Samples.AzureServiceBus/*.csproj"));
-    
+
                 var projects = includeIntegration
                     .Concat(includeSecurity)
                     .Select(x => Solution.GetProject(x))
@@ -2018,6 +2046,7 @@ partial class Build
     Target RunDdDotnetArtifactTests => _ => _
        .Description("Runs the dd-dotnet artifacts tests")
        .After(BuildDdDotnetArtifactTests)
+       .After(CopyDdDotnet)
        .Executes(async () =>
        {
            var isDebugRun = await IsDebugRun();
