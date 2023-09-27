@@ -256,7 +256,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             {
                 foreach (var target in loggingConfigurationProxy.ConfiguredNamedTargets)
                 {
-                    if (target is IDuckType { Instance: DirectSubmissionNLogTarget })
+                    if (target is IDuckType { Instance: DirectSubmissionNLogLegacyTarget })
                     {
                         // already added
                         return false;
