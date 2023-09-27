@@ -17,7 +17,7 @@
 
     <AssemblyName>dd-dotnet</AssemblyName>
 
-    <PublishAot>true</PublishAot>
+    <PublishAot Condition="!$([MSBuild]::IsOSPlatform('OSX'))">true</PublishAot>
     <OptimizationPreference>Size</OptimizationPreference>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
     <EnableUnsafeUTF7Encoding>false</EnableUnsafeUTF7Encoding>
