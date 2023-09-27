@@ -174,7 +174,7 @@ namespace Datadog.Trace
                         gitMetadataTagsProvider,
                         RcmSubscriptionManager.Instance);
 
-                TelemetryFactory.Metrics.RecordDistributionInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
+                TelemetryFactory.Metrics.RecordDistributionSharedInitTime(MetricTags.InitializationComponent.Rcm, sw.ElapsedMilliseconds);
             }
 
             dynamicConfigurationManager ??= new DynamicConfigurationManager(RcmSubscriptionManager.Instance);

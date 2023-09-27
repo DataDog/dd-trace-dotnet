@@ -6,8 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.Util;
@@ -19,14 +17,8 @@ internal abstract partial class MetricsTelemetryCollectorBase
     private readonly TimeSpan _aggregationInterval;
     private readonly Action? _aggregationNotification;
     private readonly string[] _unknownWafVersionTags = { "waf_version:unknown" };
-    private readonly Lazy<AggregatedMetrics> _aggregated = new();
     private readonly Task _aggregateTask;
     private readonly TaskCompletionSource<bool> _processExit = new();
-    // ReSharper disable once InconsistentNaming
-#pragma warning disable SA1401 // field should be private, but we access it in the MetricsTelemetryCollector + CiVisibilityCollector
-    protected MetricBuffer _buffer = new();
-#pragma warning restore SA1401 // field should be private, but we access it in the MetricsTelemetryCollector + CiVisibilityCollector
-    private MetricBuffer _reserveBuffer = new();
     private string[]? _wafVersionTags;
 
     protected MetricsTelemetryCollectorBase()
@@ -41,32 +33,17 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _aggregateTask = Task.Run(AggregateMetricsLoopAsync);
     }
 
-    public void Record(PublicApiUsage publicApi)
-    {
-        // This can technically overflow, but it's _very_ unlikely as we reset every 10s
-        // Negative values are normalized during polling
-        Interlocked.Increment(ref _buffer.PublicApiCounts[(int)publicApi]);
-    }
+    /// <summary>
+    /// Internal for testing
+    /// </summary>
+    internal abstract void AggregateMetrics();
+
+    internal abstract void Clear();
 
     public Task DisposeAsync()
     {
         _processExit.TrySetResult(true);
         return _aggregateTask;
-    }
-
-    public MetricResults GetMetrics()
-    {
-        List<MetricData>? metricData;
-        List<DistributionMetricData>? distributionData;
-
-        var aggregated = _aggregated.Value;
-        lock (aggregated)
-        {
-            metricData = GetMetricData(aggregated.PublicApiCounts, aggregated.Counts, aggregated.Gauges);
-            distributionData = GetDistributionData(aggregated.Distributions);
-        }
-
-        return new(metricData, distributionData);
     }
 
     public void SetWafVersion(string wafVersion)
@@ -75,38 +52,18 @@ internal abstract partial class MetricsTelemetryCollectorBase
         _wafVersionTags = new[] { $"waf_version:{wafVersion}" };
     }
 
-    public void Clear()
+    protected static AggregatedMetric[] GetPublicApiCountBuffer()
     {
-        _reserveBuffer.Clear();
-        var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
-        buffer.Clear();
-    }
-
-    /// <summary>
-    /// Internal for testing
-    /// </summary>
-    internal void AggregateMetrics()
-    {
-        var buffer = Interlocked.Exchange(ref _buffer, _reserveBuffer);
-
-        var aggregated = _aggregated.Value;
-        // _aggregated, containing the aggregated metrics, is not thread-safe
-        // and is also used when getting the metrics for serialization.
-        lock (aggregated)
+        var publicApiCounts = new AggregatedMetric[PublicApiUsageExtensions.Length];
+        for (var i = PublicApiUsageExtensions.Length - 1; i >= 0; i--)
         {
-            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-            AggregateMetric(buffer.PublicApiCounts, timestamp, aggregated.PublicApiCounts);
-            AggregateMetric(buffer.Counts, timestamp, aggregated.Counts);
-            AggregateMetric(buffer.Gauges, timestamp, aggregated.Gauges);
-            AggregateDistribution(buffer.Distributions, aggregated.Distributions);
+            publicApiCounts[i] = new(new[] { ((PublicApiUsage)i).ToStringFast() });
         }
 
-        // prepare the buffer for next time
-        buffer.Clear();
-        Interlocked.Exchange(ref _reserveBuffer, buffer);
+        return publicApiCounts;
     }
 
-    private void AggregateMetric(int[] metricValues, long timestamp, AggregatedMetric[] aggregatedMetrics)
+    protected static void AggregateMetric(int[] metricValues, long timestamp, AggregatedMetric[] aggregatedMetrics)
     {
         for (var i = metricValues.Length - 1; i >= 0; i--)
         {
@@ -126,7 +83,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private void AggregateDistribution(BoundedConcurrentQueue<double>[] distributions, AggregatedDistribution[] aggregatedDistributions)
+    protected static void AggregateDistribution(BoundedConcurrentQueue<double>[] distributions, AggregatedDistribution[] aggregatedDistributions)
     {
         for (var i = distributions.Length - 1; i >= 0; i--)
         {
@@ -140,132 +97,72 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    /// <summary>
-    /// Loop through the aggregated data, looking for any metrics that have points
-    /// </summary>
-    private List<MetricData>? GetMetricData(AggregatedMetric[] publicApis, AggregatedMetric[] counts, AggregatedMetric[] gauges)
+    protected void AddPublicApiMetricData(AggregatedMetric[] publicApis, List<MetricData> data)
     {
-        var apiLength = publicApis.Count(x => x.HasValues);
-        var countsLength = counts.Count(x => x.HasValues);
-        var gaugesLength = gauges.Count(x => x.HasValues);
-
-        var totalLength = apiLength + countsLength + gaugesLength;
-        if (totalLength == 0)
+        for (var i = publicApis.Length - 1; i >= 0; i--)
         {
-            return null;
-        }
-
-        var data = new List<MetricData>(totalLength);
-
-        if (apiLength > 0)
-        {
-            for (var i = publicApis.Length - 1; i >= 0; i--)
+            var publicApi = publicApis[i];
+            if (publicApi.GetAndClear() is { } series)
             {
-                var publicApi = publicApis[i];
-                if (publicApi.GetAndClear() is { } series)
+                data.Add(
+                    new MetricData(
+                        "public_api",
+                        points: series,
+                        common: false,
+                        type: TelemetryMetricType.Count)
+                    {
+                        Tags = publicApi.Tags,
+                    });
+            }
+        }
+    }
+
+    protected void AddMetricData(
+        string metricType,
+        AggregatedMetric[] values,
+        List<MetricData> data,
+        int[] cardinalityPerMetric,
+        Func<int, MetricDetails> getMetricDetails)
+    {
+        var index = values.Length - 1;
+        for (var i = cardinalityPerMetric.Length - 1; i >= 0; i--)
+        {
+            var metric = getMetricDetails(i);
+            var entries = cardinalityPerMetric[i];
+            for (var j = entries - 1; j >= 0; j--)
+            {
+                var metricValues = values[index];
+                if (metricValues.GetAndClear() is { } series)
                 {
                     data.Add(
                         new MetricData(
-                            "public_api",
+                            metric.Name,
                             points: series,
-                            common: false,
-                            type: TelemetryMetricType.Count)
+                            common: metric.IsCommon,
+                            type: metricType)
                         {
-                            Tags = publicApi.Tags,
+                            Namespace = metric.NameSpace,
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags)
                         });
                 }
+
+                index--;
             }
         }
-
-        if (countsLength > 0)
-        {
-            var index = counts.Length - 1;
-            for (var i = CountEntryCounts.Length - 1; i >= 0; i--)
-            {
-                var metric = (Count)i;
-                var metricName = metric.GetName()!;
-                var ns = metric.GetNamespace();
-                var isCommon = metric.IsCommon();
-
-                var entries = CountEntryCounts[i];
-                for (var j = entries - 1; j >= 0; j--)
-                {
-                    var metricValues = counts[index];
-                    if (metricValues.GetAndClear() is { } series)
-                    {
-                        data.Add(
-                            new MetricData(
-                                metricName,
-                                points: series,
-                                common: isCommon,
-                                type: TelemetryMetricType.Count)
-                            {
-                                Namespace = ns,
-                                Tags = GetTags(ns, metricValues.Tags),
-                            });
-                    }
-
-                    index--;
-                }
-            }
-        }
-
-        if (gaugesLength > 0)
-        {
-            var index = gauges.Length - 1;
-            for (var i = GaugeEntryCounts.Length - 1; i >= 0; i--)
-            {
-                var metric = (Gauge)i;
-                var metricName = metric.GetName()!;
-                var ns = metric.GetNamespace();
-                var isCommon = metric.IsCommon();
-
-                var entries = GaugeEntryCounts[i];
-                for (var j = entries - 1; j >= 0; j--)
-                {
-                    var metricValues = gauges[index];
-                    if (metricValues.GetAndClear() is { } series)
-                    {
-                        data.Add(
-                            new MetricData(
-                                metricName,
-                                points: series,
-                                common: isCommon,
-                                type: TelemetryMetricType.Gauge)
-                            {
-                                Namespace = ns,
-                                Tags = GetTags(ns, metricValues.Tags)
-                            });
-                    }
-
-                    index--;
-                }
-            }
-        }
-
-        return data;
     }
 
-    private List<DistributionMetricData>? GetDistributionData(AggregatedDistribution[] distributions)
+    protected void AddDistributionData(
+        AggregatedDistribution[] distributions,
+        List<DistributionMetricData> data,
+        int[] cardinalityPerDistribution,
+        Func<int, MetricDetails> getMetricDetails)
     {
-        var distributionsLength = distributions.Count(x => x.HasValues);
-
-        if (distributionsLength == 0)
-        {
-            return null;
-        }
-
-        var data = new List<DistributionMetricData>(distributionsLength);
-
         var index = distributions.Length - 1;
-        for (var i = DistributionEntryCounts.Length - 1; i >= 0; i--)
+        for (var i = cardinalityPerDistribution.Length - 1; i >= 0; i--)
         {
-            var metric = (Distribution)i;
-            var metricName = metric.GetName()!;
-            var ns = metric.GetNamespace();
-            var isCommon = metric.IsCommon();
+            var metric = getMetricDetails(i);
 
-            var entries = DistributionEntryCounts[i];
+            var entries = cardinalityPerDistribution[i];
             for (var j = entries - 1; j >= 0; j--)
             {
                 var metricValues = distributions[index];
@@ -273,20 +170,18 @@ internal abstract partial class MetricsTelemetryCollectorBase
                 {
                     data.Add(
                         new DistributionMetricData(
-                            metricName,
+                            metric.Name,
                             points: values,
-                            common: isCommon)
+                            common: metric.IsCommon)
                         {
-                            Namespace = ns,
-                            Tags = GetTags(ns, metricValues.Tags),
+                            Namespace = metric.NameSpace,
+                            Tags = GetTags(metric.NameSpace, metricValues.Tags),
                         });
                 }
 
                 index--;
             }
         }
-
-        return data;
     }
 
     private async Task AggregateMetricsLoopAsync()
@@ -360,7 +255,7 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private struct AggregatedDistribution
+    protected struct AggregatedDistribution
     {
         private List<double>? _values;
         public readonly string[]? Tags;
@@ -391,72 +286,17 @@ internal abstract partial class MetricsTelemetryCollectorBase
         }
     }
 
-    private class AggregatedMetrics
+    protected readonly struct MetricDetails
     {
-#pragma warning disable SA1401 // fields should be private
-        public readonly AggregatedMetric[] PublicApiCounts;
-        public readonly AggregatedMetric[] Counts;
-        public readonly AggregatedMetric[] Gauges;
-        public readonly AggregatedDistribution[] Distributions;
-#pragma warning restore SA1401
+        public readonly string Name;
+        public readonly string? NameSpace;
+        public readonly bool IsCommon;
 
-        public AggregatedMetrics()
+        public MetricDetails(string name, string? nameSpace, bool isCommon)
         {
-            PublicApiCounts = new AggregatedMetric[PublicApiUsageExtensions.Length];
-            for (var i = PublicApiUsageExtensions.Length - 1; i >= 0; i--)
-            {
-                PublicApiCounts[i] = new(new[] { ((PublicApiUsage)i).ToStringFast() });
-            }
-
-            Counts = GetCountBuffer();
-            Gauges = GetGaugeBuffer();
-            Distributions = GetDistributionBuffer();
-        }
-    }
-
-    protected class MetricBuffer
-    {
-#pragma warning disable SA1401 // fields should be private
-        public readonly int[] PublicApiCounts;
-        public readonly int[] Counts;
-        public readonly int[] Gauges;
-        public readonly BoundedConcurrentQueue<double>[] Distributions;
-
-#pragma warning restore SA1401
-
-        public MetricBuffer()
-        {
-            PublicApiCounts = new int[PublicApiUsageExtensions.Length];
-            Counts = new int[_countsLength];
-            Gauges = new int[_gaugesLength];
-            Distributions = new BoundedConcurrentQueue<double>[_distributionsLength];
-            for (var i = _distributionsLength - 1; i >= 0; i--)
-            {
-                Distributions[i] = new BoundedConcurrentQueue<double>(queueLimit: 1000);
-            }
-        }
-
-        public void Clear()
-        {
-            for (var i = 0; i < PublicApiCounts.Length; i++)
-            {
-                PublicApiCounts[i] = 0;
-            }
-
-            for (var i = 0; i < Counts.Length; i++)
-            {
-                Counts[i] = 0;
-            }
-
-            for (var i = 0; i < Gauges.Length; i++)
-            {
-                Gauges[i] = 0;
-            }
-
-            for (var i = 0; i < Distributions.Length; i++)
-            {
-                while (Distributions[i].TryDequeue(out _)) { }
-            }
+            Name = name;
+            NameSpace = nameSpace;
+            IsCommon = isCommon;
         }
     }
 }
