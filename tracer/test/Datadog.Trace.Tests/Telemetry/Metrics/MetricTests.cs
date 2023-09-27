@@ -128,7 +128,6 @@ public class MetricTests
             GetValues<CountShared>(TelemetryMetricType.Count, x => (((CountShared)x).GetName(), ((CountShared)x).GetNamespace(), ((CountShared)x).IsCommon())),
             GetValues<CountCIVisibility>(TelemetryMetricType.Count, x => (((CountCIVisibility)x).GetName(), ((CountCIVisibility)x).GetNamespace(), ((CountCIVisibility)x).IsCommon())),
             GetValues<Gauge>(TelemetryMetricType.Gauge, x => (((Gauge)x).GetName(), ((Gauge)x).GetNamespace(), ((Gauge)x).IsCommon())),
-            GetValues<Distribution>(TelemetryMetricType.Distribution, x => (((Distribution)x).GetName(), ((Distribution)x).GetNamespace(), ((Distribution)x).IsCommon())),
             GetValues<DistributionShared>(TelemetryMetricType.Distribution, x => (((DistributionShared)x).GetName(), ((DistributionShared)x).GetNamespace(), ((DistributionShared)x).IsCommon())),
             GetValues<DistributionCIVisibility>(TelemetryMetricType.Distribution, x => (((DistributionCIVisibility)x).GetName(), ((DistributionCIVisibility)x).GetNamespace(), ((DistributionCIVisibility)x).IsCommon())),
         };
