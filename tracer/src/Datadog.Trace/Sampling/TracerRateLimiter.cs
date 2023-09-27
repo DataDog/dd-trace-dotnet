@@ -11,8 +11,8 @@ namespace Datadog.Trace.Sampling
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TracerRateLimiter>();
 
-        public TracerRateLimiter(int? maxTracesPerInterval)
-            : base(maxTracesPerInterval)
+        public TracerRateLimiter(int? maxTracesPerInterval, int? intervalMiliseconds = null)
+            : base(maxTracesPerInterval, intervalMiliseconds)
         {
         }
 

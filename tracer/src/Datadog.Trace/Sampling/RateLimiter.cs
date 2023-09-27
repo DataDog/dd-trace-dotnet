@@ -28,11 +28,11 @@ namespace Datadog.Trace.Sampling
         private int _previousWindowChecks = 0;
         private int _previousWindowAllowed = 0;
 
-        public RateLimiter(int? maxTracesPerInterval)
+        public RateLimiter(int? maxTracesPerInterval, int? intervalMilliseconds = null)
         {
             _maxTracesPerInterval = maxTracesPerInterval ?? 100;
 
-            _intervalMilliseconds = 1_000;
+            _intervalMilliseconds = intervalMilliseconds ?? 1_000;
             _interval = TimeSpan.FromMilliseconds(_intervalMilliseconds);
             _windowBegin = Clock.UtcNow;
         }

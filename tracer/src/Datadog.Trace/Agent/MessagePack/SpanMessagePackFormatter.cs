@@ -63,6 +63,8 @@ namespace Datadog.Trace.Agent.MessagePack
 
         private readonly byte[] _processIdNameBytes = StringEncoding.UTF8.GetBytes(Metrics.ProcessId);
 
+        private readonly byte[] _apmEnabledBytes = StringEncoding.UTF8.GetBytes(Trace.Tags.ApmEnabled);
+
         // Azure App Service tag names and values
         private byte[] _aasSiteNameTagNameBytes;
         private byte[] _aasSiteKindTagNameBytes;
@@ -471,6 +473,14 @@ namespace Datadog.Trace.Agent.MessagePack
                 count++;
                 offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _processIdNameBytes);
                 offset += MessagePackBinary.WriteDouble(ref bytes, offset, processId);
+            }
+
+            // add "apm.enabled:0" tag to the first span in the chunk when APM is disabled
+            if (!model.TraceChunk.IsApmEnabled && model.IsFirstSpanInChunk)
+            {
+                count++;
+                offset += MessagePackBinary.WriteStringBytes(ref bytes, offset, _apmEnabledBytes);
+                offset += MessagePackBinary.WriteDouble(ref bytes, offset, 0);
             }
 
             // add "_sampling_priority_v1" tag to all "chunk orphans"

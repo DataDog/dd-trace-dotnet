@@ -1,4 +1,4 @@
-﻿// <copyright file="TraceChunkModel.cs" company="Datadog">
+// <copyright file="TraceChunkModel.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -53,6 +53,8 @@ internal readonly struct TraceChunkModel
 
     public readonly bool IsRunningInAzureAppService = false;
 
+    public readonly bool IsApmEnabled = true;
+
     public readonly ImmutableAzureAppServiceSettings? AzureAppServiceSettings = null;
 
     /// <summary>
@@ -84,6 +86,7 @@ internal readonly struct TraceChunkModel
             Origin = traceContext.Origin;
             Tags = traceContext.Tags;
             IsRunningInAzureAppService = traceContext.Tracer?.Settings?.IsRunningInAzureAppService ?? false;
+            IsApmEnabled = traceContext.Tracer?.Settings?.ApmTracingEnabledInternal ?? true;
             AzureAppServiceSettings = traceContext.Tracer?.Settings?.AzureAppServiceMetadata ?? null;
             if (traceContext.Tracer?.GitMetadataTagsProvider?.TryExtractGitMetadata(out var gitMetadata) == true &&
                 gitMetadata != GitMetadata.Empty)
