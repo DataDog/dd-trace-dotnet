@@ -6,9 +6,8 @@
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.SourceGenerators.NativeObjects;
 using Microsoft.CodeAnalysis;
-
-namespace Datadog.Trace.SourceGenerators.NativeObjects;
 
 /// <summary>
 /// Source generator to generate native object wrappers for COM objects to use with NativeAOT.

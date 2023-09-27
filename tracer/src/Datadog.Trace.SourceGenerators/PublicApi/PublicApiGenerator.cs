@@ -9,13 +9,12 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using Datadog.Trace.SourceGenerators.Helpers;
+using Datadog.Trace.SourceGenerators.PublicApi;
 using Datadog.Trace.SourceGenerators.PublicApi.Diagnostics;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
-
-namespace Datadog.Trace.SourceGenerators.PublicApi;
 
 /// <summary>
 /// Source generator that creates instrumented public properties from fields decorated with <c>[GeneratePublicApi]</c>.
