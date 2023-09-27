@@ -66,7 +66,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
                     if (layout.TryDuckCast<IJson5LayoutProxy>(out var layoutWithScope))
                     {
-                        layoutWithScope.IncludeScopeProperties = true;
+                        layoutWithScope.IncludeScopePropertiesField = true;
                     }
                     else if (layout.TryDuckCast<IJsonLayoutProxy>(out var layoutWithMdc))
                     {

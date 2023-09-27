@@ -9,13 +9,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 {
     internal interface IJson5LayoutProxy : IDuckType
     {
-        /// <summary>
-        /// Gets or sets a value indicating whether to include the contents of the ScopeContext properties-dictionary.
-        /// </summary>
-        /// <docgen category='Layout Options' order='10' />
-        bool IncludeScopeProperties { get; set; }
-
         [DuckField(Name = "_includeScopeProperties")]
-        bool IncludeScopePropertiesField { get; } // added in v5
+        bool IncludeScopePropertiesField { get; set; } // added in v5
     }
 }
