@@ -297,6 +297,7 @@ partial class Build : NukeBuild
         .Description("Builds and runs the tool artifacts tests")
         .DependsOn(CompileManagedTestHelpers)
         .DependsOn(BuildDdDotnetArtifactTests)
+        .DependsOn(CopyDdDotnet)
         .DependsOn(RunDdDotnetArtifactTests);
 
     Target PackNuGet => _ => _
@@ -374,12 +375,19 @@ partial class Build : NukeBuild
                 };
             }
 
+            // We don't want the symbols in MonitoringHome,
+            // So we publish to a different folder than copy only the executable
+            var publishFolder = ArtifactsDirectory / "dd-dotnet" / rid;
+
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
                 .SetFramework("net7.0")
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
-                .SetOutput(ArtifactsDirectory / "dd-dotnet" / rid));
+                .SetOutput(publishFolder));
+
+            var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
+            CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
         });
 
     Target BuildRunnerTool => _ => _
