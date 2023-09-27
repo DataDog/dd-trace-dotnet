@@ -45,9 +45,13 @@ internal static class SecurityCoordinatorHelpers
                     var securityCoordinator = new SecurityCoordinator(security, httpContext, span, transport);
                     var args = new Dictionary<string, object>
                     {
-                        { AddressesConstants.ResponseHeaderNoCookies, SecurityCoordinator.ExtractHeadersFromRequest(headers) },
+                        {
+                            AddressesConstants.ResponseHeaderNoCookies,
+                            SecurityCoordinator.ExtractHeadersFromRequest(headers)
+                        },
                         { AddressesConstants.ResponseStatus, httpContext.Response.StatusCode.ToString() },
                     };
+
                     var result = securityCoordinator.RunWaf(args);
                     securityCoordinator.CheckAndBlock(result);
                 }
@@ -123,17 +127,16 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body)
+    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body, bool response = false)
     {
         var transport = new SecurityCoordinator.HttpTransport(context);
         if (!transport.IsBlocked)
         {
             var securityCoordinator = new SecurityCoordinator(security, context, span, transport);
             var keysAndValues = ObjectExtractor.Extract(body);
-            var args = new Dictionary<string, object> { { AddressesConstants.RequestBody, keysAndValues } };
+            var args = new Dictionary<string, object> { { response ? AddressesConstants.ResponseBody : AddressesConstants.RequestBody, keysAndValues } };
             var result = securityCoordinator.RunWaf(args);
             securityCoordinator.CheckAndBlock(result);
-
             return keysAndValues;
         }
 

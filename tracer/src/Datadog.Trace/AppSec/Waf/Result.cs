@@ -15,10 +15,11 @@ namespace Datadog.Trace.AppSec.Waf
         {
             ReturnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
             Derivatives = returnStruct.Derivatives.DecodeMap();
-            ShouldBeReported = returnCode >= WafReturnCode.Match;
+            ShouldReportSchema = Derivatives is { Count: > 0 };
             var events = returnStruct.Events.DecodeObjectArray();
-            if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
+            if (events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
             else
             {
                 // Serialize all the events
@@ -32,6 +33,8 @@ namespace Datadog.Trace.AppSec.Waf
         }
 
         public WafReturnCode ReturnCode { get; }
+
+        public bool ShouldReportSchema { get; }
 
         public string Data { get; }
 
@@ -53,7 +56,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool ShouldBlock { get; }
 
-        public bool ShouldBeReported { get; }
+        public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
     }

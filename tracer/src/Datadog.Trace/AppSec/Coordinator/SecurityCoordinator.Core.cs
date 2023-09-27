@@ -6,6 +6,7 @@
 #nullable enable
 #pragma warning disable CS0282
 #if !NETFRAMEWORK
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf;
@@ -59,14 +60,14 @@ internal readonly partial struct SecurityCoordinator
 
     internal void CheckAndBlock(IResult? result)
     {
-        if (result?.ShouldBeReported is true)
+        if (result is not null)
         {
-            if (result.ShouldBlock)
+            if (result!.ShouldBlock)
             {
                 throw new BlockException(result);
             }
 
-            Report(result.Data, result.AggregatedTotalRuntime, result.AggregatedTotalRuntimeWithBindings, result.ShouldBlock);
+            TryReport(result, result.ShouldBlock);
         }
     }
 
@@ -108,19 +109,33 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var dict = new Dictionary<string, object>
+        var addressesDictionary = new Dictionary<string, object>
         {
             { AddressesConstants.RequestMethod, request.Method },
             { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
             { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
-            { AddressesConstants.RequestQuery, queryStringDic },
-            { AddressesConstants.RequestHeaderNoCookies, headersDic },
-            { AddressesConstants.RequestCookies, cookiesDic },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) },
-            { AddressesConstants.UserId, _localRootSpan.Context?.TraceContext?.Tags?.GetTag(Tags.User.Id) ?? string.Empty },
+            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
         };
 
-        return dict;
+        var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
+        if (!string.IsNullOrEmpty(userId))
+        {
+            addressesDictionary.Add(AddressesConstants.UserId, userId!);
+        }
+
+        AddIfElms(AddressesConstants.RequestQuery, queryStringDic);
+        AddIfElms(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        AddIfElms(AddressesConstants.RequestCookies, cookiesDic);
+
+        return addressesDictionary;
+
+        void AddIfElms(string address, IDictionary dic)
+        {
+            if (dic.Count > 0)
+            {
+                addressesDictionary.Add(address, dic);
+            }
+        }
     }
 
     internal class HttpTransport : HttpTransportBase

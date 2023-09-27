@@ -29,7 +29,7 @@
     <Compile Remove="DuckTyping\ObscureObject.cs" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
+    <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\ConfigFiles\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
     <Content Update="Asm\rule-set.1.7.2.json">

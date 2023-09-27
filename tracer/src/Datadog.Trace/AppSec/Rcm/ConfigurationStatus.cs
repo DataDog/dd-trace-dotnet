@@ -120,7 +120,7 @@ internal record ConfigurationStatus
         {
             if (FallbackEmbeddedRuleSet == null)
             {
-                var result = WafConfigurator.DeserializeEmbeddedRules(_embeddedRulesPath);
+                var result = WafConfigurator.DeserializeEmbeddedOrStaticRules(_embeddedRulesPath);
                 if (result != null)
                 {
                     FallbackEmbeddedRuleSet = RuleSet.From(result);

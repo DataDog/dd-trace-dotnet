@@ -286,6 +286,15 @@ namespace Datadog.Trace.AppSec.Waf
                     break;
                 }
 
+                case IEnumerable<KeyValuePair<string, bool>> objDict:
+                {
+                    var count = objDict is ICollection<KeyValuePair<string, bool>> dct ? dct.Count : objDict.Count();
+                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey1, &GetValue1);
+                    static string GetKey1(KeyValuePair<string, bool> item) => item.Key;
+                    static object GetValue1(KeyValuePair<string, bool> item) => item.Value;
+                    break;
+                }
+
                 case IEnumerable<KeyValuePair<string, string>> objDict:
                 {
                     var count = objDict is ICollection<KeyValuePair<string, string>> dct ? dct.Count : objDict.Count();
@@ -483,6 +492,7 @@ namespace Datadog.Trace.AppSec.Waf
                     // dont remove IEnumerable<KeyValuePair<string, string[]>>, it is used for logging cookies which are this type in debug mode
                     IEnumerable<KeyValuePair<string, string[]>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IEnumerable<KeyValuePair<string, object>> objDict => FormatDictionary(objDict, sb),
+                    IEnumerable<KeyValuePair<string, bool>> objDict => FormatDictionary(objDict.Select(x => new KeyValuePair<string, object>(x.Key, x.Value)), sb),
                     IList<JToken> objs => FormatList(objs, sb),
                     IList<string> objs => FormatList(objs, sb),
                     // this becomes ugly but this should change once PR improving marshalling of the waf is merged
