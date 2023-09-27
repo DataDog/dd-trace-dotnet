@@ -60,6 +60,7 @@ private:
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
 
-    // CI Visibility BenchmarkDotNet support
+    // CI Visibility support
+    bool _isCIVisibilityEnabled;
     uint64_t _ciVisibilitySpanId;
 };

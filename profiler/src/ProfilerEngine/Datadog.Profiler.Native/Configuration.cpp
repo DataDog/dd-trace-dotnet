@@ -74,13 +74,15 @@ Configuration::Configuration()
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
     _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
 
-    // Check if we are in CI Visibility mode with a test SpanId
-    // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
-    // But on Linux, it's std::uint64_t == unsigned long (=> 0ul)and it fails to compile.
-    // Here we create a 0 value of type std::uint64_t which will succeed the compilation
-    _internalCIVisibilitySpanId = GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
-    if (_internalCIVisibilitySpanId > 0)
+    // Check CI Visibility mode
+    _isCIVisibilityEnabled = GetEnvironmentValue(EnvironmentVariables::CIVisibilityEnabled, false);
+    if (_isCIVisibilityEnabled)
     {
+        // We cannot write 0ull instead of std::uint64_t{0} because on Windows, compiling in x64, std::uint64_t == unsigned long long.
+        // But on Linux, it's std::uint64_t == unsigned long (=> 0ul)and it fails to compile.
+        // Here we create a 0 value of type std::uint64_t which will succeed the compilation
+        _internalCIVisibilitySpanId = GetEnvironmentValue(EnvironmentVariables::InternalCIVisibilitySpanId, uint64_t{0});
+
         // If we detect CI Visibility we allow to reduce the minimum ms in sampling rate down to 1ms.
         _cpuWallTimeSamplingRate = ExtractCpuWallTimeSamplingRate(1);
     }
@@ -287,6 +289,11 @@ bool Configuration::IsAllocationRecorderEnabled() const
 bool Configuration::IsInternalMetricsEnabled() const
 {
     return _isInternalMetricsEnabled;
+}
+
+bool Configuration::IsCIVisibilityEnabled() const
+{
+    return _isCIVisibilityEnabled;
 }
 
 std::uint64_t Configuration::GetCIVisibilitySpanId() const

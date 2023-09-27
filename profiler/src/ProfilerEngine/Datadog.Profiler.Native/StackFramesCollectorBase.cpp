@@ -19,6 +19,7 @@ StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _config
     _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
     _pCurrentCollectionThreadInfo = nullptr;
     _isCurrentCollectionAbortRequested.store(false);
+    _isCIVisibilityEnabled = _configuration->IsCIVisibilityEnabled();
     _ciVisibilitySpanId = _configuration->GetCIVisibilitySpanId();
 }
 
@@ -109,7 +110,7 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
-    if (_ciVisibilitySpanId > 0)
+    if (_isCIVisibilityEnabled && _ciVisibilitySpanId > 0)
     {
         _pStackSnapshotResult->SetLocalRootSpanId(_ciVisibilitySpanId);
         _pStackSnapshotResult->SetSpanId(_ciVisibilitySpanId);
