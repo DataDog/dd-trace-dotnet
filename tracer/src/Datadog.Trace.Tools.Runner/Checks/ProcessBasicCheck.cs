@@ -572,18 +572,19 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             string archFolder;
             var directoryPath = "/opt/datadog/";
+            var osArchitecture = RuntimeInformation.OSArchitecture;
 
-            if (RuntimeInformation.OSArchitecture == Architecture.X64)
+            if (osArchitecture == Architecture.X64)
             {
                 archFolder = Utils.IsAlpine() ? "linux-musl-x64" : "linux-x64";
             }
-            else if (RuntimeInformation.OSArchitecture == Architecture.Arm64)
+            else if (osArchitecture == Architecture.Arm64)
             {
                 archFolder = "linux-arm64";
             }
             else
             {
-                Utils.WriteError($"Error: Linux {RuntimeInformation.OSArchitecture} architecture is not supported.");
+                Utils.WriteError(UnsupportedLinuxArchitecture(osArchitecture.ToString()));
                 return;
             }
 
@@ -599,7 +600,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                         DirectoryInfo dirInfo = new DirectoryInfo(directory);
                         if (dirInfo.Name.StartsWith("linux-", StringComparison.OrdinalIgnoreCase))
                         {
-                            Utils.WriteError($"Unable to find expected {archFolder} folder, found {dirInfo.Name} instead, make sure to use the correct installer.");
+                            Utils.WriteError(WrongLinuxFolder(archFolder, dirInfo.Name));
                             return;
                         }
                     }
