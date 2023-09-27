@@ -166,9 +166,9 @@ internal static class DatadogLoggingFactory
 #else
             var isWindows = FrameworkDescription.Instance.IsWindows();
 
-            if (ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry))
+            if (ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry))
             {
-                return isWindows ? "/home/LogFiles" : "/home/site/wwwroot";
+                return isWindows ? @"C:\home\LogFiles\datadog" : "/home/LogFiles/datadog";
             }
             else if (isWindows)
             {

@@ -46,15 +46,14 @@ inline fs::path GetDefaultLogDir()
 
     if (isAas)
     {
-#ifdef _WINDOWS
-        return WStr("C:\\home\\LogFiles\\datadog\\");
+#ifdef _WIN32
+        return WStr(R"(C:\home\LogFiles\datadog\)");
 #else
         return WStr("/home/LogFiles/datadog/");
 #endif
     }
 
 #ifdef _WIN32
-
     fs::path program_data_path;
     program_data_path = GetEnvironmentValue(WStr("PROGRAMDATA"));
 
@@ -63,6 +62,8 @@ inline fs::path GetDefaultLogDir()
         program_data_path = WStr(R"(C:\ProgramData)");
     }
 
+    // TODO: Since profiler, tracer, native loader output to the same folder, we
+    // can remove the template variable below
     return program_data_path / TLoggerPolicy::folder_path;
 #else
     return ToWSTRING("/var/log/datadog/dotnet/");
@@ -98,7 +99,7 @@ inline fs::path GetDatadogLogFilePath(const std::string& file_name_suffix)
 
     WSTRING path = GetEnvironmentValue(TLoggerPolicy::logging_environment::log_path);
 
-    if (path.length() > 0)
+    if (!path.empty())
     {
         return path;
     }
