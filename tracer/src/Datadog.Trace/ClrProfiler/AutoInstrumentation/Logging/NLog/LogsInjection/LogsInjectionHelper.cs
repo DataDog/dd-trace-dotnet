@@ -75,7 +75,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     }
                     else if (layout.TryDuckCast<IJsonLayout4Proxy>(out var layoutWithAttributes))
                     {
-                        ConfigureJson4Layout(layoutWithAttributes);
+                        try
+                        {
+                            ConfigureJson4Layout(layoutWithAttributes);
+                        }
+                        catch (Exception ex)
+                        {
+                            Log.Error("Failed to automatically configure NLog JsonLayout for logs injection: {Message}", ex.Message);
+                            return;
+                        }
                     }
                 }
             }
