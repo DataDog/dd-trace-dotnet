@@ -126,7 +126,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             if (configuration is not null && logFactoryProxy is null)
             {
-                ConfigurationTable.Add(configuration, null);
+                if (!ConfigurationTable.TryGetValue(configuration, out _))
+                {
+                    ConfigurationTable.Add(configuration, null);
+                }
             }
 
             if (tracerManager.DirectLogSubmission.Settings.IsIntegrationEnabled(IntegrationId.NLog)
