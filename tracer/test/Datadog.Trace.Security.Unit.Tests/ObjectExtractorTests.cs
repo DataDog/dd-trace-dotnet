@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
 using Xunit;
@@ -13,6 +14,15 @@ namespace Datadog.Trace.Security.Unit.Tests
 {
     public class ObjectExtractorTests
     {
+        private readonly string[] _fieldsAsStrings =
+        {
+            nameof(TestVarietyPoco.SByteValue), nameof(TestVarietyPoco.IntPtrValue),
+            nameof(TestVarietyPoco.UIntPtrValue), nameof(TestVarietyPoco.CharValue),
+            nameof(TestVarietyPoco.GuidValue), nameof(TestVarietyPoco.EnumValue),
+            nameof(TestVarietyPoco.DateTimeValue), nameof(TestVarietyPoco.DateTimeOffsetValue),
+            nameof(TestVarietyPoco.TimeSpanValue)
+        };
+
         [Fact]
         public void TestVarietyOfEmptyPropertyTypes()
         {
@@ -24,7 +34,7 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(prop.GetValue(target)?.ToString(), result[prop.Name]?.ToString());
+                Assert.Equal(_fieldsAsStrings.Contains(prop.Name) ? prop.GetValue(target).ToString() : prop.GetValue(target), result[prop.Name]);
             }
         }
 
@@ -32,7 +42,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestVarietyOfPropertyTypes()
         {
             var testTime = new DateTime(2022, 3, 1, 16, 0, 0);
-            var target = new TestVarietyPoco()
+            var target = new TestVarietyPoco
             {
                 BooleanValue = true,
                 ByteValue = 1,
@@ -61,17 +71,16 @@ namespace Datadog.Trace.Security.Unit.Tests
 
             foreach (var prop in target.GetType().GetProperties())
             {
-                Assert.Equal(prop.GetValue(target)?.ToString(), result[prop.Name]?.ToString());
+                var value = prop.GetValue(target);
+                var expectedValue = _fieldsAsStrings.Contains(prop.Name) ? value.ToString() : value;
+                Assert.Equal(expectedValue, result[prop.Name]);
             }
         }
 
         [Fact]
         public void TestIndexersAreIgnored()
         {
-            var target = new TestIndexerPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestIndexerPoco() { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -83,10 +92,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestWriteOnlyProperties()
         {
-            var target = new TestWriteOnlyPropertyPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestWriteOnlyPropertyPoco() { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -98,10 +104,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestStruct()
         {
-            var target = new TestStructPoco()
-            {
-                StringValue = "hello",
-            };
+            var target = new TestStructPoco() { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -151,10 +154,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestNullList()
         {
-            var target = new TestListPoco()
-            {
-                TestList = null
-            };
+            var target = new TestListPoco() { TestList = null };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -210,10 +210,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestNullDictionary()
         {
-            var target = new TestDictionaryPoco()
-            {
-                TestDictionary = null
-            };
+            var target = new TestDictionaryPoco() { TestDictionary = null };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
@@ -272,10 +269,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestCyclicObjects()
         {
             var target = new TestNestedPropertiesPoco();
-            var linker = new TestNestedPropertiesPoco()
-            {
-                TestNestedPropertiesPocoValue = target
-            };
+            var linker = new TestNestedPropertiesPoco() { TestNestedPropertiesPocoValue = target };
 
             target.TestNestedPropertiesPocoValue = linker;
 
@@ -296,10 +290,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void TestCyclicList()
         {
             var target = new TestNestedListPoco();
-            var linker = new TestNestedListPoco()
-            {
-                TestList = new List<TestNestedListPoco> { target }
-            };
+            var linker = new TestNestedListPoco() { TestList = new List<TestNestedListPoco> { target } };
 
             target.TestList.Add(linker);
 
@@ -322,10 +313,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         {
             const string linkKey = "next";
             var target = new TestNestedDictionaryPoco();
-            var linker = new TestNestedDictionaryPoco()
-            {
-                TestDictionary = new Dictionary<string, TestNestedDictionaryPoco> { { linkKey, target } }
-            };
+            var linker = new TestNestedDictionaryPoco() { TestDictionary = new Dictionary<string, TestNestedDictionaryPoco> { { linkKey, target } } };
 
             target.TestDictionary.Add(linkKey, linker);
 

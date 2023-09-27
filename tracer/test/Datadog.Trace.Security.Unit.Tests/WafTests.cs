@@ -97,7 +97,7 @@ namespace Datadog.Trace.Security.Unit.Tests
         public void BodyAttack(string body, string flow, string rule) => Execute(AddressesConstants.RequestBody, body, flow, rule);
 
         [Fact]
-        public void SchemaExtraction()
+        public void SchemaBodyExtraction()
         {
             Execute(
                 AddressesConstants.RequestBody,
@@ -112,17 +112,25 @@ namespace Datadog.Trace.Security.Unit.Tests
                 },
                 "security_scanner",
                 "crs-913-120",
-                schemaExtraction: """{"server.request.body.schema":[{"property1":[8],"property2":[4],"property3":[16],"property4":[16],"property5":[2],"property6":[4] }]}""");
+                schemaExtraction: """{"_dd.appsec.s.req.body":[{"property1":[8],"property2":[4],"property3":[16],"property4":[16],"property5":[2],"property6":[4] }]}""");
         }
 
-        private void Execute(string address, object value, string flow, string rule, string schemaExtraction = null)
+        [Fact]
+        public void SchemaRequestExtraction()
+        {
+            Execute(
+                AddressesConstants.RequestHeaderNoCookies,
+                new Dictionary<string, object> { { "Content-Type", "/.adsensepostnottherenonobook" }, },
+                schemaExtraction: """{"_dd.appsec.s.req.headers":[{"Content-Type":[8]}]}""");
+        }
+
+        private void Execute(string address, object value, string flow = null, string rule = null, string schemaExtraction = null)
         {
             var args = new Dictionary<string, object> { { address, value } };
-            string embeddedRuleSetPath = null;
-            if (schemaExtraction is not null)
+            var extractSchema = schemaExtraction is not null;
+            if (extractSchema)
             {
-                args.Add(AddressesConstants.WafContextSettings, new Dictionary<string, string> { { "extract-schema", "true" } });
-                embeddedRuleSetPath = "rule-set-withschema.json";
+                args.Add(AddressesConstants.WafContextProcessor, new Dictionary<string, bool> { { "extract-schema", true } });
             }
 
             if (!args.ContainsKey(AddressesConstants.RequestUriRaw))
@@ -135,22 +143,25 @@ namespace Datadog.Trace.Security.Unit.Tests
                 args.Add(AddressesConstants.RequestMethod, "GET");
             }
 
-            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: embeddedRuleSetPath);
+            var initResult = Waf.Create(WafLibraryInvoker, string.Empty, string.Empty, setupWafSchemaExtraction: extractSchema);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(WafReturnCode.Match);
-            if (schemaExtraction is not null)
+            if (flow is not null)
+            {
+                result.ReturnCode.Should().Be(WafReturnCode.Match);
+                var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
+                resultData.Rule.Tags.Type.Should().Be(flow);
+                resultData.Rule.Id.Should().Be(rule);
+                resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
+            }
+
+            if (extractSchema)
             {
                 var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);
                 serializedDerivatives.Should().BeJsonEquivalentTo(schemaExtraction);
             }
-
-            var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();
-            resultData.Rule.Tags.Type.Should().Be(flow);
-            resultData.Rule.Id.Should().Be(rule);
-            resultData.RuleMatches[0].Parameters[0].Address.Should().Be(address);
         }
     }
 }

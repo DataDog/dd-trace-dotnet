@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
+    <Content Include="..\..\src\Datadog.Trace\AppSec\Waf\ConfigFiles\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
   </ItemGroup>
