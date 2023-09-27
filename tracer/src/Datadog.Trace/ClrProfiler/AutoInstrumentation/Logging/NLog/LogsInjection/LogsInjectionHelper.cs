@@ -75,15 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     }
                     else if (layout.TryDuckCast<IJsonLayout4Proxy>(out var layoutWithAttributes))
                     {
-                        try
-                        {
-                            ConfigureJson4Layout(layoutWithAttributes);
-                        }
-                        catch (Exception ex)
-                        {
-                            Log.Error("Failed to automatically configure NLog JsonLayout for logs injection: {Message}", ex.Message);
-                            return;
-                        }
+                        ConfigureJson4Layout(layoutWithAttributes);
                     }
                 }
             }
@@ -139,11 +131,19 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 return;
             }
 
-            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.EnvKey);
-            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.TraceIdKey);
-            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.SpanIdKey);
-            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.VersionKey);
-            AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.ServiceKey);
+            try
+            {
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.EnvKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.TraceIdKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.SpanIdKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.VersionKey);
+                AddAttributeToJson4Layout(layoutWithAttributes, CorrelationIdentifier.ServiceKey);
+            }
+            catch (Exception ex)
+            {
+                Log.Error("Failed to automatically configure NLog JsonLayout attributes for logs injection: {Message}", ex.Message);
+                return;
+            }
         }
 
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
