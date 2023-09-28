@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         MinimumVersion = Major5Minor1,
         MaximumVersion = Major5MinorX,
         IntegrationName = IntegrationName,
-        InstrumentationCategory = InstrumentationCategory.AppSec)]
+        InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     // ReSharper disable once InconsistentNaming
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
