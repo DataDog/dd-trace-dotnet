@@ -359,7 +359,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [SkippableTheory]
     [InlineData("/Iast/SafeCookie")]
     [InlineData("/Iast/AllVulnerabilitiesCookie")]
-    public async Task TestIastInsecureCookieRequest(string url)
+    public async Task TestIastCookiesRequest(string url)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var filename = $"Security.AspNetCore5.enableIast={IastEnabled}.path ={sanitisedUrl}";
