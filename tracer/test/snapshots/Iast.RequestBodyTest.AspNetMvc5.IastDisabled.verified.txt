@@ -17,19 +17,14 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.appsec.waf.version: 1.14.0,
-      _dd.p.dm: -0,
-      _dd.runtime_family: dotnet
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
       _dd.agent_psr: 1.0,
-      _dd.appsec.enabled: 1.0,
-      _dd.appsec.event_rules.error_count: 0.0,
-      _dd.appsec.event_rules.loaded: 130.0,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,
-      _sampling_priority_v1: 2.0
+      _sampling_priority_v1: 1.0
     }
   },
   {
