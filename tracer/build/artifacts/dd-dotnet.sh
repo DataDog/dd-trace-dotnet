@@ -26,8 +26,13 @@ ARCH="$(uname -m)"
 DD_DOTNET_PATH=""
 EXPECTED_PACKAGE=""
 
+DISTRO_ID="$ID"
+if [ ! -z "$ID_LIKE" ]; then
+    DISTRO_ID="$DISTRO_ID $ID_LIKE"
+fi
+
 # Set the DD_DOTNET_PATH according to the distribution and architecture
-if [ "$ID" = "alpine" ]; then
+if [ "$DISTRO_ID" = *"alpine"* ]; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-musl-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz"
@@ -38,7 +43,7 @@ if [ "$ID" = "alpine" ]; then
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
-elif [ "$ID" = "centos" ] || [ "$ID" = "rhel" ] || [ "$ID" = "fedora" ]; then
+elif [ "$DISTRO_ID" = *"centos"* ] || [ "$DISTRO_ID" = *"rhel"* ] || [ "$DISTRO_ID" = *"fedora"* ]; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.x86_64.rpm"
@@ -49,7 +54,7 @@ elif [ "$ID" = "centos" ] || [ "$ID" = "rhel" ] || [ "$ID" = "fedora" ]; then
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
-elif [ "$ID" = "debian" ] || [ "$ID" = "ubuntu" ]; then
+elif [ "$DISTRO_ID" = *"debian"* ] || [ "$DISTRO_ID" = *"ubuntu"* ]; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb"
