@@ -551,7 +551,7 @@ stages:
       artifact: linux-profiler-symbols-arm64
 
 - stage: package_arm64
-  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -747,30 +747,63 @@ stages:
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [build_dd_dotnet]
+      jobs: [linux]
 
-  - job: build_dd_dotnet
+  - job: linux
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
         centos7:
-          name: centos7
           baseImage: centos7
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set
         alpine:
-          name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set
-        arm64:
-          name: arm64
-          baseImage: debian
-          artifactSuffix: linux-arm64
-          poolname: aws-arm64-auto-scaling
 
     pool:
-      name: $(poolName)
+      name: azure-linux-scale-set
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildDdDotnet"
+        retryCountForRunCommand: 1
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
+      displayName: Uploading dd-dotnet $(artifactSuffix)
+      artifact: dd-dotnet-$(artifactSuffix)
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet.dbg
+      displayName: Uploading dd-dotnet $(artifactSuffix) symbols
+      artifact: dd-dotnet-symbols-$(artifactSuffix)
+
+- stage: build_dd_dotnet_linux_arm64
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    baseImage: debian
+    artifactSuffix: linux-arm64
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: aws-arm64-auto-scaling
 
     steps:
     - template: steps/clone-repo.yml
