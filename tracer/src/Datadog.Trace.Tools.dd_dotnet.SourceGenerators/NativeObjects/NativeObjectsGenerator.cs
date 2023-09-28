@@ -6,6 +6,7 @@
 using System.Linq;
 using System.Text;
 using System.Threading;
+using Datadog.Trace.SourceGenerators;
 using Datadog.Trace.SourceGenerators.NativeObjects;
 using Microsoft.CodeAnalysis;
 
@@ -35,7 +36,7 @@ public class NativeObjectsGenerator : IIncrementalGenerator
 
     private static (string Name, string Source) Transform(GeneratorAttributeSyntaxContext context, CancellationToken cancellationToken)
     {
-        var sourceBuilder = new StringBuilder(@"
+        var sourceBuilder = new StringBuilder(Constants.FileHeader + @"
 using System;
 using System.Runtime.InteropServices;
 
