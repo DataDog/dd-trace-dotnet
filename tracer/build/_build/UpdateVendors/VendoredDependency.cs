@@ -64,7 +64,6 @@ namespace UpdateVendors
                 pathToSrc: new[] { "dnlib-3.4.0", "src" },
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "dnlib"));
 
-
             Add(
                 libraryName: "Datadog.Sketches",
                 version: "1.0.0",
@@ -82,6 +81,41 @@ namespace UpdateVendors
                 transform: filePath => RewriteCsFileWithStandardTransform(filePath, originalNamespace: "IndieSystem.Text.RegularExpressions",
                     AddIfNetcoreapp31OrGreater, AddNullableDirectiveTransform, AddIgnoreNullabilityWarningDisablePragma),
                 relativePathsToExclude: new[] { "additional/HashCode.cs", "SR.resx" });
+
+            Add(
+                libraryName: "Datadog.System.Collections.Immutable",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-main", "Datadog.System.Reflection.Metadata", "Datadog.System.Collections.Immutable" },
+                transform: s => { });
+
+            Add(
+                libraryName: "Datadog.System.Memory",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-main", "Datadog.System.Reflection.Metadata", "Datadog.System.Memory" },
+                transform: s => { });
+
+            Add(
+                libraryName: "Datadog.System.Private.CoreLib",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-main", "Datadog.System.Reflection.Metadata", "Datadog.System.Private.CoreLib" },
+                transform: s => { });
+
+            Add(
+                libraryName: "Datadog.System.Reflection.Metadata",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-main", "Datadog.System.Reflection.Metadata", "Datadog.System.Reflection.Metadata" },
+                transform: s => { });
+
+            Add(
+                libraryName: "Datadog.System.Runtime.CompilerServices.Unsafe",
+                version: "1.0.0",
+                downloadUrl: "https://github.com/DataDog/dotnet-vendored-code/archive/refs/heads/main.zip",
+                pathToSrc: new[] { "dotnet-vendored-code-main", "Datadog.System.Reflection.Metadata", "Datadog.System.Runtime.CompilerServices.Unsafe" },
+                transform: s => { });
         }
 
         public static List<VendoredDependency> All { get; set; } = new List<VendoredDependency>();
