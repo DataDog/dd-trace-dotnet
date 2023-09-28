@@ -43,7 +43,7 @@ if [ "$1" = "linux" ]; then
 
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_attack_blocking.json"
-	
+
 else
     echo "Unknown argument $1"
     exit 1
