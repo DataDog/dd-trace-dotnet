@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -26,6 +27,7 @@ namespace Datadog.Trace
             // Register callbacks to make sure we flush the traces before exiting
             AppDomain.CurrentDomain.ProcessExit += CurrentDomain_ProcessExit;
             AppDomain.CurrentDomain.DomainUnload += CurrentDomain_DomainUnload;
+            CIVisibility.CIVisibilityExit += CiVisibilityExit;
 
             try
             {
@@ -92,6 +94,13 @@ namespace Datadog.Trace
         {
             RunShutdownTasks();
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
+        }
+
+        private void CiVisibilityExit(object sender, EventArgs e)
+        {
+            Log.Information("CI Visibility is exiting.");
+            RunShutdownTasks();
+            CIVisibility.CIVisibilityExit -= CiVisibilityExit;
         }
 
         private void RunShutdownTasks()

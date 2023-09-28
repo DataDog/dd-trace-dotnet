@@ -33,6 +33,8 @@ namespace Datadog.Trace.Ci
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
+        public static event EventHandler? CIVisibilityExit;
+
         public static bool Enabled => _enabledLazy.Value;
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
@@ -243,6 +245,23 @@ namespace Datadog.Trace.Ci
             catch (Exception ex)
             {
                 Log.Error(ex, "Exception occurred when flushing spans.");
+            }
+        }
+
+        /// <summary>
+        /// Manually close the CI Visibility mode triggering the LifeManager to run the shutdown tasks
+        /// This is required due to a weird behavior on the VSTest framework were the shutdown tasks are not awaited:
+        /// ` if testhost doesn't shut down within 100ms(as the execution is completed, we expect it to shutdown fast).
+        ///   vstest.console forcefully kills the process.`
+        /// https://github.com/microsoft/vstest/issues/1900#issuecomment-457488472
+        /// https://github.com/Microsoft/vstest/blob/2d4508232b6655a4f363b8bbcc887441c7d1d334/src/Microsoft.TestPlatform.CrossPlatEngine/Client/ProxyOperationManager.cs#L197
+        /// </summary>
+        internal static void Close()
+        {
+            if (IsRunning)
+            {
+                CIVisibilityExit?.Invoke(null, EventArgs.Empty);
+                Interlocked.Exchange(ref _firstInitialization, 1);
             }
         }
 
