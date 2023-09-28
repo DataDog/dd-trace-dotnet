@@ -251,6 +251,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cor_profiler_test.cpp" />
+    <ClCompile Include="environment_variable_wrapper.cpp" />
     <ClCompile Include="guid_test.cpp" />
     <ClCompile Include="pal_test.cpp" />
     <ClCompile Include="string_test.cpp" />
@@ -266,6 +267,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="environment_variable_wrapper.h" />
     <ClInclude Include="test_cor_profiler.h" />
     <ClInclude Include="test_dynamic_dispatcher.h" />
     <ClInclude Include="test_dynamic_instance.h" />
