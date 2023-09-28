@@ -31,8 +31,21 @@ if [ ! -z "$ID_LIKE" ]; then
     DISTRO_ID="$DISTRO_ID $ID_LIKE"
 fi
 
+contains_word() {
+  local string="$1"
+  local word="$2"
+  
+  for token in $string; do
+    if [ "$token" = "$word" ]; then
+      return 0  # word found
+    fi
+  done
+  
+  return 1  # word not found
+}
+
 # Set the DD_DOTNET_PATH according to the distribution and architecture
-if [ "$DISTRO_ID" = *"alpine"* ]; then
+if contains_word "$DISTRO_ID" "alpine"; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-musl-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz"
@@ -43,7 +56,7 @@ if [ "$DISTRO_ID" = *"alpine"* ]; then
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
-elif [ "$DISTRO_ID" = *"centos"* ] || [ "$DISTRO_ID" = *"rhel"* ] || [ "$DISTRO_ID" = *"fedora"* ]; then
+elif contains_word "$DISTRO_ID" "centos" || contains_word "$DISTRO_ID" "rhel" || contains_word "$DISTRO_ID" "fedora"; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.x86_64.rpm"
@@ -54,7 +67,7 @@ elif [ "$DISTRO_ID" = *"centos"* ] || [ "$DISTRO_ID" = *"rhel"* ] || [ "$DISTRO_
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
-elif [ "$DISTRO_ID" = *"debian"* ] || [ "$DISTRO_ID" = *"ubuntu"* ]; then
+elif contains_word "$DISTRO_ID" "debian" || contains_word "$DISTRO_ID" "ubuntu"; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
         EXPECTED_PACKAGE="datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb"
