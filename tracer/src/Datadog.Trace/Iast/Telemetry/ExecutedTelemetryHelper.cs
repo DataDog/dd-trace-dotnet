@@ -139,6 +139,7 @@ internal class ExecutedTelemetryHelper
             IastInstrumentedSinks.PathTraversal => BasicExecutedTag + SinkExecutedTag + "path_traversal",
             IastInstrumentedSinks.Ssrf => BasicExecutedTag + SinkExecutedTag + "ssrf",
             IastInstrumentedSinks.UnvalidatedRedirect => BasicExecutedTag + SinkExecutedTag + "unvalidated_redirect",
+            IastInstrumentedSinks.WeakRandomness => BasicExecutedTag + SinkExecutedTag + "weak_randomness",
             IastInstrumentedSinks.None => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
             _ => throw new System.Exception($"Undefined vulnerability name for value {vulnerability}."),
         };
