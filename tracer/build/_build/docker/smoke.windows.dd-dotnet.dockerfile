@@ -51,4 +51,4 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["c:/Program Files/Datadog/.NET Tracer/dd_dotnet.cmd", "dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["'c:/Program Files/Datadog/.NET Tracer/dd_dotnet.cmd'", "dotnet", "AspNetCoreSmokeTest.dll"]
