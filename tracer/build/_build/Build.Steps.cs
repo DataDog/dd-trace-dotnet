@@ -668,6 +668,7 @@ partial class Build
     Target CreateBundleHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
+        .DependsOn(CopyDdDotnet)
         .Executes(() =>
         {
             // clean directory of everything except the text files
