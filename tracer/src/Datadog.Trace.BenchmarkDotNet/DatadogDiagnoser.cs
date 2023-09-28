@@ -244,20 +244,16 @@ public class DatadogDiagnoser : IDiagnoser
 
         environment["DD_NATIVELOADER_CONFIGFILE"] = loaderConfig;
 
+        // CI Visibility integration environment variables
         environment[ConfigurationKeys.CIVisibility.Enabled] = "1";
         environment["DD_INTERNAL_CIVISIBILITY_RUNTIMEID"] = RuntimeId.Get();
         environment["DD_INTERNAL_CIVISIBILITY_SPANID"] = spanId.ToString();
 
+        // Profiler options
         const string profilerEnabled = "DD_PROFILING_ENABLED";
         if (!environment.TryGetValue(profilerEnabled, out _))
         {
             environment[profilerEnabled] = "1";
-        }
-
-        const string profilerWalltimeEnabled = "DD_PROFILING_WALLTIME_ENABLED";
-        if (!environment.TryGetValue(profilerWalltimeEnabled, out _))
-        {
-            environment[profilerWalltimeEnabled] = "1";
         }
 
         const string profilerCPUEnabled = "DD_PROFILING_CPU_ENABLED";
@@ -266,16 +262,10 @@ public class DatadogDiagnoser : IDiagnoser
             environment[profilerCPUEnabled] = "1";
         }
 
-        const string profilerAllocationEnabled = "DD_PROFILING_ALLOCATION_ENABLED";
-        if (!environment.TryGetValue(profilerAllocationEnabled, out _))
+        const string profilerWalltimeEnabled = "DD_PROFILING_WALLTIME_ENABLED";
+        if (!environment.TryGetValue(profilerWalltimeEnabled, out _))
         {
-            environment[profilerAllocationEnabled] = "1";
-        }
-
-        const string profilerContentionEnabled = "DD_PROFILING_CONTENTION_ENABLED";
-        if (!environment.TryGetValue(profilerContentionEnabled, out _))
-        {
-            environment[profilerContentionEnabled] = "1";
+            environment[profilerWalltimeEnabled] = "1";
         }
 
         const string profilerExceptionEnabled = "DD_PROFILING_EXCEPTION_ENABLED";
@@ -284,18 +274,45 @@ public class DatadogDiagnoser : IDiagnoser
             environment[profilerExceptionEnabled] = "1";
         }
 
+        const string profilerAllocationEnabled = "DD_PROFILING_ALLOCATION_ENABLED";
+        if (!environment.TryGetValue(profilerAllocationEnabled, out _))
+        {
+            environment[profilerAllocationEnabled] = "1";
+        }
+
+        const string profilerLockEnabled = "DD_PROFILING_LOCK_ENABLED";
+        if (!environment.TryGetValue(profilerLockEnabled, out _))
+        {
+            environment[profilerLockEnabled] = "1";
+        }
+
+        const string profilerGcEnabled = "DD_PROFILING_GC_ENABLED";
+        if (!environment.TryGetValue(profilerGcEnabled, out _))
+        {
+            environment[profilerGcEnabled] = "1";
+        }
+
         const string profilerHeapEnabled = "DD_PROFILING_HEAP_ENABLED";
         if (!environment.TryGetValue(profilerHeapEnabled, out _))
         {
             environment[profilerHeapEnabled] = "1";
         }
 
-        environment["DD_INTERNAL_PROFILING_SAMPLING_RATE"] = "1";
         environment["DD_PROFILING_AGENTLESS"] = CIVisibility.Settings.Agentless ? "1" : "0";
-        environment["DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED "] = "1";
+        environment["DD_PROFILING_UPLOAD_PERIOD"] = "20";
+        environment["DD_INTERNAL_PROFILING_SAMPLING_RATE"] = "1";
         environment["DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD"] = "64";
         environment["DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD"] = "64";
         environment["DD_INTERNAL_PROFILING_CPUTIME_THREADS_THRESHOLD"] = "128";
+        environment["DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED "] = "1";
+        environment["DD_PROFILING_FRAMES_NATIVE_ENABLED "] = "1";
+
+        // Git data
+        if (CIEnvironmentValues.Instance is { } ciEnv)
+        {
+            environment["DD_GIT_REPOSITORY_URL"] = ciEnv.Repository;
+            environment["DD_GIT_COMMIT_SHA"] = ciEnv.Commit;
+        }
     }
 
     private void EnsureAndFillProfilerPathVariables(DiagnoserActionParameters parameters)
