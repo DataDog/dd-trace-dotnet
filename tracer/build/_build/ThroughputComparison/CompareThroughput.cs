@@ -100,6 +100,7 @@ public class CompareThroughput
         CrankTestSuite.LinuxArm64 => "Linux arm64",
         CrankTestSuite.WindowsX64 => "Windows x64",
         CrankTestSuite.ASMLinuxX64 => "Linux x64 (ASM)",
+        CrankTestSuite.IASTLinuxX64 => "Linux x64 (IAST)",
         _ => throw new NotImplementedException(),
     };
 
@@ -159,6 +160,11 @@ public class CompareThroughput
                 ("appsec_noattack.json", CrankScenario.NoAttack),
                 ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking),
                 ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
+            }
+        ),
+        ("crank_linux_x64_iast_1", CrankTestSuite.IASTLinuxX64, new[]
+            {
+                ("appsec_iast_baseline.json", CrankScenario.Baseline),
                 ("appsec_iast_enabled_default.json", CrankScenario.IastDefault),
                 ("appsec_iast_enabled_full.json", CrankScenario.IastFull),
                 ("appsec_iast_disabled_vulnerability.json", CrankScenario.IastVulnerabilityDisabled),
@@ -198,6 +204,7 @@ public class CompareThroughput
         LinuxArm64,
         WindowsX64,
         ASMLinuxX64,
+        IASTLinuxX64,
     }
 
     public enum CrankScenario
