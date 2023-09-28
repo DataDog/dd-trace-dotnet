@@ -6,7 +6,6 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Reflection;
 using BenchmarkDotNet.Analysers;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Engines;
@@ -16,6 +15,7 @@ using BenchmarkDotNet.Reports;
 using BenchmarkDotNet.Running;
 using BenchmarkDotNet.Validators;
 using Datadog.Trace.Ci;
+using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Util;
 
@@ -307,11 +307,34 @@ public class DatadogDiagnoser : IDiagnoser
         environment["DD_INTERNAL_PROFILING_TIMESTAMPS_AS_LABEL_ENABLED "] = "1";
         environment["DD_PROFILING_FRAMES_NATIVE_ENABLED "] = "1";
 
+        // Tags
+        var tagsList = new List<string>();
+
         // Git data
         if (CIEnvironmentValues.Instance is { } ciEnv)
         {
             environment["DD_GIT_REPOSITORY_URL"] = ciEnv.Repository;
             environment["DD_GIT_COMMIT_SHA"] = ciEnv.Commit;
+
+            if (!string.IsNullOrEmpty(ciEnv.Branch))
+            {
+                tagsList.Add($"{CommonTags.GitBranch}:{ciEnv.Branch}");
+            }
+
+            if (!string.IsNullOrEmpty(ciEnv.Tag))
+            {
+                tagsList.Add($"{CommonTags.GitTag}:{ciEnv.Tag}");
+            }
+        }
+
+        var newDdTags = string.Join(", ", tagsList);
+        if (environment.TryGetValue("DD_TAGS", out var ddTags))
+        {
+            environment["DD_TAGS"] = newDdTags + "," + ddTags;
+        }
+        else
+        {
+            environment["DD_TAGS"] = newDdTags;
         }
     }
 
