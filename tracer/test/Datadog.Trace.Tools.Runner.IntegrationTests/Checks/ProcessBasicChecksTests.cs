@@ -433,7 +433,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
         }
 
-        [SkippableFact]
+        [SkippableTheory]
         [InlineData("linux-arm64", true, false, false)]
         [InlineData("linux-musl-x64", false, true, false)]
         [InlineData("linux-x64", false, false, true)]
@@ -462,10 +462,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64 && isLinux64)
             {
                 Directory.CreateDirectory("/opt/datadog/" + folderName);
-            }
 
-            ProcessBasicCheck.CheckLinuxInstallation();
-            console.Output.Should().Contain(WrongLinuxFolder("linux-arm64", folderName));
+                ProcessBasicCheck.CheckLinuxInstallation();
+                console.Output.Should().Contain(WrongLinuxFolder("linux-arm64", folderName));
+            }
         }
 
         private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string profilerKeyValue, bool wow64 = false)
