@@ -12,6 +12,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
+using Datadog.System.Reflection.Metadata;
+using Datadog.System.Reflection.PortableExecutable;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -31,24 +33,45 @@ namespace Datadog.Trace.Pdb
     internal class DatadogPdbReader : IDisposable
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogPdbReader>();
-        private readonly SymbolReader _symbolReader;
         private bool _disposed;
 
-        private DatadogPdbReader(SymbolReader symbolReader, ModuleDefMD moduleDefMd, string pdbFullPath)
+        private DatadogPdbReader(SymbolReader symbolReader, MetadataReader metadataReader, string pdbFullPath)
         {
-            _symbolReader = symbolReader;
-            Module = moduleDefMd;
+            DnlibSymbolReader = symbolReader;
+            MetadataReader = metadataReader;
+            PdbFullPath = pdbFullPath;
+        }
+
+        private DatadogPdbReader(PEReader peReader, MetadataReader metadataReader, MetadataReaderProvider? metadataReaderProvider, string? pdbFullPath)
+        {
+            PEReader = peReader;
+            MetadataReader = metadataReader;
+            MetadataReaderProvider = metadataReaderProvider;
             PdbFullPath = pdbFullPath;
         }
 
         ~DatadogPdbReader() => Dispose(false);
 
-        internal string PdbFullPath { get; }
+        internal string? PdbFullPath { get; }
 
-        internal ModuleDefMD Module { get; }
+        internal MetadataReader MetadataReader { get; }
+
+        internal MetadataReaderProvider? MetadataReaderProvider { get; }
+
+        internal PEReader? PEReader { get; }
+
+        internal SymbolReader? DnlibSymbolReader { get; }
 
         public static DatadogPdbReader? CreatePdbReader(Assembly assembly)
         {
+            var peReader = new Datadog.System.Reflection.PortableExecutable.PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata);
+            MetadataReader? metadataReader;
+            if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
+            {
+                metadataReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
+                return new DatadogPdbReader(peReader, metadataReader, metadataReaderProvider, pdbPath);
+            }
+
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
 
             if (!TryFindPdbFile(assembly.Location, out var pdbFullPath))
@@ -65,7 +88,8 @@ namespace Datadog.Trace.Pdb
 
             dnlibReader.Initialize(module);
             module.LoadPdb(dnlibReader);
-            return new DatadogPdbReader(dnlibReader, module, pdbFullPath);
+            metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
+            return new DatadogPdbReader(dnlibReader, metadataReader, pdbFullPath);
         }
 
         private static bool TryFindPdbFile(string assemblyLocation, [NotNullWhen(true)] out string? pdbFullPath)

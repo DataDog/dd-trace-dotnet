@@ -6,9 +6,9 @@
 #nullable enable
 using System;
 using System.Linq;
+using Datadog.System.Reflection.Metadata;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
@@ -21,15 +21,15 @@ internal class SymbolPdbExtractor : SymbolExtractor
     private bool _disposed;
 
     internal SymbolPdbExtractor(DatadogPdbReader pdbReader)
-        : base(pdbReader.Module)
+        : base(pdbReader.MetadataReader)
     {
         _pdbReader = pdbReader;
     }
 
-    protected override Model.Scope CreateMethodScope(TypeDef type, MethodDef method)
+    protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
     {
         var methodScope = base.CreateMethodScope(type, method);
-        if (_pdbReader.GetMethodSymbolInfoOrDefault(method.MDToken.ToInt32()) is not { } symbolMethod)
+        if (_pdbReader.GetMethodSymbolInfoOrDefault(method.Handle.RowId) is not { } symbolMethod)
         {
             return methodScope;
         }
@@ -66,16 +66,67 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return methodScope;
     }
 
-    private Symbol[]? GetLocalsSymbol(MethodDef method, int startLine, SymbolMethod symbolMethod, out int localsCount)
+    public void GetLocalVariables(MethodDefinition method)
     {
-        localsCount = 0;
-        if (method.Body is not { Variables.Count: > 0 })
+        var methodBodyBlock = _pdbReader.PEReader?.GetMethodBody(method.RelativeVirtualAddress);
+        var methodDebugInfo = _pdbReader.MetadataReader.GetMethodDebugInformation(method.Handle);
+        foreach (var localScope in MetadataReader.GetLocalScopes(method.Handle))
         {
-            return null;
+            MetadataReader.GetLocalVariableRange(localScope, out int first, out int last);
+            foreach (var localVariable in MetadataReader.LocalVariables)
+            {
+                // localVariable.RowId
+            }
+
+            // MetadataReader.LocalVariableTable.GetName(MetadataReader.LocalVariables)
         }
 
-        var methodLocals = method.Body.Variables;
-        var localsSymbol = new Symbol[methodLocals.Count];
+        MetadataReader.GetLocalScopes(method.Handle);
+        foreach (var sequencePoint in methodDebugInfo.GetSequencePoints())
+        {
+            // var localScopes = _pdbReader.MetadataReader.GetLocalScopes(methodDebugInfo.);
+            // foreach (var localScope in localScopes)
+            // {
+            // _pdbReader.PEReader.GetSectionData()
+            // foreach (var localVariableHandle in localScope..GetLocalVariables())
+            // {
+            // var localVariable = pdbReader.GetLocalVariable(localVariableHandle);
+            // Console.WriteLine($"Index: {localVariable.Index}, Name: {pdbReader.GetString(localVariable.Name)}");
+            // }
+            // }
+        }
+
+        // var localVarSig = MetadataReader.GetLocalVariable(methodBodyBlock.LocalSignature);
+        // MethodBodyBlock methodBody = MetadataReader.MethodDefTable..GetMethodImplementation(method.Handle).MethodBody;
+        // StandAloneSignature signature = MetadataReader.GetStandaloneSignature(methodBody.LocalSignature);
+
+        // BlobReader blobReader = MetadataReader.GetBlobReader(signature.Signature);
+
+        // if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
+        // {
+        // int variableCount = blobReader.ReadCompressedInteger();
+
+        // for (int i = 0; i < variableCount; i++)
+        // {
+        // SignatureTypeCode typeCode = (SignatureTypeCode)blobReader.ReadCompressedInteger();
+
+        // For simple types, the type code maps directly to the variable type.
+        // For other types, more detailed parsing will be necessary.
+        // }
+        // }
+    }
+
+    private Symbol[]? GetLocalsSymbol(MethodDefinition method, int startLine, SymbolMethod symbolMethod, out int localsCount)
+    {
+        localsCount = 0;
+        var methodBody = _pdbReader.PEReader?.GetMethodBody(method.RelativeVirtualAddress);
+        // if (method.Body is not { Variables.Count: > 0 })
+        // {
+        // return null;
+        // }
+
+        var methodLocals = new int[1]; // methodBody.Variables;
+        var localsSymbol = new Symbol[methodLocals.Length];
         var allMethodScopes = GetAllScopes(symbolMethod);
         Symbol[]? allLocals = null;
 
@@ -85,7 +136,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             for (var l = 0; l < currentScope.Locals.Count; l++)
             {
                 var localSymbol = currentScope.Locals[l];
-                if (localSymbol.Index > methodLocals.Count || string.IsNullOrEmpty(localSymbol.Name))
+                if (localSymbol.Index > methodLocals.Length || string.IsNullOrEmpty(localSymbol.Name))
                 {
                     continue;
                 }
@@ -101,26 +152,26 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 }
 
                 Local? local = null;
-                for (var i = 0; i < methodLocals.Count; i++)
-                {
-                    if (methodLocals[i].Index != localSymbol.Index)
-                    {
-                        continue;
-                    }
+                // for (var i = 0; i < methodLocals.Length; i++)
+                // {
+                // if (methodLocals[i].Index != localSymbol.Index)
+                // {
+                // continue;
+                // }
 
-                    local = methodLocals[i];
-                    break;
-                }
+                // local = methodLocals[i];
+                // break;
+                // }
 
                 if (local == null)
                 {
                     continue;
                 }
 
-                if (IsCompilerGeneratedAttributeDefined(local.Type.ToTypeDefOrRef().CustomAttributes))
-                {
-                    continue;
-                }
+                // if (IsCompilerGeneratedAttributeDefined(local.Type.ToTypeDefOrRef().CustomAttributes))
+                // {
+                // continue;
+                // }
 
                 localsSymbol[localsCount] = new Symbol
                 {
@@ -134,24 +185,25 @@ internal class SymbolPdbExtractor : SymbolExtractor
             }
         }
 
-        if (IsCompilerGeneratedAttributeDefined(method.DeclaringType.CustomAttributes))
+        if (IsCompilerGeneratedAttributeDefined(MetadataReader.GetTypeDefinition(method.GetDeclaringType()).GetCustomAttributes()))
         {
-            var fields = method.DeclaringType.Fields;
-            for (int i = 0; i < fields.Count; i++)
+            var fields = MetadataReader.GetTypeDefinition(method.GetDeclaringType()).GetFields();
+            int index = 0;
+            foreach (var fieldHandle in fields)
             {
-                var field = fields[i];
-                if (field.Name.StartsWith("<>"))
+                var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                if (MetadataReader.GetString(field.Name).StartsWith("<>"))
                 {
                     continue;
                 }
 
                 if (allLocals == null)
                 {
-                    allLocals = new Symbol[localsCount + fields.Count - i];
+                    allLocals = new Symbol[localsCount + fields.Count - index];
                     Array.Copy(localsSymbol, 0, allLocals, 0, localsCount);
                 }
 
-                var localName = field.Name.String;
+                var localName = MetadataReader.GetString(field.Name);
                 if (localName[0] == '<')
                 {
                     var endNameIndex = localName.IndexOf('>');
@@ -164,11 +216,12 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 allLocals[localsCount] = new Symbol
                 {
                     Name = localName,
-                    Type = field.FieldType.FullName,
+                    // Type = field.FieldType.FullName,
                     SymbolType = SymbolType.Local,
                     Line = startLine
                 };
 
+                index++;
                 localsCount++;
             }
         }
