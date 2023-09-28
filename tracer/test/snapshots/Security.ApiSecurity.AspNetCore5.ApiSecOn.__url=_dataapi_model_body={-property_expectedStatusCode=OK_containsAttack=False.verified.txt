@@ -1,0 +1,60 @@
+﻿[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: aspnet_core_mvc.request,
+    Resource: POST /dataapi/model,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    ParentId: Id_3,
+    Tags: {
+      aspnet_core.action: model,
+      aspnet_core.controller: dataapi,
+      aspnet_core.route: dataapi/model,
+      component: aspnet_core,
+      env: integration_tests,
+      language: dotnet,
+      span.kind: server
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: aspnet_core.request,
+    Resource: POST /dataapi/model,
+    Service: Samples.Security.AspNetCore5,
+    Type: web,
+    Tags: {
+      aspnet_core.endpoint: Samples.Security.AspNetCore5.DataApiController.Model (Samples.Security.AspNetCore5),
+      aspnet_core.route: dataapi/model,
+      component: aspnet_core,
+      env: integration_tests,
+      http.client_ip: 127.0.0.1,
+      http.method: POST,
+      http.request.headers.host: localhost:00000,
+      http.route: dataapi/model,
+      http.status_code: 200,
+      http.url: http://localhost:00000/dataapi/model,
+      http.useragent: Mistake Not...,
+      language: dotnet,
+      network.client.ip: 127.0.0.1,
+      runtime-id: Guid_1,
+      span.kind: server,
+      _dd.appsec.s.req.body: [{"Property":[8],"Property2":[8],"Property3":[4],"Property4":[4]}],
+      _dd.appsec.s.req.headers: [{"content-length":[[[8]],{"len":1}],"content-type":[[[8]],{"len":1}],"host":[[[8,{"category":"pii","type":"passport_number"}]],{"len":1}],"user-agent":[[[8]],{"len":1}],"x-forwarded-for":[[[8]],{"len":1}]}],
+      _dd.appsec.s.req.params: [{"action":[8],"controller":[8]}],
+      _dd.appsec.s.res.body: [{"PropertyResponse":[8],"PropertyResponse2":[4],"PropertyResponse3":[16],"PropertyResponse4":[4]}],
+      _dd.appsec.s.res.headers: [{"content-type":[[[8]],{"len":1}]}],
+      _dd.p.dm: -0,
+      _dd.runtime_family: dotnet
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.appsec.enabled: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  }
+]

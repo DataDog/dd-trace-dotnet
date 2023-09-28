@@ -21,9 +21,9 @@ internal class ActionResponseFilter : IActionFilter
 
     public void OnActionExecuted(ActionExecutedContext context)
     {
-        if (context.Result.TryDuckCast<ObjectResult>(out var result))
+        var security = Security.Instance;
+        if (security.Enabled && context.Result.TryDuckCast<ObjectResult>(out var result))
         {
-            var security = Security.Instance;
             var currentSpan = Tracer.Instance.ActiveScope.Span as Span;
             security.CheckBody(context.HttpContext, currentSpan, result.Value, response: true);
         }

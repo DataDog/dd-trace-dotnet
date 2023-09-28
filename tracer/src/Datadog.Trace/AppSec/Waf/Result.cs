@@ -4,6 +4,7 @@
 // </copyright>
 
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -19,14 +20,18 @@ namespace Datadog.Trace.AppSec.Waf
             Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldReportSchema = Derivatives is { Count: > 0 };
             var events = returnStruct.Events.DecodeObjectArray();
-            if (events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
+            if (events is null || events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
             else
             {
                 // Serialize all the events
                 Data = JsonConvert.SerializeObject(events);
             }
 
-            ShouldBlock = Actions.Contains("block");
+            if (Actions != null)
+            {
+                ShouldBlock = Actions.Contains("block");
+            }
+
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Timeout = returnStruct.Timeout;
