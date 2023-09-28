@@ -4046,7 +4046,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
-  pool: Throughput-Iast
+  pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
