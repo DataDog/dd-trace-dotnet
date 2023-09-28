@@ -35,7 +35,7 @@ public class KafkaConsumerCommitIntegration
     {
         if (exception is null && state.State is IEnumerable<object> offsets)
         {
-            ConsumerGroupHelper.TryGetConsumerGroup(instance, out var groupId, out var _);
+            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
             var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
             using var enumerator = offsets.GetEnumerator();

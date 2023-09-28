@@ -5,7 +5,6 @@
 
 #nullable enable
 using System;
-using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -103,6 +102,8 @@ internal class DataStreamsManager
 
     public void TrackBacklog(string tags, long value)
     {
+        Console.WriteLine("#### " + tags);
+
         if (!IsEnabled)
         {
             return;

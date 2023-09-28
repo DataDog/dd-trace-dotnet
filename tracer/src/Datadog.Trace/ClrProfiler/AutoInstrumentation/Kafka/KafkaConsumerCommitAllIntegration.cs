@@ -30,7 +30,7 @@ public class KafkaConsumerCommitAllIntegration
     {
         if (exception is null && response.Instance is not null)
         {
-            ConsumerGroupHelper.TryGetConsumerGroup(instance, out var groupId, out var _);
+            ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
             var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
             for (var i = 0; i < response.Count; i++)

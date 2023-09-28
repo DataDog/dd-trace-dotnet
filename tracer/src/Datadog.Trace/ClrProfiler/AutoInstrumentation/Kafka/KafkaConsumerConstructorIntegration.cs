@@ -7,6 +7,7 @@ using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -52,28 +53,25 @@ public class KafkaConsumerConstructorIntegration
                 }
             }
 
-            var originalHandler = consumer.OffsetsCommittedHandler;
-            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-            consumer.OffsetsCommittedHandler = (consumer, result) =>
+            if (instance != null)
             {
-                originalHandler?.Invoke(consumer, result);
-                if (result.TryDuckCast<ICommittedOffsets>(out var committedOffsets))
+                // we need to get the actual handler type to make this work in case
+                // the original handler is not set
+                var handlerType = ConsumerCache.GetOffsetsCommittedHandlerType(instance);
+                if (handlerType != null)
                 {
-                    for (var i = 0; i < committedOffsets?.Offsets.Count; i++)
-                    {
-                        var item = committedOffsets.Offsets[i];
-                        dataStreams.TrackBacklog(
-                            $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",
-                            item.Offset.Value);
-                    }
+                    consumer.OffsetsCommittedHandler = DelegateInstrumentation.Wrap(
+                        consumer.OffsetsCommittedHandler,
+                        handlerType,
+                        new OffsetsCommittedCallbacks(groupId));
                 }
-            };
+            }
 
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
                 // Save the map between this consumer and a consumer group
-                ConsumerGroupHelper.SetConsumerGroup(instance, groupId, bootstrapServers);
+                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -87,7 +85,7 @@ public class KafkaConsumerConstructorIntegration
         // the consumer won't be created, so no point recording it.
         if (exception is not null && state is { State: { } consumer })
         {
-            ConsumerGroupHelper.RemoveConsumerGroup(consumer);
+            ConsumerCache.RemoveConsumerGroup(consumer);
         }
 
         return CallTargetReturn.GetDefault();

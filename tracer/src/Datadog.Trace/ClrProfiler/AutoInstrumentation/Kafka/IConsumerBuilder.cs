@@ -18,5 +18,5 @@ internal interface IConsumerBuilder
 {
     IEnumerable<KeyValuePair<string, string>> Config { get; }
 
-    Action<object, object> OffsetsCommittedHandler { get; set; }
+    Delegate OffsetsCommittedHandler { get; set; }
 }

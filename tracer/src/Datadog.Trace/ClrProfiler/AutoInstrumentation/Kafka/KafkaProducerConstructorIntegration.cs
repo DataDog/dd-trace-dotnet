@@ -6,6 +6,7 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
+using Datadog.Trace.Debugger.Configurations;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -31,8 +32,7 @@ public class KafkaProducerConstructorIntegration
         if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
         {
             string bootstrapServers = null;
-            var enableDeliveryReports = true;
-
+            bool deliveryReportsEnabled = true;
             foreach (var kvp in consumer.Config)
             {
                 if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
@@ -45,11 +45,16 @@ public class KafkaProducerConstructorIntegration
 
                 if (string.Equals(kvp.Key, KafkaHelper.EnableDeliveryReportsField, StringComparison.Ordinal))
                 {
-                    enableDeliveryReports = bool.Parse(kvp.Value);
+                    if (!string.IsNullOrEmpty(kvp.Value))
+                    {
+                        deliveryReportsEnabled = bool.Parse(kvp.Value);
+                    }
                 }
             }
 
-            if (enableDeliveryReports)
+            // there's no need to create a default handler if
+            // delivery reports are explicitly disabled
+            if (deliveryReportsEnabled)
             {
                 ProducerCache.CreateDefaultDeliveryHandler(instance);
             }
