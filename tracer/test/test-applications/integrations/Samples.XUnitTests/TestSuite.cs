@@ -108,5 +108,20 @@ namespace Samples.XUnitTests
         public void SkipByITRSimulation()
         {
         }
+
+        [Fact]
+        [Trait("datadog_itr_unskippable", null)]
+        public void UnskippableTest()
+        {
+        }
+    }
+
+    [Trait("datadog_itr_unskippable", null)]
+    public class UnSkippableSuite
+    {
+        [Fact]
+        public void UnskippableTest()
+        {
+        }
     }
 }

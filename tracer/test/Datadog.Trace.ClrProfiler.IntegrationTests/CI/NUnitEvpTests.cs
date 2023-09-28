@@ -24,8 +24,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitEvpTests : TestHelper
     {
-        private const int ExpectedTestCount = 31;
-        private const int ExpectedTestSuiteCount = 9;
+        private const int ExpectedTestCount = 33;
+        private const int ExpectedTestSuiteCount = 10;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static readonly string[] _testSuiteNames =
@@ -39,6 +39,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             "Samples.NUnitTests.TestSetupError",
             "Samples.NUnitTests.TestTearDownError",
             "Samples.NUnitTests.TestTearDown2Error",
+            "Samples.NUnitTests.UnSkippableSuite",
         };
 
         public NUnitEvpTests(ITestOutputHelper output)
@@ -215,6 +216,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanEqual(targetTest, TestTags.Command, sessionCommand);
                             AssertTargetSpanEqual(targetTest, TestTags.CommandWorkingDirectory, sessionWorkingDirectory);
 
+                            // Unskippable data
+                            if (targetTest.Meta[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
+
                             // check specific test span
                             switch (targetTest.Meta[TestTags.Name])
                             {
@@ -304,6 +312,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "Test05" when suite.Contains("SetupError"):
                                 case "IsNull" when suite.Contains("SetupError"):
                                     CheckSetupErrorTest(targetTest);
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetTest, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetTest);
                                     break;
                             }
 

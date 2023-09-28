@@ -15,8 +15,8 @@ internal partial class CiVisibilityMetricsTelemetryCollector : MetricsTelemetryC
     {
     }
 
-    internal CiVisibilityMetricsTelemetryCollector(TimeSpan aggregationInterval)
-        : base(aggregationInterval)
+    internal CiVisibilityMetricsTelemetryCollector(TimeSpan aggregationInterval, Action? aggregationNotification = null)
+        : base(aggregationInterval, aggregationNotification)
     {
     }
 }

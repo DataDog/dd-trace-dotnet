@@ -54,11 +54,6 @@ bool ManagedThreadList::Stop()
     return true;
 }
 
-bool ManagedThreadList::GetOrCreateThread(ThreadID clrThreadId)
-{
-    return GetOrCreate(clrThreadId) != nullptr;
-}
-
 std::shared_ptr<ManagedThreadInfo> ManagedThreadList::GetOrCreate(ThreadID clrThreadId)
 {
     std::lock_guard<std::recursive_mutex> lock(_mutex);

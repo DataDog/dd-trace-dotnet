@@ -164,4 +164,24 @@ internal static class CommonTags
     /// Environment variables from CI
     /// </summary>
     public const string CiEnvVars = "_dd.ci.env_vars";
+
+    /// <summary>
+    /// XUnit testing framework
+    /// </summary>
+    public const string TestingFrameworkNameXUnit = "xUnit";
+
+    /// <summary>
+    /// NUnit testing framework
+    /// </summary>
+    public const string TestingFrameworkNameNUnit = "NUnit";
+
+    /// <summary>
+    /// MSTestV2 testing framework
+    /// </summary>
+    public const string TestingFrameworkNameMsTestV2 = "MSTestV2";
+
+    /// <summary>
+    /// BenchmarkDotNet testing framework
+    /// </summary>
+    public const string TestingFrameworkNameBenchmarkDotNet = "BenchmarkDotNet";
 }

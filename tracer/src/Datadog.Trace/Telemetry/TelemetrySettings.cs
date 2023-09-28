@@ -75,7 +75,7 @@ namespace Datadog.Trace.Telemetry
             var haveApiKey = !string.IsNullOrEmpty(apiKey);
 
             var agentlessEnabled = config
-                                  .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled)
+                                  .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled, ConfigurationKeys.CIVisibility.AgentlessEnabled)
                                   .AsBool(
                                        defaultValue: haveApiKey, // if there's an API key, we can use agentless mode by default, otherwise we can only use the agent
                                        validator: isEnabled =>

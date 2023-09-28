@@ -44,4 +44,19 @@ internal static class IntelligentTestRunnerTags
     /// Intelligent Test Runner skipping count
     /// </summary>
     public const string SkippingCount = "test.itr.tests_skipping.count";
+
+    /// <summary>
+    /// Unskippable trait name
+    /// </summary>
+    public const string UnskippableTraitName = "datadog_itr_unskippable";
+
+    /// <summary>
+    /// Unskippable tag name
+    /// </summary>
+    public const string UnskippableTag = "test.itr.unskippable";
+
+    /// <summary>
+    /// Forced run tag name
+    /// </summary>
+    public const string ForcedRunTag = "test.itr.forced_run";
 }

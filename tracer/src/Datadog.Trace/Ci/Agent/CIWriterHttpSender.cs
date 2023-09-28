@@ -12,8 +12,10 @@ using System.Threading.Tasks;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.Transports;
 using Datadog.Trace.Ci.Agent.Payloads;
+using Datadog.Trace.Ci.Telemetry;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Util.Http;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -49,16 +51,20 @@ namespace Datadog.Trace.Ci.Agent
             }
         }
 
-        private static async Task<bool> SendPayloadAsync<T>(Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, IApiRequest request, EventPlatformPayload payload, T state, bool finalTry)
+        private static bool IsStatusCodeError(int statusCode) => statusCode is < 200 or >= 300;
+
+        private static async Task<int> SendPayloadAsync<T>(Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, IApiRequest request, EventPlatformPayload payload, T state, bool finalTry)
         {
             IApiResponse response = null;
+            int statusCode;
 
             try
             {
                 response = await senderFunc(request, payload, state).ConfigureAwait(false);
+                statusCode = response.StatusCode;
 
                 // Attempt a retry if the status code is not SUCCESS
-                if (response.StatusCode is < 200 or >= 300)
+                if (IsStatusCodeError(statusCode))
                 {
                     if (finalTry)
                     {
@@ -72,8 +78,6 @@ namespace Datadog.Trace.Ci.Agent
                             Log.Error<int>(ex, "Unable to read response for failed request with status code {StatusCode}", response.StatusCode);
                         }
                     }
-
-                    return false;
                 }
             }
             finally
@@ -81,10 +85,10 @@ namespace Datadog.Trace.Ci.Agent
                 response?.Dispose();
             }
 
-            return true;
+            return statusCode;
         }
 
-        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
+        private async Task<int> SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
@@ -111,21 +115,21 @@ namespace Datadog.Trace.Ci.Agent
                 catch (Exception ex)
                 {
                     Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                    return;
+                    return -1;
                 }
 
-                var success = false;
+                var statusCode = -1;
                 var isFinalTry = retryCount >= retryLimit;
                 Exception exception = null;
 
                 try
                 {
-                    success = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
+                    statusCode = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
                 }
                 catch (MultipartApiRequestNotSupported mReqEx)
                 {
                     Log.Error(mReqEx, "Error trying to send a multipart request to: {Url}", url.ToString());
-                    return;
+                    return statusCode;
                 }
                 catch (Exception ex)
                 {
@@ -136,19 +140,19 @@ namespace Datadog.Trace.Ci.Agent
                         if (ex.InnerException is InvalidOperationException ioe)
                         {
                             Log.Error<string>(ex, "An error occurred while sending events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                            return;
+                            return statusCode;
                         }
                     }
                 }
 
                 // Error handling block
-                if (!success)
+                if (IsStatusCodeError(statusCode))
                 {
                     if (isFinalTry)
                     {
                         // stop retrying
-                        Log.Error<int, string>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint}", retryCount, _apiRequestFactory.Info(url));
-                        return;
+                        Log.Error<int, string, int>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint} | StatusCode: {StatusCode}", retryCount, _apiRequestFactory.Info(url), statusCode);
+                        return statusCode;
                     }
 
                     // Before retry delay
@@ -158,6 +162,7 @@ namespace Datadog.Trace.Ci.Agent
                     }
 
                     // Execute retry delay
+                    Log.Debug<string, int>(exception, "An error occurred while sending events to {AgentEndpoint} | StatusCode: {StatusCode}", _apiRequestFactory.Info(url), statusCode);
                     await Task.Delay(sleepDuration).ConfigureAwait(false);
                     retryCount++;
                     sleepDuration *= 2;
@@ -166,7 +171,7 @@ namespace Datadog.Trace.Ci.Agent
                 }
 
                 Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                return;
+                return statusCode;
             }
         }
 
@@ -174,6 +179,9 @@ namespace Datadog.Trace.Ci.Agent
         {
             ArraySegment<byte> payloadArraySegment;
             MemoryStream agentlessMemoryStream = null;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
+
             try
             {
                 if (!payload.UseEvpProxy)
@@ -201,11 +209,20 @@ namespace Datadog.Trace.Ci.Agent
                     }
                 }
 
-                await SendPayloadAsync(
+                var sw = Stopwatch.StartNew();
+
+                var statusCode = await SendPayloadAsync(
                         payload,
                         static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
                         payloadArraySegment)
                    .ConfigureAwait(false);
+
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
+                if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
+                }
             }
             finally
             {
@@ -215,8 +232,20 @@ namespace Datadog.Trace.Ci.Agent
 
         private async Task SendPayloadAsync(MultipartPayload payload)
         {
+            var payloadArray = payload.ToArray();
+            var payloadBytes = 0;
+            foreach (var multipartFormItem in payloadArray)
+            {
+                payloadBytes += multipartFormItem.ContentInBytes?.Count ?? 0;
+            }
+
+            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadBytes);
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
+
+            var sw = Stopwatch.StartNew();
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
-            await SendPayloadAsync(
+            var statusCode = await SendPayloadAsync(
                 payload,
                 static (request, payload, payloadArray) =>
                 {
@@ -228,7 +257,13 @@ namespace Datadog.Trace.Ci.Agent
                     MultipartApiRequestNotSupported.Throw();
                     return Task.FromResult<IApiResponse>(null);
                 },
-                payload.ToArray()).ConfigureAwait(false);
+                payloadArray).ConfigureAwait(false);
+
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
+            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
+            }
         }
 
         private class MultipartApiRequestNotSupported : NotSupportedException

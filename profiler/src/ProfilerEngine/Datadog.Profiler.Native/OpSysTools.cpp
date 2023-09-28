@@ -14,7 +14,6 @@
 #pragma comment(lib, "winmm.lib")
 #else
 #include <cstdlib>
-#include <dlfcn.h>
 #include <fcntl.h>
 #include <pthread.h>
 #include <stdlib.h>
@@ -22,7 +21,9 @@
 #include <unistd.h>
 #define _GNU_SOURCE
 #include "cgroup.h"
+#include <dlfcn.h>
 #include <errno.h>
+#include <link.h>
 #include <sys/auxv.h>
 #endif
 
@@ -209,7 +210,10 @@ shared::WSTRING OpSysTools::GetNativeThreadName(HANDLE handle)
     {
         return {};
     }
-    on_leave { LocalFree(pThreadDescr); };
+    on_leave
+    {
+        LocalFree(pThreadDescr);
+    };
 
     return shared::WSTRING(pThreadDescr);
 }
@@ -273,7 +277,10 @@ shared::WSTRING OpSysTools::GetNativeThreadName(pid_t tid)
     {
         return WStr("");
     }
-    on_leave { close(fd); };
+    on_leave
+    {
+        close(fd);
+    };
 
     char line[16] = {0};
 
@@ -420,57 +427,51 @@ bool OpSysTools::IsSafeToStartProfiler(double coresThreshold, double& cpuLimit)
     // For linux, we check that the wrapper library is loaded and the default `dl_iterate_phdr` is
     // the one provided by our library.
 
-    // We assume that the profiler library is in the same folder as the wrapper library
-    auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
-    auto wrapperLibrary = currentModulePath.parent_path() / "Datadog.Linux.ApiWrapper.x64.so";
-    auto wrapperLibraryPath = wrapperLibrary.string();
+    const std::string wrapperLibraryName = "Datadog.Linux.ApiWrapper.x64.so";
+    const std::string customFnName = "dl_iterate_phdr";
+    auto* dlIteratePhdr = reinterpret_cast<void*>(::dl_iterate_phdr);
 
-    auto* instance = dlopen(wrapperLibraryPath.c_str(), RTLD_LAZY | RTLD_LOCAL);
-    if (instance == nullptr)
+    Dl_info info;
+    auto res = dladdr(dlIteratePhdr, &info);
+    if (res == 0 || info.dli_fname == nullptr)
     {
-        auto errorId = errno;
-        Log::Warn("Library '", wrapperLibraryPath, "' cannot be loaded (", strerror(errorId), "). This means that the profiler/tracer is not correctly installed.");
+        Log::Warn("Profiling is disabled: Unable to check if the library '", wrapperLibraryName, "'",
+                  " is correctly loaded and/or the function '", customFnName, "' is correctly wrapped.",
+                  "Please contact the support for help with the following details:\n",
+                  "Call to dladdr: ", res, "\n",
+                  "info.dli_fname: ", info.dli_fname);
         return false;
     }
 
-    const auto* customFnName = "dl_iterate_phdr";
-    auto* customFn = dlsym(instance, customFnName);
-    auto* defaultFn = dlsym(RTLD_DEFAULT, customFnName);
+    auto sharedObjectPath = fs::path(info.dli_fname);
 
-    // make sure that the default symbol for the custom function
-    // is at the same address as the one found in our lib
-    if (customFn != defaultFn)
+    if (sharedObjectPath.filename() != wrapperLibraryName)
     {
-        Log::Warn("Custom function '", customFnName, "' is not the default one. That indicates that the library ",
-                  "'", wrapperLibraryPath, "' is not loaded using the LD_PRELOAD environment variable");
-
-        if (defaultFn != nullptr)
-        {
-            auto envVarValue = shared::GetEnvironmentValue(WStr("LD_PRELOAD"));
-
-            Log::Info("LD_PRELOAD: ", (envVarValue.empty() ? WStr("<empty>") : envVarValue));
-
-            Dl_info info;
-            int rc = dladdr(defaultFn, &info);
-            if (rc != 0)
-            {
-                Log::Info("\nShared library: ", info.dli_fname, "\nShared library base address: ", info.dli_fbase,
-                          "\nNearest symbol: ", info.dli_sname, "\nNearest symbol address: ", info.dli_saddr);
-            }
-            else
-            {
-                Log::Info("Unable to get information about shared library containing '", customFnName, "'");
-            }
-        }
+        // We assume that the profiler library is in the same folder as the wrapper library
+        auto currentModulePath = fs::path(shared::GetCurrentModuleFileName());
+        auto wrapperLibrary = currentModulePath.parent_path() / wrapperLibraryName;
+        auto wrapperLibraryPath = wrapperLibrary.string();
 
         // Check if process is running is a secure-execution mode
         auto at_secure = getauxval(AT_SECURE);
-        Log::Info("Is process running in a secure execution mode ? ", std::boolalpha, at_secure);
-        // Reasons for which AT_SECURE is true:
-        //   User ID != Effective User ID
-        Log::Info("Process User ID differs from Effective User ID ? ", std::boolalpha, getuid() != geteuid());
-        //   Group ID != Effective Group ID
-        Log::Info("Process Group ID differs from Effective Group ID ? ", std::boolalpha, getgid() != getegid());
+
+        // Get LD_PRELOAD env var content
+        auto envVarValue = shared::GetEnvironmentValue(WStr("LD_PRELOAD"));
+
+        Log::Warn("Profiling is disabled: It appears the wrapper library '", wrapperLibraryName, "' is not correctly loaded.\n",
+                  "Possible reason(s):\n",
+                  "* The LD_PRELOAD environment variable might not contain the path '", wrapperLibraryPath, "'. Try adding ",
+                  "'", wrapperLibraryPath, "' to LD_PRELOAD environment variable.\n",
+                  "* Your application might be running in a secure execution mode (", std::boolalpha, at_secure != 0, "). Try adding ",
+                  "the path '", wrapperLibraryPath, "' to the /etc/ld.so.preload file (create the file if needed).\n",
+                  "If the issue persists, please contact the support with the following details:\n",
+                  "LD_PRELOAD current value: ", (envVarValue.empty() ? WStr("<empty>") : envVarValue), "\n",
+                  "The process running in a secure execution mode: ", std::boolalpha, at_secure != 0, "\n",
+                  // Reasons for which AT_SECURE is true:
+                  //   User ID != Effective User ID
+                  "Process User ID differs from Effective User ID: ", std::boolalpha, getuid() != geteuid(), "\n",
+                  //   Group ID != Effective Group ID
+                  "Process Group ID differs from Effective Group ID: ", std::boolalpha, getgid() != getegid(), "\n");
         // TODO check capabilities (for now checking capabilities requires additional packages/libraries)
         // if at_secure is true, we know that it due to the capabilities
 

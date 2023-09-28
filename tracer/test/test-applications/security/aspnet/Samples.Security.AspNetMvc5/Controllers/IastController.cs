@@ -276,5 +276,11 @@ namespace Samples.Security.AspNetCore5.Controllers
                 return Content($"Result: Not connected");
             }
         }
+
+        [Route("WeakRandomness")]
+        public ActionResult WeakRandomness()
+        {
+            return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
+        }
     }
 }

@@ -72,6 +72,7 @@ Configuration::Configuration()
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
     _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
+    _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -277,7 +278,6 @@ bool Configuration::IsInternalMetricsEnabled() const
     return _isInternalMetricsEnabled;
 }
 
-
 fs::path Configuration::GetApmBaseDirectory()
 {
 #ifdef _WINDOWS
@@ -469,6 +469,15 @@ bool Configuration::IsAgentless() const
 bool Configuration::IsDebugInfoEnabled() const
 {
     return _isDebugInfoEnabled;
+}
+
+bool Configuration::IsSystemCallsShieldEnabled() const
+{
+#ifdef LINUX
+    return _isSystemCallsShieldEnabled;
+#else
+    return false;
+#endif
 }
 
 bool convert_to(shared::WSTRING const& s, bool& result)

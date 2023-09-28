@@ -399,7 +399,7 @@ stages:
       artifact: linux-profiler-symbols-$(baseImage)
 
 - stage: package_linux
-  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler]
+  dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -415,8 +415,10 @@ stages:
       matrix:
         centos7:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -437,6 +439,16 @@ stages:
       inputs:
         artifact: linux-profiler-home-$(baseImage)
         path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet $(artifactSuffix)
+      inputs:
+        artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
+    - script: |
+        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -539,7 +551,7 @@ stages:
       artifact: linux-profiler-symbols-arm64
 
 - stage: package_arm64
-  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler]
+  dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -571,6 +583,16 @@ stages:
       inputs:
         artifact: linux-profiler-home-arm64
         path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-arm64
+      inputs:
+        artifact: dd-dotnet-linux-arm64
+        path: $(monitoringHome)/linux-arm64
+
+    - script: |
+        chmod +x $(monitoringHome)/linux-arm64/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -628,7 +650,7 @@ stages:
 
 - stage: package_windows
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [ build_windows_tracer, build_windows_profiler, merge_commit_id]
+  dependsOn: [ build_windows_tracer, build_windows_profiler, build_dd_dotnet_windows, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -654,6 +676,12 @@ stages:
           artifact: windows-profiler-home
           path: $(monitoringHome)
 
+      - task: DownloadPipelineArtifact@2
+        displayName: Download dd-dotnet win-x64
+        inputs:
+          artifact: dd-dotnet-win-x64
+          path: $(monitoringHome)/win-x64
+
       - script: tracer\build.cmd PackageTracerHome
         displayName: Build MSI and Tracer home
         retryCountOnTaskFailure: 1
@@ -673,6 +701,99 @@ stages:
       - publish: $(artifacts)/nuget
         displayName: Publish NuGet packages
         artifact: nuget-packages
+
+
+- stage: build_dd_dotnet_windows
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+
+    pool:
+      name: azure-windows-scale-set-3
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - script: tracer\build.cmd BuildDdDotnet
+      displayName: Build dd-dotnet
+
+    - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.exe
+      displayName: Uploading dd-dotnet win-x64
+      artifact: dd-dotnet-win-x64
+
+    - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.pdb
+      displayName: Uploading dd-dotnet win-x64 symbols
+      artifact: dd-dotnet-symbols-win-x64
+
+- stage: build_dd_dotnet_linux
+  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [build_dd_dotnet]
+
+  - job: build_dd_dotnet
+    timeoutInMinutes: 60 #default value
+    strategy:
+      matrix:
+        centos7:
+          name: centos7
+          baseImage: centos7
+          artifactSuffix: linux-x64
+          poolName: azure-linux-scale-set
+        alpine:
+          name: alpine
+          baseImage: alpine
+          artifactSuffix: linux-musl-x64
+          poolName: azure-linux-scale-set
+        arm64:
+          name: arm64
+          baseImage: debian
+          artifactSuffix: linux-arm64
+          poolname: aws-arm64-auto-scaling
+
+    pool:
+      name: $(poolName)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+  
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "Clean BuildDdDotnet"
+        retryCountForRunCommand: 1
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
+      displayName: Uploading dd-dotnet $(artifactSuffix)
+      artifact: dd-dotnet-$(artifactSuffix)
+
+    - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet.dbg
+      displayName: Uploading dd-dotnet $(artifactSuffix) symbols
+      artifact: dd-dotnet-symbols-$(artifactSuffix)
 
 - stage: debug_builds
   dependsOn: [merge_commit_id]
@@ -1360,9 +1481,16 @@ stages:
     steps:
     - powershell: |
         choco install cppcheck -y --version 2.9
+        $errorCode = $LASTEXITCODE
+        if ($errorCode -ne 0)
+        {
+          # something went wrong. Let's retry
+          exit 1
+        }
         Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
         refreshenv
       displayName: Install CppCheck
+      retryCountOnTaskFailure: 3
 
     - template: steps/clone-repo.yml
       parameters:
@@ -2110,7 +2238,7 @@ stages:
         dockerComposeFileArgs: |
           baseImage=$(baseImage)
           DD_LOGGER_DD_API_KEY=$(DD_LOGGER_DD_API_KEY)
-        dockerComposeCommand: run --no-deps --rm -e baseImage=$(baseImage) -e IncludeTestsRequiringDocker=false ProfilerIntegrationTests
+        dockerComposeCommand: run --rm -e baseImage=$(baseImage) ProfilerIntegrationTests
         projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
@@ -2807,7 +2935,6 @@ stages:
         AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
         GITHUB_TOKEN: $(GITHUB_TOKEN)
 
-
 - stage: dotnet_tool
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [build_windows_tracer, build_windows_profiler, build_linux_tracer, build_linux_profiler, build_arm64_tracer, build_arm64_profiler, build_macos, merge_commit_id]
@@ -2906,7 +3033,7 @@ stages:
         path: $(monitoringHome)
 
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and runner tools
+      displayName: Build Bundle NuGet and tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
@@ -2973,10 +3100,16 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
-    - template: steps/install-latest-dotnet-sdk.yml
+    - template: steps/install-dotnet-sdks.yml
       parameters:
         includeX86: true
     - template: steps/restore-working-directory.yml
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
@@ -2989,6 +3122,12 @@ stages:
       inputs:
         artifact: runner-standalone-win-$(targetPlatform)
         path: $(Agent.TempDirectory)/runner
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet win-x64
+      inputs:
+        artifact: dd-dotnet-win-x64
+        path: $(monitoringHome)/win-x64
 
     - task: ExtractFiles@1
       inputs:
@@ -3003,6 +3142,11 @@ stages:
 
     - script: tracer\build.cmd RunToolArtifactTests --ToolDestination $(runnerStandalone)
       displayName: Test standalone
+      env:
+        DD_LOGGER_DD_API_KEY: $(ddApiKey)
+
+    - script: tracer\build.cmd BuildAndRunDdDotnetArtifactTests --framework net462 --TargetPlatform $(targetPlatform)
+      displayName: Build and Test dd-dotnet
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
 
@@ -3058,6 +3202,12 @@ stages:
         artifact: build-linux-$(name)-working-directory
 
     - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-$(name)
+        path: $(monitoringHome)
+
+    - task: DownloadPipelineArtifact@2
       displayName: Download tool runner
       inputs:
         artifact: runner-dotnet-tool
@@ -3069,6 +3219,12 @@ stages:
         artifact: runner-standalone-$(artifactSuffix)
         path: $(Agent.TempDirectory)/runner
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet $(artifactSuffix)
+      inputs:
+        artifact: dd-dotnet-$(artifactSuffix)
+        path: $(monitoringHome)/$(artifactSuffix)
+
     - task: ExtractFiles@1
       inputs:
         archiveFilePatterns: '$(Agent.TempDirectory)/runner/*.tar.gz'
@@ -3078,7 +3234,11 @@ stages:
     - script: |
         ls $(runnerStandalone)
         chmod +x $(runnerStandalone)/dd-trace
-      displayName: chmod
+      displayName: chmod dd-trace
+
+    - script: |
+        chmod +x $(monitoringHome)/$(artifactSuffix)/dd-dotnet
+      displayName: chmod dd-dotnet
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3090,6 +3250,11 @@ stages:
       parameters:
         baseImage: $(baseImage)
         command: "RunToolArtifactTests --ToolDestination /project/$(relativeRunnerStandalone)"
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        baseImage: $(baseImage)
+        command: "BuildAndRunDdDotnetArtifactTests --framework net7.0"
 
     - task: PublishTestResults@2
       displayName: publish test results
@@ -3285,6 +3450,24 @@ stages:
           displayName: Download linux tracer Arm64 symbols
           inputs:
             artifact: linux-tracer-symbols-arm64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-x64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-musl-x64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-musl-x64
+            path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
+
+        - task: DownloadPipelineArtifact@2
+          displayName: Download dd-dotnet linux-arm64 symbols
+          inputs:
+            artifact: dd-dotnet-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - bash: |
@@ -3913,6 +4096,221 @@ stages:
       displayName: Upload report
       artifact: execution_time_report
 
+- stage: profiler_execution_benchmarks
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
+  dependsOn: [merge_commit_id, build_windows_profiler, build_linux_profiler]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [Windows]
+
+  - job: Windows
+    strategy:
+      matrix:
+        Cpu_Walltime:
+          sampleName: Computer01
+          testName: cpu-walltime
+          poolName: ProfilerExecBenchAgent1
+          framework: net7.0
+        Exceptions:
+          sampleName: ExceptionGenerator
+          testName: exceptions
+          poolName: ProfilerExecBenchAgent2
+          framework: net7.0
+        Contention:
+          sampleName: Computer01
+          testName: contention
+          poolName: ProfilerExecBenchAgent3
+          framework: net7.0
+        Allocations:
+          sampleName: Computer01
+          testName: allocations
+          poolName: ProfilerExecBenchAgent4
+          framework: net7.0
+        LiveHeap:
+          sampleName: Computer01
+          testName: liveheap
+          poolName: ProfilerExecBenchAgent5
+          framework: net7.0
+    pool:
+      name: $(poolName)
+    timeoutInMinutes: 30 #default value
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-dotnet-sdks.yml
+      parameters:
+        includeX86: true
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler windows native binary
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+      retryCountOnTaskFailure: 5
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release -f $(framework) -p:Platform=x64 -p:CheckEolTargetFramework=false'
+        workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
+      displayName: 'dotnet build Release x64 $(sampleName)'
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release -f $(framework) -p:Platform=x86 -p:CheckEolTargetFramework=false'
+        workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
+      displayName: 'dotnet build Release x86 $(sampleName)'
+
+    - script: run-$(testName).cmd
+      workingDirectory: $(System.DefaultWorkingDirectory)/profiler/build/
+      displayName: Execute $(testName) benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+        DOTNET_ROOT: $(LOCALAPPDATA)\Microsoft\dotnet
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_SITE: datadoghq.com
+        DD_PROFILING_AGENTLESS: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
+
+    - powershell: |
+        mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+        cp $(System.DefaultWorkingDirectory)/profiler/build/jsonexporter_*.json $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks"
+      displayName: Publish results
+      artifact: profiler_execution_time_benchmarks_windows_x64_$(testName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  - job: Linux
+    strategy:
+      matrix:
+        Cpu_Walltime:
+          sampleName: Computer01
+          testName: cpu-walltime
+          poolName: ProfilerExecBenchAgent6
+          framework: net7.0
+        Exceptions:
+          sampleName: ExceptionGenerator
+          testName: exceptions
+          poolName: ProfilerExecBenchAgent7
+          framework: net7.0
+        Contention:
+          sampleName: Computer01
+          testName: contention
+          poolName: ProfilerExecBenchAgent8
+          framework: net7.0
+        Allocations:
+          sampleName: Computer01
+          testName: allocations
+          poolName: ProfilerExecBenchAgent9
+          framework: net7.0
+        LiveHeap:
+          sampleName: Computer01
+          testName: liveheap
+          poolName: ProfilerExecBenchAgent10
+          framework: net7.0
+    pool:
+      name: $(poolName)
+    timeoutInMinutes: 30 #default value
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download profiler linux native binary
+      inputs:
+        artifact: linux-profiler-home-centos7
+        path: $(monitoringHome)
+      retryCountOnTaskFailure: 5
+
+    - task: DotNetCoreCLI@2
+      inputs:
+        command: 'build'
+        arguments: '-c Release -f $(framework) -p:Platform=x64 -p:CheckEolTargetFramework=false'
+        workingDirectory: $(System.DefaultWorkingDirectory)/profiler/src/Demos/Samples.$(sampleName)
+      displayName: 'dotnet build Release x64 $(sampleName)'
+
+    - script: ./run-$(testName).sh
+      workingDirectory: $(System.DefaultWorkingDirectory)/profiler/build/
+      displayName: Execute $(testName) benchmark
+      env:
+        DD_SERVICE: dd-trace-dotnet
+        DD_ENV: CI
+        DD_API_KEY: $(ddApiKey)
+        DD_CIVISIBILITY_AGENTLESS_ENABLED: 1
+        DD_SITE: datadoghq.com
+        DD_PROFILING_AGENTLESS: 1
+        DD_CIVISIBILITY_LOGS_ENABLED: 0
+        DD_CIVISIBILITY_ITR_ENABLED: 0
+
+    - script: |
+        mkdir -p $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+        cp $(System.DefaultWorkingDirectory)/profiler/build/jsonexporter_*.json $(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks/$(testName)
+      displayName: Copy the results to benchmarks dir
+      condition: succeededOrFailed()
+      continueOnError: true
+
+    - publish: "$(System.DefaultWorkingDirectory)/profiler/build_data/benchmarks"
+      displayName: Publish results
+      artifact: profiler_execution_time_benchmarks_linux_x64_$(testName)_$(System.JobAttempt)
+      condition: succeededOrFailed()
+      continueOnError: true
+
+  # - job: compare
+  #   timeoutInMinutes: 60 #default value
+  #   dependsOn: [Windows]
+  #   pool:
+  #     vmImage: windows-2022
+
+  #   steps:
+  #   - template: steps/clone-repo.yml
+  #     parameters:
+  #       targetShaId: $(targetShaId)
+  #       targetBranch: $(targetBranch)
+
+    # - template: steps/install-latest-dotnet-sdk.yml
+
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: Download HttpMessageHandler
+    #   inputs:
+    #     artifact: profiler_execution_time_benchmarks_windows_x64_HttpMessageHandler_1 #only download the first lot, ignores retries
+    #     path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_HttpMessageHandler_1
+
+    # - task: DownloadPipelineArtifact@2
+    #   displayName: Download FakeDbCommand
+    #   inputs:
+    #     artifact: execution_time_benchmarks_windows_x64_FakeDbCommand_1 #only download the first lot, ignores retries
+    #     path: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/current/execution_time_benchmarks_windows_x64_FakeDbCommand_1
+
+    # - script: tracer\build.cmd CompareExecutionTimeBenchmarkResults
+    #   displayName: Compare execution-time results
+    #   env:
+    #     PR_NUMBER: $(System.PullRequest.PullRequestNumber)
+    #     AZURE_DEVOPS_TOKEN: $(AZURE_DEVOPS_TOKEN)
+    #     GITHUB_TOKEN: $(GITHUB_TOKEN)
+
+    # - publish: $(System.DefaultWorkingDirectory)/tracer/build_data/execution_benchmarks/execution_time_report.md
+    #   displayName: Upload report
+    #   artifact: execution_time_report
+
 - stage: system_tests
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
   dependsOn: [package_linux, merge_commit_id]
@@ -3968,6 +4366,12 @@ stages:
         remainder_uds:
           WEBLOG_VARIANT: "uds"
           SCENARIO: "+S INTEGRATIONS +S TRACE_PROPAGATION_STYLE_W3C +S PROFILING +S LIBRARY_CONF_CUSTOM_HEADERS_SHORT +S LIBRARY_CONF_CUSTOM_HEADERS_LONG"
+        debugger_poc:
+          WEBLOG_VARIANT: "poc"
+          SCENARIO: DEBUGGER_SCENARIOS
+        debugger_uds:
+          WEBLOG_VARIANT: "uds"
+          SCENARIO: DEBUGGER_SCENARIOS
 
     steps:
       - checkout: none

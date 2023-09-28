@@ -9,7 +9,7 @@ project("Datadog.Linux.ApiWrapper" VERSION 2.39.0)
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c11 -fPIC) 
+add_compile_options(-std=c11 -fPIC -gdwarf-4) 
 
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
@@ -33,6 +33,8 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 
 add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
     functions_to_wrap.c
+    socket_operations.c
+    common.c
 )
 
 # Define linker libraries

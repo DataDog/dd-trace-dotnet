@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
-            using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
+            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {
@@ -113,7 +113,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
 
             SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
-            using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
+            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {

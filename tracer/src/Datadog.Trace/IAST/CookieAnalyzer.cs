@@ -94,7 +94,7 @@ internal static class CookieAnalyzer
 
     private static void AnalyzeCookie(string cookieHeaderValue, IntegrationId integrationId)
     {
-        if (!string.IsNullOrWhiteSpace(cookieHeaderValue))
+        if (!IsExcluded(cookieHeaderValue))
         {
             var cookieHeader = SetCookieHeaderValue.Parse(cookieHeaderValue);
             ReportVulnerabilities(integrationId, cookieHeader);
@@ -127,5 +127,11 @@ internal static class CookieAnalyzer
             IastModule.OnInsecureCookie(integrationId, name);
         }
     }
+
+    private static bool IsExcluded(string cookieName)
+    {
+        return string.IsNullOrWhiteSpace(cookieName) || cookieName.StartsWith(".AspNetCore.Correlation.", StringComparison.OrdinalIgnoreCase);
+    }
+
 #endif
 }
