@@ -3772,13 +3772,7 @@ stages:
       continueOnError: true
 
 - stage: throughput_profiler
-  condition: > 
-    and(
-      succeeded(), 
-      ne(variables['isNgenTestBuild'], 'True'),
-      eq(variables.isMainRepository, true),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
-    )
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, generate_variables, build_windows_tracer, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
