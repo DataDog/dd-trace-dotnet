@@ -24,6 +24,7 @@ namespace Datadog.Trace.BenchmarkDotNet
     }
     public static class DatadogExtensions
     {
-        public static BenchmarkDotNet.Configs.IConfig WithDatadog(this BenchmarkDotNet.Configs.IConfig config, bool? enableProfiler = default) { }
+        public static BenchmarkDotNet.Configs.IConfig WithDatadog(this BenchmarkDotNet.Configs.IConfig config) { }
+        public static BenchmarkDotNet.Configs.IConfig WithDatadog(this BenchmarkDotNet.Configs.IConfig config, bool? enableProfiler) { }
     }
 }
