@@ -19,6 +19,20 @@ internal sealed class CoverageContextContainer
     private ModuleValue? _currentModuleValue = null;
 
     /// <summary>
+    /// Initializes a new instance of the <see cref="CoverageContextContainer"/> class.
+    /// </summary>
+    /// <param name="state">State instance</param>
+    public CoverageContextContainer(object? state = null)
+    {
+        State = state;
+    }
+
+    /// <summary>
+    /// Gets or sets the context container state
+    /// </summary>
+    public object? State { get; set; }
+
+    /// <summary>
     /// Gets the current module value
     /// </summary>
     /// <param name="module">Module instance</param>

@@ -6,6 +6,7 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
+using Datadog.Trace.AppSec.Waf.NativeBindings;
 
 namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
@@ -18,9 +19,9 @@ internal class DiagnosticResult
     private readonly Lazy<DiagnosticFeatureResult?> _rulesData;
     private readonly Lazy<DiagnosticFeatureResult?> _rulesOverride;
 
-    public DiagnosticResult(Obj diagObject)
+    public DiagnosticResult(DdwafObjectStruct diagObject)
     {
-        _diagnosticsData = (Dictionary<string, object>)Encoder.Decode(diagObject);
+        _diagnosticsData = diagObject.DecodeMap();
         _customRules = MakeLazy("custom_rules");
         _exclusions = MakeLazy("exclusions");
         _rules = MakeLazy("rules");
@@ -40,6 +41,5 @@ internal class DiagnosticResult
 
     public string? RulesVersion => _diagnosticsData["ruleset_version"] as string;
 
-    private Lazy<DiagnosticFeatureResult?> MakeLazy(string key)
-        => new Lazy<DiagnosticFeatureResult?>(() => DiagnosticFeatureResult.From(key, _diagnosticsData));
+    private Lazy<DiagnosticFeatureResult?> MakeLazy(string key) => new(() => DiagnosticFeatureResult.From(key, _diagnosticsData));
 }

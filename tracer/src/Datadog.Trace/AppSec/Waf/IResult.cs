@@ -28,5 +28,7 @@ namespace Datadog.Trace.AppSec.Waf
         ulong AggregatedTotalRuntimeWithBindings { get; }
 
         bool Timeout { get; }
+
+        Dictionary<string, object> Derivatives { get; }
     }
 }

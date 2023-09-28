@@ -16,6 +16,9 @@ class NativeThreadsCpuProviderBase : public ISamplesProvider
 public:
     NativeThreadsCpuProviderBase(CpuTimeProvider* cpuTimeProvider);
 
+protected:
+    virtual void OnCpuDuration(std::uint64_t cpuTime);
+
 private:
     std::list<std::shared_ptr<Sample>> GetSamples() override;
 

@@ -76,5 +76,12 @@ namespace Datadog.Trace.Configuration.Schema
                 SchemaVersion.V0 when !_peerServiceTagsEnabled => new ServiceRemotingClientTags(),
                 _ => new ServiceRemotingClientV1Tags(),
             };
+
+        public AzureServiceBusTags CreateAzureServiceBusTags()
+            => _version switch
+            {
+                SchemaVersion.V0 when !_peerServiceTagsEnabled => new AzureServiceBusTags(),
+                _ => new AzureServiceBusV1Tags(),
+            };
     }
 }

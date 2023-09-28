@@ -6,6 +6,7 @@
 using System;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -94,15 +95,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        private static long TryGetSize(object obj)
-            => obj switch
-            {
-                null => 0,
-                byte[] bytes => bytes.Length,
-                string str => Encoding.UTF8.GetByteCount(str),
-                _ => 0,
-            };
-
         private static long GetMessageSize<T>(T message)
             where T : IMessage
         {
@@ -111,8 +103,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 return 0;
             }
 
-            var size = TryGetSize(message.Key);
-            size += TryGetSize(message.Value);
+            var size = MessageSizeHelper.TryGetSize(message.Key);
+            size += MessageSizeHelper.TryGetSize(message.Value);
 
             if (message.Headers == null)
             {

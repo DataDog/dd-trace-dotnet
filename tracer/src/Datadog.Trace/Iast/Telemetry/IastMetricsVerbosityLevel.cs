@@ -16,22 +16,22 @@ namespace Datadog.Trace.Iast.Telemetry;
 internal enum IastMetricsVerbosityLevel
 {
     /// <summary>
-    /// Debug
+    /// Disabled
     /// </summary>
-    Debug = 0,
-
-    /// <summary>
-    /// The default log level
-    /// </summary>
-    Information = 1,
+    Off = 0,
 
     /// <summary>
     /// Only mandatory metrics
     /// </summary>
-    Mandatory = 2,
+    Mandatory = 1,
 
     /// <summary>
-    /// Disabled
+    /// The default log level
     /// </summary>
-    Off = 3,
+    Information = 2,
+
+    /// <summary>
+    /// Debug
+    /// </summary>
+    Debug = 3,
 }

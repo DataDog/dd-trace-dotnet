@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Ci.Coverage.Models.Global;
@@ -65,7 +66,7 @@ internal abstract class CoverageInfo
             }
         }
 
-        _data = new[] { Math.Round((executed / total) * 100, 2), total, executed };
+        _data = new[] { Math.Round((executed / total) * 100, 2).ToValidPercentage(), total, executed };
     }
 
     protected void ClearData()
@@ -86,5 +87,10 @@ internal abstract class CoverageInfo
                 component.ClearData();
             }
         }
+    }
+
+    public double GetTotalPercentage()
+    {
+        return Data[0].ToValidPercentage();
     }
 }

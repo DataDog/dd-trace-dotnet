@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Profiler.Native.Linux" VERSION 2.38.0)
+project("Datadog.Profiler.Native.Linux" VERSION 2.39.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -89,8 +89,9 @@ set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
 
 # Define directories includes
 target_include_directories(${PROFILER_STATIC_LIB_NAME}
-        PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
-        PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native.Linux
+    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
+    PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
 )
 
 # Define linker libraries

@@ -62,5 +62,7 @@ namespace Datadog.Trace.Configuration
         Ldap,
         Ssrf,
         AwsKinesis,
+        AzureServiceBus,
+        SystemRandom,
     }
 }

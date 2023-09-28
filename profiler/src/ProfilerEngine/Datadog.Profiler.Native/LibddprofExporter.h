@@ -31,6 +31,7 @@ class IRuntimeInfo;
 class IEnabledProfilers;
 class IAllocationsRecorder;
 class IProcessSamplesProvider;
+class IMetadataProvider;
 
 class LibddprofExporter : public IExporter
 {
@@ -42,6 +43,7 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
+        IMetadataProvider* metadataProvider,
         IAllocationsRecorder* allocationsRecorder
         );
     ~LibddprofExporter() override;
@@ -137,7 +139,7 @@ private:
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
-    void SaveMetricsToDisk(const std::string& content) const;
+    void SaveJsonToDisk(const std::string prefix, const std::string& content) const;
 
     // we *must* pass the reference to the pointer
     // the Send function in rust takes the ownership, free the memory and set the pointer to null (avoid double free)
@@ -150,6 +152,7 @@ private:
     std::vector<UpscalingInfo> GetUpscalingInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
+    std::string GetMetadata() const;
 
     static tags CommonTags;
     static std::string const ProcessId;
@@ -187,6 +190,7 @@ private:
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
     std::vector<ISamplesProvider*> _processSamplesProviders;
+    IMetadataProvider* _metadataProvider;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

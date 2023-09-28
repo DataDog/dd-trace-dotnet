@@ -26,11 +26,6 @@ internal enum Count
 #region Tracers Namespace
 
     /// <summary>
-    /// The number of errors/failures in the library integration, tagged by the integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) and ErrorType (e.g. `error:duck_type`, `error:runtime`). Both tags will vary by implementation language",
-    /// </summary>
-    [TelemetryMetric<MetricTags.IntegrationName, MetricTags.InstrumentationError>("integration_errors")] IntegrationsError,
-
-    /// <summary>
     /// The number of spans created by the tracer, tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)
     /// </summary>
     [TelemetryMetric<MetricTags.IntegrationName>("spans_created")] SpanCreated,
@@ -182,8 +177,8 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
 
-    #endregion
-    #region Iast Namespace
+#endregion
+#region Iast Namespace
 
     /// <summary>
     /// Counts the number of source methods that have been called
@@ -200,5 +195,9 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
 
-    #endregion
+    /// <summary>
+    /// Counts the number of tainted objects after a request
+    /// </summary>
+    [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
+#endregion
 }

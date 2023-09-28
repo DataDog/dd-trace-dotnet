@@ -33,7 +33,9 @@ namespace Samples.Computer01
         InnerMethods,
         LineNumber,
         NullThreadNameBug,
-        MethodSignature
+        MethodSignature,
+        OpenLdapCrash,
+        SocketTimeout
     }
 
     public class Program
@@ -76,6 +78,7 @@ namespace Samples.Computer01
 
             ParseCommandLine(args, out TimeSpan timeout, out bool runAsService, out Scenario scenario, out int iterations, out int nbThreads, out int parameter);
 
+            Console.WriteLine("Running Scenario " + scenario.ToString());
             // This application is used for several purposes:
             //  - execute a processing for a given duration (for smoke test)
             //  - execute a processing several times (for runtime test)

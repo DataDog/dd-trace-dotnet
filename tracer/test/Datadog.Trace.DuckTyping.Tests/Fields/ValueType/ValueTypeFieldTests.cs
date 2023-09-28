@@ -298,10 +298,25 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType
             Assert.Null(duckAbstract.PublicStaticNullableIntField);
             Assert.Null(duckVirtual.PublicStaticNullableIntField);
 
+            Assert.Null(duckInterface.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckInterface.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Null(duckAbstract.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckAbstract.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Null(duckVirtual.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckVirtual.PublicStaticNullableIntFieldWithType.Type);
+
             duckInterface.PublicStaticNullableIntField = 42;
             Assert.Equal(42, duckInterface.PublicStaticNullableIntField);
             Assert.Equal(42, duckAbstract.PublicStaticNullableIntField);
             Assert.Equal(42, duckVirtual.PublicStaticNullableIntField);
+
+            duckInterface.PublicStaticNullableIntFieldWithType = ValueWithType<int?>.Create(42, null!);
+            Assert.Equal(42, duckInterface.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckInterface.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Equal(42, duckAbstract.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckAbstract.PublicStaticNullableIntFieldWithType.Type);
+            Assert.Equal(42, duckVirtual.PublicStaticNullableIntFieldWithType.Value);
+            Assert.Equal(typeof(int?), duckVirtual.PublicStaticNullableIntFieldWithType.Type);
 
             duckAbstract.PublicStaticNullableIntField = 50;
             Assert.Equal(50, duckInterface.PublicStaticNullableIntField);

@@ -43,5 +43,11 @@ debugger_*.h                               @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyGenerator/ @DataDog/debugger-dotnet
 tracer/src/Datadog.InstrumentedAssemblyVerification/ @DataDog/debugger-dotnet
 
+# Serverless
+/tracer/src/Datadog.Trace/ClrProfiler/ServerlessInstrumentation/   @DataDog/tracing-dotnet  @DataDog/serverless-apm
+/tracer/test/Datadog.Trace.ClrProfiler.IntegrationTests/AWS/       @DataDog/tracing-dotnet  @DataDog/serverless-apm
+/tracer/test/test-applications/azure-functions/                    @DataDog/tracing-dotnet  @DataDog/serverless-apm
+docker-compose.serverless.yml                                      @DataDog/tracing-dotnet  @DataDog/serverless-apm
+
 # Shared code we could move to the root folder
 /tracer/build/                            @DataDog/apm-dotnet

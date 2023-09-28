@@ -6,6 +6,8 @@
 
 #include "OsSpecificApi.h"
 
+#include <regex>
+
 #ifdef _WINDOWS
 
 TEST(OsSpecificApiTest, CheckLastErrorWithSystemMessage)
@@ -39,3 +41,12 @@ TEST(OsSpecificApiTest, CheckLastErrorMessageWithErrno)
     ASSERT_EQ(42, errorCode);
 }
 #endif
+
+TEST(OsSpecificApiTest, CheckProcessStartTimeFormat)
+{
+    auto processStartTime = OsSpecificApi::GetProcessStartTime();
+
+    std::regex dateFormatRegex("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z");
+
+    ASSERT_TRUE(std::regex_match(processStartTime, dateFormatRegex));
+}

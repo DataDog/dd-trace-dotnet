@@ -40,7 +40,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -63,7 +63,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().Be(NullTelemetryController.Instance);
     }
@@ -88,7 +88,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().BeOfType<TelemetryController>();
         TelemetryFactory.Config.Should().BeOfType<NullConfigurationTelemetry>();
@@ -115,7 +115,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         controller.Should().BeOfType<TelemetryControllerV2>();
         TelemetryFactory.Config.Should().BeOfType<ConfigurationTelemetry>();
@@ -141,11 +141,11 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Metrics;
 
-        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Metrics;
 
@@ -183,7 +183,7 @@ public class TelemetryFactoryTests
             metricsEnabled: false,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
         TelemetryFactory.Metrics.Should().BeOfType<NullMetricsTelemetryCollector>();
     }
@@ -193,7 +193,8 @@ public class TelemetryFactoryTests
     {
         // set the defaults (module initializer resets everything by default
         TelemetryFactory.SetConfigForTesting(new ConfigurationTelemetry());
-        TelemetryFactory.SetMetricsForTesting(new MetricsTelemetryCollector());
+        var metricsTelemetryCollector = new MetricsTelemetryCollector();
+        TelemetryFactory.SetMetricsForTesting(metricsTelemetryCollector);
 
         var factory = TelemetryFactory.CreateFactory();
         var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance));
@@ -208,9 +209,38 @@ public class TelemetryFactoryTests
             metricsEnabled: true,
             debugEnabled: false);
 
-        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
-        TelemetryFactory.Metrics.Should().BeOfType<MetricsTelemetryCollector>();
+        TelemetryFactory.Metrics.Should().Be(metricsTelemetryCollector);
+    }
+
+    [Fact]
+    public void TelemetryFactory_V2Telemetry_UsesCiVisibilityMetricsCollectorIfRequested()
+    {
+        // set the defaults (module initializer resets everything by default
+        TelemetryFactory.SetConfigForTesting(new ConfigurationTelemetry());
+        var metricsTelemetryCollector = new MetricsTelemetryCollector();
+        TelemetryFactory.SetMetricsForTesting(metricsTelemetryCollector);
+
+        var factory = TelemetryFactory.CreateFactory();
+        var tracerSettings = new ImmutableTracerSettings(new TracerSettings(NullConfigurationSource.Instance, NullConfigurationTelemetry.Instance));
+        var settings = new TelemetrySettings(
+            telemetryEnabled: true,
+            configurationError: null,
+            agentlessSettings: null,
+            agentProxyEnabled: true,
+            heartbeatInterval: TimeSpan.FromSeconds(1),
+            dependencyCollectionEnabled: true,
+            v2Enabled: true,
+            metricsEnabled: true,
+            debugEnabled: false);
+
+        var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: true);
+
+        TelemetryFactory.Metrics
+                        .Should()
+                        .NotBe(metricsTelemetryCollector)
+                        .And.BeOfType<CiVisibilityMetricsTelemetryCollector>();
     }
 
     [Theory]
@@ -236,7 +266,7 @@ public class TelemetryFactoryTests
             debugEnabled: false);
 
         // First controller
-        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller1 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Config;
 
@@ -255,7 +285,7 @@ public class TelemetryFactoryTests
         var v1Controller1 = controller1.Should().BeOfType<TelemetryControllerV2>().Subject;
 
         // Second controller
-        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance);
+        var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Config;
 

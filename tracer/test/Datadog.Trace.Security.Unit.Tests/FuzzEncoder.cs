@@ -48,13 +48,10 @@ public class FuzzEncoder : WafLibraryRequiredTest
                 using var jsonReader = new JsonTextReader(streamReader);
                 var root = JToken.ReadFrom(jsonReader);
 
-                var l = new List<Obj>();
-                using var result = Encoder.Encode(root, WafLibraryInvoker!, l, applySafetyLimits: true);
+                using var result = Encoder.Encode(root, applySafetyLimits: true);
 
                 // check the object is valid
-                Assert.NotEqual(ObjType.Invalid, result.ArgsType);
-
-                l.ForEach(x => x.Dispose());
+                Assert.NotEqual(DDWAF_OBJ_TYPE.DDWAF_OBJ_INVALID, result.Result.Type);
             }
             catch (Exception ex)
             {

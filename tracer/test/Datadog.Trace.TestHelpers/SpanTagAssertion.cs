@@ -115,5 +115,48 @@ namespace Datadog.Trace.TestHelpers
 
             return this;
         }
+
+        public SpanTagAssertion<T> IfPresentMatches(string tagName, T expectedValue)
+        {
+            bool keyExists = _tags.TryGetValue(tagName, out T value);
+            if (keyExists)
+            {
+                _tags.Remove(tagName);
+            }
+            else
+            {
+                return this;
+            }
+
+            if (!value.Equals(expectedValue))
+            {
+                _result.WithFailure(GenerateMatchesFailureString("tag", tagName, expectedValue.ToString(), value.ToString()));
+            }
+
+            return this;
+        }
+
+        public SpanTagAssertion<T> IfPresentMatchesOneOf(string tagName, params T[] expectedValues)
+        {
+            if (_tags.TryGetValue(tagName, out T value))
+            {
+                _tags.Remove(tagName);
+            }
+            else
+            {
+                return this;
+            }
+
+            if (expectedValues.Where(s => s.Equals(value)).SingleOrDefault() is null)
+            {
+                string expectedValueString = "["
+                                + string.Join(",", expectedValues.Select(s => $"\"{s}\"").ToArray())
+                                + "]";
+
+                _result.WithFailure(GenerateMatchesOneOfFailureString("tag", tagName, expectedValueString, value?.ToString()));
+            }
+
+            return this;
+        }
     }
 }

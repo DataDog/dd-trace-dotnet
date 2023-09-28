@@ -14,6 +14,7 @@
 #include "Log.h"
 #include "OsSpecificApi.h"
 #include "SampleValueTypeProvider.h"
+#include "TimelineSampleType.h"
 
 #include "shared/src/native-src/com_ptr.h"
 #include "shared/src/native-src/string.h"
@@ -27,7 +28,7 @@ StopTheWorldGCProvider::StopTheWorldGCProvider(
     IRuntimeIdStore* pRuntimeIdStore,
     IConfiguration* pConfiguration)
     :
-    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(GarbageCollectionProvider::SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawStopTheWorldSample>("StopTheWorldGCProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }
 

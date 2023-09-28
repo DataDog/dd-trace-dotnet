@@ -18,9 +18,11 @@
 
 #include "ManagedThreadInfo.h"
 #include "ICollector.h"
+#include "IService.h"
 #include "RawCpuSample.h"
 #include "RawWallTimeSample.h"
-
+#include "MetricsRegistry.h"
+#include "MeanMaxMetric.h"
 #include "shared/src/native-src/string.h"
 
 // forward declarations
@@ -38,7 +40,7 @@ typedef enum
     CpuTime
 } PROFILING_TYPE;
 
-class StackSamplerLoop
+class StackSamplerLoop : public IService
 {
     friend StackSamplerLoopManager;
 
@@ -52,14 +54,17 @@ public:
         IManagedThreadList* pManagedThreadList,
         IManagedThreadList* pCodeHotspotThreadList,
         ICollector<RawWallTimeSample>* pWallTimeCollector,
-        ICollector<RawCpuSample>* pCpuTimeCollector
+        ICollector<RawCpuSample>* pCpuTimeCollector,
+        MetricsRegistry& metricsRegistry
         );
     ~StackSamplerLoop();
     StackSamplerLoop(StackSamplerLoop const&) = delete;
     StackSamplerLoop& operator=(StackSamplerLoop const&) = delete;
 
-    void Join();
-    void RequestShutdown();
+    // Inherited via IService
+    const char* GetName() override;
+    bool Start() override;
+    bool Stop() override;
 
 private:
     ICorProfilerInfo4* _pCorProfilerInfo;
@@ -72,7 +77,7 @@ private:
     ICollector<RawWallTimeSample>* _pWallTimeCollector;
     ICollector<RawCpuSample>* _pCpuTimeCollector;
 
-    std::thread* _pLoopThread;
+    std::unique_ptr<std::thread> _pLoopThread;
     DWORD _loopThreadOsId;
     volatile bool _shutdownRequested = false;
     std::shared_ptr<ManagedThreadInfo> _targetThread;
@@ -91,6 +96,12 @@ private:
     std::unordered_map<shared::WSTRING, uint64_t> _encounteredStackCountsForDebug;
     std::chrono::nanoseconds _samplingPeriod;
     uint32_t _nbCores;
+    bool _isWalltimeEnabled;
+    bool _isCpuEnabled;
+    bool _areInternalMetricsEnabled;
+    std::shared_ptr<MeanMaxMetric> _walltimeDurationMetric;
+    std::shared_ptr<MeanMaxMetric> _cpuDurationMetric;
+    bool _isStopped;
 
 private:
     void MainLoop();

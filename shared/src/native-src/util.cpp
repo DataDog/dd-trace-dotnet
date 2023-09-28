@@ -213,6 +213,15 @@ namespace shared
 #endif
     }
 
+    bool UnsetEnvironmentValue(const ::shared::WSTRING& name)
+    {
+#ifdef _WIN32
+        return ::SetEnvironmentVariable(name.c_str(), nullptr);
+#else
+        return unsetenv(::shared::ToString(name).c_str()) == 0;
+#endif
+    }
+
     // copied from https://stackoverflow.com/a/60198074
     // We replace std::mt19937 by std::mt19937_64 so we can generate 64bits numbers instead of 32bits
     std::string GenerateUuidV4()

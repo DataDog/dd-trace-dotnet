@@ -11,12 +11,13 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly DDWAF_RET_CODE returnCode;
+        private readonly DDWAF_RET_CODE _returnCode;
 
         public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnCode = returnCode;
+            _returnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
+            Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             var events = returnStruct.Events.DecodeObjectArray();
             if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
@@ -32,13 +33,15 @@ namespace Datadog.Trace.AppSec.Waf
             Timeout = returnStruct.Timeout;
         }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
+        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(_returnCode);
 
         public string Data { get; }
 
         public List<string> Actions { get; }
 
         public List<object> Events { get; }
+
+        public Dictionary<string, object> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds

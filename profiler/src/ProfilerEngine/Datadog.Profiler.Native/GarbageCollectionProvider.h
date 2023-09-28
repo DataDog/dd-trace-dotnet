@@ -18,9 +18,6 @@ class GarbageCollectionProvider
       public IGarbageCollectionsListener
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     GarbageCollectionProvider(
         SampleValueTypeProvider& valueTypeProvider,
         IFrameStore* pFrameStore,

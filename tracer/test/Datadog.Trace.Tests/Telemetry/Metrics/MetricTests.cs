@@ -21,12 +21,19 @@ namespace Datadog.Trace.Tests.Telemetry.Metrics;
 
 public class MetricTests
 {
-    private static readonly Dictionary<string, List<string>> IgnoredTagsByMetricName = new()
+    private static readonly Dictionary<string, string[]> IgnoredTagsByMetricName = new()
     {
-        { "waf.init", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.updates", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "waf.requests", new() { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
-        { "spans_finished", new() { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+        { "waf.init", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "waf.updates", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "waf.requests", new[] { "event_rules_version" } }, // we don't send this tag as cardinality is infinite
+        { "spans_finished", new[] { "integration_name" } }, // this is technically difficult for us, so we don't tag it
+    };
+
+    private static readonly Dictionary<string, string[]> OptionalTagsByMetricName = new()
+    {
+        { "event_created", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
+        { "event_finished", new[] { "has_codeowner", "is_unsupported_ci", "is_benchmark" } },
+        { "git_requests.settings_response", new[] { "coverage_enabled", "itrskip_enabled" } },
     };
 
     private static readonly Dictionary<string, List<string>> OneOfTagsByMetricName = new()
@@ -61,9 +68,9 @@ public class MetricTests
             // check that we have the same number of tags as expected
             // this isn't correct for some tags, but it's true of most,
             // so we assert it and have an exception list where it's not required
-            var expectedPrefixes = IgnoredTagsByMetricName.TryGetValue(expectedMetric.Metric, out var ignored)
-                                       ? expectedMetric.TagPrefixes.Except(ignored).ToList()
-                                       : expectedMetric.TagPrefixes;
+            var ignoredPrefixes = IgnoredTagsByMetricName.TryGetValue(expectedMetric.Metric, out var ignored) ? ignored : Array.Empty<string>();
+            var optionalPrefixes = OptionalTagsByMetricName.TryGetValue(expectedMetric.Metric, out var optional) ? optional : Array.Empty<string>();
+            var expectedPrefixes = expectedMetric.TagPrefixes.Except(ignoredPrefixes).Except(optionalPrefixes).ToList();
 
             // if we have any expected prefixes, we should expect some permutations
             if (expectedPrefixes.Count > 0)
@@ -71,24 +78,42 @@ public class MetricTests
                 implementation.TagPermutations.Should().NotBeEmpty($"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})");
             }
 
+            // if (IgnoreTagsPermutationValidation.IndexOf(implementation.Metric) != -1)
+            // {
+            //     continue;
+            // }
+
             // Check all our permutation are valid
             foreach (var permutation in implementation.TagPermutations)
             {
-                var permutationPrefixes = permutation.Select(
-                    tag => tag.IndexOf(':') is var i and >= 0
-                               ? tag.Substring(0, i)
-                               : tag);
+                var permutationPrefixes = permutation
+                                         .Select(
+                                              tag => tag.IndexOf(':') is var i and >= 0
+                                                         ? tag.Substring(0, i)
+                                                         : tag)
+                                         .Except(optionalPrefixes)
+                                         .Where(x => !string.IsNullOrEmpty(x))
+                                         .ToList();
 
-                permutationPrefixes.Should()
-                                   .OnlyContain(prefix => expectedPrefixes.Contains(prefix), $"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})")
-                                   .And.OnlyHaveUniqueItems();
+                if (permutationPrefixes.Count == 0)
+                {
+                    permutationPrefixes.Should().HaveCount(expectedPrefixes.Count);
+                }
+                else
+                {
+                    permutationPrefixes
+                       .Should()
+                       .OnlyContain(prefix => expectedPrefixes.Contains(prefix), $"{implementation.Metric} should only use expected prefixes ({string.Join(",", expectedMetric.TagPrefixes)})")
+                       .And.OnlyHaveUniqueItems();
 
-                // for "one of" cases we only expect to send one of the specified tags, so reduce the expected count
-                var expectedCount = OneOfTagsByMetricName.TryGetValue(expectedMetric.Metric, out var oneOfList)
-                                        ? expectedPrefixes.Count - (oneOfList.Count - 1)
-                                        : expectedPrefixes.Count;
+                    // for "one of" cases we only expect to send one of the specified tags, so reduce the expected count
+                    var expectedCount = OneOfTagsByMetricName.TryGetValue(expectedMetric.Metric, out var oneOfList)
+                                            ? expectedPrefixes.Count - (oneOfList.Count - 1)
+                                            : expectedPrefixes.Count;
 
-                permutation.Should().HaveCount(expectedCount, $"{implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
+                    var permutationExcludingOptional = permutation.Except(optionalPrefixes);
+                    permutationExcludingOptional.Should().HaveCount(expectedCount, $"Received: {permutation.Length}, {implementation.Metric} should supply all the expected tags ({string.Join(",", expectedMetric.TagPrefixes)})");
+                }
             }
         }
     }
@@ -97,28 +122,33 @@ public class MetricTests
     {
         var results = new List<ImplementedMetricAndTags>();
 
-        results.AddRange(GetCounts());
-        var counts = results.Count;
-        results.AddRange(GetGauges());
-        var gauges = results.Count - counts;
-        results.AddRange(GetDistributions());
-        var distributions = results.Count - gauges;
+        var allMetrics = new[]
+        {
+            GetValues<Count>(TelemetryMetricType.Count, x => (((Count)x).GetName(), ((Count)x).GetNamespace(), ((Count)x).IsCommon())),
+            GetValues<CountShared>(TelemetryMetricType.Count, x => (((CountShared)x).GetName(), ((CountShared)x).GetNamespace(), ((CountShared)x).IsCommon())),
+            GetValues<CountCIVisibility>(TelemetryMetricType.Count, x => (((CountCIVisibility)x).GetName(), ((CountCIVisibility)x).GetNamespace(), ((CountCIVisibility)x).IsCommon())),
+            GetValues<Gauge>(TelemetryMetricType.Gauge, x => (((Gauge)x).GetName(), ((Gauge)x).GetNamespace(), ((Gauge)x).IsCommon())),
+            GetValues<DistributionShared>(TelemetryMetricType.Distribution, x => (((DistributionShared)x).GetName(), ((DistributionShared)x).GetNamespace(), ((DistributionShared)x).IsCommon())),
+            GetValues<DistributionCIVisibility>(TelemetryMetricType.Distribution, x => (((DistributionCIVisibility)x).GetName(), ((DistributionCIVisibility)x).GetNamespace(), ((DistributionCIVisibility)x).IsCommon())),
+        };
 
-        results.Should().NotBeEmpty();
-        counts.Should().NotBe(0);
-        gauges.Should().NotBe(0);
-        distributions.Should().NotBe(0);
+        foreach (var metrics in allMetrics)
+        {
+            results.AddRange(metrics);
+        }
+
         return results;
 
-        static IEnumerable<ImplementedMetricAndTags> GetCounts()
+        static IEnumerable<ImplementedMetricAndTags> GetValues<T>(
+            string type,
+            Func<object, (string Name, string NameSpace, bool IsCommon)> getDetails)
+            where T : Enum
         {
-            var metricType = typeof(Count);
+            var metricType = typeof(T);
             var allMetrics = Enum.GetValues(metricType);
-            foreach (Count metric in allMetrics)
+            foreach (var metric in allMetrics)
             {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
+                var (metricName, metricNamespace, isCommon) = getDetails(metric);
                 if (isCommon && metricNamespace is null)
                 {
                     metricNamespace = MetricNamespaceConstants.Tracer;
@@ -126,47 +156,7 @@ public class MetricTests
 
                 var member = metricType.GetField(metric.ToString());
                 var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Count, tags);
-            }
-        }
-
-        static IEnumerable<ImplementedMetricAndTags> GetGauges()
-        {
-            var metricType = typeof(Gauge);
-            var allMetrics = Enum.GetValues(metricType);
-            foreach (Gauge metric in allMetrics)
-            {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
-                if (isCommon && metricNamespace is null)
-                {
-                    metricNamespace = MetricNamespaceConstants.Tracer;
-                }
-
-                var member = metricType.GetField(metric.ToString());
-                var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Gauge, tags);
-            }
-        }
-
-        static IEnumerable<ImplementedMetricAndTags> GetDistributions()
-        {
-            var metricType = typeof(Distribution);
-            var allMetrics = Enum.GetValues(metricType);
-            foreach (Distribution metric in allMetrics)
-            {
-                var metricName = metric.GetName();
-                var isCommon = metric.IsCommon();
-                var metricNamespace = metric.GetNamespace();
-                if (isCommon && metricNamespace is null)
-                {
-                    metricNamespace = MetricNamespaceConstants.Tracer;
-                }
-
-                var member = metricType.GetField(metric.ToString());
-                var tags = GetTagPermutations(member, metricNamespace);
-                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, TelemetryMetricType.Distribution, tags);
+                yield return new ImplementedMetricAndTags(metricNamespace, metricName, isCommon, type, tags);
             }
         }
 

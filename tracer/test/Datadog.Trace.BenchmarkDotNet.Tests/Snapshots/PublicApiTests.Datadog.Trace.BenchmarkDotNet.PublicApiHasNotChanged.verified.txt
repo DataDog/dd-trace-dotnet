@@ -2,12 +2,6 @@
 
 namespace Datadog.Trace.BenchmarkDotNet
 {
-    public class DatadogColumnHidingRule : BenchmarkDotNet.Columns.IColumnHidingRule
-    {
-        public DatadogColumnHidingRule() { }
-        public static BenchmarkDotNet.Columns.IColumnHidingRule Default { get; }
-        public bool NeedToHide(BenchmarkDotNet.Columns.IColumn column) { }
-    }
     public class DatadogDiagnoser : BenchmarkDotNet.Diagnosers.IDiagnoser
     {
         public static readonly BenchmarkDotNet.Diagnosers.IDiagnoser Default;

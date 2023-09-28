@@ -68,8 +68,11 @@ Configuration::Configuration()
     _isAllocationRecorderEnabled = GetEnvironmentValue(EnvironmentVariables::AllocationRecorderEnabled, false);
     _isDebugInfoEnabled = GetEnvironmentValue(EnvironmentVariables::DebugInfoEnabled, false);
     _isGcThreadsCpuTimeEnabled = GetEnvironmentValue(EnvironmentVariables::GcThreadsCpuTimeEnabled, false);
+    _isThreadLifetimeEnabled = GetEnvironmentValue(EnvironmentVariables::ThreadLifetimeEnabled, false);
     _gitRepositoryUrl = GetEnvironmentValue(EnvironmentVariables::GitRepositoryUrl, DefaultEmptyString);
     _gitCommitSha = GetEnvironmentValue(EnvironmentVariables::GitCommitSha, DefaultEmptyString);
+    _isInternalMetricsEnabled = GetEnvironmentValue(EnvironmentVariables::InternalMetricsEnabled, false);
+    _isSystemCallsShieldEnabled = GetEnvironmentValue(EnvironmentVariables::SystemCallsShieldEnabled, true);
 }
 
 fs::path Configuration::ExtractLogDirectory()
@@ -158,6 +161,11 @@ bool Configuration::IsGcThreadsCpuTimeEnabled() const
 bool Configuration::IsHeapProfilingEnabled() const
 {
     return _isHeapProfilingEnabled;
+}
+
+bool Configuration::IsThreadLifetimeEnabled() const
+{
+    return _isThreadLifetimeEnabled;
 }
 
 int32_t Configuration::ContentionSampleLimit() const
@@ -265,6 +273,10 @@ bool Configuration::IsAllocationRecorderEnabled() const
     return _isAllocationRecorderEnabled;
 }
 
+bool Configuration::IsInternalMetricsEnabled() const
+{
+    return _isInternalMetricsEnabled;
+}
 
 fs::path Configuration::GetApmBaseDirectory()
 {
@@ -457,6 +469,15 @@ bool Configuration::IsAgentless() const
 bool Configuration::IsDebugInfoEnabled() const
 {
     return _isDebugInfoEnabled;
+}
+
+bool Configuration::IsSystemCallsShieldEnabled() const
+{
+#ifdef LINUX
+    return _isSystemCallsShieldEnabled;
+#else
+    return false;
+#endif
 }
 
 bool convert_to(shared::WSTRING const& s, bool& result)

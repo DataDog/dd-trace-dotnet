@@ -24,4 +24,5 @@ namespace OsSpecificApi
    int32_t GetProcessorCount();
    std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
    std::pair<DWORD, std::string> GetLastErrorMessage();
-   } // namespace OsSpecificApi
+   std::string GetProcessStartTime();
+ } // namespace OsSpecificApi

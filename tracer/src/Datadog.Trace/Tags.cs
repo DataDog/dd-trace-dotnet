@@ -279,6 +279,21 @@ namespace Datadog.Trace
         internal const string GraphQLSource = "graphql.source";
 
         /// <summary>
+        /// The message source name.
+        /// </summary>
+        internal const string MessagingSourceName = "messaging.source.name";
+
+        /// <summary>
+        /// The message destination name.
+        /// </summary>
+        internal const string MessagingDestinationName = "messaging.destination.name";
+
+        /// <summary>
+        /// The messaging operation.
+        /// </summary>
+        internal const string MessagingOperation = "messaging.operation";
+
+        /// <summary>
         /// The AMQP method.
         /// </summary>
         internal const string AmqpCommand = "amqp.command";

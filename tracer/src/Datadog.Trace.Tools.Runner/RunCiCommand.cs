@@ -15,6 +15,7 @@ using System.Xml;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Ci;
 using Datadog.Trace.Ci.Tags;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 using Spectre.Console;
@@ -63,7 +64,6 @@ namespace Datadog.Trace.Tools.Runner
             var ciVisibilitySettings = CIVisibility.Settings;
             var agentless = ciVisibilitySettings.Agentless;
             var apiKey = ciVisibilitySettings.ApiKey;
-            var applicationKey = ciVisibilitySettings.ApplicationKey;
 
             var customApiKey = _apiKeyOption.GetValue(context);
 
@@ -107,7 +107,7 @@ namespace Datadog.Trace.Tools.Runner
             var uploadRepositoryChangesTask = Task.CompletedTask;
 
             // Set Agentless configuration from the command line options
-            ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, applicationKey, ciVisibilitySettings.AgentlessUrl);
+            ciVisibilitySettings.SetAgentlessConfiguration(agentless, apiKey, ciVisibilitySettings.AgentlessUrl);
 
             if (!string.IsNullOrEmpty(agentUrl))
             {
@@ -161,21 +161,15 @@ namespace Datadog.Trace.Tools.Runner
                     Log.Debug("RunCiCommand: EVP proxy was detected.");
                 }
 
-                // If we have api and application key, and the code coverage or the tests skippable environment variables
+                // If we have an api key, and the code coverage or the tests skippable environment variables
                 // are not set when the intelligent test runner is enabled, we query the settings api to check if it should enable coverage or not.
-                var useConfigurationApi = !agentless || !string.IsNullOrEmpty(applicationKey);
-                if (!useConfigurationApi)
-                {
-                    Log.Debug("RunCiCommand: Application key is empty, call to configuration api skipped.");
-                }
-                else if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
+                if (!ciVisibilitySettings.IntelligentTestRunnerEnabled)
                 {
                     Log.Debug("RunCiCommand: Intelligent test runner is disabled, call to configuration api skipped.");
                 }
 
                 // If we still don't know if we have to enable code coverage or test skipping, then let's request the configuration API
-                if (useConfigurationApi
-                 && ciVisibilitySettings.IntelligentTestRunnerEnabled
+                if (ciVisibilitySettings.IntelligentTestRunnerEnabled
                  && (ciVisibilitySettings.CodeCoverageEnabled == null || ciVisibilitySettings.TestsSkippingEnabled == null))
                 {
                     try
@@ -270,7 +264,7 @@ namespace Datadog.Trace.Tools.Runner
             TestSession session = null;
             if (createTestSession)
             {
-                session = TestSession.GetOrCreate(command, null, null, null, true);
+                session = TestSession.InternalGetOrCreate(command, null, null, null, true);
                 session.SetTag(IntelligentTestRunnerTags.TestTestsSkippingEnabled, testSkippingEnabled ? "true" : "false");
                 session.SetTag(CodeCoverageTags.Enabled, codeCoverageEnabled ? "true" : "false");
 
@@ -321,7 +315,6 @@ namespace Datadog.Trace.Tools.Runner
                 }
 
                 context.ExitCode = exitCode;
-                return;
             }
             catch (Exception ex)
             {
@@ -347,7 +340,7 @@ namespace Datadog.Trace.Tools.Runner
                             globalCoverage is not null)
                         {
                             // Adds the global code coverage percentage to the session
-                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.Data[0].ToString(CultureInfo.InvariantCulture));
+                            session.SetTag(CodeCoverageTags.PercentageOfTotalLines, globalCoverage.GetTotalPercentage());
                         }
                     }
                     else
@@ -367,8 +360,9 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the OpenCover format.
 
                                     // Adds the global code coverage percentage to the session
+                                    var coveragePercentage = Math.Round(seqCovValue, 2).ToValidPercentage();
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(seqCovValue, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: OpenCover code coverage was reported: {Value}", seqCovValue);
                                 }
                                 else if (xmlDoc.SelectSingleNode("/coverage/@line-rate") is { } lineRateAttribute &&
@@ -377,8 +371,9 @@ namespace Datadog.Trace.Tools.Runner
                                     // Found using the Cobertura format.
 
                                     // Adds the global code coverage percentage to the session
+                                    var coveragePercentage = Math.Round(lineRateValue * 100, 2).ToValidPercentage();
                                     session.SetTag(CodeCoverageTags.Enabled, "true");
-                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, Math.Round(lineRateValue * 100, 2).ToString("F2", CultureInfo.InvariantCulture));
+                                    session.SetTag(CodeCoverageTags.PercentageOfTotalLines, coveragePercentage);
                                     Log.Debug("RunCiCommand: Cobertura code coverage was reported: {Value}", lineRateAttribute.Value);
                                 }
                                 else

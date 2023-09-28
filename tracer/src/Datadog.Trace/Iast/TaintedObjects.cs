@@ -40,5 +40,10 @@ namespace Datadog.Trace.Iast
         {
             return _map.Get(objectToFind) as TaintedObject;
         }
+
+        public int GetEstimatedSize()
+        {
+            return _map.GetEstimatedSize();
+        }
     }
 }

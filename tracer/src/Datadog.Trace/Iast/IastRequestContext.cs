@@ -36,16 +36,23 @@ internal class IastRequestContext
 
     internal void AddIastVulnerabilitiesToSpan(Span span)
     {
-        span.Tags.SetTag(Tags.IastEnabled, "1");
-
-        if (_vulnerabilityBatch != null)
+        try
         {
-            span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+            span.Tags.SetTag(Tags.IastEnabled, "1");
+
+            if (_vulnerabilityBatch != null)
+            {
+                span.Tags.SetTag(Tags.IastJson, _vulnerabilityBatch.ToString());
+            }
+
+            if (_executedTelemetryHelper != null)
+            {
+                _executedTelemetryHelper.GenerateMetricTags(span.Tags, _taintedObjects.GetEstimatedSize());
+            }
         }
-
-        if (_executedTelemetryHelper != null)
+        catch (Exception ex)
         {
-            _executedTelemetryHelper.GenerateMetricTags(span.Tags);
+            Log.Error(ex, "Error in IAST AddIastVulnerabilitiesToSpan");
         }
     }
 

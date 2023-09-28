@@ -78,6 +78,8 @@ bool ExceptionsProvider::OnModuleLoaded(const ModuleID moduleId)
 
 bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
 {
+    _exceptionsCountMetric->Incr();
+
     if (_mscorlibModuleId == 0)
     {
         if (!_loggedMscorlibError)
@@ -106,7 +108,6 @@ bool ExceptionsProvider::OnExceptionThrown(ObjectID thrownObjectId)
         return false;
     }
 
-    _exceptionsCountMetric->Incr();
     if (!_sampler.Sample(name))
     {
         return true;

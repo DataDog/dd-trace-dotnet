@@ -503,6 +503,9 @@
     }, {
       "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
+    }, {
+      "MinVersion": "2.57.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
   },
   {

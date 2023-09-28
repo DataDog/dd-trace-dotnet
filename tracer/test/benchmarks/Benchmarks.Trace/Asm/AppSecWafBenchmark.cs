@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using BenchmarkDotNet.Attributes;
 using Datadog.Trace;
 using Datadog.Trace.AppSec;
@@ -20,12 +21,7 @@ public class AppSecWafBenchmark
 {
     private const int TimeoutMicroSeconds = 1_000_000;
 
-    // this is necessary, as we use Iteration setup and cleanup which disables the bdn mechanism to estimate the necessary iteration count.Only 1 iteration count will be done with iteration setup and cleanup.
-    // See https://github.com/dotnet/BenchmarkDotNet/pull/1157
-    //Iteration setup and cleanup are necessary as we cant use GlobalCleanup here, the waf needs to flush more often than every 1xx.xxx ops, otherwise OutOfMemory occurs. 
-    private const int WafRuns = 2000;
     private static readonly Waf Waf;
-    private Context _context;
 
     static AppSecWafBenchmark()
     {
@@ -63,6 +59,7 @@ public class AppSecWafBenchmark
             throw new DirectoryNotFoundException($"The Path: '{path}' doesn't exist.");
         }
 
+        Environment.SetEnvironmentVariable("DD_TRACE_LOGGING_RATE", "60");
         Environment.SetEnvironmentVariable("DD_INTERNAL_TRACE_NATIVE_ENGINE_PATH", path);
         var libInitResult = WafLibraryInvoker.Initialize();
         if (!libInitResult.Success)
@@ -72,23 +69,35 @@ public class AppSecWafBenchmark
 
         var wafLibraryInvoker = libInitResult.WafLibraryInvoker!;
         var initResult = Waf.Create(wafLibraryInvoker, string.Empty, string.Empty, embeddedRulesetPath: Path.Combine(Directory.GetCurrentDirectory(), "Asm", "rule-set.1.7.2.json"));
+
+        if (!initResult.Success || initResult.HasErrors)
+        {
+            throw new ArgumentException($"Waf could not initialize, error message is: {initResult.ErrorMessage}");
+        }
+
         Waf = initResult.Waf;
     }
 
     public IEnumerable<NestedMap> Source()
     {
         yield return MakeNestedMap(10);
+        yield return MakeNestedMap(20);
         yield return MakeNestedMap(100);
-        yield return MakeNestedMap(1000);
     }
 
     public IEnumerable<NestedMap> SourceWithAttack()
     {
         yield return MakeNestedMap(10, true);
+        yield return MakeNestedMap(20, true);
         yield return MakeNestedMap(100, true);
-        yield return MakeNestedMap(1000, true);
     }
 
+    /// <summary>
+    /// Generates dummy arguments for the waf
+    /// </summary>
+    /// <param name="nestingDepth">Encoder.cs respects WafConstants.cs limits to process arguments with a max depth of 20 so above depth 20, there shouldn't be much difference of performances.</param>
+    /// <param name="withAttack">an attack present in arguments can slow down waf's run</param>
+    /// <returns></returns>
     private static NestedMap MakeNestedMap(int nestingDepth, bool withAttack = false)
     {
         var root = new Dictionary<string, object>();
@@ -128,7 +137,7 @@ public class AppSecWafBenchmark
                 };
                 map.Add("list", nextList);
             }
-
+        
             var nextMap = new Dictionary<string, object>
             {
                 { "lorem", "ipsum" },
@@ -145,12 +154,6 @@ public class AppSecWafBenchmark
         return new NestedMap(root, nestingDepth, withAttack);
     }
 
-    [IterationSetup]
-    public void Setup() => _context = Waf.CreateContext() as Context;
-
-    [IterationCleanup]
-    public void Cleanup() => _context.Dispose();
-
     [Benchmark]
     [ArgumentsSource(nameof(Source))]
     public void RunWaf(NestedMap args) => RunWafBenchmark(args);
@@ -161,10 +164,9 @@ public class AppSecWafBenchmark
 
     private void RunWafBenchmark(NestedMap args)
     {
-        for (var i = 0; i < WafRuns; i++)
-        {
-            _context.Run(args.Map, TimeoutMicroSeconds);
-        }
+        var context = Waf.CreateContext();
+        context!.Run(args.Map, TimeoutMicroSeconds);
+        context.Dispose();
     }
 
     public record NestedMap(Dictionary<string, object> Map, int NestingDepth, bool IsAttack = false)

@@ -38,5 +38,14 @@ namespace Datadog.Trace.Security.Unit.Tests.IAST
                 tag.ToString().Should().Be(((SourceTypeName)i).ToString());
             }
         }
+
+        [Fact]
+        public void CheckSourceTypeGetAsTagAndGetStringConsistency()
+        {
+            for (int i = 0; i < Enum.GetValues(typeof(SourceTypeName)).Length; i++)
+            {
+                SourceType.GetString((SourceTypeName)i).Should().Be(SourceType.GetAsTag((SourceTypeName)i).Replace("_", "."));
+            }
+        }
     }
 }

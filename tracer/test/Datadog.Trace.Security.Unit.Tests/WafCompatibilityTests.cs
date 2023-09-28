@@ -15,28 +15,17 @@ namespace Datadog.Trace.Security.Unit.Tests
     [Collection(nameof(SecuritySequentialTests))]
     public class WafCompatibilityTests
     {
-        [SkippableFact]
-        public void ShouldNotInitializeWithExportsMissing()
+        [SkippableTheory]
+        [InlineData("1.3.0")]
+        [InlineData("1.10.0")]
+        public void ShouldNotInitializeWithExportsMissing(string version)
         {
             // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            var libraryInitializationResult = WafLibraryInvoker.Initialize("1.3.0");
+            var libraryInitializationResult = WafLibraryInvoker.Initialize(version);
             libraryInitializationResult.ExportErrorHappened.Should().BeTrue();
             libraryInitializationResult.Success.Should().BeFalse();
             libraryInitializationResult.WafLibraryInvoker.Should().BeNull();
-        }
-
-        [SkippableFact]
-        public void ShouldNotInitializeWithDiagnosticsMissing()
-        {
-            // for some reason, these tests cause a "DDWAF_ERROR": [ddwaf_run]interface.cpp(206): std::bad_alloc on mac when run with others
-            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
-            var libraryInitializationResult = WafLibraryInvoker.Initialize("1.10.0");
-            libraryInitializationResult.Success.Should().BeTrue();
-            libraryInitializationResult.WafLibraryInvoker.Should().NotBeNull();
-            var initResult = Waf.Create(libraryInitializationResult.WafLibraryInvoker, string.Empty, string.Empty);
-            initResult.Success.Should().BeFalse();
-            initResult.IncompatibleWaf.Should().BeTrue();
         }
     }
 }

@@ -35,6 +35,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(16)]
         public long IntValue;
+
+        /// <summary>
+        /// Dont use non blittable type as we use unsafe to marshall/unmarshall for faster performances.
+        /// </summary>
+        [FieldOffset(16)]
+        public byte ByteValue;
+
+        [FieldOffset(16)]
+        public double DoubleValue;
         // };
 
         [FieldOffset(24)]
@@ -42,6 +51,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(32)]
         public DDWAF_OBJ_TYPE Type;
+
+        public bool BoolValue => ByteValue == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal object Decode()
@@ -51,6 +62,8 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => Marshal.PtrToStringAnsi(Array, (int)NbEntries),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => IntValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => UintValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL => BoolValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE => DoubleValue,
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => DecodeArray<object>(),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => DecodeMap(),
                 _ => null
@@ -87,12 +100,12 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
                     for (var i = 0; i < nbEntriesStart; i++)
                     {
-                        var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
-                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                        if (array is { } arrayValue)
+                        unsafe
                         {
-                            var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
-                            var value = arrayValue.Decode();
+                            var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
+                            var array = (DdwafObjectStruct*)arrayPtr;
+                            var key = Marshal.PtrToStringAnsi(array->ParameterName, (int)array->ParameterNameLength);
+                            var value = array->Decode();
                             res.Add(key, value);
                         }
                     }
@@ -118,10 +131,13 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
                     for (var i = 0; i < nbEntriesStart; i++)
                     {
-                        var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
-                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                        var value = (T)array?.Decode();
-                        res.Add(value);
+                        unsafe
+                        {
+                            var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
+                            var array = (DdwafObjectStruct*)arrayPtr;
+                            var value = (T)array->Decode();
+                            res.Add(value);
+                        }
                     }
                 }
             }

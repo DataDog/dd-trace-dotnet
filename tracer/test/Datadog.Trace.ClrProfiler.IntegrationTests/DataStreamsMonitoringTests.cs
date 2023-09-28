@@ -79,13 +79,7 @@ public class DataStreamsMonitoringTests : TestHelper
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
-        settings.ModifySerialization(
-            _ =>
-            {
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
-            });
+        settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
                       .DisableRequireUniquePrefix();
@@ -140,14 +134,7 @@ public class DataStreamsMonitoringTests : TestHelper
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
-        settings.ModifySerialization(
-            _ =>
-            {
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PayloadSize, ScrubByteArray);
-            });
-
+        settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(HandlesFanIn)}")
                       .DisableRequireUniquePrefix();
@@ -183,17 +170,6 @@ public class DataStreamsMonitoringTests : TestHelper
         using var assertionScope = new AssertionScope();
         var dataStreams = agent.DataStreams;
         dataStreams.Should().BeEmpty();
-    }
-
-    private static byte[] ScrubByteArray(MockDataStreamsStatsPoint target, byte[] value)
-    {
-        if (value is null || value.Length == 0)
-        {
-            return value;
-        }
-
-        // return a different value so we can identify that we have some data
-        return new byte[] { 0xFF };
     }
 
     private static MockDataStreamsPayload NormalizeDataStreams(IImmutableList<MockDataStreamsPayload> dataStreams)

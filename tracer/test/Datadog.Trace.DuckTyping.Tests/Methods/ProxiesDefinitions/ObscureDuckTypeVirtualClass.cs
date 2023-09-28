@@ -110,5 +110,11 @@ namespace Datadog.Trace.DuckTyping.Tests.Methods.ProxiesDefinitions
         }
 
         public virtual IDummyFieldObject Bypass(IDummyFieldObject obj) => null;
+
+        [Duck(Name = "Sum")]
+        public virtual ValueWithType<int> SumReturnValueWithType(int a, int b) => default;
+
+        [Duck(Name = "Bypass")]
+        public virtual ValueWithType<IDummyFieldObject> BypassReturnValueWithType(IDummyFieldObject obj) => default;
     }
 }

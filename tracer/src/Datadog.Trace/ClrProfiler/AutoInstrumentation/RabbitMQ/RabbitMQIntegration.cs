@@ -9,6 +9,7 @@ using System.Text;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
@@ -89,15 +90,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             };
         }
 
-        private static long TryGetValueSize(object obj)
-            => obj switch
-            {
-                null => 0,
-                byte[] bytes => bytes.Length,
-                string str => Encoding.UTF8.GetByteCount(str),
-                _ => 0,
-            };
-
         internal static long GetHeadersSize(IDictionary<string, object> headers)
         {
             if (headers == null)
@@ -109,7 +101,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             foreach (var pair in headers)
             {
                 size += Encoding.UTF8.GetByteCount(pair.Key);
-                size += TryGetValueSize(pair.Value);
+                size += MessageSizeHelper.TryGetSize(pair.Value);
             }
 
             return size;
