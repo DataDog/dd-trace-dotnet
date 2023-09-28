@@ -5084,7 +5084,7 @@ stages:
 
         - template: steps/run-snapshot-test.yml
           parameters:
-            target: 'smoke-tests'
+            target: 'dd-dotnet-smoke-tests'
             snapshotPrefix: "smoke_test"
 
         - publish: tracer/build_data
@@ -5359,7 +5359,7 @@ stages:
 
         - template: steps/run-snapshot-test.yml
           parameters:
-            target: 'smoke-tests.windows'
+            target: 'dd-dotnet-smoke-tests.windows'
             snapshotPrefix: "smoke_test"
             isLinux: false
 
