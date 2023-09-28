@@ -1481,9 +1481,16 @@ stages:
     steps:
     - powershell: |
         choco install cppcheck -y --version 2.9
+        $errorCode = $LASTEXITCODE
+        if ($errorCode -ne 0)
+        {
+          # something went wrong. Let's retry
+          exit 1
+        }
         Write-Host "##vso[task.setvariable variable=PATH;]${env:PATH};C:\Program Files\Cppcheck";
         refreshenv
       displayName: Install CppCheck
+      retryCountOnTaskFailure: 3
 
     - template: steps/clone-repo.yml
       parameters:
