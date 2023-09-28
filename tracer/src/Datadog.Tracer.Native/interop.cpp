@@ -8,6 +8,7 @@
 
 #include "cor_profiler.h"
 #include "logger.h"
+#include "iast/hardcoded_secrets_method_analyzer.h"
 
 #ifndef _WIN32
 #include <dlfcn.h>
@@ -177,7 +178,8 @@ EXTERN_C VOID STDAPICALLTYPE RegisterIastAspects(WCHAR** aspects, int aspectsLen
 }
 
 
-EXTERN_C long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size, UINT32 enabledCategories)
+EXTERN_C long STDAPICALLTYPE RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* items, int size,
+                                                          UINT32 enabledCategories)
 {
     if (trace::profiler == nullptr)
     {
@@ -188,7 +190,7 @@ EXTERN_C long RegisterCallTargetDefinitions(WCHAR* id, CallTargetDefinition2* it
     return trace::profiler->RegisterCallTargetDefinitions(id, items, size, enabledCategories);
 }
 
-EXTERN_C long EnableCallTargetDefinitions(UINT32 enabledCategories)
+EXTERN_C long STDAPICALLTYPE EnableCallTargetDefinitions(UINT32 enabledCategories)
 {
     if (trace::profiler == nullptr)
     {
@@ -199,7 +201,7 @@ EXTERN_C long EnableCallTargetDefinitions(UINT32 enabledCategories)
     return trace::profiler->EnableCallTargetDefinitions(enabledCategories);
 }
 
-EXTERN_C long DisableCallTargetDefinitions(UINT32 disabledCategories)
+EXTERN_C long STDAPICALLTYPE DisableCallTargetDefinitions(UINT32 disabledCategories)
 {
     if (trace::profiler == nullptr)
     {
@@ -214,6 +216,11 @@ EXTERN_C long DisableCallTargetDefinitions(UINT32 disabledCategories)
 EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int length)
 {
     return trace::profiler->UpdateSettings(keys, values, length);
+}
+
+EXTERN_C int STDAPICALLTYPE GetUserStrings(int arrSize, iast::UserStringInterop* arr)
+{
+    return iast::HardcodedSecretsMethodAnalyzer::GetUserStrings(arrSize, arr);
 }
 
 EXTERN_C VOID STDAPICALLTYPE ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, WCHAR* instrumentationId, int products)

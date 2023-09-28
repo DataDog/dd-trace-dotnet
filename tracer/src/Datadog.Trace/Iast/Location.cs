@@ -9,6 +9,22 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    public Location(string method)
+    {
+        int index = method.LastIndexOf("::");
+        if (index >= 0)
+        {
+            Path = method.Substring(0, index);
+            Method = method.Substring(index + 2);
+            index = Method.IndexOf("(");
+            if (index > 0) { Method = Method.Substring(0, index); }
+        }
+        else
+        {
+            Method = method;
+        }
+    }
+
     public Location(string? stackFile, string? methodName, int? line, ulong? spanId, string? methodTypeName)
     {
         if (!string.IsNullOrEmpty(stackFile))
