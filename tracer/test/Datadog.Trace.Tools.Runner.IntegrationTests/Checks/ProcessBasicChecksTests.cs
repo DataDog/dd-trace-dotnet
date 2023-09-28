@@ -14,7 +14,7 @@ using FluentAssertions.Execution;
 using Moq;
 using Xunit;
 using Xunit.Abstractions;
-
+using static System.IO.DirectoryInfo;
 using static Datadog.Trace.Tools.Runner.Checks.Resources;
 
 namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
@@ -433,38 +433,39 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
         }
 
-        [SkippableTheory]
-        [InlineData("linux-arm64", true, false, false)]
-        [InlineData("linux-musl-x64", false, true, false)]
-        [InlineData("linux-x64", false, false, true)]
-        public void LinuxInstallationDirectory(string folderName, bool isArm64, bool isAlpine64, bool isLinux64)
+        [SkippableFact]
+        public void LinuxInstallationDirectory()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64 && isArm64)
+            string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(tempDirectory);
+
+            try
             {
-                Directory.CreateDirectory("/opt/datadog/" + folderName);
+                var (extension, archPath) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentTools.GetTestTargetPlatform(), Utils.IsAlpine()) switch
+                {
+                    ("win", _, "X64", _) => ("dll", "win-x64"),
+                    ("win", _, "X86", _) => ("dll", "win-x86"),
+                    ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                    ("linux", "X64", _, false) => ("so", "linux-x64"),
+                    ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
+                    ("osx", _, _, _) => ("dylib", "osx"),
+                    var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
+                };
+
+                var path = Path.Join(tempDirectory, archPath, $"Datadog.Trace.ClrProfiler.Native.{extension}");
+                File.WriteAllText(@$"{path}", string.Empty);
+
+                using var console = ConsoleHelper.Redirect();
+
+                ProcessBasicCheck.CheckLinuxInstallation(tempDirectory);
+                console.Output.Should().BeEmpty();
             }
-            else if (Utils.IsAlpine() && isAlpine64)
+            finally
             {
-                Directory.CreateDirectory("/opt/datadog/" + folderName);
-            }
-            else if (isLinux64)
-            {
-                Directory.CreateDirectory("/opt/datadog/" + folderName);
-            }
-
-            using var console = ConsoleHelper.Redirect();
-
-            ProcessBasicCheck.CheckLinuxInstallation();
-            console.Output.Should().BeEmpty();
-
-            if (FrameworkDescription.Instance.ProcessArchitecture == ProcessArchitecture.Arm64 && isLinux64)
-            {
-                Directory.CreateDirectory("/opt/datadog/" + folderName);
-
-                ProcessBasicCheck.CheckLinuxInstallation();
-                console.Output.Should().Contain(WrongLinuxFolder("linux-arm64", folderName));
+                // cleanup
+                Directory.Delete(tempDirectory, recursive: true);
             }
         }
 

@@ -176,7 +176,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
-                    CheckLinuxInstallation();
+                    CheckLinuxInstallation("/opt/datadog/");
                 }
             }
 
@@ -568,10 +568,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
             return tracerVersion;
         }
 
-        internal static void CheckLinuxInstallation()
+        internal static void CheckLinuxInstallation(string installDirectory)
         {
             string archFolder;
-            var directoryPath = "/opt/datadog/";
             var osArchitecture = RuntimeInformation.OSArchitecture;
 
             if (osArchitecture == Architecture.X64)
@@ -590,9 +589,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             try
             {
-                if (!Directory.Exists(directoryPath + archFolder))
+                if (!Directory.Exists(installDirectory + archFolder))
                 {
-                    string[] directories = Directory.GetDirectories(directoryPath);
+                    string[] directories = Directory.GetDirectories(installDirectory);
 
                     // Iterate through directories and filter based on the starting string
                     foreach (string directory in directories)
