@@ -137,6 +137,7 @@ public class DatadogDiagnoser : IDiagnoser
         // try to locate it inside the benchmark folder
         yield return Path.Combine(Path.GetDirectoryName(parameters.BenchmarkCase.Descriptor.Type.Assembly.Location) ?? string.Empty, "datadog");
 
+#if LOCAL_HOME_FOLDER
         // try to locate it in the default path using relative path from the benchmark assembly.
         yield return Path.Combine(
             Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty,
@@ -150,6 +151,7 @@ public class DatadogDiagnoser : IDiagnoser
             "shared",
             "bin",
             "monitoring-home");
+#endif
     }
 
     private static bool GetPaths(string monitoringHome, ref string? profiler32Path, ref string? profiler64Path, ref string? loaderConfig, ref string? ldPreload)
@@ -219,10 +221,11 @@ public class DatadogDiagnoser : IDiagnoser
             environment[ConfigurationKeys.ServiceVersion] = tracer.Settings.ServiceVersionInternal;
         }
 
+        const string ProfilerId = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
         environment["COR_ENABLE_PROFILING"] = "1";
         environment["CORECLR_ENABLE_PROFILING"] = "1";
-        environment["COR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
-        environment["CORECLR_PROFILER"] = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+        environment["COR_PROFILER"] = ProfilerId;
+        environment["CORECLR_PROFILER"] = ProfilerId;
         environment["DD_DOTNET_TRACER_HOME"] = monitoringHome;
 
         if (profiler32Path != null)

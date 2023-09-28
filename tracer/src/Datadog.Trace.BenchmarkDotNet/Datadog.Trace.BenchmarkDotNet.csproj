@@ -15,6 +15,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <NoWarn>NU5100;NU5128</NoWarn>
     <PackageOutputPath Condition="'$(PackageOutputPath)' == '' ">bin\$(Configuration)\packages</PackageOutputPath>
+    <DefineConstants Condition=" '$(ExtraDefineConstants)' != '' ">$(DefineConstants);$(ExtraDefineConstants)</DefineConstants>
   </PropertyGroup>
 
   <!-- For VS testing purposes only, copy all implementation assemblies to the
