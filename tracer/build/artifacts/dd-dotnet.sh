@@ -1,5 +1,7 @@
 #!/bin/sh
 
+TRACER_VERSION="2.39.0"
+
 # Get the directory of the script
 DIR=$(dirname "$0")
 
@@ -28,7 +30,7 @@ EXPECTED_PACKAGE=""
 if [ "$ID" = "alpine" ]; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-musl-x64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-x.xx.x-musl.tar.gz"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-musl.tar.gz"
     elif [ "$ARCH" = "aarch64" ]; then
         echo "Alpine ARM64 is not supported."
         exit 1
@@ -36,13 +38,35 @@ if [ "$ID" = "alpine" ]; then
         echo "Unsupported architecture: $ARCH"
         exit 1
     fi
+elif [ "$ID" = "centos" ] || [ "$ID" = "rhel" ] || [ "$ID" = "fedora" ]; then
+    if [ "$ARCH" = "x86_64" ]; then
+        DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.x86_64.rpm"
+    elif [ "$ARCH" = "aarch64" ]; then
+        DD_DOTNET_PATH="$DIR/linux-arm64/dd-dotnet"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.aarch64.rpm"
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
+elif [ "$ID" = "debian" ] || [ "$ID" = "ubuntu" ]; then
+    if [ "$ARCH" = "x86_64" ]; then
+        DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
+        EXPECTED_PACKAGE="datadog-dotnet-apm_${TRACER_VERSION}_amd64.deb"
+    elif [ "$ARCH" = "aarch64" ]; then
+        DD_DOTNET_PATH="$DIR/linux-arm64/dd-dotnet"
+        EXPECTED_PACKAGE="datadog-dotnet-apm_${TRACER_VERSION}_arm64.deb"
+    else
+        echo "Unsupported architecture: $ARCH"
+        exit 1
+    fi
 else
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-x.xx.x.tar.gz"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.tar.gz"
     elif [ "$ARCH" = "aarch64" ]; then
         DD_DOTNET_PATH="$DIR/linux-arm64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-x.xx.x.arm64.tar.gz"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.arm64.tar.gz"
     else
         echo "Unsupported architecture: $ARCH"
         exit 1
