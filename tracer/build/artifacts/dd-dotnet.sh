@@ -59,10 +59,10 @@ if contains_word "$DISTRO_ID" "alpine"; then
 elif contains_word "$DISTRO_ID" "centos" || contains_word "$DISTRO_ID" "rhel" || contains_word "$DISTRO_ID" "fedora"; then
     if [ "$ARCH" = "x86_64" ]; then
         DD_DOTNET_PATH="$DIR/linux-x64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.x86_64.rpm"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-1.x86_64.rpm"
     elif [ "$ARCH" = "aarch64" ]; then
         DD_DOTNET_PATH="$DIR/linux-arm64/dd-dotnet"
-        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}.aarch64.rpm"
+        EXPECTED_PACKAGE="datadog-dotnet-apm-${TRACER_VERSION}-1.aarch64.rpm"
     else
         echo "Unsupported architecture: $ARCH"
         exit 1
