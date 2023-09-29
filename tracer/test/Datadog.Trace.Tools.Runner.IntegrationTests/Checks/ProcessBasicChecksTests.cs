@@ -161,7 +161,9 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 MissingProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-                WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+                WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
+                TracingWithInstaller,
+                ErrorCheckingLinuxDirectory("Could not find a part of the path '/opt/datadog'"));
         }
 
         [SkippableFact]
@@ -386,6 +388,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         public void ProfilerNotRegistered()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
             var registryService = MockRegistryService(Array.Empty<string>(), null);
 
             using var console = ConsoleHelper.Redirect();
@@ -402,6 +405,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         public void ProfilerNotFoundRegistry()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
             var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
 
             using var console = ConsoleHelper.Redirect();
@@ -419,6 +423,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         public void WrongProfilerRegistry()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+            SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
             var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
 
             using var console = ConsoleHelper.Redirect();

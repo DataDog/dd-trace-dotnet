@@ -150,5 +150,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string WrongLinuxFolder(string expected, string found) => $"Unable to find expected {expected} folder, found {found} instead, make sure to use the correct installer.";
 
         public static string UnsupportedLinuxArchitecture(string osArchitecture) => $"The Linux architecture: {osArchitecture} is not supported by the tracer, check: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-processor-architectures ";
+
+        public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
     }
 }

@@ -123,7 +123,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
-            ok &= CheckProfilerPath(process, runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH", requiredOnLinux: true);
+            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
+            string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
+            string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
+
+            ok &= CheckProfilerPath(process, corProfilerPathKey, requiredOnLinux: true);
+            ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
+            ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
 
@@ -145,10 +151,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 ok = false;
             }
 
-            string corProfilerPathKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH" : "COR_PROFILER_PATH";
-            string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
-            string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
-
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey32, out var corProfilerPathValue32);
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey64, out var corProfilerPathValue64);
@@ -166,9 +168,6 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
-                    ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
-
                     if (!CheckRegistry(CheckWindowsInstallation(process.Id, registryService), registryService))
                     {
                         ok = false;
@@ -589,7 +588,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             try
             {
-                if (!Directory.Exists(installDirectory + archFolder))
+                if (!Directory.Exists(Path.Join(installDirectory, archFolder)))
                 {
                     string[] directories = Directory.GetDirectories(installDirectory);
 
@@ -607,7 +606,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             }
             catch (Exception ex)
             {
-                Utils.WriteError(ex.Message);
+                Utils.WriteError(ErrorCheckingLinuxDirectory(ex.Message));
             }
         }
     }
