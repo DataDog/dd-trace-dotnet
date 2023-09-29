@@ -23,6 +23,65 @@ public class AwsDynamoDbCommonTests
     private const string TableName = "MyTableName";
 
     [Fact]
+    public void TagTableNameAndResourceName_TagsProperly()
+    {
+        var tracer = GetTracer();
+        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+
+        AwsDynamoDbCommon.TagTableNameAndResourceName(TableName, tags, scope);
+
+        tags.TableName.Should().Be("MyTableName");
+
+        var span = scope.Span;
+        span.ResourceName.Should().Be("DynamoDB.GetItem MyTableName");
+    }
+
+    [Fact]
+    public void TagTableNameAndResourceName_WithNullTags_SkipsTagging()
+    {
+        var tracer = GetTracer();
+        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+        var request = new GetItemRequest { TableName = TableName };
+        var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+
+        tags = null;
+        AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
+
+        var span = scope.Span;
+        span.ResourceName.Should().Be("DynamoDB.GetItem");
+    }
+
+    [Fact]
+    public void TagTableNameAndResourceName_WithNullScope_SkipsTagging()
+    {
+        var tracer = GetTracer();
+        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+        var request = new GetItemRequest { TableName = TableName };
+        var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+
+        scope = null;
+        AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
+
+        tags.TableName.Should().Be(null);
+    }
+
+    [Fact]
+    public void TagTableNameAndResourceName_WithEmptyRequest_SkipsTagging()
+    {
+        var tracer = GetTracer();
+        var scope = AwsDynamoDbCommon.CreateScope(tracer, "GetItem", out AwsDynamoDbTags tags);
+        var request = new GetItemRequest();
+        var proxy = request.DuckCast<IAmazonDynamoDbRequestWithTableName>();
+
+        AwsDynamoDbCommon.TagTableNameAndResourceName(proxy.TableName, tags, scope);
+
+        tags.TableName.Should().Be(null);
+
+        var span = scope.Span;
+        span.ResourceName.Should().Be("DynamoDB.GetItem");
+    }
+
+    [Fact]
     public void TagBatchRequest_WithOneTable_TagsTableNameAndResourceName()
     {
         var tracer = GetTracer();
@@ -45,7 +104,7 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagBatchRequest_WithMultipleTables_TagsResourceNameOnly()
+    public void TagBatchRequest_WithMultipleTables_SkipsTagging()
     {
         var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchGetItem", out AwsDynamoDbTags tags);
@@ -68,7 +127,7 @@ public class AwsDynamoDbCommonTests
     }
 
     [Fact]
-    public void TagBatchRequest_WithEmptyRequest_TagsResourceNameOnly()
+    public void TagBatchRequest_WithEmptyRequest_SkipsTagging()
     {
         var tracer = GetTracer();
         var scope = AwsDynamoDbCommon.CreateScope(tracer, "BatchWriteItem", out AwsDynamoDbTags tags);

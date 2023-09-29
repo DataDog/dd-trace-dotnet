@@ -59,6 +59,18 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             return scope;
         }
 
+        public static void TagTableNameAndResourceName(string tableName, AwsDynamoDbTags tags, Scope scope)
+        {
+            if (scope == null || tags == null || tableName == null)
+            {
+                return;
+            }
+
+            tags.TableName = tableName;
+            var span = scope.Span;
+            span.ResourceName = $"{span.ResourceName} {tableName}";
+        }
+
         public static void TagBatchRequest<TBatchRequest>(TBatchRequest request, AwsDynamoDbTags tags, Scope scope)
             where TBatchRequest : IBatchRequest
         {
@@ -72,14 +84,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.DynamoDb
             while (iterator.MoveNext())
             {
                 var tableName = iterator.Key as string;
-                if (tableName == null)
-                {
-                    continue;
-                }
-
-                tags.TableName = tableName;
-                var span = scope.Span;
-                span.ResourceName = $"{span.ResourceName} {tableName}";
+                TagTableNameAndResourceName(tableName, tags, scope);
             }
         }
     }
