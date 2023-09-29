@@ -978,7 +978,7 @@ partial class Build
                  var (build, _) = await FindAndDownloadAzureArtifact(httpClient, branch, build => "crank_linux_x64_1", directory, buildReason: null);
 
                  // get all the other artifacts from the same build for consistency
-                 var artifacts = new[] { "crank_linux_arm64_1", "crank_linux_x64_asm_1", "crank_windows_x64_1", "crank_linux_x64_iast_1" };
+                 var artifacts = new[] { "crank_linux_arm64_1", "crank_linux_x64_asm_1", "crank_windows_x64_1" };
                  foreach (var artifactName in artifacts)
                  {
                      try
