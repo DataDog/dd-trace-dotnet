@@ -33,8 +33,6 @@ namespace Datadog.Trace.Ci
 
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(CIVisibility));
 
-        public static event EventHandler? CIVisibilityExit;
-
         public static bool Enabled => _enabledLazy.Value;
 
         public static bool IsRunning => Interlocked.CompareExchange(ref _firstInitialization, 0, 0) == 0;
@@ -260,7 +258,8 @@ namespace Datadog.Trace.Ci
         {
             if (IsRunning)
             {
-                CIVisibilityExit?.Invoke(null, EventArgs.Empty);
+                Log.Information("CI Visibility is exiting.");
+                LifetimeManager.Instance.RunShutdownTasks();
                 Interlocked.Exchange(ref _firstInitialization, 1);
             }
         }
