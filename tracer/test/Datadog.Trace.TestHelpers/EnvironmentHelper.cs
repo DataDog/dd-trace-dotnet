@@ -132,7 +132,7 @@ namespace Datadog.Trace.TestHelpers
                 ("linux", "X64", _, false) => ("so", "linux-x64"),
                 ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
                 ("osx", _, _, _) => ("dylib", "osx"),
-                _ => throw new PlatformNotSupportedException()
+                var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
             };
 
             var fileName = $"Datadog.Trace.ClrProfiler.Native.{extension}";

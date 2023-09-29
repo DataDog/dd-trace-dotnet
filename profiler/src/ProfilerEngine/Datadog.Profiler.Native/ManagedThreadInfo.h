@@ -17,7 +17,6 @@
 #include <memory>
 #include <utility>
 
-
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
@@ -86,6 +85,12 @@ public:
     inline std::string GetProfileThreadId();
     inline std::string GetProfileThreadName();
 
+#ifdef LINUX
+    inline void SetSharedMemory(volatile int* memoryArea);
+    inline void MarkAsInterrupted();
+#endif
+    inline bool CanBeInterrupted() const;
+
 private:
     inline void BuildProfileThreadId();
     inline void BuildProfileThreadName();
@@ -121,9 +126,14 @@ private:
     //  strings to be used by samples: avoid allocations when rebuilding them over and over again
     std::string _profileThreadId;
     std::string _profileThreadName;
+
+    // Linux only
+    // This is pointer to a shared memory area coming from the Datadog.Linux.ApiWarapper library.
+    // This establishes a simple communication channel between the profiler and this library
+    // to know (for now, maybe more later) if the profiler interrupted a thread which was
+    // doing a syscalls.
+    volatile int* _sharedMemoryArea;
 };
-
-
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
@@ -383,3 +393,25 @@ inline bool ManagedThreadInfo::HasTraceContext() const
     }
     return false;
 }
+
+inline bool ManagedThreadInfo::CanBeInterrupted() const
+{
+    return _sharedMemoryArea == nullptr;
+}
+
+#ifdef LINUX
+// This method is called by the signal handler, when the thread has already been interrupted.
+// There is no race and it's safe to call it there.
+inline void ManagedThreadInfo::MarkAsInterrupted()
+{
+    if (_sharedMemoryArea != nullptr)
+    {
+        *_sharedMemoryArea = 1;
+    }
+}
+
+inline void ManagedThreadInfo::SetSharedMemory(volatile int* memoryArea)
+{
+    _sharedMemoryArea = memoryArea;
+}
+#endif

@@ -58,6 +58,8 @@ namespace shared
 
     bool SetEnvironmentValue(const WSTRING& name, const WSTRING& value);
 
+    bool UnsetEnvironmentValue(const WSTRING& name);
+
     // Convert Hex to string
     shared::WSTRING HexStr(const void* data, int len);
 

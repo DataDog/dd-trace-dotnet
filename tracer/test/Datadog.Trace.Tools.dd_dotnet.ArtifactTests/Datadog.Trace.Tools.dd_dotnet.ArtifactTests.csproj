@@ -1,0 +1,31 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <!--<TargetFrameworks>net461;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>-->
+    <NoWarn>SA1300</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="applicationHost.config" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="..\..\src\Datadog.Trace.Tools.dd_dotnet\Checks\Resources.cs" Link="Resources.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="applicationHost.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  
+  <ItemGroup>
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers.AutoInstrumentation\Datadog.Trace.TestHelpers.AutoInstrumentation.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.TestHelpers\Datadog.Trace.TestHelpers.csproj" />    
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Verify.Xunit" Version="14.13.1" />
+  </ItemGroup>
+
+</Project>

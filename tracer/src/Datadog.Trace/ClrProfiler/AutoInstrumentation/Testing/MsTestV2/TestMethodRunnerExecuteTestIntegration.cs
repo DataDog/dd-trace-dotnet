@@ -40,7 +40,7 @@ public static class TestMethodRunnerExecuteTestIntegration
         where TTestMethod : ITestMethod
     {
         // Check if the test should be skipped by ITR
-        if (MsTestIntegration.IsEnabled && MsTestIntegration.ShouldSkip(testMethod))
+        if (MsTestIntegration.IsEnabled && MsTestIntegration.ShouldSkip(testMethod, out _, out _))
         {
             // In order to skip a test we change the Executor to one that returns a valid outcome without calling
             // the MethodInfo of the test

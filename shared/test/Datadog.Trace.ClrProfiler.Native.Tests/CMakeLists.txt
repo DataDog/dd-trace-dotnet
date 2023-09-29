@@ -44,6 +44,7 @@ add_executable(${TEST_EXECUTABLE_NAME}
     pal_test.cpp
     runtimeid_store.cpp
     string_test.cpp
+    environment_variable_wrapper.cpp
 )
 
 # Define directories includes

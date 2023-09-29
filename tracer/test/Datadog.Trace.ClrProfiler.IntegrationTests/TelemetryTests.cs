@@ -237,26 +237,26 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             // The numbers here may change, but we should have _some_
-            telemetry.GetDistributions(Distribution.InitTime).Sum(x => x.Points.Count).Should().BeGreaterThan(5);
+            telemetry.GetDistributions(DistributionShared.InitTime.GetName()).Sum(x => x.Points.Count).Should().BeGreaterThan(5);
 
-            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
 
             // The exact number of logs aren't important, but we should have some
-            telemetry.GetMetricDataPoints(Count.LogCreated, "level:info")
+            telemetry.GetMetricDataPoints(Count.LogCreated.GetName(), "level:info")
                      .Sum(x => x.Value).Should().BeGreaterThan(10);
 
             // Should have at least 1 call to the Agentless telemetry API and no errors
-            var telemetryRequests = telemetry.GetMetricDataPoints(Count.TelemetryApiRequests, "endpoint:agentless")
+            var telemetryRequests = telemetry.GetMetricDataPoints(Count.TelemetryApiRequests.GetName(), "endpoint:agentless")
                                              .Sum(x => x.Value);
             telemetryRequests.Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TelemetryApiResponses, "endpoint:agentless")
+            telemetry.GetMetricDataPoints(Count.TelemetryApiResponses.GetName(), "endpoint:agentless")
                      .Sum(x => x.Value).Should().Be(telemetryRequests);
-            telemetry.GetMetricDataPoints(Count.TelemetryApiRequests, "endpoint:agent").Should().BeEmpty();
-            telemetry.GetMetricDataPoints(Count.TelemetryApiErrors).Should().BeEmpty();
+            telemetry.GetMetricDataPoints(Count.TelemetryApiRequests.GetName(), "endpoint:agent").Should().BeEmpty();
+            telemetry.GetMetricDataPoints(Count.TelemetryApiErrors.GetName()).Should().BeEmpty();
 
             // we inject and extract headers once
             // avoiding checking the specific tag + count here so this doesn't need updating if we change the defaults
-            telemetry.GetMetricDataPoints(Count.ContextHeaderStyleInjected)
+            telemetry.GetMetricDataPoints(Count.ContextHeaderStyleInjected.GetName())
                      .Should()
                      .NotBeEmpty()
                      .And.OnlyContain(x => x.Tags.Length > 0)
@@ -266,21 +266,21 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                      .HaveCountGreaterOrEqualTo(1);
 
             // hopefully no errors
-            telemetry.GetMetricDataPoints(Count.IntegrationsError).Should().BeEmpty();
-            telemetry.GetMetricDataPoints(Count.VersionConflictTracerCreated).Should().BeEmpty();
+            telemetry.GetMetricDataPoints(CountShared.IntegrationsError.GetName()).Should().BeEmpty();
+            telemetry.GetMetricDataPoints(Count.VersionConflictTracerCreated.GetName()).Should().BeEmpty();
 
-            telemetry.GetMetricDataPoints(Gauge.Instrumentations).Sum(x => x.Value).Should().BeGreaterThan(1);
+            telemetry.GetMetricDataPoints(Gauge.Instrumentations.GetName()).Sum(x => x.Value).Should().BeGreaterThan(1);
 
-            telemetry.GetMetricDataPoints(Count.SpanCreated).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.SpanFinished).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.SpanEnqueuedForSerialization).Sum(x => x.Value).Should().Be(ExpectedSpans);
-            telemetry.GetMetricDataPoints(Count.TraceSegmentCreated).Sum(x => x.Value).Should().Be(ExpectedTraces);
-            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued).Sum(x => x.Value).Should().Be(ExpectedTraces);
-            telemetry.GetMetricDataPoints(Count.TraceChunkSent).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            telemetry.GetMetricDataPoints(Count.SpanCreated.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            telemetry.GetMetricDataPoints(Count.SpanFinished.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            telemetry.GetMetricDataPoints(Count.SpanEnqueuedForSerialization.GetName()).Sum(x => x.Value).Should().Be(ExpectedSpans);
+            telemetry.GetMetricDataPoints(Count.TraceSegmentCreated.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
+            telemetry.GetMetricDataPoints(Count.TraceChunkSent.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
 
-            telemetry.GetMetricDataPoints(Count.TraceApiRequests).Sum(x => x.Value).Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TraceApiResponses).Sum(x => x.Value).Should().BeGreaterThan(0);
-            telemetry.GetMetricDataPoints(Count.TraceApiErrors).Should().BeEmpty();
+            telemetry.GetMetricDataPoints(Count.TraceApiRequests.GetName()).Sum(x => x.Value).Should().BeGreaterThan(0);
+            telemetry.GetMetricDataPoints(Count.TraceApiResponses.GetName()).Sum(x => x.Value).Should().BeGreaterThan(0);
+            telemetry.GetMetricDataPoints(Count.TraceApiErrors.GetName()).Should().BeEmpty();
         }
 
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)

@@ -55,16 +55,6 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases))]
-        public void ApplicationKey(string value, string expected)
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.ApplicationKey, value));
-            var settings = new CIVisibilitySettings(source, NullConfigurationTelemetry.Instance);
-
-            settings.ApplicationKey.Should().Be(expected);
-        }
-
-        [Theory]
         [MemberData(nameof(StringTestCases), "datadoghq.com", Strings.AllowEmpty)]
         public void Site(string value, string expected)
         {

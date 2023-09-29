@@ -359,7 +359,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [SkippableTheory]
     [InlineData("/Iast/SafeCookie")]
     [InlineData("/Iast/AllVulnerabilitiesCookie")]
-    public async Task TestIastInsecureCookieRequest(string url)
+    public async Task TestIastCookiesRequest(string url)
     {
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
         var filename = $"Security.AspNetCore5.enableIast={IastEnabled}.path ={sanitisedUrl}";
@@ -382,6 +382,25 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     {
         var filename = IastEnabled ? "Iast.PathTraversal.AspNetCore5.IastEnabled" : "Iast.PathTraversal.AspNetCore5.IastDisabled";
         var url = "/Iast/GetFileContent?file=nonexisting.txt";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastWeakRandomnessRequest()
+    {
+        var filename = IastEnabled ? "Iast.WeakRandomness.AspNetCore5.IastEnabled" : "Iast.WeakRandomness.AspNetCore5.IastDisabled";
+        var url = "/Iast/WeakRandomness";
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;

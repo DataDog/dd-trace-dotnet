@@ -60,6 +60,7 @@ private:
     bool CanCollect(int32_t threadId, pid_t processId) const;
     std::int32_t CollectStackManually(void* ctx);
     std::int32_t CollectStackWithBacktrace2(void* ctx);
+    void MarkAsInterrupted();
 
     std::int32_t _lastStackWalkErrorCode;
     std::condition_variable _stackWalkInProgressWaiter;

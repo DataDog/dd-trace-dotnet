@@ -7,6 +7,97 @@
 
 
 
+
+## [Release 2.38.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.38.0)
+
+## Summary
+
+This release mainly contains:
+- A _Kinesis_ integration for tracing
+
+## Changes
+
+### Tracer
+* [Tracer] add `Kinesis` integration (#4521)
+* [ASM] Filter azure assemblies in the stack of vulnerabilities (#4577)
+* Lazy initialize the `AggregatedMetrics`. (#4602)
+* Fix `HeaderTagsNormalizationFixEnabled` is not saved in settings (#4604)
+* Fix race-condition in DuckType (#4608)
+* Restrict sending APM-related metrics when running in CI app (#4618)
+
+### CI Visibility
+* [CIVisibility] Add code coverage exclusion filters (#4507)
+* Allow explicitly disabling CI Visibility (#4550)
+* [CI Visibility] `dd-trace ci configure` improvements (#4572)
+* [CIVisibility] - Adds support for `System.Diagnostics.CodeAnalysis.ExcludeFromCodeCoverageAttribute` (#4590)
+* [CI Visibility] BenchmarkDotNet instrumentation refactor and fixes (#4628)
+
+### ASM
+* [ASM] New marshalling system for Waf.Run calls to improve speed and reduce allocations (#4302)
+* [ASM] Waf update to 1.14.0 (#4523)
+* [ASM] IAST fix for the 0 line bug (#4568)
+* [ASM] Add waf benchmark with attack (#4578)
+* [ASM] Iast telemetry metrics: executed instrumentation points (#4586)
+* [ASM] Update IAST instrumented tests scripts for local debugging (#4595)
+* [ASM] Fix IAST MVC telemetry test in Net4 (#4606)
+* [ASM] Improve waf benchmarks (#4609)
+* [ASM] Add request.tainted metric (#4610)
+* [ASM] Update waf ruleset to 1.8 (#4633)
+* Skip flaky Waf Memory Tests (#4641)
+
+### Continuous Profiler
+* [Profiler] Add missing runtime metrics (#4436)
+* [Profiler] Remove unneeded debug logs (to be replaced by frames related metrics) (#4493)
+* [Profiler] Add tests for Wrapper library + pthread_create for alpine (#4560)
+* [Profiler] Improve integration tests output (#4569)
+* [Profiler] Fix log message to have thread id in hexadecimal (#4583)
+* [Profiler] Avoid returning managed thread with invalid handle (#4584)
+* [Profiler] Fix vcxproj and filters (#4585)
+* [Profiler] Add thread start/stop events to timeline (#4597)
+
+### Serverless
+* [Serverless][AWS] Fix serialization to use `JsonConverter` (#4559)
+* Refactor `LambdaMetadata` settings creation (#4624)
+* Disable telemetry metrics when running in serverless environment (#4625)
+
+### Fixes
+* Fix runtime metrics bugs + allow DD_TAGS tagging (#4580)
+
+### Build / Test
+* Change Samples.TracingWithoutLimits to use Samples.Shared (#3916)
+* Swap Samples.WebRequest to use Activity (#4101)
+* Assert that we don't timeout for MockTracerAgent (#4486)
+* Add a retry to the macos unit tests (#4571)
+* Try to remove more flake (#4581)
+* Add separate log folder for throughput run (#4594)
+* Crank: add logs as artifacts  (#4607)
+* Fix HotChocolate tests and bump version to latest (#4614)
+* Fix flake in smoke tests (#4617)
+* Fix GraphQL integration tests (#4620)
+* Fix flake in telemetry metric unit test (#4622)
+* Fix `docker-compose stop` related flake (#4626)
+* Update CODEOWNERS for serverless (#4630)
+
+### Miscellaneous
+* Initial version of the Datadog AutoInstrumentation Generator (#4422)
+* [ASM] forgotten user blocking capability (#4545)
+* Set the `Integration.Enabled` telemetry flag for direct log submission (#4552)
+* [Test Package Versions Bump] Updating package versions (#4555)
+* [Tracing] Add first-class tracing support for Azure Service Bus (#4575)
+* [DSM] Add datastreams monitoring to Azure Service Bus integration (#4576)
+* DuckType improvements (#4582)
+* Use alpine base for lib-injection image (#4589)
+* Update native log verbosity (#4591)
+* [Test Package Versions Bump] Updating package versions (#4593)
+* Delete unused helper (#4600)
+* Add support for "missing" tag values in telemetry metrics (#4601)
+* Support for Delegate instrumentation (#4613)
+* Ducktyping `ValueWithType` struct support (#4621)
+* Enable v2 telemetry by default (#4638)
+
+
+[Changes since 2.37.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.37.0...v2.38.0)
+
 ## [Release 2.37.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.37.0)
 
 ## Summary

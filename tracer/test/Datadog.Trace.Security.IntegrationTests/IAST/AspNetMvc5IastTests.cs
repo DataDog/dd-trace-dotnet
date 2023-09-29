@@ -219,6 +219,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                           .DisableRequireUniquePrefix();
     }
 
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/WeakRandomness", null)]
+    public async Task TestIastWeakRandomnessRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.WeakRandomness.AspNetMvc5.IastEnabled" : "Iast.WeakRandomness.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
     [Trait("Category", "LinuxUnsupported")]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]

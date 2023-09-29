@@ -544,5 +544,376 @@
       "send_to_user": false,
       "user_tags":[]
     }
+  },
+  "civisibility": {
+    "event_created": {
+      "tags": [
+        "test_framework",
+        "event_type",
+        "has_codeowner",
+        "is_unsupported_ci",
+        "is_benchmark"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of events created, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . Also, if the event_type is `session` two boolean tags will be set (has_codeowner and unsupported_ci), if the event_type is `test` a boolean `is_benchmark` flag will be set.",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "event_finished": {
+      "tags": [
+        "test_framework",
+        "event_type",
+        "has_codeowner",
+        "is_unsupported_ci",
+        "is_benchmark"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of events finished, tagged by event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`), testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`) . Also, if the event_type is `session` two boolean tags will be set (has_codeowner and unsupported_ci), if the event_type is `test` a boolean `is_benchmark` flag will be set.",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "code_coverage_started": {
+      "tags": [
+        "test_framework",
+        "library"
+      ],
+      "metric_type": "count",
+      "data_type": "coverages",
+      "description": "The number of code coverage sessions started tagged by the code coverage library name (e.g. `library:custom`, `library:jacoco`, `library:builtin`) and testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "code_coverage_finished": {
+      "tags": [
+        "test_framework",
+        "library"
+      ],
+      "metric_type": "count",
+      "data_type": "coverages",
+      "description": "The number of code coverage sessions finished, optionally (if implementation allows) tagget by the code coverage library name  (e.g. `library:custom`, `library:jacoco`, `library:builtin`) and testing framework name (e.g. `test_framework:xunit`, `test_framework:nunit`, `test_framework:jest`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "manual_api_events": {
+      "tags": [
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of events created used by the manual api tagged by the event type (possible values are: `event_type:test`, `event_type:suite`, `event_type:module` or `event_type:session`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "events_enqueued_for_serialization": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of events enqueued for serialization",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.bytes": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The size in bytes of the serialized payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.requests": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the endpoint, regardless of success, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.requests_ms": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to send the payload sent to the endpoint in ms, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.requests_errors": {
+      "tags": [
+        "endpoint",
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code`) and endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.events_count": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "distribution",
+      "data_type": "events",
+      "description": "The number of events included in the payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "endpoint_payload.events_serialization_ms": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to serialize the payload, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git.command": {
+      "tags": [
+        "command"
+      ],
+      "metric_type": "count",
+      "data_type": "command",
+      "description": "The number of git commands executed, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git.command_errors": {
+      "tags": [
+        "command",
+        "exit_code"
+      ],
+      "metric_type": "count",
+      "data_type": "command",
+      "description": "The number of git command that errored, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`) and the exit code of the command.",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git.command_ms": {
+      "tags": [
+        "command"
+      ],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to execute the git command, tagged by command type (possible values are: `command:get_repository`, `command:get_branch`, `command:check_shallow`, `command:unshallow`, `command:get_local_commits`, `command:get_objects`, `command:pack_objects`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.search_commits": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the search commit endpoint, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.search_commits_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the search commit request in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.search_commits_errors": {
+      "tags": [
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of search commit requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.objects_pack": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the git object pack endpoint, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.objects_pack_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the git object pack request in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.objects_pack_errors": {
+      "tags": [
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of git object pack requests sent to the endpoint that errored, tagget by the error type (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.objects_pack_bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The sum of the sizes of the object pack files inside a single payload",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.objects_pack_files": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "files",
+      "description": "The number of files sent in the object pack payload",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.settings": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the settings endpoint, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.settings_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the settings endpoint request in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.settings_errors": {
+      "tags": [
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of settings requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "git_requests.settings_response": {
+      "tags": [
+        "coverage_enabled",
+        "itrskip_enabled"
+      ],
+      "metric_type": "count",
+      "data_type": "response",
+      "description": "The number of settings responses from the endpoint tagged by the coverage_enabled and itrskip_enabled responses",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.request": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of requests sent to the itr skippable tests endpoint, regardless of success",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.request_ms": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "milliseconds",
+      "description": "The time it takes to get the response of the itr skippable tests endpoint request in ms",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.request_errors": {
+      "tags": [
+        "error_type"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of itr skippable tests requests sent to the endpoint that errored, tagget by the error type  (e.g. `error_type:timeout`, `error_type:network`, `error_type:status_code_4xx_response`, `error_type:status_code_5xx_response`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.response_bytes": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "bytes",
+      "description": "The number of bytes received by the endpoint",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.response_tests": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "tests",
+      "description": "The number of tests to skip returned by the endpoint",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skippable_tests.response_suites": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "suites",
+      "description": "The number of suites to skip returned by the endpoint",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_skipped": {
+      "tags": [
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of tests or test suites skipped tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_unskippable": {
+      "tags": [
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of tests or test suites that are seen as unskippable tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "itr_forced_run": {
+      "tags": [
+        "event_type"
+      ],
+      "metric_type": "count",
+      "data_type": "events",
+      "description": "The number of tests or test suites that would've been skipped by ITR but were forced to run because of their unskippable status tagged by event type (possible values are: `event_type:test`, `event_type:suite`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "code_coverage.is_empty": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "coverages",
+      "description": "The number of successfully collected code coverages that are empty",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "code_coverage.files": {
+      "tags": [],
+      "metric_type": "distribution",
+      "data_type": "files",
+      "description": "The number of files covered inside a coverage payload",
+      "send_to_user": false,
+      "user_tags":[]
+    },
+    "code_coverage.errors": {
+      "tags": [],
+      "metric_type": "count",
+      "data_type": "coverages",
+      "description": "The number of errors while processing code coverage",
+      "send_to_user": false,
+      "user_tags":[]
+    }
   }
 }

@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent;
@@ -46,6 +47,38 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI.Agent
                     finalPayload = payload.ToArray();
                     return Task.CompletedTask;
                 });
+
+            var trace = new[] { span };
+            agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));
+            await agentlessWriter.FlushTracesAsync(); // Force a flush to make sure the trace is written to the API
+
+            Assert.True(finalPayload.SequenceEqual(expectedBytes));
+        }
+
+        [Fact]
+        public async Task AgentlessStreamTestEventTest()
+        {
+            var settings = CIVisibility.Settings;
+            var sender = new Mock<ICIVisibilityProtocolWriterSender>();
+            var agentlessWriter = new CIVisibilityProtocolWriter(settings, sender.Object);
+
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow, new TestSpanTags());
+            span.Type = SpanTypes.Test;
+            span.SetTag(TestTags.Type, TestTags.TypeTest);
+
+            var expectedPayload = new Ci.Agent.Payloads.CITestCyclePayload(settings);
+            expectedPayload.TryProcessEvent(new TestEvent(span));
+            var mStreamExpected = new MemoryStream();
+            expectedPayload.WriteTo(mStreamExpected);
+            var expectedBytes = mStreamExpected.ToArray();
+
+            byte[] finalPayload = null;
+            sender.Setup(x => x.SendPayloadAsync(It.IsAny<Ci.Agent.Payloads.CIVisibilityProtocolPayload>()))
+                  .Returns<Ci.Agent.Payloads.CIVisibilityProtocolPayload>(payload =>
+                   {
+                       finalPayload = payload.ToArray();
+                       return Task.CompletedTask;
+                   });
 
             var trace = new[] { span };
             agentlessWriter.WriteTrace(new ArraySegment<Span>(trace));

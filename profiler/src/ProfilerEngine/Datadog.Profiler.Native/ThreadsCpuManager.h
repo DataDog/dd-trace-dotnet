@@ -34,5 +34,5 @@ private:
     std::recursive_mutex _lockThreads;
 
     // map thread OS id to ThreadCpuInfo that stores name
-    std::unordered_map<DWORD, ThreadCpuInfo*> _threads;
+    std::unordered_map<DWORD, std::unique_ptr<ThreadCpuInfo>> _threads;
 };

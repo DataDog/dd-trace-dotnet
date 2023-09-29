@@ -72,6 +72,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(StreamReader), ".ctor")]
     [InlineData(typeof(StreamWriter), ".ctor")]
     [InlineData(typeof(FileStream), ".ctor")]
+    [InlineData(typeof(Random), ".ctor")]
     [InlineData(typeof(DirectoryInfo), null, new string[] { "void CreateAsSymbolicLink(System.String)" }, true)]
     [InlineData(typeof(HttpClient), null, null, true)]
     [InlineData(typeof(HttpMessageInvoker), null, null, true)]
@@ -201,6 +202,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(DirectorySearcher))]
     [InlineData(typeof(PrincipalContext))]
     [InlineData(typeof(SearchRequest))]
+    [InlineData(typeof(Random))]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
     public void TestAllAspectsHaveACorrespondingMethod(Type type, string[] aspectsToExclude = null)

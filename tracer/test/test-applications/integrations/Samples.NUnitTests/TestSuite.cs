@@ -121,6 +121,12 @@ namespace Samples.NUnitTests
         public void SkipByITRSimulation()
         {
         }
+
+        [Test]
+        [Property("datadog_itr_unskippable", "")]
+        public void UnskippableTest()
+        {
+        }
     }
 
     [TestFixture("Test01")]
@@ -215,6 +221,15 @@ namespace Samples.NUnitTests
         public void TearDown()
         {
             throw new Exception("TearDown exception.");
+        }
+    }
+
+    [Property("datadog_itr_unskippable", "")]
+    public class UnSkippableSuite
+    {
+        [Test]
+        public void UnskippableTest()
+        {
         }
     }
 }
