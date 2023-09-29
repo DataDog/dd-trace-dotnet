@@ -66,6 +66,9 @@ public static class TestAssemblyInfoRunAssemblyCleanupIntegration
             }
 
             module.Close();
+
+            // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
+            CIVisibility.Close();
         }
 
         return new CallTargetReturn<TReturn>(returnValue);

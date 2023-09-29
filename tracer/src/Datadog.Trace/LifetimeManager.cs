@@ -7,6 +7,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Ci;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Util;
 
@@ -94,7 +95,7 @@ namespace Datadog.Trace
             AppDomain.CurrentDomain.DomainUnload -= CurrentDomain_DomainUnload;
         }
 
-        private void RunShutdownTasks()
+        public void RunShutdownTasks()
         {
             var current = SynchronizationContext.Current;
             try
