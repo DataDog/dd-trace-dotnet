@@ -5664,7 +5664,7 @@ stages:
     - dotnet_tool_self_instrument_smoke_tests_linux
     - dotnet_tool_smoke_tests_arm64
     - dotnet_tool_smoke_tests_windows
-    - dd_dotnet_installer_smoke_tests
+    - dd_dotnet_installer_smoke_tests_linux
     - dd_dotnet_installer_smoke_tests_arm64
     - dd_dotnet_msi_installer_smoke_tests
     - dd_dotnet_installer_failure_tests_linux
