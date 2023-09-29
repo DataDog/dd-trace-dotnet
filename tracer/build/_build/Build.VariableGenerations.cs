@@ -560,7 +560,7 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
                         },
-                        installer: "datadog-dotnet-apm*.arm64.tar.gz",
+                        installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
                         linuxArtifacts: "linux-packages-arm64",
                         runtimeId: "linux-arm64",
