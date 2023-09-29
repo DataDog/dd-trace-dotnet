@@ -102,8 +102,6 @@ internal class DataStreamsManager
 
     public void TrackBacklog(string tags, long value)
     {
-        Console.WriteLine("#### " + tags);
-
         if (!IsEnabled)
         {
             return;

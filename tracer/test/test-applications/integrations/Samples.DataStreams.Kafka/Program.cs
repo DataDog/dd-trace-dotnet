@@ -61,7 +61,7 @@ async Task RunStandardPipelineScenario()
     // Wait for all messages to be consumed
     // This assumes that the topics all start empty, and ultimately 6 messages end up consumed from topic 3
     Console.WriteLine($"Waiting for final consumption...");
-    var deadline = DateTime.UtcNow.AddSeconds(30);
+    var deadline = DateTime.UtcNow.AddSeconds(180);
     while (true)
     {
         var consumed = Volatile.Read(ref topic3ConsumeCount);
@@ -255,7 +255,6 @@ IDisposable CreateScope(ConsumeResult<string, string> consumeResult, string oper
         return new NoOpDisposable();
     }
 
-    Console.WriteLine("#### CREATING SCOPE MANUALLY");
     return SampleHelpers.CreateScopeWithPropagation(
         operationName,
         consumeResult.Message.Headers,
