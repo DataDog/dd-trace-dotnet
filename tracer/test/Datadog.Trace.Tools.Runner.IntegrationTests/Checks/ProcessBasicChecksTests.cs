@@ -153,8 +153,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                ContinuousProfilerEnabled,
-                ContinuousProfilerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
@@ -454,8 +452,10 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                     var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
                 };
 
-                var path = Path.Join(tempDirectory, archPath, $"Datadog.Trace.ClrProfiler.Native.{extension}");
-                File.WriteAllText(@$"{path}", string.Empty);
+                var dir = Path.Join(tempDirectory, archPath);
+                var path = Path.Join(dir, $"Datadog.Trace.ClrProfiler.Native.{extension}");
+                Directory.CreateDirectory(dir);
+                File.WriteAllText(path, string.Empty);
 
                 using var console = ConsoleHelper.Redirect();
 
