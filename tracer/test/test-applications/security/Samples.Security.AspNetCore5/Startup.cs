@@ -31,7 +31,6 @@ namespace Samples.Security.AspNetCore5
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddControllersWithViews();
-
             if (Configuration.GetValue<bool>("CreateDb"))
             {
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
