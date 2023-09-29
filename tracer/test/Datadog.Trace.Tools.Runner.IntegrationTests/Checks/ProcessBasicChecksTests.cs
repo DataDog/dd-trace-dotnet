@@ -162,8 +162,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-                TracingWithInstaller,
-                ErrorCheckingLinuxDirectory("Could not find a part of the path '/opt/datadog'"));
+                TracingWithInstaller);
         }
 
         [SkippableFact]

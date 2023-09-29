@@ -209,32 +209,20 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
 
-            try
-            {
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+            using var console = ConsoleHelper.Redirect();
 
-                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+            var result = await CheckIisCommand.ExecuteAsync(
+                         "sample",
+                         iisFixture.IisExpress.ConfigFile,
+                         iisFixture.IisExpress.Process.Id,
+                         MockRegistryService());
 
-                using var console = ConsoleHelper.Redirect();
-
-                var result = await CheckIisCommand.ExecuteAsync(
-                                 "sample",
-                                 iisFixture.IisExpress.ConfigFile,
-                                 iisFixture.IisExpress.Process.Id,
-                                 BrokenMockRegistryService());
-
-                result.Should().Be(1);
-                console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
-                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
-                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
-            }
-            finally
-            {
-                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
-            }
+            result.Should().Be(1);
+            console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
         }
 
         private static void EnsureWindowsAndX64()
@@ -253,17 +241,6 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 .Returns(Array.Empty<string>());
             registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
                 .Returns(EnvironmentHelper.GetNativeLoaderPath());
-
-            return registryService.Object;
-        }
-
-        private static IRegistryService BrokenMockRegistryService()
-        {
-            var registryService = new Mock<IRegistryService>();
-            registryService.Setup(r => r.GetLocalMachineValueNames(It.Is(@"SOFTWARE\Microsoft\.NETFramework", StringComparer.Ordinal)))
-                           .Returns(Array.Empty<string>());
-            registryService.Setup(r => r.GetLocalMachineValue(It.Is<string>(s => s == ProcessBasicChecksTests.ClsidKey || s == ProcessBasicChecksTests.Clsid32Key)))
-                           .Returns(Guid.Empty.ToString("B"));
 
             return registryService.Object;
         }
