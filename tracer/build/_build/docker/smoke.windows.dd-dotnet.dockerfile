@@ -29,7 +29,7 @@ COPY --from=builder /src/artifacts /install
 
 RUN mkdir /logs; \
     cd /install; \
-    Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm.msi INSTALLFOLDER="C:\\Program Files\\Datadog\\.NET Tracer\\"'; \
+    Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm.msi'; \
     cd /app; \
     rm /install -r -fo
 
@@ -51,4 +51,4 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT "$Env:Programfiles\\Datadog\\.NET Tracer\\dd-dotnet.cmd" "run" "--" "dotnet" "AspNetCoreSmokeTest.dll"
+ENTRYPOINT "c:\\Program Files\\Datadog\\.NET Tracer\\dd-dotnet.cmd" "run" "--" "dotnet" "AspNetCoreSmokeTest.dll"
