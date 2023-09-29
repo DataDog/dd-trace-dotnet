@@ -668,7 +668,6 @@ partial class Build
     Target CreateBundleHome => _ => _
         .Unlisted()
         .After(BuildTracerHome)
-        .DependsOn(CopyDdDotnet)
         .Executes(() =>
         {
             // clean directory of everything except the text files
@@ -682,6 +681,10 @@ partial class Build
 
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
+
+            // Add the dd-dotnet scripts
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", MonitoringHomeDirectory, FileExistsPolicy.Overwrite);
         });
 
     Target ExtractDebugInfoLinux => _ => _
