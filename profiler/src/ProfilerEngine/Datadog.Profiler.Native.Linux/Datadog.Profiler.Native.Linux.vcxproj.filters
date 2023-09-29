@@ -7,6 +7,7 @@
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="ProfilerSignalManager.cpp" />
     <ClCompile Include="LinuxThreadInfo.cpp" />
+    <ClCompile Include="SystemCallsShield.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Scripts">
@@ -22,5 +23,6 @@
     <ClInclude Include="LinuxStackFramesCollector.h" />
     <ClInclude Include="ProfilerSignalManager.h" />
     <ClInclude Include="LinuxThreadInfo.h" />
+    <ClInclude Include="SystemCallsShield.h" />
   </ItemGroup>
 </Project>

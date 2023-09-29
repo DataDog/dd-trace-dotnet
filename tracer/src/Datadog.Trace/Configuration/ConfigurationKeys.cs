@@ -5,7 +5,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Configuration
@@ -271,11 +270,6 @@ namespace Datadog.Trace.Configuration
         /// Configuration key for setting the API key, used by the Agent.
         /// </summary>
         public const string ApiKey = "DD_API_KEY";
-
-        /// <summary>
-        /// Configuration key for setting the Application key, used by the ITR.
-        /// </summary>
-        public const string ApplicationKey = "DD_APPLICATION_KEY";
 
         /// <summary>
         /// Configuration key for setting the default Datadog destination site.

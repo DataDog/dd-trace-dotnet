@@ -117,6 +117,7 @@
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
     <ClCompile Include="OsSpecificApi.cpp" />
     <ClCompile Include="ProfilerSignalManager.cpp" />
+    <ClCompile Include="SystemCallsShield.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="prepare_loader_for_linking.sh" />
@@ -125,6 +126,7 @@
     <ClInclude Include="LinuxStackFramesCollector.h" />
     <ClInclude Include="LinuxThreadInfo.h" />
     <ClInclude Include="ProfilerSignalManager.h" />
+    <ClInclude Include="SystemCallsShield.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>

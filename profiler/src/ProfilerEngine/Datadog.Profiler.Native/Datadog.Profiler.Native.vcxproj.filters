@@ -116,9 +116,8 @@
     <ClInclude Include="EnvironmentVariables.h">
       <Filter>Utils</Filter>
     </ClInclude>
-    <ClInclude Include="DirectAccessCollection.h">
-      <Filter>Utils</Filter>
-    </ClInclude>
+    <ClInclude Include="ClrLifetime.h" />
+    <ClInclude Include="IClrLifetime.h" />
     <ClInclude Include="IThreadsCpuManager.h">
       <Filter>Profiler-Driver</Filter>
     </ClInclude>

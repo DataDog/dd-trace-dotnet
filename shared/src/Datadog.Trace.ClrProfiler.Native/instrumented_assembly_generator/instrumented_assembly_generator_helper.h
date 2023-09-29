@@ -83,7 +83,7 @@ inline fs::path GetInstrumentedAssemblyGeneratorCurrentProcessFolder()
         if (!instrumentedAssemblyGeneratorOutputFolder.empty()) return instrumentedAssemblyGeneratorOutputFolder;
 
         const auto logsDirectory =
-            fs::path(shared::GetDatadogLogFilePath<Log::NativeLoaderLoggerPolicy>("not_in_use")).parent_path();
+            shared::GetDatadogLogFilePath<Log::NativeLoaderLoggerPolicy>("not_in_use").parent_path();
         const auto instrumentedAssemblyGeneratorDir = logsDirectory / InstrumentedAssemblyGeneratorLogsFolder;
 
         const auto processName = shared::GetCurrentProcessName();

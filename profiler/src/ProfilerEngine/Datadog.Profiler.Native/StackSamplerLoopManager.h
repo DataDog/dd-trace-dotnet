@@ -103,7 +103,6 @@ private:
     static inline bool ShouldCollectThread(std::uint64_t threadAggPeriodDeadlockCount, std::uint64_t globalAggPeriodDeadlockCount) ;
 
     void RunStackSampling();
-    void GracefulShutdownStackSampling();
 
     void RunWatcher();
     void ShutdownWatcher();
@@ -205,10 +204,10 @@ private:
     ICollector<RawCpuSample>* _pCpuTimeCollector = nullptr;
 
     std::unique_ptr<StackFramesCollectorBase> _pStackFramesCollector;
-    StackSamplerLoop* _pStackSamplerLoop;
+    std::unique_ptr<StackSamplerLoop> _pStackSamplerLoop;
     std::uint8_t _deadlockInterventionInProgress;
 
-    std::thread* _pWatcherThread;
+    std::unique_ptr<std::thread> _pWatcherThread;
     bool _isWatcherShutdownRequested;
 
     std::mutex _watcherActivityLock;
