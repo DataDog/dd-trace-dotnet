@@ -202,5 +202,10 @@ namespace Datadog.Trace.Configuration
 
             return websiteSKU is "Dynamic" or null && isFunctionApp;
         }
+
+        public static bool GetIsAzureAppService(IConfigurationSource source, IConfigurationTelemetry telemetry)
+            => new ConfigurationBuilder(source, telemetry)
+              .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
+              .AsBool(false);
     }
 }

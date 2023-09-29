@@ -4,6 +4,8 @@
     <Nullable>enable</Nullable>
     <IsRoslynComponent>true</IsRoslynComponent>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!--  Using the root namespace so generators are all in the root + we can control how they're written to disk  -->
+    <RootNamespace></RootNamespace>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="System.Reflection.Emit" Version="4.3.0" />

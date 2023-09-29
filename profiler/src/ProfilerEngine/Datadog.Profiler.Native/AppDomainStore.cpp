@@ -23,7 +23,6 @@ bool AppDomainStore::GetInfo(AppDomainID appDomainId, ProcessID& pid, std::strin
     if (FAILED(hr)) { return false; }
 
     auto pBuffer = std::make_unique<WCHAR[]>(characterCount);
-    if (pBuffer == nullptr) { return false; }
 
     hr = _pProfilerInfo->GetAppDomainInfo(appDomainId, characterCount, &characterCount, pBuffer.get(), &pid);
     if (FAILED(hr)) { return false; }

@@ -60,4 +60,5 @@ public:
     virtual std::string const& GetGitRepositoryUrl() const = 0;
     virtual std::string const& GetGitCommitSha() const = 0;
     virtual bool IsInternalMetricsEnabled() const = 0;
+    virtual bool IsSystemCallsShieldEnabled() const = 0;
 };

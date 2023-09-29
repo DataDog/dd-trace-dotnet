@@ -4,11 +4,13 @@
 // </copyright>
 #nullable enable
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Ci.Coverage.Models.Tests;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.Telemetry;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -27,93 +29,101 @@ internal class DefaultCoverageEventHandler : CoverageEventHandler
 
     protected override object? OnSessionFinished(CoverageContextContainer context)
     {
-        var modules = context.CloseContext();
-        const int HIDDEN = 0xFEEFEE;
-
-        Dictionary<string, FileCoverage>? fileDictionary = null;
-        foreach (var moduleValue in modules)
+        try
         {
-            var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
-            if (moduleDef is null)
-            {
-                continue;
-            }
+            var modules = context.CloseContext();
+            const int HIDDEN = 0xFEEFEE;
 
-            List<TypeDef>? moduleTypes;
-            lock (TypeDefsFromModuleDefs)
+            Dictionary<string, FileCoverage>? fileDictionary = null;
+            foreach (var moduleValue in modules)
             {
-                if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
-                {
-                    moduleTypes = moduleDef.GetTypes().ToList();
-                    TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
-                }
-            }
-
-            for (var i = 0; i < moduleValue.Methods.Length; i++)
-            {
-                var currentMethod = moduleValue.Methods[i];
-                if (currentMethod is null)
+                var moduleDef = MethodSymbolResolver.Instance.GetModuleDef(moduleValue.Module);
+                if (moduleDef is null)
                 {
                     continue;
                 }
 
-                moduleValue.Metadata.GetMethodsMetadata(i, out var typeIndex, out var methodIndex);
-                var typeDef = moduleTypes[typeIndex];
-                var methodDef = typeDef.Methods[methodIndex];
-
-                if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
+                List<TypeDef>? moduleTypes;
+                lock (TypeDefsFromModuleDefs)
                 {
-                    var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
-                    foreach (var instruction in methodDef.Body.Instructions)
+                    if (!TypeDefsFromModuleDefs.TryGetValue(moduleDef, out moduleTypes))
                     {
-                        if (instruction.SequencePoint is null ||
-                            instruction.SequencePoint.StartLine == HIDDEN ||
-                            instruction.SequencePoint.EndLine == HIDDEN)
-                        {
-                            continue;
-                        }
+                        moduleTypes = moduleDef.GetTypes().ToList();
+                        TypeDefsFromModuleDefs[moduleDef] = moduleTypes;
+                    }
+                }
 
-                        seqPoints.Add(instruction.SequencePoint);
+                for (var i = 0; i < moduleValue.Methods.Length; i++)
+                {
+                    var currentMethod = moduleValue.Methods[i];
+                    if (currentMethod is null)
+                    {
+                        continue;
                     }
 
-                    for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
+                    moduleValue.Metadata.GetMethodsMetadata(i, out var typeIndex, out var methodIndex);
+                    var typeDef = moduleTypes[typeIndex];
+                    var methodDef = typeDef.Methods[methodIndex];
+
+                    if (methodDef.HasBody && methodDef.Body.HasInstructions && currentMethod.SequencePoints.Length > 0)
                     {
-                        var repInSeqPoints = currentMethod.SequencePoints[x];
-                        if (repInSeqPoints == 0)
+                        var seqPoints = new List<SequencePoint>(currentMethod.SequencePoints.Length);
+                        foreach (var instruction in methodDef.Body.Instructions)
                         {
-                            continue;
+                            if (instruction.SequencePoint is null ||
+                                instruction.SequencePoint.StartLine == HIDDEN ||
+                                instruction.SequencePoint.EndLine == HIDDEN)
+                            {
+                                continue;
+                            }
+
+                            seqPoints.Add(instruction.SequencePoint);
                         }
 
-                        var seqPoint = seqPoints[x];
-                        fileDictionary ??= new Dictionary<string, FileCoverage>();
-                        if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
+                        for (var x = 0; x < currentMethod.SequencePoints.Length; x++)
                         {
-                            fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false) };
+                            var repInSeqPoints = currentMethod.SequencePoints[x];
+                            if (repInSeqPoints == 0)
+                            {
+                                continue;
+                            }
 
-                            fileDictionary[seqPoint.Document.Url] = fileCoverage;
+                            var seqPoint = seqPoints[x];
+                            fileDictionary ??= new Dictionary<string, FileCoverage>();
+                            if (!fileDictionary.TryGetValue(seqPoint.Document.Url, out var fileCoverage))
+                            {
+                                fileCoverage = new FileCoverage { FileName = CIEnvironmentValues.Instance.MakeRelativePathFromSourceRoot(seqPoint.Document.Url, false) };
+
+                                fileDictionary[seqPoint.Document.Url] = fileCoverage;
+                            }
+
+                            fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
                         }
-
-                        fileCoverage.Segments.Add(new[] { (uint)seqPoint.StartLine, (uint)seqPoint.StartColumn, (uint)seqPoint.EndLine, (uint)seqPoint.EndColumn, (uint)repInSeqPoints });
                     }
                 }
             }
+
+            TelemetryFactory.Metrics.RecordDistributionCIVisibilityCodeCoverageFiles(fileDictionary?.Count ?? 0);
+
+            if (fileDictionary is null || fileDictionary.Count == 0)
+            {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageIsEmpty();
+                return null;
+            }
+
+            var testCoverage = new TestCoverage { Files = fileDictionary.Values.ToList(), };
+
+            if (Log.IsEnabled(LogEventLevel.Debug))
+            {
+                Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
+            }
+
+            return testCoverage;
         }
-
-        if (fileDictionary is null || fileDictionary.Count == 0)
+        catch
         {
-            return null;
+            TelemetryFactory.Metrics.RecordCountCIVisibilityCodeCoverageErrors();
+            throw;
         }
-
-        var testCoverage = new TestCoverage
-        {
-            Files = fileDictionary.Values.ToList(),
-        };
-
-        if (Log.IsEnabled(LogEventLevel.Debug))
-        {
-            Log.Debug("Test Coverage: {Json}", JsonConvert.SerializeObject(testCoverage));
-        }
-
-        return testCoverage;
     }
 }

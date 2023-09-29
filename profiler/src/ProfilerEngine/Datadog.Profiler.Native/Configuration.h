@@ -63,6 +63,7 @@ public:
     std::string const& GetGitRepositoryUrl() const override;
     std::string const& GetGitCommitSha() const override;
     bool IsInternalMetricsEnabled() const override;
+    bool IsSystemCallsShieldEnabled() const override;
 
 private:
     static tags ExtractUserTags();
@@ -141,4 +142,5 @@ private:
     bool _isTimestampsAsLabelEnabled;
     bool _isDebugInfoEnabled;
     bool _isInternalMetricsEnabled;
+    bool _isSystemCallsShieldEnabled;
 };

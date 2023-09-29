@@ -50,26 +50,13 @@
 #include "WallTimeProvider.h"
 #include "AllocationsRecorder.h"
 #include "MetadataProvider.h"
+#ifdef LINUX
+#include "SystemCallsShield.h"
+#endif
+
 #include "shared/src/native-src/environment_variables.h"
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
-
-// The following macros are used to construct the profiler file:
-#ifdef _WINDOWS
-#define LIBRARY_FILE_EXTENSION ".dll"
-#elif LINUX
-#define LIBRARY_FILE_EXTENSION ".so"
-#elif MACOS
-#define LIBRARY_FILE_EXTENSION ".dylib"
-#else
-Error("unknown platform");
-#endif
-
-#ifdef BIT64
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
-#else
-#define PROFILER_LIBRARY_BINARY_FILE_NAME WStr("Datadog.Profiler.Native" LIBRARY_FILE_EXTENSION)
-#endif
 
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
@@ -112,6 +99,14 @@ bool CorProfilerCallback::InitializeServices()
     _pAppDomainStore = std::make_unique<AppDomainStore>(_pCorProfilerInfo);
 
     _pDebugInfoStore = std::make_unique<DebugInfoStore>(_pCorProfilerInfo, _pConfiguration.get());
+
+#ifdef LINUX
+    if (_pConfiguration->IsSystemCallsShieldEnabled())
+    {
+        // This service must be started before StackSamplerLoop-based profilers to help with non-restartable system calls (ex: socket operations)
+        _systemCallsShield = RegisterService<SystemCallsShield>(_pConfiguration.get());
+    }
+#endif
 
     _pFrameStore = std::make_unique<FrameStore>(_pCorProfilerInfo, _pConfiguration.get(), _pDebugInfoStore.get());
 
@@ -1291,6 +1286,12 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadDestroyed(ThreadID threadId
             _pThreadLifetimeProvider->OnThreadStop(pThreadInfo);
         }
     }
+#ifdef LINUX
+    if (_systemCallsShield != nullptr)
+    {
+        _systemCallsShield->Unregister();
+    }
+#endif
 
     return S_OK;
 }
@@ -1328,6 +1329,18 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #endif
 
 #ifdef LINUX
+    if (_systemCallsShield != nullptr)
+    {
+        // Register/Unregister rely on the following assumption:
+        // The native thread calling ThreadAssignedToOSThread/ThreadDestroyed is the same native thread assigned to the managed thread.
+        // This assumption has been tested and verified experimentally but there the documentation does not say that.
+        // If at some point, it's not true, we can remove Register/Unregister on the SystemCallsShield class.
+        // Then initiliaze the TLS managedThreadInfo (by calling TryGetCurrentThreadInfo) the first time a call is made in SystemCallsShield
+        // SystemCallsShield::SetSharedMemory callback.
+        auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
+        _systemCallsShield->Register(threadInfo);
+    }
+
     // TL;DR prevent the profiler from deadlocking application thread on malloc
     // When calling uwn_backtraceXX, libunwind will initialize data structures for the current
     // thread using TLS (Thread Local Storage).

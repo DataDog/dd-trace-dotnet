@@ -723,3 +723,36 @@ TEST(ConfigurationTest, CheckGitMetadataIfSet)
     ASSERT_THAT(configuration.GetGitRepositoryUrl(), expectedRepoUrl);
     ASSERT_THAT(configuration.GetGitCommitSha(), expectedCommitSha);
 }
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false;
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false; // even other platform it's disabled
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}

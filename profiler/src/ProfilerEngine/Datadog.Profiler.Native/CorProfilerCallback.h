@@ -47,6 +47,9 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+#ifdef LINUX
+class SystemCallsShield;
+#endif
 
 namespace shared {
 class Loader;
@@ -234,6 +237,9 @@ private :
     GarbageCollectionProvider* _pGarbageCollectionProvider = nullptr;
     LiveObjectsProvider* _pLiveObjectsProvider = nullptr;
     ThreadLifetimeProvider* _pThreadLifetimeProvider = nullptr;
+#ifdef LINUX
+    SystemCallsShield* _systemCallsShield = nullptr;
+#endif
 
     std::vector<std::unique_ptr<IService>> _services;
 

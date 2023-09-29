@@ -87,7 +87,7 @@ namespace Datadog.Trace.TestHelpers
         public static string GetTestTargetPlatform()
         {
             var requested = Environment.GetEnvironmentVariable("TargetPlatform");
-            return string.IsNullOrEmpty(requested) ? GetPlatform() : requested;
+            return string.IsNullOrEmpty(requested) ? GetPlatform() : requested.ToUpperInvariant();
         }
 
         public static bool IsTestTarget64BitProcess()
