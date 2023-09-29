@@ -5497,6 +5497,10 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
+        - script: docker pull $(runtimeImage)
+          displayName: Pull dockerfile
+          retryCountOnTaskFailure: 3
+
         - script: |
             echo "Expecting path: $(expectedPath)"
             echo "Expected installer: $(expectedInstaller)"
@@ -5514,8 +5518,11 @@ stages:
               echo $result
               exit 1
             fi
+
+            echo "Received expected response:"
+            echo $result
+
           displayName: Run artifact test (expecting failure)
-          retryCountOnTaskFailure: 3
 
 - stage: dd_dotnet_installer_failure_tests_linux_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -5544,6 +5551,10 @@ stages:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
 
+        - script: docker pull $(runtimeImage)
+          displayName: Pull dockerfile
+          retryCountOnTaskFailure: 3
+
         - script: |
             echo "Expecting path: $(expectedPath)"
             echo "Expected installer: $(expectedInstaller)"
@@ -5561,8 +5572,11 @@ stages:
               echo $result
               exit 1
             fi
+
+            echo "Received expected response:"
+            echo $result
+
           displayName: Run artifact test (expecting failure)
-          retryCountOnTaskFailure: 3
 
 - stage: compare_throughput
   condition: and(succeeded(), eq(variables.isMainRepository, true))
