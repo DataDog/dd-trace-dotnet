@@ -589,8 +589,8 @@ partial class Build
       .After(BuildDdDotnet, PublishManagedTracer)
       .Executes(() =>
       {
-          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-trace-dotnet.pdb";
-          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-trace-dotnet.pdb";
+          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-dotnet.pdb";
+          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-dotnet.pdb";
           CopyFile(source, dest, FileExistsPolicy.Overwrite);
       });
 
