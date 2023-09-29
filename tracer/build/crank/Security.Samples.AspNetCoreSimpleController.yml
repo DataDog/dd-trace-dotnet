@@ -22,6 +22,7 @@ jobs:
 
 scenarios:
   appsec_baseline:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm') || contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     application:
       job: server
       environmentVariables:
@@ -38,6 +39,7 @@ scenarios:
         path: /hello
 
   appsec_noattack:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm')
     application:
       job: server
       environmentVariables:
@@ -54,6 +56,7 @@ scenarios:
         path: /hello
 
   appsec_attack_noblocking:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm')
     application:
       job: server
       environmentVariables:
@@ -70,6 +73,7 @@ scenarios:
         path: /hello?[$slice]=arg
 
   appsec_attack_blocking:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm')
     application:
       job: server
       environmentVariables:
@@ -87,6 +91,7 @@ scenarios:
         path: /hello
 
   appsec_iast_enabled_default:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     application:
       job: server
       environmentVariables:
@@ -103,6 +108,7 @@ scenarios:
         path: /hello        
         
   appsec_iast_enabled_full:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     application:
       job: server
       environmentVariables:
@@ -123,6 +129,7 @@ scenarios:
         path: /hello
 
   appsec_iast_disabled_vulnerability:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     application:
       job: server
       environmentVariables:
@@ -139,6 +146,7 @@ scenarios:
         path: /hello/getfiles?filter=*&relativepath=.
         
   appsec_iast_enabled_vulnerability:
+    if: contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     application:
       job: server
       environmentVariables:
