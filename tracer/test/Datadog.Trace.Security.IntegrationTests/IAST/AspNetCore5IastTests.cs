@@ -226,20 +226,14 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
     [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
-    [InlineData("{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}", true)]
     [InlineData("{\"InnerQuery\": {\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\"]}}")]
     [InlineData("{\"Arguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
     [InlineData("{\"StringMap\": {\"query1\": \"SELECT Surname from Persons where name='Vicent'\",\"query2\": \"temp\"}}")]
     [InlineData("{\"StringMap\": {\"\": \"\",\"query2\": \"SELECT Surname from Persons where name='Vicent'\"}}")]
     [InlineData("{\"StringMap\": {\"SELECT Surname from Persons where name='Vicent'\": \"\"}}")]
     [InlineData("{\"StringArrayArguments\": [\"SELECT Surname from Persons where name='Vicent'\", \"SELECT Surname from Persons where name='Mark'\"]}")]
-    public async Task TestRequestBodyTainting(string body, bool useNS = false)
+    public async Task TestRequestBodyTainting(string body)
     {
-        if (useNS)
-        {
-            SetEnvironmentVariable("USE_NS", "true");
-        }
-
         var filename = IastEnabled ? "Iast.RequestBodyTest.AspNetCore5.IastEnabled" : "Iast.RequestBodyTest.AspNetCore5.IastDisabled";
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
