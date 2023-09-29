@@ -538,17 +538,17 @@ partial class Build : NukeBuild
                         "fedora",
                         new (string publishFramework, string runtimeTag)[]
                         {
-                            (publishFramework: TargetFramework.NET7_0, "35-7.0-arm64"),
-                            (publishFramework: TargetFramework.NET6_0, "34-6.0-arm64"),
-                            (publishFramework: TargetFramework.NET5_0, "35-5.0-arm64"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1-arm64"),
-                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1-arm64"),
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
                         linuxArtifacts: "linux-packages-arm64",
                         runtimeId: "linux-arm64",
-                        dockerName: "andrewlock/dotnet-fedora"
+                        dockerName: "andrewlock/dotnet-fedora-arm64"
                     );
 
                     // We don't support alpine on arm64 yet, so just use debian for the tar test
