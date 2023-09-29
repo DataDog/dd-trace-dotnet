@@ -31,6 +31,8 @@ RUN mkdir /logs; \
     mkdir /tool; \
     cd /install; \
     Start-Process -Wait msiexec -ArgumentList '/qn /i datadog-apm.msi INSTALLFOLDER="c:\tool\"'; \
+    cd /tool; \
+    dir;  \
     cd /app; \
     rm /install -r -fo
 
