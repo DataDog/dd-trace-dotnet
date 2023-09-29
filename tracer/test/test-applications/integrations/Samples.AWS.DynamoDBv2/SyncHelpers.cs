@@ -28,8 +28,8 @@ namespace Samples.AWS.DynamoDBv2
                 UpdateItem(dynamoDBClient);
                 DeleteItem(dynamoDBClient);
                 
-                PutItems(dynamoDBClient);
-                GetItems(dynamoDBClient);
+                BatchWriteItem(dynamoDBClient);
+                BatchGetItem(dynamoDBClient);
                 DeleteItems(dynamoDBClient);
 
                 DeleteTable(dynamoDBClient);
@@ -96,7 +96,7 @@ namespace Samples.AWS.DynamoDBv2
             Console.WriteLine($"PutItem(PutItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static void PutItems(AmazonDynamoDBClient dynamoDBClient)
+        public static void BatchWriteItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -147,7 +147,7 @@ namespace Samples.AWS.DynamoDBv2
             Console.WriteLine($"GetItem(GetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
         
-        public static void GetItems(AmazonDynamoDBClient dynamoDBClient)
+        public static void BatchGetItem(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -167,7 +167,7 @@ namespace Samples.AWS.DynamoDBv2
                     pokemon
                 }
             };
-            var batchWriteItemRequest = new BatchGetItemRequest
+            var batchGetItemRequest = new BatchGetItemRequest
             {
                 RequestItems =
                 {
@@ -175,7 +175,7 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            var response = dynamoDBClient.BatchGetItem(batchWriteItemRequest);
+            var response = dynamoDBClient.BatchGetItem(batchGetItemRequest);
             Console.WriteLine($"BatchGetItem(BatchGetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 

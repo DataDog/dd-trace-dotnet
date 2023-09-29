@@ -27,8 +27,8 @@ namespace Samples.AWS.DynamoDBv2
                 await UpdateItemAsync(dynamoDBClient);
                 await DeleteItemAsync(dynamoDBClient);
                 
-                await PutItemsAsync(dynamoDBClient);
-                await GetItemsAsync(dynamoDBClient);
+                await BatchWriteItemAsync(dynamoDBClient);
+                await BatchGetItemAsync(dynamoDBClient);
                 await DeleteItemsAsync(dynamoDBClient);
 
                 await DeleteTableAsync(dynamoDBClient);
@@ -95,7 +95,7 @@ namespace Samples.AWS.DynamoDBv2
             Console.WriteLine($"PutItemAsync(PutItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
-        public static async Task PutItemsAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static async Task BatchWriteItemAsync(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -146,7 +146,7 @@ namespace Samples.AWS.DynamoDBv2
             Console.WriteLine($"GetItemAsync(GetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
         
-        public static async Task GetItemsAsync(AmazonDynamoDBClient dynamoDBClient)
+        public static async Task BatchGetItemAsync(AmazonDynamoDBClient dynamoDBClient)
         {
             var person = new Dictionary<string, AttributeValue>
             {
@@ -166,7 +166,7 @@ namespace Samples.AWS.DynamoDBv2
                     pokemon
                 }
             };
-            var batchWriteItemRequest = new BatchGetItemRequest
+            var batchGetItemRequest = new BatchGetItemRequest
             {
                 RequestItems =
                 {
@@ -174,7 +174,7 @@ namespace Samples.AWS.DynamoDBv2
                 }
             };
 
-            var response = await dynamoDBClient.BatchGetItemAsync(batchWriteItemRequest);
+            var response = await dynamoDBClient.BatchGetItemAsync(batchGetItemRequest);
             Console.WriteLine($"BatchGetItemAsync(BatchGetItemRequest) HTTP status code: {response.HttpStatusCode}");
         }
 
