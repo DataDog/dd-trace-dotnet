@@ -5472,7 +5472,7 @@ stages:
 
 - stage: dd_dotnet_installer_failure_tests_linux
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -5498,19 +5498,19 @@ stages:
             targetBranch: $(targetBranch)
 
         - script: |
-            echo "Expecting path: $expectedPath"
-            echo "Expected installer: $expectedInstaller"
+            echo "Expecting path: $(expectedPath)"
+            echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
             result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
-            if [[ "$result" != *$expectedPath* ]]; then
-              echo "Incorrect message. Expected '$expectedPath', but found:"
+            if [[ "$result" != *$(expectedPath)* ]]; then
+              echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
               return 1
             fi
 
-            if [[ "$result" != *$expectedInstaller* ]]; then
-              echo "Incorrect message. Expected '$expectedInstaller', but found:"
+            if [[ "$result" != *$(expectedInstaller)* ]]; then
+              echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
               echo $result
               return 1
             fi
@@ -5519,7 +5519,7 @@ stages:
 
 - stage: dd_dotnet_installer_failure_tests_linux_arm64
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
-  dependsOn: [package_arm64, generate_variables, merge_commit_id]
+  dependsOn: [generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -5545,19 +5545,19 @@ stages:
             targetBranch: $(targetBranch)
 
         - script: |
-            echo "Expecting path: $expectedPath"
-            echo "Expected installer: $expectedInstaller"
+            echo "Expecting path: $(expectedPath)"
+            echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
             result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
-            if [[ "$result" != *$expectedPath* ]]; then
-              echo "Incorrect message. Expected '$expectedPath', but found:"
+            if [[ "$result" != *$(expectedPath)* ]]; then
+              echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
               return 1
             fi
 
-            if [[ "$result" != *$expectedInstaller* ]]; then
-              echo "Incorrect message. Expected '$expectedInstaller', but found:"
+            if [[ "$result" != *$(expectedInstaller)* ]]; then
+              echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
               echo $result
               return 1
             fi
