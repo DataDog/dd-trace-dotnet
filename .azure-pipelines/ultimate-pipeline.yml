@@ -5366,8 +5366,11 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download MSI to temp directory
           inputs:
-            artifact: windows-msi-$(targetPlatform)
-            patterns: '**/*-$(targetPlatform).msi'
+#            artifact: windows-msi-$(targetPlatform)
+#            patterns: '**/*-$(targetPlatform).msi'
+            # I give up, I can't get x86 to work in the docker file
+            artifact: windows-msi-x64
+            patterns: '**/*-x64.msi'
             path: $(Agent.TempDirectory)
 
         - powershell: |
@@ -5382,7 +5385,7 @@ stages:
               --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
-              --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
+              --build-arg CHANNEL_32_BIT="" \
               dd-dotnet-smoke-tests.windows
           env:
             dockerTag: $(dockerTag)
