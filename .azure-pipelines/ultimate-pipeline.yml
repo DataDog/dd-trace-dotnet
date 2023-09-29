@@ -5506,13 +5506,13 @@ stages:
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
-              return 1
+              exit 1
             fi
 
             if [[ "$result" != *$(expectedInstaller)* ]]; then
               echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
               echo $result
-              return 1
+              exit 1
             fi
           displayName: Run artifact test (expecting failure)
           retryCountOnTaskFailure: 3
@@ -5553,13 +5553,13 @@ stages:
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
-              return 1
+              exit 1
             fi
 
             if [[ "$result" != *$(expectedInstaller)* ]]; then
               echo "Incorrect message. Expected '$(expectedInstaller)', but found:"
               echo $result
-              return 1
+              exit 1
             fi
           displayName: Run artifact test (expecting failure)
           retryCountOnTaskFailure: 3
