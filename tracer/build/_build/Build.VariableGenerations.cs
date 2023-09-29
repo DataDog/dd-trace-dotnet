@@ -533,6 +533,41 @@ partial class Build : NukeBuild
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "fedora",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0-arm64"),
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0-arm64"),
+                            (publishFramework: TargetFramework.NET5_0, "35-5.0-arm64"),
+                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1-arm64"),
+                            (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1-arm64"),
+                        },
+                        installer: "datadog-dotnet-apm*-1.aarch64.rpm",
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
+                        linuxArtifacts: "linux-packages-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-fedora"
+                    );
+
+                    // We don't support alpine on arm64 yet, so just use debian for the tar test
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian_tar",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                        },
+                        installer: "datadog-dotnet-apm*.arm64.tar.gz",
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
+                        linuxArtifacts: "linux-packages-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
                     Logger.Information($"Installer smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
