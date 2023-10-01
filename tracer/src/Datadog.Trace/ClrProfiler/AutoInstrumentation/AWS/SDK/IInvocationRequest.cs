@@ -9,7 +9,8 @@ using System.IO;
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 
 /// <summary>
-/// Class that contains all the information necessary to handle an invocation of an AWS Lambda function.
+/// Interface that contains all the information necessary to handle an invocation of an AWS Lambda function.
+/// This is the DuckType for Amazon.Lambda.RuntimeSupport.InvocationRequest
 /// </summary>
 public interface IInvocationRequest : IDisposable
 {

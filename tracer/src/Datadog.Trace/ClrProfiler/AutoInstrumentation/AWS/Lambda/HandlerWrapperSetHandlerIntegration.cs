@@ -33,11 +33,13 @@ public class HandlerWrapperSetHandlerIntegration
 {
     private const string IntegrationName = nameof(IntegrationId.AwsLambda);
     private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
+    private static readonly Async1Callbacks _callbacks = new Async1Callbacks();
 
     /// <summary>
-    /// OnMethodBegin callback. The input Delegate handler is the customer's handler wrapped by the HandlerWrapper.
-    /// Here we will try further wrap it with our DelegateWrapper class in order to make it notify the Datadog-Extension
-    /// before and after the handler's each invocation.
+    /// OnMethodBegin callback. The input Delegate handler is the customer's handler.
+    /// And it's already wrapped by the Amazon.Lambda.RuntimeSupport.HandlerWrapper.
+    /// Here we will try further wrap it with our DelegateWrapper class
+    /// in order to make it notify the Datadog-Extension before and after the handler's each invocation.
     /// </summary>
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
@@ -45,73 +47,81 @@ public class HandlerWrapperSetHandlerIntegration
     /// <returns>Calltarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref Delegate handler)
     {
-        Serverless.Debug("DelegateWrapper Wrapping the Handler");
-
-        var state = CallTargetState.GetDefault();
-        handler = DelegateInstrumentation.Wrap(handler, new DelegateFunc1Callbacks(
-                                                       (sender, arg) =>
-                                                       {
-                                                           Serverless.Debug("DelegateWrapper Running onDelegateBegin");
-                                                           try
-                                                           {
-                                                               var proxyInstance = arg.DuckCast<IInvocationRequest>();
-                                                               if (proxyInstance != null)
-                                                               {
-                                                                   var reader = new StreamReader(proxyInstance.InputStream, encoding: Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: -1, leaveOpen: true);
-                                                                   string json = reader.ReadToEnd();
-                                                                   proxyInstance.InputStream.Seek(0, SeekOrigin.Begin);
-                                                                   var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), json, proxyInstance.LambdaContext?.ClientContext?.Custom);
-                                                                   state = new CallTargetState(scope);
-                                                               }
-                                                               else
-                                                               {
-                                                                   var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
-                                                                   state = new CallTargetState(scope);
-                                                               }
-                                                           }
-                                                           catch (Exception ex)
-                                                           {
-                                                               Serverless.Error("Could not send payload to the extension", ex);
-                                                               Console.WriteLine(ex.StackTrace);
-                                                           }
-
-                                                           return null;
-                                                       },
-                                                       (sender, arg, returnValue, exception) =>
-                                                       {
-                                                           Serverless.Debug("DelegateWrapper Running onDelegateEnd");
-                                                           return returnValue;
-                                                       },
-                                                       onDelegateAsyncEnd: async (sender, returnValue, exception, arg) =>
-                                                       {
-                                                           return await Task.Run(() =>
-                                                           {
-                                                               Serverless.Debug("DelegateWrapper Running onDelegateAsyncEnd");
-                                                               try
-                                                               {
-                                                                   var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
-                                                                   if (proxyInstance != null)
-                                                                   {
-                                                                       var reader = new StreamReader(proxyInstance.OutputStream, encoding: Encoding.UTF8, detectEncodingFromByteOrderMarks: true, bufferSize: -1, leaveOpen: true);
-                                                                       string json = reader.ReadToEnd();
-                                                                       proxyInstance.OutputStream.Seek(0, SeekOrigin.Begin);
-                                                                       LambdaCommon.EndInvocationSync(json, exception, state.Scope, RequestBuilder);
-                                                                   }
-                                                                   else
-                                                                   {
-                                                                       LambdaCommon.EndInvocationSync(string.Empty, exception, state.Scope, RequestBuilder);
-                                                                   }
-                                                               }
-                                                               catch (Exception ex)
-                                                               {
-                                                                   Serverless.Error("Could not call EndInvocationSync", ex);
-                                                                   Console.WriteLine(ex.StackTrace);
-                                                               }
-
-                                                               Serverless.Debug("DelegateWrapper FINISHED Running onDelegateAsyncEnd");
-                                                               return returnValue;
-                                                           }).ConfigureAwait(false);
-                                                       }));
+        handler = handler.Instrument(_callbacks);
         return CallTargetState.GetDefault();
+    }
+
+    private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
+    {
+        public bool PreserveAsyncContext => false;
+
+        public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
+        {
+            Serverless.Debug("DelegateWrapper Running onDelegateBegin");
+            try
+            {
+                var proxyInstance = arg.DuckCast<IInvocationRequest>();
+                if (proxyInstance != null)
+                {
+                    var reader = new StreamReader(proxyInstance.InputStream, Encoding.UTF8, leaveOpen: true);
+                    var json = reader.ReadToEnd();
+                    proxyInstance.InputStream.Seek(0, SeekOrigin.Begin);
+                    var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), json, proxyInstance.LambdaContext?.ClientContext?.Custom);
+                    return new CallTargetState(scope);
+                }
+                else
+                {
+                    var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
+                    return new CallTargetState(scope);
+                }
+            }
+            catch (Exception ex)
+            {
+                Serverless.Error("Could not send payload to the extension", ex);
+                Console.WriteLine(ex.StackTrace);
+            }
+
+            return CallTargetState.GetDefault();
+        }
+
+        /// <inheritdoc/>
+        public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
+        {
+            return returnValue;
+        }
+
+        /// <inheritdoc/>
+        public Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
+        {
+            Serverless.Debug("DelegateWrapper Running onDelegateAsyncEnd");
+            try
+            {
+                var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
+                if (proxyInstance != null)
+                {
+                    var reader = new StreamReader(proxyInstance.OutputStream, Encoding.UTF8, leaveOpen: true);
+                    var json = reader.ReadToEnd();
+                    proxyInstance.OutputStream.Seek(0, SeekOrigin.Begin);
+                    LambdaCommon.EndInvocationSync(json, exception, ((CallTargetState)state!).Scope, RequestBuilder);
+                }
+                else
+                {
+                    LambdaCommon.EndInvocationSync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder);
+                }
+            }
+            catch (Exception ex)
+            {
+                Serverless.Debug(ex.StackTrace);
+                LambdaCommon.EndInvocationSync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder);
+            }
+
+            Serverless.Debug("DelegateWrapper FINISHED Running onDelegateAsyncEnd");
+            return Task.FromResult(returnValue);
+        }
+
+        /// <inheritdoc/>
+        public void OnException(object sender, Exception ex)
+        {
+        }
     }
 }
