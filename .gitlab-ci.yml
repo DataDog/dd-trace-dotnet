@@ -23,11 +23,6 @@ variables:
     description: "Used by the package stage when triggered manually"
 
 build:
-  only:
-    - master
-    - main
-    - /^hotfix.*$/
-    - /^release.*$/
   except:
     variables:
       - $DEPLOY_TO_REL_ENV == "true"
