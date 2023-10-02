@@ -155,6 +155,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_UNICODE;UNICODE;X86;HOST_X86;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -178,6 +179,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>BIT64;HOST_64BIT;AMD64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -204,6 +206,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>TARGET_64BIT;BIT64;HOST_64BIT;AMD64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -227,6 +230,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>BIT64;HOST_64BIT;ARM64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -253,6 +257,7 @@
       <MultiProcessorCompilation Condition=" '$(ENABLE_MULTIPROCESSOR_COMPILATION)' == '' ">true</MultiProcessorCompilation>
       <PreprocessorDefinitions>_TARGET_64BIT;BIT64;HOST_64BIT;ARM64;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(LIB_INCLUDES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalOptions>/FS %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Lib>
       <AdditionalLibraryDirectories>$(LIB_INCLUDES);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
