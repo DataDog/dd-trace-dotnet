@@ -88,7 +88,7 @@ namespace Datadog.Trace.Ci.Agent
             return statusCode;
         }
 
-        private async Task<int> SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
+        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
@@ -118,7 +118,7 @@ namespace Datadog.Trace.Ci.Agent
                 catch (Exception ex)
                 {
                     Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                    return -1;
+                    return;
                 }
 
                 var statusCode = -1;
@@ -134,7 +134,7 @@ namespace Datadog.Trace.Ci.Agent
                 {
                     Log.Error(mReqEx, "Error trying to send a multipart request to: {Url}", url.ToString());
                     TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
-                    return statusCode;
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -146,7 +146,7 @@ namespace Datadog.Trace.Ci.Agent
                         {
                             Log.Error<string>(ex, "An error occurred while sending events to {AgentEndpoint}", _apiRequestFactory.Info(url));
                             TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
-                            return statusCode;
+                            return;
                         }
                     }
                 }
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Ci.Agent
                         // stop retrying
                         Log.Error<int, string, int>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint} | StatusCode: {StatusCode}", retryCount, _apiRequestFactory.Info(url), statusCode);
                         TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
-                        return statusCode;
+                        return;
                     }
 
                     // Before retry delay
@@ -186,7 +186,7 @@ namespace Datadog.Trace.Ci.Agent
                 }
 
                 Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                return statusCode;
+                return;
             }
         }
 
