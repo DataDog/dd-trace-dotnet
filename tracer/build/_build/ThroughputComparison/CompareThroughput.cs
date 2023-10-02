@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -24,14 +24,14 @@ public class CompareThroughput
         var charts = crankResults
                     .GroupBy(x => x.TestSuite)
                     .Select(group =>
-                     {
+                    {
 
-                         var scenarios = group
-                                        .Select(x => x)
-                                        .OrderBy(x => x.Scenario)
-                                        .GroupBy(x => x.Scenario)
-                                        .Select(scenarioResults => GetMermaidSection(scenarioResults.Key, scenarioResults));
-                         return $"""
+                        var scenarios = group
+                                       .Select(x => x)
+                                       .OrderBy(x => x.Scenario)
+                                       .GroupBy(x => x.Scenario)
+                                       .Select(scenarioResults => GetMermaidSection(scenarioResults.Key, scenarioResults));
+                        return $"""
                         ```mermaid
                         gantt
                             title Throughput {GetName(group.Key)} (Total requests) 
@@ -40,7 +40,7 @@ public class CompareThroughput
                         {string.Join(Environment.NewLine, scenarios)}
                         ```
                         """;
-                     });
+                    });
 
         return GetCommentMarkdown(sources, charts);
     }
@@ -114,6 +114,10 @@ public class CompareThroughput
         CrankScenario.NoAttack => "No attack",
         CrankScenario.AttackNoBlocking => "Attack",
         CrankScenario.AttackBlocking => "Blocking",
+        CrankScenario.IastDefault => "IAST default",
+        CrankScenario.IastFull => "IAST full",
+        CrankScenario.IastVulnerabilityDisabled => "Base vuln",
+        CrankScenario.IastVulnerabilityEnabled => "IAST vuln",
         _ => throw new NotImplementedException(),
     };
 
@@ -155,6 +159,10 @@ public class CompareThroughput
                 ("appsec_noattack.json", CrankScenario.NoAttack),
                 ("appsec_attack_noblocking.json", CrankScenario.AttackNoBlocking),
                 ("appsec_attack_blocking.json", CrankScenario.AttackBlocking),
+                ("appsec_iast_enabled_default.json", CrankScenario.IastDefault),
+                ("appsec_iast_enabled_full.json", CrankScenario.IastFull),
+                ("appsec_iast_disabled_vulnerability.json", CrankScenario.IastVulnerabilityDisabled),
+                ("appsec_iast_enabled_vulnerability.json", CrankScenario.IastVulnerabilityEnabled),
             }
         ),
     };
@@ -163,21 +171,21 @@ public class CompareThroughput
     {
         var results = new List<CrankResult>();
         foreach (var (path, type, scenarios) in ExpectedScenarios)
-        foreach (var (filename, scenario) in scenarios)
-        {
-            var fileName = source.Path / path / filename;
-            try
+            foreach (var (filename, scenario) in scenarios)
             {
-                using var file = File.OpenRead(fileName);
-                var node = JsonNode.Parse(file)!;
-                var requests = (double)node["jobResults"]!["jobs"]!["load"]!["results"]!["bombardier/requests"];
-                results.Add(new(source, type, scenario, (long)requests));
+                var fileName = source.Path / path / filename;
+                try
+                {
+                    using var file = File.OpenRead(fileName);
+                    var node = JsonNode.Parse(file)!;
+                    var requests = (double)node["jobResults"]!["jobs"]!["load"]!["results"]!["bombardier/requests"];
+                    results.Add(new(source, type, scenario, (long)requests));
+                }
+                catch (Exception ex)
+                {
+                    Logger.Information($"Error reading {fileName}: {ex.Message}. Skipping");
+                }
             }
-            catch (Exception ex)
-            {
-                Logger.Information($"Error reading {fileName}: {ex.Message}. Skipping");
-            }
-        }
 
         return results;
     }
@@ -203,6 +211,10 @@ public class CompareThroughput
         NoAttack,
         AttackNoBlocking,
         AttackBlocking,
+        IastDefault,
+        IastFull,
+        IastVulnerabilityDisabled,
+        IastVulnerabilityEnabled,
     }
 }
 
