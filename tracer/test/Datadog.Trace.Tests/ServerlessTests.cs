@@ -13,10 +13,11 @@ using Xunit;
 
 namespace Datadog.Trace.Tests
 {
+    [Collection(nameof(EnvironmentVariablesTestCollection))]
     public class ServerlessTests : IDisposable
     {
-        private const string FunctionNameEnvVar = "AWS_LAMBDA_FUNCTION_NAME";
-        private const string HandlerEnvVar = "_HANDLER";
+        private const string FunctionNameEnvVar = LambdaMetadata.FunctionNameEnvVar;
+        private const string HandlerEnvVar = LambdaMetadata.HandlerEnvVar;
         private readonly Dictionary<string, string> _originalEnvVars;
 
         public ServerlessTests()
