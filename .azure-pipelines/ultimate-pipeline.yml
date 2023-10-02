@@ -3989,6 +3989,7 @@ stages:
 - stage: throughput_appsec
   condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, merge_commit_id]
+  condition: or(contains(github.event.pull_request.labels.*.name, 'area:asm'), contains(github.event.pull_request.labels.*.name, 'area:asm-iast'))
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
