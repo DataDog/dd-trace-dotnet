@@ -19,7 +19,7 @@ namespace Datadog.Trace.Debugger
         public const int DefaultMaxNumberOfFieldsToCopy = 20;
 
         private const int DefaultUploadBatchSize = 100;
-        private const int DefaultDiagnosticsIntervalSeconds = 5;
+        private const int DefaultDiagnosticsIntervalSeconds = 60 * 60; // 1 hour
         private const int DefaultUploadFlushIntervalMilliseconds = 0;
 
         public DebuggerSettings(IConfigurationSource? source, IConfigurationTelemetry telemetry)
