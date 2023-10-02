@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -46,7 +46,8 @@
           "location": {
             "method": "Recursive",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -109,7 +110,8 @@
           "location": {
             "method": "Recursive",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -172,7 +174,8 @@
           "location": {
             "method": "Recursive",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncRecursiveCall"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

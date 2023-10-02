@@ -403,7 +403,7 @@
       }
     ],
     notCapturedReason: collectionSize,
-    type: Int32[],
-    value: count: 2000
+    size: 2000,
+    type: Int32[]
   }
 }

@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -16,7 +16,8 @@
             "lines": [
               26
             ]
-          }
+          },
+          "version": 0
         },
         "timestamp": "ScrubbedValue"
       }
