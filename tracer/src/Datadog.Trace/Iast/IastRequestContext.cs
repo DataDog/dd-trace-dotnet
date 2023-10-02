@@ -70,16 +70,22 @@ internal class IastRequestContext
         }
     }
 
-    internal void AddRequestBody(object body, object? bodyExtracted)
+    internal void AddRequestBody(object? body, object? bodyExtracted)
     {
         try
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
+
             if (bodyExtracted is null)
             {
+                if (body is null)
+                {
+                    return;
+                }
+
                 bodyExtracted = ObjectExtractor.Extract(body);
             }
 
-            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
             AddExtractedBody(bodyExtracted, null);
         }
         catch
