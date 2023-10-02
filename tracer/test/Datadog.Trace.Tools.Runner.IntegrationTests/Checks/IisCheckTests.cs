@@ -203,6 +203,28 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
             console.Output.Should().Contain(Resources.CouldNotFindIisApplication("sample", "/dummy"));
         }
 
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public async Task IncorrectlyConfiguredAppPool()
+        {
+            EnsureWindowsAndX64();
+
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+
+            using var console = ConsoleHelper.Redirect();
+
+            var result = await CheckIisCommand.ExecuteAsync(
+                         "sample",
+                         iisFixture.IisExpress.ConfigFile,
+                         iisFixture.IisExpress.Process.Id,
+                         MockRegistryService());
+
+            result.Should().Be(1);
+            console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
+        }
+
         private static void EnsureWindowsAndX64()
         {
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)
