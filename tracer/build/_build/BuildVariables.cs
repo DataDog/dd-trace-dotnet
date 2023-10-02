@@ -7,11 +7,21 @@ partial class Build
     public void AddDebuggerEnvironmentVariables(Dictionary<string, string> envVars)
     {
         AddTracerEnvironmentVariables(envVars);
-        envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
-        envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+
+        if (!DisableDynamicInstrumentationProduct)
+        {
+            envVars.Add("DD_DYNAMIC_INSTRUMENTATION_ENABLED", "1");
+            envVars.Add("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL", "1");
+        }
+
         envVars.Add("COMPlus_DbgEnableMiniDump", "1");
         envVars.Add("COMPlus_DbgMiniDumpType", "4");
         envVars.Add("VSTEST_CONNECTION_TIMEOUT", "200");
+
+        if (EnableFaultTolerantInstrumentation)
+        {
+            envVars.Add("DD_INTERNAL_FAULT_TOLERANT_INSTRUMENTATION_ENABLED", "true");
+        }
     }
 
     public void AddContinuousProfilerEnvironmentVariables(Dictionary<string, string> envVars)

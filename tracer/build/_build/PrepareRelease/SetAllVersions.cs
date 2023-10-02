@@ -371,6 +371,9 @@ namespace PrepareRelease
                     "../profiler/src/ProfilerEngine/ProductVersion.props",
                     PropsVersionReplace);
 
+                SynchronizeVersion("build/artifacts/dd-dotnet.sh",
+                    text => FullVersionReplace(text, "."));
+
                 // Deployment updates
                 SynchronizeVersion(
                     "../shared/src/msi-installer/WindowsInstaller.wixproj",

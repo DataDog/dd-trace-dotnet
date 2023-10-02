@@ -22,6 +22,12 @@ partial class Build
     [Parameter("Indicates name of exploration test to run. If not specified, will run all tests sequentially.")]
     readonly ExplorationTestName? ExplorationTestName;
 
+    [Parameter("Indicates if the Fault-Tolerant Instrumentation should be turned on.")]
+    readonly bool EnableFaultTolerantInstrumentation;
+
+    [Parameter("Indicates if the Dynamic Instrumentation product should be disabled.")]
+    readonly bool DisableDynamicInstrumentationProduct;
+
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
     readonly bool ExplorationTestCloneLatest;
@@ -193,24 +199,17 @@ partial class Build
 
     void RunUnitTest(ExplorationTestDescription testDescription, Dictionary<string, string> envVariables)
     {
+        if (!testDescription.ShouldRun)
+        {
+            Logger.Information($"Skipping the exploration test {testDescription.Name}.");
+            return;
+        }
+
         Logger.Information($"Running exploration test {testDescription.Name}.");
 
         if (Framework != null && !testDescription.IsFrameworkSupported(Framework))
         {
             throw new InvalidOperationException($"The framework '{Framework}' is not listed in the project's target frameworks of {testDescription.Name}");
-        }
-
-        if (testDescription.Name is global::ExplorationTestName.paket)
-        {
-            Logger.Information("The Exploration Tests: paket, are disabled currently in CI because it fails due to poor environment isolation.");
-            return;
-        }
-
-        if (ExplorationTestUseCase == global::ExplorationTestUseCase.Debugger &&
-            testDescription.Name is global::ExplorationTestName.protobuf or global::ExplorationTestName.cake or global::ExplorationTestName.paket or global::ExplorationTestName.polly)
-        {
-            Logger.Information("The Exploration Tests: protobuf, cake, paket, polly are disabled for the Live Debugger.");
-            return;
         }
 
         if (Framework == null)
@@ -307,6 +306,8 @@ class ExplorationTestDescription
     public bool IsTestedByVSTest { get; set; }
     public string[] TestsToIgnore { get; set; }
 
+    public bool ShouldRun { get; set; } = true;
+
     public string GetTestTargetPath(AbsolutePath explorationTestsDirectory, TargetFramework framework, Configuration buildConfiguration)
     {
         var projectPath = $"{explorationTestsDirectory}/{Name}/{PathToUnitTestProject}";
@@ -362,6 +363,7 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {
@@ -388,8 +390,9 @@ class ExplorationTestDescription
                 GitRepositoryTag = "6.2.1",
                 IsGitShallowCloneSupported = true,
                 PathToUnitTestProject = "tests/Paket.Tests",
-                TestsToIgnore = new[] { "Loading assembly metadata works" },
+                TestsToIgnore = new[] { "Loading assembly metadata works", "task priorization works" /* fails on timing */, "should normalize home path", "should parse config with home path in cache" },
                 SupportedFrameworks = new[] { TargetFramework.NET461 },
+                ShouldRun = false // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.RestSharp => new ExplorationTestDescription()
             {

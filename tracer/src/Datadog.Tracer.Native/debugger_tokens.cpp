@@ -301,7 +301,8 @@ int DebuggerTokens::GetAdditionalLocalsCount()
     return 3;
 }
 
-void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+void DebuggerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                         ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the calltarget state of line probe type buffer and size
     unsigned callTargetStateTypeRefBuffer;
