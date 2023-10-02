@@ -634,6 +634,16 @@
       "send_to_user": false,
       "user_tags":[]
     },
+    "endpoint_payload.dropped": {
+      "tags": [
+        "endpoint"
+      ],
+      "metric_type": "count",
+      "data_type": "requests",
+      "description": "The number of payloads dropped after all retries, tagged by endpoint type (possible values are: `endpoint:test_cycle` or `endpoint:code_coverage`)",
+      "send_to_user": false,
+      "user_tags":[]
+    },
     "endpoint_payload.requests_ms": {
       "tags": [
         "endpoint"
