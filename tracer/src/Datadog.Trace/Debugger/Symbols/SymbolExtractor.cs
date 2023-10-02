@@ -419,7 +419,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var methodAttributes = method.Attributes & StaticFinalVirtual;
             var methodLanguageSpecifics = new LanguageSpecifics
             {
-                // ReturnType = method.ReturnType.FullName, // decode signature
+                ReturnType = method.DecodeSignature(new TypeProvider(), 0).ReturnType.Name,
                 AccessModifiers = (method.Attributes & MethodAttributes.MemberAccessMask) > 0 ? new[] { _methodAccess[Convert.ToUInt16(method.Attributes & MethodAttributes.MemberAccessMask)] } : null,
                 Annotations = methodAttributes > 0 ? new[] { _methodAttributes[Convert.ToUInt16(methodAttributes)] } : null
             };
@@ -628,17 +628,23 @@ namespace Datadog.Trace.Debugger.Symbols
 
             var argsSymbol = ArrayPool<Symbol>.Shared.Rent(parameters.Count);
             int index = 0;
+
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
                 argsSymbol[index] = new Symbol
                 {
                     Name = MetadataReader.GetString(parameterDef.Name),
-                    // Type =  parameterDef.Type.FullName, // ??
                     SymbolType = SymbolType.Arg,
                     Line = UnknownStartLine
                 };
                 index++;
+            }
+
+            var methodSig = method.DecodeSignature(new TypeProvider(), 0);
+            for (int i = 0; i < argsSymbol.Length; i++)
+            {
+                argsSymbol[i].Type = methodSig.ParameterTypes[i].Name;
             }
 
             return argsSymbol;

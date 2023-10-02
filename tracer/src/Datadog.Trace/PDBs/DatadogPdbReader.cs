@@ -42,11 +42,10 @@ namespace Datadog.Trace.Pdb
             PdbFullPath = pdbFullPath;
         }
 
-        private DatadogPdbReader(PEReader peReader, MetadataReader metadataReader, MetadataReaderProvider? metadataReaderProvider, string? pdbFullPath)
+        private DatadogPdbReader(PEReader peReader, MetadataReader metadataReader, string? pdbFullPath)
         {
             PEReader = peReader;
             MetadataReader = metadataReader;
-            MetadataReaderProvider = metadataReaderProvider;
             PdbFullPath = pdbFullPath;
         }
 
@@ -55,8 +54,6 @@ namespace Datadog.Trace.Pdb
         internal string? PdbFullPath { get; }
 
         internal MetadataReader MetadataReader { get; }
-
-        internal MetadataReaderProvider? MetadataReaderProvider { get; }
 
         internal PEReader? PEReader { get; }
 
@@ -69,7 +66,7 @@ namespace Datadog.Trace.Pdb
             if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
             {
                 metadataReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                return new DatadogPdbReader(peReader, metadataReader, metadataReaderProvider, pdbPath);
+                return new DatadogPdbReader(peReader, metadataReader, pdbPath);
             }
 
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });

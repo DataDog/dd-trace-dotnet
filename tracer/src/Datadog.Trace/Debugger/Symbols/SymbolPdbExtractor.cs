@@ -6,10 +6,11 @@
 #nullable enable
 using System;
 using System.Linq;
+using Datadog.System.Buffers;
 using Datadog.System.Reflection.Metadata;
+using Datadog.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger.Symbols;
@@ -66,106 +67,59 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return methodScope;
     }
 
-    public void GetLocalVariables(MethodDefinition method)
+    private StandaloneSignature GetLocalSignature(MethodDefinition method)
     {
         var methodBodyBlock = _pdbReader.PEReader?.GetMethodBody(method.RelativeVirtualAddress);
-        var methodDebugInfo = _pdbReader.MetadataReader.GetMethodDebugInformation(method.Handle);
-        foreach (var localScope in MetadataReader.GetLocalScopes(method.Handle))
-        {
-            MetadataReader.GetLocalVariableRange(localScope, out int first, out int last);
-            foreach (var localVariable in MetadataReader.LocalVariables)
-            {
-                // localVariable.RowId
-            }
+        return MetadataReader.GetStandaloneSignature(methodBodyBlock!.LocalSignature);
+    }
 
-            // MetadataReader.LocalVariableTable.GetName(MetadataReader.LocalVariables)
+    private int GetLocalVariablesCount(MethodDefinition method)
+    {
+        var signature = GetLocalSignature(method);
+        BlobReader blobReader = MetadataReader.GetBlobReader(signature.Signature);
+
+        if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
+        {
+            int variableCount = blobReader.ReadCompressedInteger();
+            return variableCount;
         }
 
-        MetadataReader.GetLocalScopes(method.Handle);
-        foreach (var sequencePoint in methodDebugInfo.GetSequencePoints())
-        {
-            // var localScopes = _pdbReader.MetadataReader.GetLocalScopes(methodDebugInfo.);
-            // foreach (var localScope in localScopes)
-            // {
-            // _pdbReader.PEReader.GetSectionData()
-            // foreach (var localVariableHandle in localScope..GetLocalVariables())
-            // {
-            // var localVariable = pdbReader.GetLocalVariable(localVariableHandle);
-            // Console.WriteLine($"Index: {localVariable.Index}, Name: {pdbReader.GetString(localVariable.Name)}");
-            // }
-            // }
-        }
-
-        // var localVarSig = MetadataReader.GetLocalVariable(methodBodyBlock.LocalSignature);
-        // MethodBodyBlock methodBody = MetadataReader.MethodDefTable..GetMethodImplementation(method.Handle).MethodBody;
-        // StandAloneSignature signature = MetadataReader.GetStandaloneSignature(methodBody.LocalSignature);
-
-        // BlobReader blobReader = MetadataReader.GetBlobReader(signature.Signature);
-
-        // if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
-        // {
-        // int variableCount = blobReader.ReadCompressedInteger();
-
-        // for (int i = 0; i < variableCount; i++)
-        // {
-        // SignatureTypeCode typeCode = (SignatureTypeCode)blobReader.ReadCompressedInteger();
-
-        // For simple types, the type code maps directly to the variable type.
-        // For other types, more detailed parsing will be necessary.
-        // }
-        // }
+        return 0;
     }
 
     private Symbol[]? GetLocalsSymbol(MethodDefinition method, int startLine, SymbolMethod symbolMethod, out int localsCount)
     {
         localsCount = 0;
-        var methodBody = _pdbReader.PEReader?.GetMethodBody(method.RelativeVirtualAddress);
-        // if (method.Body is not { Variables.Count: > 0 })
-        // {
-        // return null;
-        // }
-
-        var methodLocals = new int[1]; // methodBody.Variables;
-        var localsSymbol = new Symbol[methodLocals.Length];
-        var allMethodScopes = GetAllScopes(symbolMethod);
-        Symbol[]? allLocals = null;
-
-        for (var k = 0; k < allMethodScopes.Count; k++)
+        var methodLocalsCount = GetLocalVariablesCount(method);
+        if (methodLocalsCount == 0)
         {
-            var currentScope = allMethodScopes[k];
-            for (var l = 0; l < currentScope.Locals.Count; l++)
+            return null;
+        }
+
+        var localsSymbol = ArrayPool<Symbol>.Shared.Rent(methodLocalsCount);
+        var signature = GetLocalSignature(method);
+        var localTypes = signature.DecodeLocalSignature(new TypeProvider(), 0);
+
+        Symbol[]? allLocals = null;
+        foreach (var scopeHandle in MetadataReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
+        {
+            var localScope = MetadataReader.GetLocalScope(scopeHandle);
+            foreach (var localVarHandle in localScope.GetLocalVariables())
             {
-                var localSymbol = currentScope.Locals[l];
-                if (localSymbol.Index > methodLocals.Length || string.IsNullOrEmpty(localSymbol.Name))
+                var local = MetadataReader.GetLocalVariable(localVarHandle);
+                if (local.Index > methodLocalsCount || string.IsNullOrEmpty(MetadataReader.GetString(local.Name)))
                 {
                     continue;
                 }
 
                 var line = UnknownEndLineEntireScope;
-                for (var m = 0; m < symbolMethod.SequencePoints.Count; m++)
+                foreach (var sequencePoint in MetadataReader.GetMethodDebugInformation(method.Handle.ToDebugInformationHandle()).GetSequencePoints())
                 {
-                    if (symbolMethod.SequencePoints[m].Offset >= currentScope.StartOffset)
+                    if (sequencePoint.Offset >= localScope.StartOffset)
                     {
-                        line = symbolMethod.SequencePoints[m].Line;
+                        line = sequencePoint.StartLine;
                         break;
                     }
-                }
-
-                Local? local = null;
-                // for (var i = 0; i < methodLocals.Length; i++)
-                // {
-                // if (methodLocals[i].Index != localSymbol.Index)
-                // {
-                // continue;
-                // }
-
-                // local = methodLocals[i];
-                // break;
-                // }
-
-                if (local == null)
-                {
-                    continue;
                 }
 
                 // if (IsCompilerGeneratedAttributeDefined(local.Type.ToTypeDefOrRef().CustomAttributes))
@@ -175,8 +129,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
 
                 localsSymbol[localsCount] = new Symbol
                 {
-                    Name = localSymbol.Name,
-                    Type = local.Type?.FullName,
+                    Name = MetadataReader.GetString(local.Name),
+                    Type = localTypes[local.Index].Name,
                     SymbolType = SymbolType.Local,
                     Line = line
                 };
@@ -216,7 +170,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 allLocals[localsCount] = new Symbol
                 {
                     Name = localName,
-                    // Type = field.FieldType.FullName,
+                    Type = field.DecodeSignature(new TypeProvider(), 0).Name,
                     SymbolType = SymbolType.Local,
                     Line = startLine
                 };
