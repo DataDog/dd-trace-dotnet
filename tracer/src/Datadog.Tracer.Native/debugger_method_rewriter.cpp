@@ -2,12 +2,16 @@
 #include "debugger_rejit_handler_module_method.h"
 #include "cor_profiler.h"
 #include "debugger_constants.h"
+#include "debugger_environment_variables_util.h"
 #include "il_rewriter_wrapper.h"
 #include "logger.h"
 #include "stats.h"
 #include "version.h"
 #include "environment_variables_util.h"
 #include "debugger_probes_tracker.h"
+#include "fault_tolerant_envionrment_variables_util.h"
+#include "fault_tolerant_tracker.h"
+#include "instrumenting_product.h"
 
 namespace debugger
 {
@@ -191,6 +195,7 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
                                                       ILInstr** outLoadArgumentInstr,
                                                       CallTargetTokens* callTargetTokens)
 {
+
     // *** Load instance into the stack (if not static)
     if (isStatic)
     {
@@ -250,8 +255,11 @@ HRESULT DebuggerMethodRewriter::LoadInstanceIntoStack(FunctionInfo* caller, bool
     return S_OK;
 }
 
-HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler)
+HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, RejitHandlerModuleMethod* methodHandler, ICorProfilerFunctionControl* pFunctionControl)
 {
+    const auto moduleId = moduleHandler->GetModuleId();
+    const auto methodId = methodHandler->GetMethodDef();
+
     const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
 
     if (debuggerMethodHandler->GetProbes().empty())
@@ -277,7 +285,8 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         return S_OK;
     }
 
-    Logger::Info("About to apply debugger instrumentation on ", probes.size(), " probes for methodDef: ", methodHandler->GetMethodDef());
+    Logger::Info("About to apply debugger instrumentation on ", probes.size(),
+                 " probes for methodDef: ", methodHandler->GetMethodDef());
 
     for (const auto& probe : probes)
     {
@@ -305,8 +314,10 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
 
     if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
     {
-        // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation while the method got executed.
-        Logger::Info("There are no method probes, lines probes and span probes for methodDef", methodHandler->GetMethodDef());
+        // No lines probes & method probes. Should not happen unless the user requested to undo the instrumentation
+        // while the method got executed.
+        Logger::Info("There are no method probes, lines probes and span probes for methodDef",
+                     methodHandler->GetMethodDef());
         return S_OK;
     }
     else
@@ -314,10 +325,76 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler, Rejit
         Logger::Info("Applying ", methodProbes.size(), " method probes, ", lineProbes.size(), " line probes and ",
                      spanOnMethodProbes.size(), " span probes on methodDef: ", methodHandler->GetMethodDef());
 
-        const auto hr = Rewrite(moduleHandler, methodHandler, methodProbes, lineProbes, spanOnMethodProbes);
+        auto hr = Rewrite(moduleHandler, methodHandler, pFunctionControl, methodProbes, lineProbes, spanOnMethodProbes);
+        return FAILED(hr) ? S_FALSE : S_OK;
+    }
+}
+
+InstrumentingProducts DebuggerMethodRewriter::GetInstrumentingProduct(RejitHandlerModule* moduleHandler,
+    RejitHandlerModuleMethod* methodHandler)
+{
+    return InstrumentingProducts::DynamicInstrumentation;
+}
+
+WSTRING DebuggerMethodRewriter::GetInstrumentationId(RejitHandlerModule* moduleHandler,
+                                                          RejitHandlerModuleMethod* methodHandler)
+{
+    const auto debuggerMethodHandler = dynamic_cast<DebuggerRejitHandlerModuleMethod*>(methodHandler);
+
+    if (debuggerMethodHandler == nullptr)
+    {
+        return EmptyWStr;
     }
 
-    return S_OK;
+    const auto& probes = debuggerMethodHandler->GetProbes();
+
+    if (probes.empty())
+    {
+        return EmptyWStr;
+    }
+
+    MethodProbeDefinitions methodProbes;
+    LineProbeDefinitions lineProbes;
+    SpanProbeOnMethodDefinitions spanOnMethodProbes;
+
+    for (const auto& probe : probes)
+    {
+        const auto spanProbe = std::dynamic_pointer_cast<SpanProbeOnMethodDefinition>(probe);
+        if (spanProbe != nullptr)
+        {
+            spanOnMethodProbes.emplace_back(spanProbe);
+            continue;
+        }
+
+        const auto methodProbe = std::dynamic_pointer_cast<MethodProbeDefinition>(probe);
+        if (methodProbe != nullptr)
+        {
+            methodProbes.emplace_back(methodProbe);
+            continue;
+        }
+
+        const auto lineProbe = std::dynamic_pointer_cast<LineProbeDefinition>(probe);
+        if (lineProbe != nullptr)
+        {
+            lineProbes.emplace_back(lineProbe);
+            continue;
+        }
+    }
+
+    if (methodProbes.empty() && lineProbes.empty() && spanOnMethodProbes.empty())
+    {
+        return EmptyWStr;
+    }
+
+    std::wstringstream instrumentationIdStream;
+    instrumentationIdStream << WStr("M") << methodProbes.size() << WStr("L") << lineProbes.size() << WStr("S")
+                            << spanOnMethodProbes.size();
+
+    // Convert std::wstring to WSTRING
+    std::wstring temp = instrumentationIdStream.str();
+    WSTRING converted(temp.begin(), temp.end());
+
+    return converted;
 }
 
 /// <summary>
@@ -597,7 +674,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     IfFailRet(hr);
 
     ILInstr* loadStrInstr;
-    for (auto methodIndex = 0; methodIndex < methodProbes.size(); methodIndex++)
+    for (auto methodIndex = 0; methodIndex < static_cast<int>(methodProbes.size()); methodIndex++)
     {
         auto probeId = methodProbes[methodIndex]->probeId;
 
@@ -616,7 +693,7 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
     hr = debuggerTokens->WriteRentArray(&rewriterWrapper, intType, &beginCallInstruction);
     IfFailRet(hr);
 
-    for (auto methodIndex = 0; methodIndex < methodProbes.size(); methodIndex++)
+    for (auto methodIndex = 0; methodIndex < static_cast<int>(methodProbes.size()); methodIndex++)
     {
         auto probeId = methodProbes[methodIndex]->probeId;
 
@@ -843,37 +920,32 @@ HRESULT DebuggerMethodRewriter::ApplyMethodProbe(
         rewriterWrapper.LoadLocal(returnValueIndex);
     }
 
-    // Changes all returns to a LEAVE.S (including branches to `ret`)
+    // Changes all returns to a LEAVE.S
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
     {
         if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
         {
-            if (!isVoid)
+            if (isVoid)
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
+                pInstr->m_opcode = CEE_LEAVE_S;
+                pInstr->m_pTarget = endFinallyInstr->m_pNext;
             }
-            pInstr->m_opcode = CEE_LEAVE_S;
-            pInstr->m_pTarget = endFinallyInstr->m_pNext;
-        }
-        else if (ILRewriter::IsBranchTarget(pInstr) && pInstr->m_pTarget->m_opcode == CEE_RET)
-        {
-            if (!isVoid)
+            else
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
-
-                // Unconditional branching instructions (`br`) do not pop any value from the top of the stack.
-                // Other conditional branches, though, do mutate the evaluation stack (e.g `brtrue` pops
-                // the top of the stack and jumps to the target if it's non-zero/true).
-                // If we are dealing with conditional branches that changes the evaluation stack, we fix
-                // the evaluation stack accordingly by loading it back in case we are not branching.
-                if (pInstr->m_opcode != CEE_BR && pInstr->m_opcode != CEE_BR_S &&
-                    pInstr->m_pNext != endFinallyInstr->m_pNext)
+                pInstr->m_opcode = CEE_STLOC;
+                pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                if (pInstr->m_Arg16 < 0)
                 {
-                    rewriterWrapper.SetILPosition(pInstr->m_pNext);
-                    rewriterWrapper.LoadLocal(returnValueIndex);
+                    // We check if the conversion returned negative numbers.
+                    Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower "
+                                  "than zero.");
+                    return S_FALSE;
                 }
+
+                ILInstr* leaveInstr = rewriter.NewILInstr();
+                leaveInstr->m_opcode = CEE_LEAVE_S;
+                leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                rewriter.InsertAfter(pInstr, leaveInstr);
             }
         }
     }
@@ -1054,37 +1126,32 @@ HRESULT DebuggerMethodRewriter::ApplyMethodSpanProbe(
         rewriterWrapper.LoadLocal(returnValueIndex);
     }
 
-    // Changes all returns to a LEAVE.S (including branches to `ret`)
+    // Changes all returns to a LEAVE.S
     for (ILInstr* pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
     {
         if (pInstr->m_opcode == CEE_RET && pInstr != methodReturnInstr)
         {
-            if (!isVoid)
+            if (isVoid)
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
+                pInstr->m_opcode = CEE_LEAVE_S;
+                pInstr->m_pTarget = endFinallyInstr->m_pNext;
             }
-            pInstr->m_opcode = CEE_LEAVE_S;
-            pInstr->m_pTarget = endFinallyInstr->m_pNext;
-        }
-        else if (ILRewriter::IsBranchTarget(pInstr) && pInstr->m_pTarget->m_opcode == CEE_RET)
-        {
-            if (!isVoid)
+            else
             {
-                rewriterWrapper.SetILPosition(pInstr);
-                rewriterWrapper.StLocal(returnValueIndex);
-
-                // Unconditional branching instructions (`br`) do not pop any value from the top of the stack.
-                // Other conditional branches, though, do mutate the evaluation stack (e.g `brtrue` pops
-                // the top of the stack and jumps to the target if it's non-zero/true).
-                // If we are dealing with conditional branches that changes the evaluation stack, we fix
-                // the evaluation stack accordingly by loading it back in case we are not branching.
-                if (pInstr->m_opcode != CEE_BR && pInstr->m_opcode != CEE_BR_S &&
-                    pInstr->m_pNext != endFinallyInstr->m_pNext)
+                pInstr->m_opcode = CEE_STLOC;
+                pInstr->m_Arg16 = static_cast<INT16>(returnValueIndex);
+                if (pInstr->m_Arg16 < 0)
                 {
-                    rewriterWrapper.SetILPosition(pInstr->m_pNext);
-                    rewriterWrapper.LoadLocal(returnValueIndex);
+                    // We check if the conversion returned negative numbers.
+                    Logger::Error("The local variable index for the return value ('returnValueIndex') cannot be lower "
+                                  "than zero.");
+                    return S_FALSE;
                 }
+
+                ILInstr* leaveInstr = rewriter.NewILInstr();
+                leaveInstr->m_opcode = CEE_LEAVE_S;
+                leaveInstr->m_pTarget = endFinallyInstr->m_pNext;
+                rewriter.InsertAfter(pInstr, leaveInstr);
             }
         }
     }
@@ -1583,7 +1650,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     hr = debugger_tokens->WriteRentArray(&rewriterWrapper, stringType, &beginCallInstruction);
     IfFailRet(hr);
 
-    for (auto methodIndex = 0; methodIndex < methodProbes.size(); methodIndex++)
+    for (auto methodIndex = 0; methodIndex < static_cast<int>(methodProbes.size()); methodIndex++)
     {
         auto probeId = methodProbes[methodIndex]->probeId;
 
@@ -1603,7 +1670,7 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodProbe(
     hr = debugger_tokens->WriteRentArray(&rewriterWrapper, intType, &beginCallInstruction);
     IfFailRet(hr);
 
-    for (auto methodIndex = 0; methodIndex < methodProbes.size(); methodIndex++)
+    for (auto methodIndex = 0; methodIndex < static_cast<int>(methodProbes.size()); methodIndex++)
     {
         auto probeId = methodProbes[methodIndex]->probeId;
 
@@ -1837,6 +1904,18 @@ HRESULT DebuggerMethodRewriter::ApplyAsyncMethodSpanProbe(
     return S_OK;
 }
 
+bool DebuggerMethodRewriter::DoesILContainUnsupportedInstructions(ILRewriter& rewriter)
+{
+    for (auto pInstr = rewriter.GetILList()->m_pNext; pInstr != rewriter.GetILList(); pInstr = pInstr->m_pNext)
+    {
+        if (pInstr->m_opcode == CEE_JMP || pInstr->m_opcode == CEE_TAILCALL /* F# */ )
+        {
+            return true;
+        }
+    }
+    return false;
+}
+
 HRESULT DebuggerMethodRewriter::IsTypeImplementIAsyncStateMachine(const ComPtr<IMetaDataImport2>& metadataImport,
                                                                   const ULONG32 typeToken, bool& isTypeImplementIAsyncStateMachine)
 {
@@ -1981,6 +2060,7 @@ void DebuggerMethodRewriter::MarkAllSpanOnMethodProbesAsError(SpanProbeOnMethodD
 
 HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                                         RejitHandlerModuleMethod* methodHandler,
+                                        ICorProfilerFunctionControl* pFunctionControl,
                                         MethodProbeDefinitions& methodProbes,
                                         LineProbeDefinitions& lineProbes,
                                         SpanProbeOnMethodDefinitions& spanOnMethodProbes) const
@@ -1997,6 +2077,14 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     std::vector<TypeSignature> methodArguments = caller->method_signature.GetMethodArguments();
     int numArgs = caller->method_signature.NumberOfArguments();
 
+    if (caller->type.name.rfind(L'@') != std::wstring::npos)
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite() Encountered a type with '@' in it's name - it's not supported since the realization of generic is non-deterministic (it does not contain the ` in it's name if it's a generic type)."
+                     "token=", function_token, " caller_name=", caller->type.name, ".", caller->name, "()");
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, general_error_message);
+        return E_NOTIMPL;
+    }
+    
     if (retTypeFlags & TypeFlagByRef || caller->name == WStr(".ctor") || caller->name == WStr(".cctor"))
     {
         // Internal Jira ticket: DEBUG-1063, DEBUG-1065.
@@ -2022,7 +2110,7 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
     }
 
     // *** Create rewriter
-    ILRewriter rewriter(m_corProfiler->info_, methodHandler->GetFunctionControl(), module_id, function_token);
+    ILRewriter rewriter(m_corProfiler->info_, pFunctionControl, module_id, function_token);
     auto hr = rewriter.Import();
     if (FAILED(hr))
     {
@@ -2030,6 +2118,21 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
                      function_token);
         MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, invalid_probe_failed_to_import_method_il);
         return E_FAIL;
+    }
+
+    if (caller->type.name.rfind(L'@') != std::wstring::npos)
+    {
+        auto errorMessage = type_contains_invalid_symbol + WStr("caller_name =") +
+                       caller->type.name + WStr(".") + caller->name;
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, errorMessage);
+        return E_NOTIMPL;
+    }
+
+    if (DoesILContainUnsupportedInstructions(rewriter))
+    {
+        Logger::Warn("*** DebuggerMethodRewriter::Rewrite(): IL contain unsupported instructions (i.e. jmp, tail)");
+        MarkAllProbesAsError(methodProbes, lineProbes, spanOnMethodProbes, non_supported_compiled_bytecode);
+        return E_NOTIMPL;
     }
 
     // *** Store the original il code text if the dump_il option is enabled.
@@ -2125,7 +2228,6 @@ HRESULT DebuggerMethodRewriter::Rewrite(RejitHandlerModule* moduleHandler,
         // byref-like can't exist as a generic param). Therefore, we only need to worry about non-async methods.
         bool isTypeIsByRefLike = false;
         hr = IsTypeByRefLike(module_metadata, methodReturnType, debuggerTokens->GetCorLibAssemblyRef(), isTypeIsByRefLike);
-
         if (FAILED(hr))
         {
             Logger::Warn("DebuggerRewriter: Failed to determine if the return value is By-Ref like.");

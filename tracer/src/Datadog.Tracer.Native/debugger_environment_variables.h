@@ -16,7 +16,6 @@ namespace environment
 
     // Determines if the Debugger is enabled.
     const WSTRING debugger_enabled = WStr("DD_DYNAMIC_INSTRUMENTATION_ENABLED");
-
 } // namespace environment
 } // namespace debugger
 

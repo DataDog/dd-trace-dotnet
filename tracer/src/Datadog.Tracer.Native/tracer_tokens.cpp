@@ -170,7 +170,8 @@ int TracerTokens::GetAdditionalLocalsCount()
     return 2;
 }
 
-void TracerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod)
+void TracerTokens::AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                                       ULONG& signatureSize, bool isAsyncMethod)
 {
     // Gets the exception type buffer and size
     unsigned exTypeRefBuffer;

@@ -109,6 +109,8 @@ public:
 
     HRESULT Import();
 
+    HRESULT Import(LPCBYTE pMethodBytes);
+
     HRESULT ImportIL(LPCBYTE pIL);
 
     HRESULT ImportEH(const COR_ILMETHOD_SECT_EH* pILEH, unsigned nEH);

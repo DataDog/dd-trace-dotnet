@@ -32,7 +32,6 @@ namespace debugger
         // Holds incremental number that is uniquely given for each and every instrumentation instance. If a probe is added/removed from
         // a specific method, then this method is going to get a new number.
         inline static std::atomic<int> _nextInstrumentationVersion{0};
-
     public:
         ProbesMetadataTracker() = default;
 
