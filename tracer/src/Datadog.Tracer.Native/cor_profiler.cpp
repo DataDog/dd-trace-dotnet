@@ -10,6 +10,7 @@
 #include "dllmain.h"
 #include "environment_variables.h"
 #include "environment_variables_util.h"
+#include "fault_tolerant_tracker.h"
 #include "il_rewriter.h"
 #include "il_rewriter_wrapper.h"
 #include "integration.h"
@@ -261,8 +262,10 @@ HRESULT STDMETHODCALLTYPE CorProfiler::Initialize(IUnknown* cor_profiler_info_un
                         : std::make_shared<RejitHandler>(this->info_, work_offloader);
     tracer_integration_preprocessor = std::make_unique<TracerRejitPreprocessor>(this, rejit_handler, work_offloader);
 
+    fault_tolerant_method_duplicator = std::make_shared<fault_tolerant::FaultTolerantMethodDuplicator>(this, rejit_handler, work_offloader);
+
     debugger_instrumentation_requester = std::make_unique<debugger::DebuggerProbesInstrumentationRequester>(
-        this, rejit_handler, work_offloader);
+        this, rejit_handler, work_offloader, fault_tolerant_method_duplicator);
 
     DWORD event_mask = COR_PRF_MONITOR_JIT_COMPILATION | COR_PRF_DISABLE_TRANSPARENCY_CHECKS_UNDER_FULL_TRUST |
                        COR_PRF_MONITOR_MODULE_LOADS | COR_PRF_MONITOR_ASSEMBLY_LOADS | COR_PRF_MONITOR_APPDOMAIN_LOADS |
@@ -877,10 +880,12 @@ HRESULT CorProfiler::TryRejitModule(ModuleID module_id, std::vector<ModuleID>& m
         RewritingPInvokeMaps(module_metadata, WStr("windows"), windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_windows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_windows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_windows_nativemethods_type);
 #else
         RewritingPInvokeMaps(module_metadata, WStr("non-windows"), nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("ASM"), appsec_nonwindows_nativemethods_type);
         RewritingPInvokeMaps(module_metadata, WStr("debugger"), debugger_nonwindows_nativemethods_type);
+        RewritingPInvokeMaps(module_metadata, WStr("fault_tolerant"), fault_tolerant_nonwindows_nativemethods_type);
 #endif // _WIN32
 
         call_target_bubble_up_exception_available = EnsureCallTargetBubbleUpExceptionTypeAvailable(module_metadata);
@@ -2120,6 +2125,26 @@ int CorProfiler::GetProbesStatuses(WCHAR** probeIds, int probeIdsLength, debugge
     }
 
     return 0;
+}
+
+//
+// Fault-Tolerant Instrumentation methods
+//
+void CorProfiler::ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId,
+    int products)
+{
+    const auto instrumentationIdString = shared::WSTRING(instrumentationId);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    fault_tolerant::FaultTolerantTracker::Instance()->AddSuccessfulInstrumentationId(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
+}
+
+bool CorProfiler::ShouldHeal(ModuleID moduleId, int methodToken, const WCHAR* instrumentationId, int products)
+{
+    const auto instrumentationIdString = shared::WSTRING(instrumentationId);
+    const auto instrumentingProducts = static_cast<InstrumentingProducts>(products);
+    const auto methodId = static_cast<mdMethodDef>(methodToken);
+    return fault_tolerant::FaultTolerantTracker::Instance()->ShouldHeal(moduleId, methodId, instrumentationIdString, instrumentingProducts, rejit_handler);
 }
 
 //
