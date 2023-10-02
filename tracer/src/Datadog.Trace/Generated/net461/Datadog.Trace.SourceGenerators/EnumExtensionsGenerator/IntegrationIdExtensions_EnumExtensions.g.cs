@@ -84,6 +84,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus => nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
             Datadog.Trace.Configuration.IntegrationId.SystemRandom => nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb => nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
+            Datadog.Trace.Configuration.IntegrationId.HardcodedSecret => nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
             _ => value.ToString(),
         };
 
@@ -151,6 +152,7 @@ internal static partial class IntegrationIdExtensions
             Datadog.Trace.Configuration.IntegrationId.AzureServiceBus,
             Datadog.Trace.Configuration.IntegrationId.SystemRandom,
             Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb,
+            Datadog.Trace.Configuration.IntegrationId.HardcodedSecret,
         };
 
     /// <summary>
@@ -218,5 +220,6 @@ internal static partial class IntegrationIdExtensions
             nameof(Datadog.Trace.Configuration.IntegrationId.AzureServiceBus),
             nameof(Datadog.Trace.Configuration.IntegrationId.SystemRandom),
             nameof(Datadog.Trace.Configuration.IntegrationId.AwsDynamoDb),
+            nameof(Datadog.Trace.Configuration.IntegrationId.HardcodedSecret),
         };
 }

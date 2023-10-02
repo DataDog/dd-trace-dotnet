@@ -32,6 +32,7 @@ internal class HardcodedSecretsAnalyzer
 
     public HardcodedSecretsAnalyzer()
     {
+        Log.Debug("HardcodedSecretsAnalyzer -> Init");
         LifetimeManager.Instance.AddShutdownTask(RunShutdown);
         _started = true;
         Task.Run(() => PoolingThread());
@@ -41,10 +42,12 @@ internal class HardcodedSecretsAnalyzer
     {
         try
         {
+            Log.Debug("HardcodedSecretsAnalyzer polling thread -> Started");
             while (_started)
             {
                 var userStrings = new UserStringInterop[100];
                 int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
+                Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
                 if (userStringLen > 0 && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
                     for (int x = 0; x < userStringLen; x++)
@@ -66,7 +69,7 @@ internal class HardcodedSecretsAnalyzer
                     if (userStringLen == userStrings.Length) { continue; }
                 }
 
-                _waitEvent.Wait(10_000);
+                _waitEvent.Wait(5_000);
             }
         }
         catch (Exception err)
@@ -74,6 +77,8 @@ internal class HardcodedSecretsAnalyzer
             _started = false;
             Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread. Disabling feature.");
         }
+
+        Log.Debug("HardcodedSecretsAnalyzer polling thread -> Exit");
     }
 
     internal static string? CheckSecret(string secret)
