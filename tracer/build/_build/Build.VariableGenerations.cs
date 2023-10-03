@@ -235,7 +235,7 @@ partial class Build : NukeBuild
             {
                 var baseImages = new []
                 {
-                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
                 };
 
@@ -260,7 +260,7 @@ partial class Build : NukeBuild
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
                 var baseImages = new []
                 {
-                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
                 };
                 var optimizations = new[] { "true", "false" };
@@ -340,7 +340,7 @@ partial class Build : NukeBuild
 
                 var baseImages = new []
                 {
-                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "debian", artifactSuffix: "linux-x64"), 
                     (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
                 };
 

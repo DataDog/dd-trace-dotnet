@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
+    <TargetFrameworks>net8.0;net7.0;net6.0;netcoreapp3.1;net472</TargetFrameworks>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
 
     <!-- benchmarkdotnet only support numberic values, not "latest"-->
