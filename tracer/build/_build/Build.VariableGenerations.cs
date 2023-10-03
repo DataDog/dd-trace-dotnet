@@ -32,6 +32,7 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
+                GenerateConditionVariableBasedOnGitChange("isAppSecChanged", new[] { "/tracer/src/Datadog.Trace/Iast", "/tracer/src/Datadog.Tracer.Native/iast", "/tracer/src/Datadog.Trace/AppSec" }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
@@ -69,7 +70,7 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
 
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
+                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
                     }
 
                     Logger.Information($"{variableName} - {isChanged}");

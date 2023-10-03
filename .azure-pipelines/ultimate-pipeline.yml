@@ -4024,7 +4024,6 @@ stages:
         ./run-appsec.sh "linux"
       displayName: Crank
       env:
-        GITHUB_TOKEN: $(GITHUB_TOKEN)
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
 
