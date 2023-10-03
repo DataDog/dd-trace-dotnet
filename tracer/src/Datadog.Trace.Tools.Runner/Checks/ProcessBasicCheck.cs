@@ -50,7 +50,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
             if (loaderModule == null)
             {
-                AnsiConsole.WriteLine(LoaderNotLoaded);
+                Utils.WriteWarning(LoaderNotLoaded);
             }
 
             if (nativeTracerModule == null)
@@ -69,7 +69,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                         nativeTracerVersion = null;
                     }
 
-                    AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
+                    Utils.WriteSuccess(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
             }
 
@@ -83,7 +83,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
             else if (tracerModules.Length == 1)
             {
                 var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
+                Utils.WriteSuccess(TracerVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {
@@ -153,6 +153,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
                 ok = false;
             }
+            else if (corProfiler == Utils.Profilerid)
+            {
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corProfilerKey, Utils.Profilerid));
+            }
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
 
@@ -164,6 +168,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
+            }
+            else if (corEnable == "1")
+            {
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corEnableKey, "1"));
             }
 
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
@@ -223,7 +231,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     if (ParseBooleanConfigurationValue(profilingEnabled))
                     {
-                        AnsiConsole.WriteLine(ContinuousProfilerEnabled);
+                        Utils.WriteSuccess(ContinuousProfilerEnabled);
                         isContinuousProfilerEnabled = true;
                     }
                     else
@@ -376,6 +384,10 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 {
                     Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
                     ok = false;
+                }
+                else
+                {
+                    Utils.WriteSuccess(CorrectlySetupEnvironment(key, profilerPath));
                 }
             }
             else if (requiredOnLinux)
