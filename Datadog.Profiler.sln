@@ -45,9 +45,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "DeployResources", "DeployRe
 	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.WindowsService01", "profiler\src\Demos\Samples.WindowsService01\Samples.WindowsService01.csproj", "{A2FCEEF7-975E-495C-AD0D-6A79176B3A44}"
-	ProjectSection(ProjectDependencies) = postProject
-		{0831386B-1A96-443F-B02B-C1D2B65FD845} = {0831386B-1A96-443F-B02B-C1D2B65FD845}
-	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".github", ".github", "{5E111292-1382-45DA-9BB6-3558CD529F3B}"
 EndProject
@@ -122,6 +119,11 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "dd-prof-etw-client", "profiler\src\Tools\ETW\dd-prof-etw\dd-prof-etw-client\dd-prof-etw-client.vcxproj", "{97DD3E31-0922-455E-A308-E0C798E84476}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tools", "Tools", "{C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Demos", "Demos", "{EACEAEE9-23A6-448F-A56E-39FE4E837FA6}"
+	ProjectSection(SolutionItems) = preProject
+		profiler\src\Demos\Directory.Build.props = profiler\src\Demos\Directory.Build.props
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -586,6 +588,7 @@ Global
 		{3FD8A994-8EDC-4EDD-95C5-E664D205A401} = {C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04}
 		{97DD3E31-0922-455E-A308-E0C798E84476} = {C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04}
 		{C1D06C89-E4D1-4E09-9AB6-35BB5A1DEB04} = {D2476213-2D12-43A8-966C-BCFCE098FD63}
+		{EACEAEE9-23A6-448F-A56E-39FE4E837FA6} = {3437D742-5FB6-4457-8291-1EBBADBEE1BC}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {917C242A-028D-42FD-BA47-E7317B6A36B4}
