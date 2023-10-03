@@ -241,6 +241,9 @@ partial class Build
             // If we're building for x64, build for x86 too
             var platforms = ArchitecturesForPlatformForTracer;
 
+            // Gitlab has issues with memory usage...
+            var isGitlab = Nuke.Common.CI.GitLab.GitLab.Instance is not null;
+
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
             MSBuild(s => s
@@ -249,7 +252,7 @@ partial class Build
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
                 .DisableRestore()
-                .SetMaxCpuCount(null)
+                .SetMaxCpuCount(isGitlab ? 1 : null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
