@@ -15,8 +15,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal static class Resources
     {
-        public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
-        public const string NetCoreRuntime = "Target process is running with .NET Core";
+        public const string NetFrameworkRuntime = "- Target process is running with .NET Framework";
+        public const string NetCoreRuntime = "- Target process is running with .NET Core";
         public const string RuntimeDetectionFailed = "- Failed to detect target process runtime, assuming .NET Framework";
         public const string BothRuntimesDetected = "- The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string LoaderNotLoaded = "- The native loader library is not loaded into the process";
@@ -33,19 +33,19 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string AspNetCoreProcessNotFound = "- Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "- Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
 
-        public const string TracingWithBundleProfilerPath = "Datadog.Trace.Bundle Nuget related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithInstaller = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
-        public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
+        public const string TracingWithBundleProfilerPath = "- Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
+        public const string TracingWithInstaller = "- Check failing with Installer/MSI, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TraceProgramNotFound = "- Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
-        public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
-        public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
-        public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
-        public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
-        public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
+        public const string ContinuousProfilerEnabled = "- DD_PROFILING_ENABLED is set.";
+        public const string ContinuousProfilerDisabled = "- The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
+        public const string ContinuousProfilerNotSet = "- DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
+        public const string ContinuousProfilerNotLoaded = "- The continuous profiler library is not loaded into the process.";
+        public const string ContinuousProfilerWithoutLoader = "- The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
 
         public const string LdPreloadNotSet = "- The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 
-        public static string TracerNotEnabled(string value) => $"- The value for DD_TRACE_ENABLED is set to {value}, to enable automatic tracing set it to true.";
+        public static string TracerNotEnabled(string value) => $"- Tracing is explicitly disabled through DD_TRACE_ENABLED with a value of {value}, to enable automatic tracing set it to true.";
 
         public static string ApiWrapperNotFound(string path) => $"- The environment variable LD_PRELOAD is set to '{path}' but the file could not be found. Check the Datadog .NET Profiler documentation to set it properly.";
 
@@ -119,8 +119,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         {
             var sb = new StringBuilder();
 
-            sb.AppendLine("Found multiple instances of Datadog.Trace.dll in the target process.");
-            sb.AppendLine("Detected versions:");
+            sb.AppendLine("- Found multiple instances of Datadog.Trace.dll in the target process.");
+            sb.AppendLine("- Detected versions:");
 
             // The ordering is not required but makes the output consistent for tests
             foreach (var version in versions.OrderBy(v => v))
