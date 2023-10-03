@@ -541,7 +541,6 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET7_0, "35-7.0"),
                             (publishFramework: TargetFramework.NET6_0, "34-6.0"),
                             (publishFramework: TargetFramework.NET5_0, "35-5.0"),
-                            (publishFramework: TargetFramework.NETCOREAPP3_1, "33-3.1"),
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
