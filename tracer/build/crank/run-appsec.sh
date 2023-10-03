@@ -39,6 +39,8 @@ repository="--application.source.repository $repo"
 commit="--application.source.branchOrCommit #$commit_sha"
 prdata=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -X GET "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
 
+echo "$prdata"
+
 if [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
@@ -51,14 +53,14 @@ if [ "$1" = "linux" ]; then
     rm -f appsec_iast_disabled_vulnerability.json
     rm -f appsec_iast_enabled_vulnerability.json
 
-    if hasLabel "area:asm" "$prdata" || hasLabel "area:asm-iast" "$prdata"; then
+    if hasLabel "\"area:asm\"" "$prdata" || hasLabel "\"area:asm-iast\"" "$prdata"; then
         crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
         dd-trace --crank-import="appsec_baseline.json"
     else
         echo "GitHub label 'area:asm' or 'area:asm-iast' not present. Skipping execution."
     fi
 
-    if hasLabel "area:asm" "$prdata"; then
+    if hasLabel "\"area:asm\"" "$prdata"; then
 
         echo "GitHub label 'area:asm' is present."
         crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile linux --json appsec_noattack.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
@@ -73,7 +75,7 @@ if [ "$1" = "linux" ]; then
         echo "GitHub label 'area:asm' is not present. Skipping execution."
     fi
 
-    if hasLabel "area:asm-iast" "$prdata"; then
+    if hasLabel "\"area:asm-iast\"" "$prdata"; then
 
         echo "GitHub label 'area:asm-iast' is present."
         crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_default --profile linux --json appsec_iast_enabled_default.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_default --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
