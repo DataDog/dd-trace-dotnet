@@ -28,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
         MethodName = MethodName,
         ReturnTypeName = ClrNames.Stream,
         MinimumVersion = WebRequestCommon.Major4,
-        MaximumVersion = WebRequestCommon.Major7,
+        MaximumVersion = WebRequestCommon.Major8,
         IntegrationName = WebRequestCommon.IntegrationName)]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
