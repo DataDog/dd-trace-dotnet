@@ -21,7 +21,6 @@ echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
 echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
 echo "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER=$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
-echo "$GITHUB_TOKEN"
 
 repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
@@ -40,8 +39,6 @@ repository="--application.source.repository $repo"
 commit="--application.source.branchOrCommit #$commit_sha"
 prdata=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -X GET "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
 
-echo "$prdata"
-
 if [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
 
@@ -55,6 +52,7 @@ if [ "$1" = "linux" ]; then
     rm -f appsec_iast_enabled_vulnerability.json
 
     if hasLabel "\"area:asm\"" "$prdata" || hasLabel "\"area:asm-iast\"" "$prdata"; then
+		echo "GitHub label 'area:asm' or 'area:asm-iast' are present."
         crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
         dd-trace --crank-import="appsec_baseline.json"
     else
