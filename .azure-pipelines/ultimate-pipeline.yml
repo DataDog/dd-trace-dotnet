@@ -4001,7 +4001,6 @@ stages:
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
-    if: contains(github.event.pull_request.labels.*.name, 'area:asm') || contains(github.event.pull_request.labels.*.name, 'area:asm-iast')
     timeoutInMinutes: 60
 
     steps:

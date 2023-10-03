@@ -22,7 +22,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
-
+                       GenerateASMVariables();
                        GenerateIntegrationTestsWindowsMatrices();
                        GenerateIntegrationTestsLinuxMatrices();
                        GenerateExplorationTestMatrices();
@@ -41,7 +41,7 @@ partial class Build : NukeBuild
                     "tracer/test/test-applications/debugger",
                     "tracer/build/_build/Build.Steps.Debugger.cs"
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });           
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
@@ -78,6 +78,49 @@ partial class Build : NukeBuild
                     EnvironmentInfo.SetVariable(variableName, variableValue);
                     AzurePipelines.Instance.SetOutputVariable(variableName, variableValue);
                 }
+            }
+
+            void GenerateASMVariables()
+            {
+                if (string.IsNullOrEmpty(GitHubToken))
+                {
+                    return;
+                }
+
+                var client = GetGitHubClient();
+
+                var pr = client.PullRequest.Get(
+                    owner: GitHubRepositoryOwner,
+                    name: GitHubRepositoryName,
+                    number: PullRequestNumber.Value).Result;
+
+                var labels = pr.Labels;
+                var asmLabel = false;
+                var iastLabel = false;
+
+                if (labels is not null)
+                {
+                    foreach (var label in labels)
+                    {
+                        Logger.Information("Label: " + label.Name);
+                        if (label.Name.Equals("area:asm", StringComparison.OrdinalIgnoreCase))
+                        {
+                            asmLabel = true;
+                        }
+
+                        if (label.Name.Equals("area:asm-iast", StringComparison.OrdinalIgnoreCase))
+                        {
+                            iastLabel = true;
+                        }
+                    }
+                }
+
+                Logger.Information("ASM label found: " + asmLabel.ToString());
+                Logger.Information("IAST label found: " + iastLabel.ToString());
+                EnvironmentInfo.SetVariable("isASM", asmLabel.ToString());
+                AzurePipelines.Instance.SetOutputVariable("isASM", asmLabel.ToString());
+                EnvironmentInfo.SetVariable("isIAST", iastLabel.ToString());
+                AzurePipelines.Instance.SetOutputVariable("isIAST", iastLabel.ToString());
             }
 
             void GenerateIntegrationTestsWindowsMatrices()
