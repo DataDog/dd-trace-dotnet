@@ -258,20 +258,18 @@ internal static partial class DotNetSettingsExtensions
         where T : ToolSettings
     {
         return toolSettings
-            .SetProcessEnvironmentVariable("MONGO_HOST", "localhost")
-            .SetProcessEnvironmentVariable("SERVICESTACK_REDIS_HOST", "localhost:6379")
-            .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_HOST", "localhost:6392,127.0.0.1:6390")
-            .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST", "localhost:6391")
-            .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
-            .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
-            .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
-            .SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", "Server=localhost;User=sa;Password=Strong!Passw0rd")
-            .SetProcessEnvironmentVariable("POSTGRES_HOST", "localhost")
-            .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
-            .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
-            .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
-            .SetProcessEnvironmentVariable("AWS_SQS_HOST", "localhost:4566")
-            .SetProcessEnvironmentVariable("AWS_SNS_HOST", "localhost:4566")
-            .SetProcessEnvironmentVariable("AWS_KINESIS_HOST", "localhost:4566");
+              .SetProcessEnvironmentVariable("MONGO_HOST", "localhost")
+              .SetProcessEnvironmentVariable("SERVICESTACK_REDIS_HOST", "localhost:6379")
+              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_HOST", "localhost:6392,127.0.0.1:6390")
+              .SetProcessEnvironmentVariable("STACKEXCHANGE_REDIS_SINGLE_HOST", "localhost:6391")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH7_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH6_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("ELASTICSEARCH5_HOST", "localhost:9200")
+              .SetProcessEnvironmentVariable("SQLSERVER_CONNECTION_STRING", "Server=localhost;User=sa;Password=Strong!Passw0rd")
+              .SetProcessEnvironmentVariable("POSTGRES_HOST", "localhost")
+              .SetProcessEnvironmentVariable("MYSQL_HOST", "localhost")
+              .SetProcessEnvironmentVariable("MYSQL_PORT", "3306")
+              .SetProcessEnvironmentVariable("RABBITMQ_HOST", "localhost")
+              .SetProcessEnvironmentVariable("AWS_SDK_HOST", "localhost:4566");
     }
 }

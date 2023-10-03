@@ -65,7 +65,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 snsSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(snsSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                var host = Environment.GetEnvironmentVariable("AWS_SNS_HOST");
+                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");

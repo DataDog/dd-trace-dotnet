@@ -39,7 +39,7 @@ namespace Samples.AWS.SNS
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("AWS_SNS_HOST") ?? "localhost:4566";
+            return Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
         }
 
         private static async Task<string> GetOrCreateTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicName)
