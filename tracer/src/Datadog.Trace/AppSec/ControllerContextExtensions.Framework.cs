@@ -28,43 +28,56 @@ namespace Datadog.Trace.AppSec
             var context = HttpContext.Current;
             var iastEnabled = Iast.Iast.Instance.Settings.Enabled;
             Scope scope = null;
+            object requestBody = null;
+            Dictionary<string, object> pathParamsDic = null;
 
-            if ((context != null && security.Enabled) || iastEnabled)
+            if (context != null)
             {
-                scope = SharedItems.TryPeekScope(context, peekScopeKey);
-            }
-
-            if (context != null && security.Enabled)
-            {
-                var bodyDic = new Dictionary<string, object>(parameters.Count);
-                var pathParamsDic = new Dictionary<string, object>(parameters.Count);
-                foreach (var item in parameters)
+                if (security.Enabled || iastEnabled)
                 {
-                    if (controllerContext.RouteData.Values.ContainsKey(item.Key))
+                    scope = SharedItems.TryPeekScope(context, peekScopeKey);
+
+                    var bodyDic = new Dictionary<string, object>(parameters.Count);
+                    pathParamsDic = new Dictionary<string, object>(parameters.Count);
+                    foreach (var item in parameters)
                     {
-                        pathParamsDic[item.Key] = item.Value;
+                        if (controllerContext.RouteData.Values.ContainsKey(item.Key))
+                        {
+                            pathParamsDic[item.Key] = item.Value;
+                        }
+                        else
+                        {
+                            // We exclude the query string params
+                            if (!context.Request.QueryString.AllKeys.Contains(item.Key))
+                            {
+                                bodyDic[item.Key] = item.Value;
+                            }
+                        }
                     }
-                    else
+
+                    requestBody = ObjectExtractor.Extract(bodyDic);
+                }
+
+                if (security.Enabled)
+                {
+                    var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
+                    if (!securityTransport.IsBlocked)
                     {
-                        bodyDic[item.Key] = item.Value;
+                        var inputData = new Dictionary<string, object>
+                        {
+                            { AddressesConstants.RequestBody, requestBody },
+                            { AddressesConstants.RequestPathParams, ObjectExtractor.Extract(pathParamsDic) }
+                        };
+                        securityTransport.CheckAndBlock(inputData);
                     }
                 }
 
-                var securityTransport = new Coordinator.SecurityCoordinator(security, context, scope.Span);
-                if (!securityTransport.IsBlocked)
+                if (iastEnabled)
                 {
-                    var inputData = new Dictionary<string, object>
-                    {
-                        { AddressesConstants.RequestBody, ObjectExtractor.Extract(bodyDic) },
-                        { AddressesConstants.RequestPathParams, ObjectExtractor.Extract(pathParamsDic) }
-                    };
-                    securityTransport.CheckAndBlock(inputData);
+                    var iastRequestContext = scope?.Span?.Context?.TraceContext?.IastRequestContext;
+                    iastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
+                    iastRequestContext?.AddRequestBody(null, requestBody);
                 }
-            }
-
-            if (iastEnabled)
-            {
-                scope?.Span?.Context?.TraceContext?.IastRequestContext?.AddRequestData(context.Request, controllerContext.RouteData.Values);
             }
         }
     }
