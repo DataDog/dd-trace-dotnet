@@ -28,7 +28,7 @@ public class WeakCipherTests : TestHelper
         SetServiceVersion("1.0.0");
     }
 
-#if !NET7_0
+#if !NET7_0_OR_GREATER
     [SkippableFact]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
