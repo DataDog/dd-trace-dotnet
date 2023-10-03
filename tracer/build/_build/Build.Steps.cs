@@ -681,6 +681,10 @@ partial class Build
 
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
+
+            // Add the dd-dotnet scripts
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
         });
 
     Target ExtractDebugInfoLinux => _ => _

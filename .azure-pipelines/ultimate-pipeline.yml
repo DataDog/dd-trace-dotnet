@@ -3065,6 +3065,30 @@ stages:
           **/loader.conf
         path: $(monitoringHome)
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet win-x64
+      inputs:
+        artifact: dd-dotnet-win-x64
+        path: $(monitoringHome)/win-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-x64
+      inputs:
+        artifact: dd-dotnet-linux-x64
+        path: $(monitoringHome)/linux-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-musl-x64
+      inputs:
+        artifact: dd-dotnet-linux-musl-x64
+        path: $(monitoringHome)/linux-musl-x64
+
+    - task: DownloadPipelineArtifact@2
+      displayName: Download dd-dotnet linux-arm64
+      inputs:
+        artifact: dd-dotnet-linux-arm64
+        path: $(monitoringHome)/linux-arm64
+
     - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
       displayName: Build Bundle NuGet and tools
 
