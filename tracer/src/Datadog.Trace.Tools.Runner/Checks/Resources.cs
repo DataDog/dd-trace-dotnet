@@ -15,15 +15,15 @@ namespace Datadog.Trace.Tools.Runner.Checks
 {
     internal static class Resources
     {
-        public const string NetFrameworkRuntime = "- Target process is running with .NET Framework";
-        public const string NetCoreRuntime = "- Target process is running with .NET Core";
+        public const string NetFrameworkRuntime = "Target process is running with .NET Framework";
+        public const string NetCoreRuntime = "Target process is running with .NET Core";
         public const string RuntimeDetectionFailed = "- Failed to detect target process runtime, assuming .NET Framework";
         public const string BothRuntimesDetected = "- The target process is running .NET Framework and .NET Core simultaneously. Checks will be performed assuming a .NET Framework runtime.";
         public const string LoaderNotLoaded = "- The native loader library is not loaded into the process";
-        public const string NativeTracerNotLoaded = "The native tracer library is not loaded into the process";
+        public const string NativeTracerNotLoaded = "- The native tracer library is not loaded into the process";
         public const string TracerNotLoaded = "- Tracer is not loaded into the process";
         public const string AgentDetectionFailed = "- Could not detect the agent version. It may be running with a version older than 7.27.0.";
-        public const string IisProcess = "- The target process is an IIS process. The detection of the configuration might be incomplete, it's recommended to use dd-trace check iis <site name> instead.";
+        public const string IisProcess = "- The target process is an IIS process. The detection of the configuration might be incomplete, please use dd-trace check iis <site name> instead.";
         public const string MissingGac = "- The Datadog.Trace assembly could not be found in the GAC. Make sure the tracer has been properly installed with the MSI.";
         public const string NoWorkerProcess = "- No worker process found, to perform additional checks make sure the application is active";
         public const string GetProcessError = "- Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
@@ -80,6 +80,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public static string MissingProfilerRegistry(string key, string path) => $@"- The registry key {key} was set to path '{path}' but the file is missing or you don't have sufficient permission. Try reinstalling the tracer with the MSI and check the permissions.";
 
         public static string MissingProfilerEnvironment(string key, string path) => $@"- The environment variable {key} is set to {path} but the file is missing or you don't have sufficient permission.";
+
+        public static string CorrectlySetupEnvironment(string key, string value) => $@"- The environment variable {key} is set to the correct value of {path}.";
 
         public static string GacVersionFormat(string version) => $"- Found Datadog.Trace version {version} in the GAC";
 
