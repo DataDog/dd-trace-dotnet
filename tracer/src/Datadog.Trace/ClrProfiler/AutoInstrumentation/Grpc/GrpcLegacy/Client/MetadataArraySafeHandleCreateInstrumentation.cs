@@ -34,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcLegacy.Client
         /// </summary>
         internal static CallTargetState OnMethodBegin<TInstance, TMetadata>(TInstance instance, TMetadata metadataInstance)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             if (!GrpcCoreApiVersionHelper.IsSupported || !tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc) || metadataInstance is null)
             {
                 return CallTargetState.GetDefault();

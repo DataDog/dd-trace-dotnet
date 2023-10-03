@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal static CallTargetState OnMethodBegin<TTarget, TValidationContext, TRules>(TTarget instance, TValidationContext validationContext, TRules rules)
             where TValidationContext : IValidationContext
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, validationContext.Document.Source?.ToString()));
+            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.InternalInstance, validationContext.Document.Source?.ToString()));
         }
 
         internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)

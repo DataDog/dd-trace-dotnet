@@ -95,7 +95,7 @@ internal readonly partial struct SecurityCoordinator
 
         if (status is not null)
         {
-            _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, Tracer.Instance.Settings);
+            _localRootSpan.SetHttpStatusCode(status.Value, isServer: true, Tracer.InternalInstance.Settings);
         }
     }
 

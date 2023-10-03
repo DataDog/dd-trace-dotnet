@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
             var requestProxy = request.DuckCast<IPublishRequest>();
 
-            var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
+            var scope = AwsSnsCommon.CreateScope(Tracer.InternalInstance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
             tags.TopicArn = requestProxy.TopicArn;
             tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
 

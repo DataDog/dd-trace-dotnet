@@ -136,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler
 
                 InitializeTracer(sw);
 
-                InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
+                InitializeServerless(sw, Tracer.InternalInstance.Settings.LambdaMetadata);
             }
 
 #if NETSTANDARD2_0 || NETCOREAPP3_1
@@ -216,7 +216,7 @@ namespace Datadog.Trace.ClrProfiler
 
             InitializeTracer(sw);
 
-            InitializeServerless(sw, Tracer.Instance.Settings.LambdaMetadata);
+            InitializeServerless(sw, Tracer.InternalInstance.Settings.LambdaMetadata);
 
             InitializeAppSecLegacy(sw);
 
@@ -338,7 +338,7 @@ namespace Datadog.Trace.ClrProfiler
 
             try
             {
-                if (Tracer.Instance.Settings.IsActivityListenerEnabled)
+                if (Tracer.InternalInstance.Settings.IsActivityListenerEnabled)
                 {
                     Log.Debug("Initializing activity listener.");
                     Activity.ActivityListener.Initialize();
@@ -351,10 +351,10 @@ namespace Datadog.Trace.ClrProfiler
 
             Log.Debug("Initialization of non native parts finished.");
 
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             if (tracer is null)
             {
-                Log.Debug("Tracer.Instance is null after InitializeNoNativeParts was invoked");
+                Log.Debug("Tracer.InternalInstance is null after InitializeNoNativeParts was invoked");
             }
 
             if (sw != null)
@@ -366,10 +366,10 @@ namespace Datadog.Trace.ClrProfiler
 
         private static void InitializeTracer(Stopwatch sw)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             if (tracer is null)
             {
-                Log.Debug("Skipping TraceMethods initialization because Tracer.Instance was null after InitializeNoNativeParts was invoked");
+                Log.Debug("Skipping TraceMethods initialization because Tracer.InternalInstance was null after InitializeNoNativeParts was invoked");
             }
             else
             {
@@ -454,7 +454,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             var observers = new List<DiagnosticObserver>();
 
-            if (Tracer.Instance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
+            if (Tracer.InternalInstance.Settings.AzureAppServiceMetadata?.IsFunctionsApp is not true)
             {
                 // Not adding the `AspNetCoreDiagnosticObserver` is particularly important for Azure Functions.
                 // The AspNetCoreDiagnosticObserver will be loaded in a separate Assembly Load Context, breaking the connection of AsyncLocal

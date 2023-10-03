@@ -51,7 +51,7 @@ public static class SignInManagerPasswordSignInUserIntegration
         var security = Security.Instance;
         if (security.TrackUserEvents)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             var scope = tracer.InternalActiveScope;
             return new CallTargetState(scope, user);
         }

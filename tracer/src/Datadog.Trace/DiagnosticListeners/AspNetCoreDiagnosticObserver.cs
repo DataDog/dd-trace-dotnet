@@ -79,7 +79,7 @@ namespace Datadog.Trace.DiagnosticListeners
 
         protected override string ListenerName => DiagnosticListenerName;
 
-        private Tracer CurrentTracer => _tracer ?? Tracer.Instance;
+        private Tracer CurrentTracer => _tracer ?? Tracer.InternalInstance;
 
         private Security CurrentSecurity => _security ?? Security.Instance;
 

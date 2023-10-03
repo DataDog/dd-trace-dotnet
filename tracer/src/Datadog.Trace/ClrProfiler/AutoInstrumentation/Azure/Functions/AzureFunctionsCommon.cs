@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static CallTargetState OnFunctionExecutionBegin<TTarget, TFunction>(TTarget instance, TFunction instanceParam)
             where TFunction : IFunctionInstance
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -178,7 +178,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         public static CallTargetState OnIsolatedFunctionBegin<T>(T functionContext)
             where T : IFunctionContext
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

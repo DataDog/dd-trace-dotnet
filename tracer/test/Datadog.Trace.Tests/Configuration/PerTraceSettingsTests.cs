@@ -23,9 +23,9 @@ namespace Datadog.Trace.Tests.Configuration
                 [ConfigurationKeys.ServiceNameMappings] = "test:before"
             }));
 
-            var scope = Tracer.Instance.StartActive("Trace1");
+            var scope = Tracer.InternalInstance.StartActive("Trace1");
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
+            Tracer.InternalInstance.CurrentTraceSettings.GetServiceName(Tracer.InternalInstance, "test")
                .Should().Be("before");
 
             Tracer.Configure(TracerSettings.Create(new()
@@ -33,12 +33,12 @@ namespace Datadog.Trace.Tests.Configuration
                 [ConfigurationKeys.ServiceNameMappings] = "test:after"
             }));
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
+            Tracer.InternalInstance.CurrentTraceSettings.GetServiceName(Tracer.InternalInstance, "test")
                .Should().Be("before", "the old configuration should be used inside of the active trace");
 
             scope.Close();
 
-            Tracer.Instance.CurrentTraceSettings.GetServiceName(Tracer.Instance, "test")
+            Tracer.InternalInstance.CurrentTraceSettings.GetServiceName(Tracer.InternalInstance, "test")
                .Should().Be("after", "the new configuration should be used outside of the active trace");
         }
     }

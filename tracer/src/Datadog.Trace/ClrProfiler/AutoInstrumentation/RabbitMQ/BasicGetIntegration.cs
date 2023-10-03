@@ -86,7 +86,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                 }
             }
 
-            using (var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
+            using (var scope = RabbitMQIntegration.CreateScope(Tracer.InternalInstance, out RabbitMQTags tags, Command, parentContext: propagatedContext, spanKind: SpanKinds.Consumer, queue: queue, startTime: startTime))
             {
                 if (scope != null)
                 {
@@ -106,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
                     if (basicProperties != null)
                     {
                         RabbitMQIntegration.SetDataStreamsCheckpointOnConsume(
-                            Tracer.Instance,
+                            Tracer.InternalInstance,
                             scope.Span,
                             tags,
                             basicProperties.Headers,

@@ -38,7 +38,7 @@ public sealed class Test
         var module = suite.Module;
 
         var tags = new TestSpanTags(Suite.Tags, name);
-        var tracer = Tracer.Instance;
+        var tracer = Tracer.InternalInstance;
         var span = tracer.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test" : $"{module.Framework!.ToLowerInvariant()}.test",
             tags: tags,

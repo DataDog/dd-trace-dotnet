@@ -23,7 +23,7 @@ internal static class MsTestIntegration
 
     internal static readonly ThreadLocal<object> IsTestMethodRunnableThreadLocal = new();
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test OnMethodBegin<TTestMethod>(TTestMethod testMethodInfo, Type type)
         where TTestMethod : ITestMethod

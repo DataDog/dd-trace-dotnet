@@ -40,13 +40,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
 
             try
             {
-                if (!Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId))
+                if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId))
                 {
                     // integration disabled, don't create a scope, skip this trace
                     return null;
                 }
 
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
                 var request = controllerContext.Request;
                 SpanContext propagatedContext = null;
                 HttpHeadersCollection? headersCollection = null;
@@ -119,7 +119,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNet
         {
             try
             {
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
                 var tracerSettings = tracer.Settings;
                 var newResourceNamesEnabled = tracerSettings.RouteTemplateResourceNamesEnabled;
                 var request = controllerContext.Request;

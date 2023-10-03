@@ -57,7 +57,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 // The current span should be started in KafkaProduceSyncIntegration.OnMethodBegin
                 // The OnMethodBegin and OnMethodEnd of this integration happens between KafkaProduceSyncIntegration.OnMethodBegin
                 // and KafkaProduceSyncIntegration.OnMethodEnd, so the consumer span is active for the duration of this integration
-                var activeScope = Tracer.Instance?.InternalActiveScope;
+                var activeScope = Tracer.InternalInstance?.InternalActiveScope;
                 var span = activeScope?.Span;
                 if (span is null)
                 {

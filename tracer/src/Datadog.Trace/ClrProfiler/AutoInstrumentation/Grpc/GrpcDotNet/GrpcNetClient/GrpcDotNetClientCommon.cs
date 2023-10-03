@@ -105,7 +105,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 span.SetHeaderTags(metadata, tracer.Settings.GrpcTagsInternal, defaultTagPrefix: GrpcCommon.ResponseMetadataTagPrefix);
             }
 
-            GrpcCommon.RecordFinalClientSpanStatus(Tracer.Instance, grpcStatusCode, errorMessage, ex);
+            GrpcCommon.RecordFinalClientSpanStatus(Tracer.InternalInstance, grpcStatusCode, errorMessage, ex);
         }
     }
 }

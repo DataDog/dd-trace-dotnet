@@ -90,7 +90,7 @@ namespace Datadog.Trace.Tests.Sampling
             var settings = TracerSettings.Create(new() { { ConfigurationKeys.RareSamplerEnabled, false } });
             var sampler = new RareSampler(new ImmutableTracerSettings(settings));
 
-            var trace = new[] { Tracer.Instance.StartSpan("1") };
+            var trace = new[] { Tracer.InternalInstance.StartSpan("1") };
             trace[0].Context.TraceContext.SetSamplingPriority(SamplingPriorityValues.AutoReject);
 
             sampler.Sample(new(trace)).Should().BeFalse();

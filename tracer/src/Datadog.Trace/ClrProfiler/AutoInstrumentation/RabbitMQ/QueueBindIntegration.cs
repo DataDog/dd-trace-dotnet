@@ -41,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, string queue, string exchange, string routingKey, IDictionary<string, object> arguments)
             where TTarget : IModelBase
         {
-            return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.Instance, out _, Command, SpanKinds.Client, queue: queue, exchange: exchange, routingKey: routingKey, host: instance?.Session.Connection.Endpoint.HostName));
+            return new CallTargetState(RabbitMQIntegration.CreateScope(Tracer.InternalInstance, out _, Command, SpanKinds.Client, queue: queue, exchange: exchange, routingKey: routingKey, host: instance?.Session.Connection.Endpoint.HostName));
         }
 
         /// <summary>

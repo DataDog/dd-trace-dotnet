@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             //
             // context.IncomingMessageProperties contains:
             // - ["httpRequest"] key to find distributed tracing headers
-            if (!Tracer.Instance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.Instance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
+            if (!Tracer.InternalInstance.Settings.IsIntegrationEnabled(WcfCommon.IntegrationId) || !Tracer.InternalInstance.Settings.DelayWcfInstrumentationEnabled || WcfCommon.GetCurrentOperationContext is null)
             {
                 return CallTargetState.GetDefault();
             }
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 var requestContext = operationContextProxy.RequestContext;
 
                 // First, capture the active scope
-                var activeScope = Tracer.Instance.InternalActiveScope;
+                var activeScope = Tracer.InternalInstance.InternalActiveScope;
                 var spanContextRaw = DistributedTracer.Instance.GetSpanContextRaw() ?? activeScope?.Span?.Context;
 
                 // Then, create the new scope
@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
             {
                 // InvokeBegin should have started an async operation that will ultimately call InvokeEnd
                 // The current thread will be reused by WCF to process other requests so we need to restore the old scope
-                if (Tracer.Instance.ScopeManager is IScopeRawAccess rawAccess)
+                if (Tracer.InternalInstance.ScopeManager is IScopeRawAccess rawAccess)
                 {
                     rawAccess.Active = state.PreviousScope;
                     DistributedTracer.Instance.SetSpanContext(state.PreviousDistributedSpanContext);

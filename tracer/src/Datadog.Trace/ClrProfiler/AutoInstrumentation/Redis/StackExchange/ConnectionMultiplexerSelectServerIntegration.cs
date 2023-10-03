@@ -29,7 +29,7 @@ public class ConnectionMultiplexerSelectServerIntegration
 {
     internal static CallTargetReturn<TResult> OnMethodEnd<TTarget, TResult>(TTarget instance, TResult result, Exception exception, in CallTargetState state)
     {
-        var span = Tracer.Instance.InternalActiveScope?.Span;
+        var span = Tracer.InternalInstance.InternalActiveScope?.Span;
 
         if (result is not null
             && span is { Type: SpanTypes.Redis, Tags: RedisTags { InstrumentationName: StackExchangeRedisHelper.IntegrationName } tags })

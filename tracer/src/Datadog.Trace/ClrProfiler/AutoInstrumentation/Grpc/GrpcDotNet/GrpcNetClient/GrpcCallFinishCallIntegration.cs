@@ -43,7 +43,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
             where TStatus : IStatus
         {
             // always supported, as only applies in v2.43.0+
-            GrpcDotNetClientCommon.RecordResponseMetadataAndStatus(Tracer.Instance, instance, status.StatusCode, status.Detail, status.DebugException);
+            GrpcDotNetClientCommon.RecordResponseMetadataAndStatus(Tracer.InternalInstance, instance, status.StatusCode, status.Detail, status.DebugException);
             return CallTargetState.GetDefault();
         }
     }

@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
             try
             {
-                await Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                await Tracer.InternalInstance.TracerManager.AgentWriter.FlushTracesAsync()
                             .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime))
                             .ConfigureAwait(false);
             }
@@ -151,7 +151,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
             var samplingPriority = response.Headers.Get(HttpHeaderNames.SamplingPriority);
             if (ValidateOKStatus(response))
             {
-                return CreatePlaceholderScope(Tracer.Instance, traceId, samplingPriority);
+                return CreatePlaceholderScope(Tracer.InternalInstance, traceId, samplingPriority);
             }
 
             return null;
@@ -212,7 +212,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 // here we need a sync flush, since the lambda environment can be destroy after each invocation
                 // 3 seconds is enough to send payload to the extension (via localhost)
                 AsyncUtil.RunSync(
-                    () => Tracer.Instance.TracerManager.AgentWriter.FlushTracesAsync()
+                    () => Tracer.InternalInstance.TracerManager.AgentWriter.FlushTracesAsync()
                                 .WaitAsync(TimeSpan.FromSeconds(ServerlessMaxWaitingFlushTime)));
             }
             catch (Exception ex)

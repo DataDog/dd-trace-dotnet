@@ -69,7 +69,7 @@ public static class FireOnStartCommon
             {
                 if (security.Enabled)
                 {
-                    var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+                    var span = Tracer.InternalInstance.InternalActiveScope?.Root?.Span;
 
                     if (span is not null)
                     {

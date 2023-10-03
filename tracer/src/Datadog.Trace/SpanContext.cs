@@ -423,7 +423,7 @@ namespace Datadog.Trace
         [return: MaybeNull]
         internal string PrepareTagsHeaderForPropagation()
         {
-            // try to get max length from tracer settings, but do NOT access Tracer.Instance
+            // try to get max length from tracer settings, but do NOT access Tracer.InternalInstance
             var headerMaxLength = TraceContext?.Tracer?.Settings?.OutgoingTagPropagationHeaderMaxLength;
 
             var propagatedTags = PrepareTagsForPropagation();

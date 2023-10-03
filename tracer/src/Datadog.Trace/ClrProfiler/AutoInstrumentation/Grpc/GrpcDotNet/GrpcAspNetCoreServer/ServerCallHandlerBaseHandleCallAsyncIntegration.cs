@@ -40,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         {
             if (GrpcCoreApiVersionHelper.IsSupported)
             {
-                var scope = GrpcDotNetServerCommon.CreateServerSpan(Tracer.Instance, instance, httpContext.Request);
+                var scope = GrpcDotNetServerCommon.CreateServerSpan(Tracer.InternalInstance, instance, httpContext.Request);
                 return new CallTargetState(scope);
             }
 

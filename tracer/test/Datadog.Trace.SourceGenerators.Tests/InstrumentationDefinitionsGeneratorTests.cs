@@ -1799,7 +1799,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.InternalInstance, (IDbCommand)instance));
         }
 
         /// <summary>
@@ -1835,7 +1835,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
         {
-            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.Instance, (IDbCommand)instance));
+            return new CallTargetState(DbScopeFactory.Cache<TTarget>.CreateDbCommandScope(Tracer.InternalInstance, (IDbCommand)instance));
         }
 
         /// <summary>

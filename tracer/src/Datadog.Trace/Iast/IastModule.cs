@@ -231,7 +231,7 @@ internal static class IastModule
             return null;
         }
 
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var currentSpan = (Tracer.InternalInstance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         return traceContext?.IastRequestContext;
     }
@@ -244,7 +244,7 @@ internal static class IastModule
     // This method adds web vulnerabilities, with no location, only on web environments
     private static Scope? AddWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
-        var tracer = Tracer.Instance;
+        var tracer = Tracer.InternalInstance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span
@@ -278,7 +278,7 @@ internal static class IastModule
 
     public static bool AddRequestVulnerabilitiesAllowed()
     {
-        var currentSpan = (Tracer.Instance.ActiveScope as Scope)?.Span;
+        var currentSpan = (Tracer.InternalInstance.ActiveScope as Scope)?.Span;
         var traceContext = currentSpan?.Context?.TraceContext;
         var isRequest = traceContext?.RootSpan?.Type == SpanTypes.Web;
         return isRequest && traceContext?.IastRequestContext?.AddVulnerabilitiesAllowed() == true;
@@ -286,7 +286,7 @@ internal static class IastModule
 
     private static Scope? GetScope(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, string operationName, bool taintedFromEvidenceRequired = false)
     {
-        var tracer = Tracer.Instance;
+        var tracer = Tracer.InternalInstance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
         {
             // integration disabled, don't create a scope, skip this span

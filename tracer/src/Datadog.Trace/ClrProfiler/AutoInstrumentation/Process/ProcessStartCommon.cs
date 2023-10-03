@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 
         private static Scope? CreateScope(string filename, IDictionary<string, string?>? environmentVariables, bool useShellExecute, string arguments, Collection<string>? argumentList = null)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
                 // integration disabled, don't create a scope, skip this span
@@ -87,7 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
             };
 
             // Don't populate further with command line information if shell collection is disabled
-            if (!Tracer.Instance.Settings.CommandsCollectionEnabled)
+            if (!Tracer.InternalInstance.Settings.CommandsCollectionEnabled)
             {
                 return tags;
             }

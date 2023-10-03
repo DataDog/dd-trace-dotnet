@@ -50,7 +50,7 @@ namespace Datadog.Trace
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor);
             // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
+            // before this new instance of Tracer is assigned to Tracer.InternalInstance
             TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
@@ -74,7 +74,7 @@ namespace Datadog.Trace
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Ctor_Settings);
             // Don't call Configure because it will call Start on the TracerManager
-            // before this new instance of Tracer is assigned to Tracer.Instance
+            // before this new instance of Tracer is assigned to Tracer.InternalInstance
             TracerManager.ReplaceGlobalManager(settings is null ? null : new ImmutableTracerSettings(settings, true), TracerManagerFactory.Instance);
 
             // update the count of Tracer instances
@@ -126,7 +126,32 @@ namespace Datadog.Trace
         /// Used by all automatic instrumentation and recommended
         /// as the entry point for manual instrumentation.
         /// </summary>
+        [PublicApi]
         public static Tracer Instance
+        {
+            get => InternalInstance;
+            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
+                      " instance in code.")]
+            set => InternalInstance = value;
+        }
+
+        /// <summary>
+        /// Gets the active scope
+        /// </summary>
+        public IScope ActiveScope
+        {
+            get
+            {
+                return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
+            }
+        }
+
+        /// <summary>
+        /// Gets or sets the global <see cref="Tracer"/> instance.
+        /// Used by all automatic instrumentation and recommended
+        /// as the entry point for manual instrumentation.
+        /// </summary>
+        internal static Tracer InternalInstance
         {
             get
             {
@@ -152,10 +177,6 @@ namespace Datadog.Trace
                 return instance;
             }
 
-            // TODO: Make this API internal
-            [Obsolete("Use " + nameof(Tracer) + "." + nameof(Configure) + " to configure the global Tracer" +
-                      " instance in code.")]
-            [PublicApi]
             set
             {
                 TelemetryFactory.Metrics.Record(PublicApiUsage.Tracer_Instance_Set);
@@ -178,17 +199,6 @@ namespace Datadog.Trace
                 }
 
                 value?.TracerManager.Start();
-            }
-        }
-
-        /// <summary>
-        /// Gets the active scope
-        /// </summary>
-        public IScope ActiveScope
-        {
-            get
-            {
-                return DistributedTracer.Instance.GetActiveScope() ?? InternalActiveScope;
             }
         }
 
@@ -272,7 +282,7 @@ namespace Datadog.Trace
         internal static void ConfigureInternal(ImmutableTracerSettings settings)
         {
             TracerManager.ReplaceGlobalManager(settings, TracerManagerFactory.Instance);
-            Tracer.Instance.TracerManager.Start();
+            Tracer.InternalInstance.TracerManager.Start();
         }
 
         /// <summary>

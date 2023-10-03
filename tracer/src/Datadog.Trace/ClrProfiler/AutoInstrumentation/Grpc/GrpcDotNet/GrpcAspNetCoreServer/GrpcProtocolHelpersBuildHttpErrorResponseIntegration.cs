@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcAspN
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin(HttpResponse response, int httpStatusCode, int grpcStatusCode, string message)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
             if (GrpcCoreApiVersionHelper.IsSupported
              && tracer.Settings.IsIntegrationEnabled(IntegrationId.Grpc)
              && tracer.ActiveScope?.Span is Span { Tags: GrpcServerTags } span)

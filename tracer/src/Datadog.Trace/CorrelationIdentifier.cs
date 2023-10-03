@@ -30,6 +30,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the name of the service
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static string Service
         {
             get
@@ -42,6 +43,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the version of the service
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static string Version
         {
             get
@@ -54,6 +56,7 @@ namespace Datadog.Trace
         /// <summary>
         /// Gets the environment name of the service
         /// </summary>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static string Env
         {
             get
@@ -67,6 +70,7 @@ namespace Datadog.Trace
         /// Gets the id of the active trace.
         /// </summary>
         /// <returns>The id of the active trace. If there is no active trace, returns zero.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static ulong TraceId
         {
             get
@@ -80,6 +84,7 @@ namespace Datadog.Trace
         /// Gets the id of the active span.
         /// </summary>
         /// <returns>The id of the active span. If there is no active span, returns zero.</returns>
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static ulong SpanId
         {
             get

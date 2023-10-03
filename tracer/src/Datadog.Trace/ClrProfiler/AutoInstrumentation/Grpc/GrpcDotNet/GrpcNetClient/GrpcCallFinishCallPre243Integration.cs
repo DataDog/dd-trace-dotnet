@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Grpc.GrpcDotNet.GrpcNetC
                 // Technically, status _should_ be a Nullable<Status>, but due to nullable weirdness,
                 // if it has a value, then it isn't, and it _always_ has a value here AFAICT
                 var statusValue = status.DuckCast<StatusStruct>();
-                GrpcDotNetClientCommon.RecordResponseMetadataAndStatus(Tracer.Instance, instance, statusValue.StatusCode, statusValue.Detail, statusValue.DebugException);
+                GrpcDotNetClientCommon.RecordResponseMetadataAndStatus(Tracer.InternalInstance, instance, statusValue.StatusCode, statusValue.Detail, statusValue.DebugException);
             }
 
             return CallTargetState.GetDefault();
