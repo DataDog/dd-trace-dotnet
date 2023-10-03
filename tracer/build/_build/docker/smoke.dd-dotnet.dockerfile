@@ -26,9 +26,6 @@ RUN mkdir -p /opt/datadog \
     && rm -rf /app/install
 
 # Set the required env vars
-ENV DD_PROFILING_ENABLED=1
-ENV DD_APPSEC_ENABLED=1
-ENV DD_TRACE_DEBUG=1
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
@@ -40,4 +37,4 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["/opt/datadog/dd-dotnet.sh", "run", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["/opt/datadog/dd-dotnet.sh", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]

@@ -34,12 +34,7 @@ RUN mkdir /logs; \
     rm /install -r -fo
 
 # Set the additional env vars
-ENV DD_PROFILING_ENABLED=1 \
-    DD_APPSEC_ENABLED=1 \
-    DD_TRACE_DEBUG=1 \
-    CORECLR_ENABLE_PROFILING=1 \
-    CORECLR_PROFILER={846F5F1C-F9AE-4B07-969E-05C26BC060D8} \
-    DD_TRACE_LOG_DIRECTORY="C:\logs" \
+ENV DD_TRACE_LOG_DIRECTORY="C:\logs" \
     ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore
@@ -51,5 +46,5 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ENTRYPOINT ["c:\\Program Files\\Datadog\\.NET Tracer\\dd-dotnet.cmd", "run", "--", "dotnet", "AspNetCoreSmokeTest.dll"]
+ENTRYPOINT ["c:\\Program Files\\Datadog\\.NET Tracer\\dd-dotnet.cmd", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "AspNetCoreSmokeTest.dll"]
 
