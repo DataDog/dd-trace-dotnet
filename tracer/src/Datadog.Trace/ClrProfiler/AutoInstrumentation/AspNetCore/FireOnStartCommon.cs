@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "7.*.*.*",
     IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
+    InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 [InstrumentMethod(
     AssemblyName = "Microsoft.AspNetCore.Server.IIS",
     TypeName = "Microsoft.AspNetCore.Server.IIS.Core.IISHttpContext",
@@ -39,25 +39,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MinimumVersion = "2.0.0.0",
     MaximumVersion = "7.*.*.*",
     IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.AppSec)]
-[InstrumentMethod(
-    AssemblyName = "Microsoft.AspNetCore.Server.Kestrel.Core",
-    TypeName = "Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol",
-    MethodName = "FireOnStarting",
-    ReturnTypeName = ClrNames.Task,
-    MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*",
-    IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.Iast)]
-[InstrumentMethod(
-    AssemblyName = "Microsoft.AspNetCore.Server.IIS",
-    TypeName = "Microsoft.AspNetCore.Server.IIS.Core.IISHttpContext",
-    MethodName = "FireOnStarting",
-    ReturnTypeName = ClrNames.Task,
-    MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*",
-    IntegrationName = IntegrationName,
-    InstrumentationCategory = InstrumentationCategory.Iast)]
+    InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
 
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]

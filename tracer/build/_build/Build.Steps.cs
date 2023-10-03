@@ -589,8 +589,8 @@ partial class Build
       .After(BuildDdDotnet, PublishManagedTracer)
       .Executes(() =>
       {
-          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-trace-dotnet.pdb";
-          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-trace-dotnet.pdb";
+          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-dotnet.pdb";
+          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-dotnet.pdb";
           CopyFile(source, dest, FileExistsPolicy.Overwrite);
       });
 
@@ -681,6 +681,10 @@ partial class Build
 
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
+
+            // Add the dd-dotnet scripts
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
         });
 
     Target ExtractDebugInfoLinux => _ => _

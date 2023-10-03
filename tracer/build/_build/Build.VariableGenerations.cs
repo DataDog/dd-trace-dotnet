@@ -384,8 +384,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -405,8 +407,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
@@ -424,8 +428,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
+                        installer: "datadog-dotnet-apm*-musl.tar.gz",
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
                         linuxArtifacts: "linux-packages-alpine",
+                        runtimeId: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -440,8 +446,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
@@ -455,8 +463,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-rhel"
                     );
 
@@ -471,8 +481,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-centos-stream"
                     );
 
@@ -487,8 +499,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
                         linuxArtifacts: "linux-packages-centos7",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
@@ -512,8 +526,43 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                         },
+                        installer: "datadog-dotnet-apm_*_arm64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
                         linuxArtifacts: "linux-packages-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "fedora",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                        },
+                        installer: "datadog-dotnet-apm*-1.aarch64.rpm",
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
+                        linuxArtifacts: "linux-packages-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-fedora-arm64"
+                    );
+
+                    // We don't support alpine on arm64 yet, so just use debian for the tar test
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian_tar",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                        },
+                        installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
+                        linuxArtifacts: "linux-packages-arm64",
+                        runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -526,8 +575,10 @@ partial class Build : NukeBuild
                     Dictionary<string, object> matrix,
                     string shortName,
                     (string publishFramework, string runtimeTag)[] images,
+                    string installer,
                     string installCmd,
                     string linuxArtifacts,
+                    string runtimeId,
                     string dockerName
                 )
                 {
@@ -538,6 +589,8 @@ partial class Build : NukeBuild
                             dockerTag,
                             new
                             {
+                                expectedInstaller = installer,
+                                expectedPath = runtimeId,
                                 installCmd = installCmd,
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,

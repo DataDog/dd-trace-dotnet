@@ -12,7 +12,7 @@ internal static partial class CountCIVisibilityExtensions
     /// <summary>
     /// The number of separate metrics in the <see cref="Datadog.Trace.Telemetry.Metrics.CountCIVisibility" /> metric.
     /// </summary>
-    public const int Length = 26;
+    public const int Length = 27;
 
     /// <summary>
     /// Gets the metric name for the provided metric
@@ -30,6 +30,7 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "events_enqueued_for_serialization",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "endpoint_payload.requests",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "endpoint_payload.requests_errors",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "endpoint_payload.dropped",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommand => "git.command",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "git.command_errors",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "git_requests.search_commits",
@@ -78,6 +79,7 @@ internal static partial class CountCIVisibilityExtensions
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EventsEnqueueForSerialization => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequests => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadRequestsErrors => "civisibility",
+            Datadog.Trace.Telemetry.Metrics.CountCIVisibility.EndpointPayloadDropped => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommand => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitCommandErrors => "civisibility",
             Datadog.Trace.Telemetry.Metrics.CountCIVisibility.GitRequestsSearchCommits => "civisibility",

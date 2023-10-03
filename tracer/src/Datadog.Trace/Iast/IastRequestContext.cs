@@ -70,12 +70,19 @@ internal class IastRequestContext
         }
     }
 
-    internal void AddRequestBody(object body, object? bodyExtracted)
+    internal void AddRequestBody(object? body, object? bodyExtracted)
     {
         try
         {
+            _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
+
             if (bodyExtracted is null)
             {
+                if (body is null)
+                {
+                    return;
+                }
+
                 bodyExtracted = ObjectExtractor.Extract(body);
             }
 
@@ -89,7 +96,6 @@ internal class IastRequestContext
 
     private void AddExtractedBody(object bodyExtracted, string? key)
     {
-        _executedTelemetryHelper?.AddExecutedSource(IastInstrumentedSources.RequestBody);
         if (bodyExtracted != null)
         {
             // We get either string, List<object> or Dictionary<string, object>
