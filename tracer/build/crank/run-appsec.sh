@@ -1,12 +1,26 @@
 #!/bin/bash
 set -eo pipefail
 
+# Function to check if the PR contains a specific label
+
+function hasLabel() {
+    local label="$1"
+    local response="$2"
+    
+    if [[ $response == *"$label"* ]]; then
+        return 0  # Label is present
+    else
+        return 1  # Label is not present
+    fi
+}
+
 sha="$(git rev-parse HEAD)"
 echo "sha=$sha"
 echo "SYSTEM_PULLREQUEST_SOURCECOMMITID=$SYSTEM_PULLREQUEST_SOURCECOMMITID"
 echo "BUILD_SOURCEVERSION=$BUILD_SOURCEVERSION"
 echo "SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI=$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 echo "BUILD_REPOSITORY_URI=$BUILD_REPOSITORY_URI"
+echo "SYSTEM_PULLREQUEST_PULLREQUESTNUMBER=$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER"
 
 repo="$SYSTEM_PULLREQUEST_SOURCEREPOSITORYURI"
 commit_sha="$SYSTEM_PULLREQUEST_SOURCECOMMITID"
@@ -23,6 +37,7 @@ echo "Using repo=$repo commit=$commit_sha"
 
 repository="--application.source.repository $repo"
 commit="--application.source.branchOrCommit #$commit_sha"
+prdata=$(curl -s -H "Authorization: token $GITHUB_TOKEN" -X GET "https://api.github.com/repos/DataDog/dd-trace-dotnet/pulls/$SYSTEM_PULLREQUEST_PULLREQUESTNUMBER")
 
 if [ "$1" = "linux" ]; then
     echo "Running Linux  x64 throughput tests"
@@ -36,29 +51,45 @@ if [ "$1" = "linux" ]; then
     rm -f appsec_iast_disabled_vulnerability.json
     rm -f appsec_iast_enabled_vulnerability.json
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_baseline.json"
+    if hasLabel "area:asm" "$prdata" || hasLabel "area:asm-iast" "$prdata"; then
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_baseline.json"
+    else
+        echo "GitHub label 'area:asm' or 'area:asm-iast' not present. Skipping execution."
+    fi
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile linux --json appsec_noattack.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_noattack.json"
+    if hasLabel "area:asm" "$prdata"; then
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_noblocking --profile linux --json appsec_attack_noblocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_noblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_attack_noblocking.json"
+        echo "GitHub label 'area:asm' is present."
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_noattack --profile linux --json appsec_noattack.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_noattack --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_noattack.json"
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_attack_blocking.json"
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_noblocking --profile linux --json appsec_attack_noblocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_noblocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_attack_noblocking.json"
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_default --profile linux --json appsec_iast_enabled_default.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_default --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_iast_enabled_default.json"
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_attack_blocking.json"
+    else
+        echo "GitHub label 'area:asm' is not present. Skipping execution."
+    fi
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_full --profile linux --json appsec_iast_enabled_full.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_full --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_iast_enabled_full.json"
+    if hasLabel "area:asm-iast" "$prdata"; then
 
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_disabled_vulnerability --profile linux --json appsec_iast_disabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_disabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_iast_disabled_vulnerability.json"
+        echo "GitHub label 'area:asm-iast' is present."
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_default --profile linux --json appsec_iast_enabled_default.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_default --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_iast_enabled_default.json"
+
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_full --profile linux --json appsec_iast_enabled_full.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_full --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_iast_enabled_full.json"
+
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_disabled_vulnerability --profile linux --json appsec_iast_disabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_disabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_iast_disabled_vulnerability.json"
 	
-    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_vulnerability --profile linux --json appsec_iast_enabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
-    dd-trace --crank-import="appsec_iast_enabled_vulnerability.json"	
+        crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_vulnerability --profile linux --json appsec_iast_enabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+        dd-trace --crank-import="appsec_iast_enabled_vulnerability.json"	
+    else
+        echo "GitHub label 'area:asm-iast' is not present. Skipping execution."
+    fi
 
 else
     echo "Unknown argument $1"
