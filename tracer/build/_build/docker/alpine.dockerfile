@@ -60,7 +60,8 @@ RUN apk update \
     && gem install --version 2.7.6 dotenv \
     && gem install --version 1.14.2 --minimal-deps --no-document fpm
 
-ENV IsAlpine=true
+ENV IsAlpine=true \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \

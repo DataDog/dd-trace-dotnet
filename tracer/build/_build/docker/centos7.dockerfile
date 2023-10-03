@@ -80,6 +80,7 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
     && dotnet help
 
 ENV \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1 \
     CXX=clang++ \
     CC=clang
 
