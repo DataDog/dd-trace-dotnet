@@ -209,34 +209,20 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
         {
             EnsureWindowsAndX64();
 
-            var buildPs1 = Path.Combine(EnvironmentTools.GetSolutionDirectory(), "tracer", "build.ps1");
-
             EnvironmentHelper.SetAutomaticInstrumentation(false);
 
-            try
-            {
-                // GacFixture is not compatible with .NET Core, use the Nuke target instead
-                Process.Start("powershell", $"{buildPs1} GacAdd --framework net461").WaitForExit();
+            using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+            using var console = ConsoleHelper.Redirect();
+            var result = await CheckIisCommand.ExecuteAsync(
+                             "sample",
+                             iisFixture.IisExpress.ConfigFile,
+                             iisFixture.IisExpress.Process.Id,
+                             MockRegistryService());
 
-                using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
-
-                using var console = ConsoleHelper.Redirect();
-
-                var result = await CheckIisCommand.ExecuteAsync(
-                                 "sample",
-                                 iisFixture.IisExpress.ConfigFile,
-                                 iisFixture.IisExpress.Process.Id,
-                                 MockRegistryService());
-
-                result.Should().Be(1);
-                console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
-                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
-                console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
-            }
-            finally
-            {
-                Process.Start("powershell", $"{buildPs1} GacRemove --framework net461").WaitForExit();
-            }
+            result.Should().Be(1);
+            console.Output.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
+            console.Output.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
         }
 
         private static void EnsureWindowsAndX64()

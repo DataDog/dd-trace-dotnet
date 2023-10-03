@@ -343,7 +343,7 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             }
         }
 
-        internal static int _GetProcessBitness(IntPtr hProcess)
+        private static int _GetProcessBitness(IntPtr hProcess)
         {
             if (Environment.Is64BitOperatingSystem)
             {
