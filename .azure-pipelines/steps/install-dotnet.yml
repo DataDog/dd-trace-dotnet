@@ -35,6 +35,13 @@ steps:
   retryCountOnTaskFailure: 5
 
 - task: UseDotNet@2
+  displayName: install dotnet core runtime 7.0
+  inputs:
+    packageType: runtime
+    version: 7.0.x
+  retryCountOnTaskFailure: 5
+
+- task: UseDotNet@2
   displayName: install latest dotnet core sdk
   inputs:
     packageType: sdk

@@ -16,7 +16,7 @@ Then run the following
 docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
 
 # build the smoke test docker image (using the artifacts)
-docker-compose build --build-arg DOTNETSDK_VERSION=7.0.306 --build-arg RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim --build-arg PUBLISH_FRAMEWORK=net6.0 --build-arg INSTALL_CMD="dpkg -i ./datadog-dotnet-apm*_amd64.deb" smoke-tests
+docker-compose build --build-arg DOTNETSDK_VERSION=8.0.100-rc.2.23502.2 --build-arg RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim --build-arg PUBLISH_FRAMEWORK=net6.0 --build-arg INSTALL_CMD="dpkg -i ./datadog-dotnet-apm*_amd64.deb" smoke-tests
 
 # start the test-agent (you may get an error on Windows, just ignore it)
 docker-compose run --rm start-test-agent
@@ -43,7 +43,7 @@ To test and update the .NET Core 2.1 snapshots, use the following steps instead
 docker pull ghcr.io/datadog/dd-apm-test-agent/ddapm-test-agent:latest
 
 # build the .NET Core 2.1 smoke test docker image (using the artifacts)
-docker-compose build --build-arg DOTNETSDK_VERSION=7.0.306 --build-arg RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:2.1-bionic --build-arg PUBLISH_FRAMEWORK=netcoreapp2.1 --build-arg INSTALL_CMD="dpkg -i ./datadog-dotnet-apm*_amd64.deb" smoke-tests
+docker-compose build --build-arg DOTNETSDK_VERSION=8.0.100-rc.2.23502.2 --build-arg RUNTIME_IMAGE=mcr.microsoft.com/dotnet/aspnet:2.1-bionic --build-arg PUBLISH_FRAMEWORK=netcoreapp2.1 --build-arg INSTALL_CMD="dpkg -i ./datadog-dotnet-apm*_amd64.deb" smoke-tests
 
 # start the test-agent (you may get an error on Windows, just ignore it)
 docker-compose run --rm start-test-agent
