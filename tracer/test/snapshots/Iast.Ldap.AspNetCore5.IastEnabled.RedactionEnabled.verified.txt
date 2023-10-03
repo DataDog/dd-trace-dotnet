@@ -34,6 +34,7 @@
           },
           {
             "redacted": true,
+            "pattern": "abcdefghijk",
             "source": 0
           },
           {
@@ -47,7 +48,8 @@
     {
       "origin": "http.request.parameter",
       "name": "userName",
-      "redacted": true
+      "redacted": true,
+      "pattern": "abcdefghijk"
     }
   ]
 },

@@ -37,6 +37,7 @@
           },
           {
             "redacted": true,
+            "pattern": "abcd",
             "source": 1
           }
         ]
@@ -52,7 +53,8 @@
     {
       "origin": "http.cookie.value",
       "name": "argumentLine",
-      "redacted": true
+      "redacted": true,
+      "pattern": "abcd"
     }
   ]
 },

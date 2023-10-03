@@ -30,7 +30,16 @@
       "evidence": {
         "valueParts": [
           {
+            "value": "SELECT Surname from Persons where name='",
+            "source": 0
+          },
+          {
             "redacted": true,
+            "pattern": "OPQRST",
+            "source": 0
+          },
+          {
+            "value": "'",
             "source": 0
           }
         ]
@@ -41,7 +50,8 @@
     {
       "origin": "http.request.body",
       ,
-      "redacted": true
+      "redacted": true,
+      "pattern": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU"
     }
   ]
 },
