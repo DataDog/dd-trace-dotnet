@@ -6,7 +6,9 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Datadog.Trace.Iast.Helpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Iast;
@@ -42,6 +44,13 @@ internal class EvidenceConverter : JsonConverter<Evidence>
 
     public override bool CanRead => false;
 
+    private static string Substring(string value, Range range)
+    {
+        if (range.Start >= value.Length) { return string.Empty; }
+        else if (range.Start + range.Length >= value.Length) { return value.Substring(range.Start); }
+        return value.Substring(range.Start, range.Length);
+    }
+
     public override Evidence ReadJson(JsonReader reader, Type objectType, Evidence existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         throw new NotImplementedException();
@@ -71,7 +80,7 @@ internal class EvidenceConverter : JsonConverter<Evidence>
         writer.WriteEndObject();
     }
 
-    private void ToJsonTaintedValue(JsonWriter writer, string value, Range[] ranges)
+    internal static void ToJsonTaintedValue(JsonWriter writer, string value, Range[] ranges)
     {
         writer.WriteStartArray();
         int start = 0;
@@ -83,7 +92,7 @@ internal class EvidenceConverter : JsonConverter<Evidence>
             }
 
             string substring = Substring(value, range);
-            WriteValuePart(writer, substring, range);
+            WriteValuePart(writer, substring, range.Source);
             start = range.Start + substring.Length;
         }
 
@@ -95,145 +104,288 @@ internal class EvidenceConverter : JsonConverter<Evidence>
         writer.WriteEndArray();
     }
 
-    private string Substring(string value, Range range)
+    internal static void WriteValuePart(JsonWriter writer, string? value, Source? source = null)
     {
-        if (range.Start >= value.Length) { return string.Empty; }
-        else if (range.Start + range.Length >= value.Length) { return value.Substring(range.Start); }
-        return value.Substring(range.Start, range.Length);
-    }
-
-    private void WriteValuePart(JsonWriter writer, string value)
-    {
-        if (!string.IsNullOrEmpty(value))
-        {
-            WriteValuePart(writer, value, null);
-        }
-    }
-
-    private void WriteValuePart(JsonWriter writer, string value, Range? range)
-    {
+        if (value == null) { return; }
         writer.WriteStartObject();
         writer.WritePropertyName("value");
         writer.WriteValue(value);
-        if (range != null && range.Value.Source != null)
+        if (source != null)
         {
             writer.WritePropertyName("source");
-            writer.WriteValue(range.Value.Source.GetInternalId());
+            writer.WriteValue(source.GetInternalId());
         }
 
         writer.WriteEndObject();
     }
 
-    private void WriteRedactedValuePart(JsonWriter writer)
+    internal static void WriteRedactedValuePart(JsonWriter writer, string? value, Source? source = null)
     {
         writer.WriteStartObject();
         writer.WritePropertyName("redacted");
         writer.WriteValue(true);
-        writer.WriteEndObject();
-    }
+        if (value != null)
+        {
+            writer.WritePropertyName("pattern");
+            writer.WriteValue(value);
+        }
 
-    private void WriteRedactedValuePart(JsonWriter writer, Range range)
-    {
-        writer.WriteStartObject();
-        writer.WritePropertyName("redacted");
-        writer.WriteValue(true);
-        if (range.Source != null)
+        if (source != null)
         {
             writer.WritePropertyName("source");
-            writer.WriteValue(range.Source.GetInternalId());
+            writer.WriteValue(source.GetInternalId());
         }
 
         writer.WriteEndObject();
     }
 
-    private Range? Poll(LinkedList<Range> list)
+    internal static void Write(JsonWriter writer, ValuePart part)
     {
-        if (list.First != null)
+        if (part.IsRedacted)
         {
-            var res = list.First.Value;
-            list.RemoveFirst();
-            return res;
+            WriteRedactedValuePart(writer, part.Value, part.Source);
         }
-
-        return null;
+        else if (!part.ShouldRedact)
+        {
+            WriteValuePart(writer, part.Value, part.Source);
+        }
+        else
+        {
+            foreach (var valuePart in part.Split())
+            {
+                Write(writer, valuePart);
+            }
+        }
     }
 
     private void ToRedactedJson(JsonWriter writer, string value, Range[]? taintedRanges, Range[]? sensitiveRanges)
     {
         writer.WriteStartArray();
-        int start = 0;
+        // int start = 0;
         LinkedList<Range> tainted = taintedRanges != null ? new LinkedList<Range>(taintedRanges) : new LinkedList<Range>();
         LinkedList<Range> sensitive = sensitiveRanges != null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
 
-        // Ranges should be sorted by start position
-        Range? nextTainted = Poll(tainted);
-        Range? nextSensitive = Poll(sensitive);
-        for (int i = 0; i < value.Length; i++)
+        var parts = new ValuePartIterator(value, tainted, sensitive);
+        foreach (var part in parts)
         {
-            if (nextTainted != null && nextTainted.Value.Start == i)
+            if (part != null)
             {
-                WriteValuePart(writer, value.Substring(start, i - start)); // Write the string from the end of the previous range until the start of the current range
-                // If the tainted range contains sensitive ranges, we redact the tainted range source
-                while (nextSensitive != null && nextTainted.Value.Contains(nextSensitive.Value))
-                {
-                    nextTainted.Value.Source?.MarkAsRedacted();
-                    nextSensitive = Poll(sensitive);
-                }
-
-                // If the tainted range intersects sensitive ranges, we redact the tainted range source and split the sensitive range
-                if (nextSensitive != null && nextSensitive.Value.Intersects(nextTainted.Value))
-                {
-                    nextTainted.Value.Source?.MarkAsRedacted();
-                    var rest = nextSensitive.Value.Remove(nextTainted.Value);
-                    nextSensitive = rest.Count > 0 ? rest[0] : null;
-                }
-
-                // We write the range value redacted or not depensing on the source status
-                if (nextTainted.Value.Source != null && nextTainted.Value.Source.IsRedacted())
-                {
-                    WriteRedactedValuePart(writer, nextTainted.Value);
-                }
-                else
-                {
-                    WriteValuePart(writer, Substring(value, nextTainted.Value), nextTainted);
-                }
-
-                start = i + nextTainted.Value.Length;
-                i = start - 1;
-                nextTainted = Poll(tainted);
+                Write(writer, part.Value);
             }
-            else if (nextSensitive != null && nextSensitive.Value.Start == i)
-            {
-                WriteValuePart(writer, value.Substring(start, i - start)); // Write the string from the end of the previous range until the start of the current range
-                if (nextTainted != null && nextSensitive.Value.Intersects(nextTainted.Value))
-                {
-                    // If the sensitive range intersects the next tainted range, we split it and add the sensitive range parts to the sensitive ranges list front
-                    nextTainted.Value.Source?.MarkAsRedacted();
-                    foreach (var entry in nextSensitive.Value.Remove(nextTainted.Value))
-                    {
-                        if (entry.Start == i)
-                        {
-                            nextSensitive = entry;
-                        }
-                        else
-                        {
-                            sensitive.AddFirst(entry);
-                        }
-                    }
-                }
-
-                WriteRedactedValuePart(writer);
-                start = i + nextSensitive.Value.Length;
-                i = start - 1;
-                nextSensitive = Poll(sensitive);
-            }
-        }
-
-        if (start < value.Length)
-        {
-            WriteValuePart(writer, value.Substring(start));
         }
 
         writer.WriteEndArray();
+    }
+
+    private class ValuePartIterator : IEnumerable<ValuePart?>
+    {
+        // private Context ctx;
+        private string value;
+        private LinkedList<Range> tainted;
+        private LinkedList<Range> sensitive;
+        private Dictionary<Range, LinkedList<Range>> intersections = new Dictionary<Range, LinkedList<Range>>();
+        private LinkedList<ValuePart> next = new LinkedList<ValuePart>();
+
+        public ValuePartIterator(string value, LinkedList<Range> tainted, LinkedList<Range> sensitive)
+        {
+            this.value = value;
+            this.tainted = tainted;
+            this.sensitive = sensitive;
+        }
+
+        IEnumerator<ValuePart?> IEnumerable<ValuePart?>.GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return new Enumerator(this);
+        }
+
+        private class Enumerator : IEnumerator<ValuePart?>
+        {
+            private ValuePartIterator iterator;
+
+            private int index = 0;
+            private ValuePart? current = null;
+
+            public Enumerator(ValuePartIterator iterator)
+            {
+                this.iterator = iterator;
+            }
+
+            object? IEnumerator.Current
+            {
+                get
+                {
+                    return (object?)current;
+                }
+            }
+
+            public ValuePart? Current
+            {
+                get
+                {
+                    return current;
+                }
+            }
+
+            public bool MoveNext()
+            {
+                if (!HasNext())
+                {
+                    return false;
+                }
+
+                if (!iterator.next.IsEmpty())
+                {
+                    current = iterator.next.Poll();
+                    return true;
+                }
+
+                if (iterator.tainted.IsEmpty() && iterator.sensitive.IsEmpty())
+                {
+                    current = NextStringValuePart(iterator.value.Length); // last string chunk
+                    return true;
+                }
+
+                var nextTainted = iterator.tainted.Poll();
+                var nextSensitive = iterator.sensitive.Poll();
+                if (nextTainted != null)
+                {
+                    if (nextTainted.Value.IsBefore(nextSensitive))
+                    {
+                        AddNextStringValuePart(nextTainted.Value.Start, iterator.next); // pending string chunk
+                        nextSensitive = HandleTaintedValue(nextTainted.Value, nextSensitive);
+                    }
+                    else
+                    {
+                        iterator.tainted.AddFirst(nextTainted.Value);
+                    }
+                }
+
+                if (nextSensitive != null)
+                {
+                    if (nextSensitive.Value.IsBefore(nextTainted))
+                    {
+                        AddNextStringValuePart(nextSensitive.Value.Start, iterator.next); // pending string chunk
+                        HandleSensitiveValue(nextSensitive);
+                    }
+                    else
+                    {
+                        iterator.sensitive.AddFirst(nextSensitive.Value);
+                    }
+                }
+
+                current = iterator.next.Poll();
+                return true;
+            }
+
+            public void Dispose()
+            {
+            }
+
+            public bool HasNext()
+            {
+                return !iterator.next.IsEmpty() || index < iterator.value.Length;
+            }
+
+            public void Reset()
+            {
+            }
+
+            private Range? HandleTaintedValue(Range nextTainted, Range? nextSensitive)
+            {
+                var intersections = iterator.intersections.GetAndRemove(nextTainted);
+                intersections = intersections ?? new LinkedList<Range>();
+
+                // remove fully overlapped sensitive ranges
+                while (nextSensitive != null && nextTainted.Contains(nextSensitive.Value))
+                {
+                    nextTainted.Source?.MarkAsRedacted();
+                    intersections.AddLast(nextSensitive.Value);
+                    nextSensitive = iterator.sensitive.Poll();
+                }
+
+                Range? intersection = null;
+                // truncate last sensitive range if intersects with the tainted one
+                if (nextSensitive != null && (intersection = nextTainted.Intersection(nextSensitive.Value)) != null)
+                {
+                    nextTainted.Source?.MarkAsRedacted();
+                    intersections.AddLast(intersection.Value);
+                    nextSensitive = RemoveTaintedRange(nextSensitive.Value, nextTainted);
+                }
+
+                // finally add value part
+                string taintedValue = Substring(iterator.value, nextTainted);
+                iterator.next.AddLast(new ValuePart(taintedValue, nextTainted, intersections));
+                index = nextTainted.Start + nextTainted.Length;
+                return nextSensitive;
+            }
+
+            private void HandleSensitiveValue(Range? nextSensitive)
+            {
+                // truncate sensitive part if intersects with the next tainted range
+                Range? nextTainted = iterator.tainted.Peek();
+                Range? intersection = null;
+                if (nextTainted != null && nextSensitive != null && (intersection = nextTainted.Value.Intersection(nextSensitive)) != null)
+                {
+                    nextTainted!.Value.Source?.MarkAsRedacted();
+                    iterator.intersections.Get(nextTainted.Value, r => new LinkedList<Range>()).AddLast(intersection.Value);
+                    nextSensitive = RemoveTaintedRange(nextSensitive.Value, nextTainted.Value);
+                }
+
+                // finally add value part
+                if (nextSensitive != null)
+                {
+                    // string sensitiveValue = Substring(iterator.value, nextSensitive.Value);
+                    // iterator.next.AddLast(new RedactedValuePart(sensitiveValue));
+                    iterator.next.AddLast(new ValuePart(iterator.next.Peek()?.Source));
+                    index = nextSensitive.Value.Start + nextSensitive.Value.Length;
+                }
+            }
+
+            // Removes the tainted range from the sensitive one and returns whatever is before and enqueues the rest
+            private Range? RemoveTaintedRange(Range sensitive, Range tainted)
+            {
+                List<Range> disjointRanges = sensitive.Remove(tainted);
+                Range? result = null;
+                foreach (var disjoint in disjointRanges)
+                {
+                    if (disjoint.IsBefore(tainted))
+                    {
+                        result = disjoint;
+                    }
+                    else
+                    {
+                        iterator.sensitive.AddFirst(disjoint);
+                    }
+                }
+
+                return result;
+            }
+
+            private ValuePart? NextStringValuePart(int end)
+            {
+                if (index < end)
+                {
+                    string chunk = iterator.value.Substring(index, end - index);
+                    index = end;
+                    return new ValuePart(chunk);
+                }
+
+                return null;
+            }
+
+            private void AddNextStringValuePart(int end, LinkedList<ValuePart>? target)
+            {
+                var part = NextStringValuePart(end);
+                if (part != null && target != null)
+                {
+                    target.AddLast(part.Value);
+                }
+            }
+        }
     }
 }

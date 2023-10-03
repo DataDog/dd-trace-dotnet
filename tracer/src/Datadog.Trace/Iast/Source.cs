@@ -5,14 +5,22 @@
 
 #nullable enable
 
+using System;
+using System.Text;
+
 namespace Datadog.Trace.Iast;
 
 internal class Source
 {
+    private const string RedactedSensitiveBuffer = "****************";
+    private const string RedactedSourceBuffer = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+
     private readonly byte _origin;
     private int _internalId;
     private string? _value;
+    private bool _sensitive;
     private bool _redacted;
+    private string? _redactedValue;
 
     public Source(byte origin, string? name, string? value)
     {
@@ -29,6 +37,12 @@ internal class Source
     public string? Name { get; }
 
     public string? Value => _value;
+
+    internal bool IsSensitive => _sensitive;
+
+    internal bool IsRedacted => _redacted;
+
+    public string? RedactedValue => _redactedValue;
 
     public void SetInternalId(int id)
     {
@@ -47,13 +61,58 @@ internal class Source
 
     public override bool Equals(object? obj) => GetHashCode() == obj?.GetHashCode();
 
-    internal void MarkAsRedacted()
+    internal void MarkAsSensitive()
     {
-        _redacted = true;
+        _sensitive = true;
+        MarkAsRedacted();
     }
 
-    internal bool IsRedacted()
+    internal void MarkAsRedacted()
     {
-        return _redacted;
+        if (_redacted) { return; }
+        _redacted = true;
+        if (_value != null)
+        {
+            _redactedValue = NewString(ComputeLength(_value), RedactedSourceBuffer);
+        }
+    }
+
+    internal string RedactString(string value)
+    {
+        return NewString(ComputeLength(value), RedactedSensitiveBuffer);
+    }
+
+    private static int ComputeLength(string value)
+    {
+        if (value == null || value == string.Empty)
+        {
+            return 0;
+        }
+
+        int size = 0;
+        for (int i = 0; i < value.Length; i++)
+        {
+            char c = value[i];
+            if (!char.IsHighSurrogate(c))
+            {
+                size++;
+            }
+        }
+
+        return size;
+    }
+
+    private static string NewString(int length, string buffer)
+    {
+        var result = new StringBuilder(length);
+        int remaining = length;
+        while (remaining > 0)
+        {
+            int next = Math.Min(remaining, buffer.Length);
+            result.Append(buffer, 0, next);
+            remaining -= next;
+        }
+
+        return result.ToString();
     }
 }
