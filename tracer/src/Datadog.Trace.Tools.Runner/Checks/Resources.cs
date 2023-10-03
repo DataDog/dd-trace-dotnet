@@ -152,12 +152,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string WrongTracerArchitecture(string tracerArchitecture) => $"- Found {tracerArchitecture} installed but the current process is 64 Bit, make sure to install the 64-bit tracer instead.";
 
-        public static string AppPoolCheckFindings(string appPool) => $"- Check did not pass, fix the configuration on the {appPool} AppPool:";
+        public static string AppPoolCheckFindings(string appPool) => $"Initial run check did not pass, found the incorrect configuration on the {appPool} AppPool:";
 
         public static string WrongLinuxFolder(string expected, string found) => $"- Unable to find expected {expected} folder, found {found} instead, make sure to use the correct installer.";
 
         public static string UnsupportedLinuxArchitecture(string osArchitecture) => $"- The Linux architecture: {osArchitecture} is not supported by the tracer, check: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-processor-architectures ";
 
-        public static string ErrorCheckingLinuxDirectory(string error) => $"- Error trying to check the Linux installer directory: {error}";
+        public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
+
+        public static string EnvVarCheck(string number, string envVar) => $"{number}. Checking {envVar} and related configuration value:";
+
+        public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
     }
 }
