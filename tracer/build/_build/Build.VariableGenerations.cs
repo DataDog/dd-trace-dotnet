@@ -22,6 +22,7 @@ partial class Build : NukeBuild
                   .Executes(() =>
                    {
                        GenerateConditionVariables();
+
                        GenerateIntegrationTestsWindowsMatrices();
                        GenerateIntegrationTestsLinuxMatrices();
                        GenerateExplorationTestMatrices();
@@ -40,7 +41,7 @@ partial class Build : NukeBuild
                     "tracer/test/test-applications/debugger",
                     "tracer/build/_build/Build.Steps.Debugger.cs"
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });           
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
