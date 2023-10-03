@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+#nullable enable
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -31,17 +32,16 @@ public class KafkaConsumerCommitIntegration
         return new CallTargetState(null, offsets);
     }
 
-    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
     {
-        if (exception is null && state.State is IEnumerable<object> offsets)
+        var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+        if (exception is null && state.State is IEnumerable<object> offsets && dataStreams.IsEnabled && instance != null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
-            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
-            using var enumerator = offsets.GetEnumerator();
-            while (enumerator.MoveNext())
+            foreach (var offset in offsets)
             {
-                if (enumerator.Current.TryDuckCast<ITopicPartitionOffset>(out var item))
+                if (offset.TryDuckCast<ITopicPartitionOffset>(out var item))
                 {
                     dataStreams.TrackBacklog(
                         $"consumer_group:{groupId},partition:{item.Partition.Value},topic:{item.Topic},type:kafka_commit",

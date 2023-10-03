@@ -6,19 +6,19 @@
 #nullable enable
 
 using System;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
-using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
-internal class ProducerCache
+internal static class ProducerCache
 {
     // A map between Kafka Producer<TKey,TValue> and the corresponding producer bootstrap servers
     private static readonly ConditionalWeakTable<object, string> ProducerToBootstrapServersMap = new();
-    private static readonly ConditionalWeakTable<object, Delegate> ProducerDefaultDeliveryHandlerMap = new();
+    private static readonly ConditionalWeakTable<object, Delegate?> ProducerToDefaultDeliveryHandlerMap = new();
 
-    public static void AddProducer(object producer, string bootstrapServers)
+    public static void AddBootstrapServers(object producer, string bootstrapServers)
     {
 #if NETCOREAPP3_1_OR_GREATER
         ProducerToBootstrapServersMap.AddOrUpdate(producer, bootstrapServers);
@@ -27,14 +27,17 @@ internal class ProducerCache
 #endif
     }
 
-    public static void CreateDefaultDeliveryHandler<TProducer>(TProducer producer)
+    public static void AddDefaultDeliveryHandler(object producer)
     {
-        if (producer == null)
-        {
-            return;
-        }
+#if NETCOREAPP3_1_OR_GREATER
+        ProducerToDefaultDeliveryHandlerMap.AddOrUpdate(producer, CreateDefaultDeliveryHandler(producer.GetType()));
+#else
+        ProducerToDefaultDeliveryHandlerMap.GetValue(producer, x => CreateDefaultDeliveryHandler(producer.GetType()));
+#endif
+    }
 
-        var producerType = producer.GetType();
+    private static Delegate? CreateDefaultDeliveryHandler(Type producerType)
+    {
         var deliveryReportType = producerType.Assembly.GetType("Confluent.Kafka.DeliveryReport`2");
         var genericArgs = producerType.GetGenericArguments();
 
@@ -43,27 +46,26 @@ internal class ProducerCache
             var genericDeliveryReportType = deliveryReportType.MakeGenericType(genericArgs);
             var delegateType = typeof(Action<>).MakeGenericType(genericDeliveryReportType);
 
-            var handler = DelegateInstrumentation.Wrap(
+            return DelegateInstrumentation.Wrap(
                 null,
                 delegateType,
                 new ProduceDeliveryCallbacks());
-#if NETCOREAPP3_1_OR_GREATER
-            ProducerDefaultDeliveryHandlerMap.AddOrUpdate(producer, handler);
-#else
-            ProducerDefaultDeliveryHandlerMap.GetValue(producer, _ => handler);
-#endif
         }
-    }
 
-    public static bool TryGetDefaultDeliveryHandler(object producer, out Delegate? handler)
-        => ProducerDefaultDeliveryHandlerMap.TryGetValue(producer, out handler);
+        return null;
+    }
 
     public static bool TryGetProducer(object producer, out string? bootstrapServers)
         => ProducerToBootstrapServersMap.TryGetValue(producer, out bootstrapServers);
 
+    public static bool TryGetDefaultDeliveryHandler(object producer, out Delegate? handler)
+    {
+        return ProducerToDefaultDeliveryHandlerMap.TryGetValue(producer, out handler);
+    }
+
     public static void RemoveProducer(object producer)
     {
         ProducerToBootstrapServersMap.Remove(producer);
-        ProducerDefaultDeliveryHandlerMap.Remove(producer);
+        ProducerToDefaultDeliveryHandlerMap.Remove(producer);
     }
 }

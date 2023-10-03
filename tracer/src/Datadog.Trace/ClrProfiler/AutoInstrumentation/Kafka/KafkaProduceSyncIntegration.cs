@@ -40,14 +40,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, ref Delegate deliveryHandler)
             where TMessage : IMessage
         {
-            if (deliveryHandler == null)
+            // We should not use a delivery handler if deliveryReports are disabled (enabled by default),
+            // since it will result in InvalidOperationException
+            // https://github.com/confluentinc/confluent-kafka-dotnet/blob/65362199f13bdad8a0831541f53d92e1e95a8a37/src/Confluent.Kafka/Producer.cs#L869
+            if (
+                deliveryHandler == null &&
+                Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled &&
+                ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
             {
-                // there will be a default delivery handler for this producer unless
-                // the delivery reports are explicitly disabled.
-                if (ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
-                {
-                    deliveryHandler = handler;
-                }
+                deliveryHandler = handler;
             }
 
             // manually doing duck cast here so we have access to the _original_ TopicPartition type

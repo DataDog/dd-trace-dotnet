@@ -2,6 +2,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+#nullable enable
 
 using System;
 using System.ComponentModel;
@@ -25,13 +26,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class KafkaConsumerCommitAllIntegration
 {
-    internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
+    internal static CallTargetReturn<TResponse> OnMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception? exception, in CallTargetState state)
         where TResponse : ITopicPartitionOffsets, IDuckType
     {
-        if (exception is null && response.Instance is not null)
+        var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
+        if (exception is null && response.Instance is not null && dataStreams.IsEnabled && instance != null)
         {
             ConsumerCache.TryGetConsumerGroup(instance, out var groupId, out var _);
-            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
 
             for (var i = 0; i < response.Count; i++)
             {

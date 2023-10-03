@@ -53,18 +53,10 @@ public class KafkaConsumerConstructorIntegration
                 }
             }
 
-            if (instance != null)
+            if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
             {
-                // we need to get the actual handler type to make this work in case
-                // the original handler is not set
-                var handlerType = ConsumerCache.GetOffsetsCommittedHandlerType(instance);
-                if (handlerType != null)
-                {
-                    consumer.OffsetsCommittedHandler = DelegateInstrumentation.Wrap(
-                        consumer.OffsetsCommittedHandler,
-                        handlerType,
-                        new OffsetsCommittedCallbacks(groupId));
-                }
+                // add handler to track committed offsets
+                consumer.OffsetsCommittedHandler = consumer.OffsetsCommittedHandler.Instrument(new OffsetsCommittedCallbacks(groupId));
             }
 
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache

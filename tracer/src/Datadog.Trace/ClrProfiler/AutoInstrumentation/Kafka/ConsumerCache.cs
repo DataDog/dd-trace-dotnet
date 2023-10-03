@@ -17,47 +17,6 @@ internal static class ConsumerCache
     private static readonly ConditionalWeakTable<object, string> ConsumerToBootstrapServersMap = new();
     private static readonly ConditionalWeakTable<object, Type?> ConsumerToOffsetsCommittedHandlerMap = new();
 
-    public static Type? GetOffsetsCommittedHandlerType<TConsumer>(TConsumer consumer)
-    {
-        if (consumer == null)
-        {
-            return null;
-        }
-
-#if NETCOREAPP3_1_OR_GREATER
-        if (ConsumerToOffsetsCommittedHandlerMap.TryGetValue(consumer, out var result))
-        {
-            return result;
-        }
-
-        lock (consumer)
-        {
-            var handler = CreateOffsetsCommittedHandlerType(consumer);
-            ConsumerToOffsetsCommittedHandlerMap.AddOrUpdate(consumer, handler);
-            return handler;
-        }
-#else
-        return ConsumerToOffsetsCommittedHandlerMap.GetValue(
-            consumer, CreateOffsetsCommittedHandlerType);
-#endif
-    }
-
-    private static Type? CreateOffsetsCommittedHandlerType<TConsumer>(TConsumer consumer)
-    {
-        var consumerType = consumer?.GetType();
-        var consumerInterfaceType = consumerType?.Assembly.GetType("Confluent.Kafka.IConsumer`2");
-        var offsetsType = consumerType?.Assembly.GetType("Confluent.Kafka.CommittedOffsets");
-        var genericArgs = consumerType?.GetGenericArguments();
-
-        if (consumerInterfaceType == null || offsetsType == null || genericArgs == null)
-        {
-            return null;
-        }
-
-        var genericConsumer = consumerInterfaceType.MakeGenericType(genericArgs);
-        return typeof(Action<,>).MakeGenericType(genericConsumer, offsetsType);
-    }
-
     public static void SetConsumerGroup(object consumer, string groupId, string bootstrapServers)
     {
 #if NETCOREAPP3_1_OR_GREATER
