@@ -32,7 +32,7 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isAppSecChanged", new[] { "/tracer/src/Datadog.Trace/Iast", "/tracer/src/Datadog.Tracer.Native/iast", "/tracer/src/Datadog.Trace/AppSec" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isAppSecChanged", new[] { "tracer/src/Datadog.Trace/Iast", "tracer/src/Datadog.Tracer.Native/iast", "tracer/src/Datadog.Trace/AppSec" }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
