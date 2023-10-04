@@ -184,12 +184,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
             if (!ok && isTracingUsingBundle)
             {
                 AnsiConsole.WriteLine($"6. Checking if process tracing configuration matches Installer or Bundler:");
-                AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
+                Utils.WriteWarning(TracingWithBundleProfilerPath);
             }
             else if (!ok)
             {
                 AnsiConsole.WriteLine($"6. Checking if process tracing configuration matches Installer or Bundler:");
-                AnsiConsole.WriteLine(TracingWithInstaller);
+                Utils.WriteWarning(TracingWithInstaller);
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
