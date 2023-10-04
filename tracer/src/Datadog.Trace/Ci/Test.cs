@@ -342,14 +342,22 @@ public sealed class Test
         duration ??= _scope.Span.Context.TraceContext.Clock.ElapsedSince(scope.Span.StartTime);
 
         // Set coverage
-        if (CIVisibility.Settings.CodeCoverageEnabled == true && Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
+        if (CIVisibility.Settings.CodeCoverageEnabled == true)
         {
-            testCoverage.SessionId = tags.SessionId;
-            testCoverage.SuiteId = tags.SuiteId;
-            testCoverage.SpanId = _scope.Span.SpanId;
+            if (Coverage.CoverageReporter.Handler.EndSession() is Coverage.Models.Tests.TestCoverage testCoverage)
+            {
+                testCoverage.SessionId = tags.SessionId;
+                testCoverage.SuiteId = tags.SuiteId;
+                testCoverage.SpanId = _scope.Span.SpanId;
 
-            CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
-            CIVisibility.Manager?.WriteEvent(testCoverage);
+                CIVisibility.Log.Debug("Coverage data for SessionId={SessionId}, SuiteId={SuiteId} and SpanId={SpanId} processed.", testCoverage.SessionId, testCoverage.SuiteId, testCoverage.SpanId);
+                CIVisibility.Manager?.WriteEvent(testCoverage);
+            }
+            else if (status != TestStatus.Skip)
+            {
+                var testName = scope.Span.ResourceName;
+                CIVisibility.Log.Warning("Coverage data for test: {TestName} with Status: {Status} is empty. File: {File}", testName, status, tags.SourceFile);
+            }
         }
 
         // Set status
