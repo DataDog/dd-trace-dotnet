@@ -353,17 +353,17 @@ namespace Datadog.Trace.Tools.Runner
 
         internal static void WriteError(string message)
         {
-            AnsiConsole.MarkupLine($"[red3 on black]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[red] [[FAILURE]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static void WriteWarning(string message)
         {
-            AnsiConsole.MarkupLine($"[yellow on black]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[yellow] [[WARNING]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static void WriteSuccess(string message)
         {
-            AnsiConsole.MarkupLine($"[lime on black]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[lime] [[SUCCESS]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static bool IsAlpine()
