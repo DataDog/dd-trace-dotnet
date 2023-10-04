@@ -60,6 +60,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
         {
             foreach (var target in configuredNamedTargets)
             {
+                if (target is IDuckType { Instance: DirectSubmissionNLogV5Target } ||
+                    target is IDuckType { Instance: DirectSubmissionNLogTarget } ||
+                    target is IDuckType { Instance: DirectSubmissionNLogLegacyTarget })
+                {
+                    // don't want to configure our own target
+                    continue;
+                }
+
                 if (target.TryDuckCast<ITargetWithLayoutProxy>(out var targetWithLayout))
                 {
                     var layout = targetWithLayout.Layout;
