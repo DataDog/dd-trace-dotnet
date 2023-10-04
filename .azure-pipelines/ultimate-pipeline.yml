@@ -336,7 +336,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -493,7 +493,7 @@ stages:
         build: true
         target: builder
         baseImage: debian
-        command: "Clean CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader ExtractDebugInfoLinux"
+        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -633,10 +633,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
 
-    - script: brew install cppcheck
-      displayName: Installing CppCheck
-
-    - script: ./tracer/build.sh CppCheckNativeSrc BuildTracerHome CppCheckNativeLoader BuildNativeLoader
+    - script: ./tracer/build.sh BuildTracerHome BuildNativeLoader
       displayName: Build tracer home
       retryCountOnTaskFailure: 1
 
@@ -1489,6 +1486,65 @@ stages:
       workingDirectory: $(Pipeline.Workspace)
       condition: succeededOrFailed()
       continueOnError: true
+
+- stage: static_analysis_checks_tracer
+  dependsOn: [merge_commit_id]
+  variables:
+    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
+    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+  jobs:
+  - template: steps/update-github-status-jobs.yml
+    parameters:
+      jobs: [linux, macos]
+
+  - job: linux
+    timeoutInMinutes: 60 #default value
+    dependsOn: []
+    strategy:
+      matrix:
+        centos7:
+          baseImage: centos7
+          poolName: azure-linux-scale-set
+        alpine:
+          baseImage: alpine
+          poolName: azure-linux-scale-set
+        arm64:
+          baseImage: debian
+          poolName: aws-arm64-auto-scaling
+    pool:
+      name: $(poolName)
+
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(baseImage)
+        command: "CppCheckNativeSrc CppCheckNativeLoader"
+        retryCountForRunCommand: 1
+
+  - job: macos
+    timeoutInMinutes: 60 #default value
+    dependsOn: [ ]
+    pool:
+      vmImage: macos-11
+    steps:
+    - template: steps/clone-repo.yml
+      parameters:
+        targetShaId: $(targetShaId)
+        targetBranch: $(targetBranch)
+    - template: steps/install-latest-dotnet-sdk.yml
+
+    - script: brew install cppcheck
+      displayName: Installing CppCheck
+
+    - script: ./tracer/build.sh CppCheckNativeSrc CppCheckNativeLoader
+      displayName: Run cpp check
+      retryCountOnTaskFailure: 1
 
 - stage: static_analysis_tests_profiler
   condition: >
@@ -5682,6 +5738,7 @@ stages:
     - integration_tests_linux_debugger
     - integration_tests_arm64
     - integration_tests_arm64_debugger
+    - static_analysis_checks_tracer
     - profiler_integration_tests_linux
     - profiler_integration_tests_windows
     - exploration_tests_windows
