@@ -236,7 +236,7 @@ partial class Build
 
     Target CompileNativeSrcWindows => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -261,7 +261,7 @@ partial class Build
 
     Target CompileTracerNativeSrcLinux => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -275,7 +275,7 @@ partial class Build
 
     Target CompileNativeSrcMacOs => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
@@ -355,11 +355,22 @@ partial class Build
         .Description("Runs CppCheck over the native tracer project")
         .DependsOn(CppCheckNativeSrcUnix);
 
+    Target CompileManagedLoader => _ => _
+        .Unlisted()
+        .Description("Compiles the managed loader (which is required by the native loader)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
         .After(Restore)
+        .After(CompileManagedLoader)
         .Executes(() =>
         {
             var include = TracerDirectory.GlobFiles(
@@ -370,7 +381,8 @@ partial class Build
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj"
+                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
             var toBuild = include.Except(exclude);

@@ -95,6 +95,7 @@ schedules:
 variables:
   buildConfiguration: Release
   dotnetCoreSdkLatestVersion: 8.0.100-rc.1.23463.5
+  nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -319,10 +320,14 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          nativeBaseImage: centos7
+          managedBaseImage: debian
+          useNativeSdkVersion: true
           artifactSuffix: linux-x64
         alpine:
-          baseImage: alpine
+          nativeBaseImage: alpine
+          managedBaseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
@@ -332,12 +337,29 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
-        baseImage: $(baseImage)
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        baseImage: $(managedBaseImage)
+        command: "Clean CompileManagedLoader"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(nativeBaseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildNativeTracerHome"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: $(managedBaseImage)
+        command: "BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -370,9 +392,11 @@ stages:
         x64:
           baseImage: centos7
           artifactSuffix: linux-x64
+          useNativeSdkVersion: true
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          useNativeSdkVersion: ""
     pool:
       name: azure-linux-scale-set
 
@@ -381,11 +405,13 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -417,7 +443,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -844,9 +870,15 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          nativeBaseImage: centos7
+          managedBaseImage: debian
+          useNativeSdkVersion: true
+          artifactSuffix: linux-x64
         alpine:
-          baseImage: alpine
+          nativeBaseImage: alpine
+          managedBaseImage: alpine
+          useNativeSdkVersion: ""
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -855,12 +887,29 @@ stages:
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
+
       - template: steps/run-in-docker.yml
         parameters:
           build: true
           target: builder
-          baseImage: $(baseImage)
-          command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
+          baseImage: $(managedBaseImage)
+          command: "Clean CompileManagedLoader -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+      - template: steps/run-in-docker.yml
+        parameters:
+          build: true
+          target: builder
+          baseImage: $(nativeBaseImage)
+          useNativeSdkVersion: $(useNativeSdkVersion)
+          command: "BuildNativeTracerHome -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+      - template: steps/run-in-docker.yml
+        parameters:
+          target: builder
+          baseImage: $(managedBaseImage)
+          command: "BuildManagedTracerHome ExtractDebugInfoLinux -buildConfiguration Debug"
           retryCountForRunCommand: 1
 
   - job: windows
@@ -1038,7 +1087,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -1081,9 +1130,11 @@ stages:
       matrix:
         x64:
           baseImage: centos7
+          useNativeSdkVersion: true
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
@@ -1108,6 +1159,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunNativeUnitTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -1499,7 +1551,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    baseImage: "centos7"
+    baseImage: "debian"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1918,7 +1970,7 @@ stages:
     variables:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
-      baseImage: "centos7"
+      baseImage: "debian"
       artifactSuffix: "linux-x64"
 
     strategy:
@@ -2294,9 +2346,11 @@ stages:
       matrix:
         x64:
           baseImage: centos7
+          useNativeSdkVersion: true
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
 
     variables:
@@ -2327,12 +2381,14 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2340,6 +2396,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -3323,7 +3380,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
           poolName: azure-linux-scale-set
         alpine:

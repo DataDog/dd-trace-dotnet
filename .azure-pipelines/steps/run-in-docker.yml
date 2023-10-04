@@ -1,11 +1,16 @@
 parameters:
   - name: 'baseImage'
     type: 'string'
-    default: centos7
+    default: debian
 
   - name: 'target'
     type: 'string'
     default: tester
+
+    # This should be a boolean, but AzDo
+  - name: useNativeSdkVersion
+    type: string
+    default: ''
 
   - name: build
     type: boolean
@@ -29,15 +34,31 @@ parameters:
 steps:
 - ${{ if eq(parameters.build, true) }}:
   - script: |
+      if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
+        sdkVersion=$(dotnetCoreSdkLatestVersion)
+      else
+        sdkVersion=$(nativeBuildDotnetSdkVersion)
+      fi
+
+      echo "Using SDK version $sdkVersion"
+
       docker build \
-        --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
-        --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+        --build-arg DOTNETSDK_VERSION=$sdkVersion \
+        --tag dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         --target ${{ parameters.target }} \
         --file "$(System.DefaultWorkingDirectory)/tracer/build/_build/docker/${{ parameters.baseImage }}.dockerfile" \
         "$(System.DefaultWorkingDirectory)/tracer/build/_build"
     displayName: Build ${{ parameters.baseImage }} Docker image
     retryCountOnTaskFailure: 5
 - script: |
+    if [ -z "${{ parameters.useNativeSdkVersion }}" ]; then
+      sdkVersion=$(dotnetCoreSdkLatestVersion)
+    else
+      sdkVersion=$(nativeBuildDotnetSdkVersion)
+    fi
+
+    echo "Using SDK version $sdkVersion"
+
     docker run --rm \
         --mount type=bind,source="$(System.DefaultWorkingDirectory)",target=/project \
         --env NugetPackageDirectory=/project/$(relativeNugetPackageDirectory) \
@@ -79,7 +100,7 @@ steps:
         --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH \
         --env DD_LOGGER_DD_TAGS \
         ${{ parameters.extraArgs }} \
-        dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
+        dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }}:$sdkVersion \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
   displayName: Run '${{ parameters.command }}' in Docker
   retryCountOnTaskFailure: ${{ parameters.retryCountForRunCommand }}
