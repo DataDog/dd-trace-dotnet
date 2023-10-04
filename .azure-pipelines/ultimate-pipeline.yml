@@ -4020,8 +4020,8 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         echo "aaa $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])"
         echo "aaa $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])"
-        echo "bbb $(variables.isMainBranch)"
-        echo "vvvv $(variables.isMainRepository)"
+        echo "isAppSecChanged $(isAppSecChanged)"
+        echo "IsTracerChanged $(IsTracerChanged)"
         echo "bwwwbb $(isMainBranch)"
         echo "wwwvvvv $(isMainRepository)"
         mkdir -p $(CrankDir)/results/logs
