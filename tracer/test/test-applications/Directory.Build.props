@@ -18,6 +18,8 @@
     <DefineConstants Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'">$(DefineConstants);TEST_ALL_MINOR_PACKAGE_VERSIONS</DefineConstants>
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet from complaining about vulnerable packages -->
+    <NuGetAudit>false</NuGetAudit>
 
     <!-- WebClient is obsolete -->
     <NoWarn>SYSLIB0014</NoWarn>
