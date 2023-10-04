@@ -19,11 +19,5 @@ public class RcmBaseFramework : AspNetBase, IClassFixture<AspNetCoreTestFixture>
         : base(sampleName, outputHelper,  shutdownPath, samplesDir, testName)
     {
         SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "0.5");
-
-        // even if not using the log entry watcher , it's nice to have different logs directories to read artifacts
-        Directory.CreateDirectory(LogDirectory);
-        SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
     }
-
-    protected string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 }
