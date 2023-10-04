@@ -407,7 +407,7 @@ namespace Datadog.Trace.ClrProfiler
         {
             try
             {
-                Serverless.InitIfNeeded(metadata);
+                // Serverless.InitIfNeeded(metadata);
             }
             catch (Exception ex)
             {
