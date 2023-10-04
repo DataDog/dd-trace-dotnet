@@ -28,13 +28,19 @@ internal class EvidenceConverter : JsonConverter<Evidence>
     //
     // When redacted output is:
     // "valueParts": [
-    //   { "value": "SELECT * FROM Users WHERE " },     -> Not tainted part
-    //   { "source": 0, "value": "Name='" },            -> Tainted part from source 0
-    //   { "source": 0, "redacted": true },             -> Redacted tainted part from source 0
-    //   { "source": 0, "value": "'" },                 -> Tainted part from source 0
-    //   { "value": " and RoleId=" },                   -> Not tainted part
-    //   { "redacted": true }                           -> Redacted not tainted part
+    //   { "value": "SELECT * FROM Users WHERE " },            -> Not tainted part
+    //   { "source": 0, "value": "Name='" },                   -> Tainted part from source 0
+    //   { "source": 0, "redacted": true, "pattern": "abcd" }, -> Redacted tainted part from source 0
+    //   { "source": 0, "value": "'" },                        -> Tainted part from source 0
+    //   { "value": " and RoleId=" },                          -> Not tainted part
+    //   { "redacted": true }                                  -> Redacted not tainted part
     // ]
+
+    // Explanation:
+    //   Input is a string value, tainted ranges and sensitive ranges.
+    //   We must produce an array of "value parts", with are segments of the input value.
+    //   Non sensitive parts are plain text. Sensitive ranges must be redacted.
+    //   If a tainted range intersects with a sensitive range, the corresponding source must be redacted also.
 
     private bool _redactionEnabled;
 
@@ -162,7 +168,6 @@ internal class EvidenceConverter : JsonConverter<Evidence>
     private void ToRedactedJson(JsonWriter writer, string value, Range[]? taintedRanges, Range[]? sensitiveRanges)
     {
         writer.WriteStartArray();
-        // int start = 0;
         LinkedList<Range> tainted = taintedRanges != null ? new LinkedList<Range>(taintedRanges) : new LinkedList<Range>();
         LinkedList<Range> sensitive = sensitiveRanges != null ? new LinkedList<Range>(sensitiveRanges) : new LinkedList<Range>();
 
@@ -259,22 +264,22 @@ internal class EvidenceConverter : JsonConverter<Evidence>
 
         private void AddValuePart(int start, int end, bool redact, List<ValuePart> valueParts)
         {
-            if (start < end)
+            if (start < end && Value != null)
             {
-                var chunk = Value!.Substring(start, end - start);
+                var chunk = Value.Substring(start, end - start);
                 if (!redact)
                 {
                     // append the value
                     valueParts.Add(new ValuePart(chunk, Source));
                 }
-                else
+                else if (Source?.Value != null)
                 {
                     var length = chunk.Length;
-                    var matching = Source!.Value!.IndexOf(chunk);
-                    if (matching >= 0)
+                    var matching = Source.Value.IndexOf(chunk);
+                    if (matching >= 0 && Source.RedactedValue != null)
                     {
                         // if matches append the matching part from the redacted value
-                        var pattern = Source!.RedactedValue!.Substring(matching, length);
+                        var pattern = Source.RedactedValue.Substring(matching, length);
                         valueParts.Add(new ValuePart(pattern, Source, true));
                     }
                     else
@@ -330,7 +335,7 @@ internal class EvidenceConverter : JsonConverter<Evidence>
             {
                 get
                 {
-                    return (object?)current;
+                    return current;
                 }
             }
 

@@ -7,6 +7,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
 
@@ -104,7 +105,7 @@ internal class Source
 
     private static string NewString(int length, string buffer)
     {
-        var result = new StringBuilder(length);
+        var result = StringBuilderCache.Acquire(length);
         int remaining = length;
         while (remaining > 0)
         {
@@ -113,6 +114,6 @@ internal class Source
             remaining -= next;
         }
 
-        return result.ToString();
+        return StringBuilderCache.GetStringAndRelease(result);
     }
 }

@@ -43,8 +43,8 @@ internal static class CollectionExtensions
         return list == null || list.Count == 0;
     }
 
-#pragma warning disable 8714
     public static TV? GetAndRemove<TK, TV>(this Dictionary<TK, TV>? map, TK key)
+        where TK : notnull
         where TV : class
     {
         if (map != null && map.TryGetValue(key, out var val))
@@ -57,6 +57,7 @@ internal static class CollectionExtensions
     }
 
     public static TV Get<TK, TV>(this Dictionary<TK, TV> map, TK key, Func<TK, TV> computeIfAbsent)
+        where TK : notnull
         where TV : class
     {
         if (map.TryGetValue(key, out var val))
@@ -68,5 +69,4 @@ internal static class CollectionExtensions
         map[key] = newVal;
         return newVal;
     }
-#pragma warning restore 8714
 }
