@@ -123,8 +123,7 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the global <see cref="Tracer"/> instance.
-        /// Used by all automatic instrumentation and recommended
-        /// as the entry point for manual instrumentation.
+        /// This is the entry point for manual instrumentation.
         /// </summary>
         [PublicApi]
         public static Tracer Instance
@@ -148,8 +147,8 @@ namespace Datadog.Trace
 
         /// <summary>
         /// Gets or sets the global <see cref="Tracer"/> instance.
-        /// Used by all automatic instrumentation and recommended
-        /// as the entry point for manual instrumentation.
+        /// This is the entry point for automatic instrumentation and must not
+        /// be called by code paths that are exposed to the public API.
         /// </summary>
         internal static Tracer InternalInstance
         {
