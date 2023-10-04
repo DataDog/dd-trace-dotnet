@@ -118,40 +118,14 @@ const IpcHeader ErrorResponse =
 };
 
 
-// helpers
-//
+// Helpers
 //
 inline bool IsMessageValid(IpcHeader* pMessage)
 {
     if (memcmp(&DD_Ipc_Magic_V1, pMessage->Magic, sizeof(DD_Ipc_Magic_V1)) != 0)
     {
-#ifdef _DEBUG
-        std::cout << "Invalid Magic signature...\n";
-#endif
         return false;
     }
 
     return true;
-}
-
-inline HANDLE CheckEndpoint(const std::string& pipeName, DWORD timeoutMS)
-{
-    bool success = ::WaitNamedPipeA(pipeName.c_str(), timeoutMS);
-#ifdef _DEBUG
-    if (!success)
-    {
-        std::cout << "Timeout when trying to connect to" << pipeName << "...\n";
-    }
-#endif
-
-    HANDLE hPipe = ::CreateFileA(
-        pipeName.c_str(),
-        GENERIC_READ | GENERIC_WRITE,
-        0,
-        nullptr,
-        OPEN_EXISTING,
-        0,
-        nullptr);
-
-    return hPipe;
 }

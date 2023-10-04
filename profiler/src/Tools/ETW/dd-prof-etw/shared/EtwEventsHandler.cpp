@@ -11,6 +11,12 @@
 
 EtwEventsHandler::EtwEventsHandler()
 {
+    _showMessages = false;
+}
+
+EtwEventsHandler::EtwEventsHandler(bool showMessages)
+{
+    _showMessages = showMessages;
 }
 
 void EtwEventsHandler::Stop()
@@ -48,9 +54,10 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
                 totalReadSize += readSize;
                 if (totalReadSize == bufferSize)
                 {
-#ifdef _DEBUG
-                    std::cout << "Read buffer was too small...\n";
-#endif
+                    if (_showMessages)
+                    {
+                        std::cout << "Read buffer was too small...\n";
+                    }
                     return false;
                 }
 
@@ -60,15 +67,17 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
             {
                 if (lastError == ERROR_BROKEN_PIPE)
                 {
-#ifdef _DEBUG
-                    std::cout << "Disconnected client...\n";
-#endif
+                    if (_showMessages)
+                    {
+                        std::cout << "Disconnected client...\n";
+                    }
                 }
                 else
                 {
-#ifdef _DEBUG
-                    std::cout << "Error reading from pipe (" << lastError << ")...\n ";
-#endif
+                    if (_showMessages)
+                    {
+                        std::cout << "Error reading from pipe (" << lastError << ")...\n ";
+                    }
                 }
                 return false;
             }
@@ -77,6 +86,11 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
         {
             if (!IsMessageValid(pMessage))
             {
+                if (_showMessages)
+                {
+                    std::cout << "Invalid Magic signature...\n";
+                }
+
                 // fire and forget
                 //WriteErrorResponse(hPipe);
                 return false;
@@ -102,21 +116,30 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
         readSize = 0;
         if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
         {
-            std::cout << "Stop reading events\n";
+            if (_showMessages)
+            {
+                std::cout << "Stop reading events\n";
+            }
             break;
         }
 
         // check the message based on the expected command
         if (message->CommandId == Commands::ClrEvents)
         {
-            std::cout << "Events received: " << message->Size - sizeof(IpcHeader) << " / " << readSize << " bytes\n";
+            if (_showMessages)
+            {
+                std::cout << "Events received: " << message->Size - sizeof(IpcHeader) << " / " << readSize << " bytes\n";
+            }
 
             // fire and forget
             //WriteSuccessResponse(hPipe);
         }
         else
         {
-            std::cout << "Invalid command (" << message->CommandId << ")...\n";
+            if (_showMessages)
+            {
+                std::cout << "Invalid command (" << message->CommandId << ")...\n";
+            }
 
             // fire and forget
             //WriteErrorResponse(hPipe);

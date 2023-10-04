@@ -15,9 +15,28 @@
 #include "..\shared\IpcServer.h"
 #include "..\shared\EtwEventsHandler.h"
 
-bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe)
+
+void ShowHelp()
+{
+    printf("\nDatadog CLR Events Client v1.0\n");
+    printf("Simulate a .NET profiled application asking for ETW CLR events via named pipes.\n");
+    printf("\n");
+    printf("Usage: -pid <pid of a .NET process emitting events> -pipe <server named pipe endpoint>\n");
+    printf("   Ex: -pid 1234 -pipe DD_ETW_DISPATCHER\n");
+    printf("\n");
+}
+
+bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe, bool& needHelp)
 {
     bool success = false;
+
+    // show help if no parameter is provided
+    if (argc == 1)
+    {
+        needHelp = true;
+        return true;
+    }
+
     for (size_t i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "-pid") == 0)
@@ -42,244 +61,20 @@ bool ParseCommandLine(int argc, char* argv[], int& pid, char*& pipe)
             pipe = argv[i + 1];
             success = true;
         }
+        else
+        if (strcmp(argv[i], "-help") == 0)
+        {
+            needHelp = true;
+            return true;
+        }
     }
 
     return success;
 }
 
-int ShowLastError(const char* msg, DWORD error = ::GetLastError())
+void ShowLastError(const char* msg, DWORD error = ::GetLastError())
 {
     printf("%s (%u)\n", msg, error);
-    return -2;
-}
-
-bool WriteErrorResponse(HANDLE hPipe)
-{
-    DWORD written;
-    if (!::WriteFile(hPipe, &ErrorResponse, sizeof(ErrorResponse), &written, nullptr))
-    {
-        printf("Failed to send error response...\n");
-        return false;
-    }
-    ::FlushFileBuffers(hPipe);
-
-    return true;
-}
-
-bool WriteSuccessResponse(HANDLE hPipe)
-{
-    DWORD written;
-    if (!::WriteFile(hPipe, &SuccessResponse, sizeof(SuccessResponse), &written, nullptr))
-    {
-        printf("Failed to send success response...\n");
-        return false;
-    }
-    ::FlushFileBuffers(hPipe);
-
-    return true;
-}
-
-bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize)
-{
-    bool success = true;
-    auto pMessage = reinterpret_cast<ClrEventsMessage*>(pBuffer);
-    DWORD totalReadSize = 0;
-    DWORD lastError = ERROR_SUCCESS;
-
-    while (totalReadSize < bufferSize)
-    {
-        success = ::ReadFile(hPipe, &(pBuffer[totalReadSize]), bufferSize - totalReadSize, &readSize, nullptr);
-
-        if (!success || readSize == 0)
-        {
-            lastError = ::GetLastError();
-
-            if (lastError == ERROR_MORE_DATA)
-            {
-                totalReadSize += readSize;
-                if (totalReadSize == bufferSize)
-                {
-                    std::cout << "Read buffer was too small...\n";
-                    return false;
-                }
-
-                continue;
-            }
-            else
-            {
-                if (lastError == ERROR_BROKEN_PIPE)
-                {
-                    std::cout << "Disconnected client...\n";
-                }
-                else
-                {
-                    std::cout << "Error reading from pipe (" << lastError << ")...\n ";
-                }
-                return false;
-            }
-        }
-        else
-        {
-            if (!IsMessageValid(pMessage))
-            {
-                WriteErrorResponse(hPipe);
-                return false;
-            }
-
-            return true;
-        }
-    }
-
-    // too big for the buffer
-    return false;
-}
-
-void ProcessEvents(HANDLE hPipe)
-{
-    DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
-    auto buffer = std::make_unique<uint8_t[]>(bufferSize);
-    auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
-
-    DWORD readSize;
-    for (;;)
-    {
-        if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
-        {
-            break;
-        }
-
-        // check the message based on the expected command
-        if (message->CommandId == Commands::ClrEvents)
-        {
-            std::cout << "Events received: " << message->Size - sizeof(IpcHeader) << " / " << readSize << " bytes\n";
-
-            WriteSuccessResponse(hPipe);
-        }
-        else
-        {
-            std::cout << "Invalid command (" << message->CommandId << ")...\n";
-
-            WriteErrorResponse(hPipe);
-            break;
-        }
-    }
-
-    ::DisconnectNamedPipe(hPipe);
-    ::CloseHandle(hPipe);
-}
-
-
-int RunServer(int pid)
-{
-    std::stringstream buffer;
-    buffer << "\\\\.\\pipe\\DD_ETW_CLIENT_";
-    buffer << pid;
-    std::string pipeName = buffer.str();
-    std::cout << "Exposing " << pipeName << "\n";
-
-    // we are expecting only one "client" connecting: the Datadog Agent
-    HANDLE hNamedPipe =
-        ::CreateNamedPipeA(
-            pipeName.c_str(),
-            PIPE_ACCESS_DUPLEX,  // TODO: do we really need to send a response to the Agent?
-            PIPE_TYPE_MESSAGE | PIPE_READMODE_MESSAGE | PIPE_WAIT | PIPE_REJECT_REMOTE_CLIENTS,
-            1,
-            sizeof(SuccessResponse),
-            (1 << 16) + sizeof(IpcHeader),
-            0,
-            nullptr);
-
-    if (hNamedPipe == INVALID_HANDLE_VALUE)
-    {
-        return ShowLastError("Failed to create named pipe");
-    }
-
-    std::cout << "Listening...\n";
-
-    if (!::ConnectNamedPipe(hNamedPipe, nullptr) && ::GetLastError() != ERROR_PIPE_CONNECTED)
-    {
-        return ShowLastError("ConnectNamedPipe failed...");
-    }
-
-    // process events as they are received
-    ProcessEvents(hNamedPipe);
-
-    return 0;
-}
-
-void CALLBACK RunServerCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
-{
-    int pid = reinterpret_cast<int>(context);
-    RunServer(pid);
-}
-
-void StartServerAsync(int pid)
-{
-    // let a threadpool thread run the named pipe server
-    if (!::TrySubmitThreadpoolCallback(RunServerCallback, reinterpret_cast<PVOID>(pid), nullptr))
-    {
-        ShowLastError("Impossible to run the server into the threadpool...");
-    }
-}
-
-void SendRegistrationCommand(HANDLE hPipe, int pid, bool add)
-{
-    RegistrationProcessMessage message;
-    if (add)
-    {
-        SetupRegisterCommand(message, pid);
-    }
-    else
-    {
-        SetupUnregisterCommand(message, pid);
-    }
-
-	DWORD written;
-    if (!::WriteFile(hPipe, &message, sizeof(message), &written, nullptr))
-    {
-        ShowLastError("Failed to write to pipe");
-        return;
-    }
-    ::FlushFileBuffers(hPipe);
-
-    IpcHeader response;
-    DWORD read;
-    if (!::ReadFile(hPipe, &response, sizeof(response), &read, nullptr))
-    {
-        DWORD lastError = ::GetLastError();
-        if (lastError == ERROR_PIPE_NOT_CONNECTED)
-        {
-            // expected after unregistration (i.e. !add) because the pipe will be closed by the Agent
-            if (add)
-            {
-                std::cout << "Pipe no more connected: registration failed...\n";
-            }
-        }
-        else
-        {
-            ShowLastError("Failed to read result");
-            if (add)
-            {
-                std::cout << "Registration failed...\n";
-            }
-            else
-            {
-                std::cout << "Unregistration failed...\n";
-            }
-        }
-    }
-    else
-    {
-        if (add)
-        {
-            std::cout << "Registered!\n";
-        }
-        else
-        {
-            std::cout << "Unregistered!\n";
-        }
-    }
-
 }
 
 void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
@@ -345,7 +140,8 @@ int main(int argc, char* argv[])
 {
     int pid = -1;
     char* pipe = nullptr;
-    if (!ParseCommandLine(argc, argv, pid, pipe))
+    bool needHelp = false;
+    if (!ParseCommandLine(argc, argv, pid, pipe, needHelp))
     {
         if (pid == -1)
         {
@@ -359,19 +155,25 @@ int main(int argc, char* argv[])
         return -1;
     }
 
+    if (needHelp)
+    {
+        ShowHelp();
+        return 0;
+    }
+
     std::cout << "\n";
 
     // start the server part to receive proxied ETW events
-    //StartServerAsync(pid);
-
     std::stringstream buffer;
     buffer << "\\\\.\\pipe\\DD_ETW_CLIENT_";
     buffer << pid;
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
-    auto handler = std::make_unique<EtwEventsHandler>();
+    bool showMessages = true;
+    auto handler = std::make_unique<EtwEventsHandler>(showMessages);
     auto server = IpcServer::StartAsync(
+        showMessages,
         pipeName,
         handler.get(),
         (1 << 16) + sizeof(IpcHeader),
@@ -390,7 +192,7 @@ int main(int argc, char* argv[])
     pipeName += pipe;
     std::cout << "Contacting " << pipeName << "...\n";
 
-    auto client = IpcClient::Connect(pipeName, 500);
+    auto client = IpcClient::Connect(showMessages, pipeName, 500);
     if (client == nullptr)
     {
         std::cout << "Impossible to connect to the ETW server...\n";

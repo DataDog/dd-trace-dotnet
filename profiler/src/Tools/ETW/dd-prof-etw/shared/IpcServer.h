@@ -16,15 +16,17 @@ class IpcServer
 {
 public:
     IpcServer();
-    IpcServer(const std::string& portName,
+    IpcServer(bool showMessages,
+              const std::string& portName,
               INamedPipeHandler* pHandler,
               uint32_t inBufferSize,
               uint32_t outBufferSize,
               uint32_t maxInstances,
               uint32_t timeoutMS);
-    ~IpcServer() = default;
+    ~IpcServer();
 
     static std::unique_ptr<IpcServer> StartAsync(
+        bool showMessages,
         const std::string& portName,
         INamedPipeHandler* pHandler,
         uint32_t inBufferSize,
@@ -36,8 +38,10 @@ public:
 private:
     static void CALLBACK StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
     static void CALLBACK ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID context);
+    void ShowLastError(const char* message, uint32_t lastError = ::GetLastError());
 
 private:
+    bool _showMessages;
     std::string _portName;
     uint32_t _inBufferSize;
     uint32_t _outBufferSize;

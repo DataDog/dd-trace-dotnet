@@ -38,9 +38,6 @@
     <ClInclude Include="..\shared\IpcClient.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\shared\DebugHelpers.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="..\shared\INamedPipeHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>

@@ -22,8 +22,8 @@ enum NamedPipesCode : uint32_t
 class IpcClient
 {
 public:
-    static std::unique_ptr<IpcClient> Connect(const std::string& portName, uint32_t timeoutMS = NMPWAIT_USE_DEFAULT_WAIT);
-    IpcClient(HANDLE hPipe);
+    static std::unique_ptr<IpcClient> Connect(bool showMessages, const std::string& portName, uint32_t timeoutMS = NMPWAIT_USE_DEFAULT_WAIT);
+    IpcClient(bool showMessages, HANDLE hPipe);
 
     uint32_t Send(PVOID pBuffer, uint32_t bufferSize);
     uint32_t Read(PVOID pBuffer, uint32_t bufferSize);
@@ -32,8 +32,11 @@ public:
 
 private:
     IpcClient();
-    static HANDLE GetEndPoint(const std::string& portName, uint16_t timeoutMS);
+    uint32_t ShowLastError(const char* message, uint32_t lastError = ::GetLastError());
+    static HANDLE GetEndPoint(bool showMessages, const std::string& portName, uint16_t timeoutMS);
 
 private:
     HANDLE _hPipe;
+    bool _showMessages;
 };
+

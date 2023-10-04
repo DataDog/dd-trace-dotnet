@@ -11,7 +11,13 @@ IpcServer::IpcServer()
 {
 }
 
-IpcServer::IpcServer(const std::string& portName,
+IpcServer::~IpcServer()
+{
+    Stop();
+}
+
+IpcServer::IpcServer(bool showMessages,
+                     const std::string& portName,
                      INamedPipeHandler* pHandler,
                      uint32_t inBufferSize,
                      uint32_t outBufferSize,
@@ -29,6 +35,7 @@ IpcServer::IpcServer(const std::string& portName,
 }
 
 std::unique_ptr<IpcServer> IpcServer::StartAsync(
+    bool showMessages,
     const std::string& portName,
     INamedPipeHandler* pHandler,
     uint32_t inBufferSize,
@@ -43,13 +50,13 @@ std::unique_ptr<IpcServer> IpcServer::StartAsync(
     }
 
     auto server = std::make_unique<IpcServer>(
-        portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
+        showMessages, portName, pHandler, inBufferSize, outBufferSize, maxInstances, timeoutMS
         );
 
     // let a threadpool thread process the command; allowing the server to process more incoming commands
     if (!::TrySubmitThreadpoolCallback(StartCallback, (PVOID)server.get(), nullptr))
     {
-        ShowLastError("Impossible to add the Start callback into the threadpool...");
+        server->ShowLastError("Impossible to add the Start callback into the threadpool...");
         return nullptr;
     }
 
@@ -85,22 +92,25 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 
         if (hNamedPipe == INVALID_HANDLE_VALUE)
         {
-            ShowLastError("Failed to create named pipe...");
-#ifdef _DEBUG
-            std::cout << "--> for server #" << pThis->_serverCount << "...\n";
-#endif
+            pThis->ShowLastError("Failed to create named pipe...");
+            if (pThis->_showMessages)
+            {
+                std::cout << "--> for server #" << pThis->_serverCount << "...\n";
+            }
 
             pThis->_pHandler->OnStartError();
             return;
         }
 
-#ifdef _DEBUG
-        std::cout << "Listening to server #" << pThis->_serverCount << "...\n";
-#endif
+        if (pThis->_showMessages)
+        {
+            std::cout << "Listening to server #" << pThis->_serverCount << "...\n";
+        }
 
         if (!::ConnectNamedPipe(hNamedPipe, nullptr) && ::GetLastError() != ERROR_PIPE_CONNECTED)
         {
-            ShowLastError("ConnectNamedPipe failed...");
+            pThis->ShowLastError("ConnectNamedPipe failed...");
+            ::CloseHandle(hNamedPipe);
 
             pThis->_pHandler->OnConnectError();
             return;
@@ -114,7 +124,7 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         // let a threadpool thread process the read/write communication; allowing the server to process more incoming connections
         if (!::TrySubmitThreadpoolCallback(ConnectCallback, pServerInfo, nullptr))
         {
-            ShowLastError("Impossible to add the Connect callback into the threadpool...");
+            pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
 
             pThis->_pHandler->OnStartError();
             return;
@@ -135,4 +145,12 @@ void CALLBACK IpcServer::ConnectCallback(PTP_CALLBACK_INSTANCE instance, PVOID c
     // cleanup
     ::DisconnectNamedPipe(hPipe);
     ::CloseHandle(hPipe);
+}
+
+void IpcServer::ShowLastError(const char* message, uint32_t lastError)
+{
+    if (_showMessages)
+    {
+        std::cout << message << " (" << lastError << ")\n";
+    }
 }

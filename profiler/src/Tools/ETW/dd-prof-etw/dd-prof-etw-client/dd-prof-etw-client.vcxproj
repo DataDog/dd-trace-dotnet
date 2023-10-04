@@ -134,7 +134,6 @@
     <ClCompile Include="dd-prof-etw-client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\shared\DebugHelpers.h" />
     <ClInclude Include="..\shared\EtwEventsHandler.h" />
     <ClInclude Include="..\shared\INamedPipeHandler.h" />
     <ClInclude Include="..\shared\IpcClient.h" />

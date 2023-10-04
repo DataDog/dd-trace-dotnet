@@ -8,45 +8,48 @@
 
 IpcClient::IpcClient()
 {
+    _showMessages = false;
     _hPipe = nullptr;
 }
 
-IpcClient::IpcClient(HANDLE hPipe)
+IpcClient::IpcClient(bool showMessages, HANDLE hPipe)
 {
+    _showMessages = showMessages;
     _hPipe = hPipe;
 }
 
 IpcClient::~IpcClient()
 {
-    if (_hPipe != nullptr)
-    {
-        ::CloseHandle(_hPipe);
-        _hPipe = nullptr;
-    }
+    Disconnect();
 }
 
 bool IpcClient::Disconnect()
 {
     HANDLE hPipe = _hPipe;
     _hPipe = nullptr;
+    if (hPipe == nullptr)
+    {
+        return false;
+    }
+
     return ::CloseHandle(hPipe);
 }
 
 
-
-std::unique_ptr<IpcClient> IpcClient::Connect(const std::string& portName, uint32_t timeoutMS)
+std::unique_ptr<IpcClient> IpcClient::Connect(bool showMessages, const std::string& portName, uint32_t timeoutMS)
 {
-    HANDLE hPipe = GetEndPoint(portName, timeoutMS);
+    HANDLE hPipe = GetEndPoint(showMessages, portName, timeoutMS);
     if (hPipe == INVALID_HANDLE_VALUE)
     {
-#ifdef _DEBUG
-        DWORD lastError = ::GetLastError();
-        std::cout << "Impossible to connect to " << portName << " (" << lastError << ")\n";
-#endif
+        if (showMessages)
+        {
+            DWORD lastError = ::GetLastError();
+            std::cout << "Impossible to connect to " << portName << " (" << lastError << ")\n";
+        }
         return nullptr;
     }
 
-    return std::make_unique<IpcClient>(hPipe);
+    return std::make_unique<IpcClient>(showMessages, hPipe);
  }
 
 uint32_t IpcClient::Send(PVOID pBuffer, uint32_t bufferSize)
@@ -89,15 +92,16 @@ uint32_t IpcClient::Read(PVOID pBuffer, uint32_t bufferSize)
     }
 }
 
-HANDLE IpcClient::GetEndPoint(const std::string& portName, uint16_t timeoutMS)
+HANDLE IpcClient::GetEndPoint(bool showMessages, const std::string& portName, uint16_t timeoutMS)
 {
     bool success = ::WaitNamedPipeA(portName.c_str(), timeoutMS);
-#ifdef _DEBUG
     if (!success)
     {
-        std::cout << "Timeout when trying to connect to" << portName << "...\n";
+        if (showMessages)
+        {
+            std::cout << "Timeout when trying to connect to" << portName << "...\n";
+        }
     }
-#endif
 
     HANDLE hPipe = ::CreateFileA(
         portName.c_str(),
@@ -109,4 +113,14 @@ HANDLE IpcClient::GetEndPoint(const std::string& portName, uint16_t timeoutMS)
         nullptr);
 
     return hPipe;
+}
+
+uint32_t IpcClient::ShowLastError(const char* message, uint32_t lastError)
+{
+    if (_showMessages)
+    {
+        std::cout << message << " (" << lastError << ")\n";
+    }
+
+    return lastError;
 }

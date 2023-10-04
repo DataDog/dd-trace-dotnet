@@ -15,6 +15,7 @@ class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
+    EtwEventsHandler(bool showMessages);
     void Stop();
 
 public:
@@ -28,4 +29,5 @@ private:
 
 private:
     std::atomic<bool> _stopRequested = false;
+    bool _showMessages;
 };

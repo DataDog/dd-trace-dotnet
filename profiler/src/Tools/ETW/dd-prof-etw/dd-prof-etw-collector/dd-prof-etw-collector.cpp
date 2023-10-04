@@ -39,30 +39,6 @@ int ShowLastError(const char* msg, DWORD error = ::GetLastError())
     return 1;
 }
 
-bool IsSuccessResponse(HANDLE hPipe)
-{
-    IpcHeader response;
-    DWORD read;
-    if (!::ReadFile(hPipe, &response, sizeof(response), &read, nullptr))
-    {
-        ShowLastError("Failed to get response...");
-        return false;
-    }
-
-    if (read != sizeof(response))
-    {
-        std::cout << "invalid response size\n";
-        return false;
-    }
-
-    if (!IsMessageValid(&response))
-    {
-        return false;
-    }
-
-    return (response.ResponseCode == (uint8_t)ResponseId::OK);
-}
-
 bool IsSuccessResponse(IpcClient* client)
 {
     IpcHeader response;
@@ -83,6 +59,7 @@ bool IsSuccessResponse(IpcClient* client)
 
     if (!IsMessageValid(&response))
     {
+        std::cout << "Invalid Magic signature...\n";
         return false;
     }
 
@@ -91,7 +68,7 @@ bool IsSuccessResponse(IpcClient* client)
 
 void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
-    int pid = reinterpret_cast<int>(context);
+    uint64_t pid = reinterpret_cast<uint64_t>(context);
 
     // check the profiled application is listening
     std::stringstream sBuffer;
@@ -99,7 +76,8 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
     sBuffer << pid;
     std::string pipeName = sBuffer.str();
 
-    auto client = IpcClient::Connect(pipeName, 500);
+    bool showMessages = true;
+    auto client = IpcClient::Connect(showMessages, pipeName, 500);
     if (client == nullptr)
     {
         std::cout << "Impossible to connect to the profiled application on " << pipeName << "\n";
@@ -125,7 +103,7 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
             return;
         }
 
-        // TODO: fire and forget
+        // fire and forget
         //if (!IsSuccessResponse(client.get()))
         //{
         //    std::cout << "Error from the CLR events receiver...\n ";
@@ -138,7 +116,7 @@ void SendClrEvents(PTP_CALLBACK_INSTANCE instance, PVOID context)
     client->Disconnect();
 }
 
-void SendClrEventsAsync(int pid)
+void SendClrEventsAsync(uint64_t pid)
 {
     if (!::TrySubmitThreadpoolCallback(SendClrEvents, reinterpret_cast<PVOID>(pid), nullptr))
     {
