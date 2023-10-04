@@ -260,8 +260,8 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
             //
             __try
             {
-                // FIX: in some situations, SentinelOne Agent was messing up the stack of a thread
-                //      so RSP was not valid
+                // FIX: For a customer using the SentinelOne solution, it was not possible to walk the stack
+                //      of a thread so RSP was not valid
                 context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
             }
             __except (EXCEPTION_EXECUTE_HANDLER)
