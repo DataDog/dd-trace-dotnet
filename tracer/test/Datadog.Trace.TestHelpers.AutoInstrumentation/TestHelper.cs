@@ -17,9 +17,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -57,9 +59,15 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"TargetFramework: {EnvironmentHelper.GetTargetFramework()}");
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
+
+            // the directory would be created anyway, but in certain case a delay can lead to an exception from the LogEntryWatcher
+            Directory.CreateDirectory(LogDirectory);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         }
 
         public bool SecurityEnabled { get; private set; }
+
+        protected virtual string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 
