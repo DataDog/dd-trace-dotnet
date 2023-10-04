@@ -14,7 +14,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -36,7 +36,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -58,7 +58,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -80,7 +80,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -102,7 +102,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -124,7 +124,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -146,7 +146,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -168,7 +168,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -190,7 +190,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -212,7 +212,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -234,7 +234,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -256,7 +256,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -278,7 +278,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -300,7 +300,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -322,7 +322,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -344,7 +344,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -366,7 +366,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -388,7 +388,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -410,7 +410,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -432,7 +432,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -454,7 +454,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -476,7 +476,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -498,7 +498,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -520,7 +520,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -542,7 +542,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -564,7 +564,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -586,7 +586,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -608,7 +608,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -630,7 +630,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -652,7 +652,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -674,7 +674,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -696,7 +696,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -718,7 +718,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -740,7 +740,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -762,7 +762,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -784,7 +784,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -806,7 +806,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -828,7 +828,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -850,7 +850,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -872,7 +872,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -894,7 +894,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -916,7 +916,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -938,7 +938,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -960,7 +960,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -982,7 +982,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1004,7 +1004,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1026,7 +1026,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1048,7 +1048,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1070,7 +1070,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1092,7 +1092,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1114,7 +1114,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1136,7 +1136,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1158,7 +1158,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1180,7 +1180,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1202,7 +1202,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1224,7 +1224,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1246,7 +1246,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1268,7 +1268,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1290,7 +1290,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1312,7 +1312,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1334,7 +1334,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1356,7 +1356,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1378,7 +1378,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1400,7 +1400,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1422,7 +1422,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1444,7 +1444,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1466,7 +1466,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1488,7 +1488,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1510,7 +1510,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1532,7 +1532,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1554,7 +1554,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1576,7 +1576,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1598,7 +1598,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1620,7 +1620,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1642,7 +1642,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1664,7 +1664,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1686,7 +1686,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1708,7 +1708,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1730,7 +1730,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1752,7 +1752,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1774,7 +1774,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1796,7 +1796,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1818,7 +1818,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1840,7 +1840,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1862,7 +1862,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1884,7 +1884,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1906,7 +1906,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1928,7 +1928,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1950,7 +1950,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1972,7 +1972,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1994,7 +1994,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2016,7 +2016,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2038,7 +2038,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2060,7 +2060,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2082,7 +2082,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2104,7 +2104,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2126,7 +2126,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2148,7 +2148,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2170,7 +2170,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2192,7 +2192,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2214,7 +2214,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2236,7 +2236,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2258,7 +2258,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2280,7 +2280,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2302,7 +2302,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2324,7 +2324,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2346,7 +2346,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2368,7 +2368,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2390,7 +2390,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2412,7 +2412,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2434,7 +2434,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2456,7 +2456,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2478,7 +2478,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2500,7 +2500,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2522,7 +2522,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2544,7 +2544,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2566,7 +2566,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2588,7 +2588,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2610,7 +2610,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2632,7 +2632,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2654,7 +2654,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2676,7 +2676,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2698,7 +2698,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2720,7 +2720,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2742,7 +2742,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2764,7 +2764,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2786,7 +2786,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2808,7 +2808,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2830,7 +2830,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2852,7 +2852,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2874,7 +2874,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2896,7 +2896,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2918,7 +2918,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2940,7 +2940,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2962,7 +2962,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2984,7 +2984,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3006,7 +3006,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3028,7 +3028,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3050,7 +3050,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3072,7 +3072,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3094,7 +3094,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3116,7 +3116,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3138,7 +3138,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3160,7 +3160,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3182,7 +3182,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3204,7 +3204,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3226,7 +3226,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3248,7 +3248,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3270,7 +3270,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3292,7 +3292,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3314,7 +3314,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3336,7 +3336,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3358,7 +3358,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3380,7 +3380,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3402,7 +3402,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3424,7 +3424,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3446,7 +3446,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3468,7 +3468,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3490,7 +3490,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3512,7 +3512,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3534,7 +3534,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3556,7 +3556,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3578,7 +3578,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3600,7 +3600,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3622,7 +3622,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3644,7 +3644,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3666,7 +3666,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3688,7 +3688,7 @@
       out.host: sqlserver,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.git.commit.sha: GUIDe4204c10,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {

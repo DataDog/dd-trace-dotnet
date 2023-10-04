@@ -17,7 +17,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -42,7 +42,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -67,7 +67,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -92,7 +92,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -117,7 +117,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -142,7 +142,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -167,7 +167,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -192,7 +192,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -217,7 +217,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -242,7 +242,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -267,7 +267,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -292,7 +292,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -317,7 +317,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -342,7 +342,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -367,7 +367,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -392,7 +392,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -417,7 +417,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -442,7 +442,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -467,7 +467,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -492,7 +492,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -517,7 +517,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -542,7 +542,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -567,7 +567,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -592,7 +592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -617,7 +617,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -642,7 +642,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -667,7 +667,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -692,7 +692,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -717,7 +717,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -742,7 +742,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -767,7 +767,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -792,7 +792,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -817,7 +817,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -842,7 +842,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -867,7 +867,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -892,7 +892,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -917,7 +917,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -942,7 +942,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -967,7 +967,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -992,7 +992,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1017,7 +1017,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1042,7 +1042,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1067,7 +1067,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1092,7 +1092,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1117,7 +1117,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1142,7 +1142,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1167,7 +1167,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1192,7 +1192,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1217,7 +1217,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1242,7 +1242,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1267,7 +1267,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1292,7 +1292,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1317,7 +1317,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1342,7 +1342,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1367,7 +1367,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1392,7 +1392,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1417,7 +1417,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1442,7 +1442,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1467,7 +1467,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1492,7 +1492,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1517,7 +1517,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1542,7 +1542,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1567,7 +1567,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1592,7 +1592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1617,7 +1617,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1642,7 +1642,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1667,7 +1667,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1692,7 +1692,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1717,7 +1717,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1742,7 +1742,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1767,7 +1767,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1792,7 +1792,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1817,7 +1817,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1842,7 +1842,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1867,7 +1867,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1892,7 +1892,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1917,7 +1917,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1942,7 +1942,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1967,7 +1967,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -1992,7 +1992,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2017,7 +2017,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2042,7 +2042,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2067,7 +2067,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2092,7 +2092,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2117,7 +2117,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2142,7 +2142,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2167,7 +2167,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2192,7 +2192,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2217,7 +2217,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2242,7 +2242,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2267,7 +2267,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2292,7 +2292,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2317,7 +2317,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2342,7 +2342,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2367,7 +2367,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2392,7 +2392,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2417,7 +2417,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2442,7 +2442,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2467,7 +2467,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2492,7 +2492,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2517,7 +2517,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2542,7 +2542,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2567,7 +2567,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2592,7 +2592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2617,7 +2617,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2642,7 +2642,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2667,7 +2667,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2692,7 +2692,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2717,7 +2717,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2742,7 +2742,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2767,7 +2767,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2792,7 +2792,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2817,7 +2817,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2842,7 +2842,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2867,7 +2867,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2892,7 +2892,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2917,7 +2917,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2942,7 +2942,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2967,7 +2967,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -2992,7 +2992,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3017,7 +3017,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3042,7 +3042,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3067,7 +3067,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3092,7 +3092,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3117,7 +3117,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3142,7 +3142,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3167,7 +3167,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3192,7 +3192,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3217,7 +3217,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3242,7 +3242,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3267,7 +3267,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3292,7 +3292,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3317,7 +3317,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3342,7 +3342,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3367,7 +3367,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3392,7 +3392,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3417,7 +3417,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3442,7 +3442,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3467,7 +3467,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3492,7 +3492,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3517,7 +3517,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3542,7 +3542,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3567,7 +3567,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3592,7 +3592,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3617,7 +3617,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3642,7 +3642,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
@@ -3667,7 +3667,7 @@
       runtime-id: Guid_1,
       span.kind: client,
       _dd.dbm_trace_injected: true,
-      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
