@@ -35,6 +35,9 @@ namespace Datadog.Trace
         [PublicApi]
         public ISpanContext? Extract<TCarrier>(TCarrier carrier, Func<TCarrier, string, IEnumerable<string?>> getter)
         {
+            // TODO: This API is public but it relies on the internal property SpanContextPropagator.Instance.
+            // Ensure that we follow up and proxy this type appropriately so
+            // the user will receive this type from the automatic assembly.
             TelemetryFactory.Metrics.Record(PublicApiUsage.SpanContextExtractor_Extract);
             var spanContext = SpanContextPropagator.Instance.Extract(carrier, getter);
             if (spanContext is not null

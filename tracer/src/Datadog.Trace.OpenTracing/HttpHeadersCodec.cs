@@ -15,6 +15,13 @@ namespace Datadog.Trace.OpenTracing
     {
         private static readonly CultureInfo InvariantCulture = CultureInfo.InvariantCulture;
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the SpanContextPropagator helpers via public accessors so they can get redirected to the automatic tracer's SpanContextPropagator.Instance when a version-conflict scenario is detected.")]
+        private static readonly SpanContextExtractor SpanContextExtractor = new();
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the SpanContextPropagator helpers via public accessors so they can get redirected to the automatic tracer's SpanContextPropagator.Instance when a version-conflict scenario is detected.")]
+        private static readonly SpanContextInjector SpanContextInjector = new();
+
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the SpanContextPropagator helpers via public accessors so they can get redirected to the automatic tracer's SpanContextPropagator.Instance when a version-conflict scenario is detected.")]
         public global::OpenTracing.ISpanContext Extract(object carrier)
         {
             var map = carrier as ITextMap;
@@ -25,10 +32,11 @@ namespace Datadog.Trace.OpenTracing
             }
 
             IHeadersCollection headers = new TextMapHeadersCollection(map);
-            var propagationContext = SpanContextPropagator.Instance.Extract(headers);
+            var propagationContext = SpanContextExtractor.Extract(headers, (carrier, key) => carrier.GetValues(key));
             return new OpenTracingSpanContext(propagationContext);
         }
 
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the SpanContextPropagator helpers via public accessors so they can get redirected to the automatic tracer's SpanContextPropagator.Instance when a version-conflict scenario is detected.")]
         public void Inject(global::OpenTracing.ISpanContext context, object carrier)
         {
             var map = carrier as ITextMap;
@@ -43,7 +51,7 @@ namespace Datadog.Trace.OpenTracing
             if (context is OpenTracingSpanContext otSpanContext && otSpanContext.Context is SpanContext ddSpanContext)
             {
                 // this is a Datadog context
-                SpanContextPropagator.Instance.Inject(ddSpanContext, headers);
+                SpanContextInjector.Inject(headers, (carrier, key, value) => carrier.Set(key, value), ddSpanContext);
             }
             else
             {
