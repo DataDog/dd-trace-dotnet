@@ -43,9 +43,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogFactoryGetConfigurationForLoggerInstrumentation));
 
-        // TODO attempt to store the fact that we've configured a given configuration to not double configure
-        internal static ConditionalWeakTable<object, object?> ConfigurationTable { get; } = new();
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>
@@ -75,12 +72,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
             // for later versions of NLog, the configuration passed is "null"
             // but we have an "_isDisposing" field that is set to true in the LogFactory that we can check
             // for older versions of NLog, the configuration passed is the _previous_ configuration used
-            // and there is no "_isDisposing" field that we can check, so using the ConfigurationTable to keep track
-
-            if (configuration is not null && ConfigurationTable.TryGetValue(configuration, out _))
-            {
-                return CallTargetState.GetDefault();
-            }
+            // and there is no "_isDisposing" field that we can check
+            // but we handle the multiple calls in the logs injection helper and with the direct log submission already
 
             if (instance.TryDuckCast<ILogFactoryProxy>(out var logFactoryProxy) && logFactoryProxy.IsDisposing)
             {
@@ -121,14 +114,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                     //       to hook everything up correctly for this newly created configuration
                     //       but first we need to create and add the direct logs submission target
                     configuration = (TLoggingConfiguration)loggingConfigurationInstance;
-                }
-            }
-
-            if (configuration is not null && logFactoryProxy is null)
-            {
-                if (!ConfigurationTable.TryGetValue(configuration, out _))
-                {
-                    ConfigurationTable.Add(configuration, null);
                 }
             }
 
