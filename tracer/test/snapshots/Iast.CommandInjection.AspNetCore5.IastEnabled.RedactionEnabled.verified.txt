@@ -38,6 +38,7 @@
           },
           {
             "redacted": true,
+            "pattern": "abcd",
             "source": 1
           }
         ]
@@ -53,7 +54,8 @@
     {
       "origin": "http.request.parameter",
       "name": "argumentLine",
-      "redacted": true
+      "redacted": true,
+      "pattern": "abcd"
     }
   ]
 },
