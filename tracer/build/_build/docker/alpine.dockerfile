@@ -73,9 +73,11 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
 FROM base as builder
 
 # Copy the build project in and build it
-WORKDIR /project
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
+WORKDIR /project
 
 FROM base as tester
 
@@ -91,6 +93,8 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && rm dotnet-install.sh
 
 # Copy the build project in and build it
-WORKDIR /project
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
+WORKDIR /project
