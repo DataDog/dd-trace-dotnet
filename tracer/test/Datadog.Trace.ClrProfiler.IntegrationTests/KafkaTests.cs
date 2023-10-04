@@ -21,11 +21,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [Trait("RequiresDockerDependency", "true")]
     public class KafkaTests : TracingIntegrationTest
     {
-        private const int ExpectedSuccessProducerWithHandlerSpans = 30;
-        private const int ExpectedSuccessProducerWithoutHandlerSpans = 0;
+        private const int ExpectedSuccessProducerWithHandlerSpans = 20;
+        private const int ExpectedSuccessProducerWithoutHandlerSpans = 10;
         private const int ExpectedSuccessProducerSpans = ExpectedSuccessProducerWithHandlerSpans + ExpectedSuccessProducerWithoutHandlerSpans;
-        private const int ExpectedTombstoneProducerWithHandlerSpans = 30;
-        private const int ExpectedTombstoneProducerWithoutHandlerSpans = 0;
+        private const int ExpectedTombstoneProducerWithHandlerSpans = 20;
+        private const int ExpectedTombstoneProducerWithoutHandlerSpans = 10;
         private const int ExpectedTombstoneProducerSpans = ExpectedTombstoneProducerWithHandlerSpans + ExpectedTombstoneProducerWithoutHandlerSpans;
         private const int ExpectedErrorProducerSpans = 2; // When no delivery handler, error can't be caught, so we don't test that case
         private const int ExpectedConsumerSpans = ExpectedSuccessProducerSpans + ExpectedTombstoneProducerSpans;

@@ -54,8 +54,8 @@ async Task RunStandardPipelineScenario()
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
-    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: false, isTombstone: false);
-    await Producer.ProduceAsync(topic2, numMessages: 3, config, isTombstone: false);
+    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: false, isTombstone: false, explicitPartitions: true);
+    await Producer.ProduceAsync(topic2, numMessages: 3, config, isTombstone: false, explicitPartitions: true);
     LogWithTime("Finished producing messages");
 
     // Wait for all messages to be consumed
@@ -115,7 +115,7 @@ async Task RunStandardPipelineScenario()
         Handle(consumeResult);
 
         Console.WriteLine($"Producing to {produceToTopic}");
-        Producer.Produce(produceToTopic, numMessages: 1, config, handleDelivery: true, isTombstone: false);
+        Producer.Produce(produceToTopic, numMessages: 1, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
     }
 }
 
@@ -153,7 +153,7 @@ async Task RunFanInAndOutScenario()
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
-    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false);
+    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
     LogWithTime("Finished producing messages");
 
     // Wait for all messages to be consumed
@@ -222,7 +222,7 @@ async Task RunFanInAndOutScenario()
             }
             
             Console.WriteLine($"Producing to {topic2} x2");
-            Producer.Produce(topic2, numMessages: 2, config, handleDelivery: true, isTombstone: false);
+            Producer.Produce(topic2, numMessages: 2, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
             foreach (var scope in scopes)
             {
                 scope.Dispose();

@@ -19,7 +19,7 @@ namespace Samples.Kafka
         private static readonly ConcurrentDictionary<string, int> LastUsedPartition = new();
         private static int _messageNumber = 0;
 
-        public static async Task ProduceAsync(string topic, int numMessages, ClientConfig config, bool isTombstone)
+        public static async Task ProduceAsync(string topic, int numMessages, ClientConfig config, bool isTombstone, bool explicitPartitions = false)
         {
             var producerConfig = new ProducerConfig
             {
@@ -40,9 +40,17 @@ namespace Samples.Kafka
 
                     try
                     {
-                        var deliveryResult = await producer.ProduceAsync(new TopicPartition(topic, GetPartition(config, topic, key)), message);
+                        DeliveryResult<string, string> deliveryResult;
+                        if (explicitPartitions)
+                        {
+                            deliveryResult = await producer.ProduceAsync(new TopicPartition(topic, GetPartition(config, topic)), message);
+                        }
+                        else
+                        {
+                            deliveryResult = await producer.ProduceAsync(topic, message);
+                        }
+                        
                         Console.WriteLine($"Produced message to: {deliveryResult.TopicPartitionOffset}");
-
                     }
                     catch (ProduceException<string, string> ex)
                     {
@@ -79,7 +87,7 @@ namespace Samples.Kafka
             return 0;
         }
 
-        private static Partition GetPartition(ClientConfig config, string topic, string key)
+        private static Partition GetPartition(ClientConfig config, string topic)
         {
             var numPartitions = TopicPartitions.GetOrAdd(topic, t => GetTopicPartitionCount(topic, config));
             var partition = LastUsedPartition.GetOrAdd(topic, t => 0);
@@ -92,12 +100,12 @@ namespace Samples.Kafka
             return new Partition(partition);
         }
 
-        public static void Produce(string topic, int numMessages, ClientConfig config, bool handleDelivery, bool isTombstone)
+        public static void Produce(string topic, int numMessages, ClientConfig config, bool handleDelivery, bool isTombstone, bool explicitPartitions = false)
         {
-            Produce(topic, numMessages, config, handleDelivery ? HandleDelivery : null, isTombstone);
+            Produce(topic, numMessages, config, handleDelivery ? HandleDelivery : null, isTombstone, explicitPartitions);
         }
 
-        private static void Produce(string topic, int numMessages, ClientConfig config, Action<DeliveryReport<string, string>> deliveryHandler, bool isTombstone)
+        private static void Produce(string topic, int numMessages, ClientConfig config, Action<DeliveryReport<string, string>> deliveryHandler, bool isTombstone, bool explicitPartitions = false)
         {
             var producerConfig = new ProducerConfig
             {
@@ -116,7 +124,14 @@ namespace Samples.Kafka
                     var message = new Message<string, string> { Key = key, Value = value };
 
                     Console.WriteLine($"Producing record {i}: {message.Key}...");
-                    producer.Produce(new TopicPartition(topic, GetPartition(config, topic, key)), message, deliveryHandler);
+                    if (explicitPartitions)
+                    {
+                        producer.Produce(new TopicPartition(topic, GetPartition(config, topic)), message, deliveryHandler); 
+                    }
+                    else
+                    {
+                        producer.Produce(topic, message, deliveryHandler);
+                    }
 
                     if (numMessages % FlushInterval == 0)
                     {
