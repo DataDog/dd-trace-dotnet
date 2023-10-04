@@ -5682,7 +5682,7 @@ stages:
             echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
-            result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
+            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
@@ -5736,7 +5736,7 @@ stages:
             echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
-            result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
+            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
