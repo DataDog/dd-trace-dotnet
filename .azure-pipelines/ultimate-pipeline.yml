@@ -319,10 +319,12 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -341,15 +343,15 @@ stages:
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-$(baseImage)
+      artifact: linux-tracer-home-$(artifactSuffix)
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
-      artifact: build-linux-$(baseImage)-working-directory
+      artifact: build-$(artifactSuffix)-working-directory
 
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
-      artifact: linux-tracer-symbols-$(baseImage)
+      artifact: linux-tracer-symbols-$(artifactSuffix)
 
 - stage: build_linux_profiler
   dependsOn: [merge_commit_id]
@@ -366,10 +368,12 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -388,15 +392,15 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-$(baseImage)
+      artifact: linux-profiler-binaries-$(artifactSuffix)
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
-      artifact: linux-profiler-home-$(baseImage)
+      artifact: linux-profiler-home-$(artifactSuffix)
 
     - publish: $(symbols)
       displayName: Upload linux profiler symbols
-      artifact: linux-profiler-symbols-$(baseImage)
+      artifact: linux-profiler-symbols-$(artifactSuffix)
 
 - stage: package_linux
   dependsOn: [merge_commit_id, build_linux_tracer, build_linux_profiler, build_dd_dotnet_linux]
@@ -413,7 +417,7 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
           artifactSuffix: linux-x64
         alpine:
@@ -431,13 +435,13 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer linux native binary
       inputs:
-        artifact: linux-tracer-home-$(baseImage)
+        artifact: linux-tracer-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
-        artifact: linux-profiler-home-$(baseImage)
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -460,11 +464,11 @@ stages:
 
     - publish: $(artifacts)/linux-x64
       displayName: Upload linux-x64 packages
-      artifact: linux-packages-$(baseImage)
+      artifact: linux-packages-$(artifactSuffix)
 
     - publish: $(monitoringHome)
       displayName: Upload linux-x64 monitoring home
-      artifact: linux-monitoring-home-$(baseImage)
+      artifact: linux-monitoring-home-$(artifactSuffix)
 
 - stage: build_arm64_tracer
   dependsOn: [merge_commit_id]
@@ -750,7 +754,7 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
           artifactSuffix: linux-x64
         alpine:
@@ -840,7 +844,7 @@ stages:
     dependsOn: []
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
         alpine:
           baseImage: alpine
@@ -1034,10 +1038,12 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -1049,7 +1055,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -1074,10 +1080,12 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
     pool:
       name: azure-linux-scale-set
 
@@ -1089,12 +1097,12 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux profiler binaries
       inputs:
-        artifact: linux-profiler-binaries-$(baseImage)
+        artifact: linux-profiler-binaries-$(artifactSuffix)
         path: $(System.DefaultWorkingDirectory)/profiler/_build
 
     - template: steps/run-in-docker.yml
@@ -1738,7 +1746,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1752,7 +1760,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-$(baseImage)
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DockerCompose@0
@@ -1820,7 +1828,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -1834,7 +1842,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-$(baseImage)
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - script: |
@@ -1912,6 +1920,7 @@ stages:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
       baseImage: "centos7"
+      artifactSuffix: "linux-x64"
 
     strategy:
       matrix:
@@ -1932,12 +1941,12 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-$(baseImage)
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - template: steps/run-in-docker.yml
@@ -2119,7 +2128,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
     # (currently the docker-compose step relies on serverless samples)
@@ -2133,7 +2142,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-$(baseImage)
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DockerCompose@0
@@ -2260,10 +2269,12 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
+        x64:
           baseImage: centos7
+          artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          artifactSuffix: linux-musl-x64
 
     variables:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
@@ -2279,12 +2290,12 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download linux monitoring home
       inputs:
-        artifact: linux-monitoring-home-$(baseImage)
+        artifact: linux-monitoring-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     # when we build samples separately, we could run this step and the docker-compose one below in //
@@ -2837,7 +2848,7 @@ stages:
 
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(baseImage)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - template: steps/run-in-docker.yml
       parameters:
@@ -3044,7 +3055,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux tracer home
       inputs:
-        artifact: linux-tracer-home-centos7
+        artifact: linux-tracer-home-linux-x64
         patterns: |
           **/*.so
           **/loader.conf
@@ -3053,7 +3064,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine tracer home
       inputs:
-        artifact: linux-tracer-home-alpine
+        artifact: linux-tracer-home-linux-musl-x64
         patterns:  |
           **/*.so
           **/loader.conf
@@ -3087,7 +3098,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux profiler home
       inputs:
-        artifact: linux-profiler-home-centos7
+        artifact: linux-profiler-home-linux-x64
         patterns:  |
           **/*.so
           **/loader.conf
@@ -3096,7 +3107,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download alpine profiler home
       inputs:
-        artifact: linux-profiler-home-alpine
+        artifact: linux-profiler-home-linux-musl-x64
         patterns:  |
           **/*.so
           **/loader.conf
@@ -3276,18 +3287,15 @@ stages:
     timeoutInMinutes: 60 #default value
     strategy:
       matrix:
-        centos7:
-          name: centos7
+        x64:
           baseImage: centos7
           artifactSuffix: linux-x64
           poolName: azure-linux-scale-set
         alpine:
-          name: alpine
           baseImage: alpine
           artifactSuffix: linux-musl-x64
           poolName: azure-linux-scale-set
         arm64:
-          name: arm64
           baseImage: debian
           artifactSuffix: linux-arm64
           poolname: aws-arm64-auto-scaling
@@ -3300,14 +3308,15 @@ stages:
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/restore-working-directory.yml
       parameters:
-        artifact: build-linux-$(name)-working-directory
+        artifact: build-$(artifactSuffix)-working-directory
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
-        artifact: linux-profiler-home-$(name)
+        artifact: linux-profiler-home-$(artifactSuffix)
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -3399,7 +3408,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux-packages
       inputs:
-        artifact: linux-packages-centos7
+        artifact: linux-packages-linux-x64
         patterns: '**/*amd64.deb'
         path: s3_upload
 
@@ -3503,13 +3512,13 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux Alpine packages
           inputs:
-            artifact: linux-packages-alpine
+            artifact: linux-packages-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux CentOS7 packages
+          displayName: Download linux x64 packages
           inputs:
-            artifact: linux-packages-centos7
+            artifact: linux-packages-linux-x64
             path: $(Build.ArtifactStagingDirectory)
 
         - task: DownloadPipelineArtifact@2
@@ -3522,13 +3531,13 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Alpine symbols
           inputs:
-            artifact: linux-profiler-symbols-alpine
+            artifact: linux-profiler-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux profiler CentOS7 symbols
+          displayName: Download linux profiler x64 symbols
           inputs:
-            artifact: linux-profiler-symbols-centos7
+            artifact: linux-profiler-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
         - task: DownloadPipelineArtifact@2
@@ -3540,13 +3549,13 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Alpine symbols
           inputs:
-            artifact: linux-tracer-symbols-alpine
+            artifact: linux-tracer-symbols-linux-musl-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-musl-x64
 
         - task: DownloadPipelineArtifact@2
-          displayName: Download linux tracer CentOS7 symbols
+          displayName: Download linux tracer x64 symbols
           inputs:
-            artifact: linux-tracer-symbols-centos7
+            artifact: linux-tracer-symbols-linux-x64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-x64
 
         - task: DownloadPipelineArtifact@2
@@ -3760,7 +3769,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-centos7
+        artifact: linux-monitoring-home-linux-x64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -3910,7 +3919,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-centos7
+        artifact: linux-monitoring-home-linux-x64
         path: $(System.DefaultWorkingDirectory)/monitoring-home-linux
 
     - script: |
@@ -4012,7 +4021,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download linux native binary
       inputs:
-        artifact: linux-monitoring-home-centos7
+        artifact: linux-monitoring-home-linux-x64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
 
     - script: |
@@ -4349,7 +4358,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler linux native binary
       inputs:
-        artifact: linux-profiler-home-centos7
+        artifact: linux-profiler-home-linux-x64
         path: $(monitoringHome)
       retryCountOnTaskFailure: 5
 
@@ -4499,7 +4508,7 @@ stages:
       - task: DownloadPipelineArtifact@2
         displayName: Download linux-packages
         inputs:
-          artifact: linux-packages-centos7
+          artifact: linux-packages-linux-x64
           patterns: '**/*tar.gz'
           path: $(Build.ArtifactStagingDirectory)
 
@@ -4888,7 +4897,7 @@ stages:
       dockerTag: debian_net6
       runtimeImage: "mcr.microsoft.com/dotnet/aspnet:6.0-bullseye-slim"
       installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb"
-      linuxArtifacts: "linux-packages-centos7"
+      linuxArtifacts: "linux-packages-linux-x64"
     pool:
       vmImage: ubuntu-20.04
 
@@ -5796,6 +5805,7 @@ stages:
       vmImage: ubuntu-20.04
 
     steps:
+    - checkout: none
     - bash: |
         sha=$(echo $(OriginalCommitId) | head -c 7)
         curl -X POST \
