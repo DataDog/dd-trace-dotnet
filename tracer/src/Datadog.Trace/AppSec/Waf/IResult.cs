@@ -10,7 +10,7 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal interface IResult
     {
-        ReturnCode ReturnCode { get; }
+        WafReturnCode ReturnCode { get; }
 
         /// <summary>
         /// Gets a value indicating whether to block the request or not

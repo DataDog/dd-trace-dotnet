@@ -79,7 +79,7 @@ namespace Datadog.Trace.AppSec.Waf
             // not restart cause it's the total runtime over runs, and we run several * during request
             _stopwatch.Start();
 
-            DDWAF_RET_CODE code;
+            WafReturnCode code;
             lock (_stopwatch)
             {
                 var pool = Encoder.Pool;
