@@ -1,17 +1,14 @@
-// <copyright file="CollectionExtensions.cs" company="Datadog">
+// <copyright file="LinkedListExtensions.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
 #nullable enable
-using System;
 using System.Collections.Generic;
-using System.Security.Cryptography;
-using System.Text;
 
 namespace Datadog.Trace.Iast.Helpers;
 
-internal static class CollectionExtensions
+internal static class LinkedListExtensions
 {
     public static T? Poll<T>(this LinkedList<T>? list)
         where T : struct
@@ -41,32 +38,5 @@ internal static class CollectionExtensions
     public static bool IsEmpty<T>(this LinkedList<T>? list)
     {
         return list == null || list.Count == 0;
-    }
-
-    public static TV? GetAndRemove<TK, TV>(this Dictionary<TK, TV>? map, TK key)
-        where TK : notnull
-        where TV : class
-    {
-        if (map != null && map.TryGetValue(key, out var val))
-        {
-            map.Remove(key);
-            return val;
-        }
-
-        return null;
-    }
-
-    public static TV Get<TK, TV>(this Dictionary<TK, TV> map, TK key, Func<TK, TV> computeIfAbsent)
-        where TK : notnull
-        where TV : class
-    {
-        if (map.TryGetValue(key, out var val))
-        {
-            return val;
-        }
-
-        var newVal = computeIfAbsent(key);
-        map[key] = newVal;
-        return newVal;
     }
 }

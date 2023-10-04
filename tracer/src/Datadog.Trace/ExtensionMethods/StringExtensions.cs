@@ -129,5 +129,15 @@ namespace Datadog.Trace.ExtensionMethods
             normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
             return true;
         }
+
+        public static string Quote(this string text)
+        {
+            if (text != null && !text.StartsWith("\"") && !text.EndsWith("\""))
+            {
+                text = "\"" + text + "\"";
+            }
+
+            return text ?? string.Empty;
+        }
     }
 }

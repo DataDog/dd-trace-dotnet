@@ -101,5 +101,32 @@ namespace Datadog.Trace.ExtensionMethods
         }
 
         public static bool IsNullOrEmpty<TKey, TValue>(this IReadOnlyDictionary<TKey, TValue> dictionary) => dictionary?.IsEmpty() ?? true;
+
+        public static TV GetAndRemove<TK, TV>(this Dictionary<TK, TV> map, TK key)
+            where TK : notnull
+            where TV : class
+        {
+            if (map != null && map.TryGetValue(key, out var val))
+            {
+                map.Remove(key);
+                return val;
+            }
+
+            return null;
+        }
+
+        public static TV Get<TK, TV>(this Dictionary<TK, TV> map, TK key, Func<TK, TV> computeIfAbsent)
+            where TK : notnull
+            where TV : class
+        {
+            if (map.TryGetValue(key, out var val))
+            {
+                return val;
+            }
+
+            var newVal = computeIfAbsent(key);
+            map[key] = newVal;
+            return newVal;
+        }
     }
 }
