@@ -4019,8 +4019,9 @@ stages:
         test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
         test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
         echo "aaa1 $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])"
+        echo "aaa1 $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsAppSecChanged'])"
         echo "aaa2 $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'])"
-        echo "aaa3 $(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'])"
+        echo "aaa3 $(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsAppSecChanged'])"
         echo "aaa4 $(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.IsTracerChanged'])"
         echo "dsds $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]"
         echo "bwwwbb $(isMainBranch)"
