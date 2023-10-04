@@ -44,7 +44,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Process
 #endif
                 }
 
-                return new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
+                var state = new CallTargetState(scope: ProcessStartCommon.CreateScope(startInfo));
+                return state;
             }
 
             return CallTargetState.GetDefault();
