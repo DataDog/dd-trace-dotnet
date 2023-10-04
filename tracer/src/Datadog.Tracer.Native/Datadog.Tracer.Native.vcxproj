@@ -269,6 +269,13 @@
     <ClInclude Include="..\..\..\shared\src\native-src\miniutfdata.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\pal.h" />
     <ClInclude Include="..\..\..\shared\src\native-src\string.h" />
+    <ClInclude Include="fault_tolerant_cor_profiler_function_control.h" />
+    <ClInclude Include="fault_tolerant_tokens.h" />
+    <ClInclude Include="fault_tolerant_envionrment_variables_util.h" />
+    <ClInclude Include="fault_tolerant_environment_variables.h" />
+    <ClInclude Include="fault_tolerant_method_duplicator.h" />
+    <ClInclude Include="fault_tolerant_rewriter.h" />
+    <ClInclude Include="fault_tolerant_tracker.h" />
     <ClInclude Include="iast\app_domain_info.h" />
     <ClInclude Include="iast\aspect.h" />
     <ClInclude Include="calltarget_tokens.h" />
@@ -304,6 +311,7 @@
     <ClInclude Include="il_rewriter.h" />
     <ClInclude Include="il_rewriter_wrapper.h" />
     <ClInclude Include="debugger_probes_tracker.h" />
+    <ClInclude Include="instrumenting_product.h" />
     <ClInclude Include="integration.h" />
     <ClInclude Include="clr_helpers.h" />
     <ClInclude Include="debugger_members.h" />
@@ -336,6 +344,12 @@
     <ClCompile Include="debugger_rejit_handler_module_method.cpp" />
     <ClCompile Include="debugger_rejit_preprocessor.cpp" />
     <ClCompile Include="environment_variables_util.cpp" />
+    <ClCompile Include="fault_tolerant_cor_profiler_function_control.cpp" />
+    <ClCompile Include="fault_tolerant_tokens.cpp" />
+    <ClCompile Include="fault_tolerant_envionrment_variables_util.cpp" />
+    <ClCompile Include="fault_tolerant_method_duplicator.cpp" />
+    <ClCompile Include="fault_tolerant_rewriter.cpp" />
+    <ClCompile Include="fault_tolerant_tracker.cpp" />
     <ClCompile Include="iast\aspect.cpp" />
     <ClCompile Include="iast\aspect_filter.cpp" />
     <ClCompile Include="iast\dataflow.cpp" />

@@ -11,16 +11,6 @@
       }
     },
     {
-      "name": "Profiler_no_exception",
-      "environmentVariables": {
-        "DD_CLR_ENABLE_NGEN": "true",
-        "DD_PROFILING_ENABLED": "1",
-        "DD_PROFILING_WALLTIME_ENABLED": "0",
-        "DD_PROFILING_CPU_ENABLED": "0",
-        "DD_TRACE_ENABLED" : "0"
-      }
-    },
-    {
       "name": "Profiler_exceptions",
       "environmentVariables": {
         "DD_CLR_ENABLE_NGEN": "true",
@@ -44,7 +34,7 @@
     }
   ],
   "processName": "Samples.ExceptionGenerator.exe",
-  "processArguments": "--scenario 5 --iterations 100",
+  "processArguments": "--scenario 5 --iterations 40",
   "processTimeout": 15,
   "workingDirectory": "$(CWD)\\..\\_build\\bin\\Release-$(arch)\\profiler\\src\\Demos\\Samples.ExceptionGenerator\\net7.0",
   "environmentVariables": {

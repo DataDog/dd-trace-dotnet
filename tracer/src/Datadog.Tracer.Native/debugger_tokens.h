@@ -86,7 +86,6 @@ static const WSTRING instrumentation_allocator_invoker_name = WStr("Datadog.Trac
 class DebuggerTokens : public CallTargetTokens
 {
 private:
-
     // Method probe members:
     mdMemberRef nonAsyncShouldUpdateProbeInfoRef = mdMemberRefNil;
     mdMemberRef nonAsyncUpdateProbeInfoRef = mdMemberRefNil;
@@ -549,7 +548,8 @@ protected:
     const WSTRING& GetCallTargetReturnType() override;
     const WSTRING& GetCallTargetReturnGenericType() override;
 
-    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[500], ULONG& signatureOffset, ULONG& signatureSize, bool isAsyncMethod) override;
+    void AddAdditionalLocals(COR_SIGNATURE (&signatureBuffer)[BUFFER_SIZE], ULONG& signatureOffset,
+                             ULONG& signatureSize, bool isAsyncMethod) override;
     
 public:
     DebuggerTokens(ModuleMetadata* module_metadata_ptr);

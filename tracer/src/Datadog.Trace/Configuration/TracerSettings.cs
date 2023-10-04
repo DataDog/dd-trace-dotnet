@@ -335,9 +335,7 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
 
-            IsRunningInAzureAppService = config
-                                        .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-                                        .AsBool(false);
+            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
 
             IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
 

@@ -64,5 +64,6 @@ namespace Datadog.Trace.Configuration
         AwsKinesis,
         AzureServiceBus,
         SystemRandom,
+        AwsDynamoDb,
     }
 }

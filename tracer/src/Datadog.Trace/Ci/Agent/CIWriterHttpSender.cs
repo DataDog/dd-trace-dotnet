@@ -88,16 +88,19 @@ namespace Datadog.Trace.Ci.Agent
             return statusCode;
         }
 
-        private async Task<int> SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
+        private async Task SendPayloadAsync<T>(EventPlatformPayload payload, Func<IApiRequest, EventPlatformPayload, T, Task<IApiResponse>> senderFunc, T state)
         {
             // retry up to 5 times with exponential back-off
             const int retryLimit = 5;
             var retryCount = 1;
             var sleepDuration = 100; // in milliseconds
             var url = payload.Url;
+            var sw = Stopwatch.StartNew();
 
             while (true)
             {
+                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
+
                 IApiRequest request;
 
                 try
@@ -115,13 +118,14 @@ namespace Datadog.Trace.Ci.Agent
                 catch (Exception ex)
                 {
                     Log.Error(ex, "An error occurred while generating http request to send events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                    return -1;
+                    return;
                 }
 
                 var statusCode = -1;
                 var isFinalTry = retryCount >= retryLimit;
                 Exception exception = null;
 
+                sw.Restart();
                 try
                 {
                     statusCode = await SendPayloadAsync(senderFunc, request, payload, state, isFinalTry).ConfigureAwait(false);
@@ -129,7 +133,8 @@ namespace Datadog.Trace.Ci.Agent
                 catch (MultipartApiRequestNotSupported mReqEx)
                 {
                     Log.Error(mReqEx, "Error trying to send a multipart request to: {Url}", url.ToString());
-                    return statusCode;
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
+                    return;
                 }
                 catch (Exception ex)
                 {
@@ -140,8 +145,17 @@ namespace Datadog.Trace.Ci.Agent
                         if (ex.InnerException is InvalidOperationException ioe)
                         {
                             Log.Error<string>(ex, "An error occurred while sending events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                            return statusCode;
+                            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
+                            return;
                         }
+                    }
+                }
+                finally
+                {
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
                     }
                 }
 
@@ -152,7 +166,8 @@ namespace Datadog.Trace.Ci.Agent
                     {
                         // stop retrying
                         Log.Error<int, string, int>(exception, "An error occurred while sending events after {Retries} retries to {AgentEndpoint} | StatusCode: {StatusCode}", retryCount, _apiRequestFactory.Info(url), statusCode);
-                        return statusCode;
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadDropped(payload.TelemetryEndpoint);
+                        return;
                     }
 
                     // Before retry delay
@@ -171,7 +186,7 @@ namespace Datadog.Trace.Ci.Agent
                 }
 
                 Log.Debug<string>("Successfully sent events to {AgentEndpoint}", _apiRequestFactory.Info(url));
-                return statusCode;
+                return;
             }
         }
 
@@ -179,9 +194,6 @@ namespace Datadog.Trace.Ci.Agent
         {
             ArraySegment<byte> payloadArraySegment;
             MemoryStream agentlessMemoryStream = null;
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
-
             try
             {
                 if (!payload.UseEvpProxy)
@@ -209,20 +221,14 @@ namespace Datadog.Trace.Ci.Agent
                     }
                 }
 
-                var sw = Stopwatch.StartNew();
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
+                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
 
-                var statusCode = await SendPayloadAsync(
+                await SendPayloadAsync(
                         payload,
                         static (request, payload, payloadBytes) => request.PostAsync(payloadBytes, MimeTypes.MsgPack, payload.UseEvpProxy ? null : "gzip"),
                         payloadArraySegment)
                    .ConfigureAwait(false);
-
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadArraySegment.Count);
-                if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
-                {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
-                }
             }
             finally
             {
@@ -239,13 +245,11 @@ namespace Datadog.Trace.Ci.Agent
                 payloadBytes += multipartFormItem.ContentInBytes?.Count ?? 0;
             }
 
-            TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequests(payload.TelemetryEndpoint);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadBytes(payload.TelemetryEndpoint, payloadBytes);
             TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadEventsCount(payload.TelemetryEndpoint, payload.Count);
 
-            var sw = Stopwatch.StartNew();
             Log.Debug<int>("Sending {Count} multipart items...", payload.Count);
-            var statusCode = await SendPayloadAsync(
+            await SendPayloadAsync(
                 payload,
                 static (request, payload, payloadArray) =>
                 {
@@ -258,12 +262,6 @@ namespace Datadog.Trace.Ci.Agent
                     return Task.FromResult<IApiResponse>(null);
                 },
                 payloadArray).ConfigureAwait(false);
-
-            TelemetryFactory.Metrics.RecordDistributionCIVisibilityEndpointPayloadRequestsMs(payload.TelemetryEndpoint, sw.Elapsed.TotalMilliseconds);
-            if (TelemetryHelper.GetErrorTypeFromStatusCode(statusCode) is { } errorType)
-            {
-                TelemetryFactory.Metrics.RecordCountCIVisibilityEndpointPayloadRequestsErrors(payload.TelemetryEndpoint, errorType);
-            }
         }
 
         private class MultipartApiRequestNotSupported : NotSupportedException

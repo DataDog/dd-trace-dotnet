@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Util;
@@ -59,10 +58,10 @@ namespace Datadog.Trace.Telemetry
 
         public bool MetricsEnabled { get; }
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, ImmutableTracerSettings tracerSettings)
-            => FromSource(source, telemetry, IsAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan || tracerSettings.IsRunningInGCPFunctions);
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, ImmutableTracerSettings tracerSettings, bool? isAgentAvailable)
+            => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan || tracerSettings.IsRunningInGCPFunctions);
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, Func<bool?> isAgentAvailable, bool isServerless)
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, bool? isAgentAvailable, bool isServerless)
         {
             string? configurationError = null;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -75,7 +74,7 @@ namespace Datadog.Trace.Telemetry
             var haveApiKey = !string.IsNullOrEmpty(apiKey);
 
             var agentlessEnabled = config
-                                  .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled, ConfigurationKeys.CIVisibility.AgentlessEnabled)
+                                  .WithKeys(ConfigurationKeys.Telemetry.AgentlessEnabled)
                                   .AsBool(
                                        defaultValue: haveApiKey, // if there's an API key, we can use agentless mode by default, otherwise we can only use the agent
                                        validator: isEnabled =>
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Telemetry
 
             var agentProxyEnabled = config
                                    .WithKeys(ConfigurationKeys.Telemetry.AgentProxyEnabled)
-                                   .AsBool(() => isAgentAvailable() ?? true, validator: null)
-                                   .Value;
+                                   .AsBool(isAgentAvailable ?? true);
 
             // enabled by default if we have any transports
             var telemetryEnabled = config
@@ -187,17 +185,6 @@ namespace Datadog.Trace.Telemetry
                 v2Enabled,
                 metricsEnabled,
                 debugEnabled);
-        }
-
-        private static bool? IsAgentAvailable()
-        {
-            // if CIVisibility is enabled and in agentless mode, we probably don't have an agent available
-            if (CIVisibility.IsRunning || CIVisibility.Enabled)
-            {
-                return !CIVisibility.Settings.Agentless;
-            }
-
-            return null;
         }
 
         public class AgentlessSettings

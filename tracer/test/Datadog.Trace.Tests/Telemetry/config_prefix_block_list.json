@@ -124,6 +124,8 @@
   "DD_AzureServiceBus_",
   "DD_TRACE_SystemRandom_",
   "DD_SystemRandom_",
+  "DD_TRACE_AwsDynamoDb_",
+  "DD_AwsDynamoDb_",
   "trace.amqp_enabled",
   "trace.amqp_analytics_enabled",
   "trace.amqp_analytics_sample_rate",

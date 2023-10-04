@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 kinesisSpans.Should().NotBeEmpty();
                 ValidateIntegrationSpans(kinesisSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 
-                var host = Environment.GetEnvironmentVariable("AWS_KINESIS_HOST");
+                var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 settings.UseFileName($"{nameof(AwsKinesisTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");

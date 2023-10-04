@@ -74,6 +74,12 @@ internal enum CountCIVisibility
         ("endpoint_payload.requests_errors", isCommon: true, NS.CIVisibility)] EndpointPayloadRequestsErrors,
 
     /// <summary>
+    /// The number of payloads dropped after all retries by CI Visibility
+    /// </summary>
+    [TelemetryMetric<MetricTags.CIVisibilityEndpoints>
+        ("endpoint_payload.dropped", isCommon: true, NS.CIVisibility)] EndpointPayloadDropped,
+
+    /// <summary>
     /// The number of git commands executed by CI Visibility
     /// </summary>
     [TelemetryMetric<MetricTags.CIVisibilityCommands>

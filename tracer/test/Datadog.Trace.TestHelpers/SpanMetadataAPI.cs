@@ -60,6 +60,13 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsAspNetCoreMvcV0(),
             };
 
+        public static Result IsAwsDynamoDb(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsAwsDynamoDbV1(),
+                _ => span.IsAwsDynamoDbV0(),
+            };
+
         public static Result IsAwsKinesisOutbound(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {

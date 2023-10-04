@@ -4,7 +4,7 @@ services:
   localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -93,7 +93,7 @@ services:
   localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -466,9 +466,7 @@ services:
       - MYSQL57_PORT=3306
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
-      - AWS_SQS_HOST=localstack:4566
-      - AWS_SNS_HOST=localstack:4566
-      - AWS_KINESIS_HOST=localstack:4566
+      - AWS_SDK_HOST=localstack:4566
       - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
@@ -740,9 +738,7 @@ services:
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
-      - AWS_SQS_HOST=localstack_arm64:4566
-      - AWS_SNS_HOST=localstack_arm64:4566
-      - AWS_KINESIS_HOST=localstack_arm64:4566
+      - AWS_SDK_HOST=localstack_arm64:4566
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -968,6 +964,26 @@ services:
     depends_on:
     - test-agent
 
+  dd-dotnet-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.dd-dotnet.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - INSTALL_CMD=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
@@ -991,7 +1007,7 @@ services:
   localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns,sqs,kinesis
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1

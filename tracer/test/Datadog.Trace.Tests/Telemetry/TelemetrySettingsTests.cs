@@ -32,7 +32,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(expected);
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Telemetry.Enabled, "1" }
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
             settings.Agentless.Should().BeNull();
             settings.ConfigurationError.Should().BeNullOrEmpty();
         }
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -77,7 +77,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Site, domain },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
 
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be($"https://instrumentation-telemetry-intake.{domain}/");
@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Telemetry.Uri, url },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
 
             settings.Agentless.Should().BeNull();
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -114,7 +114,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "some_key" },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
 
             settings.Agentless.Should().NotBeNull();
             settings.Agentless.AgentlessUri.Should().Be(DefaultIntakeUrl);
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, apiKey },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
             var expectAgentless = enabled && !string.IsNullOrEmpty(apiKey);
 
             if (expectAgentless)
@@ -167,7 +167,7 @@ namespace Datadog.Trace.Tests.Telemetry
             });
             var hasApiKey = !string.IsNullOrEmpty(apiKey);
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
             using var s = new AssertionScope();
 
             settings.TelemetryEnabled.Should().Be(true);
@@ -211,7 +211,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, agentlessEnabled == true ? "SOME_KEY" : null },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
 
             var expectEnabled = enabled != false;
             var expectAgentless = expectEnabled && agentlessEnabled == true;
@@ -244,7 +244,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.Telemetry.AgentProxyEnabled, agentProxyEnabled?.ToString() }
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => agentAvailable, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: agentAvailable, isServerless: false);
 
             settings.AgentProxyEnabled.Should().Be(expected);
         }
@@ -263,7 +263,7 @@ namespace Datadog.Trace.Tests.Telemetry
                 { ConfigurationKeys.ApiKey, "SOME_KEY" },
             });
 
-            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, telemetry: new NullConfigurationTelemetry(), isAgentAvailable: true, isServerless: false);
 
             using var s = new AssertionScope();
             settings.TelemetryEnabled.Should().Be(expected);
@@ -289,7 +289,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void HeartbeatInterval(string value, double expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, value));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
 
             settings.HeartbeatInterval.Should().Be(TimeSpan.FromSeconds(expected));
         }
@@ -302,7 +302,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void V2Enabled_EnabledByDefault(string value, bool expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
 
             settings.V2Enabled.Should().Be(expected);
         }
@@ -320,7 +320,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.Telemetry.V2Enabled, v2Enabled),
                 (ConfigurationKeys.Telemetry.MetricsEnabled, metricsEnabled));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: true);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: true);
 
             settings.MetricsEnabled.Should().Be(expected);
         }
@@ -338,7 +338,7 @@ namespace Datadog.Trace.Tests.Telemetry
             var source = CreateConfigurationSource(
                 (ConfigurationKeys.Telemetry.MetricsEnabled, metricSettingValue),
                 (ConfigurationKeys.Telemetry.V2Enabled, v2Enabled ? "1" : "0"));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
 
             settings.MetricsEnabled.Should().Be(expected);
             settings.ConfigurationError.Should().BeNullOrEmpty();
@@ -348,7 +348,7 @@ namespace Datadog.Trace.Tests.Telemetry
         public void MetricsEnabled_TryingToEnableWhenV2DisabledIsConfigError()
         {
             var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, "1"), (ConfigurationKeys.Telemetry.V2Enabled, "0"));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, () => true, isServerless: false);
+            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
 
             settings.MetricsEnabled.Should().Be(false);
             settings.ConfigurationError.Should().NotBeNullOrEmpty();

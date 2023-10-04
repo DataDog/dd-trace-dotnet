@@ -350,7 +350,6 @@ partial class Build : NukeBuild
 
     Target BuildDdDotnet => _ => _
         .Unlisted()
-        .After(CreateBundleHome, ExtractDebugInfoLinux)
         .Executes(() =>
         {
             DotNetBuild(x => x
