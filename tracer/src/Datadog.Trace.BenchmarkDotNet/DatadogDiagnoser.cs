@@ -309,6 +309,7 @@ public class DatadogDiagnoser : IDiagnoser
 
         // Tags
         var tagsList = new List<string>();
+        tagsList.Add($"{Trace.Tags.Origin}:{TestTags.CIAppTestOriginName}");
 
         // Git data
         if (CIEnvironmentValues.Instance is { } ciEnv)
