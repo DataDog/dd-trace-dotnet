@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -14,6 +14,8 @@
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -45,6 +47,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       error.type: Couchbase.Core.Exceptions.KeyValue.DocumentNotFoundException,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -70,6 +74,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -95,6 +101,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -120,6 +128,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -145,6 +155,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -170,6 +182,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -195,6 +209,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -220,6 +236,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -246,6 +264,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       env: integration_tests,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

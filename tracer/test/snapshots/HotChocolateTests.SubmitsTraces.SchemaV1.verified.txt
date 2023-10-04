@@ -21,6 +21,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -54,7 +56,9 @@
 },
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -79,6 +83,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -111,6 +117,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -143,6 +151,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -175,6 +185,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -209,7 +221,9 @@ query Book {
 },
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -235,7 +249,9 @@ mutation m {
 },
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -277,7 +293,9 @@ errors: [
 },
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -312,7 +330,9 @@ subscription NotImplementedSub {
 },
       language: dotnet,
       span.kind: server,
-      version: 1.0.0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

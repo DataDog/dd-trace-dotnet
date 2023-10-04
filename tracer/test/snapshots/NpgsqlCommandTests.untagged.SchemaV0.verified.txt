@@ -14,7 +14,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -35,7 +37,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -56,7 +60,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -77,7 +83,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -98,7 +106,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -119,7 +129,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -140,7 +152,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -161,7 +175,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -182,7 +198,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -203,7 +221,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -224,7 +244,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -245,7 +267,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -266,7 +290,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -287,7 +313,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -308,7 +336,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -329,7 +359,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -350,7 +382,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -371,7 +405,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -392,7 +428,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -413,7 +451,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -434,7 +474,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -455,7 +497,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -476,7 +520,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -497,7 +543,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -518,7 +566,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -539,7 +589,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -560,7 +612,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -581,7 +635,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -602,7 +658,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -623,7 +681,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -644,7 +704,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -665,7 +727,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -686,7 +750,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -707,7 +773,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -728,7 +796,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -749,7 +819,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -770,7 +842,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -791,7 +865,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -812,7 +888,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -833,7 +911,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -854,7 +934,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -875,7 +957,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -896,7 +980,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -917,7 +1003,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -938,7 +1026,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -959,7 +1049,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -980,7 +1072,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1001,7 +1095,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1022,7 +1118,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1043,7 +1141,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1064,7 +1164,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1085,7 +1187,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1106,7 +1210,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1127,7 +1233,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1148,7 +1256,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1169,7 +1279,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1190,7 +1302,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1211,7 +1325,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1232,7 +1348,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1253,7 +1371,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1274,7 +1394,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1295,7 +1417,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1316,7 +1440,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1337,7 +1463,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1358,7 +1486,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1379,7 +1509,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1400,7 +1532,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1421,7 +1555,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1442,7 +1578,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1463,7 +1601,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1484,7 +1624,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1505,7 +1647,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1526,7 +1670,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1547,7 +1693,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1568,7 +1716,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1589,7 +1739,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1610,7 +1762,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1631,7 +1785,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1652,7 +1808,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1673,7 +1831,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1694,7 +1854,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1715,7 +1877,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1736,7 +1900,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1757,7 +1923,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1778,7 +1946,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1799,7 +1969,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1820,7 +1992,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1841,7 +2015,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1862,7 +2038,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1883,7 +2061,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1904,7 +2084,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1925,7 +2107,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1946,7 +2130,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1967,7 +2153,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -1988,7 +2176,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2009,7 +2199,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2030,7 +2222,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2051,7 +2245,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2072,7 +2268,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2093,7 +2291,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2114,7 +2314,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2135,7 +2337,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2156,7 +2360,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2177,7 +2383,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2198,7 +2406,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2219,7 +2429,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2240,7 +2452,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2261,7 +2475,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2282,7 +2498,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2303,7 +2521,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2324,7 +2544,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2345,7 +2567,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2366,7 +2590,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2387,7 +2613,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2408,7 +2636,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2429,7 +2659,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2450,7 +2682,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2471,7 +2705,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2492,7 +2728,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2513,7 +2751,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2534,7 +2774,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2555,7 +2797,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2576,7 +2820,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2597,7 +2843,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2618,7 +2866,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2639,7 +2889,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2660,7 +2912,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2681,7 +2935,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2702,7 +2958,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2723,7 +2981,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2744,7 +3004,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2765,7 +3027,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2786,7 +3050,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2807,7 +3073,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2828,7 +3096,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2849,7 +3119,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2870,7 +3142,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2891,7 +3165,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2912,7 +3188,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2933,7 +3211,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2954,7 +3234,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2975,7 +3257,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -2996,7 +3280,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3017,7 +3303,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3038,7 +3326,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3059,7 +3349,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -3080,7 +3372,9 @@
       env: integration_tests,
       out.host: postgres,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: GUID8c59944f,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0

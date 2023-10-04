@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -30,6 +30,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[?\\$(?:(?:s(?:lic|iz)|wher)e|e(?:lemMatch|xists|q)|n(?:o[rt]|in?|e)|l(?:ike|te?)|t(?:ext|ype)|a(?:ll|nd)|jsonSchema|between|regex|x?or|div|mod)\\]?)\\b)","parameters":[{"address":"server.request.query","highlight":["[$slice"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -76,6 +78,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290-new","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -122,6 +126,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290-new","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.query","highlight":["[$slice]"],"key_path":["[$slice]"],"value":"[$slice]"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
