@@ -255,7 +255,7 @@ namespace Datadog.Trace.Tests
         public void OperationName_ShouldBe_Unknown_Dot_Client_Dot_Request()
         {
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
             var tagObjects = new Dictionary<string, object>
             {
             };

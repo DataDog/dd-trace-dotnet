@@ -28,12 +28,111 @@ namespace Datadog.Trace.Activity
 
                     break;
                 case SpanKinds.Server:
+                    if (span.TryGetTag("http.request.method", out _))
+                    {
+                        operationName = "http.server.request";
+                        break;
+                    }
+                    else if (span.TryGetTag("network.protocol.name", out var protocol))
+                    {
+                        operationName = $"{protocol}.server.request";
+                        break;
+                    }
+                    else if (span.TryGetTag("rpc.system", out var rpcSystem))
+                    {
+                        // TODO do we care about rpcSErvice
+                        operationName = $"{rpcSystem}.server.request";
+                        break;
+                    }
+                    else if (span.TryGetTag("graphql.operation.type", out var operationType))
+                    {
+                        operationName = $"graphql.{operationType}";
+                        break;
+                    }
+                    else if (span.TryGetTag("faas.trigger", out var trigger))
+                    {
+                        operationName = $"{trigger}.trigger";
+                        break;
+                    }
+
+                    operationName = "unknown.server.request";
                     break;
                 case SpanKinds.Client:
+                    if (span.TryGetTag("http.request.method", out _))
+                    {
+                        operationName = "http.client.request";
+                        break;
+                    }
+                    else if (span.TryGetTag("db.system", out var dbSystem))
+                    {
+                        if (span.TryGetTag("db.operation", out var dbOperation))
+                        {
+                            operationName = $"{dbSystem}.{dbOperation}";
+                            break;
+                        }
+
+                        operationName = $"{dbSystem}.query";
+                        break;
+                    }
+                    else if (span.TryGetTag("messaging.system", out var messagingSystem) &&
+                             span.TryGetTag("messaging.operation", out var messagingOperation))
+                    {
+                        operationName = $"{messagingSystem}.{messagingOperation}";
+                        break;
+                    }
+                    else if (span.TryGetTag("rpc.system", out var rpcSystem))
+                    {
+                        _ = span.TryGetTag("rpc.service", out var rpcService);
+                        if (rpcSystem == "aws-api")
+                        {
+                            if (!string.IsNullOrEmpty(rpcService))
+                            {
+                                operationName = $"aws.{rpcService.ToLower()}";
+                                break;
+                            }
+
+                            operationName = "aws";
+                            break;
+                        }
+                        else
+                        {
+                            // TODO do we care about the rpc.service?
+                            operationName = $"{rpcSystem}.client.request";
+                            break;
+                        }
+                    }
+                    else if (span.TryGetTag("faas.invoked_provider", out var provider))
+                    {
+                        operationName = $"{provider}.invoke";
+                        break;
+                    }
+                    else if (span.TryGetTag("network.protocol.name", out var protocol))
+                    {
+                        operationName = $"{protocol}.client.request";
+                        break;
+                    }
+
+                    operationName = "unknown.client.request"; // TODO fallback value no clue what to do here
                     break;
                 case SpanKinds.Producer:
+                    if (span.TryGetTag("messaging.system", out var messagingSystem2) &&
+                             span.TryGetTag("messaging.operation", out var messagingOperation2))
+                    {
+                        operationName = $"{messagingSystem2}.{messagingOperation2}";
+                        break;
+                    }
+
+                    operationName = "unknown.producer.request"; // TODO fallback value no clue what to do here
                     break;
                 case SpanKinds.Consumer:
+                    if (span.TryGetTag("messaging.system", out var messagingSystem3) &&
+                         span.TryGetTag("messaging.operation", out var messagingOperation3))
+                    {
+                        operationName = $"{messagingSystem3}.{messagingOperation3}";
+                        break;
+                    }
+
+                    operationName = "unknown.consumer.request"; // TODO fallback value no clue what to do here
                     break;
                 default:
                     break;
