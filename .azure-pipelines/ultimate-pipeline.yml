@@ -735,6 +735,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    targetFramework: net8.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -753,7 +754,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
   
-    - script: tracer\build.cmd BuildDdDotnet
+    - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
     - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.exe
@@ -780,7 +781,7 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
@@ -795,13 +796,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet"
+        command: "Clean BuildDdDotnet --framework net8.0"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
@@ -820,6 +821,7 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     baseImage: debian
     artifactSuffix: linux-arm64
+    targetFramework: net8.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -843,7 +845,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet"
+        command: "Clean BuildDdDotnet --framework $(targetFramework)"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet

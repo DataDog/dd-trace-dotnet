@@ -365,9 +365,11 @@ partial class Build : NukeBuild
         .Unlisted()
         .Executes(() =>
         {
+            var framework = Framework ?? TargetFramework.NET8_0; 
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
                 .SetConfiguration(BuildConfiguration)
+                .SetFramework(framework)
                 .SetNoWarnDotNetCore3());
 
             string rid;
@@ -393,7 +395,7 @@ partial class Build : NukeBuild
 
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
-                .SetFramework("net7.0")
+                .SetFramework(framework)
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));
