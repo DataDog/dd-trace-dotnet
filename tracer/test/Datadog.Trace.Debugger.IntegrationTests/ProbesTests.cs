@@ -353,10 +353,10 @@ public class ProbesTests : TestHelper
 
 #endif
 
-    private static LogEntryWatcher CreateLogEntryWatcher()
+    private LogEntryWatcher CreateLogEntryWatcher()
     {
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", LogDirectory);
     }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
