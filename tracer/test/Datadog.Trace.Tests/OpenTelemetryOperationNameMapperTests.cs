@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using Datadog.Trace.Activity;
 using Datadog.Trace.Activity.DuckTypes;
@@ -25,9 +26,10 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            Assert.Equal("http.server.request", name);
+            Assert.Equal("http.server.request", span.OperationName);
         }
 
         [Fact]
@@ -41,9 +43,10 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            Assert.Equal("http.client.request", name);
+            Assert.Equal("http.client.request", span.OperationName);
         }
 
         [Theory]
@@ -59,10 +62,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{dbSystem}.{dbOperation}";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -77,10 +81,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{dbSystem}.query";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -98,10 +103,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{messagingSystem}.{messagingOperation}";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -115,10 +121,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"aws";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -135,10 +142,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"aws.{rpcService.ToLower()}";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -156,10 +164,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{rpcSystem}.{((ActivityKind)kind).ToString().ToLower()}.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -176,10 +185,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"graphql.{operationType}";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -196,10 +206,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{protocol}.server.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -212,10 +223,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"unknown.server.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -232,10 +244,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{protocol}.client.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -248,10 +261,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"unknown.client.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -264,10 +278,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"unknown.producer.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -280,10 +295,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"unknown.consumer.request";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -303,10 +319,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{trigger}.trigger";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -326,10 +343,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{provider}.invoke";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
@@ -346,10 +364,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"{codeNamespace}.{functionName}";
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
@@ -362,10 +381,11 @@ namespace Datadog.Trace.Tests
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
             var expected = $"internal"; // span.kind.lower() TODO can this be other span.kinds?
-            Assert.Equal(expected, name);
+            Assert.Equal(expected, span.OperationName);
         }
     }
 }

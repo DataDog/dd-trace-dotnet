@@ -5,8 +5,6 @@
 
 #nullable enable
 
-using Datadog.Trace.Activity.DuckTypes;
-
 namespace Datadog.Trace.Activity
 {
     /// <summary>
@@ -14,20 +12,23 @@ namespace Datadog.Trace.Activity
     /// </summary>
     internal static class ActivityOperationNameMapper
     {
-        public static string MapToOperationName(IActivity5 activity)
+        public static void MapToOperationName(Span span)
         {
+            // HACK for now - maybe we can just use a Span here?
             string operationName = string.Empty;
-            switch (activity.Kind)
+            var spanKind = span.GetTag(Tags.SpanKind);
+            switch (spanKind)
             {
-                case ActivityKind.Internal:
+                // TODO basic implementation first to get tests passing
+                case SpanKinds.Internal:
                     break;
-                case ActivityKind.Server:
+                case SpanKinds.Server:
                     break;
-                case ActivityKind.Client:
+                case SpanKinds.Client:
                     break;
-                case ActivityKind.Producer:
+                case SpanKinds.Producer:
                     break;
-                case ActivityKind.Consumer:
+                case SpanKinds.Consumer:
                     break;
                 default:
                     break;
@@ -35,10 +36,11 @@ namespace Datadog.Trace.Activity
 
             if (string.IsNullOrEmpty(operationName))
             {
-                operationName = activity.Kind.ToString().ToLower();
+                operationName = spanKind;
             }
 
-            return operationName;
+            // TODO what if there is a tag from the activity "operation.name" do we honour that?
+            span.OperationName = operationName;
         }
     }
 }
