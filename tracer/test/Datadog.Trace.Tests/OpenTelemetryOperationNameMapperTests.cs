@@ -104,6 +104,23 @@ namespace Datadog.Trace.Tests
             Assert.Equal(expected, name);
         }
 
+        [Fact]
+        public void OperationName_ShouldBe_Aws()
+        {
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
+            var tagObjects = new Dictionary<string, object>
+            {
+                { "rpc.system", "aws-api" } // NOTE: no rpc.service here as it is optional
+            };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
+
+            var expected = $"aws";
+            Assert.Equal(expected, name);
+        }
+
         [Theory]
         [InlineData("S3")]
         [InlineData("SNS")]
@@ -125,12 +142,14 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
-        [InlineData("grpc")]
-        [InlineData("dotnet_wcf")]
-        public void OperationName_ShouldBe_RpcSystem_Dot_Request(string rpcSystem)
+        [InlineData("grpc", (int)ActivityKind.Client)]
+        [InlineData("grpc", (int)ActivityKind.Server)]
+        [InlineData("dotnet_wcf", (int)ActivityKind.Client)]
+        [InlineData("dotnet_wcf", (int)ActivityKind.Server)]
+        public void OperationName_ShouldBe_RpcSystem_Dot_SpanKind_Dot_Request(string rpcSystem,  int kind)
         {
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
+            activityMock.Setup(x => x.Kind).Returns((ActivityKind)kind);
             var tagObjects = new Dictionary<string, object>
             {
                 { "rpc.system", rpcSystem }
@@ -139,26 +158,7 @@ namespace Datadog.Trace.Tests
 
             var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
 
-            var expected = $"{rpcSystem}.request";
-            Assert.Equal(expected, name);
-        }
-
-        [Theory]
-        [InlineData("grpc")]
-        [InlineData("dotnet_wcf")]
-        public void OperationName_ShouldBe_RpcSystem_Dot_Call(string rpcSystem)
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "rpc.system", rpcSystem }
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
-
-            var expected = $"{rpcSystem}.call";
+            var expected = $"{rpcSystem}.{((ActivityKind)kind).ToString().ToLower()}.request";
             Assert.Equal(expected, name);
         }
 
@@ -353,7 +353,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void OperationName_ShouldBe_Unknown_Dot_Operation()
+        public void OperationName_ShouldBe_SpanKind()
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Internal);
@@ -364,7 +364,7 @@ namespace Datadog.Trace.Tests
 
             var name = ActivityOperationNameMapper.MapToOperationName(activityMock.Object);
 
-            var expected = $"unknown.operation";
+            var expected = $"internal"; // span.kind.lower() TODO can this be other span.kinds?
             Assert.Equal(expected, name);
         }
     }

@@ -16,7 +16,7 @@ namespace Datadog.Trace.Activity
     {
         public static string MapToOperationName(IActivity5 activity)
         {
-            var operationName = "unknown.operation";
+            string operationName = string.Empty;
             switch (activity.Kind)
             {
                 case ActivityKind.Internal:
@@ -31,6 +31,11 @@ namespace Datadog.Trace.Activity
                     break;
                 default:
                     break;
+            }
+
+            if (string.IsNullOrEmpty(operationName))
+            {
+                operationName = activity.Kind.ToString().ToLower();
             }
 
             return operationName;
