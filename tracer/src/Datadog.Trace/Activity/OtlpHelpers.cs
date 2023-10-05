@@ -37,6 +37,8 @@ namespace Datadog.Trace.Activity
             {
                 span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
             }
+
+            ActivityOperationNameMapper.MapToOperationName(span);
         }
 
         // See trace agent func convertSpan: https://github.com/DataDog/datadog-agent/blob/67c353cff1a6a275d7ce40059aad30fc6a3a0bc1/pkg/trace/api/otlp.go#L459
