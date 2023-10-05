@@ -94,7 +94,10 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 8.0.100-rc.1.23463.5
+  dotnetCoreSdkLatestVersion: 8.0.100-rc.2.23502.2
+  # This is required until we're out of rc.
+  # After GA we can do a find and replace and get rid of this
+  dotnetCoreSdkLatestVersionShort: 8.0.100-rc.2
   nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
@@ -4678,7 +4681,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
@@ -4751,7 +4754,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
@@ -4835,7 +4838,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-nuget-smoke-tests
@@ -4903,7 +4906,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-smoke-tests
@@ -4968,7 +4971,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5046,7 +5049,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5106,7 +5109,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5177,7 +5180,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
@@ -5258,7 +5261,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-smoke-tests
@@ -5318,7 +5321,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5389,7 +5392,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5476,7 +5479,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5543,7 +5546,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5614,7 +5617,7 @@ stages:
 
         - bash: |
             docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg CHANNEL_32_BIT="" \
@@ -5679,7 +5682,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
