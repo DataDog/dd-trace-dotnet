@@ -1492,6 +1492,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    baseImage: "centos7"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1500,19 +1501,8 @@ stages:
   - job: linux
     timeoutInMinutes: 60 #default value
     dependsOn: []
-    strategy:
-      matrix:
-        centos7:
-          baseImage: centos7
-          poolName: azure-linux-scale-set
-        alpine:
-          baseImage: alpine
-          poolName: azure-linux-scale-set
-        arm64:
-          baseImage: debian
-          poolName: aws-arm64-auto-scaling
     pool:
-      name: $(poolName)
+      name: azure-linux-scale-set
 
     steps:
     - template: steps/clone-repo.yml
