@@ -14,13 +14,18 @@ namespace Datadog.Trace.Activity
     {
         public static void MapToOperationName(Span span)
         {
-            // HACK for now - maybe we can just use a Span here?
             string operationName = string.Empty;
             var spanKind = span.GetTag(Tags.SpanKind);
             switch (spanKind)
             {
                 // TODO basic implementation first to get tests passing
                 case SpanKinds.Internal:
+                    if (span.TryGetTag("code.namespace", out var codeNamespace) &&
+                        span.TryGetTag("code.function", out var codeFunction))
+                    {
+                        operationName = $"{codeNamespace}.{codeFunction}";
+                    }
+
                     break;
                 case SpanKinds.Server:
                     break;
@@ -41,6 +46,18 @@ namespace Datadog.Trace.Activity
 
             // TODO what if there is a tag from the activity "operation.name" do we honour that?
             span.OperationName = operationName;
+        }
+
+        // TODO hacky extension to just get tests passing
+        private static bool TryGetTag(this Span span, string key, out string value)
+        {
+            value = span.Tags.GetTag(key);
+            if (string.IsNullOrEmpty(value))
+            {
+                return false;
+            }
+
+            return true;
         }
     }
 }
