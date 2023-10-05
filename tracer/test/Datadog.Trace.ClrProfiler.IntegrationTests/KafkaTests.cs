@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, arguments: topic, packageVersion: packageVersion);
 
-            var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 60_000);
+            var allSpans = agent.WaitForSpans(TotalExpectedSpanCount, timeoutInMilliseconds: 10_000);
             using var assertionScope = new AssertionScope();
             // We use HaveCountGreaterOrEqualTo because _both_ consumers may handle the message
             // Due to manual/autocommit behaviour
