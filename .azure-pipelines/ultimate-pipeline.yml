@@ -502,7 +502,7 @@ stages:
 
     - publish: $(monitoringHome)
       displayName: Uploading linux tracer home artifact
-      artifact: linux-tracer-home-arm64
+      artifact: linux-tracer-home-linux-arm64
 
     - publish: $(System.DefaultWorkingDirectory)
       displayName: Upload working directory after the build
@@ -510,7 +510,7 @@ stages:
 
     - publish: $(symbols)
       displayName: Upload linux tracer symbols
-      artifact: linux-tracer-symbols-arm64
+      artifact: linux-tracer-symbols-linux-arm64
 
 - stage: build_arm64_profiler
   dependsOn: [merge_commit_id]
@@ -544,15 +544,15 @@ stages:
 
     - publish: $(System.DefaultWorkingDirectory)/profiler/_build
       displayName: Uploading linux profiler output build folder
-      artifact: linux-profiler-binaries-arm64
+      artifact: linux-profiler-binaries-linux-arm64
 
     - publish: $(monitoringHome)
       displayName: Uploading linux profiler home artifact
-      artifact: linux-profiler-home-arm64
+      artifact: linux-profiler-home-linux-arm64
 
     - publish: $(symbols)
       displayName: Upload linux profiler symbols
-      artifact: linux-profiler-symbols-arm64
+      artifact: linux-profiler-symbols-linux-arm64
 
 - stage: package_arm64
   dependsOn: [merge_commit_id, build_arm64_tracer, build_arm64_profiler, build_dd_dotnet_linux_arm64]
@@ -579,13 +579,13 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download tracer arm64 native binary
       inputs:
-        artifact: linux-tracer-home-arm64
+        artifact: linux-tracer-home-linux-arm64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
       displayName: Download profiler arm64 native binary
       inputs:
-        artifact: linux-profiler-home-arm64
+        artifact: linux-profiler-home-linux-arm64
         path: $(monitoringHome)
 
     - task: DownloadPipelineArtifact@2
@@ -608,11 +608,11 @@ stages:
 
     - publish: $(artifacts)/linux-arm64
       displayName: Upload arm64 packages
-      artifact: linux-packages-arm64
+      artifact: linux-packages-linux-arm64
 
     - publish: $(monitoringHome)
       displayName: Upload arm64 monitoring home
-      artifact: linux-monitoring-home-arm64
+      artifact: linux-monitoring-home-linux-arm64
 
 - stage: build_macos
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
@@ -2508,7 +2508,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
           inputs:
-            artifact: linux-monitoring-home-arm64
+            artifact: linux-monitoring-home-linux-arm64
             path: $(monitoringHome)
 
         - task: DockerCompose@0
@@ -2586,7 +2586,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
           inputs:
-            artifact: linux-monitoring-home-arm64
+            artifact: linux-monitoring-home-linux-arm64
             path: $(monitoringHome)
 
         - script: |
@@ -2699,7 +2699,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download arm64 monitoring home
           inputs:
-            artifact: linux-monitoring-home-arm64
+            artifact: linux-monitoring-home-linux-arm64
             path: $(monitoringHome)
 
         - task: DockerCompose@0
@@ -3073,7 +3073,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 tracer home
       inputs:
-        artifact: linux-tracer-home-arm64
+        artifact: linux-tracer-home-linux-arm64
         patterns:  |
           **/*.so
           **/loader.conf
@@ -3116,7 +3116,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 profiler home
       inputs:
-        artifact: linux-profiler-home-arm64
+        artifact: linux-profiler-home-linux-arm64
         patterns:  |
           **/*.so
           **/loader.conf
@@ -3524,7 +3524,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux Arm64 packages
           inputs:
-            artifact: linux-packages-arm64
+            artifact: linux-packages-linux-arm64
             path: $(Build.ArtifactStagingDirectory)
 
         # Linux symbols
@@ -3543,7 +3543,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux profiler Arm64 symbols
           inputs:
-            artifact: linux-profiler-symbols-arm64
+            artifact: linux-profiler-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - task: DownloadPipelineArtifact@2
@@ -3561,7 +3561,7 @@ stages:
         - task: DownloadPipelineArtifact@2
           displayName: Download linux tracer Arm64 symbols
           inputs:
-            artifact: linux-tracer-symbols-arm64
+            artifact: linux-tracer-symbols-linux-arm64
             path: $(Build.ArtifactStagingDirectory)/symbols/linux-arm64
 
         - task: DownloadPipelineArtifact@2
@@ -3856,7 +3856,7 @@ stages:
     - task: DownloadPipelineArtifact@2
       displayName: Download arm64 native binary
       inputs:
-        artifact: linux-monitoring-home-arm64
+        artifact: linux-monitoring-home-linux-arm64
         path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux-arm64
 
     - script: |

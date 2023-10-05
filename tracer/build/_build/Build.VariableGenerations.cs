@@ -542,7 +542,7 @@ partial class Build : NukeBuild
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
-                        linuxArtifacts: "linux-packages-arm64",
+                        linuxArtifacts: "linux-packages-linux-arm64",
                         runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
@@ -558,7 +558,7 @@ partial class Build : NukeBuild
                         },
                         installer: "datadog-dotnet-apm*-1.aarch64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
-                        linuxArtifacts: "linux-packages-arm64",
+                        linuxArtifacts: "linux-packages-linux-arm64",
                         runtimeId: "linux-arm64",
                         dockerName: "andrewlock/dotnet-fedora-arm64"
                     );
@@ -575,7 +575,7 @@ partial class Build : NukeBuild
                         },
                         installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
-                        linuxArtifacts: "linux-packages-arm64",
+                        linuxArtifacts: "linux-packages-linux-arm64",
                         runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
