@@ -3682,12 +3682,7 @@ stages:
           GITHUB_TOKEN: $(GITHUB_TOKEN)
 
 - stage: throughput
-  condition: >
-    and(succeeded(), 
-        eq(variables.isMainRepository, true),
-        or(
-          eq(variables.isMainBranch, true),
-          eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, package_arm64, build_windows_tracer, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -3937,12 +3932,7 @@ stages:
       continueOnError: true
 
 - stage: throughput_appsec
-  condition: >
-    and(succeeded(), 
-        eq(variables.isMainRepository, true),
-        or(
-          eq(variables.isMainBranch, true),
-          eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsTracerChanged'], 'True')))
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
