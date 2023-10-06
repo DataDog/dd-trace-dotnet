@@ -13,6 +13,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         string? GetLocalMachineValue(string key);
 
-        bool GetLocalMachineSubKeyVersion(string key, string displayName, out string? tracerVersion);
+        public string[] GetLocalMachineKeyNames(string key);
+
+        public string? GetLocalMachineKeyNameValue(string key, string subKeyName, string name);
     }
 }

@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.Runner.Checks;
 using Datadog.Trace.Tools.Runner.Checks.Windows;
@@ -24,44 +25,47 @@ namespace Datadog.Trace.Tools.Runner.Tests
 
         [SkippableFact]
         [Trait("RunOnWindows", "True")]
-        public void GetLocalMachineSubKeyVersion()
+        public void GetLocalMachineKeyNames()
         {
             SkipOn.Platform(SkipOn.PlatformValue.MacOs);
 
-            // Mock data to check
             const string testKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
-            const string displayName = "TestDisplayName";
-            const string versionMajor = "1";
-            const string versionMinor = "0";
 
-            var registryService = MockRegistryService(testKey, displayName);
-            var result = registryService.GetLocalMachineSubKeyVersion(testKey, displayName, out var tracerVersion);
+            var registryService = MockRegistryService(testKey, Array.Empty<string>(), null, null, null);
+            var result = registryService.GetLocalMachineKeyNames(testKey);
 
-            result.Should().BeTrue();
-            tracerVersion.Should().Be(versionMajor + "." + versionMinor);
+            result.Should().BeEquivalentTo(Array.Empty<string>());
         }
 
-        private static IRegistryService MockRegistryService(string key, string displayName)
+        [SkippableFact]
+        [Trait("RunOnWindows", "True")]
+        public void GetLocalMachineKeyNameValue()
+        {
+            SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+            const string testKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
+            const string subKeyName = "TestSubKey";
+            const string valueName = "TestValue";
+            const string expectedValue = "TestValueData";
+
+            var registryService = MockRegistryService(testKey, null, subKeyName, valueName, expectedValue);
+            var result = registryService.GetLocalMachineKeyNameValue(testKey, subKeyName, valueName);
+
+            result.Should().Be(expectedValue);
+        }
+
+        private static IRegistryService MockRegistryService(string key, string[] subKeyNames, string subKeyName, string valueName, string value)
         {
             var registryService = new Mock<IRegistryService>();
-            const string testKey = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
 
-            registryService.Setup(r => r.GetLocalMachineSubKeyVersion(
+            registryService.Setup(r => r.GetLocalMachineKeyNames(
+                                      It.Is<string>(k => k == key)))
+                           .Returns(subKeyNames);
+            registryService.Setup(r => r.GetLocalMachineKeyNameValue(
                                       It.Is<string>(k => k == key),
-                                      It.Is<string>(d => d == displayName),
-                                      out It.Ref<string>.IsAny))
-                           .Callback((string keyName, string nameValue, out string version) =>
-                            {
-                                if (testKey == keyName && nameValue == "TestDisplayName")
-                                {
-                                    version = "1.0";
-                                }
-                                else
-                                {
-                                    version = null;
-                                }
-                            })
-                           .Returns(true);
+                                      It.Is<string>(sk => sk == subKeyName),
+                                      It.Is<string>(n => n == valueName)))
+                           .Returns(value);
 
             return registryService.Object;
         }

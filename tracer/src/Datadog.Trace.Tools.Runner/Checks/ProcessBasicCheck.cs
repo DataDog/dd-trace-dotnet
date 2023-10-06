@@ -536,20 +536,18 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         private static string? CheckWindowsInstallation(int processId, IRegistryService? registryService = null)
         {
-            registryService ??= new Windows.RegistryService();
-
             const string datadog64BitProgram = "Datadog .NET Tracer 64-bit";
             const string datadog32BitProgram = "Datadog .NET Tracer 32-bit";
             const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
             const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
 
-            if (registryService.GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
                 return tracerVersion;
             }
 
-            if (registryService.GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
                 var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));
@@ -565,6 +563,27 @@ namespace Datadog.Trace.Tools.Runner.Checks
             Utils.WriteError(TraceProgramNotFound);
 
             return tracerVersion;
+        }
+
+        private static bool GetLocalMachineSubKeyVersion(string uninstallKey, string datadogProgramName, out string? tracerVersion, IRegistryService? registryService = null)
+        {
+            registryService ??= new Windows.RegistryService();
+
+            tracerVersion = null;
+            var versionFound = false;
+
+            foreach (var subKeyName in registryService.GetLocalMachineKeyNames(uninstallKey))
+            {
+                var subKeyDisplayName = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "DisplayName");
+
+                if (subKeyDisplayName == datadogProgramName)
+                {
+                    tracerVersion = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMajor") + "." + registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMinor");
+                    versionFound = true;
+                }
+            }
+
+            return versionFound;
         }
 
         internal static void CheckLinuxInstallation(string installDirectory)

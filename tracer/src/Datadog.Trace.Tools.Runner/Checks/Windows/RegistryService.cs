@@ -42,34 +42,40 @@ namespace Datadog.Trace.Tools.Runner.Checks.Windows
             return registryKey?.GetValue(null) as string;
         }
 
-        public bool GetLocalMachineSubKeyVersion(string key, string displayName, out string? tracerVersion)
+        public string[] GetLocalMachineKeyNames(string key)
         {
-            tracerVersion = null;
-            var versionFound = false;
-
             if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
             {
-                return versionFound;
+                return Array.Empty<string>();
             }
 
             var registryKey = Registry.LocalMachine.OpenSubKey(key);
 
-            if (registryKey != null)
+            if (registryKey == null)
             {
-                foreach (var subKeyName in registryKey.GetSubKeyNames())
-                {
-                    var subKey = registryKey.OpenSubKey(subKeyName);
-                    var subKeyDisplayName = subKey?.GetValue("DisplayName");
-
-                    if (subKeyDisplayName?.ToString() == displayName)
-                    {
-                        tracerVersion = subKey?.GetValue("VersionMajor") + "." + subKey?.GetValue("VersionMinor");
-                        versionFound = true;
-                    }
-                }
+                return Array.Empty<string>();
             }
 
-            return versionFound;
+            return registryKey.GetSubKeyNames();
+        }
+
+        public string? GetLocalMachineKeyNameValue(string key, string subKeyName, string name)
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return string.Empty;
+            }
+
+            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+
+            if (registryKey == null)
+            {
+                return string.Empty;
+            }
+
+            var subKey = registryKey.OpenSubKey(subKeyName);
+
+            return subKey?.GetValue(name) as string;
         }
     }
 }
