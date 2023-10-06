@@ -35,6 +35,12 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstaller = "Check failing with Installer/MSI, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
+        public const string InitialCheckStart = "Starting .NET Tracer Check:";
+        public const string ModuleCheck = "1. Checking Modules Needed so the Tracer Loads:";
+        public const string TracerCheck = "6. Checking if process tracing configuration matches Installer or Bundler:";
+        public const string CheckOptionalConfiguration = "Setup checks passed, checking configuration for main related products:";
+        public const string TraceEnabledCheck = "*Checking if tracing is disabled using DD_TRACE_ENABLED.";
+        public const string TraceEnabledNotSet = "- DD_TRACE_ENABLED is not set, note that the default value is true.";
 
         public const string TracingWithBundleProfilerPath = "Datadog.Trace.Bundle Nuget related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstaller = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
@@ -63,9 +69,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string TracerVersion(string version) => $"The tracer version {version} is loaded into the process.";
 
-        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
+        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set.";
 
-        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
+        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist.";
+
+        public static string TracerHomeFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' and the directory was found correctly.";
 
         public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
 
