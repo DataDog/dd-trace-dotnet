@@ -15,7 +15,10 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
     public class GarbageCollectorCpuTimeTest
     {
         private const string ScenarioGenerics = "--scenario 12";
-        private const string GcFrame = "|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:";
+        private static readonly StackFrame GcFrame = new("|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:");
+        private static readonly StackFrame ClrFrame = new("|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:");
+
+        private readonly StackTrace gcStack = new(GcFrame, ClrFrame);
 
         private readonly ITestOutputHelper _output;
 
@@ -41,11 +44,9 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-
             SamplesHelper.GetSamples(runner.Environment.PprofDir).Should()
                 // match the GC stacktrace and check that the waltime value is 0 and the cpu value is not 0
-                .Contain(sample => sample.StackTrace.Equals(gcStackTrace) && sample.Values[0] == 0 && sample.Values[1] != 0);
+                .Contain(sample => sample.StackTrace.Equals(gcStack) && sample.Values[0] == 0 && sample.Values[1] != 0);
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -66,8 +67,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -86,8 +86,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -106,8 +105,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net6.0", "net7.0" })]
@@ -126,8 +124,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "netcoreapp3.1" })]
@@ -146,8 +143,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
 
         [TestAppFact("Samples.Computer01", new[] { "net45" })]
@@ -166,8 +162,7 @@ namespace Datadog.Profiler.IntegrationTests.GarbageCollections
             runner.Run(agent);
             Assert.True(agent.NbCallsOnProfilingEndpoint > 0);
 
-            var gcStackTrace = new StackTrace(new StackFrame(GcFrame));
-            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStackTrace));
+            SamplesHelper.GetSamples(runner.Environment.PprofDir).Should().NotContain(sample => sample.StackTrace.Equals(gcStack));
         }
     }
 }
