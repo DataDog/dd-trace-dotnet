@@ -5,6 +5,7 @@
 
 #nullable enable
 using System;
+using System.Collections.Concurrent;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
@@ -98,18 +99,6 @@ internal class DataStreamsManager
         // But if data streams was disabled, you call SetCheckpoint, and then data streams is enabled
         // you will hit this code path
         Log.Debug("Attempted to inject null pathway context");
-    }
-
-    public void TrackBacklog(string tags, long value)
-    {
-        if (!IsEnabled)
-        {
-            return;
-        }
-
-        var writer = Volatile.Read(ref _writer);
-        var point = new BacklogPoint(tags, value, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
-        writer?.AddBacklog(point);
     }
 
     /// <summary>

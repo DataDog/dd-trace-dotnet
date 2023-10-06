@@ -30,37 +30,17 @@ public class KafkaProducerConstructorIntegration
     {
         if (Tracer.Instance.Settings.IsIntegrationEnabled(KafkaConstants.IntegrationId))
         {
-            string bootstrapServers = null;
-            var deliveryReportsEnabled = true;
             foreach (var kvp in consumer.Config)
             {
                 if (string.Equals(kvp.Key, KafkaHelper.BootstrapServersKey, StringComparison.Ordinal))
                 {
                     if (!string.IsNullOrEmpty(kvp.Value))
                     {
-                        bootstrapServers = kvp.Value;
+                        // Save the map between this producer and its bootstrap server config
+                        ProducerCache.AddProducer(instance, kvp.Value);
+                        return new CallTargetState(scope: null, state: instance);
                     }
                 }
-
-                if (string.Equals(kvp.Key, KafkaHelper.EnableDeliveryReportsField, StringComparison.Ordinal))
-                {
-                    if (!string.IsNullOrEmpty(kvp.Value))
-                    {
-                        deliveryReportsEnabled = bool.Parse(kvp.Value);
-                    }
-                }
-            }
-
-            if (deliveryReportsEnabled)
-            {
-                ProducerCache.AddDefaultDeliveryHandler(instance);
-            }
-
-            if (!string.IsNullOrEmpty(bootstrapServers))
-            {
-                // Save the map between this producer and its bootstrap server config
-                ProducerCache.AddBootstrapServers(instance, bootstrapServers);
-                return new CallTargetState(scope: null, state: instance);
             }
         }
 

@@ -18,7 +18,4 @@ public class MockDataStreamsBucket
 
     [Key(nameof(Stats))]
     public MockDataStreamsStatsPoint[] Stats { get; set; }
-
-    [Key(nameof(Backlogs))]
-    public MockDataStreamsBacklog[] Backlogs { get; set; }
 }
