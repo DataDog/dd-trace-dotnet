@@ -8,7 +8,9 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using System.Text;
 using Datadog.Trace.Ci.Tags;
 using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration.Telemetry;
@@ -586,6 +588,21 @@ namespace Datadog.Trace.Configuration
             TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableTracerSettings_FromDefaultSources);
             return new ImmutableTracerSettings(TracerSettings.FromDefaultSourcesInternal(), true);
         }
+
+        // Overriding the default "record" behaviour here
+        // This type _shouldn't_ be treated as a record generally, we only made it a record
+        // so we could use with {} expressions...
+
+        /// <inheritdoc />
+        // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
+        public override int GetHashCode() => base.GetHashCode();
+
+        /// <inheritdoc />
+        // ReSharper disable once BaseObjectEqualsIsObjectEquals
+        public virtual bool Equals(ImmutableTracerSettings? other) => base.Equals(other);
+
+        /// <inheritdoc />
+        public override string? ToString() => base.ToString();
 
         internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
         {
