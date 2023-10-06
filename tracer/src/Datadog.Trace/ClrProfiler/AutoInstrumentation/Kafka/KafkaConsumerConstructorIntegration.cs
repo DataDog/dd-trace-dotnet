@@ -6,8 +6,6 @@
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.DuckTyping;
-using Datadog.Trace.Util.Delegates;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka;
 
@@ -53,17 +51,11 @@ public class KafkaConsumerConstructorIntegration
                 }
             }
 
-            if (Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
-            {
-                // add handler to track committed offsets
-                consumer.OffsetsCommittedHandler = consumer.OffsetsCommittedHandler.Instrument(new OffsetsCommittedCallbacks(groupId));
-            }
-
             // Only config setting "group.id" is required, so assert that the value is non-null before adding to the ConsumerGroup cache
             if (groupId is not null)
             {
                 // Save the map between this consumer and a consumer group
-                ConsumerCache.SetConsumerGroup(instance, groupId, bootstrapServers);
+                ConsumerGroupHelper.SetConsumerGroup(instance, groupId, bootstrapServers);
                 return new CallTargetState(scope: null, state: instance);
             }
         }
@@ -77,7 +69,7 @@ public class KafkaConsumerConstructorIntegration
         // the consumer won't be created, so no point recording it.
         if (exception is not null && state is { State: { } consumer })
         {
-            ConsumerCache.RemoveConsumerGroup(consumer);
+            ConsumerGroupHelper.RemoveConsumerGroup(consumer);
         }
 
         return CallTargetReturn.GetDefault();

@@ -32,25 +32,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
         /// <typeparam name="TTarget">Type of the target</typeparam>
         /// <typeparam name="TTopicPartition">Type of the TopicPartition</typeparam>
         /// <typeparam name="TMessage">Type of the message</typeparam>
+        /// <typeparam name="TDeliveryHandler">Type of the delivery handler action</typeparam>
         /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
         /// <param name="topicPartition">TopicPartition instance</param>
         /// <param name="message">Message instance</param>
         /// <param name="deliveryHandler">Delivery Handler instance</param>
         /// <returns>Calltarget state value</returns>
-        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage>(TTarget instance, TTopicPartition topicPartition, TMessage message, ref Delegate deliveryHandler)
+        internal static CallTargetState OnMethodBegin<TTarget, TTopicPartition, TMessage, TDeliveryHandler>(TTarget instance, TTopicPartition topicPartition, TMessage message, TDeliveryHandler deliveryHandler)
             where TMessage : IMessage
         {
-            // We should not use a delivery handler if deliveryReports are disabled (enabled by default),
-            // since it will result in InvalidOperationException
-            // https://github.com/confluentinc/confluent-kafka-dotnet/blob/65362199f13bdad8a0831541f53d92e1e95a8a37/src/Confluent.Kafka/Producer.cs#L869
-            if (
-                deliveryHandler == null &&
-                Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled &&
-                ProducerCache.TryGetDefaultDeliveryHandler(instance, out var handler))
-            {
-                deliveryHandler = handler;
-            }
-
             // manually doing duck cast here so we have access to the _original_ TopicPartition type
             // as a generic parameter, for injecting headers
             var partition = topicPartition.DuckCast<ITopicPartition>();

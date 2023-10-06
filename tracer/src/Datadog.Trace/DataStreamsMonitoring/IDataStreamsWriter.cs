@@ -13,7 +13,5 @@ internal interface IDataStreamsWriter
 {
     void Add(in StatsPoint point);
 
-    void AddBacklog(in BacklogPoint point);
-
     Task DisposeAsync();
 }

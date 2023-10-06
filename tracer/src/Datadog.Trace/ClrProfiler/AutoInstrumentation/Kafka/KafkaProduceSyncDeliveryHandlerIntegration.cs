@@ -142,14 +142,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                         {
                             tags.Offset = report.Offset.ToString();
                         }
-
-                        if (!isError)
-                        {
-                            var dataStreams = Tracer.Instance.TracerManager.DataStreamsManager;
-                            dataStreams.TrackBacklog(
-                                $"partition:{report.Partition.Value},topic:{report.Topic},type:kafka_produce",
-                                report.Offset.Value);
-                        }
                     }
 
                     // call previous delegate
