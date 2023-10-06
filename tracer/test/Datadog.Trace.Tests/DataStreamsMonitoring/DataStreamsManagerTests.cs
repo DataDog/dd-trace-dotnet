@@ -12,7 +12,6 @@ using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.DataStreamsMonitoring.Aggregation;
 using Datadog.Trace.DataStreamsMonitoring.Hashes;
 using Datadog.Trace.ExtensionMethods;
-using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
 using FluentAssertions;
 using Xunit;
 
@@ -106,20 +105,6 @@ public class DataStreamsManagerTests
 
         point.EdgeLatencyNs.Should().Be(latencyNs);
         point.PathwayLatencyNs.Should().Be(latencyNs);
-    }
-
-    [Fact]
-    public void WhenEnabled_TracksBacklog()
-    {
-        const string tags = "tag:value";
-        const long value = 100;
-
-        var dsm = GetDataStreamManager(true, out var writer);
-        dsm.TrackBacklog(tags, value);
-
-        var point = writer.BacklogPoints.Should().ContainSingle().Subject;
-        point.Value.Should().Be(value);
-        point.Tags.Should().Be(tags);
     }
 
     [Fact]
@@ -285,18 +270,11 @@ public class DataStreamsManagerTests
 
         public ConcurrentQueue<StatsPoint> Points { get; } = new();
 
-        public ConcurrentQueue<BacklogPoint> BacklogPoints { get; } = new();
-
         public int DisposeCount => Volatile.Read(ref _disposeCount);
 
         public void Add(in StatsPoint point)
         {
             Points.Enqueue(point);
-        }
-
-        public void AddBacklog(in BacklogPoint point)
-        {
-            BacklogPoints.Enqueue(point);
         }
 
         public async Task DisposeAsync()

@@ -193,7 +193,6 @@ public class DataStreamsMonitoringTests : TestHelper
 
         var currentBucketStats = new List<MockDataStreamsStatsPoint>();
         var originBucketStats = new List<MockDataStreamsStatsPoint>();
-        var backlogs = new List<MockDataStreamsBacklog>();
         foreach (var mockPayload in dataStreams)
         {
             foreach (var bucket in mockPayload.Stats)
@@ -201,28 +200,17 @@ public class DataStreamsMonitoringTests : TestHelper
                 bucket.Duration.Should().Be(10_000_000_000); // 10s in ns
                 bucket.Start.Should().BePositive();
 
-                if (bucket.Stats != null)
+                var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
+                foreach (var bucketStat in bucket.Stats)
                 {
-                    var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
-                    foreach (var bucketStat in bucket.Stats)
+                    if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
                     {
-                        if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
-                        {
-                            buckets.Add(bucketStat);
-                        }
+                        buckets.Add(bucketStat);
                     }
-                }
-
-                if (bucket.Backlogs != null)
-                {
-                    backlogs.AddRange(bucket.Backlogs);
                 }
             }
         }
 
-        // order and reset tag offset values, since
-        // there's no guarantee that messages will be routed the same way on every run.
-        currentBucket.Backlogs = GroupBacklogs(backlogs);
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);
         payload.Stats = new[] { currentBucket, originBucket };
@@ -273,27 +261,6 @@ public class DataStreamsMonitoringTests : TestHelper
             }
 
             return depth;
-        }
-
-        static MockDataStreamsBacklog[] GroupBacklogs(List<MockDataStreamsBacklog> backlogs)
-        {
-            var tuples = backlogs.Select(s =>
-                {
-                    Array.Sort(s.Tags);
-                    return new Tuple<string, long>(string.Join(",", s.Tags), s.Value);
-                });
-
-            var maxByTags = tuples.GroupBy(
-                g => g.Item1,
-                (tags, values) => tags);
-
-            return maxByTags
-                  .OrderBy(o => o)
-                  .Select(s => new MockDataStreamsBacklog()
-                   {
-                       Tags = s.Split(',')
-                   })
-                  .ToArray();
         }
     }
 }

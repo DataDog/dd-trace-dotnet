@@ -67,9 +67,7 @@ public class DataStreamsMonitoringTransportTests
 
         discovery.TriggerChange();
 
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
-        writer.Add(CreateStatsPoint(timestamp));
-        writer.AddBacklog(CreateBacklogPoint(timestamp));
+        writer.Add(CreateStatsPoint());
 
         await writer.DisposeAsync();
 
@@ -82,21 +80,17 @@ public class DataStreamsMonitoringTransportTests
         headers.AllKeys.ToDictionary(x => x, x => headers[x])
                .Should()
                .ContainKey("Content-Encoding", "gzip");
-        payload.Stats.Should().ContainSingle(s => s.Backlogs != null);
     }
 
-    private StatsPoint CreateStatsPoint(long timestamp = 0)
+    private StatsPoint CreateStatsPoint()
         => new StatsPoint(
             edgeTags: new[] { "direction:out", "type:kafka" },
             hash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
-            timestampNs: timestamp != 0 ? timestamp : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+            timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
             pathwayLatencyNs: 5_000_000_000,
             edgeLatencyNs: 2_000_000_000,
             payloadSizeBytes: 1024);
-
-    private BacklogPoint CreateBacklogPoint(long timestamp = 0)
-        => new BacklogPoint("type:produce", 100, timestamp != 0 ? timestamp : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
     private MockTracerAgent Create(TracesTransportType transportType)
         => transportType switch

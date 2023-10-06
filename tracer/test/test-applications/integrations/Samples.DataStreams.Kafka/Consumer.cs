@@ -15,7 +15,7 @@ internal class Consumer : ConsumerBase
 
     protected override void HandleMessage(ConsumeResult<string, string> consumeResult) => _handler(consumeResult);
 
-    public static Consumer Create(string topic, string consumerName, Action<ConsumeResult<string, string>> handler, bool enableAutoCommit = true)
+    public static Consumer Create(string topic, string consumerName, Action<ConsumeResult<string, string>> handler)
     {
         Console.WriteLine($"Creating consumer '{consumerName}' and subscribing to topic {topic}");
 
@@ -24,8 +24,7 @@ internal class Consumer : ConsumerBase
             BootstrapServers = Samples.Kafka.Config.KafkaBrokerHost,
             GroupId = "Samples.DataStreams.Kafka." + consumerName,
             AutoOffsetReset = AutoOffsetReset.Earliest,
-            EnableAutoCommit = enableAutoCommit,
-            AutoCommitIntervalMs = 5, 
+            EnableAutoCommit = true,
         };
         return new Consumer(config, topic, consumerName, handler);
     }
