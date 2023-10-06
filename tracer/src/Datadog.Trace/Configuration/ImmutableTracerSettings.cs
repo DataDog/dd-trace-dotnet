@@ -602,7 +602,12 @@ namespace Datadog.Trace.Configuration
         public virtual bool Equals(ImmutableTracerSettings? other) => base.Equals(other);
 
         /// <inheritdoc />
-        public override string? ToString() => base.ToString();
+        [PublicApi]
+        public override string? ToString()
+        {
+            TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableTracerSettings_ToString);
+            return base.ToString();
+        }
 
         internal bool IsErrorStatusCode(int statusCode, bool serverStatusCode)
         {

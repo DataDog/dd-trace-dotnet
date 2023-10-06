@@ -221,6 +221,7 @@ internal enum PublicApiUsage
     [Description("name:immutabletracersettings_traceenabled_get")] ImmutableTracerSettings_TraceEnabled_Get,
     [Description("name:immutabletracersettings_tracermetricsenabled_get")] ImmutableTracerSettings_TracerMetricsEnabled_Get,
     [Description("name:immutabletracersettings_fromdefaultsources")] ImmutableTracerSettings_FromDefaultSources,
+    [Description("name:immutabletracersettings_tostring")] ImmutableTracerSettings_ToString,
 
     [Description("name:opentracingtracerfactory_createtracer")] OpenTracingTracerFactory_CreateTracer,
     [Description("name:opentracingtracerfactory_wraptracer")] OpenTracingTracerFactory_WrapTracer,
