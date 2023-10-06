@@ -12,6 +12,15 @@ namespace Datadog.Trace.Activity
     /// </summary>
     internal static class ActivityOperationNameMapper
     {
+        private const string CodeNamespace = "code.namespace";
+        private const string CodeFunction = "code.function";
+        private const string HttpRequestMethod = "http.request.method";
+        private const string NetworkProtocolName = "network.protocol.name";
+        private const string MessagingSystem = "messaging.system";
+        private const string MessagingOperation = "messaging.operation";
+        private const string RpcSystem = "rpc.system";
+        private const string RpcService = "rpc.service";
+
         public static void MapToOperationName(Span span)
         {
             string operationName = string.Empty;
@@ -20,25 +29,25 @@ namespace Datadog.Trace.Activity
             {
                 // TODO basic implementation first to get tests passing
                 case SpanKinds.Internal:
-                    if (span.TryGetTag("code.namespace", out var codeNamespace) &&
-                        span.TryGetTag("code.function", out var codeFunction))
+                    if (span.TryGetTag(CodeNamespace, out var codeNamespace) &&
+                        span.TryGetTag(CodeFunction, out var codeFunction))
                     {
                         operationName = $"{codeNamespace}.{codeFunction}";
                     }
 
                     break;
                 case SpanKinds.Server:
-                    if (span.TryGetTag("http.request.method", out _))
+                    if (span.TryGetTag(HttpRequestMethod, out _))
                     {
                         operationName = "http.server.request";
                         break;
                     }
-                    else if (span.TryGetTag("network.protocol.name", out var protocol))
+                    else if (span.TryGetTag(NetworkProtocolName, out var protocol))
                     {
                         operationName = $"{protocol}.server.request";
                         break;
                     }
-                    else if (span.TryGetTag("rpc.system", out var rpcSystem))
+                    else if (span.TryGetTag(RpcSystem, out var rpcSystem))
                     {
                         // TODO do we care about rpcSErvice
                         operationName = $"{rpcSystem}.server.request";
@@ -58,7 +67,7 @@ namespace Datadog.Trace.Activity
                     operationName = "unknown.server.request";
                     break;
                 case SpanKinds.Client:
-                    if (span.TryGetTag("http.request.method", out _))
+                    if (span.TryGetTag(HttpRequestMethod, out _))
                     {
                         operationName = "http.client.request";
                         break;
@@ -74,15 +83,15 @@ namespace Datadog.Trace.Activity
                         operationName = $"{dbSystem}.query";
                         break;
                     }
-                    else if (span.TryGetTag("messaging.system", out var messagingSystem) &&
-                             span.TryGetTag("messaging.operation", out var messagingOperation))
+                    else if (span.TryGetTag(MessagingSystem, out var messagingSystem) &&
+                             span.TryGetTag(MessagingOperation, out var messagingOperation))
                     {
                         operationName = $"{messagingSystem}.{messagingOperation}";
                         break;
                     }
-                    else if (span.TryGetTag("rpc.system", out var rpcSystem))
+                    else if (span.TryGetTag(RpcSystem, out var rpcSystem))
                     {
-                        _ = span.TryGetTag("rpc.service", out var rpcService);
+                        _ = span.TryGetTag(RpcService, out var rpcService);
                         if (rpcSystem == "aws-api")
                         {
                             if (!string.IsNullOrEmpty(rpcService))
@@ -106,7 +115,7 @@ namespace Datadog.Trace.Activity
                         operationName = $"{provider}.invoke";
                         break;
                     }
-                    else if (span.TryGetTag("network.protocol.name", out var protocol))
+                    else if (span.TryGetTag(NetworkProtocolName, out var protocol))
                     {
                         operationName = $"{protocol}.client.request";
                         break;
@@ -115,8 +124,8 @@ namespace Datadog.Trace.Activity
                     operationName = "unknown.client.request"; // TODO fallback value no clue what to do here
                     break;
                 case SpanKinds.Producer:
-                    if (span.TryGetTag("messaging.system", out var messagingSystem2) &&
-                             span.TryGetTag("messaging.operation", out var messagingOperation2))
+                    if (span.TryGetTag(MessagingSystem, out var messagingSystem2) &&
+                             span.TryGetTag(MessagingOperation, out var messagingOperation2))
                     {
                         operationName = $"{messagingSystem2}.{messagingOperation2}";
                         break;
@@ -125,8 +134,8 @@ namespace Datadog.Trace.Activity
                     operationName = "unknown.producer.request"; // TODO fallback value no clue what to do here
                     break;
                 case SpanKinds.Consumer:
-                    if (span.TryGetTag("messaging.system", out var messagingSystem3) &&
-                         span.TryGetTag("messaging.operation", out var messagingOperation3))
+                    if (span.TryGetTag(MessagingSystem, out var messagingSystem3) &&
+                         span.TryGetTag(MessagingOperation, out var messagingOperation3))
                     {
                         operationName = $"{messagingSystem3}.{messagingOperation3}";
                         break;
@@ -142,6 +151,16 @@ namespace Datadog.Trace.Activity
             {
                 operationName = spanKind;
             }
+
+            // TODO I've copy pasted this from OTLPHelper just to not forget to do something with it if it makes sense
+            // if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled)
+            // {
+            //     span.OperationName = activity5.Source.Name switch
+            //     {
+            //         string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{spanKind}",
+            //         _ => $"opentelemetry.{spanKind}",
+            //     };
+            // }
 
             // TODO what if there is a tag from the activity "operation.name" do we honour that?
             span.OperationName = operationName;
