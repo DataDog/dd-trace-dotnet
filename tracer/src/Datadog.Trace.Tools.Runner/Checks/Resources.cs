@@ -35,7 +35,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstaller = "Check failing with Installer/MSI, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
+        public const string InitialCheckStart = "Starting .NET Tracer Check:";
+        public const string ModuleCheck = "1. Checking Modules Needed so the Tracer Loads:";
+        public const string TracerCheck = "6. Checking if process tracing configuration matches Installer or Bundler:";
+        public const string CheckOptionalConfiguration = "Setup checks passed, checking configuration for main related products:";
+        public const string TraceEnabledCheck = "*Checking if tracing is disabled using DD_TRACE_ENABLED.";
+        public const string TraceEnabledNotSet = "- DD_TRACE_ENABLED is not set, note that the default value is true.";
 
+        public const string ContinuousProfilerCheck = "*Checking if profiling is enabled using DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
@@ -54,9 +61,11 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string TracerVersion(string version) => $"The tracer version {version} is loaded into the process.";
 
-        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set";
+        public static string EnvironmentVariableNotSet(string environmentVariable) => $"The environment variable {environmentVariable} is not set.";
 
-        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist";
+        public static string TracerHomeNotFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' but the directory does not exist.";
+
+        public static string TracerHomeFoundFormat(string tracerHome) => $"DD_DOTNET_TRACER_HOME is set to '{tracerHome}' and the directory was found correctly.";
 
         public static string WrongEnvironmentVariableFormat(string key, string expectedValue, string? actualValue) => $"The environment variable {key} should be set to '{expectedValue}' (current value: {EscapeOrNotSet(actualValue)})";
 
@@ -146,12 +155,16 @@ namespace Datadog.Trace.Tools.Runner.Checks
 
         public static string WrongTracerArchitecture(string tracerArchitecture) => $"Found {tracerArchitecture} installed but the current process is 64 Bit, make sure to install the 64-bit tracer instead.";
 
-        public static string AppPoolCheckFindings(string appPool) => $"Check did not pass, found the configuration below on the {appPool} AppPool:";
+        public static string AppPoolCheckFindings(string appPool) => $"Initial run check did not pass, found the incorrect configuration on the {appPool} AppPool:";
 
         public static string WrongLinuxFolder(string expected, string found) => $"Unable to find expected {expected} folder, found {found} instead, make sure to use the correct installer.";
 
         public static string UnsupportedLinuxArchitecture(string osArchitecture) => $"The Linux architecture: {osArchitecture} is not supported by the tracer, check: https://docs.datadoghq.com/tracing/trace_collection/compatibility/dotnet-core/#supported-processor-architectures ";
 
         public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
+
+        public static string EnvVarCheck(string number, string envVar) => $"{number}. Checking {envVar} and related configuration value:";
+
+        public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
     }
 }
