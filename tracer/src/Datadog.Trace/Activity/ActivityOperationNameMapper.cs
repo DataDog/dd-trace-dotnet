@@ -4,7 +4,7 @@
 // </copyright>
 
 #nullable enable
-
+// TODO maybe rename to OpenTelemetryOperationNameMapper? or something better?
 namespace Datadog.Trace.Activity
 {
     /// <summary>
@@ -29,119 +29,19 @@ namespace Datadog.Trace.Activity
             {
                 // TODO basic implementation first to get tests passing
                 case SpanKinds.Internal:
-                    if (span.TryGetTag(CodeNamespace, out var codeNamespace) &&
-                        span.TryGetTag(CodeFunction, out var codeFunction))
-                    {
-                        operationName = $"{codeNamespace}.{codeFunction}";
-                    }
-
+                    operationName = CreateOperationNameForInternal(span);
                     break;
                 case SpanKinds.Server:
-                    if (span.TryGetTag(HttpRequestMethod, out _))
-                    {
-                        operationName = "http.server.request";
-                        break;
-                    }
-                    else if (span.TryGetTag(NetworkProtocolName, out var protocol))
-                    {
-                        operationName = $"{protocol}.server.request";
-                        break;
-                    }
-                    else if (span.TryGetTag(RpcSystem, out var rpcSystem))
-                    {
-                        // TODO do we care about rpcSErvice
-                        operationName = $"{rpcSystem}.server.request";
-                        break;
-                    }
-                    else if (span.TryGetTag("graphql.operation.type", out var operationType))
-                    {
-                        operationName = $"graphql.{operationType}";
-                        break;
-                    }
-                    else if (span.TryGetTag("faas.trigger", out var trigger))
-                    {
-                        operationName = $"{trigger}.trigger";
-                        break;
-                    }
-
-                    operationName = "unknown.server.request";
+                    operationName = CreateOperationNameForServer(span);
                     break;
                 case SpanKinds.Client:
-                    if (span.TryGetTag(HttpRequestMethod, out _))
-                    {
-                        operationName = "http.client.request";
-                        break;
-                    }
-                    else if (span.TryGetTag("db.system", out var dbSystem))
-                    {
-                        if (span.TryGetTag("db.operation", out var dbOperation))
-                        {
-                            operationName = $"{dbSystem}.{dbOperation}";
-                            break;
-                        }
-
-                        operationName = $"{dbSystem}.query";
-                        break;
-                    }
-                    else if (span.TryGetTag(MessagingSystem, out var messagingSystem) &&
-                             span.TryGetTag(MessagingOperation, out var messagingOperation))
-                    {
-                        operationName = $"{messagingSystem}.{messagingOperation}";
-                        break;
-                    }
-                    else if (span.TryGetTag(RpcSystem, out var rpcSystem))
-                    {
-                        _ = span.TryGetTag(RpcService, out var rpcService);
-                        if (rpcSystem == "aws-api")
-                        {
-                            if (!string.IsNullOrEmpty(rpcService))
-                            {
-                                operationName = $"aws.{rpcService.ToLower()}";
-                                break;
-                            }
-
-                            operationName = "aws";
-                            break;
-                        }
-                        else
-                        {
-                            // TODO do we care about the rpc.service?
-                            operationName = $"{rpcSystem}.client.request";
-                            break;
-                        }
-                    }
-                    else if (span.TryGetTag("faas.invoked_provider", out var provider))
-                    {
-                        operationName = $"{provider}.invoke";
-                        break;
-                    }
-                    else if (span.TryGetTag(NetworkProtocolName, out var protocol))
-                    {
-                        operationName = $"{protocol}.client.request";
-                        break;
-                    }
-
-                    operationName = "unknown.client.request"; // TODO fallback value no clue what to do here
+                    operationName = CreateOperationNameForClient(span);
                     break;
                 case SpanKinds.Producer:
-                    if (span.TryGetTag(MessagingSystem, out var messagingSystem2) &&
-                             span.TryGetTag(MessagingOperation, out var messagingOperation2))
-                    {
-                        operationName = $"{messagingSystem2}.{messagingOperation2}";
-                        break;
-                    }
-
-                    operationName = "unknown.producer.request"; // TODO fallback value no clue what to do here
+                    operationName = CreateOperationNameForProducer(span);
                     break;
                 case SpanKinds.Consumer:
-                    if (span.TryGetTag(MessagingSystem, out var messagingSystem3) &&
-                         span.TryGetTag(MessagingOperation, out var messagingOperation3))
-                    {
-                        operationName = $"{messagingSystem3}.{messagingOperation3}";
-                        break;
-                    }
-
-                    operationName = "unknown.consumer.request"; // TODO fallback value no clue what to do here
+                    operationName = CreateOperationNameForConsumer(span);
                     break;
                 default:
                     break;
@@ -164,6 +64,116 @@ namespace Datadog.Trace.Activity
 
             // TODO what if there is a tag from the activity "operation.name" do we honour that?
             span.OperationName = operationName;
+        }
+
+        private static string CreateOperationNameForInternal(Span span)
+        {
+            if (span.TryGetTag(CodeNamespace, out var codeNamespace) &&
+                span.TryGetTag(CodeFunction, out var codeFunction))
+            {
+                return $"{codeNamespace}.{codeFunction}";
+            }
+
+            return string.Empty;
+        }
+
+        private static string CreateOperationNameForServer(Span span)
+        {
+            if (span.TryGetTag(HttpRequestMethod, out _))
+            {
+                return "http.server.request";
+            }
+            else if (span.TryGetTag(NetworkProtocolName, out var protocol))
+            {
+                return $"{protocol}.server.request";
+            }
+            else if (span.TryGetTag(RpcSystem, out var rpcSystem))
+            {
+                // TODO do we care about rpcService
+                return $"{rpcSystem}.server.request";
+            }
+            else if (span.TryGetTag("graphql.operation.type", out var operationType))
+            {
+                return $"graphql.{operationType}";
+            }
+            else if (span.TryGetTag("faas.trigger", out var trigger))
+            {
+                return $"{trigger}.trigger";
+            }
+
+            return "unknown.server.request";
+        }
+
+        private static string CreateOperationNameForClient(Span span)
+        {
+            if (span.TryGetTag(HttpRequestMethod, out _))
+            {
+               return "http.client.request";
+            }
+            else if (span.TryGetTag("db.system", out var dbSystem))
+            {
+                if (span.TryGetTag("db.operation", out var dbOperation))
+                {
+                    return $"{dbSystem}.{dbOperation}";
+                }
+
+                return $"{dbSystem}.query";
+            }
+            else if (span.TryGetTag(MessagingSystem, out var messagingSystem) &&
+                     span.TryGetTag(MessagingOperation, out var messagingOperation))
+            {
+                return $"{messagingSystem}.{messagingOperation}";
+            }
+            else if (span.TryGetTag(RpcSystem, out var rpcSystem))
+            {
+                _ = span.TryGetTag(RpcService, out var rpcService);
+                if (rpcSystem == "aws-api")
+                {
+                    if (!string.IsNullOrEmpty(rpcService))
+                    {
+                        return $"aws.{rpcService.ToLower()}";
+                    }
+
+                    return "aws";
+                }
+                else
+                {
+                    // TODO do we care about the rpc.service?
+                    return $"{rpcSystem}.client.request";
+                }
+            }
+            else if (span.TryGetTag("faas.invoked_provider", out var provider))
+            {
+                return $"{provider}.invoke";
+            }
+            else if (span.TryGetTag(NetworkProtocolName, out var protocol))
+            {
+                return $"{protocol}.client.request";
+            }
+
+            return "unknown.client.request"; // TODO fallback value no clue what to do here
+        }
+
+        private static string CreateOperationNameForProducer(Span span)
+        {
+            if (span.TryGetTag(MessagingSystem, out var messagingSystem2) &&
+                             span.TryGetTag(MessagingOperation, out var messagingOperation2))
+            {
+                return $"{messagingSystem2}.{messagingOperation2}";
+            }
+
+            return "unknown.producer.request"; // TODO fallback value no clue what to do here
+        }
+
+        private static string CreateOperationNameForConsumer(Span span)
+        {
+            if (span.TryGetTag(MessagingSystem, out var messagingSystem3) &&
+                         span.TryGetTag(MessagingOperation, out var messagingOperation3))
+            {
+                return $"{messagingSystem3}.{messagingOperation3}";
+            }
+
+            return "unknown.consumer.request"; // TODO fallback value no clue what to do here
         }
 
         // TODO hacky extension to just get tests passing
