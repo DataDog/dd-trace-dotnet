@@ -591,7 +591,8 @@ namespace Datadog.Trace.Configuration
 
         // Overriding the default "record" behaviour here
         // This type _shouldn't_ be treated as a record generally, we only made it a record
-        // so we could use with {} expressions...
+        // so we could use with {} expressions, but these access public properties by default
+        // (rather than only the internal ones)
 
         /// <inheritdoc />
         // ReSharper disable once BaseObjectGetHashCodeCallInGetHashCode
@@ -602,7 +603,6 @@ namespace Datadog.Trace.Configuration
         public virtual bool Equals(ImmutableTracerSettings? other) => base.Equals(other);
 
         /// <inheritdoc />
-        [PublicApi]
         public override string? ToString()
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.ImmutableTracerSettings_ToString);
