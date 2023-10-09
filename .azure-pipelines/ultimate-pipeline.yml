@@ -1623,6 +1623,8 @@ stages:
 
     steps:
     - powershell: |
+        # Required to reload environment apparently
+        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
         choco install cppcheck -y --version 2.9
         $errorCode = $LASTEXITCODE
         if ($errorCode -ne 0)
