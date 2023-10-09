@@ -2463,7 +2463,25 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "RunProfilerAsanTest -Framework net7.0"
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithProfilerAsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -2532,7 +2550,25 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "RunProfilerUbsanTest -Framework net7.0"
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithProfilerUbsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
