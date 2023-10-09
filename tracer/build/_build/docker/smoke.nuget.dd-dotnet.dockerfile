@@ -1,4 +1,4 @@
-﻿﻿ARG DOTNETSDK_VERSION
+﻿ARG DOTNETSDK_VERSION
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
