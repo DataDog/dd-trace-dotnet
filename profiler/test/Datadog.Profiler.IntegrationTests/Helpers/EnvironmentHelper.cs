@@ -41,6 +41,8 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
         }
 
+        public static bool IsArm64 { get => RuntimeInformation.ProcessArchitecture == Architecture.Arm64; }
+
         public Dictionary<string, string> CustomEnvironmentVariables { get; set; } = new Dictionary<string, string>();
 
         public string LogDir
@@ -71,6 +73,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetPlatform()
         {
+            if (IsArm64)
+            {
+                return "Arm64";
+            }
+
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
@@ -164,6 +171,11 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
             environmentVariables["DD_PROFILING_UPLOAD_PERIOD"] = profilingExportIntervalInSeconds.ToString();
             environmentVariables["DD_TRACE_DEBUG"] = "1";
+
+            if (IsArm64)
+            {
+                environmentVariables["DD_INTERNAL_PROFILING_ARM64_ENABLED"] = "1";
+            }
 
             if (!IsRunningOnWindows())
             {
@@ -316,6 +328,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
                 ("linux", "x64", false) => "linux-x64",
                 ("linux", "x64", true) => "linux-musl-x64",
                 ("linux", "Arm64", _) => "linux-arm64",
+                // maybe later a linux-musl-arm64 ?
                 ("osx", _, _) => "osx-x64",
                 _ => throw new PlatformNotSupportedException()
             };

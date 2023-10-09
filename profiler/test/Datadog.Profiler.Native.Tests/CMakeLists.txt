@@ -59,7 +59,10 @@ target_include_directories(${TEST_EXECUTABLE_NAME}
     PUBLIC ${googletest_SOURCE_DIR}/googlemock/include
 )
 
-add_dependencies(${TEST_EXECUTABLE_NAME} gmock gtest Datadog.Profiler.Native.static libunwind)
+add_dependencies(${TEST_EXECUTABLE_NAME} gmock gtest Datadog.Profiler.Native.static)
+if (NOT ISARM64)
+  add_dependencies(${TEST_EXECUTABLE_NAME} libunwind)
+endif()
 
 if (RUN_ASAN)
     target_link_libraries(${TEST_EXECUTABLE_NAME} -fsanitize=address)

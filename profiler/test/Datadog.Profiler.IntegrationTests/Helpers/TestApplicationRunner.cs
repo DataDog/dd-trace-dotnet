@@ -7,6 +7,7 @@ using System;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
+using System.Runtime.InteropServices;
 using Xunit;
 using Xunit.Abstractions;
 using Xunit.Sdk;
@@ -59,7 +60,9 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         public static string GetApplicationOutputFolderPath(string appName)
         {
-            var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{EnvironmentHelper.GetPlatform()}";
+            var appTargetPlatform = EnvironmentHelper.GetPlatform();
+
+            var configurationAndPlatform = $"{EnvironmentHelper.GetConfiguration()}-{(appTargetPlatform == "Arm64" ? "AnyCPU" : appTargetPlatform)}";
             var binPath = EnvironmentHelper.GetBinOutputPath();
             return Path.Combine(binPath, configurationAndPlatform, "profiler", "src", "Demos", appName);
         }

@@ -112,6 +112,7 @@
   </PropertyGroup>
   <ItemGroup>
     <ClCompile Include="..\..\dotnet-runtime-coreclr\pal\prebuilt\idl\corprof_i.cpp" />
+    <ClCompile Include="LinuxClrBasedStackFramesCollector.cpp" />
     <ClCompile Include="LinuxStackFramesCollector.cpp" />
     <ClCompile Include="LinuxThreadInfo.cpp" />
     <ClCompile Include="LinuxThreadsCpuManager.cpp" />
@@ -123,6 +124,7 @@
     <None Include="prepare_loader_for_linking.sh" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="LinuxClrBasedStackFramesCollector.h" />
     <ClInclude Include="LinuxStackFramesCollector.h" />
     <ClInclude Include="LinuxThreadInfo.h" />
     <ClInclude Include="ProfilerSignalManager.h" />

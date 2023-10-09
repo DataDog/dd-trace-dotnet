@@ -16,7 +16,9 @@
 #else
 #include "cgroup.h"
 #include <signal.h>
+#ifndef ARM64
 #include <libunwind.h>
+#endif
 #endif
 
 #include "AllocationsProvider.h"
@@ -1341,6 +1343,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         _systemCallsShield->Register(threadInfo);
     }
 
+#ifndef ARM64
     // TL;DR prevent the profiler from deadlocking application thread on malloc
     // When calling uwn_backtraceXX, libunwind will initialize data structures for the current
     // thread using TLS (Thread Local Storage).
@@ -1350,6 +1353,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
     // initializing the TLS'd data structures for the current thread.
     uintptr_t tab[1];
     unw_backtrace((void**)tab, 1);
+#endif
 
     // check if SIGUSR1 signal is blocked for current thread
     sigset_t currentMask;

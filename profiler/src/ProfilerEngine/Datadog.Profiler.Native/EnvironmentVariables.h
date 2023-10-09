@@ -60,4 +60,5 @@ public:
     inline static const shared::WSTRING InternalMetricsEnabled      = WStr("DD_INTERNAL_METRICS_ENABLED");
     inline static const shared::WSTRING ThreadLifetimeEnabled       = WStr("DD_INTERNAL_THREAD_LIFETIME_ENABLED");
     inline static const shared::WSTRING SystemCallsShieldEnabled    = WStr("DD_INTERNAL_SYSTEM_CALLS_SHIELD_ENABLED");
+    inline static const shared::WSTRING EnableProfilerForArm64      = WStr("DD_INTERNAL_PROFILING_ARM64_ENABLED");
 };

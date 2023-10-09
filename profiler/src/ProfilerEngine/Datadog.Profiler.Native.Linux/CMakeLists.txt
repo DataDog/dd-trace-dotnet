@@ -71,8 +71,13 @@ FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
 
 FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
 FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")
-
 list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
+
+if (ISARM64)
+    list(REMOVE_ITEM LINUX_PROFILER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/LinuxStackFramesCollector.cpp)
+else()
+    list(REMOVE_ITEM LINUX_PROFILER_SRC ${CMAKE_CURRENT_SOURCE_DIR}/LinuxClrBasedStackFramesCollector.cpp)
+endif()
 
 # ******************************************************
 # Define static target
@@ -111,7 +116,6 @@ endif()
 target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
 target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    libunwind-lib
     libdatadog-lib
     coreclr
     PPDB
@@ -123,8 +127,17 @@ target_link_libraries(${PROFILER_STATIC_LIB_NAME}
     -ldl
 )
 
-add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB)
+if (NOT ISARM64)
+    target_link_libraries(${PROFILER_STATIC_LIB_NAME}
+        libunwind-lib
+    )
+endif()
+        
 
+add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib coreclr spdlog-headers PPDB)
+if (NOT ISARM64)
+    add_dependencies(${PROFILER_STATIC_LIB_NAME} libunwind-lib)
+endif()
 # ******************************************************
 # Define shared target
 # ******************************************************

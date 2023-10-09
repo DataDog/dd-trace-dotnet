@@ -74,8 +74,10 @@ message(STATUS "Spdlog headers")
 find_package(ManagedLoader REQUIRED)
 message(STATUS "Tracer Managed Loader")
 
+if (NOT ISARM64)
 find_package(Libunwind REQUIRED)
 message(STATUS "Libunwind library " ${LIBUNWIND_VERSION})
+endif()
 
 find_package(Libdatadog REQUIRED)
 message(STATUS "Libdatadog library " ${LIBDATADOG_VERSION})

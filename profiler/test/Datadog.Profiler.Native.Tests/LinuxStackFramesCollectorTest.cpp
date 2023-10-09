@@ -1,7 +1,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#ifdef LINUX
+#if defined(LINUX) && !defined(ARM64)
 
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/LinuxStackFramesCollector.h"
 #include "profiler/src/ProfilerEngine/Datadog.Profiler.Native.Linux/ProfilerSignalManager.h"
@@ -425,7 +425,7 @@ TEST_F(LinuxStackFramesCollectorFixture, CheckProfilerSignalHandlerIsRestoredIfA
     // Disable this check on Alpine due to flackyness
     // Libunwind randomly fails with unw_backtrace2 (from a signal handler)
     // but unw_backtrace
-#ifndef DD_ALPINE
+#if !defined(DD_ALPINE)
     ValidateCallstack(ips);
 #endif
 

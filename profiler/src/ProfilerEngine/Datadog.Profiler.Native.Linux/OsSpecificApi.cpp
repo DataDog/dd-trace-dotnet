@@ -5,12 +5,12 @@
 
 #include "OsSpecificApi.h"
 
-#include <cstdlib>
-#include <iostream>
 #include <chrono>
+#include <cstdlib>
 #include <fstream>
-#include <string>
+#include <iostream>
 #include <sstream>
+#include <string>
 
 #include <errno.h>
 #include <fcntl.h>
@@ -27,7 +27,11 @@
 
 #include "IConfiguration.h"
 #include "IThreadInfo.h"
+#if ARM64
+#include "LinuxClrBasedStackFramesCollector.h"
+#else
 #include "LinuxStackFramesCollector.h"
+#endif
 #include "LinuxThreadInfo.h"
 #include "Log.h"
 #include "OpSysTools.h"
@@ -54,10 +58,13 @@ std::pair<DWORD, std::string> GetLastErrorMessage()
     return std::make_pair(errorCode, message);
 }
 
-
 std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* const pConfiguration)
 {
+#ifdef ARM64
+    return std::make_unique<LinuxClrBasedStackFramesCollector>(pCorProfilerInfo, ProfilerSignalManager::Get());
+#else
     return std::make_unique<LinuxStackFramesCollector>(ProfilerSignalManager::Get(), pConfiguration);
+#endif
 }
 
 // https://linux.die.net/man/5/proc
@@ -133,7 +140,10 @@ bool GetCpuInfo(pid_t tid, bool& isRunning, uint64_t& cpuTime)
         return false;
     }
 
-    on_leave { close(fd); };
+    on_leave
+    {
+        close(fd);
+    };
 
     // 1023 + 1 to ensure that the last char is a null one
     // initialize the whole array slots to 0
@@ -210,7 +220,10 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
 
     if (proc_dir != nullptr)
     {
-        on_leave { closedir(proc_dir); };
+        on_leave
+        {
+            closedir(proc_dir);
+        };
         threads.reserve(512);
 
         /* /proc available, iterate through tasks... */
@@ -248,7 +261,10 @@ std::chrono::seconds GetMachineBootTime()
         return -1s;
     }
 
-    on_leave { close(fd); };
+    on_leave
+    {
+        close(fd);
+    };
 
     // 1023 + 1 to ensure that the last char is a null one
     // initialize the whole array slots to 0
@@ -286,7 +302,10 @@ std::chrono::seconds GetProcessStartTimeSinceBoot()
         return -1s;
     }
 
-    on_leave { close(fd); };
+    on_leave
+    {
+        close(fd);
+    };
 
     // 1023 + 1 to ensure that the last char is a null one
     // initialize the whole array slots to 0
