@@ -244,6 +244,8 @@ partial class Build
             // Gitlab has issues with memory usage...
             var isGitlab = Nuke.Common.CI.GitLab.GitLab.Instance is not null;
 
+            Logger.Information($"Running in GitLab? {isGitlab}");
+
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
             MSBuild(s => s
