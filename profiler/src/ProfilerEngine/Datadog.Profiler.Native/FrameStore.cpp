@@ -41,12 +41,12 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     // We may end up in a situation where the module containing that symbol was just unloaded.
     // For linux, we do not have solution yet.
     HRESULT hr;
-#ifdef WINDOWS
+#ifdef _WINDOWS
     __try
     {
 #endif
         hr = _pCorProfilerInfo->GetFunctionFromIP((LPCBYTE)instructionPointer, &functionId);
-#ifdef WINDOWS
+#ifdef _WINDOWS
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
