@@ -18,14 +18,14 @@ internal static class TelemetryTransportStrategy
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(TelemetryTransportStrategy));
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(15);
 
-    public static IApiRequestFactory GetDirectIntakeFactory(Uri baseEndpoint, string apiKey)
+    public static IApiRequestFactory GetDirectIntakeFactory(TelemetrySettings.AgentlessSettings settings)
     {
 #if NETCOREAPP
         Log.Information("Using {FactoryType} for telemetry transport direct to intake.", nameof(HttpClientRequestFactory));
-        return new HttpClientRequestFactory(baseEndpoint, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(apiKey), timeout: Timeout);
+        return new HttpClientRequestFactory(settings.AgentlessUri, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(settings), timeout: Timeout);
 #else
         Log.Information("Using {FactoryType} for telemetry transport direct to intake.", nameof(ApiWebRequestFactory));
-        return new ApiWebRequestFactory(baseEndpoint, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(apiKey), timeout: Timeout);
+        return new ApiWebRequestFactory(settings.AgentlessUri, TelemetryHttpHeaderNames.GetDefaultIntakeHeaders(settings), timeout: Timeout);
 #endif
     }
 
