@@ -27,9 +27,6 @@ RUN mkdir -p /opt/datadog \
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
-ARG RELATIVE_PROFILER_PATH
-ARG RELATIVE_APIWRAPPER_PATH
-
 ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Set a random env var we should ignore

@@ -5089,6 +5089,23 @@ stages:
         target: 'nuget-smoke-tests'
         snapshotPrefix: "smoke_test"
 
+    - script: |
+        docker-compose -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          nuget-dddotnet-smoke-tests
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests dd-dotnet
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'nuget-dddotnet-smoke-tests'
+        snapshotPrefix: "smoke_test"
+
     - publish: tracer/build_data
       artifact: _$(System.StageName)_$(Agent.JobName)_logs_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -5283,6 +5300,25 @@ stages:
     - template: steps/run-snapshot-test.yml
       parameters:
         target: 'nuget-smoke-tests.windows'
+        snapshotPrefix: "smoke_test"
+        isLinux: false
+
+    - bash: |
+        docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg RUNTIME_IMAGE=$(runtimeImage) \
+          --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
+          --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
+          --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
+          nuget-dddotnet-smoke-tests.windows
+      env:
+        dockerTag: $(dockerTag)
+      displayName: docker-compose build smoke-tests dd-dotnet
+      retryCountOnTaskFailure: 3
+
+    - template: steps/run-snapshot-test.yml
+      parameters:
+        target: 'nuget-dddotnet-smoke-tests.windows'
         snapshotPrefix: "smoke_test"
         isLinux: false
 
