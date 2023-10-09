@@ -24,7 +24,7 @@ public class TelemetryTransportFactoryTests
         var telemetrySettings = new TelemetrySettings(
             telemetryEnabled: true,
             configurationError: null,
-            agentlessSettings: agentlessEnabled ? new TelemetrySettings.AgentlessSettings(new Uri("http://localhost"), "SOME_API_KEY") : null,
+            agentlessSettings: agentlessEnabled ? new TelemetrySettings.AgentlessSettings(new Uri("http://localhost"), "SOME_API_KEY", null) : null,
             agentProxyEnabled: agentProxyEnabled,
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,

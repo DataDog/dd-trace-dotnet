@@ -132,7 +132,7 @@ namespace Datadog.Trace.Telemetry
 
                 // The uri is already validated in the above code, so this won't fail
                 var finalUri = UriHelpers.Combine(new Uri(agentlessUri, UriKind.Absolute), "/");
-                agentless = new AgentlessSettings(finalUri, apiKey!);
+                agentless = AgentlessSettings.Create(finalUri, apiKey!);
             }
 
             var heartbeatInterval = config
@@ -189,10 +189,18 @@ namespace Datadog.Trace.Telemetry
 
         public class AgentlessSettings
         {
-            public AgentlessSettings(Uri agentlessUri, string apiKey)
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AgentlessSettings"/> class.
+            /// For testing only, prefer using <see cref="Create"/> instead
+            /// </summary>
+            public AgentlessSettings(
+                Uri agentlessUri,
+                string apiKey,
+                CloudSettings? cloudSettings)
             {
                 AgentlessUri = agentlessUri;
                 ApiKey = apiKey;
+                Cloud = cloudSettings;
             }
 
             /// <summary>
@@ -204,6 +212,49 @@ namespace Datadog.Trace.Telemetry
             /// Gets the api key to use when sending requests to the agentless telemetry intake
             /// </summary>
             public string ApiKey { get; }
+
+            public CloudSettings? Cloud { get; }
+
+            public static AgentlessSettings Create(Uri agentlessUri, string apiKey)
+            {
+                CloudSettings? cloud = null;
+                if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.GcpServiceVariable) is { Length: >0 } gcp)
+                {
+                    cloud = new("GCP", "GCPCloudRun", gcp);
+                }
+                else if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureContainerAppVariable) is { Length: >0 } aca)
+                {
+                    cloud = new("Azure", "AzureContainerApp", aca);
+                }
+                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable1))
+                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable2)))
+                {
+                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceIdentifierVariable));
+                }
+
+                // TODO: Handle AWS Lambda. We don't currently have a good way to get the ARN as the identifier so skip for now
+
+                return new AgentlessSettings(agentlessUri, apiKey, cloud);
+            }
+
+            public class CloudSettings
+            {
+                public CloudSettings(
+                    string provider,
+                    string resourceType,
+                    string resourceIdentifier)
+                {
+                    Provider = provider;
+                    ResourceType = resourceType;
+                    ResourceIdentifier = resourceIdentifier;
+                }
+
+                public string Provider { get; }
+
+                public string ResourceType { get; }
+
+                public string ResourceIdentifier { get; }
+            }
         }
     }
 }
