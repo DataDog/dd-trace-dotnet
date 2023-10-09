@@ -246,6 +246,24 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        /// <summary>
+        /// Manually close the CI Visibility mode triggering the LifeManager to run the shutdown tasks
+        /// This is required due to a weird behavior on the VSTest framework were the shutdown tasks are not awaited:
+        /// ` if testhost doesn't shut down within 100ms(as the execution is completed, we expect it to shutdown fast).
+        ///   vstest.console forcefully kills the process.`
+        /// https://github.com/microsoft/vstest/issues/1900#issuecomment-457488472
+        /// https://github.com/Microsoft/vstest/blob/2d4508232b6655a4f363b8bbcc887441c7d1d334/src/Microsoft.TestPlatform.CrossPlatEngine/Client/ProxyOperationManager.cs#L197
+        /// </summary>
+        internal static void Close()
+        {
+            if (IsRunning)
+            {
+                Log.Information("CI Visibility is exiting.");
+                LifetimeManager.Instance.RunShutdownTasks();
+                Interlocked.Exchange(ref _firstInitialization, 1);
+            }
+        }
+
         internal static void WaitForSkippableTaskToFinish()
         {
             if (_skippableTestsTask is { IsCompleted: false })

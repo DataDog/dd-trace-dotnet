@@ -9,10 +9,9 @@
 #include "debugger_probes_tracker.h"
 #include "debugger_rejit_handler_module_method.h"
 #include "debugger_rejit_preprocessor.h"
-#include "il_rewriter_wrapper.h"
+#include "fault_tolerant_method_duplicator.h"
 #include "logger.h"
-#include "stats.h"
-#include "version.h"
+#include <random>
 
 namespace debugger
 {
@@ -47,6 +46,55 @@ bool DebuggerProbesInstrumentationRequester::IsCoreLibOr3rdParty(const WSTRING& 
     }
 
     return false;
+}
+
+WSTRING DebuggerProbesInstrumentationRequester::GenerateRandomProbeId()
+{
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dis(0, 15);
+    std::uniform_int_distribution<> dis8(8, 11);
+
+    std::wstringstream ss;
+    int i;
+    ss << std::hex;
+
+    for (i = 0; i < 8; i++)
+    {
+        ss << dis(gen);
+    }
+
+    ss << L"-";
+
+    for (i = 0; i < 4; i++)
+    {
+        ss << dis(gen);
+    }
+
+    ss << L"-4";
+
+    for (i = 0; i < 3; i++)
+    {
+        ss << dis(gen);
+    }
+
+    ss << L"-a";
+
+    for (i = 0; i < 3; i++)
+    {
+        ss << dis(gen);
+    }
+
+    ss << L"-";
+
+    for (i = 0; i < 12; i++)
+    {
+        ss << dis(gen);
+    }
+
+    std::wstring temp = ss.str();
+    WSTRING converted(temp.begin(), temp.end());
+    return converted;
 }
 
 /**
@@ -127,7 +175,7 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
         }
 
         const auto& methodProbe = std::make_shared<MethodProbeDefinition>(MethodProbeDefinition(
-            WStr("ProbeId"),
+            GenerateRandomProbeId(),
             MethodReference(targetAssembly, caller.type.name, caller.name, minVersion, maxVersion, signatureTypes),
             /* is_exact_signature_match */ false));
 
@@ -140,12 +188,14 @@ void DebuggerProbesInstrumentationRequester::PerformInstrumentAllIfNeeded(const 
 
 DebuggerProbesInstrumentationRequester::DebuggerProbesInstrumentationRequester(
     CorProfiler* corProfiler, std::shared_ptr<trace::RejitHandler> rejit_handler,
-    std::shared_ptr<trace::RejitWorkOffloader> work_offloader) :
+    std::shared_ptr<trace::RejitWorkOffloader> work_offloader,
+    std::shared_ptr<fault_tolerant::FaultTolerantMethodDuplicator> fault_tolerant_method_duplicator) :
     m_corProfiler(corProfiler),
+    m_debugger_rejit_preprocessor(
+    std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader)),
     m_rejit_handler(rejit_handler),
     m_work_offloader(work_offloader),
-    m_debugger_rejit_preprocessor(
-        std::make_unique<DebuggerRejitPreprocessor>(corProfiler, rejit_handler, work_offloader))
+    m_fault_tolerant_method_duplicator(fault_tolerant_method_duplicator)
 {
     is_debugger_enabled = IsDebuggerEnabled();
 }
@@ -671,7 +721,7 @@ void DebuggerProbesInstrumentationRequester::RequestRejitForLoadedModule(const M
     Logger::Debug("[Debugger] Total number of ReJIT Requested: ", numReJITs);
 }
 
-void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId) const
+void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToModule(const ModuleID moduleId)
 {
     auto corProfilerInfo = m_rejit_handler->GetCorProfilerInfo();
 
@@ -714,6 +764,8 @@ void DebuggerProbesInstrumentationRequester::ModuleLoadFinished_AddMetadataToMod
         std::make_unique<AssemblyMetadata>(GetAssemblyImportMetadata(assemblyImport));
     Logger::Debug("  Assembly Metadata loaded for: ", assemblyMetadata->name, "(", assemblyMetadata->version.str(),
                   ").");
+
+    m_fault_tolerant_method_duplicator->DuplicateAll(moduleId, moduleInfo, metadataImport, metadataEmit);
 
     // Enumerate the types of the module
     auto typeDefEnum = EnumTypeDefs(metadataImport);

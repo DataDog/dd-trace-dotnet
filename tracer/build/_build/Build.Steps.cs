@@ -241,6 +241,9 @@ partial class Build
             // If we're building for x64, build for x86 too
             var platforms = ArchitecturesForPlatformForTracer;
 
+            // Gitlab has issues with memory usage...
+            var isGitlab = Nuke.Common.CI.GitLab.GitLab.Instance is not null;
+
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
             MSBuild(s => s
@@ -249,7 +252,7 @@ partial class Build
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
                 .DisableRestore()
-                .SetMaxCpuCount(null)
+                .SetMaxCpuCount(isGitlab ? 1 : null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
@@ -589,8 +592,8 @@ partial class Build
       .After(BuildDdDotnet, PublishManagedTracer)
       .Executes(() =>
       {
-          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-trace-dotnet.pdb";
-          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-trace-dotnet.pdb";
+          var source = ArtifactsDirectory / "dd-dotnet" / "win-x64" / "dd-dotnet.pdb";
+          var dest = SymbolsDirectory / "dd-dotnet-win-x64" / "dd-dotnet.pdb";
           CopyFile(source, dest, FileExistsPolicy.Overwrite);
       });
 
@@ -681,6 +684,10 @@ partial class Build
 
             // Add the create log path script
             CopyFileToDirectory(BuildDirectory / "artifacts" / FileNames.CreateLogPathScript, BundleHomeDirectory);
+
+            // Add the dd-dotnet scripts
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.cmd", BundleHomeDirectory, FileExistsPolicy.Overwrite);
+            CopyFileToDirectory(BuildDirectory / "artifacts" / "dd-dotnet.sh", BundleHomeDirectory, FileExistsPolicy.Overwrite);
         });
 
     Target ExtractDebugInfoLinux => _ => _

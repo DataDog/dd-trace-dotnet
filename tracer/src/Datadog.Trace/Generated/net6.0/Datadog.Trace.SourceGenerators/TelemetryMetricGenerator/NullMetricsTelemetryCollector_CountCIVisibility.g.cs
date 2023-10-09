@@ -44,6 +44,10 @@ internal partial class NullMetricsTelemetryCollector
     {
     }
 
+    public void RecordCountCIVisibilityEndpointPayloadDropped(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityEndpoints tag, int increment = 1)
+    {
+    }
+
     public void RecordCountCIVisibilityGitCommand(Datadog.Trace.Telemetry.Metrics.MetricTags.CIVisibilityCommands tag, int increment = 1)
     {
     }

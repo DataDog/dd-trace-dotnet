@@ -31,6 +31,10 @@ if [ "$1" = "linux" ]; then
     rm -f appsec_noattack.json
     rm -f appsec_attack_noblocking.json
     rm -f appsec_attack_blocking.json
+    rm -f appsec_iast_enabled_default.json
+    rm -f appsec_iast_enabled_full.json
+    rm -f appsec_iast_disabled_vulnerability.json
+    rm -f appsec_iast_enabled_vulnerability.json
 
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_baseline --profile linux --json appsec_baseline.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_baseline --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_baseline.json"
@@ -44,6 +48,17 @@ if [ "$1" = "linux" ]; then
     crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_attack_blocking --profile linux --json appsec_attack_blocking.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_attack_blocking --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
     dd-trace --crank-import="appsec_attack_blocking.json"
 
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_default --profile linux --json appsec_iast_enabled_default.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_default --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_enabled_default.json"
+
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_full --profile linux --json appsec_iast_enabled_full.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_full --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_enabled_full.json"
+
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_disabled_vulnerability --profile linux --json appsec_iast_disabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_disabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_disabled_vulnerability.json"
+	
+    crank --config Security.Samples.AspNetCoreSimpleController.yml --scenario appsec_iast_enabled_vulnerability --profile linux --json appsec_iast_enabled_vulnerability.json $repository $commit  --property name=AspNetCoreSimpleController --property scenario=appsec_iast_enabled_vulnerability --property profile=linux --property arch=x64 --variable commit_hash=$commit_sha
+    dd-trace --crank-import="appsec_iast_enabled_vulnerability.json"
 else
     echo "Unknown argument $1"
     exit 1

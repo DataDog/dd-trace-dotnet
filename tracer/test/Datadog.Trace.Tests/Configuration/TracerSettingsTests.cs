@@ -7,9 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
@@ -781,41 +779,8 @@ namespace Datadog.Trace.Tests.Configuration
             settings.TraceEnabled.Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData("test1,, ,test2", false, false, new[] { "TEST1", "TEST2" })]
-        [InlineData("test1,, ,test2", true, true, new[] { "TEST1", "TEST2" })]
-        [InlineData(null, true, true, new[] { "azuredefault" })]
-        [InlineData(null, false, true, new[] { "/2018-06-01/RUNTIME/INVOCATION/" })]
-        [InlineData(null, false, false, new string[0])]
-        [InlineData("", true, true, new string[0])]
-        public void HttpClientExcludedUrlSubstrings(string value, bool isRunningInAppService, bool isRunningInLambda, string[] expected)
-        {
-            if (expected.Length == 1 && expected[0] == "azuredefault")
-            {
-                expected = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Split(',').Select(s => s.Trim()).ToArray();
-            }
-
-            var previous = isRunningInLambda
-                               ? SetLambdaEnvironmentForTests("functionName", "serviceName::handlerName")
-                               : SetLambdaEnvironmentForTests(null, null);
-            try
-            {
-                var source = CreateConfigurationSource(
-                    (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
-                    (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
-
-                var settings = new TracerSettings(source);
-
-                settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
-            }
-            finally
-            {
-                foreach (var kvp in previous)
-                {
-                    System.Environment.SetEnvironmentVariable(kvp.Key, kvp.Value);
-                }
-            }
-        }
+        // The HttpClientExcludedUrlSubstrings tests rely on Lambda.Create() which uses environment variables
+        // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
         [InlineData("", DbmPropagationLevel.Disabled)]
@@ -900,6 +865,35 @@ namespace Datadog.Trace.Tests.Configuration
             configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
         }
 
+        [Fact]
+        public void RecordsTelemetryAboutTfm()
+        {
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
+            var collector = new ConfigurationTelemetry();
+            tracerSettings.CollectTelemetry(collector);
+            var data = collector.GetData();
+            var value = data
+                       .GroupBy(x => x.Name)
+                       .Should()
+                       .ContainSingle(x => x.Key == ConfigTelemetryData.ManagedTracerTfm)
+                       .Which
+                       .OrderByDescending(x => x.SeqId)
+                       .First();
+
+#if NET6_0_OR_GREATER
+            var expected = "net6.0";
+#elif NETCOREAPP3_1_OR_GREATER
+            var expected = "netcoreapp3.1";
+#elif NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_0
+            var expected = "netstandard2.0";
+#elif NETFRAMEWORK
+            var expected = "net461";
+#else
+            #error Unexpected TFM
+#endif
+            value.Value.Should().Be(expected);
+        }
+
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
         {
             var settings = new TracerSettings();
@@ -920,22 +914,6 @@ namespace Datadog.Trace.Tests.Configuration
             }
 
             Assert.Empty(statusCodes);
-        }
-
-        private Dictionary<string, string> SetLambdaEnvironmentForTests(
-            string functionName, string handlerName, [CallerFilePath] string extensionPath = null)
-        {
-            var previous = new Dictionary<string, string>
-            {
-                { LambdaMetadata.FunctionNameEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar) },
-                { LambdaMetadata.HandlerEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.HandlerEnvVar) },
-                { LambdaMetadata.ExtensionPathEnvVar, System.Environment.GetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar) },
-            };
-
-            System.Environment.SetEnvironmentVariable(LambdaMetadata.FunctionNameEnvVar, functionName);
-            System.Environment.SetEnvironmentVariable(LambdaMetadata.HandlerEnvVar, handlerName);
-            System.Environment.SetEnvironmentVariable(LambdaMetadata.ExtensionPathEnvVar, extensionPath);
-            return previous;
         }
     }
 }

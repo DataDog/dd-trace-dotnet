@@ -15,6 +15,7 @@ namespace Datadog.Trace.Telemetry
         public const string AgentTraceTransport = "agent_transport";
         public const string Debug = "debug";
         public const string NativeTracerVersion = "native_tracer_version";
+        public const string ManagedTracerTfm = "managed_tracer_framework";
         public const string AnalyticsEnabled = "analytics_enabled";
         public const string SampleRate = "sample_rate";
         public const string SamplingRules = "sampling_rules";
@@ -46,5 +47,18 @@ namespace Datadog.Trace.Telemetry
 
         public const string ProfilerLoaded = "profiler_loaded";
         public const string CodeHotspotsEnabled = "code_hotspots_enabled";
+
+        // We intentionally are using specific values here, not OR_GREATER_THAN
+#if NET6_0
+        public const string ManagedTracerTfmValue = "net6.0";
+#elif NETCOREAPP3_1
+        public const string ManagedTracerTfmValue = "netcoreapp3.1";
+#elif NETSTANDARD2_0
+        public const string ManagedTracerTfmValue = "netstandard2.0";
+#elif NETFRAMEWORK
+        public const string ManagedTracerTfmValue = "net461";
+#else
+#error Unexpected TFM
+#endif
     }
 }

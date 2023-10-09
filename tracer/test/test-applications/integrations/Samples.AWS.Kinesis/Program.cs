@@ -38,7 +38,7 @@ namespace Samples.AWS.Kinesis
 
         private static string Host()
         {
-            return Environment.GetEnvironmentVariable("AWS_KINESIS_HOST") ?? "localhost:4566";
+            return Environment.GetEnvironmentVariable("AWS_SDK_HOST") ?? "localhost:4566";
         }
     }
 }

@@ -5,21 +5,18 @@
 
 #nullable enable
 using System;
-using System.Security.Cryptography;
-using System.Text;
 
-namespace Datadog.Trace.Iast.Helpers
+namespace Datadog.Trace.Iast.Helpers;
+
+internal static class StringExtensions
 {
-    internal static class StringExtensions
+    public static string Quote(this string? text)
     {
-        public static string Quote(this string text)
+        if (text != null && !text.StartsWith("\"") && !text.EndsWith("\""))
         {
-            if (text != null && !text.StartsWith("\"") && !text.EndsWith("\""))
-            {
-                text = "\"" + text + "\"";
-            }
-
-            return text ?? string.Empty;
+            text = "\"" + text + "\"";
         }
+
+        return text ?? string.Empty;
     }
 }

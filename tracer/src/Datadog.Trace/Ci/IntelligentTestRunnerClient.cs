@@ -329,14 +329,23 @@ internal class IntelligentTestRunnerClient
                     Log.Debug("ITR: Getting settings from: {Url}", _settingsUrl.ToString());
                 }
 
-                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                string? responseContent;
+                try
                 {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
-                }
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(errorType);
+                    }
 
-                CheckResponseStatusCode(response, responseContent, finalTry);
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                }
+                catch
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSettingsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    throw;
+                }
 
                 Log.Debug("ITR: JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
@@ -414,15 +423,24 @@ internal class IntelligentTestRunnerClient
                     Log.Debug("ITR: Searching skippable tests from: {Url}", _skippableTestsUrl.ToString());
                 }
 
-                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
-                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                string? responseContent;
+                try
                 {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(errorType);
-                }
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    TelemetryFactory.Metrics.RecordDistributionCIVisibilityITRSkippableTestsResponseBytes(Encoding.UTF8.GetByteCount(responseContent ?? string.Empty));
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(errorType);
+                    }
 
-                CheckResponseStatusCode(response, responseContent, finalTry);
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                }
+                catch
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityITRSkippableTestsRequestErrors(MetricTags.CIVisibilityErrorType.Network);
+                    throw;
+                }
 
                 Log.Debug("ITR: JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
@@ -526,14 +544,23 @@ internal class IntelligentTestRunnerClient
                     Log.Debug("ITR: Searching commits from: {Url}", _searchCommitsUrl.ToString());
                 }
 
-                using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
-                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                string? responseContent;
+                try
                 {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
-                }
+                    using var response = await request.PostAsync(new ArraySegment<byte>(state), MimeTypes.Json).ConfigureAwait(false);
+                    responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(errorType);
+                    }
 
-                CheckResponseStatusCode(response, responseContent, finalTry);
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                }
+                catch
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    throw;
+                }
 
                 Log.Debug("ITR: JSON RS = {Json}", responseContent);
                 if (string.IsNullOrEmpty(responseContent))
@@ -634,17 +661,26 @@ internal class IntelligentTestRunnerClient
 
                 var multipartRequest = (IMultipartApiRequest)request;
                 using var fileStream = File.Open(packFile, FileMode.Open, FileAccess.Read, FileShare.Read);
-                using var response = await multipartRequest.PostAsync(
-                                                                new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
-                                                                new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
-                                                           .ConfigureAwait(false);
-                var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
-                if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
-                {
-                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPackErrors(errorType);
-                }
 
-                CheckResponseStatusCode(response, responseContent, finalTry);
+                try
+                {
+                    using var response = await multipartRequest.PostAsync(
+                                                                    new MultipartFormItem("pushedSha", MimeTypes.Json, null, new ArraySegment<byte>(jsonPushedShaBytes)),
+                                                                    new MultipartFormItem("packfile", "application/octet-stream", null, fileStream))
+                                                               .ConfigureAwait(false);
+                    var responseContent = await response.ReadAsStringAsync().ConfigureAwait(false);
+                    if (TelemetryHelper.GetErrorTypeFromStatusCode(response.StatusCode) is { } errorType)
+                    {
+                        TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsObjectsPackErrors(errorType);
+                    }
+
+                    CheckResponseStatusCode(response, responseContent, finalTry);
+                }
+                catch
+                {
+                    TelemetryFactory.Metrics.RecordCountCIVisibilityGitRequestsSearchCommitsErrors(MetricTags.CIVisibilityErrorType.Network);
+                    throw;
+                }
 
                 return new FileInfo(packFile).Length;
             }

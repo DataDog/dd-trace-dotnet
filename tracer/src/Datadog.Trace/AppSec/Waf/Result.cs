@@ -11,14 +11,14 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly DDWAF_RET_CODE _returnCode;
+        private readonly WafReturnCode _returnCode;
 
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
             _returnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
             Derivatives = returnStruct.Derivatives.DecodeMap();
-            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
+            ShouldBeReported = returnCode >= WafReturnCode.Match;
             var events = returnStruct.Events.DecodeObjectArray();
             if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
             else
@@ -33,7 +33,7 @@ namespace Datadog.Trace.AppSec.Waf
             Timeout = returnStruct.Timeout;
         }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(_returnCode);
+        public WafReturnCode ReturnCode => _returnCode;
 
         public string Data { get; }
 

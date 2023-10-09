@@ -50,6 +50,9 @@ public static class XUnitTestAssemblyRunnerBeforeTestAssemblyFinishedAsyncIntegr
         if (TestModule.Current is { } testModule)
         {
             await testModule.CloseAsync().ConfigureAwait(false);
+
+            // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
+            CIVisibility.Close();
         }
 
         return returnValue;

@@ -32,6 +32,7 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
+                GenerateConditionVariableBasedOnGitChange("isAppSecChanged", new[] { "tracer/src/Datadog.Trace/Iast", "tracer/src/Datadog.Tracer.Native/iast", "tracer/src/Datadog.Trace/AppSec" }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
@@ -69,7 +70,7 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
 
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter)) && !exclusionFilters.Any(filter => s.Contains(filter)));
+                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
                     }
 
                     Logger.Information($"{variableName} - {isChanged}");
@@ -217,16 +218,21 @@ partial class Build : NukeBuild
 
             void GenerateIntegrationTestsLinuxMatrix()
             {
-                var baseImages = new[] { "centos7", "alpine" };
+                var baseImages = new []
+                {
+                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                };
+
                 var targetFrameworks = TestingFrameworks.Except(new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0 });
 
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
-                    foreach (var baseImage in baseImages)
+                    foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
-                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage });
+                        matrix.Add($"{baseImage}_{framework}", new { publishTargetFramework = framework, baseImage = baseImage, artifactSuffix = artifactSuffix });
                     }
                 }
 
@@ -237,13 +243,17 @@ partial class Build : NukeBuild
             void GenerateIntegrationTestsDebuggerLinuxMatrix()
             {
                 var targetFrameworks = TestingFrameworksDebugger.Except(new[] { TargetFramework.NET462 });
-                var baseImages = new[] { "centos7", "alpine" };
+                var baseImages = new []
+                {
+                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                };
                 var optimizations = new[] { "true", "false" };
 
                 var matrix = new Dictionary<string, object>();
                 foreach (var framework in targetFrameworks)
                 {
-                    foreach (var baseImage in baseImages)
+                    foreach (var (baseImage, artifactSuffix) in baseImages)
                     {
                         foreach (var optimize in optimizations)
                         {
@@ -253,6 +263,7 @@ partial class Build : NukeBuild
                                            publishTargetFramework = framework,
                                            baseImage = baseImage,
                                            optimize = optimize,
+                                           artifactSuffix = artifactSuffix,
                                        });
                         }
                     }
@@ -312,11 +323,15 @@ partial class Build : NukeBuild
                 var testDescriptions = ExplorationTestDescription.GetAllExplorationTestDescriptions();
                 var targetFrameworks = TargetFramework.GetFrameworks(except: new[] { TargetFramework.NET461, TargetFramework.NET462, TargetFramework.NETSTANDARD2_0, });
 
-                var baseImages = new[] { "centos7", "alpine" };
+                var baseImages = new []
+                {
+                    (baseImage: "centos7", artifactSuffix: "linux-x64"), 
+                    (baseImage: "alpine", artifactSuffix: "linux-musl-x64"), 
+                };
 
                 var matrix = new Dictionary<string, object>();
 
-                foreach (var baseImage in baseImages)
+                foreach (var (baseImage, artifactSuffix) in baseImages)
                 {
                     foreach (var explorationTestUseCase in useCases)
                     {
@@ -328,7 +343,7 @@ partial class Build : NukeBuild
                                 {
                                     matrix.Add(
                                         $"{baseImage}_{targetFramework}_{explorationTestUseCase}_{testDescription.Name}",
-                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name });
+                                        new { baseImage = baseImage, publishTargetFramework = targetFramework, explorationTestUseCase = explorationTestUseCase, explorationTestName = testDescription.Name, artifactSuffix = artifactSuffix });
                                 }
                             }
                         }
@@ -384,8 +399,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-bionic"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-stretch-slim"),
                         },
+                        installer: "datadog-dotnet-apm*_amd64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm*_amd64.deb",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -405,8 +422,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "29-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "29-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-fedora"
                     );
 
@@ -424,8 +443,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.13"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "2.1-alpine3.12"),
                         },
+                        installer: "datadog-dotnet-apm*-musl.tar.gz",
                         installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*-musl.tar.gz",
-                        linuxArtifacts: "linux-packages-alpine",
+                        linuxArtifacts: "linux-packages-linux-musl-x64",
+                        runtimeId: "linux-musl-x64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -440,8 +461,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "7-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "7-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-centos"
                     );
 
@@ -455,8 +478,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-rhel"
                     );
 
@@ -471,8 +496,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "8-5.0"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "8-3.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-centos-stream"
                     );
 
@@ -487,8 +514,10 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "15-3.1"),
                             (publishFramework: TargetFramework.NETCOREAPP2_1, "15-2.1"),
                         },
+                        installer: "datadog-dotnet-apm*-1.x86_64.rpm",
                         installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.x86_64.rpm",
-                        linuxArtifacts: "linux-packages-centos7",
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
                         dockerName: "andrewlock/dotnet-opensuse"
                     );
 
@@ -512,8 +541,43 @@ partial class Build : NukeBuild
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
                         },
+                        installer: "datadog-dotnet-apm_*_arm64.deb",
                         installCmd: "dpkg -i ./datadog-dotnet-apm_*_arm64.deb",
-                        linuxArtifacts: "linux-packages-arm64",
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "fedora",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "35-7.0"),
+                            (publishFramework: TargetFramework.NET6_0, "34-6.0"),
+                            (publishFramework: TargetFramework.NET5_0, "35-5.0"),
+                        },
+                        installer: "datadog-dotnet-apm*-1.aarch64.rpm",
+                        installCmd: "rpm -Uvh ./datadog-dotnet-apm*-1.aarch64.rpm",
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "andrewlock/dotnet-fedora-arm64"
+                    );
+
+                    // We don't support alpine on arm64 yet, so just use debian for the tar test
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian_tar",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
+                            (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
+                        },
+                        installer: "datadog-dotnet-apm_*_arm64.deb", // we advise customers to install the .deb in this case
+                        installCmd: "tar -C /opt/datadog -xzf ./datadog-dotnet-apm*.arm64.tar.gz",
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
                         dockerName: "mcr.microsoft.com/dotnet/aspnet"
                     );
 
@@ -526,8 +590,10 @@ partial class Build : NukeBuild
                     Dictionary<string, object> matrix,
                     string shortName,
                     (string publishFramework, string runtimeTag)[] images,
+                    string installer,
                     string installCmd,
                     string linuxArtifacts,
+                    string runtimeId,
                     string dockerName
                 )
                 {
@@ -538,6 +604,8 @@ partial class Build : NukeBuild
                             dockerTag,
                             new
                             {
+                                expectedInstaller = installer,
+                                expectedPath = runtimeId,
                                 installCmd = installCmd,
                                 dockerTag = dockerTag,
                                 publishFramework = image.publishFramework,

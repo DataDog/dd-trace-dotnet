@@ -26,21 +26,14 @@ public static class CoverageReporter<TMeta>
 {
     private static readonly TMeta Metadata;
     private static readonly Module Module;
-    private static CoverageContextContainer? _currentCoverageContextContainer;
-    private static ModuleValue? _currentModuleValue;
     private static ModuleValue _globalModuleValue;
 
     static CoverageReporter()
     {
         Metadata = new TMeta();
         Module = typeof(TMeta).Module;
-        _currentCoverageContextContainer = CoverageReporter.Container;
-        CoverageReporter.AddContextContainerChangeAction(ctx =>
-        {
-            Volatile.Write(ref _currentModuleValue, null);
-            Volatile.Write(ref _currentCoverageContextContainer, ctx);
-        });
 
+        // Caching the module from the global shared container in case an async container is null
         var globalCoverageContextContainer = CoverageReporter.GlobalContainer;
         var globalModuleValue = globalCoverageContextContainer.GetModuleValue(Module);
         if (globalModuleValue is null)
@@ -59,27 +52,27 @@ public static class CoverageReporter<TMeta>
     /// <returns>Counters array for the method</returns>
     public static int[] GetCounters(int methodIndex)
     {
-        var module = _currentModuleValue;
-        if (module is null)
-        {
-            var container = _currentCoverageContextContainer;
-            if (container is null)
-            {
-                module = _globalModuleValue;
-            }
-            else
-            {
-                module = container.GetModuleValue(Module);
-                if (module is null)
-                {
-                    module = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
-                    container.Add(module);
-                }
+        ModuleValue? module;
 
-                _currentModuleValue = module;
+        // Try to get the async context container
+        if (CoverageReporter.Container is { } container)
+        {
+            // Get the module form the container
+            module = container.GetModuleValue(Module);
+            if (module is null)
+            {
+                // If the module is not found, we create a new one for this container
+                module = new ModuleValue(Metadata, Module, Metadata.GetMethodsCount());
+                container.Add(module);
             }
         }
+        else
+        {
+            // If there's no async context container then we use the module from the global shared container.
+            module = _globalModuleValue;
+        }
 
+        // Get the method from the module and return the sequence points array for the method
         ref var method = ref module.Methods.FastGetReference(methodIndex);
         method ??= new MethodValues(Metadata.GetTotalSequencePointsOfMethod(methodIndex));
         return method.SequencePoints;
