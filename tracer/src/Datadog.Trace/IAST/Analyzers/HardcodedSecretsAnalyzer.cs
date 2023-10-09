@@ -21,6 +21,7 @@ namespace Datadog.Trace.Iast.Analyzers;
 
 internal class HardcodedSecretsAnalyzer
 {
+    private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
     private static HardcodedSecretsAnalyzer? _instance = null;
 
@@ -45,7 +46,7 @@ internal class HardcodedSecretsAnalyzer
             Log.Debug("HardcodedSecretsAnalyzer polling thread -> Started");
             while (_started)
             {
-                var userStrings = new UserStringInterop[100];
+                var userStrings = new UserStringInterop[UserStringsArraySize];
                 int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
                 Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
                 if (userStringLen > 0 && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
@@ -66,7 +67,10 @@ internal class HardcodedSecretsAnalyzer
                         }
                     }
 
-                    if (userStringLen == userStrings.Length) { continue; }
+                    if (userStringLen == userStrings.Length)
+                    {
+                        continue; // Skip wait time if array came full
+                    }
                 }
 
                 _waitEvent.Wait(5_000);

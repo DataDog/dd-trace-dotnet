@@ -220,7 +220,11 @@ EXTERN_C VOID STDAPICALLTYPE UpdateSettings(WCHAR* keys[], WCHAR* values[], int 
 
 EXTERN_C int STDAPICALLTYPE GetUserStrings(int arrSize, iast::UserStringInterop* arr)
 {
-    return iast::HardcodedSecretsMethodAnalyzer::GetUserStrings(arrSize, arr);
+    if (iast::HardcodedSecretsMethodAnalyzer::Instance)
+    {
+        return iast::HardcodedSecretsMethodAnalyzer::Instance->GetUserStrings(arrSize, arr);
+    }
+    return 0;
 }
 
 EXTERN_C VOID STDAPICALLTYPE ReportSuccessfulInstrumentation(ModuleID moduleId, int methodToken, WCHAR* instrumentationId, int products)

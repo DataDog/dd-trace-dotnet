@@ -6,12 +6,15 @@
 
 namespace iast
 {
-CS _cs;
-std::vector<UserString> _userStrings;
-std::vector<UserString> _deliveredUserStrings;
+HardcodedSecretsMethodAnalyzer* HardcodedSecretsMethodAnalyzer::Instance = nullptr;
 
+HardcodedSecretsMethodAnalyzer::HardcodedSecretsMethodAnalyzer()
+{
+    Instance = this;
+}
 HardcodedSecretsMethodAnalyzer::~HardcodedSecretsMethodAnalyzer()
 {
+    Instance = nullptr;
 }
 
 bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
@@ -48,6 +51,7 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
     if (userStrings.size() > 0)
     {
         CSGUARD(_cs);
+        _userStrings.reserve(_userStrings.size() + userStrings.size());
         for (auto userString : userStrings)
         {
             _userStrings.push_back(userString);
