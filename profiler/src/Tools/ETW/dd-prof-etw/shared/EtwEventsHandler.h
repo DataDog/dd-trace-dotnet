@@ -16,6 +16,7 @@ class EtwEventsHandler : public INamedPipeHandler
 public:
     EtwEventsHandler();
     EtwEventsHandler(bool showMessages);
+    ~EtwEventsHandler();
     void Stop();
 
 public:

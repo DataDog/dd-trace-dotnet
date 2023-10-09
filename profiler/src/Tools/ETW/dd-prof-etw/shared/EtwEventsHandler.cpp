@@ -19,6 +19,11 @@ EtwEventsHandler::EtwEventsHandler(bool showMessages)
     _showMessages = showMessages;
 }
 
+EtwEventsHandler::~EtwEventsHandler()
+{
+    Stop();
+}
+
 void EtwEventsHandler::Stop()
 {
     _stopRequested.store(true);
@@ -106,7 +111,7 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
 
 void EtwEventsHandler::OnConnect(HANDLE hPipe)
 {
-    DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
+    const DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
     auto buffer = std::make_unique<uint8_t[]>(bufferSize);
     auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
 

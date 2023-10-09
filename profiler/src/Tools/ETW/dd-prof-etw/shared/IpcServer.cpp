@@ -116,7 +116,6 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
             return;
         }
 
-        // TODO: how to use smart pointers in that case?
         auto pServerInfo = new ServerInfo();
         pServerInfo->pThis = pThis;
         pServerInfo->hPipe = hNamedPipe;
@@ -124,8 +123,9 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         // let a threadpool thread process the read/write communication; allowing the server to process more incoming connections
         if (!::TrySubmitThreadpoolCallback(ConnectCallback, pServerInfo, nullptr))
         {
-            pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
+            delete pServerInfo;
 
+            pThis->ShowLastError("Impossible to add the Connect callback into the threadpool...");
             pThis->_pHandler->OnStartError();
             return;
         }
