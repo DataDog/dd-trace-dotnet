@@ -29,19 +29,19 @@ FrameStore::FrameStore(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration* pCon
 {
 }
 
-std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
-{
-    static const std::string NotResolvedModuleName("NotResolvedModule");
-    static const std::string NotResolvedFrame("NotResolvedFrame");
-    static const std::string UnloadedModuleName("UnloadedModule");
 
+std::optional<std::pair<HRESULT, FunctionID>> FrameStore::GetFunctionFromIP(uintptr_t instructionPointer)
+{
+    HRESULT hr;
     FunctionID functionId;
 
     // On Windows, the call to GetFunctionFromIP can crash:
     // We may end up in a situation where the module containing that symbol was just unloaded.
     // For linux, we do not have solution yet.
-    HRESULT hr;
 #ifdef _WINDOWS
+    // Cannot return while in __try/__except (compilation error)
+    // We need a flag to know if an access violation exception was raised.
+    bool wasAccessViolationRaised = false;
     __try
     {
 #endif
@@ -50,10 +50,33 @@ std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer
     }
     __except (EXCEPTION_EXECUTE_HANDLER)
     {
+        wasAccessViolationRaised = true;
+    }
+
+    if (wasAccessViolationRaised)
+    {
+        return {};
+    }
+#endif
+
+    return {{hr, functionId}};
+}
+
+std::pair<bool, FrameInfoView> FrameStore::GetFrame(uintptr_t instructionPointer)
+{
+    static const std::string NotResolvedModuleName("NotResolvedModule");
+    static const std::string NotResolvedFrame("NotResolvedFrame");
+    static const std::string UnloadedModuleName("UnloadedModule");
+
+    std::optional<std::pair<HRESULT, FunctionID>> result = GetFunctionFromIP(instructionPointer);
+
+    if (!result.has_value())
+    {
         // we still want a frame to display a good'ish callstack shape
         return {true, {UnloadedModuleName, NotResolvedFrame, "", 0}};
     }
-#endif
+
+    auto const& [hr, functionId] = result.value();
 
     if (SUCCEEDED(hr))
     {
