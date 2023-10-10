@@ -101,6 +101,8 @@ partial class Build
     [LazyPathExecutable(name: "otool")] readonly Lazy<Tool> OTool;
     [LazyPathExecutable(name: "lipo")] readonly Lazy<Tool> Lipo;
 
+    bool IsGitlab => !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("CI_JOB_ID"));
+
     IEnumerable<MSBuildTargetPlatform> ArchitecturesForPlatformForTracer
     {
         get
@@ -241,10 +243,7 @@ partial class Build
             // If we're building for x64, build for x86 too
             var platforms = ArchitecturesForPlatformForTracer;
 
-            // Gitlab has issues with memory usage...
-            var isGitlab = Nuke.Common.CI.GitLab.GitLab.Instance is not null;
-
-            Logger.Information($"Running in GitLab? {isGitlab}");
+            Logger.Information($"Running in GitLab? {IsGitlab}");
 
             // Can't use dotnet msbuild, as needs to use the VS version of MSBuild
             // Build native tracer assets
@@ -254,7 +253,8 @@ partial class Build
                 .SetMSBuildPath()
                 .SetTargets("BuildCppSrc")
                 .DisableRestore()
-                .SetMaxCpuCount(isGitlab ? 1 : null)
+                // Gitlab has issues with memory usage...
+                .SetMaxCpuCount(IsGitlab ? 1 : null)
                 .CombineWith(platforms, (m, platform) => m
                     .SetTargetPlatform(platform)));
         });
