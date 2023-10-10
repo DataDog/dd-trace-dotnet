@@ -22,7 +22,7 @@ protected:
 private:
     std::list<std::shared_ptr<Sample>> GetSamples() override;
 
-    virtual FrameInfoView GetFrameInfo() = 0;
+    virtual std::vector<FrameInfoView> GetFrames() = 0;
     virtual std::vector<std::shared_ptr<IThreadInfo>> const& GetThreads() = 0;
 
     CpuTimeProvider* _cpuTimeProvider;
