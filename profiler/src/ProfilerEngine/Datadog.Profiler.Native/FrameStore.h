@@ -4,6 +4,7 @@
 #pragma once
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <unordered_map>
 #include <string>
 #include <vector>
@@ -41,6 +42,8 @@ public :
 
 
 private:
+    std::optional<std::pair<HRESULT, FunctionID>> GetFunctionFromIP(uintptr_t instructionPointer);
+
     bool GetFunctionInfo(
         FunctionID functionId,
         mdToken& mdTokenFunc,
