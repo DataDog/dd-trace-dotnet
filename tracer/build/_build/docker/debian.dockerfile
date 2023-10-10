@@ -29,6 +29,7 @@ RUN apt-get update \
         make \
         llvm \
         clang \
+        clang-tidy \
         gcc \
         build-essential \
         rpm \
