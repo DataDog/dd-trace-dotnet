@@ -41,6 +41,7 @@ add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
 target_link_libraries(${API_WRAPPER_SHARED_LIB_NAME}
     -pthread
     -ldl
+    -Wl,--build-id
 )
 
 set_target_properties(${API_WRAPPER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
