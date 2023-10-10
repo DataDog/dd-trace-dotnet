@@ -205,7 +205,6 @@ if (ISMACOS)
         spdlog-headers
         ${CMAKE_DL_LIBS}
         ${GENERATED_OBJ_FILES}
-        -Wl,--build-id
     )
 elseif(ISLINUX)
     target_link_libraries("Datadog.Tracer.Native.static"
