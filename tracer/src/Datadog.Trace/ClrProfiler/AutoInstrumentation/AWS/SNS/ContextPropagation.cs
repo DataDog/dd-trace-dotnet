@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Propagators;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
@@ -32,7 +33,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
-        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext spanContext)
+        public static void InjectHeadersIntoBatch<TBatchRequest>(IPublishBatchRequest request, SpanContext context)
+        {
+            // request.PublishBatchRequestEntries is not null and has at least one element,
+            // and the length of array is less than 10, limit defined by AWS for batch requests
+            if (request.PublishBatchRequestEntries?.Count is not (> 0 and < 10))
+            {
+                return;
+            }
+
+            var publishBatchRequestEntry = request.PublishBatchRequestEntries[0].DuckCast<IContainsMessageAttributes>();
+
+            InjectHeadersIntoMessage<TBatchRequest>(publishBatchRequestEntry, context);
+        }
+
+        public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext context)
         {
             // add distributed tracing headers to the message
             if (carrier.MessageAttributes == null)
@@ -73,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             }
 
             // Inject the tracing headers
-            Inject<TMessageRequest>(spanContext, carrier.MessageAttributes);
+            Inject<TMessageRequest>(context, carrier.MessageAttributes);
         }
 
         private readonly struct StringBuilderCarrierSetter : ICarrierSetter<StringBuilder>
