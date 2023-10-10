@@ -2,7 +2,7 @@
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-windowsservercore-ltsc2022 as builder
 
 # Without this, the container doesn't have permission to add the new package 
 USER ContainerAdministrator
