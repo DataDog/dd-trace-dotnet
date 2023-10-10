@@ -1728,8 +1728,8 @@ stages:
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker-compose up -d IntegrationTests.IIS
+        docker compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
@@ -1747,12 +1747,8 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: DockerCompose@0
+    - script: docker compose down
       displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
