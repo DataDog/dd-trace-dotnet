@@ -40,8 +40,6 @@ public class StringAspectsBenchmark
     public IEnumerable<List<string>> IastContext(bool enabled)
     {
         yield return InitTaintedContext(5, enabled);
-        yield return InitTaintedContext(10, enabled);
-        yield return InitTaintedContext(20, enabled);
         yield return InitTaintedContext(100, enabled);
     }
 
@@ -86,13 +84,15 @@ public class StringAspectsBenchmark
         return res;
     }
 
+    const int Iterations = 1000;
+
     [Benchmark]
     [ArgumentsSource(nameof(IastDisabledContext))]
     public void StringConcatBenchmark(List<string> parameters)
     {
         var list = new List<string>(parameters.Count);
         var arr = parameters.ToArray();
-        for (int x = 0; x < 100; x++)
+        for (int x = 0; x < Iterations; x++)
         {
             var txt = string.Concat(arr);
             list.Add(string.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
@@ -106,7 +106,7 @@ public class StringAspectsBenchmark
     {
         var list = new List<string>(parameters.Count);
         var arr = parameters.ToArray();
-        for (int x = 0; x < 100; x++)
+        for (int x = 0; x < Iterations; x++)
         {
             var txt = StringAspects.Concat(arr);
             list.Add(StringAspects.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
