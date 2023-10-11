@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="$(ApiVersion)" />
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.52" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
     <PackageReference Include="System.Net.Requests" Version="4.3.0" />
   </ItemGroup>
