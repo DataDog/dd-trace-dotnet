@@ -35,6 +35,7 @@ namespace Honeypot
             NugetPackages.Add("AerospikeClient", new [] { "Aerospike.Client" });
             NugetPackages.Add("Microsoft.AspNetCore.Http", new string[] { });
             NugetPackages.Add("System.Web.Mvc", new [] { "Microsoft.AspNet.Mvc" });
+            NugetPackages.Add("Amazon.Lambda.RuntimeSupport", new [] { "Amazon.Lambda.RuntimeSupport" });
             NugetPackages.Add("AWSSDK.DynamoDBv2", new [] { "AWSSDK.DynamoDBv2" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
             NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
