@@ -88,22 +88,30 @@ public class StringAspectsBenchmark
 
     [Benchmark]
     [ArgumentsSource(nameof(IastDisabledContext))]
-    public void RunStringBenchmark(List<string> parameters)
+    public void StringConcatBenchmark(List<string> parameters)
     {
-        for (int x = 0; x < 1000; x++)
+        var list = new List<string>(parameters.Count);
+        var arr = parameters.ToArray();
+        for (int x = 0; x < 100; x++)
         {
-            var txt = string.Concat("Select * from users where name in (", string.Join(", ", parameters), ")");
+            var txt = string.Concat(arr);
+            list.Add(string.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
         }
+        System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
     [Benchmark]
     [ArgumentsSource(nameof(IastEnabledContext))]
-    public void RunStringAspectBenchmark(List<string> parameters)
+    public void StringConcatAspectBenchmark(List<string> parameters)
     {
-        for (int x = 0; x < 1000; x++)
+        var list = new List<string>(parameters.Count);
+        var arr = parameters.ToArray();
+        for (int x = 0; x < 100; x++)
         {
-            var txt = StringAspects.Concat("Select * from users where name in (", StringAspects.Join(", ", parameters), ")");
+            var txt = StringAspects.Concat(arr);
+            list.Add(StringAspects.Concat(x.ToString(), "Select * from users where name in (", txt, ")"));
         }
+        System.Diagnostics.Trace.WriteLine($"{list.Count} elements computed");
     }
 
     [IterationCleanup]
