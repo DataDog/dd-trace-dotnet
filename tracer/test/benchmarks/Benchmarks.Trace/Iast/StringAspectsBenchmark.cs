@@ -29,18 +29,21 @@ public class StringAspectsBenchmark
 
     public IEnumerable<List<string>> IastEnabledContext()
     {
-        yield return InitTaintedContext(10);
-        yield return InitTaintedContext(20);
-        yield return InitTaintedContext(100);
+        return IastContext(true);
     }
 
     public IEnumerable<List<string>> IastDisabledContext()
     {
-        yield return InitTaintedContext(10, false);
-        yield return InitTaintedContext(20, false);
-        yield return InitTaintedContext(100, false);
+        return IastContext(false);
     }
 
+    public IEnumerable<List<string>> IastContext(bool enabled)
+    {
+        yield return InitTaintedContext(5, enabled);
+        yield return InitTaintedContext(10, enabled);
+        yield return InitTaintedContext(20, enabled);
+        yield return InitTaintedContext(100, enabled);
+    }
 
     /// <summary>
     /// Generates dummy arguments for the waf
@@ -71,11 +74,12 @@ public class StringAspectsBenchmark
             var context = traceContext?.IastRequestContext;
             taintedObjects = context.GetTaintedObjects();
         }
+
         List<string> res = new List<string>();
         for (int x = 0; x < size; x++)
         {
             var p = $"param{x}";
-            taintedObjects?.TaintInputString(p, new Source(1, "kk", "kk"));
+            taintedObjects?.TaintInputString(p, new Source((byte)x, $"source{x}", p));
             res.Add(p);
         }
 
@@ -88,7 +92,7 @@ public class StringAspectsBenchmark
     {
         for (int x = 0; x < 1000; x++)
         {
-            var txt = "Select * from users where name in (" + string.Join(", ", parameters) + ")";
+            var txt = string.Concat("Select * from users where name in (", string.Join(", ", parameters), ")");
         }
     }
 
