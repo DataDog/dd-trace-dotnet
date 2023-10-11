@@ -23,6 +23,7 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
     - [Add required docker services](#add-required-docker-services)
   - [Local testing using Nuke](#local-testing-using-nuke)
   - [Testing in CI](#testing-in-ci)
+- [Rollout](#rollout)
 
 ### Creating a new automatic instrumentation implementation
 
@@ -441,6 +442,7 @@ On MacOs, you won't be able to run all tests as some images aren't arm compatibl
 # your sample, and running only your new tests
 # You can choose whichever framework is appropriate
 ./tracer/build.sh BuildAndRunOSxIntegrationTests -buildConfiguration Debug -framework net6.0 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+```
 
 #### Testing in CI
 
@@ -465,3 +467,7 @@ You can do this [by going to Azure DevOps](https://dev.azure.com/datadoghq/dd-tr
   - `TEST_FILTER` = `MyNewIntegrationTests` - the test class to run
   - `TEST_SAMPLE_NAME` = `Samples.MyNewSample` - the sample to build
 - Click **Run**
+
+### Rollout
+
+Before rolling out, make sure you have updated the block list of telemetry configuration in the telemetry repository. Indeed, we do not keep track of all configuration and that will avoid useless alerts after the release.

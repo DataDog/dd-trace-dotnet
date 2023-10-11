@@ -91,7 +91,7 @@ internal class EvidenceRedactor
     {
         if (IsKeySensitive(source.Name) || IsValueSensitive(source.Value))
         {
-            source.MarkAsRedacted();
+            source.MarkAsSensitive();
         }
     }
 

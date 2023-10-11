@@ -26,6 +26,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public static readonly bool IsAllMinorPackageVersions = false;
 #endif
 
+        public static IEnumerable<object[]> AwsDynamoDb => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsDynamoDb : PackageVersionsLatestSpecific.AwsDynamoDb;
+
         public static IEnumerable<object[]> AwsKinesis => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsKinesis : PackageVersionsLatestSpecific.AwsKinesis;
 
         public static IEnumerable<object[]> AwsSqs => IsAllMinorPackageVersions ? PackageVersionsLatestMinors.AwsSqs : PackageVersionsLatestSpecific.AwsSqs;

@@ -138,6 +138,28 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
+        public static Result IsAwsDynamoDbV1(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.dynamodb.request")
+                .Matches(Type, "dynamodb"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("region")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "DynamoDB")
+                .Matches("aws_service", "DynamoDB")
+                .IsPresent("tablename")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .IsPresent("peer.service")
+                .IsOptional("peer.service.remapped_from")
+                .MatchesOneOf("_dd.peer.service.source", "tablename", "peer.service")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
         public static Result IsAwsKinesisOutboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
                 .Matches(Name, "aws.kinesis.send")

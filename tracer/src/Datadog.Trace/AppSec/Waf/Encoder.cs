@@ -42,17 +42,6 @@ namespace Datadog.Trace.AppSec.Waf
             }
         }
 
-        public static ReturnCode DecodeReturnCode(DDWAF_RET_CODE rc) => rc switch
-        {
-            DDWAF_RET_CODE.DDWAF_ERR_INTERNAL => ReturnCode.ErrorInternal,
-            DDWAF_RET_CODE.DDWAF_ERR_INVALID_ARGUMENT => ReturnCode.ErrorInvalidArgument,
-            DDWAF_RET_CODE.DDWAF_ERR_INVALID_OBJECT => ReturnCode.ErrorInvalidObject,
-            DDWAF_RET_CODE.DDWAF_OK => ReturnCode.Ok,
-            DDWAF_RET_CODE.DDWAF_MATCH => ReturnCode.Match,
-            DDWAF_RET_CODE.DDWAF_BLOCK => ReturnCode.Block,
-            _ => throw new Exception($"Unknown return code: {rc}")
-        };
-
         public static EncodeResult Encode<TInstance>(TInstance? o, int remainingDepth = WafConstants.MaxContainerDepth, string? key = null, bool applySafetyLimits = true)
         {
             var lstPointers = new List<IntPtr>();

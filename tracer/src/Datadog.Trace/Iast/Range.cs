@@ -13,7 +13,7 @@ namespace Datadog.Trace.Iast;
 
 internal readonly struct Range : IComparable<Range>
 {
-    public Range(int start, int length, Source? source)
+    public Range(int start, int length, Source? source = null)
     {
         this.Start = start;
         this.Length = length;
@@ -49,6 +49,27 @@ internal readonly struct Range : IComparable<Range>
     public int CompareTo([AllowNull] Range other)
     {
         return this.Start.CompareTo(other.Start);
+    }
+
+    internal bool IsBefore(Range? range)
+    {
+        if (range == null)
+        {
+            return true;
+        }
+
+        return IsBefore(range.Value);
+    }
+
+    internal bool IsBefore(Range range)
+    {
+        int offset = Start - range.Start;
+        if (offset == 0)
+        {
+            return Length <= range.Length; // put smaller ranges first
+        }
+
+        return offset < 0;
     }
 
     internal bool Intersects(Range range)
@@ -92,6 +113,44 @@ internal readonly struct Range : IComparable<Range>
             }
 
             return res;
+        }
+    }
+
+    internal Range? Intersection(Range? range)
+    {
+        if (range == null) { return null; }
+
+        return Intersection(range.Value);
+    }
+
+    internal Range? Intersection(Range range)
+    {
+        if (Start == range.Start && Length == range.Length)
+        {
+            return this;
+        }
+
+        Range lead, trail;
+        if (Start < range.Start)
+        {
+            lead = this;
+            trail = range;
+        }
+        else
+        {
+            lead = range;
+            trail = this;
+        }
+
+        int start = Math.Max(lead.Start, trail.Start);
+        int end = Math.Min(lead.Start + lead.Length, trail.Start + trail.Length);
+        if (start >= end)
+        {
+            return null;
+        }
+        else
+        {
+            return new Range(start, end - start);
         }
     }
 }

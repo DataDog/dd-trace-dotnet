@@ -22,7 +22,7 @@ internal abstract class CoverageEventHandler
 
     protected CoverageEventHandler()
     {
-        _asyncContext = new(obj => CoverageReporter.FireContextContainerChangeAction(obj.CurrentValue));
+        _asyncContext = new();
         _globalContainer = new CoverageContextContainer();
     }
 

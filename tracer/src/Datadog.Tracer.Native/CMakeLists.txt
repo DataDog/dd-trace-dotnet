@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.39.0)
+project("Datadog.Tracer.Native" VERSION 2.40.0)
 
 # ******************************************************
 # Environment detection
@@ -216,6 +216,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
+        -Wl,--build-id
     )
 endif()
 

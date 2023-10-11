@@ -418,6 +418,11 @@ namespace Datadog.Trace
         internal const string StreamName = "streamname";
 
         /// <summary>
+        /// The table name associated with the AWS SDK DynamoDB span.
+        /// </summary>
+        internal const string TableName = "tablename";
+
+        /// <summary>
         /// Configures Trace Analytics.
         /// </summary>
         internal const string Analytics = "_dd1.sr.eausr";

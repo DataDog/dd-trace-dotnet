@@ -3,7 +3,7 @@
   <PropertyGroup>
     <ApiVersion Condition="'$(ApiVersion)' == '' AND $(TargetFramework.StartsWith('net4')) ">2.1.0</ApiVersion>
     <ApiVersion Condition="'$(ApiVersion)' == '' AND !$(TargetFramework.StartsWith('net4')) ">5.0.0</ApiVersion>
-    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0'">$(DefineConstants);NLOG_4_0</DefineConstants>
+    <DefineConstants Condition="'$(ApiVersion)'&gt;='4.0.0' AND $(TargetFramework.StartsWith('net4'))">$(DefineConstants);NLOG_4_0</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='4.6.0'">$(DefineConstants);NLOG_4_6</DefineConstants>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='5.0.0'">$(DefineConstants);NLOG_5_0</DefineConstants>
 
@@ -23,16 +23,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="NLog.40.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="NLog.Pre40.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="NLog.46.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </None>
-    <None Update="NLog.50.config">
+    <None Update="Configurations\*">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

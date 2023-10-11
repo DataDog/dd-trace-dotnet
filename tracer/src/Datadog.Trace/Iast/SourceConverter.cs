@@ -56,10 +56,15 @@ internal class SourceConverter : JsonConverter<Source>
                 writer.WriteValue(source.Name);
             }
 
-            if (source.IsRedacted())
+            if (source.IsRedacted)
             {
                 writer.WritePropertyName("redacted");
                 writer.WriteValue(true);
+                if (source.RedactedValue != null)
+                {
+                    writer.WritePropertyName("pattern");
+                    writer.WriteValue(source.RedactedValue);
+                }
             }
             else if (source.Value != null)
             {
