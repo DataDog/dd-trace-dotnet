@@ -55,10 +55,11 @@ public class StringAspectsBenchmark
         if (initTainted)
         {
             var settings = new CustomSettingsForTests(new Dictionary<string, object>()
-        {
-            { ConfigurationKeys.Iast.RequestSampling, 100 },
-            { ConfigurationKeys.Iast.Enabled, true }
-        });
+            {
+                { ConfigurationKeys.Iast.RequestSampling, 100 },
+                { ConfigurationKeys.Iast.Enabled, true },
+                { ConfigurationKeys.Iast.IsIastDeduplicationEnabled, false },
+            });
             var iastSettings = new IastSettings(settings, NullConfigurationTelemetry.Instance);
             Datadog.Trace.Iast.Iast.Instance = new Datadog.Trace.Iast.Iast(iastSettings);
 
@@ -104,6 +105,7 @@ public class StringAspectsBenchmark
     [IterationCleanup]
     public void Cleanup()
     {
+        Tracer.Instance?.ActiveScope?.Close();
         Datadog.Trace.Iast.Iast.Instance = null;
     }
 }
