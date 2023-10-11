@@ -8,13 +8,24 @@ using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
 using Benchmarks.Trace.DatadogProfiler;
 using Benchmarks.Trace.Jetbrains;
+using Benchmarks.Trace.Iast;
+using System.Reflection.Metadata;
+using BenchmarkDotNet.Attributes;
+using System.Reflection;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Utilities;
+using System.Collections;
 
 namespace Benchmarks.Trace
 {
     internal class Program
     {
-        private static void Main(string[] args)
+        private static int Main(string[] args)
         {
+#if DEBUG
+            // Debug benchmark classes here
+            return Debug<StringAspectsBenchmark>("RunStringAspectBenchmark");
+#endif
+
             Console.WriteLine($"Execution context: ");
             Console.WriteLine("CurrentCulture is {0}.", CultureInfo.CurrentCulture.Name);
 
@@ -67,6 +78,52 @@ namespace Benchmarks.Trace
 
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
+
+            return 0;
+        }
+
+        private static int Debug<T>(string methodName, params object[] arguments)
+            where T : class, new()
+        {
+            // Retrieve the Benchmark method
+            var benchmarkMethod = typeof(T).GetMethod(methodName);
+            var initMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(IterationSetupAttribute)) != null);
+            var cleanupMethod = typeof(T).GetMethods().FirstOrDefault(m => Attribute.GetCustomAttribute(m, typeof(IterationCleanupAttribute)) != null);
+
+            //Retrieve Arguments
+            MethodInfo argMethod = null;
+            var argAttribute = Attribute.GetCustomAttribute(benchmarkMethod, typeof(ArgumentsSourceAttribute));
+            if (argAttribute != null)
+            {
+                var argMethodName = argAttribute.GetType().GetProperty("Name").GetValue(argAttribute) as string;
+                argMethod = typeof(T).GetMethod(argMethodName);
+            }
+
+            T instance = new T();
+            if (arguments.Length > 0 || argMethod == null) 
+            {
+                Debug(instance, benchmarkMethod, arguments, initMethod, cleanupMethod); 
+            }
+            else 
+            {
+                var argEnumerable = argMethod?.Invoke(instance, null) as IEnumerable;
+                foreach (var arg in argEnumerable)
+                {
+                    Debug(instance, benchmarkMethod, new object[] { arg }, initMethod, cleanupMethod);
+                }
+            }
+
+            // Retrieve the Benchmark methods
+            var benchmarkMethods = typeof(T).GetMethods().Where(m => Attribute.GetCustomAttribute(m, typeof(BenchmarkDotNet.Attributes.BenchmarkAttribute)) != null).ToList();
+
+            return 0;
+
+        }
+        private static void Debug(object instance, MethodInfo method, object[] args, MethodInfo initMethod, MethodInfo cleanupMethod)
+        {
+            initMethod?.Invoke(instance, null);
+            method.Invoke(instance, args.Length > 0 ? args : null);
+            cleanupMethod?.Invoke(instance, null);
         }
     }
 }
