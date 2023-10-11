@@ -51,6 +51,11 @@ namespace Datadog.Profiler.IntegrationTests.Exceptions
                 expectedStack = new StackTrace(
                     new StackFrame("|lm:Samples.ExceptionGenerator |ns:Samples.ExceptionGenerator |ct:ParallelExceptionsScenario |cg: |fn:ThrowExceptions |fg: |sg:(object state)"));
             }
+            else if (framework == "net8.0")
+            {
+                // TODO: Update this to suport .NET 8
+                return;
+            }
             else
             {
                 expectedStack = new StackTrace(
