@@ -216,6 +216,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
+        -Wl,--build-id
     )
 endif()
 

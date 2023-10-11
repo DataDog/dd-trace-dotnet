@@ -178,6 +178,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         coreclr
         spdlog-headers
+        -Wl,--build-id
     )
 endif()
 
