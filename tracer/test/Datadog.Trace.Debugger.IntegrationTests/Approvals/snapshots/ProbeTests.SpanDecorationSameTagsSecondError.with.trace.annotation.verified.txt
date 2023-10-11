@@ -12,6 +12,8 @@
       language: dotnet,
       runtime-id: Guid_2,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -36,7 +38,9 @@
       SpanDecorationSameTagsSecondError: Instance=Datadog.Trace.Debugger.Expressions.UndefinedValue,
       version: 1.0.0,
       _dd.di.SpanDecorationSameTagsSecondError.evaluation_error: EvaluationError { Expression = this.error },
-      _dd.di.SpanDecorationSameTagsSecondError.probe_id: Guid_3
+      _dd.di.SpanDecorationSameTagsSecondError.probe_id: Guid_3,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

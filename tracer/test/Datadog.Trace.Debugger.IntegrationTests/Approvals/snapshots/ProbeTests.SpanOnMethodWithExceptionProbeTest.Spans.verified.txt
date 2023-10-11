@@ -1,9 +1,9 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
     Name: dd.dynamic.span,
-    Resource: GUIDst.Method,
+    Resource: SpanOnMethodWithExceptionProbeTest.Method,
     Service: Probes,
     Error: 1,
     Tags: {
@@ -13,11 +13,13 @@
       error.msg: Ralph,
       error.stack:
 System.InvalidOperationException: Ralph
-at Samples.Probes.TestRuns.SmokeTests.GUIDst.Calculate(String input, Person& person),
+at Samples.Probes.TestRuns.SmokeTests.SpanOnMethodWithExceptionProbeTest.Calculate(String input, Person& person),
       error.type: System.InvalidOperationException,
       language: dotnet,
       runtime-id: Guid_2,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
