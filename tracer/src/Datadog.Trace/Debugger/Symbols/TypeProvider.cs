@@ -4,8 +4,8 @@
 // </copyright>
 
 using System;
-using Datadog.System.Collections.Immutable;
-using Datadog.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
 namespace Datadog.Trace.Debugger.Symbols
 {

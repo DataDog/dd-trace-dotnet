@@ -6,11 +6,10 @@
 #nullable enable
 using System;
 using System.Linq;
-using Datadog.System.Buffers;
-using Datadog.System.Reflection.Metadata;
-using Datadog.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger.Symbols;
@@ -67,15 +66,9 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return methodScope;
     }
 
-    private StandaloneSignature GetLocalSignature(MethodDefinition method)
-    {
-        var methodBodyBlock = _pdbReader.PEReader?.GetMethodBody(method.RelativeVirtualAddress);
-        return MetadataReader.GetStandaloneSignature(methodBodyBlock!.LocalSignature);
-    }
-
     private int GetLocalVariablesCount(MethodDefinition method)
     {
-        var signature = GetLocalSignature(method);
+        var signature = _pdbReader.GetLocalSignature(method);
         BlobReader blobReader = MetadataReader.GetBlobReader(signature.Signature);
 
         if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
@@ -97,7 +90,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         }
 
         var localsSymbol = ArrayPool<Symbol>.Shared.Rent(methodLocalsCount);
-        var signature = GetLocalSignature(method);
+        var signature = _pdbReader.GetLocalSignature(method);
         var localTypes = signature.DecodeLocalSignature(new TypeProvider(), 0);
 
         Symbol[]? allLocals = null;

@@ -10,18 +10,15 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using Datadog.System.Buffers;
-using Datadog.System.Reflection.Metadata;
-using Datadog.System.Reflection.Metadata.Ecma335;
-using Datadog.System.Reflection.PortableExecutable;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
-using FieldAttributes = System.Reflection.FieldAttributes;
-using MethodAttributes = System.Reflection.MethodAttributes;
-using TypeAttributes = System.Reflection.TypeAttributes;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -71,7 +68,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 if (pdbReader == null)
                 {
                     Log.Warning("Could not create a PDB reader file for assembly {Assembly}", assembly.FullName);
-                    var peReader = new Datadog.System.Reflection.PortableExecutable.PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata);
+                    var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata);
                     metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
                 }
                 else
@@ -137,7 +134,8 @@ namespace Datadog.Trace.Debugger.Symbols
             foreach (var typeDefinitionHandle in MetadataReader.TypeDefinitions)
             {
                 var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
-                if (!typeToExtract.Equals(MetadataReader.GetString(type.Name))) // full name?
+                // full name?
+                if (!typeToExtract.Equals(MetadataReader.GetString(type.Name)))
                 {
                     continue;
                 }

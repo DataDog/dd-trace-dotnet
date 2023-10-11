@@ -1,4 +1,4 @@
-﻿// <copyright file="SourceLinkInformationExtractor.cs" company="Datadog">
+// <copyright file="SourceLinkInformationExtractor.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -49,7 +49,7 @@ internal static class SourceLinkInformationExtractor
             return false;
         }
 
-        if (!ExtractSourceLinkMappingUrl(sourceLinkJsonDocument, pdbReader.PdbFullPath, out var sourceLinkMappedUri))
+        if (!ExtractSourceLinkMappingUrl(sourceLinkJsonDocument, pdbReader?.PdbFullPath, out var sourceLinkMappedUri))
         {
             return false;
         }
@@ -62,9 +62,10 @@ internal static class SourceLinkInformationExtractor
     //       {"documents":{"C:\\dev\\dd-trace-dotnet\\*":"https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*"}}
     // Extract:
     //       https://raw.githubusercontent.com/DataDog/dd-trace-dotnet/dd35903c688a74b62d1c6a9e4f41371c65704db8/*
-    private static bool ExtractSourceLinkMappingUrl(string sourceLinkJsonDocument, string pdbFullPath, [NotNullWhen(true)] out Uri? sourceLinkMappedUri)
+    private static bool ExtractSourceLinkMappingUrl(string sourceLinkJsonDocument, string? pdbFullPath, [NotNullWhen(true)] out Uri? sourceLinkMappedUri)
     {
         sourceLinkMappedUri = null;
+        pdbFullPath ??= "Unknown";
         try
         {
             string? sourceLinkMappedUrl = JObject.Parse(sourceLinkJsonDocument).SelectTokens("$.documents.*").FirstOrDefault()?.ToString();

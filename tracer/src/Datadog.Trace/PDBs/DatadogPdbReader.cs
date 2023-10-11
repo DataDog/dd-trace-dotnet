@@ -12,9 +12,9 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using Datadog.System.Reflection.Metadata;
-using Datadog.System.Reflection.PortableExecutable;
 using Datadog.Trace.Logging;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
@@ -33,19 +33,22 @@ namespace Datadog.Trace.Pdb
     internal class DatadogPdbReader : IDisposable
     {
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogPdbReader>();
+        private readonly PEReader? _peReader;
         private bool _disposed;
 
-        private DatadogPdbReader(SymbolReader symbolReader, MetadataReader metadataReader, string pdbFullPath)
+        private DatadogPdbReader(MetadataReader metadataReader, SymbolReader pdbReader, string pdbFullPath)
         {
-            DnlibSymbolReader = symbolReader;
+            DnlibPdbReader = pdbReader;
             MetadataReader = metadataReader;
             PdbFullPath = pdbFullPath;
+            _peReader = null;
         }
 
-        private DatadogPdbReader(PEReader peReader, MetadataReader metadataReader, string? pdbFullPath)
+        private DatadogPdbReader(PEReader peReader, MetadataReader metadataReader, MetadataReader pdbReader, string? pdbFullPath)
         {
-            PEReader = peReader;
+            _peReader = peReader;
             MetadataReader = metadataReader;
+            PdbReader = pdbReader;
             PdbFullPath = pdbFullPath;
         }
 
@@ -55,18 +58,19 @@ namespace Datadog.Trace.Pdb
 
         internal MetadataReader MetadataReader { get; }
 
-        internal PEReader? PEReader { get; }
+        internal MetadataReader? PdbReader { get; }
 
-        internal SymbolReader? DnlibSymbolReader { get; }
+        internal SymbolReader? DnlibPdbReader { get; }
 
         public static DatadogPdbReader? CreatePdbReader(Assembly assembly)
         {
-            var peReader = new Datadog.System.Reflection.PortableExecutable.PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata);
-            MetadataReader? metadataReader;
+            var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
+            MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
+            MetadataReader? pdbReader;
             if (peReader.TryOpenAssociatedPortablePdb(assembly.Location, File.OpenRead, out var metadataReaderProvider, out var pdbPath))
             {
-                metadataReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
-                return new DatadogPdbReader(peReader, metadataReader, pdbPath);
+                pdbReader = metadataReaderProvider!.GetMetadataReader(MetadataReaderOptions.Default, MetadataStringDecoder.DefaultUTF8);
+                return new DatadogPdbReader(peReader, metadataReader, pdbReader, pdbPath);
             }
 
             var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
@@ -85,8 +89,7 @@ namespace Datadog.Trace.Pdb
 
             dnlibReader.Initialize(module);
             module.LoadPdb(dnlibReader);
-            metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
-            return new DatadogPdbReader(dnlibReader, metadataReader, pdbFullPath);
+            return new DatadogPdbReader(metadataReader, dnlibReader, pdbFullPath);
         }
 
         private static bool TryFindPdbFile(string assemblyLocation, [NotNullWhen(true)] out string? pdbFullPath)
@@ -135,22 +138,31 @@ namespace Datadog.Trace.Pdb
             return false;
         }
 
+        internal StandaloneSignature GetLocalSignature(MethodDefinition method)
+        {
+            var methodBodyBlock = _peReader?.GetMethodBody(method.RelativeVirtualAddress);
+            return MetadataReader.GetStandaloneSignature(methodBodyBlock!.LocalSignature);
+        }
+
         public string? GetSourceLinkJsonDocument()
         {
-            var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
-            return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
+            return null;
+            // var sourceLink = Module.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
+            // return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
         public SymbolMethod? GetMethodSymbolInfoOrDefault(int methodMetadataToken)
         {
-            var rid = MDToken.ToRID(methodMetadataToken);
-            var mdMethod = Module.ResolveMethod(rid);
-            return GetSymbolMethodOfAsyncMethodOrDefault(mdMethod) ?? _symbolReader.GetMethod(mdMethod, version: 1);
+            return null;
+            // var rid = MDToken.ToRID(methodMetadataToken);
+            // var mdMethod = Module.ResolveMethod(rid);
+            // return GetSymbolMethodOfAsyncMethodOrDefault(mdMethod) ?? MetadataReader.GetMethod(mdMethod, version: 1);
         }
 
+        /*
         private SymbolMethod? GetSymbolMethodOfAsyncMethodOrDefault(MethodDef mdMethod)
         {
-            // Determine if the given mdMethod is a kickoff of a state machine (aka an async method)
+            // Determine if the given mdMethod is a kickoff of a state machine(aka an async method)
             // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
             var stateMachineAttributeFullName = typeof(AsyncStateMachineAttribute).FullName;
             var stateMachineAttributeOfMdMethod = mdMethod.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == stateMachineAttributeFullName);
@@ -167,21 +179,25 @@ namespace Datadog.Trace.Pdb
 
             return _symbolReader.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
+        */
 
-        public SymbolMethod GetContainingMethodAndOffset(string filePath, int line, int? column, out int? bytecodeOffset)
+        public SymbolMethod? GetContainingMethodAndOffset(string filePath, int line, int? column, out int? bytecodeOffset)
         {
-            return _symbolReader switch
+            bytecodeOffset = null;
+            return null;
+            /* return _symbolReader switch
             {
                 PortablePdbReader portablePdbReader => portablePdbReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
                 PdbReader managedPdbReader => managedPdbReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
                 SymbolReaderImpl symUnmanagedReader => symUnmanagedReader.GetContainingMethod(filePath, line, column, out bytecodeOffset),
                 _ => throw new ArgumentOutOfRangeException(nameof(filePath), $"Reader type {_symbolReader.GetType().FullName} is not supported")
-            };
+            }; */
         }
 
-        public IList<SymbolDocument> GetDocuments()
+        public IList<SymbolDocument>? GetDocuments()
         {
-            return _symbolReader.Documents;
+            return null;
+            // return _symbolReader.Documents;
         }
 
         internal string[]? GetLocalVariableNamesOrDefault(int methodToken, int localVariablesCount)
@@ -227,12 +243,8 @@ namespace Datadog.Trace.Pdb
                 return;
             }
 
-            if (disposing)
-            {
-                Module.Dispose();
-            }
-
-            _symbolReader.Dispose();
+            DnlibPdbReader?.Dispose();
+            // PEReader?.Dispose();
             _disposed = true;
         }
     }

@@ -30,20 +30,20 @@
     <!-- https://www.nuget.org/packages/IndieSystem.Text.RegularExpressions/0.6 -->
     <PackageReference Include="IndieSystem.Text.RegularExpressions" Version="0.6" />
 
-    <!-- https://www.nuget.org/packages/Datadog.System.Collections.Immutable/1.0.0 -->
-    <PackageReference Include="Datadog.System.Collections.Immutable" Version="1.0.0" />
+    <!-- https://www.nuget.org/packages/System.Collections.Immutable/1.0.0 -->
+    <PackageReference Include="System.Collections.Immutable" Version="1.0.0" />
 
-    <!-- https://www.nuget.org/packages/Datadog.System.Memory/1.0.0 -->
-    <PackageReference Include="Datadog.System.Memory" Version="1.0.0" />
+    <!-- https://www.nuget.org/packages/System.Memory/1.0.0 -->
+    <PackageReference Include="System.Memory" Version="1.0.0" />
 
-    <!-- https://www.nuget.org/packages/Datadog.System.Private.CoreLib/1.0.0 -->
-    <PackageReference Include="Datadog.System.Private.CoreLib" Version="1.0.0" />
+    <!-- https://www.nuget.org/packages/System.Private.CoreLib/1.0.0 -->
+    <PackageReference Include="System.Private.CoreLib" Version="1.0.0" />
 
-    <!-- https://www.nuget.org/packages/Datadog.System.Reflection.Metadata/1.0.0 -->
-    <PackageReference Include="Datadog.System.Reflection.Metadata" Version="1.0.0" />
+    <!-- https://www.nuget.org/packages/System.Reflection.Metadata/1.0.0 -->
+    <PackageReference Include="System.Reflection.Metadata" Version="1.0.0" />
 
-    <!-- https://www.nuget.org/packages/Datadog.System.Runtime.CompilerServices.Unsafe/1.0.0 -->
-    <PackageReference Include="Datadog.System.Runtime.CompilerServices.Unsafe" Version="1.0.0" />
+    <!-- https://www.nuget.org/packages/System.Runtime.CompilerServices.Unsafe/1.0.0 -->
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" Version="1.0.0" />
 
   </ItemGroup>
 
