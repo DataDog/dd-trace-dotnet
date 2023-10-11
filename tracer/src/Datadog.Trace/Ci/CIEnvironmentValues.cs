@@ -383,6 +383,17 @@ namespace Datadog.Trace.Ci
                     VariablesToBypass,
                     Constants.CodefreshBuildId);
             }
+            else if (EnvironmentHelpers.GetEnvironmentVariable(Constants.AWSCodePipelineBuildInitiator) is { Length: > 0 } initiator &&
+                     initiator.StartsWith("codepipeline"))
+            {
+                SetupAWSCodePipeline();
+                VariablesToBypass = new Dictionary<string, string>();
+                SetEnvironmentVariablesIfNotEmpty(
+                    VariablesToBypass,
+                    Constants.AWSCodePipelineBuildArn,
+                    Constants.AWSCodePipelineId,
+                    Constants.AWSCodePipelineActionExecutionId);
+            }
             else
             {
                 Branch = gitInfo.Branch;
@@ -1065,6 +1076,13 @@ namespace Datadog.Trace.Ci
             WorkspacePath = gitInfo.SourceRoot;
         }
 
+        private void SetupAWSCodePipeline()
+        {
+            IsCI = true;
+            Provider = "awscodepipeline";
+            PipelineId = EnvironmentHelpers.GetEnvironmentVariable(Constants.AWSCodePipelineId);
+        }
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private void CleanBranchAndTag()
         {
@@ -1327,6 +1345,12 @@ namespace Datadog.Trace.Ci
             public const string CodefreshBuildUrl = "CF_BUILD_URL";
             public const string CodefreshStepName = "CF_STEP_NAME";
             public const string CodefreshBranch = "CF_BRANCH";
+
+            // AWS CodePipeline
+            public const string AWSCodePipelineId = "DD_PIPELINE_EXECUTION_ID";
+            public const string AWSCodePipelineBuildInitiator = "CODEBUILD_INITIATOR";
+            public const string AWSCodePipelineBuildArn = "CODEBUILD_BUILD_ARN";
+            public const string AWSCodePipelineActionExecutionId = "DD_ACTION_EXECUTION_ID";
 
             // Datadog Custom CI Environment variables
             public const string DDGitBranch = "DD_GIT_BRANCH";
