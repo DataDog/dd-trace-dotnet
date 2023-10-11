@@ -14,7 +14,7 @@ internal abstract class ConsumerBase : IDisposable
     public static int TotalAsyncMessages = 0;
     public static int TotalSyncMessages = 0;
     public static int TotalTombstones = 0;
-
+    
     protected ConsumerBase(ConsumerConfig config, string topic, string consumerName)
     {
         ConsumerName = consumerName;
@@ -93,7 +93,7 @@ internal abstract class ConsumerBase : IDisposable
         }
     }
 
-    public void ConsumeWithExplicitCommit(int commitEveryXMessages, CancellationToken cancellationToken = default)
+    public void ConsumeWithExplicitCommit(int commitEveryXMessages, CancellationToken cancellationToken = default, bool useCommitAll = false)
     {
         ConsumeResult<string, string> consumeResult = null;
         try
@@ -117,7 +117,15 @@ internal abstract class ConsumerBase : IDisposable
                     try
                     {
                         Console.WriteLine($"{ConsumerName}: committing...");
-                        _consumer.Commit(consumeResult);
+                        if (useCommitAll)
+                        {
+                            _consumer.Commit(); 
+                        }
+                        else
+                        {
+                            _consumer.Commit(consumeResult);
+                        }
+                        
                     }
                     catch (KafkaException e)
                     {
