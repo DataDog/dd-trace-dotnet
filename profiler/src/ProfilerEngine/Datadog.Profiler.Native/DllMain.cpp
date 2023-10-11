@@ -9,6 +9,9 @@
 #include "EnvironmentVariables.h"
 #include "Log.h"
 
+#include "dd_profiler_version.h"
+
+
 HINSTANCE DllHandle;
 
 const IID IID_IUnknown = {0x00000000,
@@ -29,6 +32,7 @@ extern "C" BOOL STDMETHODCALLTYPE DllMain(HINSTANCE hInstDll, DWORD reason, PVOI
     {
         case DLL_PROCESS_ATTACH:
             Log::Info("Profiler DLL loaded.");
+            Log::Info("Profiler version = ", PROFILER_VERSION);
             Log::Info("Pointer size: ", 8 * sizeof(void*), " bits.");
             break;
 
