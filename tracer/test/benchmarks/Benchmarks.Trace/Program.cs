@@ -23,7 +23,7 @@ namespace Benchmarks.Trace
         {
 #if DEBUG
             // Debug benchmark classes here
-            return Debug<StringAspectsBenchmark>("RunStringAspectBenchmark");
+            // Example: return Debug<StringAspectsBenchmark>("RunStringAspectBenchmark");
 #endif
 
             Console.WriteLine($"Execution context: ");
