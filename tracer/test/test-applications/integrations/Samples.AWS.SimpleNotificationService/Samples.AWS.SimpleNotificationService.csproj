@@ -1,6 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <ApiVersion Condition="'$(ApiVersion)' == ''">3.3.3</ApiVersion>
+    <!-- Minimun version is 3.7.3 since it is when Batch methods were introduced in SNS -->
+    <ApiVersion Condition="'$(ApiVersion)' == ''">3.7.3</ApiVersion>
     <RequiresDockerDependency>All</RequiresDockerDependency>
     <!-- Required to build multiple projects with the same Configuration|Platform -->
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
