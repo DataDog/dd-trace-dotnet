@@ -28,16 +28,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             sb.Append('}');
 
             var resultString = Util.StringBuilderCache.GetStringAndRelease(sb);
-            byte[] bytes = Encoding.UTF8.GetBytes(resultString);
-            MemoryStream stream = new MemoryStream(bytes);
+            var bytes = Encoding.UTF8.GetBytes(resultString);
+            var stream = new MemoryStream(bytes);
             messageAttributes[SnsKey] = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributeValue(stream);
         }
 
         public static void InjectHeadersIntoBatch<TBatchRequest>(IPublishBatchRequest request, SpanContext context)
         {
-            // request.PublishBatchRequestEntries is not null and has at least one element,
-            // and the length of array is less than 10, limit defined by AWS for batch requests
-            if (request.PublishBatchRequestEntries?.Count is not (> 0 and < 10))
+            // Skip adding Trace Context if entries don't exist or empty.
+            if (request.PublishBatchRequestEntries is not { Count: > 0 })
             {
                 return;
             }
@@ -49,7 +48,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
 
         public static void InjectHeadersIntoMessage<TMessageRequest>(IContainsMessageAttributes carrier, SpanContext context)
         {
-            // add distributed tracing headers to the message
+            // Skip adding Trace Context if there is no more space left to inject.
+            // AWS SNS Message Attributes limit is 10.
+            if (carrier.MessageAttributes is { Count: >= 10 })
+            {
+                return;
+            }
+
+            // Add distributed tracing headers to the message.
             if (carrier.MessageAttributes == null)
             {
                 carrier.MessageAttributes = CachedMessageHeadersHelper<TMessageRequest>.CreateMessageAttributes();
