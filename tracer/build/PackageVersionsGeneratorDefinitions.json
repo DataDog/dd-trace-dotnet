@@ -36,12 +36,12 @@
     "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
     "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
     "MinVersion": "1.0.0",
-    "MaxVersionExclusive": "1.*.*",
+    "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
       "1.*.*"
     ],
     "VersionConditions": [{
-      "MinVersion": "1.0.0",
+      "MaxVersionExclusive": "2.0.0",
       "IncludeOnlyTargetFrameworks": ["net6.0"]
     }]
   },
