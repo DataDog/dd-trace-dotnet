@@ -60,16 +60,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
             return new CallTargetState(scope);
         }
 
-        /// <summary>
-        /// OnAsyncMethodEnd callback
-        /// </summary>
-        /// <typeparam name="TTarget">Type of the target</typeparam>
-        /// <typeparam name="TResponse">Type of the response, in an async scenario will be T of Task of T</typeparam>
-        /// <param name="instance">Instance value, aka `this` of the instrumented method.</param>
-        /// <param name="response">Response instance</param>
-        /// <param name="exception">Exception instance in case the original code threw an exception.</param>
-        /// <param name="state">CallTarget state value</param>
-        /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static TResponse OnAsyncMethodEnd<TTarget, TResponse>(TTarget instance, TResponse response, Exception exception, in CallTargetState state)
         {
             state.Scope.DisposeWithException(exception);
