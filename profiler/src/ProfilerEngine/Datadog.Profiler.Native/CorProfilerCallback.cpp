@@ -58,13 +58,25 @@
 #include "shared/src/native-src/pal.h"
 #include "shared/src/native-src/string.h"
 
+#include "dd_profiler_version.h"
+
+
 IClrLifetime* CorProfilerCallback::GetClrLifetime() const
 {
     return _pClrLifetime.get();
 }
 
-// Initialization
+// This can be used to detect profiler version in a memory dump
+// in WinDbg:  dt Datadog_Profiler_Native!Profiler_Version
+// in gdb: p Profiler_Version
+#ifdef _WINDOWS
+extern "C" __declspec(dllexport) const char* Profiler_Version = PROFILER_VERSION;
+#else
+extern "C" __attribute__((visibility("default"))) const char* Profiler_Version = PROFILER_VERSION;
+#endif
 
+
+// Initialization
 CorProfilerCallback* CorProfilerCallback::_this = nullptr;
 
 CorProfilerCallback::CorProfilerCallback()
