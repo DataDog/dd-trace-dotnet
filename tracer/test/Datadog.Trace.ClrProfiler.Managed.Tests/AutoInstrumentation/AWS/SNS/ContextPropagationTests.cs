@@ -33,7 +33,7 @@ public class ContextPropagationTests
 
         var traceId = new TraceId(upper, lower);
         const ulong spanId = 6766950223540265769;
-        _spanContext = new SpanContext(traceId, spanId, 1, "test-kinesis", "serverless");
+        _spanContext = new SpanContext(traceId, spanId, 1, "test-sns", "serverless");
     }
 
     public static PublishBatchRequest GeneratePublishBatchRequest(List<string> messages, Dictionary<string, MessageAttributeValue> messageAttributeValues = null)
