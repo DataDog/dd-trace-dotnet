@@ -390,8 +390,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -542,8 +542,8 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -580,8 +580,8 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -638,8 +638,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
@@ -673,7 +673,7 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18-chiseled"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
@@ -733,8 +733,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -787,8 +787,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-focal"),
@@ -820,7 +820,7 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-alpine3.18-chiseled"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
@@ -877,8 +877,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -905,8 +905,8 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET7_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET7_0, "8.0-jammy"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
-                            (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled"),
+                            // (publishFramework: TargetFramework.NET7_0, "8.0-jammy-chiseled-composite"),
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-bullseye"),
