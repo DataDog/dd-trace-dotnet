@@ -36,25 +36,13 @@ public class ContextPropagationTests
         _spanContext = new SpanContext(traceId, spanId, 1, "test-sns", "serverless");
     }
 
-    public static PublishBatchRequest GeneratePublishBatchRequest(List<string> messages, Dictionary<string, MessageAttributeValue> messageAttributeValues = null)
+    public static PublishBatchRequest GeneratePublishBatchRequest(List<PublishBatchRequestEntry> entries)
     {
         var request = new PublishBatchRequest
         {
             TopicArn = TopicArn,
-            PublishBatchRequestEntries = new List<PublishBatchRequestEntry>()
+            PublishBatchRequestEntries = entries
         };
-
-        foreach (var message in messages)
-        {
-            var entry = new PublishBatchRequestEntry { Message = message, Id = Guid.NewGuid().ToString() };
-            request.PublishBatchRequestEntries.Add(entry);
-        }
-
-        // Add message attributes only to the first entry.
-        if (messageAttributeValues is { Count: > 0 })
-        {
-            request.PublishBatchRequestEntries[0].MessageAttributes = messageAttributeValues;
-        }
 
         return request;
     }
@@ -82,30 +70,41 @@ public class ContextPropagationTests
         var request = GeneratePublishBatchRequest(
             new()
             {
-                "Message1",
-                "Message2",
+                new()
+                {
+                    Message = "Message1",
+                    Id = "1",
+                },
+                new()
+                {
+                    Message = "Message2",
+                    Id = "2",
+                }
             });
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
 
         ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest>(proxy, _spanContext);
 
-        // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
-        var firstMessage = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[0];
+        for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
+        {
+            // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
+            var message = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[i];
 
-        // Naively deserialize in order to not use tracer extraction logic
-        var messageAttributes = firstMessage.MessageAttributes;
-        messageAttributes.Count.Should().Be(1);
+            // Naively deserialize in order to not use tracer extraction logic
+            var messageAttributes = message.MessageAttributes;
+            messageAttributes.Count.Should().Be(1);
 
-        var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
-        extracted.Should().BeTrue();
+            var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
+            extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var jsonString = Encoding.UTF8.GetString(datadogMessageAttribute.BinaryValue.ToArray());
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+            // Cast into a Dictionary<string, string> so we can read it properly
+            var jsonString = Encoding.UTF8.GetString(datadogMessageAttribute.BinaryValue.ToArray());
+            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+            extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
+            extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+        }
     }
 
     [Fact]
@@ -114,31 +113,43 @@ public class ContextPropagationTests
         var request = GeneratePublishBatchRequest(
             new()
             {
-                "Message1",
-                "Message2",
-            },
-            GenerateMessageAttributes(2));
+                new()
+                {
+                    Message = "Message1",
+                    Id = "1",
+                    MessageAttributes = GenerateMessageAttributes(2)
+                },
+                new()
+                {
+                    Message = "Message2",
+                    Id = "2",
+                    MessageAttributes = GenerateMessageAttributes(2)
+                }
+            });
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
 
         ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest>(proxy, _spanContext);
 
-        // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
-        var firstMessage = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[0];
+        for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
+        {
+            // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
+            var message = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[i];
 
-        // Naively deserialize in order to not use tracer extraction logic
-        var messageAttributes = firstMessage.MessageAttributes;
-        messageAttributes.Count.Should().Be(3);
+            // Naively deserialize in order to not use tracer extraction logic
+            var messageAttributes = message.MessageAttributes;
+            messageAttributes.Count.Should().Be(3);
 
-        var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
-        extracted.Should().BeTrue();
+            var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
+            extracted.Should().BeTrue();
 
-        // Cast into a Dictionary<string, string> so we can read it properly
-        var jsonString = Encoding.UTF8.GetString(datadogMessageAttribute.BinaryValue.ToArray());
-        var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
+            // Cast into a Dictionary<string, string> so we can read it properly
+            var jsonString = Encoding.UTF8.GetString(datadogMessageAttribute.BinaryValue.ToArray());
+            var extractedTraceContext = JsonConvert.DeserializeObject<Dictionary<string, string>>(jsonString);
 
-        extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
-        extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+            extractedTraceContext["x-datadog-parent-id"].Should().Be(_spanContext.SpanId.ToString());
+            extractedTraceContext["x-datadog-trace-id"].Should().Be(_spanContext.TraceId.ToString());
+        }
     }
 
     [Fact]
@@ -147,26 +158,37 @@ public class ContextPropagationTests
         var request = GeneratePublishBatchRequest(
             new()
             {
-                "Message0",
-                "Message1",
-            },
-            // AWS SNS Message Attribute Limit
-            GenerateMessageAttributes(10));
+                new()
+                {
+                    Message = "Message1",
+                    Id = "1",
+                    MessageAttributes = GenerateMessageAttributes(10)
+                },
+                new()
+                {
+                    Message = "Message2",
+                    Id = "2",
+                    MessageAttributes = GenerateMessageAttributes(10)
+                }
+            });
 
         var proxy = request.DuckCast<IPublishBatchRequest>();
         ContextPropagation.InjectHeadersIntoBatch<PublishBatchRequest>(proxy, _spanContext);
 
-        // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
-        var firstMessage = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[0];
+        for (int i = 0; i < proxy.PublishBatchRequestEntries.Count; i++)
+        {
+            // Hard-casting into PublishBatchRequestEntry because trace context assertion is needed
+            var message = (PublishBatchRequestEntry)proxy.PublishBatchRequestEntries[i];
 
-        // Naively deserialize in order to not use tracer extraction logic
-        var messageAttributes = firstMessage.MessageAttributes;
-        messageAttributes.Count.Should().Be(10);
+            // Naively deserialize in order to not use tracer extraction logic
+            var messageAttributes = message.MessageAttributes;
+            messageAttributes.Count.Should().Be(10);
 
-        var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
-        extracted.Should().BeFalse();
+            var extracted = messageAttributes.TryGetValue(DatadogKey, out var datadogMessageAttribute);
+            extracted.Should().BeFalse();
 
-        datadogMessageAttribute.Should().Be(null);
+            datadogMessageAttribute.Should().Be(null);
+        }
     }
 
     [Fact]
