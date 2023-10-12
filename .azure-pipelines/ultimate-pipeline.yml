@@ -4346,6 +4346,11 @@ stages:
           testName: liveheap
           poolName: ProfilerExecBenchAgent10
           framework: net7.0
+        GarbageCollections:
+          sampleName: Computer01
+          testName: garbagecollections
+          poolName: ProfilerExecBenchAgent12
+          framework: net7.0
     pool:
       name: $(poolName)
     timeoutInMinutes: 30 #default value
