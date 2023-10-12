@@ -42,22 +42,14 @@ namespace Datadog.Trace.Tools.Runner.Checks
         public const string TraceEnabledCheck = "*Checking if tracing is disabled using DD_TRACE_ENABLED.";
         public const string TraceEnabledNotSet = "- DD_TRACE_ENABLED is not set, note that the default value is true.";
 
-        public const string TracingWithBundleProfilerPath = "Datadog.Trace.Bundle Nuget related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithInstaller = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
-        public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
-        public const string InitialCheckStart = "Starting .NET Tracer Check:";
-        public const string ModuleCheck = "1. Checking Modules Needed so the Tracer Loads:";
-        public const string TracerCheck = "6. Checking if process tracing configuration matches Installer or Bundler:";
-        public const string CheckOptionalConfiguration = "Setup checks passed, checking configuration for main related products:";
-        public const string TraceEnabledCheck = "*Checking if tracing is disabled using DD_TRACE_ENABLED.";
-        public const string TraceEnabledNotSet = "DD_TRACE_ENABLED is not set, note that the default value is true.";
-
         public const string ContinuousProfilerCheck = "*Checking if profiling is enabled using DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
         public const string ContinuousProfilerNotLoaded = "The continuous profiler library is not loaded into the process.";
         public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
+
+        public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
 
         public static string TracerNotEnabled(string value) => $"Tracing is explicitly disabled through DD_TRACE_ENABLED with a value of {value}, to enable automatic tracing set it to true.";
 
