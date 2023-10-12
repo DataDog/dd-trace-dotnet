@@ -43,7 +43,9 @@ ENV CORECLR_ENABLE_PROFILING=1 \
     DD_DOTNET_TRACER_HOME="c:\app\datadog" \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
     DD_PROFILING_ENABLED=1 \
-    ASPNETCORE_URLS=http://localhost:5000
+    ASPNETCORE_URLS=http://localhost:5000 \
+    DOTNET_ROLL_FORWARD=LatestMajor \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary

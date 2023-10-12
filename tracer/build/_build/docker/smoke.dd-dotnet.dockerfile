@@ -26,7 +26,9 @@ RUN mkdir -p /opt/datadog \
     && rm -rf /app/install
 
 # Set the required env vars
-ENV ASPNETCORE_URLS=http://localhost:5000
+ENV ASPNETCORE_URLS=http://localhost:5000 \
+    DOTNET_ROLL_FORWARD=LatestMajor \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary

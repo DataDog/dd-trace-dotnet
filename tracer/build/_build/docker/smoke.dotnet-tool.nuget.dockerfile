@@ -35,7 +35,9 @@ ENV ASPNETCORE_URLS=http://localhost:5000
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 
 # see https://github.com/DataDog/dd-trace-dotnet/pull/3579
-ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
+ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1 \
+    DOTNET_ROLL_FORWARD=LatestMajor \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.

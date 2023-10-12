@@ -40,7 +40,9 @@ ENV DD_PROFILING_ENABLED=1 \
     DD_TRACE_DEBUG=1 \
     DD_APPSEC_ENABLED=1 \
     DD_TRACE_LOG_DIRECTORY="C:\logs" \
-    ASPNETCORE_URLS=http://localhost:5000
+    ASPNETCORE_URLS=http://localhost:5000 \
+    DOTNET_ROLL_FORWARD=LatestMajor \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary
