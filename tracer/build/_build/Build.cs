@@ -430,8 +430,9 @@ partial class Build : NukeBuild
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 // .EnableNoDependencies()
-                .SetFramework(TargetFramework.NETCOREAPP3_1)
+                .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
+                .SetSelfContained(true)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("BuildStandalone", "true")

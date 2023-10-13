@@ -31,9 +31,27 @@
         <RuntimeIdentifiers>win-x64;win-x86;linux-x64;linux-musl-x64;osx-x64;linux-arm64</RuntimeIdentifiers>
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
+        <TrimMode>copyused</TrimMode>
+        <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
+        <ILLinkTreatWarningsAsErrors>false</ILLinkTreatWarningsAsErrors>
         <PublishSingleFile>true</PublishSingleFile>
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
+      <ItemGroup>
+        <TrimmerRootAssembly Include="Datadog.Trace" />
+        <TrimmerRootAssembly Include="dnlib" />
+        <TrimmerRootAssembly Include="ICSharpCode.Decompiler" />
+        <TrimmerRootAssembly Include="Microsoft.TestPlatform.CoreUtilities" />
+        <TrimmerRootAssembly Include="Microsoft.TestPlatform.PlatformAbstractions" />
+        <TrimmerRootAssembly Include="Microsoft.VisualStudio.TestPlatform.ObjectModel" />
+        <TrimmerRootAssembly Include="Microsoft.Web.Administration" />
+        <TrimmerRootAssembly Include="Mono.Cecil" />
+        <TrimmerRootAssembly Include="Mono.Cecil.Pdb" />
+        <TrimmerRootAssembly Include="Spectre.Console" />
+        <TrimmerRootAssembly Include="System.CodeDom" />
+        <TrimmerRootAssembly Include="System.Management" />
+        <TrimmerRootAssembly Include="System.Xml" />
+      </ItemGroup>
       <ItemGroup>
         <Content Include="..\Datadog.Trace.Bundle\home\**\*.*" LinkBase="home">
           <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -141,8 +159,9 @@
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <Message Text="Removing $(DuplicateFileToRemove) from publish output" Importance="high" />
     <ItemGroup>
-      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\Spectre.Console.dll" />
-      <ResolvedFileToPublish Remove="$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\linked\ILVerification.dll" />
+      <ResolvedFileToPublish Remove="$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\SignedAssemblies\Spectre.Console.dll" />
+      <ResolvedFileToPublish Remove="$(MSBuildThisFileDirectory)$(BaseIntermediateOutputPath)$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\SignedAssemblies\ILVerification.dll" />
     </ItemGroup>
   </Target>
+
 </Project>
