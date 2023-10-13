@@ -40,7 +40,7 @@ internal class Program
 
         var localizationResources = new CustomLocalizationResources();
 
-        var rootCommand = new CommandWithExamples("dd-trace");
+        var rootCommand = new CommandWithExamples(CommandWithExamples.Command);
 
         var builder = new CommandLineBuilder(rootCommand)
             .UseLocalizationResources(localizationResources)
@@ -55,9 +55,9 @@ internal class Program
                 return helpBuilder;
             });
 
-        rootCommand.AddExample("dd-dotnet run --dd-env prod -- myApp --argument-for-my-app");
-        rootCommand.AddExample("dd-dotnet check process <pid>");
-        rootCommand.AddExample("dd-dotnet check iis <website>");
+        rootCommand.AddExample("run --dd-env prod -- myApp --argument-for-my-app");
+        rootCommand.AddExample("check process <pid>");
+        rootCommand.AddExample("check iis <website>");
 
         var checkCommand = new Command("check");
         builder.Command.AddCommand(checkCommand);
