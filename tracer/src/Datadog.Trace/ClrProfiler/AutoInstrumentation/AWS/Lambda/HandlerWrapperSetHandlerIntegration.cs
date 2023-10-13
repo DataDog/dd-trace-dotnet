@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
     MethodName = "set_Handler",
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Amazon.Lambda.RuntimeSupport.LambdaBootstrapHandler" },
-    MinimumVersion = "1.0.0",
+    MinimumVersion = "1.4.0",
     MaximumVersion = "1.*.*",
     IntegrationName = IntegrationName)]
 public class HandlerWrapperSetHandlerIntegration
@@ -81,7 +81,7 @@ public class HandlerWrapperSetHandlerIntegration
                 Serverless.Error("Could not send payload to the extension", ex);
                 Console.WriteLine(ex.StackTrace);
             }
-
+            Serverless.Debug("DelegateWrapper FINISHED Running OnDelegateBegin");
             return CallTargetState.GetDefault();
         }
 
