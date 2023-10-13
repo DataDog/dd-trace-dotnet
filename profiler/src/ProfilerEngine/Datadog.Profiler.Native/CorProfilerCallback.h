@@ -55,6 +55,7 @@ namespace shared {
 class Loader;
 }
 
+
 class CorProfilerCallback : public ICorProfilerCallback10
 {
 private:

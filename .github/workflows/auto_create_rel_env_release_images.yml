@@ -33,7 +33,7 @@ jobs:
             ref="refs/heads/hotfix/$version"
           fi
 
-          sha=$(git rev-parse tags/tag_name)
+          sha=$(git rev-parse tags/$tag_name)
 
           echo "using '$ref' ref for '$version' version, with sha '$sha'"
           echo "tag=$tag_name" >> $GITHUB_OUTPUT
