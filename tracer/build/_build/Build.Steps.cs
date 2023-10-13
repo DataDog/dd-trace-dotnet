@@ -509,7 +509,13 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var testDir = project.Directory;
-                    var frameworks = project.GetTargetFrameworks();
+                    
+                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's 
+                    // failing to load MSBuild, so can't get the target frameworks here
+                    // so hardcoding to use the default test frameworks for now
+                    var frameworks = IsOsx
+                        ? TestingFrameworks.Select(x => (string) x).ToArray()
+                        : project.GetTargetFrameworks();
 
                     var testBinFolder = testDir / "bin" / BuildConfiguration;
 
