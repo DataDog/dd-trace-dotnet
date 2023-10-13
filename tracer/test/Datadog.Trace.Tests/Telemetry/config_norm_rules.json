@@ -29,6 +29,7 @@
   "security_enabled": "appsec_enabled",
   "stats_computation_enabled": "trace_stats_computation_enabled",
   "native_tracer_version": "native_tracer_version",
+  "managed_tracer_framework": "managed_tracer_framework",
   "wcf_obfuscation_enabled": "trace_wcf_obfuscation_enabled",
   "data.streams.enabled": "data_streams_enabled",
   "dynamic.instrumentation.enabled": "dynamic_instrumentation_enabled",

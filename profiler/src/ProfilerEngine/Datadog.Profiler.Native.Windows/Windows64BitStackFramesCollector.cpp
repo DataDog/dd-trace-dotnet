@@ -258,7 +258,21 @@ StackSnapshotResultBuffer* Windows64BitStackFramesCollector::CollectStackSampleI
             //     2) Perform a virtual stack pop to account for the value we just used from the stack:
             //         - Remember that x64 stack grows physically downwards.
             //         - So, add 8 bytes (=64 bits = sizeof(pointer)) to the virtual stack register RSP
-            context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
+            //
+            __try
+            {
+                // FIX: For a customer using the SentinelOne solution, it was not possible to walk the stack
+                //      of a thread so RSP was not valid
+                context.Rip = *reinterpret_cast<uint64_t*>(context.Rsp);
+            }
+            __except (EXCEPTION_EXECUTE_HANDLER)
+            {
+                AddFakeFrame();
+
+                SetOutputHr(E_ABORT, pHR);
+                return this->GetStackSnapshotResult();
+            }
+
             context.Rsp += 8;
         }
         else

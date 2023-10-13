@@ -140,7 +140,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
-            result.ReturnCode.Should().Be(ReturnCode.Match);
+            result.ReturnCode.Should().Be(WafReturnCode.Match);
             if (schemaExtraction is not null)
             {
                 var serializedDerivatives = JsonConvert.SerializeObject(result.Derivatives);

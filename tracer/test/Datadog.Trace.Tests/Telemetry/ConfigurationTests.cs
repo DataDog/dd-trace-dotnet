@@ -39,6 +39,8 @@ public class ConfigurationTests
         "DD_GIT_COMMIT_COMMITTER_NAME",
         "DD_GIT_COMMIT_COMMITTER_EMAIL",
         "DD_GIT_COMMIT_COMMITTER_DATE",
+        "DD_ACTION_EXECUTION_ID",
+        "DD_PIPELINE_EXECUTION_ID",
         "DD_TESTSESSION_COMMAND",
         "DD_TESTSESSION_WORKINGDIRECTORY",
         // Internal env vars that we only ever read from environment

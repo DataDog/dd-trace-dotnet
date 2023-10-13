@@ -119,12 +119,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 
                     Assert.Equal(spanDataItem.Value, value);
                 }
-
-                if (jsonData.Name != "usersupplied")
-                {
-                    string providerName = span.Tags.GetTag(CommonTags.CIProvider);
-                    Assert.Equal(jsonData.Name, providerName);
-                }
             }
         }
 

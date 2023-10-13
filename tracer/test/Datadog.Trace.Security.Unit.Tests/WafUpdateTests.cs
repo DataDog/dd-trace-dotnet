@@ -152,9 +152,9 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             using var context = waf.CreateContext();
             var result = context.Run(args, TimeoutMicroSeconds);
-            var spectedResult = isAttack ? ReturnCode.Match : ReturnCode.Ok;
+            var spectedResult = isAttack ? WafReturnCode.Match : WafReturnCode.Ok;
             result.ReturnCode.Should().Be(spectedResult);
-            if (spectedResult == ReturnCode.Match)
+            if (spectedResult == WafReturnCode.Match)
             {
                 var rule = attackParts[2];
                 var resultData = JsonConvert.DeserializeObject<WafMatch[]>(result.Data).FirstOrDefault();

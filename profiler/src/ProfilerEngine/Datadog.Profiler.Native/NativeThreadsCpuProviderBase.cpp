@@ -49,7 +49,10 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample
     // TODO add strings as static field ? (from framestore ?)
-    sample->AddFrame(GetFrameInfo());
+    for (auto frame : GetFrames())
+    {
+        sample->AddFrame(frame);
+    }
 
     samples.push_back(sample);
     return samples;

@@ -865,6 +865,35 @@ namespace Datadog.Trace.Tests.Configuration
             configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
         }
 
+        [Fact]
+        public void RecordsTelemetryAboutTfm()
+        {
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
+            var collector = new ConfigurationTelemetry();
+            tracerSettings.CollectTelemetry(collector);
+            var data = collector.GetData();
+            var value = data
+                       .GroupBy(x => x.Name)
+                       .Should()
+                       .ContainSingle(x => x.Key == ConfigTelemetryData.ManagedTracerTfm)
+                       .Which
+                       .OrderByDescending(x => x.SeqId)
+                       .First();
+
+#if NET6_0_OR_GREATER
+            var expected = "net6.0";
+#elif NETCOREAPP3_1_OR_GREATER
+            var expected = "netcoreapp3.1";
+#elif NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_0
+            var expected = "netstandard2.0";
+#elif NETFRAMEWORK
+            var expected = "net461";
+#else
+            #error Unexpected TFM
+#endif
+            value.Value.Should().Be(expected);
+        }
+
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)
         {
             var settings = new TracerSettings();
