@@ -2100,6 +2100,9 @@ partial class Build
                 datadogTraceTypes.AddRange(GetTypeReferences(DatadogTraceDirectory / "bin" / BuildConfiguration / tfm / Projects.DatadogTrace + ".dll"));
             }
 
+            // add Datadog projects to the root descriptors file
+            datadogTraceTypes.Add(new(Projects.DatadogTrace, null));
+
             var types = loaderTypes
                        .Concat(datadogTraceTypes)
                        .Distinct()
