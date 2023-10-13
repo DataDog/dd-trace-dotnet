@@ -144,7 +144,7 @@ public class IisCheckTests : ToolTestHelper
 
         EnvironmentHelper.SetAutomaticInstrumentation(false);
 
-        using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+        using var iisFixture = await StartIis(GetAppType());
 
         var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
 

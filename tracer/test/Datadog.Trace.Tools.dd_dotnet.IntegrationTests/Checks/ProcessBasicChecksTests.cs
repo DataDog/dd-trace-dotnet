@@ -379,6 +379,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void ProfilerNotRegistered()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), null);
 
         using var console = ConsoleHelper.Redirect();
@@ -395,6 +396,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void ProfilerNotFoundRegistry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
 
         using var console = ConsoleHelper.Redirect();
@@ -412,6 +414,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void WrongProfilerRegistry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
 
         using var console = ConsoleHelper.Redirect();
