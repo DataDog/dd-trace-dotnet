@@ -24,7 +24,9 @@ namespace Samples.AWS.SimpleNotificationService
                 Thread.Sleep(1000);
 
                 await PublishMessageAsync(snsClient, topicArn);
+#if AWS_SNS_3_7_3
                 await PublishBatchAsync(snsClient, topicArn);
+#endif
                 await DeleteTopicAsync(snsClient, topicArn);
 
                 // Needed in order to allow resource to be deleted
@@ -40,7 +42,7 @@ namespace Samples.AWS.SimpleNotificationService
 
             Console.WriteLine($"PublishMessageAsync(PublishRequest) HTTP status code: {response.HttpStatusCode}");
         }
-
+#if AWS_SNS_3_7_3
         private static async Task PublishBatchAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn)
         {
             var publishBatchRequest = new PublishBatchRequest
@@ -65,7 +67,7 @@ namespace Samples.AWS.SimpleNotificationService
             
             Console.WriteLine($"PublishBatchAsync(PublishBatchRequest) HTTP status code: {response.HttpStatusCode}");
         }
-
+#endif
         private static async Task DeleteTopicAsync(AmazonSimpleNotificationServiceClient snsClient, string topicArn)
         {
             var deleteTopicRequest = new DeleteTopicRequest { TopicArn = topicArn };

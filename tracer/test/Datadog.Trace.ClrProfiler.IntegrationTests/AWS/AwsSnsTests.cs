@@ -68,7 +68,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                 var host = Environment.GetEnvironmentVariable("AWS_SDK_HOST");
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
-                settings.UseFileName($"{nameof(AwsSnsTests)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}");
                 settings.AddSimpleScrubber("out.host: localhost", "out.host: aws_sns");
                 settings.AddSimpleScrubber("out.host: localstack", "out.host: aws_sns");
                 settings.AddSimpleScrubber("out.host: localstack_arm64", "out.host: aws_sns");
@@ -80,16 +79,23 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
                     settings.AddSimpleScrubber(host, "localhost:00000");
                 }
 
-                settings.DisableRequireUniquePrefix();
-
                 // Note: http.request spans are expected for the following SNS APIs that don't have explicit support
                 // - ListTopics
                 // - GetTopicAttributes
                 // - SetTopicAttributes
-                await VerifyHelper.VerifySpans(spans, settings);
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseFileName($"{nameof(AwsSnsTests)}{GetVersionSuffix(packageVersion)}.{frameworkName}.Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.AwsSns);
             }
+        }
+
+        private static string GetVersionSuffix(string packageVersion)
+        {
+            var version = new Version(string.IsNullOrEmpty(packageVersion) ? "3.7.3" : packageVersion); // default version in csproj
+
+            return version < new Version("3.7.3") ? "_3_3" : string.Empty;
         }
     }
 }
