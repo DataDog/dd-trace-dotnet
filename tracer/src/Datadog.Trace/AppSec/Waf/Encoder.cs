@@ -137,6 +137,7 @@ namespace Datadog.Trace.AppSec.Waf
                             var key = getKey(keyValue!);
                             if (string.IsNullOrEmpty(key))
                             {
+                                childrenCount--;
                                 Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
                                 continue;
                             }
@@ -154,6 +155,7 @@ namespace Datadog.Trace.AppSec.Waf
                         var key = getKey(keyValue);
                         if (string.IsNullOrEmpty(key))
                         {
+                            childrenCount--;
                             Log.Warning("EncodeDictionary: ignoring dictionary member with null name");
                             continue;
                         }

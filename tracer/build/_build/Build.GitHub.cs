@@ -418,6 +418,7 @@ partial class Build
                 "shared/src/Datadog.Trace.ClrProfiler.Native/CMakeLists.txt",
                 "shared/src/Datadog.Trace.ClrProfiler.Native/Resource.rc",
                 "shared/src/msi-installer/WindowsInstaller.wixproj",
+                "tracer/build/artifacts/dd-dotnet.sh",
                 "tracer/build/_build/Build.cs",
                 "tracer/samples/AutomaticTraceIdInjection/MicrosoftExtensionsExample/MicrosoftExtensionsExample.csproj",
                 "tracer/samples/AutomaticTraceIdInjection/Log4NetExample/Log4NetExample.csproj",

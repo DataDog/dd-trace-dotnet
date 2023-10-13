@@ -18,6 +18,18 @@ jobs:
       - name: Clone dd-trace-dotnet repository
         uses: actions/checkout@v3
 
+      - uses: octokit/request-action@v2.x
+        name: 'Open Code Freeze Milestone'
+        id: milestones
+        if: github.event_name == 'workflow_dispatch'
+        with:
+          route: PATCH /repos/{owner}/{repo}/milestones/115
+          owner: DataDog
+          repo: dd-trace-dotnet
+          state: open
+        env:
+          GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
       - uses: ./.github/actions/code-freeze
         name: 'Freeze 25 PRs'
         with:
