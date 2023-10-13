@@ -87,26 +87,5 @@
       span.kind: client,
       _dd.peer.service.source: out.host
     }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_6,
-    Name: http.client.request,
-    Resource: POST localhost:00000/,
-    Service: Samples.AWS.SimpleNotificationService,
-    Type: http,
-    ParentId: Id_2,
-    Tags: {
-      component: HttpMessageHandler,
-      env: integration_tests,
-      http-client-handler-type: System.Net.Http.HttpClientHandler,
-      http.method: POST,
-      http.status_code: 200,
-      http.url: http://localhost:00000/,
-      out.host: aws_sns,
-      peer.service: aws_sns,
-      span.kind: client,
-      _dd.peer.service.source: out.host
-    }
   }
 ]
