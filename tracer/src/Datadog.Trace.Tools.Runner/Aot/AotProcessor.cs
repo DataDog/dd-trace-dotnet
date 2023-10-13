@@ -6,6 +6,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -23,6 +24,9 @@ using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner.Aot
 {
+#if NET6_0_OR_GREATER
+    [UnconditionalSuppressMessage("Trimming", "IL2026", Justification = "System.Reflection.Assembly.GetType is only called over the tracer assembly.")]
+#endif
     internal class AotProcessor
     {
         private static readonly NativeCallTargetDefinition[] Definitions;
@@ -36,10 +40,20 @@ namespace Datadog.Trace.Tools.Runner.Aot
 
         private static readonly MethodInfo CallTargetStateGetDefaultMethodInfo;
 
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
         private static readonly Type CallTargetReturnVoid;
+#else
+        private static readonly Type CallTargetReturnVoid;
+#endif
         private static readonly MethodInfo CallTargetReturnVoidGetDefaultValueMethodInfo;
 
+#if NET6_0_OR_GREATER
+        [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicMethods)]
         private static readonly Type CallTargetReturn;
+#else
+        private static readonly Type CallTargetReturn;
+#endif
         private static readonly MethodInfo CallTargetReturnGetReturnValueMethodInfo;
         private static readonly MethodInfo CallTargetReturnGetDefaultValueMethodInfo;
 
