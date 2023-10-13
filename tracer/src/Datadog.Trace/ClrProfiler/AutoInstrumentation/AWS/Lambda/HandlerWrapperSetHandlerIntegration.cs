@@ -81,6 +81,7 @@ public class HandlerWrapperSetHandlerIntegration
                 Serverless.Error("Could not send payload to the extension", ex);
                 Console.WriteLine(ex.StackTrace);
             }
+
             Serverless.Debug("DelegateWrapper FINISHED Running OnDelegateBegin");
             return CallTargetState.GetDefault();
         }
