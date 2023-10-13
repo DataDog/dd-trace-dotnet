@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-
 namespace Datadog.Trace.Tools.dd_dotnet.Checks
 {
     internal interface IRegistryService

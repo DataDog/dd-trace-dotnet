@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
+using Datadog.Trace.Tools.Shared;
 using Spectre.Console;
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
@@ -31,10 +33,15 @@ internal class CheckProcessCommand : Command
 
         AnsiConsole.WriteLine("Running checks on process " + pid);
 
-        var process = ProcessInfo.GetProcessInfo(pid);
+        ProcessInfo process;
 
-        if (process == null)
+        try
         {
+            process = ProcessInfo.GetProcessInfo(pid);
+        }
+        catch (Exception ex)
+        {
+            Utils.WriteError("Error while trying to fetch process information: " + ex.Message);
             Utils.WriteError("Could not fetch information about target process. Make sure to run the command from an elevated prompt, and check that the pid is correct.");
             context.ExitCode = 1;
             return;
@@ -60,7 +67,8 @@ internal class CheckProcessCommand : Command
             return;
         }
 
-        foundIssue = !await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false);
+        var configurationSource = process.ExtractConfigurationSource(null, null);
+        foundIssue = !await AgentConnectivityCheck.RunAsync(configurationSource).ConfigureAwait(false);
 
         if (foundIssue)
         {

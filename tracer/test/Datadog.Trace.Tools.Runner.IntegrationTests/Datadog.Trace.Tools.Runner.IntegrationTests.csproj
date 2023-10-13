@@ -5,16 +5,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="applicationHost.config" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="applicationHost.config">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-
-  <ItemGroup>
     <ProjectReference Include="..\..\src\Datadog.Trace.Tools.Runner\Datadog.Trace.Tools.Runner.csproj" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
   </ItemGroup>

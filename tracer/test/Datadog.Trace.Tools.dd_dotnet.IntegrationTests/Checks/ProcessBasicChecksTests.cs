@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
+using Datadog.Trace.Tools.Shared;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;

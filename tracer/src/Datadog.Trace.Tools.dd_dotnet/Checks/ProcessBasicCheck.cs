@@ -2,7 +2,6 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-#nullable enable
 
 using System;
 using System.Collections.Generic;
@@ -11,6 +10,8 @@ using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Tools.dd_dotnet.Checks.Windows;
+using Datadog.Trace.Tools.Shared;
+using Datadog.Trace.Tools.Shared.Windows;
 using Spectre.Console;
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
 
@@ -25,7 +26,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         {
             bool ok = true;
             var runtime = process.DotnetRuntime;
-            Version? nativeTracerVersion = null;
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 // .so modules don't have version metadata
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out nativeTracerVersion))
+                    if (!Version.TryParse(FileVersionInfo.GetVersionInfo(nativeTracerModule).FileVersion, out var nativeTracerVersion))
                     {
                         nativeTracerVersion = null;
                     }
@@ -266,7 +266,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         internal static bool CheckRegistry(string? tracerProgramVersion, IRegistryService? registry = null)
         {
-            registry ??= new Windows.RegistryService();
+            registry ??= new RegistryService();
 
             try
             {
