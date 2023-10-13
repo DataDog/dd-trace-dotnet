@@ -136,6 +136,25 @@ public class IisCheckTests : ToolTestHelper
         exitCode.Should().Be(1);
     }
 
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task IncorrectlyConfiguredAppPool()
+    {
+        EnsureWindowsAndX64();
+
+        EnvironmentHelper.SetAutomaticInstrumentation(false);
+
+        using var iisFixture = await StartIis(IisAppType.AspNetCoreInProcess);
+
+        var (standardOutput, errorOutput, exitCode) = await RunTool($"check iis sample {IisExpressOptions(iisFixture)}");
+
+        exitCode.Should().Be(1);
+        standardOutput.Should().Contain(Resources.AppPoolCheckFindings("applicationPoolDefaults"));
+        standardOutput.Should().Contain(Resources.WrongEnvironmentVariableFormat("COR_ENABLE_PROFILING", "1", "0"));
+        standardOutput.Should().Contain(Resources.WrongEnvironmentVariableFormat("CORECLR_ENABLE_PROFILING", "1", "0"));
+        errorOutput.Should().BeEmpty();
+    }
+
     private static IisAppType GetAppType()
     {
 #if NETFRAMEWORK

@@ -131,8 +131,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 LoaderNotLoaded,
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                ContinuousProfilerEnabled,
-                ContinuousProfilerNotLoaded,
                 TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
                 WrongEnvironmentVariableFormat(CorProfilerKey, Profilerid, Guid.Empty.ToString("B")),
                 WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
@@ -142,6 +140,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
                 MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
                 WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+
+            // Because TracingWithInstaller has a long URL, it gets split in the Spectre.Console output
+            // Removing the spaces to make the assertion work, until we figure out a better way
+            standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstaller.Replace(" ", string.Empty));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(1);
