@@ -13,7 +13,6 @@ using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using FluentAssertions;
 using Xunit;
-using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.AWS.SNS;
 
@@ -23,11 +22,9 @@ public class ContextPropagationTests
     private const string TopicArn = "arn:aws:sns:region:000000000:my-topic-name";
 
     private readonly SpanContext _spanContext;
-    private readonly ITestOutputHelper _testOutputHelper;
 
-    public ContextPropagationTests(ITestOutputHelper testOutputHelper)
+    public ContextPropagationTests()
     {
-        _testOutputHelper = testOutputHelper;
         const long upper = 1234567890123456789;
         const ulong lower = 9876543210987654321;
 
