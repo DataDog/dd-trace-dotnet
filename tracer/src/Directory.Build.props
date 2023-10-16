@@ -26,6 +26,7 @@
     <Authors>Datadog</Authors>
     <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
     <NugetAudit>false</NugetAudit>
+    <CheckEolTargetFramework>false</CheckEolTargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
