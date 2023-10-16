@@ -82,6 +82,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         [InlineData(AddressesConstants.RequestQuery, "/Health/?arg=[$slice]", null)]
         [InlineData(AddressesConstants.RequestQuery, "/Health/?arg&[$slice]", null)]
         [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint", null)]
+        [InlineData(AddressesConstants.RequestPathParams, "/Health/params/appscan_fingerprint?&q=help", null)]
         [InlineData(AddressesConstants.RequestBody, "/Home/Upload", "{\"Property1\": \"[$slice]\"}")]
         [InlineData(AddressesConstants.RequestBody, "/Home/UploadStruct", "{\"Property1\": \"[$slice]\"}")]
         [InlineData(AddressesConstants.RequestBody, "/Home/UploadJson", "{\"DictionaryProperty\": {\"a\":\"[$slice]\"} }")]
