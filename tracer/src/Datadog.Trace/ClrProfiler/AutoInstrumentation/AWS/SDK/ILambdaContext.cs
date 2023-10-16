@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Object that allows you to access useful information available within
 /// the Lambda execution environment.
 /// </summary>
-public interface ILambdaContext
+internal interface ILambdaContext
 {
     /// <summary>
     /// Gets the AWS request ID associated with the request.

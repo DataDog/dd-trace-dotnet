@@ -10,7 +10,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// <summary>
 /// Information about client configuration and execution environment.
 /// </summary>
-public interface IClientContext
+internal interface IClientContext
 {
     /// <summary>
     /// Gets the datadog injected trace context

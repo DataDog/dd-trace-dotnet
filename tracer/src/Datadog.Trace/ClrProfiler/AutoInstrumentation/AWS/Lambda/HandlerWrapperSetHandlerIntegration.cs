@@ -5,6 +5,7 @@
 
 #if NETCOREAPP3_1_OR_GREATER
 using System;
+using System.ComponentModel;
 using System.IO;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
     MinimumVersion = "1.4.0",
     MaximumVersion = "1.*.*",
     IntegrationName = IntegrationName)]
+[Browsable(false)]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public class HandlerWrapperSetHandlerIntegration
 {
     private const string IntegrationName = nameof(IntegrationId.AwsLambda);

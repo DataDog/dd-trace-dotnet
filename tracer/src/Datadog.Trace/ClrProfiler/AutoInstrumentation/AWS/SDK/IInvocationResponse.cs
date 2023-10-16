@@ -11,15 +11,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Interface that contains the response for an invocation of an AWS Lambda function.
 /// This is the DuckType for Amazon.Lambda.RuntimeSupport.InvocationResponse
 /// </summary>
-public interface IInvocationResponse
+internal interface IInvocationResponse
 {
     /// <summary>
-    /// Gets output from the function invocation.
+    /// Gets or sets output from the function invocation.
     /// </summary>
     public Stream OutputStream { get; internal set; }
 
     /// <summary>
-    /// Gets a value indicating whether true if the LambdaBootstrap should dispose the stream after it's read, false otherwise.
+    /// Gets or sets a value indicating whether true if the LambdaBootstrap should dispose the stream after it's read, false otherwise.
     /// Set this to false if you plan to reuse the same output stream for multiple invocations of the function.
     /// </summary>
     public bool DisposeOutputStream { get; internal set; }

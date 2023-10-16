@@ -12,15 +12,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 /// Interface that contains all the information necessary to handle an invocation of an AWS Lambda function.
 /// This is the DuckType for Amazon.Lambda.RuntimeSupport.InvocationRequest
 /// </summary>
-public interface IInvocationRequest : IDisposable
+internal interface IInvocationRequest : IDisposable
 {
     /// <summary>
-    /// Gets input to the function invocation.
+    /// Gets or sets input to the function invocation.
     /// </summary>
     public Stream InputStream { get; internal set; }
 
     /// <summary>
-    /// Gets context for the invocation.
+    /// Gets or sets context for the invocation.
     /// </summary>
     public ILambdaContext LambdaContext { get; internal set; }
 }
