@@ -430,7 +430,7 @@ partial class Build : NukeBuild
                 // Have to do a restore currently as we're specifying specific runtime
                 // .EnableNoRestore()
                 // .EnableNoDependencies()
-                .SetFramework(TargetFramework.NET7_0)
+                .SetFramework(TargetFramework.NET5_0)
                 .SetConfiguration(BuildConfiguration)
                 .SetSelfContained(true)
                 .SetNoWarnDotNetCore3()
