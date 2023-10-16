@@ -3986,14 +3986,8 @@ stages:
       condition: succeededOrFailed()
       continueOnError: true
 
-- stage: throughput_appsec
-  condition: >
-    and(succeeded(), 
-        eq(variables.isMainRepository, true),
-        or(
-          eq(variables.isMainBranch, true),
-          eq(variables.force_appsec_throughput_run, 'true'),
-          eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True')))
+- stage: throughput_appsec 
+  condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -4008,6 +4002,7 @@ stages:
 
   - job: Linux64
     timeoutInMinutes: 60
+    condition: or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_throughput_run, 'true'))
 
     steps:
     - template: steps/clone-repo.yml
