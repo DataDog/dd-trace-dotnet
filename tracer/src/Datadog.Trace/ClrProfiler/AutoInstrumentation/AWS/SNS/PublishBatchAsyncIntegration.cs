@@ -40,21 +40,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <param name="cancellationToken">CancellationToken value</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishBatchRequest>(TTarget instance, TPublishBatchRequest request, CancellationToken cancellationToken)
+            where TPublishBatchRequest : IPublishBatchRequest, IDuckType
         {
-            if (request is null)
+            if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var requestProxy = request.DuckCast<IPublishBatchRequest>();
-
             var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
-            tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            tags.TopicArn = request.TopicArn;
+            tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
 
             if (scope?.Span.Context != null)
             {
-                ContextPropagation.InjectHeadersIntoBatch<TPublishBatchRequest>(requestProxy, scope.Span.Context);
+                ContextPropagation.InjectHeadersIntoBatch<TPublishBatchRequest>(request, scope.Span.Context);
             }
 
             return new CallTargetState(scope);

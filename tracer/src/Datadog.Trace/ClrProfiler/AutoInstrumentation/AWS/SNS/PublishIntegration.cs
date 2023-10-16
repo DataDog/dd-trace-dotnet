@@ -38,21 +38,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SNS
         /// <param name="request">The request for the SNS operation</param>
         /// <returns>CallTarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TPublishRequest>(TTarget instance, TPublishRequest request)
+            where TPublishRequest : IPublishRequest, IDuckType
         {
-            if (request is null)
+            if (request.Instance is null)
             {
                 return CallTargetState.GetDefault();
             }
 
-            var requestProxy = request.DuckCast<IPublishRequest>();
-
             var scope = AwsSnsCommon.CreateScope(Tracer.Instance, Operation, SpanKinds.Producer, out AwsSnsTags tags);
-            tags.TopicArn = requestProxy.TopicArn;
-            tags.TopicName = AwsSnsCommon.GetTopicName(requestProxy.TopicArn);
+            tags.TopicArn = request.TopicArn;
+            tags.TopicName = AwsSnsCommon.GetTopicName(request.TopicArn);
 
             if (scope?.Span.Context != null)
             {
-                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(requestProxy, scope.Span.Context);
+                ContextPropagation.InjectHeadersIntoMessage<TPublishRequest>(request, scope.Span.Context);
             }
 
             return new CallTargetState(scope);
