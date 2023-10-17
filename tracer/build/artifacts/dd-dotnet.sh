@@ -1,6 +1,6 @@
 #!/bin/sh
 
-TRACER_VERSION="2.40.0"
+TRACER_VERSION="2.41.0"
 
 # Get the directory of the script
 DIR=$(dirname "$0")
