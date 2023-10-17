@@ -417,6 +417,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
         /// </summary>
         /// <seealso cref="ConfigurationKeys.ObfuscationQueryStringRegex"/>
         internal string ObfuscationQueryStringRegex { get; }
