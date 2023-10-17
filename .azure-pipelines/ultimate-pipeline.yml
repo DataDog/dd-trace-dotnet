@@ -4024,11 +4024,11 @@ stages:
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
-      condition: or(eq($(appChanged), 'True'), eq(variables.force_appsec_throughput_run, 'true'))
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
-
+        FORCE_APPSEC_THROUGHPUT_RUN: $(variables.force_appsec_throughput_run)
+        IS_APPSEC_CHANGED: $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
