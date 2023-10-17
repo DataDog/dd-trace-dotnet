@@ -4024,7 +4024,7 @@ stages:
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
-      condition: or(eq(appChanged, 'True'), eq(variables.force_appsec_throughput_run, 'true'))
+      condition: or(eq($(appChanged), 'True'), eq(variables.force_appsec_throughput_run, 'true'))
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
