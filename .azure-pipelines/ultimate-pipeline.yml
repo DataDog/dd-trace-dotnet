@@ -4023,6 +4023,7 @@ stages:
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
+      dependsOn: [generate_variables]
       condition: or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_throughput_run, 'true'))
       env:
         DD_SERVICE: dd-trace-dotnet
