@@ -71,10 +71,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
     public static DataStreamsWriter Create(
         ImmutableTracerSettings settings,
         IDiscoveryService discoveryService,
-        string defaultServiceName)
+        string defaultServiceName,
+        string version)
         => new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(settings.EnvironmentInternal, defaultServiceName),
+                new DataStreamsMessagePackFormatter(settings.EnvironmentInternal, defaultServiceName, version),
                 bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs),
             new DataStreamsApi(DataStreamsTransportStrategy.GetAgentIntakeFactory(settings.ExporterInternal)),
             bucketDurationMs: DataStreamsConstants.DefaultBucketDurationMs,

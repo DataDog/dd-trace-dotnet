@@ -107,7 +107,7 @@ public class DataStreamsAggregatorTests
     private static DataStreamsAggregator CreateAggregatorWithData(long t1, long t2)
     {
         var aggregator = new DataStreamsAggregator(
-            new DataStreamsMessagePackFormatter("env", "service"),
+            new DataStreamsMessagePackFormatter("env", "service", "version"),
             BucketDurationMs);
 
         aggregator.Add(

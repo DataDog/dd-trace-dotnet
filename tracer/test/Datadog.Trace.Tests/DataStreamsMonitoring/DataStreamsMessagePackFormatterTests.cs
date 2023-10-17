@@ -25,9 +25,10 @@ public class DataStreamsMessagePackFormatterTests
     {
         var env = "my-env";
         var service = "service=name";
+        var version = "my-version"
         var bucketDuration = 10_000_000_000;
         var edgeTags = new[] { "edge-1" };
-        var formatter = new DataStreamsMessagePackFormatter(env, service);
+        var formatter = new DataStreamsMessagePackFormatter(env, service, version);
 
         var timeNs = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
 
@@ -96,6 +97,7 @@ public class DataStreamsMessagePackFormatterTests
         {
             Env = env,
             Service = service,
+            version = version,
             Lang = "dotnet",
             TracerVersion = TracerConstants.AssemblyVersion,
             Stats = new MockDataStreamsBucket[]

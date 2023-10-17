@@ -29,6 +29,7 @@ public class DataStreamsWriterTests
     private const int BucketDurationMs = 1_000; // 1 second
     private const string Environment = "env";
     private const string Service = "service";
+    private const string Version = "version";
     private int _flushCount;
 
     [Theory]
@@ -271,6 +272,7 @@ public class DataStreamsWriterTests
 
         payloads.Should().OnlyContain(x => x.Env == Environment);
         payloads.Should().OnlyContain(x => x.Service == Service);
+        payloads.Should().OnlyContain(x => x.Version == Version);
         payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "current")));
         payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "origin")));
     }
@@ -334,7 +336,7 @@ public class DataStreamsWriterTests
         discoveryService = new DiscoveryServiceMock();
         return new DataStreamsWriter(
             new DataStreamsAggregator(
-                new DataStreamsMessagePackFormatter(Environment, Service),
+                new DataStreamsMessagePackFormatter(Environment, Service, Version),
                 bucketDurationMs),
             stubApi,
             bucketDurationMs: bucketDurationMs,
