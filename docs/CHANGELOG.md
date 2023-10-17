@@ -9,6 +9,35 @@
 
 
 
+
+## [Release 2.40.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.40.0)
+
+## Summary
+
+Fixes a possible application crash when using ASM. This issue was introduced in `2.38.0`. If you are using ASM with `2.38.0` or `2.39.0`, please upgrade to `2.40.0`.
+
+## Changes
+
+### CI Visibility
+* [CI Visibility] Add support for AWS Code Pipeline (#4714)
+
+### Continuous Profiler
+* [Profiler] Add GC benchmarks for Windows (#4708)
+* [Profiler] Add Profiler_Version as exported symbol to allow version check in dumps (#4710)
+
+### ASM
+* Fix possible application crash (#4726)
+
+### Miscellaneous
+* [Tool] Updating Tool checks for Windows scenarios (#4605)
+
+### Build / Test
+* Use dd-dotnet in the nuget smoke tests (#4695)
+* Fix various GitHub Actions (#4716)
+
+
+[Changes since 2.39.0](https://github.com/DataDog/dd-trace-dotnet/compare/v2.39.0...v2.40.0)
+
 ## [Release 2.39.0](https://github.com/DataDog/dd-trace-dotnet/releases/tag/v2.39.0)
 
 ## Summary

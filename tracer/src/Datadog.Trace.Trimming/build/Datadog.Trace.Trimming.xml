@@ -8,6 +8,7 @@
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
+   <assembly fullname="Datadog.Trace" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="GraphQL" />
    <assembly fullname="GraphQL.SystemReactive" />
