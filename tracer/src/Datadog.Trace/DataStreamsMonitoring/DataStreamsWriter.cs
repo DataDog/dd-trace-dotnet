@@ -24,6 +24,7 @@ internal class DataStreamsWriter : IDataStreamsWriter
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<DataStreamsWriter>();
 
     private readonly BoundedConcurrentQueue<StatsPoint> _buffer = new(queueLimit: 10_000);
+    private readonly BoundedConcurrentQueue<BacklogPoint> _backlogBuffer = new(queueLimit: 10_000);
     private readonly Task _processTask;
     private readonly ManualResetEventSlim _processingMutex = new(initialState: false, spinCount: 0);
     private readonly TaskCompletionSource<bool> _processExit = new(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -93,6 +94,22 @@ internal class DataStreamsWriter : IDataStreamsWriter
         else
         {
             // TODO: Monitor with telemetry
+            Interlocked.Increment(ref _pointsDropped);
+        }
+    }
+
+    public void AddBacklog(in BacklogPoint point)
+    {
+        if ((Volatile.Read(ref _isSupported) != SupportState.Unsupported)
+         && _backlogBuffer.TryEnqueue(point))
+        {
+            if (!_processingMutex.IsSet)
+            {
+                _processingMutex.Set();
+            }
+        }
+        else
+        {
             Interlocked.Increment(ref _pointsDropped);
         }
     }
@@ -189,6 +206,11 @@ internal class DataStreamsWriter : IDataStreamsWriter
                 while (_buffer.TryDequeue(out var statsPoint))
                 {
                     _aggregator.Add(in statsPoint);
+                }
+
+                while (_backlogBuffer.TryDequeue(out var backlogPoint))
+                {
+                    _aggregator.AddBacklog(in backlogPoint);
                 }
 
                 var flushRequested = Interlocked.CompareExchange(ref _flushRequested, 0, 1);
