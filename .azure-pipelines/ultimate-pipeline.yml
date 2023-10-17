@@ -4002,7 +4002,6 @@ stages:
 
   - job: Linux64
     timeoutInMinutes: 60
-    condition: or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_throughput_run, 'true'))
 
     steps:
     - template: steps/clone-repo.yml
@@ -4024,6 +4023,7 @@ stages:
         chmod +x ./run-appsec.sh
         ./run-appsec.sh "linux"
       displayName: Crank
+      condition: or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_throughput_run, 'true'))
       env:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
