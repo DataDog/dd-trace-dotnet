@@ -30,8 +30,6 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void RulesUpdate()
         {
-            GlobalSettings.SetDebugEnabled(true);
-
             var initResult = Waf.Create(WafLibraryInvoker!, string.Empty, string.Empty);
             using var waf = initResult.Waf;
             waf.Should().NotBeNull();
