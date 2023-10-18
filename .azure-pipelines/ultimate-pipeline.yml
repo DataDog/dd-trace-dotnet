@@ -3993,7 +3993,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
-    IsAppChanged: $[ dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
+    IsAppChanged: $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
