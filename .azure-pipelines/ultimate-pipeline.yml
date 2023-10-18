@@ -3990,7 +3990,6 @@ stages:
   condition: and(succeeded(), eq(variables.isMainRepository, true))
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
-    appChanged: $[ dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
@@ -4028,7 +4027,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         FORCE_APPSEC_THROUGHPUT_RUN: $(variables.force_appsec_throughput_run)
-        IS_APPSEC_CHANGED: $(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])
+        IS_APPSEC_CHANGED: $[dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
