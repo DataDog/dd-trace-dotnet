@@ -35,7 +35,7 @@ namespace BuggyBits
 
     public class Program
     {
-        public static async Task Main(string[] args)
+        public static async Task<int> Main(string[] args)
         {
             var sw = new Stopwatch();
 
@@ -64,7 +64,17 @@ namespace BuggyBits
                 var cts = new CancellationTokenSource();
                 using (var selfInvoker = new SelfInvoker(cts.Token, scenario, nbIdleThreads))
                 {
-                    await host.StartAsync();
+                    try
+                    {
+                        await host.StartAsync();
+                    }
+                    catch (Exception x)
+                    {
+                        WriteLine($"Failed to start host - {x.GetType().Name} | {x.Message}");
+
+                        // ! this error code is recognized by the test runner: don't change it !
+                        return 42;
+                    }
 
                     WriteLine();
                     WriteLine($"Started at {DateTime.UtcNow}.");
@@ -74,7 +84,7 @@ namespace BuggyBits
                     if (iterations > 0)
                     {
                         await selfInvoker.RunAsync(rootUrl, iterations);
-                        return;
+                        return 0;
                     }
 
                     var selfInvokerTask = selfInvoker.RunAsync(rootUrl);
@@ -121,6 +131,8 @@ namespace BuggyBits
 
             sw.Stop();
             WriteLine($"The application exited after: {sw.Elapsed} at {DateTime.UtcNow}");
+
+            return 0;
         }
 
         public static IHostBuilder CreateHostBuilder(string[] args) =>

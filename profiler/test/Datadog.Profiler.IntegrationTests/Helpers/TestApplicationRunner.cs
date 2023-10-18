@@ -205,7 +205,7 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             }
 
             Assert.True(
-                0 == process.ExitCode,
+                (0 == process.ExitCode) || (42 == process.ExitCode),  // 42 is returned by non crashing apps when an error occurs such as impossible to bind to a port
                 $"Exit code of \"{Path.GetFileName(process.StartInfo?.FileName ?? string.Empty)}\" should be 0 instead of {process.ExitCode} (= 0x{process.ExitCode.ToString("X")})");
         }
 
