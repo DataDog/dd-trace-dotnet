@@ -299,7 +299,7 @@ public class DatadogDiagnoser : IDiagnoser
         }
 
         environment["DD_PROFILING_AGENTLESS"] = CIVisibility.Settings.Agentless ? "1" : "0";
-        environment["DD_PROFILING_UPLOAD_PERIOD"] = "20";
+        environment["DD_PROFILING_UPLOAD_PERIOD"] = "90";
         environment["DD_INTERNAL_PROFILING_SAMPLING_RATE"] = "1";
         environment["DD_INTERNAL_PROFILING_WALLTIME_THREADS_THRESHOLD"] = "64";
         environment["DD_INTERNAL_PROFILING_CODEHOTSPOTS_THREADS_THRESHOLD"] = "64";
@@ -309,7 +309,6 @@ public class DatadogDiagnoser : IDiagnoser
 
         // Tags
         var tagsList = new List<string>();
-        tagsList.Add($"{Trace.Tags.Origin}:{TestTags.CIAppTestOriginName}");
 
         // Git data
         if (CIEnvironmentValues.Instance is { } ciEnv)

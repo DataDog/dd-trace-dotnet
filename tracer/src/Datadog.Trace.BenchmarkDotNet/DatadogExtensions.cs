@@ -29,7 +29,7 @@ public static class DatadogExtensions
     /// <param name="config">Configuration instance</param>
     /// <param name="enableProfiler">True to enable Datadog's Profiler; a null value will parse DD_PROFILING_ENABLED environment variable</param>
     /// <returns>Same configuration instance</returns>
-    public static IConfig WithDatadog(this IConfig config, bool? enableProfiler)
+    internal static IConfig WithDatadog(this IConfig config, bool? enableProfiler)
     {
         var cfg = config.AddLogger(DatadogSessionLogger.Default);
 
