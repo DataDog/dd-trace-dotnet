@@ -48,6 +48,15 @@
     <Filter Include="Threads">
       <UniqueIdentifier>{9343cd1c-a26e-4f7d-a006-85e4612d0813}</UniqueIdentifier>
     </Filter>
+    <Filter Include="libdatadog">
+      <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdatadog\error_handling">
+      <UniqueIdentifier>{43d49fd0-399f-4216-b7be-8769b8882c01}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdatadog\details">
+      <UniqueIdentifier>{3522eff2-3a0d-4312-97a5-e1c6c0fe984b}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -379,6 +388,44 @@
     <ClInclude Include="TimelineSampleType.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="MetadataProvider.h" />
+    <ClInclude Include="Profile.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="error_code.h">
+      <Filter>libdatadog\error_handling</Filter>
+    </ClInclude>
+    <ClInclude Include="Exporter.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\Exporter.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\Tags.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="Tags.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Exception.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\Profile.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\error_code.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\FileExporter.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_details\AgentExporter.hpp">
+      <Filter>libdatadog\details</Filter>
+    </ClInclude>
+    <ClInclude Include="libdatadog_helper.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodedProfile.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -566,6 +613,24 @@
     </ClCompile>
     <ClCompile Include="TimelineSampleType.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Profile.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="error_code.cpp">
+      <Filter>libdatadog\error_handling</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Tags.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Exception.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="std_extensions.hpp">
+      <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

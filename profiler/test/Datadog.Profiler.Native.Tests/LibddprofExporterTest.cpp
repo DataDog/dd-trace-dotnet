@@ -120,7 +120,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 
     ASSERT_EQ(pprofFiles.size(), 1);
 
-    auto file = pprofFiles[0];
+    auto& file = pprofFiles[0];
 
     ASSERT_TRUE(file.is_regular_file());
 

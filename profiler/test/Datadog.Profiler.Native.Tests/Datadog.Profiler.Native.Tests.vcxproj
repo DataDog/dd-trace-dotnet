@@ -62,12 +62,14 @@
     <ClCompile Include="OsSpecificApiTest.cpp" />
     <ClCompile Include="ProfilerMockedInterface.cpp" />
     <ClCompile Include="ProfilerSignalManagerTest.cpp" />
+    <ClCompile Include="ProfileTest.cpp" />
     <ClCompile Include="RuntimeIdStoreHelper.cpp" />
     <ClCompile Include="RuntimeIdTest.cpp" />
     <ClCompile Include="RuntimeInfoHelper.cpp" />
     <ClCompile Include="SamplesCollectorTest.cpp" />
     <ClCompile Include="SampleValueTypeProviderTest.cpp" />
     <ClCompile Include="StackSnapshotResultBufferTest.cpp" />
+    <ClCompile Include="TagsTest.cpp" />
     <ClCompile Include="TagsHelperTest.cpp" />
     <ClCompile Include="ProviderTest.cpp" />
     <ClCompile Include="ThreadsCpuManagerHelper.cpp" />

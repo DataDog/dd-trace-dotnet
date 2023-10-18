@@ -2,7 +2,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "FfiHelper.h"
+
+#include <stdint.h>
 #include <string.h>
+extern "C"
+{
+#include "datadog/common.h"
+}
 
 ddog_ByteSlice FfiHelper::StringToByteSlice(std::string const& str)
 {
