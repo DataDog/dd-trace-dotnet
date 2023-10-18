@@ -7,6 +7,7 @@
 
 using System;
 using System.Text;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Iast;
@@ -27,7 +28,7 @@ internal class Source
     {
         this._origin = origin;
         this.Name = name;
-        this._value = value;
+        this._value = value.SanitizeNulls();
         this._redacted = false;
     }
 

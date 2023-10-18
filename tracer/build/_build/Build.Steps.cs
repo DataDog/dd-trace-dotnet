@@ -505,18 +505,18 @@ partial class Build
                     // so copy both, just to be safe
                     if (IsWin)
                     {
-                        foreach (var arch in WafWindowsArchitectureFolders)
+                        foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            var source = MonitoringHomeDirectory / arch;
-                            foreach (var fmk in frameworks)
+                            var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                            await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                            foreach (var arch in WafWindowsArchitectureFolders)
                             {
-                                var dest = testBinFolder / fmk / arch;
-                                CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                                foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                                var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
+                                var source = MonitoringHomeDirectory / arch;
+                                foreach (var fmk in frameworks)
                                 {
-                                    var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
-                                    var oldVersionPath = oldVersionTempPath / "runtimes" / arch / "native" / "ddwaf.dll";
-                                    await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
+                                    var dest = testBinFolder / fmk / arch;
+                                    CopyDirectoryRecursively(source, dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
                                     CopyFile(oldVersionPath, dest / $"ddwaf-{olderLibDdwafVersion}.dll", FileExistsPolicy.Overwrite);
                                 }
                             }
@@ -527,26 +527,28 @@ partial class Build
                         var (arch, _) = GetUnixArchitectureAndExtension();
                         var (archWaf, ext) = GetLibDdWafUnixArchitectureAndExtension();
 
-                        foreach (var fmk in frameworks)
+                        foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
                         {
-                            // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
-                            // This is because these tests try to load the WAF.
-                            // Loading the WAF requires using the native tracer as a proxy, which means either
-                            // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
-                            // - The native tracer must be side-by-side with the running dll
-                            // As this is a managed-only unit test, the native tracer _must_ be in the root folder
-                            // For simplicity, we just copy all the native dlls there
-                            var dest = testBinFolder / fmk;
-
-                            // use the files from the monitoring native folder
-                            CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
-                            foreach (var olderLibDdwafVersion in OlderLibDdwafVersions)
+                            var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
+                            var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
+                            var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
+                            await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
                             {
-                                var patchedArchWaf = (IsOsx && olderLibDdwafVersion != "1.10.0") ? archWaf + "-x64" : archWaf;
-                                var oldVersionTempPath = TempDirectory / $"libddwaf.{olderLibDdwafVersion}";
-                                var oldVersionPath = oldVersionTempPath / "runtimes" / patchedArchWaf / "native" / $"libddwaf.{ext}";
-                                await DownloadWafVersion(olderLibDdwafVersion, oldVersionTempPath);
-                                CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                                foreach (var fmk in frameworks)
+                                {
+                                    // We have to copy into the _root_ test bin folder here, not the arch sub-folder.
+                                    // This is because these tests try to load the WAF.
+                                    // Loading the WAF requires using the native tracer as a proxy, which means either
+                                    // - The native tracer must be loaded first, so it can rewrite the PInvoke calls
+                                    // - The native tracer must be side-by-side with the running dll
+                                    // As this is a managed-only unit test, the native tracer _must_ be in the root folder
+                                    // For simplicity, we just copy all the native dlls there
+                                    var dest = testBinFolder / fmk;
+
+                                    // use the files from the monitoring native folder
+                                    CopyDirectoryRecursively(MonitoringHomeDirectory / (IsOsx ? "osx" : arch), dest, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+                                    CopyFile(oldVersionPath, dest / $"libddwaf-{olderLibDdwafVersion}.{ext}", FileExistsPolicy.Overwrite);
+                                }
                             }
                         }
                     }
