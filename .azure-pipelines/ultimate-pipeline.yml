@@ -3993,6 +3993,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
+    IsAppChanged: $[ dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
   pool: Throughput-AppSec
   jobs:
   - template: steps/update-github-status-jobs.yml
@@ -4027,9 +4028,9 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         FORCE_APPSEC_THROUGHPUT_RUN: $(variables.force_appsec_throughput_run)
-        IS_APPSEC_CHANGED: $[dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
+        IS_APPSEC_CHANGED: $(IsAppChanged)
     - script: |
-        cp $(CrankDir)/*.json $(CrankDir)/results
+        cp -u $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
       condition: succeededOrFailed()
       continueOnError: true
