@@ -99,31 +99,38 @@ namespace Honeypot
         { 
         }
 
-        public static async Task<IntegrationMap> Create(string name, string assemblyName, Version maximumVersion)
+        public static async Task<IntegrationMap> Create(string name, string integrationId, string assemblyName, Version minimumVersion, Version maximumVersion)
         {
-            var instance = new IntegrationMap();
-
             if (!NugetPackages.ContainsKey(name))
             {
                 throw new Exception($"Missing key: {name} - Every integration must be represented in the packages map.");
             }
-
-            instance.Name = name;
-            instance.AssemblyName = assemblyName;
-            instance.MaximumAssemblyVersion = maximumVersion;
+            
+            var instance = new IntegrationMap
+            {
+                Name = name,
+                IntegrationId = integrationId,
+                AssemblyName = assemblyName,
+                MinimumAssemblyVersion = minimumVersion,
+                MaximumAssemblyVersion = maximumVersion
+            };
 
             await instance.PopulatePackages();
 
             return instance;
         }
 
-        public string Name { get; set; }
+        public string Name { get; init; }
 
-        public string AssemblyName { get; set; }
+        public string IntegrationId { get; init; }
 
-        public Version MaximumAssemblyVersion { get; set; }
+        public string AssemblyName { get; init; }
 
-        public List<IntegrationPackage> Packages { get; set; } = new List<IntegrationPackage>();
+        public Version MaximumAssemblyVersion { get; init; }
+
+        public Version MinimumAssemblyVersion { get; init; }
+
+        public List<IntegrationPackage> Packages { get; } = new();
 
         private async Task PopulatePackages()
         {
@@ -167,22 +174,37 @@ namespace Honeypot
                                                  ? latestVersion
                                                  : new Version(latestSupportedPackage.Identity.Version.ToNormalizedString());
 
-                Packages.Add(new IntegrationPackage
+                var firstPackage = potentiallySupportedPackages.Last();
+                var firstVersion = new Version(firstPackage.Identity.Version.ToNormalizedString());
+                var firstSupportedPackage = potentiallySupportedPackages
+                    .LastOrDefault(x => x.Identity.Version.Version >= MinimumAssemblyVersion);
+                if (firstSupportedPackage is null)
                 {
-                    NugetName = latestPackage.Identity.Id,
-                    LatestNuget = latestVersion,
-                    LatestSupportedNuget = latestSupportedVersion,
-                });
+                    Logger.Warning($"No version of {packageName} above minimum package version {MinimumAssemblyVersion}." +
+                                   $"Using first instead");
+                }
+
+                var firstSupportedVersion = firstSupportedPackage is null
+                    ? firstVersion
+                    : new Version(firstSupportedPackage.Identity.Version.ToNormalizedString());
+
+                Packages.Add(new IntegrationPackage(
+                    NugetName: latestPackage.Identity.Id,
+                    LatestVersion: latestVersion,
+                    LatestSupportedVersion: latestSupportedVersion,
+                    FirstVersion: firstVersion,
+                    FirstSupportedVersion: firstSupportedVersion));
             }
         }
     }
 
-    public class IntegrationPackage
-    {
-        public string NugetName { get; set; }
-        public Version LatestSupportedNuget { get; set; }
-        public Version LatestNuget { get; set; }
-    }
+    public record IntegrationPackage(
+        string NugetName,
+        Version FirstSupportedVersion,
+        Version FirstVersion,
+        Version LatestSupportedVersion,
+        Version LatestVersion
+    );
 
     public class PackageSearchCriteria : IPackageVersionEntry
     {

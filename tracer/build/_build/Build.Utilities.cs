@@ -214,9 +214,13 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations);
 
            var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+
+           var outputPath = TracerDirectory / "build" / "supported_versions.yml";
+           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
     
     Target GenerateSpanDocumentation => _ => _
