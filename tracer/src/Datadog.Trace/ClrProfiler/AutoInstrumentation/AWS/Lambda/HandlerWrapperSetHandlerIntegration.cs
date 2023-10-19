@@ -55,26 +55,33 @@ public class HandlerWrapperSetHandlerIntegration
         return CallTargetState.GetDefault();
     }
 
+    private static string ConvertPayloadStream(Stream payloadStream)
+    {
+        var reader = new StreamReader(payloadStream, Encoding.UTF8, leaveOpen: true);
+        var result = reader.ReadToEnd();
+        payloadStream.Seek(0, SeekOrigin.Begin); // Reset the offset so that it can be read by the originally intended consumer
+        return result;
+    }
+
     private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
     {
         public bool PreserveAsyncContext => false;
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
-            Serverless.Debug("DelegateWrapper Running onDelegateBegin");
+            Serverless.Debug("DelegateWrapper Running OnDelegateBegin");
             try
             {
                 var proxyInstance = arg.DuckCast<IInvocationRequest>();
                 if (proxyInstance != null)
                 {
-                    var reader = new StreamReader(proxyInstance.InputStream, Encoding.UTF8, leaveOpen: true);
-                    var json = reader.ReadToEnd();
-                    proxyInstance.InputStream.Seek(0, SeekOrigin.Begin);
+                    var json = ConvertPayloadStream(proxyInstance.InputStream);
                     var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), json, proxyInstance.LambdaContext?.ClientContext?.Custom);
                     return new CallTargetState(scope);
                 }
                 else
                 {
+                    Serverless.Debug("DuckCast.IInvocationRequest got null proxyInstance");
                     var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
                     return new CallTargetState(scope);
                 }
@@ -98,19 +105,18 @@ public class HandlerWrapperSetHandlerIntegration
         /// <inheritdoc/>
         public Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
-            Serverless.Debug("DelegateWrapper Running onDelegateAsyncEnd");
+            Serverless.Debug("DelegateWrapper Running OnDelegateEndAsync");
             try
             {
                 var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
                 if (proxyInstance != null)
                 {
-                    var reader = new StreamReader(proxyInstance.OutputStream, Encoding.UTF8, leaveOpen: true);
-                    var json = reader.ReadToEnd();
-                    proxyInstance.OutputStream.Seek(0, SeekOrigin.Begin);
+                    var json = ConvertPayloadStream(proxyInstance.OutputStream);
                     LambdaCommon.EndInvocationSync(json, exception, ((CallTargetState)state!).Scope, RequestBuilder);
                 }
                 else
                 {
+                    Serverless.Debug("DuckCast.IInvocationResponse got null proxyInstance");
                     LambdaCommon.EndInvocationSync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder);
                 }
             }
@@ -120,7 +126,7 @@ public class HandlerWrapperSetHandlerIntegration
                 LambdaCommon.EndInvocationSync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder);
             }
 
-            Serverless.Debug("DelegateWrapper FINISHED Running onDelegateAsyncEnd");
+            Serverless.Debug("DelegateWrapper FINISHED Running OnDelegateEndAsync");
             return Task.FromResult(returnValue);
         }
 
