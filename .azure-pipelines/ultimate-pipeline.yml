@@ -4028,9 +4028,9 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         FORCE_APPSEC_THROUGHPUT_RUN: $(variables.force_appsec_throughput_run)
-        IS_APPSEC_CHANGED: $[stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
+        IS_APPSEC_CHANGED: $[ stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
         IS_APPSEC_CHANGED2: $(stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])
-        IS_APPSEC_CHANGED3: $[dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
+        IS_APPSEC_CHANGED3: $[ dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
     - script: |
         cp -u $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
