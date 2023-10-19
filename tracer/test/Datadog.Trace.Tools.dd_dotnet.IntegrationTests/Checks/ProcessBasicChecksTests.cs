@@ -141,8 +141,6 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             LoaderNotLoaded,
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            ContinuousProfilerEnabled,
-            ContinuousProfilerNotLoaded,
             TracerHomeNotFoundFormat("TheDirectoryDoesNotExist"),
             WrongEnvironmentVariableFormat(CorProfilerKey, Utils.Profilerid, Guid.Empty.ToString("B")),
             WrongEnvironmentVariableFormat(CorEnableKey, "1", "0"),
@@ -151,7 +149,9 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             MissingProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
             WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
             MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
+            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
+            TracingWithInstaller);
     }
 
     [SkippableFact]
@@ -345,7 +345,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         using var console = ConsoleHelper.Redirect();
 
-        var result = ProcessBasicCheck.CheckRegistry(registryService);
+        var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
         result.Should().BeTrue();
 
@@ -365,7 +365,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         using var console = ConsoleHelper.Redirect();
 
-        var result = ProcessBasicCheck.CheckRegistry(registryService);
+        var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
         result.Should().BeFalse();
 
@@ -379,11 +379,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void ProfilerNotRegistered()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), null);
 
         using var console = ConsoleHelper.Redirect();
 
-        var result = ProcessBasicCheck.CheckRegistry(registryService);
+        var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
         result.Should().BeFalse();
 
@@ -395,11 +396,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void ProfilerNotFoundRegistry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), "dummyPath/" + Path.GetFileName(ProfilerPath));
 
         using var console = ConsoleHelper.Redirect();
 
-        var result = ProcessBasicCheck.CheckRegistry(registryService);
+        var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
         result.Should().BeFalse();
 
@@ -412,16 +414,55 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
     public void WrongProfilerRegistry()
     {
         SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+        SkipOn.PlatformAndArchitecture(SkipOn.PlatformValue.Linux, SkipOn.ArchitectureValue.ARM64);
         var registryService = MockRegistryService(Array.Empty<string>(), "wrongProfiler.dll");
 
         using var console = ConsoleHelper.Redirect();
 
-        var result = ProcessBasicCheck.CheckRegistry(registryService);
+        var result = ProcessBasicCheck.CheckRegistry("2.14", registryService);
 
         result.Should().BeFalse();
 
         console.Output.Should().NotContain(MissingRegistryKey(ClsidKey));
         console.Output.Should().Contain(Resources.WrongProfilerRegistry(ClsidKey, "wrongProfiler.dll"));
+    }
+
+    [SkippableFact]
+    public void LinuxInstallationDirectory()
+    {
+        SkipOn.Platform(SkipOn.PlatformValue.MacOs);
+
+        string tempDirectory = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+        Directory.CreateDirectory(tempDirectory);
+
+        try
+        {
+            var (extension, archPath) = (EnvironmentTools.GetOS(), EnvironmentTools.GetPlatform(), EnvironmentTools.GetTestTargetPlatform(), Utils.IsAlpine()) switch
+            {
+                ("win", _, "X64", _) => ("dll", "win-x64"),
+                ("win", _, "X86", _) => ("dll", "win-x86"),
+                ("linux", "Arm64", _, _) => ("so", "linux-arm64"),
+                ("linux", "X64", _, false) => ("so", "linux-x64"),
+                ("linux", "X64", _, true) => ("so", "linux-musl-x64"),
+                ("osx", _, _, _) => ("dylib", "osx"),
+                var unsupportedTarget => throw new PlatformNotSupportedException(unsupportedTarget.ToString())
+            };
+
+            var dir = Path.Join(tempDirectory, archPath);
+            var path = Path.Join(dir, $"Datadog.Trace.ClrProfiler.Native.{extension}");
+            Directory.CreateDirectory(dir);
+            File.WriteAllText(path, string.Empty);
+
+            using var console = ConsoleHelper.Redirect();
+
+            ProcessBasicCheck.CheckLinuxInstallation(tempDirectory);
+            console.Output.Should().BeEmpty();
+        }
+        finally
+        {
+            // cleanup
+            Directory.Delete(tempDirectory, recursive: true);
+        }
     }
 
     private static IRegistryService MockRegistryService(string[] frameworkKeyValues, string? profilerKeyValue, bool wow64 = false)

@@ -41,5 +41,41 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows
 
             return registryKey?.GetValue(null) as string;
         }
+
+        public string[] GetLocalMachineKeyNames(string key)
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return Array.Empty<string>();
+            }
+
+            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+
+            if (registryKey == null)
+            {
+                return Array.Empty<string>();
+            }
+
+            return registryKey.GetSubKeyNames();
+        }
+
+        public string? GetLocalMachineKeyNameValue(string key, string subKeyName, string name)
+        {
+            if (!RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
+            {
+                return string.Empty;
+            }
+
+            var registryKey = Registry.LocalMachine.OpenSubKey(key);
+
+            if (registryKey == null)
+            {
+                return string.Empty;
+            }
+
+            var subKey = registryKey.OpenSubKey(subKeyName);
+
+            return subKey?.GetValue(name) as string;
+        }
     }
 }

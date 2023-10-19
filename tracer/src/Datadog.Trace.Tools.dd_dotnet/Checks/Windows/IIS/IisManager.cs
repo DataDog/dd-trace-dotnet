@@ -131,6 +131,26 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
             return result;
         }
 
+        public IReadOnlyDictionary<string, string> GetDefaultEnvironmentVariables()
+        {
+            var result = new Dictionary<string, string>();
+
+            using var applicationPoolsSection = _appHostAdminManager.GetAdminSection("system.applicationHost/applicationPools", "MACHINE/WEBROOT/APPHOST");
+            using var applicationPoolDefaults = applicationPoolsSection.GetElementByName("applicationPoolDefaults");
+            using var environmentVariables = applicationPoolDefaults.GetElementByName("environmentVariables");
+
+            using var collection = environmentVariables.Collection();
+            var count = collection.Count();
+
+            for (int i = 0; i < count; i++)
+            {
+                using var item = collection.GetItem(i);
+                result.Add(item.GetStringProperty("name"), item.GetStringProperty("value"));
+            }
+
+            return result;
+        }
+
         private unsafe class PathMapper : IAppHostPathMapper
         {
             private static readonly Guid Guid = Guid.Parse("e7927575-5cc3-403b-822e-328a6b904bee");

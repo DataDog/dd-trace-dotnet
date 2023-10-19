@@ -12,5 +12,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         string[] GetLocalMachineValueNames(string key);
 
         string? GetLocalMachineValue(string key);
+
+        string[] GetLocalMachineKeyNames(string key);
+
+        string? GetLocalMachineKeyNameValue(string key, string subKeyName, string name);
     }
 }
