@@ -159,6 +159,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         internal static bool SendEndInvocation(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string data)
         {
+            Console.WriteLine("======================== inside SendEndInvocation");
             var request = requestBuilder.GetEndInvocationRequest(scope, isError);
             WriteRequestPayload(request, data);
             return ValidateOKStatus((HttpWebResponse)request.GetResponse());
@@ -192,6 +193,7 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
 
         private static void NotifyExtensionEnd(ILambdaExtensionRequest requestBuilder, Scope scope, bool isError, string json = DefaultJson)
         {
+            Serverless.Debug("====================== [tracer] NOTIFY EXTENSION END");
             try
             {
                 if (!SendEndInvocation(requestBuilder, scope, isError, json))

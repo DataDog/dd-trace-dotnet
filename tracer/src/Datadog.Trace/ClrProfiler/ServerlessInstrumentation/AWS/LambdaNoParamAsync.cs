@@ -43,7 +43,8 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
         /// <returns>A response value</returns>
         internal static Task<TReturn> OnAsyncMethodEnd<TTarget, TReturn>(TTarget instance, TReturn returnValue, Exception exception, in CallTargetState state)
         {
-            Serverless.Debug("OnMethodEnd - no param");
+            Serverless.Debug("====================== [tracer] ASYNC");
+            Serverless.Error("OnMethodEnd - no param");
             return LambdaCommon.EndInvocationAsync(returnValue, exception, state.Scope, RequestBuilder);
         }
     }
