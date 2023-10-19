@@ -4041,6 +4041,12 @@ stages:
     timeoutInMinutes: 10
 
     steps:
+    - script: |
+        if [ ! -d "$(CrankDir)/results" ]; then
+          mkdir -p "$(CrankDir)/results"
+        fi
+      displayName: 'Create directory if needed'
+
     - publish: "$(CrankDir)/results"
       displayName: Publish results
       artifact: crank_linux_x64_asm_$(System.JobAttempt)
