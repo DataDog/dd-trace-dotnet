@@ -130,11 +130,15 @@ internal class CheckIisCommand : Command
                 Utils.WriteWarning(ErrorExtractingConfiguration(ex.Message));
             }
 
-            var process = ProcessInfo.GetProcessInfo(pid);
+            ProcessInfo process;
 
-            if (process == null)
+            try
             {
-                Utils.WriteError(GetProcessError);
+                process = ProcessInfo.GetProcessInfo(pid);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(GetProcessError(ex.Message));
                 return 1;
             }
 
@@ -181,11 +185,13 @@ internal class CheckIisCommand : Command
 
                 AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
 
-                process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
-
-                if (process == null)
+                try
                 {
-                    Utils.WriteError(GetProcessError);
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+                }
+                catch (Exception ex)
+                {
+                    Utils.WriteError(GetProcessError(ex.Message));
                     return 1;
                 }
             }
