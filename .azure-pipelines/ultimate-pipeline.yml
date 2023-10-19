@@ -4002,6 +4002,7 @@ stages:
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
+    condition: or(eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'), eq(variables.force_appsec_throughput_run, 'true'))
     timeoutInMinutes: 60
 
     steps:
@@ -4028,7 +4029,7 @@ stages:
         DD_SERVICE: dd-trace-dotnet
         DD_ENV: CI
         FORCE_APPSEC_THROUGHPUT_RUN: $(variables.force_appsec_throughput_run)
-        IS_APPSEC_CHANGED: $[ stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
+        IS_APPSEC_CHANGED: $[stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
         IS_APPSEC_CHANGED2: $(stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'])
         IS_APPSEC_CHANGED3: $[ dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged']]
     - script: |
@@ -4036,6 +4037,10 @@ stages:
       displayName: Copy the results to results dir
       continueOnError: true
 
+  - job: PublishLinux64
+    timeoutInMinutes: 10
+
+    steps:
     - publish: "$(CrankDir)/results"
       displayName: Publish results
       artifact: crank_linux_x64_asm_$(System.JobAttempt)
