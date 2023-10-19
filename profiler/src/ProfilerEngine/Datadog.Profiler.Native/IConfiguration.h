@@ -61,4 +61,6 @@ public:
     virtual std::string const& GetGitCommitSha() const = 0;
     virtual bool IsInternalMetricsEnabled() const = 0;
     virtual bool IsSystemCallsShieldEnabled() const = 0;
+    virtual bool IsCIVisibilityEnabled() const = 0;
+    virtual std::uint64_t GetCIVisibilitySpanId() const = 0;
 };

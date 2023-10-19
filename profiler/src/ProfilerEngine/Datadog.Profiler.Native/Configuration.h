@@ -64,6 +64,8 @@ public:
     std::string const& GetGitCommitSha() const override;
     bool IsInternalMetricsEnabled() const override;
     bool IsSystemCallsShieldEnabled() const override;
+    bool IsCIVisibilityEnabled() const override;
+    std::uint64_t GetCIVisibilitySpanId() const override;
 
 private:
     static tags ExtractUserTags();
@@ -80,7 +82,7 @@ private:
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
-    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
+    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
     static int32_t ExtractWallTimeThreadsThreshold();
     static int32_t ExtractCpuThreadsThreshold();
     static int32_t ExtractCodeHotspotsThreadsThreshold();
@@ -143,4 +145,7 @@ private:
     bool _isDebugInfoEnabled;
     bool _isInternalMetricsEnabled;
     bool _isSystemCallsShieldEnabled;
+
+    bool _isCIVisibilityEnabled;
+    std::uint64_t _internalCIVisibilitySpanId;
 };

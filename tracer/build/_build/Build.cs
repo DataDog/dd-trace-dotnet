@@ -120,6 +120,7 @@ partial class Build : NukeBuild
             SourceDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             TestsDirectory.GlobDirectories("**/bin", "**/obj").ForEach(x => DeleteDirectory(x));
             BundleHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
+            BenchmarkHomeDirectory.GlobFiles("**").ForEach(x => DeleteFile(x));
             EnsureCleanDirectory(MonitoringHomeDirectory);
             EnsureCleanDirectory(OutputDirectory);
             EnsureCleanDirectory(ArtifactsDirectory);
@@ -331,6 +332,22 @@ partial class Build : NukeBuild
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
         });
 
+    Target BuildBenchmarkNuget => _ => _
+        .Unlisted()
+        .DependsOn(CreateBenchmarkIntegrationHome)
+        .After(ExtractDebugInfoLinux)
+        .Executes(() =>
+        {
+            DotNetBuild(x => x
+                .SetProjectFile(Solution.GetProject(Projects.DatadogTraceBenchmarkDotNet))
+                .EnableNoRestore()
+                .EnableNoDependencies()
+                .SetConfiguration(BuildConfiguration)
+                .SetNoWarnDotNetCore3()
+                .SetProperty("PackageOutputPath", ArtifactsDirectory / "nuget" / "benchmark")
+                .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool"));
+        });
+
     Target BuildDdDotnet => _ => _
         .Unlisted()
         .Executes(() =>
@@ -371,6 +388,7 @@ partial class Build : NukeBuild
             var file = IsWin ? "dd-dotnet.exe" : "dd-dotnet";
             CopyFileToDirectory(publishFolder / file, MonitoringHomeDirectory / rid, FileExistsPolicy.Overwrite);
         });
+
     Target BuildRunnerTool => _ => _
         .Unlisted()
         .DependsOn(CompileInstrumentationVerificationLibrary)
@@ -448,6 +466,7 @@ partial class Build : NukeBuild
 
     Target RunBenchmarks => _ => _
         .After(BuildTracerHome)
+        .After(BuildProfilerHome)
         .Description("Runs the Benchmarks project")
         .Executes(() =>
         {

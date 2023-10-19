@@ -23,7 +23,7 @@ class Windows64BitStackFramesCollector : public StackFramesCollectorBase
     // ----------- 64 bit specific implementation: -----------
 
 public:
-    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo);
+    explicit Windows64BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration);
     ~Windows64BitStackFramesCollector() override;
 
     bool SuspendTargetThreadImplementation(ManagedThreadInfo* pThreadInfo,
@@ -51,7 +51,8 @@ private:
     // (This collector is not meant for 32 bit builds. Use the 32 bit collector instead.)
 
 public:
-    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _)
+    Windows64BitStackFramesCollector(ICorProfilerInfo4* const _, IConfiguration const* configuration) :
+        StackFramesCollectorBase(configuration)
     {
         Log::Error("Windows64BitStackFramesCollector used in a 32 bit build."
                    " This was not intended. Use Windows32BitStackFramesCollector instead.");
