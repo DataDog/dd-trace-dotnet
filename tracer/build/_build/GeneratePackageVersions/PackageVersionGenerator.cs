@@ -39,19 +39,21 @@ namespace GeneratePackageVersions
             }
         }
 
-        public async Task GenerateVersions(Solution solution)
+        public async Task<List<TestedPackage>> GenerateVersions(Solution solution)
         {
             var definitions = File.ReadAllText(_definitionsFilePath);
             var entries = JsonConvert.DeserializeObject<PackageVersionEntry[]>(definitions);
-            await RunFileGeneratorWithPackageEntries(entries, solution);
+            return await RunFileGeneratorWithPackageEntries(entries, solution);
         }
 
-        private async Task RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries, Solution solution)
+        private async Task<List<TestedPackage>> RunFileGeneratorWithPackageEntries(IEnumerable<PackageVersionEntry> entries, Solution solution)
         {
             _latestMinors.Start();
             _latestMajors.Start();
             _latestSpecific.Start();
             _strategyGenerator.Start();
+
+            List<TestedPackage> testedVersions = new();
 
             foreach (var entry in entries)
             {
@@ -89,12 +91,24 @@ namespace GeneratePackageVersions
                 _latestSpecific.Write(entry, latestSpecific, requiresDockerDependency);
 
                 _strategyGenerator.Write(entry, null, requiresDockerDependency);
+                
+                // we test the latestSpecific versions by default
+                var allVersions = latestSpecific
+                    .SelectMany(x => x.versions)
+                    .OrderBy(x => x.Major)
+                    .ThenBy(x => x.Minor)
+                    .ThenBy(x => x.Revision)
+                    .ToList();
+                var earliestVersion = allVersions.First();
+                var lastVersion = allVersions.Last();
+                testedVersions.Add(new (entry.NugetPackageSearchName, earliestVersion, lastVersion));
             }
 
             _latestMinors.Finish();
             _latestMajors.Finish();
             _latestSpecific.Finish();
             _strategyGenerator.Finish();
+            return testedVersions;
         }
 
         static IEnumerable<(TargetFramework framework, IEnumerable<Version> versions)> SelectMax<T>(
@@ -236,5 +250,7 @@ namespace GeneratePackageVersions
                 _xUnitFileGenerator.Finish();
             }
         }
+
+        public record TestedPackage(string NugetPackageSearchName, Version MinVersion, Version MaxVersion);
     }
 }

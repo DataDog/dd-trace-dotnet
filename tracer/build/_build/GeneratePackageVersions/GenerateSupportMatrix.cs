@@ -1,10 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
 using System.Threading.Tasks;
 using Honeypot;
-using PrepareRelease;
 
 namespace GeneratePackageVersions;
 
@@ -16,8 +16,9 @@ namespace GeneratePackageVersions;
 internal static class GenerateSupportMatrix
 {
     public static async Task GenerateInstrumentationSupportMatrix(
-        string outputPath, 
-        List<IntegrationMap> instrumentedAssemblies)
+        string outputPath,
+        List<IntegrationMap> instrumentedAssemblies,
+        List<PackageVersionGenerator.TestedPackage> testedVersions)
     {
         List<Integration> integrations = new(instrumentedAssemblies.Count);
         
@@ -33,6 +34,7 @@ internal static class GenerateSupportMatrix
 
             foreach (var package in instrumentedAssembly.Packages.OrderBy(x=>x.NugetName))
             {
+                var testedVersion = testedVersions.FirstOrDefault(x => x.NugetPackageSearchName == package.NugetName);
                 integration.Packages.Add(new()
                 {
                     Name = package.NugetName,
@@ -40,6 +42,8 @@ internal static class GenerateSupportMatrix
                     MaxVersionAvailableInclusive = package.LatestVersion.ToString(),
                     MinVersionSupportedInclusive = package.FirstSupportedVersion.ToString(),
                     MaxVersionSupportedInclusive = package.LatestSupportedVersion.ToString(),
+                    MinVersionTestedInclusive = testedVersion?.MinVersion.ToString(),
+                    MaxVersionTestedInclusive = testedVersion?.MaxVersion.ToString(),
                 });
             }
             
@@ -109,6 +113,11 @@ internal static class GenerateSupportMatrix
         /// The minimum version of the NuGet package that we instrument
         /// </summary>
         public required string MinVersionSupportedInclusive { get; init; }
+
+        /// <summary>
+        /// The minimum version of the NuGet package that we test in CI
+        /// </summary>
+        public required string? MinVersionTestedInclusive { get; init; }
         
         /// <summary>
         /// The maximum version of the NuGet package that is available
@@ -119,5 +128,10 @@ internal static class GenerateSupportMatrix
         /// The maximum version of the NuGet package that we instrument
         /// </summary>
         public required string MaxVersionAvailableInclusive { get; init; }
+        
+        /// <summary>
+        /// The maximum version of the NuGet package that we test in CI
+        /// </summary>
+        public required string? MaxVersionTestedInclusive { get; init; }
     }
 }

@@ -206,7 +206,7 @@ partial class Build
            var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
 
            var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
-           await versionGenerator.GenerateVersions(Solution);
+           var testedVersions = await versionGenerator.GenerateVersions(Solution);
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -220,7 +220,7 @@ partial class Build
            await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
 
            var outputPath = TracerDirectory / "build" / "supported_versions.yml";
-           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
+           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations, testedVersions);
        });
     
     Target GenerateSpanDocumentation => _ => _
