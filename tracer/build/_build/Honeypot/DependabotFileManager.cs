@@ -53,7 +53,7 @@ namespace Honeypot
                         maxVersionTarget.TargetMaximumPatch);
                 distinctIntegrations.Add(
                     await IntegrationMap.Create(
-                        name: tg.Key,
+                        name: maxVersionTarget.IntegrationName,
                         assemblyName: maxVersionTarget.TargetAssembly,
                         maxVersion));
             }
