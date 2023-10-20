@@ -4003,7 +4003,7 @@ stages:
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
-    condition: or(eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'], 'True'), ne(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'], 'True'))
+    condition: or(eq(IsAppChanged2, 'True'))
     timeoutInMinutes: 60
 
     steps:
