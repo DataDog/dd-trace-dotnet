@@ -61,7 +61,7 @@ namespace Datadog.Trace.Configuration
 
         private static void OnConfigurationChanged(ConfigurationBuilder settings)
         {
-            var oldSettings = Tracer.Instance.Settings;
+            var oldSettings = Tracer.InternalInstance.Settings;
 
             var headerTags = TracerSettings.InitializeHeaderTags(settings, ConfigurationKeys.HeaderTags, oldSettings.HeaderTagsNormalizationFixEnabled);
             // var serviceNameMappings = TracerSettings.InitializeServiceNameMappings(settings, ConfigurationKeys.ServiceNameMappings);

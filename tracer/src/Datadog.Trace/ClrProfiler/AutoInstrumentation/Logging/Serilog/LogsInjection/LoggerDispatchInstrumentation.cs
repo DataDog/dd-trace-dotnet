@@ -46,7 +46,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.Serilog.LogsInje
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget, TLogEvent>(TTarget instance, TLogEvent loggingEvent)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (tracer.Settings.LogsInjectionEnabledInternal)
             {

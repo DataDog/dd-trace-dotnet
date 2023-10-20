@@ -33,7 +33,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb
         internal static Scope CreateScope<TConnection>(object wireProtocol, TConnection connection)
             where TConnection : IConnection
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {

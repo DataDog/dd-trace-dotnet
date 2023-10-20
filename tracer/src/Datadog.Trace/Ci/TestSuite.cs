@@ -30,7 +30,7 @@ public sealed class TestSuite
         Name = name;
 
         var tags = new TestSuiteSpanTags(module.Tags, name);
-        var span = Tracer.Instance.StartSpan(
+        var span = Tracer.InternalInstance.StartSpan(
             string.IsNullOrEmpty(module.Framework) ? "test_suite" : $"{module.Framework!.ToLowerInvariant()}.test_suite",
             tags: tags,
             startTime: startDate);

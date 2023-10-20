@@ -35,7 +35,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Msmq
         internal static CallTargetState OnMethodBegin<TMessageQueue>(TMessageQueue instance)
             where TMessageQueue : IMessageQueue
         {
-            var scope = MsmqCommon.CreateScope(Tracer.Instance, Command, SpanKinds.Client, instance);
+            var scope = MsmqCommon.CreateScope(Tracer.InternalInstance, Command, SpanKinds.Client, instance);
             return new CallTargetState(scope);
         }
 

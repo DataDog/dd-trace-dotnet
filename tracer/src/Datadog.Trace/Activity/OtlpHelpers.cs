@@ -69,7 +69,7 @@ namespace Datadog.Trace.Activity
             }
 
             // Fixup "version" tag
-            if (Tracer.Instance.Settings.ServiceVersionInternal is null
+            if (Tracer.InternalInstance.Settings.ServiceVersionInternal is null
                 && span.GetTag("service.version") is { Length: > 1 } otelServiceVersion)
             {
                 span.SetTag(Tags.Version, otelServiceVersion);
@@ -156,7 +156,7 @@ namespace Datadog.Trace.Activity
             {
                 // Later: Support config 'span_name_as_resource_name'
                 // Later: Support config 'span_name_remappings'
-                if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null)
+                if (Tracer.InternalInstance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null)
                 {
                     span.OperationName = activity5.Source.Name switch
                     {

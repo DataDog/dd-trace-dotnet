@@ -27,15 +27,15 @@ namespace Datadog.Trace.Tests
             var tracerTwo = TracerHelper.Create();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            Tracer.InternalInstance.Should().Be(tracerOne);
+            Tracer.InternalInstance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            Tracer.InternalInstance.Should().Be(tracerTwo);
+            Tracer.InternalInstance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            Tracer.InternalInstance.Should().BeNull();
         }
 
         [Fact]
@@ -45,22 +45,22 @@ namespace Datadog.Trace.Tests
             var tracerTwo = new LockedTracer();
 
             TracerRestorerAttribute.SetTracer(tracerOne);
-            Tracer.Instance.Should().Be(tracerOne);
-            Tracer.Instance.TracerManager.Should().Be(tracerOne.TracerManager);
+            Tracer.InternalInstance.Should().Be(tracerOne);
+            Tracer.InternalInstance.TracerManager.Should().Be(tracerOne.TracerManager);
 
             TracerRestorerAttribute.SetTracer(null);
-            Tracer.Instance.Should().BeNull();
+            Tracer.InternalInstance.Should().BeNull();
 
             // Set the locked tracer
             TracerRestorerAttribute.SetTracer(tracerTwo);
-            Tracer.Instance.Should().Be(tracerTwo);
-            Tracer.Instance.TracerManager.Should().Be(tracerTwo.TracerManager);
+            Tracer.InternalInstance.Should().Be(tracerTwo);
+            Tracer.InternalInstance.TracerManager.Should().Be(tracerTwo.TracerManager);
 
             // We test the locked tracer cannot be replaced.
 #pragma warning disable CS0618 // Setter isn't actually obsolete, just should be internal
-            Assert.Throws<InvalidOperationException>(() => Tracer.Instance = tracerOne);
+            Assert.Throws<InvalidOperationException>(() => Tracer.InternalInstance = tracerOne);
 
-            Assert.Throws<ArgumentNullException>(() => Tracer.Instance = null);
+            Assert.Throws<ArgumentNullException>(() => Tracer.InternalInstance = null);
 
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, TracerManagerFactory.Instance));
             Assert.Throws<InvalidOperationException>(() => TracerManager.ReplaceGlobalManager(null, new CITracerManagerFactory(CIVisibility.Settings, NullDiscoveryService.Instance, false)));
@@ -85,7 +85,7 @@ namespace Datadog.Trace.Tests
                 };
                 Tracer.Configure(oldSettings);
 
-                var span = Tracer.Instance.StartActive("Test span");
+                var span = Tracer.InternalInstance.StartActive("Test span");
 
                 var newSettings = new TracerSettings
                 {

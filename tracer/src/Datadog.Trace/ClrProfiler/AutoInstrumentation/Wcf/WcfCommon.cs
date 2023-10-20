@@ -44,7 +44,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return null;
             }
 
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -164,7 +164,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Wcf
                 return action;
             }
 
-            if (Tracer.Instance.Settings.WcfObfuscationEnabled)
+            if (Tracer.InternalInstance.Settings.WcfObfuscationEnabled)
             {
                 return UriHelpers.GetCleanUriPath(requestHeaders.To?.LocalPath);
             }

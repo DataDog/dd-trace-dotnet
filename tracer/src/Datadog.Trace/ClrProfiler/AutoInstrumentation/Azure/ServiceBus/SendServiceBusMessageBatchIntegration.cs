@@ -42,8 +42,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.ServiceBus
         internal static CallTargetState OnMethodBegin<TTarget, TMessage>(TTarget instance, TMessage message)
             where TMessage : IServiceBusMessage
         {
-            if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
-                && Tracer.Instance.TracerManager.DataStreamsManager.IsEnabled)
+            if (Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId.AzureServiceBus)
+                && Tracer.InternalInstance.TracerManager.DataStreamsManager.IsEnabled)
             {
                 // Adding DSM to the send operation of ServiceBusMessageBatch - Step One:
                 // While we have access to the message object itself, create a mapping from the

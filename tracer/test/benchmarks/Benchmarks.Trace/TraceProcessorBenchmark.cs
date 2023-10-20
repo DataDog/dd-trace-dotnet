@@ -21,7 +21,7 @@ namespace Benchmarks.Trace
             _trucantorTraceProcessor = new TruncatorTraceProcessor();
             _obfuscatorTraceProcessor = new ObfuscatorTraceProcessor(true);
             
-            var traceContext = new TraceContext(Tracer.Instance, null);
+            var traceContext = new TraceContext(Tracer.InternalInstance, null);
             var spanContext = new SpanContext(parent: null, traceContext, serviceName: "My Service Name", traceId: (TraceId)100, spanId: 200);
             var span = new Span(spanContext, DateTimeOffset.Now);
             span.ResourceName = "My Resource Name";

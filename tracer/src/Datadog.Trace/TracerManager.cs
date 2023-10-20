@@ -200,7 +200,7 @@ namespace Datadog.Trace
         }
 
         /// <summary>
-        /// Start internal processes that require Tracer.Instance is already set
+        /// Start internal processes that require Tracer.InternalInstance is already set
         /// </summary>
         internal void Start()
         {

@@ -45,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                 var spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
                 bool setSamplingPriority = spanContext?.SamplingPriority != null && tracer.ActiveScope == null;
 
                 Scope scope = null;

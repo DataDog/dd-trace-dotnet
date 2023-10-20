@@ -26,6 +26,7 @@ namespace Datadog.Trace.OpenTracing
         /// <param name="isDebugEnabled">Turns on all debug logging (this may have an impact on application performance).</param>
         /// <returns>A Datadog compatible ITracer implementation</returns>
         [PublicApi]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("CodeQuality", "DD0002:Incorrect usage of public API", Justification = "We must access the tracer via the public Tracer.Instance accessor because this API is only ever used for manual instrumentation.")]
         public static global::OpenTracing.ITracer CreateTracer(Uri agentEndpoint = null, string defaultServiceName = null, bool isDebugEnabled = false)
         {
             TelemetryFactory.Metrics.Record(PublicApiUsage.OpenTracingTracerFactory_CreateTracer);

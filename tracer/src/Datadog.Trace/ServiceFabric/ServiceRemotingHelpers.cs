@@ -144,7 +144,7 @@ namespace Datadog.Trace.ServiceFabric
         {
             try
             {
-                var scope = Tracer.Instance.InternalActiveScope;
+                var scope = Tracer.InternalInstance.InternalActiveScope;
 
                 if (scope == null)
                 {
@@ -152,7 +152,7 @@ namespace Datadog.Trace.ServiceFabric
                     return;
                 }
 
-                string expectedSpanName = GetOperationName(Tracer.Instance, spanKind);
+                string expectedSpanName = GetOperationName(Tracer.InternalInstance, spanKind);
 
                 if (expectedSpanName != scope.Span.OperationName)
                 {

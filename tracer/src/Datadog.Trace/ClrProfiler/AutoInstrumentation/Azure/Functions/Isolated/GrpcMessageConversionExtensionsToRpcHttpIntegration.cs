@@ -40,7 +40,7 @@ public class GrpcMessageConversionExtensionsToRpcHttpIntegration
     internal static TReturn OnAsyncMethodEnd<TTarget, TReturn>(TTarget nullInstance, TReturn returnValue, Exception exception, in CallTargetState state)
         where TReturn : ITypedData
     {
-        AzureFunctionsCommon.OverridePropagatedContext<TTarget, TReturn>(Tracer.Instance, returnValue, state.State as string);
+        AzureFunctionsCommon.OverridePropagatedContext<TTarget, TReturn>(Tracer.InternalInstance, returnValue, state.State as string);
         return returnValue;
     }
 }

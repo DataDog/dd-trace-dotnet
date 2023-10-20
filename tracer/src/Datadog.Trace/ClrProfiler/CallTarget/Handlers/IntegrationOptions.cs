@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 if (_integrationId.Value is { } integrationId)
                 {
                     TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.DuckTyping);
-                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
+                    Tracer.InternalInstance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(DuckTypeException));
                 }
 
                 _disableIntegration = true;
@@ -48,7 +48,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
                 if (_integrationId.Value is { } integrationId)
                 {
                     TelemetryFactory.Metrics.RecordCountSharedIntegrationsError(integrationId.GetMetricTag(), MetricTags.InstrumentationError.Invoker);
-                    Tracer.Instance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
+                    Tracer.InternalInstance.TracerManager.Telemetry.IntegrationDisabledDueToError(integrationId, nameof(CallTargetInvokerException));
                 }
 
                 _disableIntegration = true;
@@ -67,7 +67,7 @@ namespace Datadog.Trace.ClrProfiler.CallTarget.Handlers
         {
             if (_integrationId.Value is not null)
             {
-                Tracer.Instance.TracerManager.Telemetry.IntegrationRunning(_integrationId.Value.Value);
+                Tracer.InternalInstance.TracerManager.Telemetry.IntegrationRunning(_integrationId.Value.Value);
             }
         }
     }

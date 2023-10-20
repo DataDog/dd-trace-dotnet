@@ -42,7 +42,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         /// <returns>Calltarget state value</returns>
         internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, HttpContext httpContext)
         {
-            var tracer = Tracer.Instance;
+            var tracer = Tracer.InternalInstance;
 
             if (tracer.Settings.IsIntegrationEnabled(AzureFunctionsCommon.IntegrationId))
             {
@@ -71,7 +71,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Azure.Functions
         {
             if (state.Scope is { } scope)
             {
-                var tracer = Tracer.Instance;
+                var tracer = Tracer.InternalInstance;
                 var security = Security.Instance;
                 var httpContext = state.State as HttpContext;
                 try

@@ -51,8 +51,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
             where TBody : IBody, IDuckType // Versions < 6.0.0: TBody is byte[] // Versions >= 6.0.0: TBody is ReadOnlyMemory<byte>
             where TTarget : IModelBase
         {
-            var scope = RabbitMQIntegration.CreateScope(Tracer.Instance, out RabbitMQTags tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session.Connection.Endpoint.HostName);
-            Tracer.Instance.CurrentTraceSettings.Schema.RemapPeerService(tags);
+            var scope = RabbitMQIntegration.CreateScope(Tracer.InternalInstance, out RabbitMQTags tags, Command, spanKind: SpanKinds.Producer, exchange: exchange, routingKey: routingKey, host: instance?.Session.Connection.Endpoint.HostName);
+            Tracer.InternalInstance.CurrentTraceSettings.Schema.RemapPeerService(tags);
 
             if (scope != null)
             {
@@ -80,7 +80,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.RabbitMQ
 
                     SpanContextPropagator.Instance.Inject(scope.Span.Context, basicProperties.Headers, default(ContextPropagation));
                     RabbitMQIntegration.SetDataStreamsCheckpointOnProduce(
-                        Tracer.Instance,
+                        Tracer.InternalInstance,
                         scope.Span,
                         tags,
                         basicProperties.Headers,

@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger
         private readonly string _cachedFormat;
 
         public DatadogLoggingScope()
-            : this(Tracer.Instance)
+            : this(Tracer.InternalInstance)
         {
         }
 

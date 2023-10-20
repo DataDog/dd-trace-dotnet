@@ -17,7 +17,7 @@ internal static class XUnitIntegration
     internal const string IntegrationName = nameof(IntegrationId.XUnit);
     internal const IntegrationId IntegrationId = Configuration.IntegrationId.XUnit;
 
-    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+    internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId);
 
     internal static Test? CreateTest(ref TestRunnerStruct runnerInstance, Type targetType)
     {
@@ -86,7 +86,7 @@ internal static class XUnitIntegration
         }
 
         // Telemetry
-        Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+        Tracer.InternalInstance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
         // Skip tests
         if (runnerInstance.SkipReason is { } skipReason)

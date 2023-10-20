@@ -19,7 +19,7 @@ namespace Datadog.Trace.TestHelpers
 
         public override void Before(MethodInfo methodUnderTest)
         {
-            _tracer = Tracer.Instance;
+            _tracer = Tracer.InternalInstance;
             _tracerManager = _tracer.TracerManager;
             _distributedTracer = ClrProfiler.DistributedTracer.Instance;
             base.Before(methodUnderTest);

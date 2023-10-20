@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
         internal const string SkipReasonKey = "_SKIPREASON";
         internal static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(NUnitIntegration));
 
-        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId);
+        internal static bool IsEnabled => CIVisibility.IsRunning && Tracer.InternalInstance.Settings.IsIntegrationEnabled(IntegrationId);
 
         internal static Test? CreateTest(ITest currentTest)
         {
@@ -117,7 +117,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.NUnit
             test.SetTestMethodInfo(testMethod);
 
             // Telemetry
-            Tracer.Instance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
+            Tracer.InternalInstance.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
 
             // Skip tests
             if (skipReason is not null)

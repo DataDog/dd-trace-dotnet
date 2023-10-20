@@ -52,7 +52,7 @@ public sealed class TestSession
 
         tags.SetCIEnvironmentValues(environment);
 
-        var span = Tracer.Instance.StartSpan(
+        var span = Tracer.InternalInstance.StartSpan(
             string.IsNullOrEmpty(framework) ? "test_session" : $"{framework!.ToLowerInvariant()}.test_session",
             tags: tags,
             startTime: startDate);
