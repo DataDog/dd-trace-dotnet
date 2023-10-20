@@ -3,7 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#if NETCOREAPP3_1_OR_GREATER
+#if NET6_0_OR_GREATER
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -11,8 +11,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.ClrProfiler.CallTarget;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Util.Delegates;
@@ -37,7 +35,7 @@ public class HandlerWrapperSetHandlerIntegration
 {
     private const string IntegrationName = nameof(IntegrationId.AwsLambda);
     private static readonly ILambdaExtensionRequest RequestBuilder = new LambdaRequestBuilder();
-    private static readonly Async1Callbacks _callbacks = new Async1Callbacks();
+    private static readonly Async1Callbacks Callbacks = new();
 
     /// <summary>
     /// OnMethodBegin callback. The input Delegate handler is the customer's handler.
@@ -48,10 +46,10 @@ public class HandlerWrapperSetHandlerIntegration
     /// <typeparam name="TTarget">Type of the target</typeparam>
     /// <param name="instance">Instance value, aka `this` of the instrumented method</param>
     /// <param name="handler">Instance of Amazon.Lambda.RuntimeSupport.LambdaBootstrapHandler</param>
-    /// <returns>Calltarget state value</returns>
+    /// <returns>CallTarget state value</returns>
     internal static CallTargetState OnMethodBegin<TTarget>(TTarget instance, ref Delegate handler)
     {
-        handler = handler.Instrument(_callbacks);
+        handler = handler.Instrument(Callbacks);
         return CallTargetState.GetDefault();
     }
 
@@ -59,80 +57,74 @@ public class HandlerWrapperSetHandlerIntegration
     {
         var reader = new StreamReader(payloadStream, Encoding.UTF8, leaveOpen: true);
         var result = reader.ReadToEnd();
-        payloadStream.Seek(0, SeekOrigin.Begin); // Reset the offset so that it can be read by the originally intended consumer
+        // Reset the offset so that it can be read by the originally intended consumer, i.e. the user defined handler
+        payloadStream.Seek(0, SeekOrigin.Begin);
         return result;
     }
 
-    private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnCallback, IReturnAsyncCallback
+    private readonly struct Async1Callbacks : IBegin1Callbacks, IReturnAsyncCallback, IReturnCallback
     {
         public bool PreserveAsyncContext => false;
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
-            Serverless.Debug("DelegateWrapper Running OnDelegateBegin");
-            try
+            Console.WriteLine("ATLEAST HERE");
+            LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
+
+            Scope scope;
+            var proxyInstance = arg.DuckCast<IInvocationRequest>();
+            if (proxyInstance == null)
             {
-                var proxyInstance = arg.DuckCast<IInvocationRequest>();
-                if (proxyInstance != null)
-                {
-                    var json = ConvertPayloadStream(proxyInstance.InputStream);
-                    var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), json, proxyInstance.LambdaContext?.ClientContext?.Custom);
-                    return new CallTargetState(scope);
-                }
-                else
-                {
-                    Serverless.Debug("DuckCast.IInvocationRequest got null proxyInstance");
-                    var scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
-                    return new CallTargetState(scope);
-                }
+                LambdaCommon.Log("DuckCast.IInvocationRequest got null proxyInstance", debug: false);
+                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), string.Empty, null);
             }
-            catch (Exception ex)
+            else
             {
-                Serverless.Error("Could not send payload to the extension", ex);
-                Console.WriteLine(ex.StackTrace);
+                var jsonString = ConvertPayloadStream(proxyInstance.InputStream);
+                scope = LambdaCommon.SendStartInvocation(new LambdaRequestBuilder(), jsonString, proxyInstance.LambdaContext?.ClientContext?.Custom);
             }
 
-            Serverless.Debug("DelegateWrapper FINISHED Running OnDelegateBegin");
-            return CallTargetState.GetDefault();
+            LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateBegin");
+            return new CallTargetState(scope);
         }
 
-        /// <inheritdoc/>
+        public void OnException(object sender, Exception ex)
+        {
+            LambdaCommon.Log("OnDelegateBegin could not send payload to the extension", ex, false);
+        }
+
         public TReturn OnDelegateEnd<TReturn>(object sender, TReturn returnValue, Exception exception, object state)
         {
+            // Needed in order to make this Async1Callbacks work with Func1Wrapper, which expects IReturnCallback
             return returnValue;
         }
 
         /// <inheritdoc/>
         public Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
-            Serverless.Debug("DelegateWrapper Running OnDelegateEndAsync");
+            LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
             try
             {
                 var proxyInstance = returnValue.DuckCast<IInvocationResponse>();
-                if (proxyInstance != null)
+                if (proxyInstance == null)
                 {
-                    var json = ConvertPayloadStream(proxyInstance.OutputStream);
-                    LambdaCommon.EndInvocationSync(json, exception, ((CallTargetState)state!).Scope, RequestBuilder);
+                    LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
+                    LambdaCommon.EndInvocationAsync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
                 }
                 else
                 {
-                    Serverless.Debug("DuckCast.IInvocationResponse got null proxyInstance");
-                    LambdaCommon.EndInvocationSync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder);
+                    var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
+                    LambdaCommon.EndInvocationAsync(jsonString, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
-                Serverless.Debug(ex.StackTrace);
-                LambdaCommon.EndInvocationSync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder);
+                LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
+                LambdaCommon.EndInvocationAsync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
             }
 
-            Serverless.Debug("DelegateWrapper FINISHED Running OnDelegateEndAsync");
+            LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
             return Task.FromResult(returnValue);
-        }
-
-        /// <inheritdoc/>
-        public void OnException(object sender, Exception ex)
-        {
         }
     }
 }

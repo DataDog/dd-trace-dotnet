@@ -471,7 +471,7 @@ public class FuncInstrumentationTests
                                                  onDelegateAsyncEnd: async (sender, returnValue, exception, state) =>
                                                  {
                                                      Interlocked.Increment(ref value).Should().Be(4);
-                                                     await Task.Delay(500).ConfigureAwait(false);
+                                                     await Task.Delay(100).ConfigureAwait(false);
                                                      return ((int)returnValue) + 1;
                                                  }));
         result = await func2("Arg01").ConfigureAwait(false);

@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AWS
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
 
-                // We get differ"ent stack traces from the exception in each framework, so scrub them to all look the same
+                // We get different stack traces from the exception in each framework, so scrub them to all look the same
                 settings.AddRegexScrubber(StackRegex, "$1 Cannot assign requested address (SocketException)$2");
                 settings.AddRegexScrubber(ErrorMsgRegex, "$1 Cannot assign requested address$2");
 
