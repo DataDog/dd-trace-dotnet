@@ -563,7 +563,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), TracerSettings.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases), TracerSettingsConstants.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
         public void ObfuscationQueryStringRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, value));

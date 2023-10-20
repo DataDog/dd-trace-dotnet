@@ -12,6 +12,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using VerifyXunit;
@@ -167,9 +168,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
              && !EnvironmentHelper.IsCoreClr()
              && EnvironmentTools.IsTestTarget64BitProcess())
             {
-                throw new SkipException("ASP.NET Core running on .NET Framework requires x86, because it uses " +
-                                        "the x86 version of libuv unless you compile the dll _explicitly_ for x64, " +
-                                        "which we don't do any more");
+                throw new SkipException(
+                    "ASP.NET Core running on .NET Framework requires x86, because it uses " +
+                    "the x86 version of libuv unless you compile the dll _explicitly_ for x64, " +
+                    "which we don't do any more");
             }
 
             await RunSubmitsTraces();
@@ -189,7 +191,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             SetServiceVersion(ServiceVersion);
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
-
+#if NETCOREAPP2_1
+            // NET 2.1, sometimes times out
+            SetEnvironmentVariable(Configuration.ConfigurationKeys.ObfuscationQueryStringRegexTimeout, "600");
+#endif
             _testName = testName;
             _metadataSchemaVersion = metadataSchemaVersion;
         }

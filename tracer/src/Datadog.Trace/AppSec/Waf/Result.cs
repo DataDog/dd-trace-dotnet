@@ -11,11 +11,9 @@ namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly WafReturnCode _returnCode;
-
         public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            _returnCode = returnCode;
+            ReturnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
             Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldBeReported = returnCode >= WafReturnCode.Match;
@@ -33,7 +31,7 @@ namespace Datadog.Trace.AppSec.Waf
             Timeout = returnStruct.Timeout;
         }
 
-        public WafReturnCode ReturnCode => _returnCode;
+        public WafReturnCode ReturnCode { get; }
 
         public string Data { get; }
 
