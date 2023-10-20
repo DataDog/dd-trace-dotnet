@@ -3922,7 +3922,7 @@ stages:
       or(
       eq(variables.isMainBranch, true),
       eq(variables.force_appsec_throughput_run, 'true'),
-      eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True')))
+      eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'], 'True')))
 
     steps:
       - template: steps/clone-repo.yml
