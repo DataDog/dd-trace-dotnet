@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Globalization;
 using System.Net;
 
@@ -50,6 +51,25 @@ namespace Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS
                 if (span.Context.TraceContext?.SamplingPriority is { } samplingPriority)
                 {
                     request.Headers.Set(HttpHeaderNames.SamplingPriority, samplingPriority.ToString());
+                }
+
+                var errorMessage = span.GetTag("error.msg");
+                if (errorMessage != null)
+                {
+                    request.Headers.Set(HttpHeaderNames.InvocationErrorMsg, errorMessage);
+                }
+
+                var errorType = span.GetTag("error.type");
+                if (errorType != null)
+                {
+                    request.Headers.Set(HttpHeaderNames.InvocationErrorType, errorType);
+                }
+
+                var errorStack = span.GetTag("error.stack");
+                if (errorStack != null)
+                {
+                    var encodedErrStack = System.Text.Encoding.UTF8.GetBytes(errorStack);
+                    request.Headers.Set(HttpHeaderNames.InvocationErrorStack, Convert.ToBase64String(encodedErrStack));
                 }
             }
 
