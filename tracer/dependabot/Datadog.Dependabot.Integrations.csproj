@@ -153,8 +153,8 @@
 
     <!-- Integration: NLog -->
     <!-- Assembly: NLog -->
-    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.4 -->
-    <PackageReference Include="NLog" Version="5.2.4" />
+    <!-- Latest package https://www.nuget.org/packages/NLog/5.2.5 -->
+    <PackageReference Include="NLog" Version="5.2.5" />
 
     <!-- Integration: Npgsql -->
     <!-- Assembly: Npgsql -->
@@ -275,6 +275,11 @@
     <!-- Assembly: Microsoft.Extensions.Identity.Core -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.12 -->
     <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.12" />
+
+    <!-- Integration: Amazon.Lambda.RuntimeSupport -->
+    <!-- Assembly: Amazon.Lambda.RuntimeSupport -->
+    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.9.0 -->
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.9.0" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->

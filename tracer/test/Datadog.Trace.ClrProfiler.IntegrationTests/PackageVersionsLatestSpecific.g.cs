@@ -97,6 +97,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
             };
 
+      public static IEnumerable<object[]> AwsLambda =>
+
+            new List<object[]>
+            {
+#if DEFAULT_SAMPLES
+                new object[] { string.Empty },
+#else
+#if NET6_0
+                new object[] { "1.8.8" },
+#endif
+#if NET7_0
+                new object[] { "1.8.8" },
+#endif
+#endif
+            };
+
       public static IEnumerable<object[]> AwsSqs =>
 
             new List<object[]>
@@ -1179,31 +1195,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "2.1.0" },
                 new object[] { "3.2.1" },
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NETCOREAPP2_1
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NETCOREAPP3_0
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NET5_0
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NET6_0
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #if NET7_0
                 new object[] { "4.7.15" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #endif
             };
