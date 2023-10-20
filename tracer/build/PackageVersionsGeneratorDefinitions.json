@@ -41,8 +41,8 @@
       "1.*.*"
     ],
     "VersionConditions": [{
-      "MaxVersionExclusive": "2.0.0",
-      "IncludeOnlyTargetFrameworks": ["net6.0"]
+      "MinVersion": "1.0.0",
+      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0"]
     }]
   },
   {
