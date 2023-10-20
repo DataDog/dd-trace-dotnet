@@ -4003,7 +4003,7 @@ stages:
   #### Throughput-AppSec Linux 64
 
   - job: Linux64
-    condition: or(eq(IsAppChanged2, 'True'))
+    condition: or(eq(stageDependencies.throughput_appsec.IsAppChanged2, 'True'))
     timeoutInMinutes: 60
 
     steps:
