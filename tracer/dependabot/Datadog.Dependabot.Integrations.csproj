@@ -28,28 +28,28 @@
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!-- Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.5 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.5" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.6 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.6" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!-- Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.57 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.58 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.58" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.4 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.204.4" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.5 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.204.5" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.57 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.57" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.58 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.58" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.58 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.58" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.59 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.59" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!-- Assembly: Azure.Messaging.ServiceBus -->
@@ -283,13 +283,13 @@
 
     <!-- Integration: Grpc.AspNetCore.Server -->
     <!-- Assembly: Grpc.AspNetCore.Server -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.57.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.58.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.58.0" />
 
     <!-- Integration: Grpc.Net.Client -->
     <!-- Assembly: Grpc.Net.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.57.0 -->
-    <PackageReference Include="Grpc.AspNetCore" Version="2.57.0" />
+    <!-- Latest package https://www.nuget.org/packages/Grpc.AspNetCore/2.58.0 -->
+    <PackageReference Include="Grpc.AspNetCore" Version="2.58.0" />
 
   </ItemGroup>
 
