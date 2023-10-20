@@ -51,7 +51,9 @@ public class DataStreamsMonitoringTransportTests
     {
         using var agent = Create((TracesTransportType)transport);
 
-        var bucketDurationMs = 100; // 100 ms
+        // We don't want to trigger a flush based on the timer, only based on the disposal of the writer
+        // That ensures we only get a single payload
+        var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
         var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
         var api = new DataStreamsApi(
             DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
