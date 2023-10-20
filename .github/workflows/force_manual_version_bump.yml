@@ -40,7 +40,7 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@v3.10.0
+        uses: ./.github/actions/create-pull-request
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: "version-bump-${{steps.versions.outputs.full_version}}"
