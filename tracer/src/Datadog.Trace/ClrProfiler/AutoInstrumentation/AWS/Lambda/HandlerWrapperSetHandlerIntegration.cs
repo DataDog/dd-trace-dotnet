@@ -68,7 +68,6 @@ public class HandlerWrapperSetHandlerIntegration
 
         public object OnDelegateBegin<TArg1>(object sender, ref TArg1 arg)
         {
-            Console.WriteLine("ATLEAST HERE");
             LambdaCommon.Log("DelegateWrapper Running OnDelegateBegin");
 
             Scope scope;
