@@ -29,7 +29,6 @@ internal static class MetricTags
         [Description("component:traceattributes_pinvoke")] TraceAttributesPinvoke,
         [Description("component:managed")] Managed,
         [Description("component:calltarget_defs_pinvoke")] CallTargetDefsPinvoke,
-        [Description("component:serverless")] Serverless,
         [Description("component:calltarget_derived_defs_pinvoke")] CallTargetDerivedDefsPinvoke,
         [Description("component:calltarget_interface_defs_pinvoke")] CallTargetInterfaceDefsPinvoke,
         [Description("component:discovery_service")] DiscoveryService,

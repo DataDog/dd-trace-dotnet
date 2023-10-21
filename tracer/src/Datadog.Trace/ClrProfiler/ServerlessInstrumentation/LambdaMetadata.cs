@@ -53,7 +53,7 @@ internal class LambdaMetadata
         }
 
         var handlerName = EnvironmentHelpers.GetEnvironmentVariable(HandlerEnvVar);
-        var serviceName = handlerName?.IndexOf(LambdaHandler.Separator, StringComparison.Ordinal) switch
+        var serviceName = handlerName?.IndexOf("::", StringComparison.Ordinal) switch
         {
             null => null, // not provided
             0 => null, // invalid handler name (no assembly)

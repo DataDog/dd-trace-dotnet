@@ -41,6 +41,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AwsSdk => MetricTags.IntegrationName.AwsSdk,
             IntegrationId.AwsSns => MetricTags.IntegrationName.AwsSns,
             IntegrationId.AwsSqs => MetricTags.IntegrationName.AwsSqs,
+            IntegrationId.AwsLambda => MetricTags.IntegrationName.AwsLambda,
             IntegrationId.ILogger => MetricTags.IntegrationName.ILogger,
             IntegrationId.Aerospike => MetricTags.IntegrationName.Aerospike,
             IntegrationId.AzureFunctions => MetricTags.IntegrationName.AzureFunctions,

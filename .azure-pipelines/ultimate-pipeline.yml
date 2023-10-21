@@ -1956,6 +1956,13 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        
     - script: |
         # Include the serverless dockerfile
         docker-compose -p ddtrace_$(Build.BuildNumber) \
@@ -2041,7 +2048,8 @@ stages:
           serverless-lambda-generic-abstract \
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
-          serverless-lambda-generic-complex-nested
+          serverless-lambda-generic-complex-nested \
+          serverless-lambda-toplevel-statement
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
