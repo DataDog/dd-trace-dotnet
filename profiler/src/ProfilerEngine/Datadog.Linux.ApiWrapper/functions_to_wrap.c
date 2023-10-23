@@ -121,6 +121,130 @@ int dladdr(const void* addr_arg, Dl_info* info)
     return result;
 }
 
+#include <signal.h>
+
+void** current_handlers = NULL;
+
+static __thread int in_signal_handler = 0;
+
+int is_already_running_inside_signal_handler()
+{
+    return in_signal_handler;
+}
+
+static void wrapped_sa_handler(int code)
+{
+    in_signal_handler++;
+    ((void (*)(int))(current_handlers[code]))(code);
+    in_signal_handler--;
+}
+
+static void wrapped_sa_sigaction(int code, siginfo_t* info, void* ctx)
+{
+    in_signal_handler++;
+    ((void (*)(int, siginfo_t*, void*))(current_handlers[code]))(code, info, ctx);
+    in_signal_handler--;
+}
+
+static int (*__real_sigaction)(int signum, const struct sigaction* act,
+                               struct sigaction* oldact) = NULL;
+
+int sigaction(int signum, const struct sigaction* act,
+    struct sigaction* oldact)
+{
+    //printf("entering sigaction\n");
+    if (__real_sigaction == NULL)
+    {
+        __real_sigaction = dlsym(RTLD_NEXT, "sigaction");
+    }
+
+    //printf("signum %d %d\n", signum, SIGRTMAX);
+    // Paranoia: This not happen but in case, we delegate it to the real sigaction
+    if (signum >= SIGRTMAX)
+    {
+        return __real_sigaction(signum, act, oldact);
+    }
+
+    const struct sigaction* new_ptr = act;
+    struct sigaction new_act;
+
+    //printf("get current handler for signal %d\n", signum);
+    void* old_handler = current_handlers[signum];
+
+    if (act != NULL)
+    {
+        //printf("copy it\n");
+        new_act = *act;
+        new_ptr = &new_act;
+        //printf("get previous\n");
+
+        // check old_handler to know what to put in oldact
+
+        if ((new_act.sa_flags & SA_SIGINFO) == SA_SIGINFO)
+        {
+            if (new_act.sa_sigaction != NULL)
+            {
+
+                //printf("sa_siginfo\n");
+                current_handlers[signum] = (void*)new_act.sa_sigaction;
+                new_act.sa_sigaction = wrapped_sa_sigaction;
+            }
+            else // clean up
+            {
+                old_handler = NULL;
+            }
+        }
+        else
+        {
+            if (new_act.sa_handler != SIG_DFL && new_act.sa_handler != SIG_IGN)
+            {
+                //printf("sa_handler\n");
+                current_handlers[signum] = (void*)new_act.sa_handler;
+                new_act.sa_handler = wrapped_sa_handler;
+            }
+            else
+            {
+                old_handler = NULL;
+            }
+        }
+        //printf("out of act != null\n");
+    }
+
+    //printf("call to real\n");
+    int result = __real_sigaction(signum, new_ptr, oldact);
+
+    //printf("about to restore\n");
+    // return the old action with the old handler
+    if (oldact != NULL && old_handler != NULL)
+    {
+        //printf("restore \n");
+        if ((oldact->sa_flags & SA_SIGINFO) == SA_SIGINFO)
+        {
+            oldact->sa_sigaction = old_handler;
+        }
+        else
+        {
+            oldact->sa_handler = old_handler;
+        }
+    }
+
+    return result;
+}
+#include <stdlib.h>
+#include <stdio.h>
+
+static void initialize_handlers_array() __attribute__((constructor));
+void initialize_handlers_array()
+{
+    current_handlers = (void**)malloc(SIGRTMAX * sizeof(void*));
+}
+
+static void clean_handlers_array() __attribute__((destructor));
+void clean_handlers_array()
+{
+    free(current_handlers);
+}
+
 #ifdef DD_ALPINE
 
 /* Function pointers to hold the value of the glibc functions */
