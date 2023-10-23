@@ -19,30 +19,6 @@ internal abstract class TelemetryWrapper
 
     public abstract T TryGetPayload<T>(string requestType);
 
-    public class V1 : TelemetryWrapper
-    {
-        public V1(TelemetryData data)
-        {
-            Data = data;
-        }
-
-        public TelemetryData Data { get; }
-
-        public override string ApiVersion => Data.ApiVersion;
-
-        public override int SeqId => Data.SeqId;
-
-        private string RequestType => Data.RequestType;
-
-        private IPayload Payload => Data.Payload;
-
-        public override bool IsRequestType(string requestType)
-            => RequestType == requestType;
-
-        public override T TryGetPayload<T>(string requestType)
-            => RequestType == requestType && Payload is T p ? p : default;
-    }
-
     public class V2 : TelemetryWrapper
     {
         public V2(TelemetryDataV2 data)

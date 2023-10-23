@@ -21,10 +21,6 @@ namespace Datadog.Trace.Telemetry
         private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
         private readonly object _sync = new();
 
-        // V1 integration only
-        private ConfigurationTelemetryCollector? _configuration;
-        private IntegrationTelemetryCollector? _integrations;
-
         // v2 integration only
         private TelemetryControllerV2? _controllerV2;
 
@@ -108,19 +104,8 @@ namespace Datadog.Trace.Telemetry
                     ReplaceMetricsCollector(new CiVisibilityMetricsTelemetryCollector());
                 }
 
-                // Making assumptions that we never switch from v1 to v2
-                // so we don't need to "clean up" the collectors.
-                if (settings.V2Enabled)
-                {
-                    log.Debug("Creating telemetry controller v2");
-                    return CreateV2Controller(telemetryTransports, settings, discoveryService);
-                }
-                else
-                {
-                    DisableConfigCollector();
-                    log.Debug("Creating telemetry controller v1");
-                    return CreateV1Controller(telemetryTransports, settings);
-                }
+                log.Debug("Creating telemetry controller v2");
+                return CreateV2Controller(telemetryTransports, settings, discoveryService);
             }
             catch (Exception ex)
             {
@@ -158,31 +143,6 @@ namespace Datadog.Trace.Telemetry
                 // "clears" all the data stored so far
                 config.Clear();
             }
-        }
-
-        private ITelemetryController CreateV1Controller(
-            TelemetryTransports telemetryTransports,
-            TelemetrySettings settings)
-        {
-            TelemetryTransportManager transportManager = telemetryTransports switch
-            {
-                { AgentTransport: { } a, AgentlessTransport: { } b } => new(new[] { a, b }),
-                { AgentTransport: { } a } => new(new[] { a }),
-                { AgentlessTransport: { } b } => new(new[] { b }),
-                _ => new(Array.Empty<ITelemetryTransport>()), // can't be reached, but for completeness
-            };
-
-            // Initialized once so if we create a new controller from this factory we get the same collector instances
-            var configuration = LazyInitializer.EnsureInitialized(ref _configuration)!;
-            var integrations = LazyInitializer.EnsureInitialized(ref _integrations)!;
-
-            return new TelemetryController(
-                configuration,
-                _dependencies,
-                integrations,
-                transportManager,
-                TelemetryConstants.DefaultFlushInterval,
-                settings.HeartbeatInterval);
         }
 
         private ITelemetryController CreateV2Controller(

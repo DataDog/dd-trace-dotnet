@@ -19,7 +19,7 @@ public class TelemetryTransportFactoryTests
 {
     [Theory]
     [MemberData(nameof(Data.Transports), MemberType = typeof(Data))]
-    public void UsesCorrectTransports(bool agentProxyEnabled, bool agentlessEnabled, bool v2Enabled)
+    public void UsesCorrectTransports(bool agentProxyEnabled, bool agentlessEnabled)
     {
         var telemetrySettings = new TelemetrySettings(
             telemetryEnabled: true,
@@ -28,7 +28,6 @@ public class TelemetryTransportFactoryTests
             agentProxyEnabled: agentProxyEnabled,
             heartbeatInterval: TimeSpan.FromSeconds(1),
             dependencyCollectionEnabled: true,
-            v2Enabled: v2Enabled,
             metricsEnabled: true,
             debugEnabled: false);
 
@@ -55,7 +54,6 @@ public class TelemetryTransportFactoryTests
         public static IEnumerable<object[]> Transports
             => from agentProxyEnabled in TrueFalse
                from agentlessEnabled in TrueFalse
-               from v2Enabled in TrueFalse
-               select new object[] { agentProxyEnabled, agentlessEnabled, v2Enabled };
+               select new object[] { agentProxyEnabled, agentlessEnabled };
     }
 }
