@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryTransportManagerV2Tests.cs" company="Datadog">
+﻿// <copyright file="TelemetryTransportManagerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-public class TelemetryTransportManagerV2Tests
+public class TelemetryTransportManagerTests
 {
     [Fact]
     public async Task WhenHaveSuccess_ReturnsTrue()
@@ -22,7 +22,7 @@ public class TelemetryTransportManagerV2Tests
         const int requestCount = 10;
         var telemetryPushResults = Enumerable.Repeat(TelemetryPushResult.Success, requestCount).ToArray();
         var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
-        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
+        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
 
         for (var i = 0; i < requestCount; i++)
         {
@@ -39,7 +39,7 @@ public class TelemetryTransportManagerV2Tests
         const int requestCount = 10;
         var telemetryPushResults = Enumerable.Repeat((TelemetryPushResult)result, requestCount).ToArray();
         var transports = new TelemetryTransports(new TestTransport(telemetryPushResults), null);
-        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
+        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
 
         for (var i = 0; i < requestCount; i++)
         {
@@ -53,7 +53,7 @@ public class TelemetryTransportManagerV2Tests
     {
         var transport1 = new TestTransport(TelemetryPushResult.TransientFailure);
         var transports = new TelemetryTransports(transport1, null);
-        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
+        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
 
         await transportManager.TryPushTelemetry(null!);
 
@@ -67,7 +67,7 @@ public class TelemetryTransportManagerV2Tests
         var transport1 = new TestTransport(TelemetryPushResult.TransientFailure, TelemetryPushResult.Success);
         var transport2 = new TestTransport(TelemetryPushResult.TransientFailure);
         var transports = new TelemetryTransports(transport1, transport2);
-        var transportManager = new TelemetryTransportManagerV2(transports, new DiscoveryServiceMock());
+        var transportManager = new TelemetryTransportManager(transports, new DiscoveryServiceMock());
 
         var fail1 = await transportManager.TryPushTelemetry(null!);
         var fail2 = await transportManager.TryPushTelemetry(null!);
@@ -88,7 +88,7 @@ public class TelemetryTransportManagerV2Tests
             agentTransport: new TestTransport(),
             agentlessTransport: null);
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+        var manager = new TelemetryTransportManager(transports, discoveryService);
 
         if (initiallyAvailableInDiscovery == true)
         {
@@ -126,7 +126,7 @@ public class TelemetryTransportManagerV2Tests
     {
         var transports = new TelemetryTransports(agentTransport: null, agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+        var manager = new TelemetryTransportManager(transports, discoveryService);
 
         if (initiallyAvailableInDiscovery == true)
         {
@@ -163,7 +163,7 @@ public class TelemetryTransportManagerV2Tests
     {
         var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+        var manager = new TelemetryTransportManager(transports, discoveryService);
 
         if (notifyAvailable)
         {
@@ -180,7 +180,7 @@ public class TelemetryTransportManagerV2Tests
     {
         var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+        var manager = new TelemetryTransportManager(transports, discoveryService);
 
         discoveryService.TriggerChange(telemetryProxyEndpoint: null);
 
@@ -194,7 +194,7 @@ public class TelemetryTransportManagerV2Tests
     {
         var transports = new TelemetryTransports(agentTransport: new TestTransport(), agentlessTransport: new TestTransport());
         var discoveryService = new DiscoveryServiceMock();
-        var manager = new TelemetryTransportManagerV2(transports, discoveryService);
+        var manager = new TelemetryTransportManager(transports, discoveryService);
 
         // initial value
         var nextTransport = manager.GetNextTransport(null);
@@ -242,7 +242,7 @@ public class TelemetryTransportManagerV2Tests
             _results = results;
         }
 
-        public Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             _current++;
             if (_current >= _results.Length)

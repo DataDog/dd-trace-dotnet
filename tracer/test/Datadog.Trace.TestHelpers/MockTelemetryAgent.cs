@@ -141,13 +141,13 @@ namespace Datadog.Trace.TestHelpers
                     throw new Exception($"Unknown V2 telemetry request type {requestType}");
                 }
 
-                TelemetryDataV2 telemetry;
+                TelemetryData telemetry;
                 using var sr = new StreamReader(inputStream);
                 var text = sr.ReadToEnd();
                 var tr = new StringReader(text);
                 using (var jsonTextReader = new JsonTextReader(tr))
                 {
-                    telemetry = serializer.Deserialize<TelemetryDataV2>(jsonTextReader);
+                    telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
                 }
 
                 return new TelemetryWrapper.V2(telemetry);
@@ -220,11 +220,11 @@ namespace Datadog.Trace.TestHelpers
                 V2Serializers = new()
                 {
                     { TelemetryRequestTypes.MessageBatch, CreateSerializer<MessageBatchPayload>() },
-                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayloadV2>() },
+                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayload>() },
                     { TelemetryRequestTypes.AppDependenciesLoaded, CreateSerializer<AppDependenciesLoadedPayload>() },
                     { TelemetryRequestTypes.AppIntegrationsChanged, CreateSerializer<AppIntegrationsChangedPayload>() },
-                    { TelemetryRequestTypes.AppClientConfigurationChanged, CreateSerializer<AppClientConfigurationChangedPayloadV2>() },
-                    { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayloadV2>() },
+                    { TelemetryRequestTypes.AppClientConfigurationChanged, CreateSerializer<AppClientConfigurationChangedPayload>() },
+                    { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayload>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },

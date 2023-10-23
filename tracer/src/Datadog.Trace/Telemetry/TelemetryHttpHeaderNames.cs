@@ -15,8 +15,8 @@ namespace Datadog.Trace.Telemetry
         internal static KeyValuePair<string, string>[] GetDefaultAgentHeaders()
             => new[]
             {
-                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language), // optional in v1, required in v2
-                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion), // optional in v1, required in v2
+                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language),
+                new KeyValuePair<string, string>(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion),
                 new KeyValuePair<string, string>(HttpHeaderNames.TracingEnabled, "false"), // don't add automatic instrumentation to requests directed to the agent
             };
 
@@ -29,8 +29,8 @@ namespace Datadog.Trace.Telemetry
 
             var headers = new KeyValuePair<string, string>[headerCount];
 
-            headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language); // optional in v1, required in v2
-            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion); // optional in v1, required in v2
+            headers[0] = new(TelemetryConstants.ClientLibraryLanguageHeader, TracerConstants.Language);
+            headers[1] = new(TelemetryConstants.ClientLibraryVersionHeader, TracerConstants.AssemblyVersion);
             headers[2] = new(HttpHeaderNames.TracingEnabled, "false"); // don't add automatic instrumentation to requests directed to the agent
             headers[3] = new(TelemetryConstants.ApiKeyHeader, settings.ApiKey);
 

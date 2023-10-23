@@ -1,4 +1,4 @@
-﻿// <copyright file="HostTelemetryDataV2.cs" company="Datadog">
+﻿// <copyright file="HostTelemetryData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -6,9 +6,9 @@
 #nullable enable
 namespace Datadog.Trace.Telemetry;
 
-internal class HostTelemetryDataV2
+internal class HostTelemetryData
 {
-    public HostTelemetryDataV2(string hostname, string os, string architecture)
+    public HostTelemetryData(string hostname, string os, string architecture)
     {
         Hostname = hostname;
         Os = os;

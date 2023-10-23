@@ -86,7 +86,7 @@ namespace Datadog.Trace.TestHelpers
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
-        /// Gets the wrapped <see cref="Datadog.Trace.Telemetry.TelemetryDataV2"/> requests received by the telemetry endpoint
+        /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
         /// </summary>
         public ConcurrentStack<object> Telemetry { get; } = new();
 
@@ -219,7 +219,7 @@ namespace Datadog.Trace.TestHelpers
         /// To retrieve all telemetry received, use <see cref="Telemetry"/>
         /// </summary>
         /// <param name="hasExpectedValues">A predicate for the current telemetry.
-        /// The object passed to the func will be a <see cref="TelemetryDataV2"/> instance</param>
+        /// The object passed to the func will be a <see cref="TelemetryData"/> instance</param>
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>

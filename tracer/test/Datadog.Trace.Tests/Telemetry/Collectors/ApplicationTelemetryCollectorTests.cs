@@ -1,4 +1,4 @@
-﻿// <copyright file="ApplicationTelemetryCollectorV2Tests.cs" company="Datadog">
+﻿// <copyright file="ApplicationTelemetryCollectorTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,7 +14,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry.Collectors;
 
-public class ApplicationTelemetryCollectorV2Tests
+public class ApplicationTelemetryCollectorTests
 {
     private const string ServiceName = "serializer-test-app";
 
@@ -34,7 +34,7 @@ public class ApplicationTelemetryCollectorV2Tests
                 }),
             configurationTelemetry);
 
-        var collector = new ApplicationTelemetryCollectorV2();
+        var collector = new ApplicationTelemetryCollector();
 
         collector.GetApplicationData().Should().BeNull();
 
@@ -44,7 +44,7 @@ public class ApplicationTelemetryCollectorV2Tests
         AssertData(collector.GetApplicationData());
         AssertData(collector.GetApplicationData());
 
-        void AssertData(ApplicationTelemetryDataV2 data)
+        void AssertData(ApplicationTelemetryData data)
         {
             data.Should().NotBeNull();
             data.ServiceName.Should().Be(ServiceName);
@@ -74,7 +74,7 @@ public class ApplicationTelemetryCollectorV2Tests
                 }),
             configurationTelemetry);
 
-        var collector = new ApplicationTelemetryCollectorV2();
+        var collector = new ApplicationTelemetryCollector();
 
         collector.GetHostData().Should().BeNull();
 
@@ -84,7 +84,7 @@ public class ApplicationTelemetryCollectorV2Tests
         AssertData(collector.GetHostData());
         AssertData(collector.GetHostData());
 
-        static void AssertData(HostTelemetryDataV2 data)
+        static void AssertData(HostTelemetryData data)
         {
             data.Should().NotBeNull();
             data.Hostname.Should().Be(HostMetadata.Instance.Hostname ?? string.Empty);

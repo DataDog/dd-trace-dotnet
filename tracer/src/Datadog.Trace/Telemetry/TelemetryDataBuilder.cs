@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataBuilderV2.cs" company="Datadog">
+﻿// <copyright file="TelemetryDataBuilder.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,14 +12,14 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryDataBuilderV2
+internal class TelemetryDataBuilder
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilderV2>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryDataBuilder>();
     private int _sequence = 0;
 
-    public TelemetryDataV2 BuildTelemetryData(
-        ApplicationTelemetryDataV2 application,
-        HostTelemetryDataV2 host,
+    public TelemetryData BuildTelemetryData(
+        ApplicationTelemetryData application,
+        HostTelemetryData host,
         in TelemetryInput input,
         string? namingSchemeVersion,
         bool sendAppClosing)
@@ -31,7 +31,7 @@ internal class TelemetryDataBuilderV2
             Log.Debug("App started, sending app-started");
             data = new()
             {
-                new(TelemetryRequestTypes.AppStarted, new AppStartedPayloadV2()
+                new(TelemetryRequestTypes.AppStarted, new AppStartedPayload()
                 {
                     Configuration = input.Configuration,
                     Products = input.Products,
@@ -47,7 +47,7 @@ internal class TelemetryDataBuilderV2
                 {
                     new(
                         TelemetryRequestTypes.AppClientConfigurationChanged,
-                        new AppClientConfigurationChangedPayloadV2(configuration))
+                        new AppClientConfigurationChangedPayload(configuration))
                 };
             }
 
@@ -57,7 +57,7 @@ internal class TelemetryDataBuilderV2
                 data ??= new();
                 data.Add(new(
                     TelemetryRequestTypes.AppProductChanged,
-                    new AppProductChangePayloadV2(products)));
+                    new AppProductChangePayload(products)));
             }
         }
 
@@ -136,12 +136,12 @@ internal class TelemetryDataBuilderV2
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);
     }
 
-    public TelemetryDataV2 BuildHeartbeatData(ApplicationTelemetryDataV2 application, HostTelemetryDataV2 host, string? namingSchemeVersion)
+    public TelemetryData BuildHeartbeatData(ApplicationTelemetryData application, HostTelemetryData host, string? namingSchemeVersion)
         => GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
 
-    public TelemetryDataV2 BuildExtendedHeartbeatData(
-        ApplicationTelemetryDataV2 application,
-        HostTelemetryDataV2 host,
+    public TelemetryData BuildExtendedHeartbeatData(
+        ApplicationTelemetryData application,
+        HostTelemetryData host,
         ICollection<ConfigurationKeyValue>? configuration,
         ICollection<DependencyTelemetryData>? dependencies,
         ICollection<IntegrationTelemetryData>? integrations,
@@ -158,16 +158,16 @@ internal class TelemetryDataBuilderV2
             },
             namingSchemeVersion);
 
-    private TelemetryDataV2 GetRequest(
-        ApplicationTelemetryDataV2 application,
-        HostTelemetryDataV2 host,
+    private TelemetryData GetRequest(
+        ApplicationTelemetryData application,
+        HostTelemetryData host,
         string requestType,
         IPayload? payload,
         string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 
-        return new TelemetryDataV2(
+        return new TelemetryData(
             requestType: requestType,
             tracerTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             runtimeId: Tracer.RuntimeId,
@@ -180,15 +180,15 @@ internal class TelemetryDataBuilderV2
         };
     }
 
-    private TelemetryDataV2 GetRequest(
-        ApplicationTelemetryDataV2 application,
-        HostTelemetryDataV2 host,
+    private TelemetryData GetRequest(
+        ApplicationTelemetryData application,
+        HostTelemetryData host,
         MessageBatchPayload? payload,
         string? namingSchemeVersion)
     {
         var sequence = Interlocked.Increment(ref _sequence);
 
-        return new TelemetryDataV2(
+        return new TelemetryData(
             requestType: TelemetryRequestTypes.MessageBatch,
             tracerTime: DateTimeOffset.UtcNow.ToUnixTimeSeconds(),
             runtimeId: Tracer.RuntimeId,

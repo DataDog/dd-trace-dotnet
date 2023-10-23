@@ -18,16 +18,16 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
     public class JsonTelemetryTransportTests
     {
         [Fact]
-        public void SerializedAppStartedShouldProduceJsonWithExpectedFormatV2()
+        public void SerializedAppStartedShouldProduceJsonWithExpectedFormat()
         {
-            var expectedJson = JToken.Parse(GetAppStartedDataV2());
+            var expectedJson = JToken.Parse(GetAppStartedData());
 
-            var data = new TelemetryDataV2(
+            var data = new TelemetryData(
                 requestType: "app-started",
                 runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
                 seqId: 5672,
                 tracerTime: 1628099086,
-                application: new ApplicationTelemetryDataV2(
+                application: new ApplicationTelemetryData(
                     serviceName: "myapp",
                     env: "prod",
                     serviceVersion: "1.2.3",
@@ -36,7 +36,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3"),
-                host: new HostTelemetryDataV2(
+                host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
                     architecture: "x86_64")
@@ -46,7 +46,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     KernelRelease = "5.4.0-1037-gcp",
                     KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
                 },
-                payload: new AppStartedPayloadV2()
+                payload: new AppStartedPayload()
                 {
                     Configuration = new List<ConfigurationKeyValue>
                     {
@@ -77,12 +77,12 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
         {
             var expectedJson = JToken.Parse(GetGenerateMetricsData());
 
-            var data = new TelemetryDataV2(
+            var data = new TelemetryData(
                 requestType: TelemetryRequestTypes.GenerateMetrics,
                 runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
                 seqId: 5672,
                 tracerTime: 1628099086,
-                application: new ApplicationTelemetryDataV2(
+                application: new ApplicationTelemetryData(
                     serviceName: "myapp",
                     env: "prod",
                     serviceVersion: "1.2.3",
@@ -91,7 +91,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3"),
-                host: new HostTelemetryDataV2(
+                host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
                     architecture: "x86_64")
@@ -146,12 +146,12 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
         {
             var expectedJson = JToken.Parse(GetDistributionsData());
 
-            var data = new TelemetryDataV2(
+            var data = new TelemetryData(
                 requestType: TelemetryRequestTypes.Distributions,
                 runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
                 seqId: 5672,
                 tracerTime: 1628099086,
-                application: new ApplicationTelemetryDataV2(
+                application: new ApplicationTelemetryData(
                     serviceName: "myapp",
                     env: "prod",
                     serviceVersion: "1.2.3",
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3"),
-                host: new HostTelemetryDataV2(
+                host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
                     architecture: "x86_64")
@@ -206,16 +206,16 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
         }
 
         [Fact]
-        public void SerializedMessageBatchShouldProduceJsonWithExpectedFormatV2()
+        public void SerializedMessageBatchShouldProduceJsonWithExpectedFormat()
         {
-            var expectedJson = JToken.Parse(GetMessageBatchDataV2());
+            var expectedJson = JToken.Parse(GetMessageBatchData());
 
-            var data = new TelemetryDataV2(
+            var data = new TelemetryData(
                 requestType: TelemetryRequestTypes.MessageBatch,
                 runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
                 seqId: 5672,
                 tracerTime: 1628099086,
-                application: new ApplicationTelemetryDataV2(
+                application: new ApplicationTelemetryData(
                     serviceName: "myapp",
                     env: "prod",
                     serviceVersion: "1.2.3",
@@ -224,7 +224,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                     languageVersion: "14.16.1",
                     runtimeName: "dotnet",
                     runtimeVersion: "7.0.3"),
-                host: new HostTelemetryDataV2(
+                host: new HostTelemetryData(
                     hostname: "i-09ecf74c319c49be8",
                     os: "GNU/Linux",
                     architecture: "x86_64")
@@ -254,7 +254,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
                             })),
                         new(
                             TelemetryRequestTypes.AppClientConfigurationChanged,
-                            new AppClientConfigurationChangedPayloadV2(new List<ConfigurationKeyValue>
+                            new AppClientConfigurationChangedPayload(new List<ConfigurationKeyValue>
                             {
                                 new("DD_TRACE_AGENT_URL", "http://localhost:9126", "env_var", 1, null),
                                 new("DD_TRACE_DEBUG", "true", "env_var", 2, null),
@@ -273,17 +273,17 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
-        private static string GetAppStartedDataV2()
-            => GetSampleTelemetryData("telemetry_app-started-v2.json");
+        private static string GetAppStartedData()
+            => GetSampleTelemetryData("telemetry_app-started.json");
 
-        private static string GetMessageBatchDataV2()
-            => GetSampleTelemetryData("telemetry_message-batch-v2.json");
+        private static string GetMessageBatchData()
+            => GetSampleTelemetryData("telemetry_message-batch.json");
 
         private static string GetGenerateMetricsData()
-            => GetSampleTelemetryData("telemetry_generate-metrics-v2.json");
+            => GetSampleTelemetryData("telemetry_generate-metrics.json");
 
         private static string GetDistributionsData()
-            => GetSampleTelemetryData("telemetry_distributions-v2.json");
+            => GetSampleTelemetryData("telemetry_distributions.json");
 
         private static string GetSampleTelemetryData(string filename)
         {

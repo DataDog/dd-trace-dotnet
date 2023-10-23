@@ -21,12 +21,12 @@ internal abstract class TelemetryWrapper
 
     public class V2 : TelemetryWrapper
     {
-        public V2(TelemetryDataV2 data)
+        public V2(TelemetryData data)
         {
             Data = data;
         }
 
-        public TelemetryDataV2 Data { get; }
+        public TelemetryData Data { get; }
 
         public override string ApiVersion => Data.ApiVersion;
 

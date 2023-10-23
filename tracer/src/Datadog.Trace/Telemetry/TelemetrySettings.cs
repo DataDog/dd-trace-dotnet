@@ -141,7 +141,6 @@ namespace Datadog.Trace.Telemetry
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
-            // Requires v2 enabled
             bool metricsEnabled;
             if (isServerless)
             {

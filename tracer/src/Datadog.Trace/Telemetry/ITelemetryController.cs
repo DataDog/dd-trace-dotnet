@@ -52,7 +52,6 @@ namespace Datadog.Trace.Telemetry
 
         /// <summary>
         /// Should be called when the status (enabled/disabled) of a product (ASM/Profiler) changed.
-        /// Only used in Telemetry V2
         /// </summary>
         void ProductChanged(TelemetryProductType product, bool enabled, ErrorData? error);
     }

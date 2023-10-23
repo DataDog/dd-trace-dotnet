@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerV2SchedulerTests.cs" company="Datadog">
+﻿// <copyright file="TelemetryControllerSchedulerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-public class TelemetryControllerV2SchedulerTests
+public class TelemetryControllerSchedulerTests
 {
     private static readonly TimeSpan FlushInterval = TimeSpan.FromSeconds(60);
     private static readonly TimeSpan FiveSeconds = TimeSpan.FromSeconds(5);
@@ -20,11 +20,11 @@ public class TelemetryControllerV2SchedulerTests
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly SimpleClock _clock = new();
     private readonly DelayFactory _delayFactory = new();
-    private TelemetryControllerV2.Scheduler _scheduler;
+    private TelemetryController.Scheduler _scheduler;
 
-    public TelemetryControllerV2SchedulerTests()
+    public TelemetryControllerSchedulerTests()
     {
-        _scheduler = new TelemetryControllerV2.Scheduler(FlushInterval, _processExit, _clock, _delayFactory);
+        _scheduler = new TelemetryController.Scheduler(FlushInterval, _processExit, _clock, _delayFactory);
     }
 
     [Fact]
@@ -188,10 +188,10 @@ public class TelemetryControllerV2SchedulerTests
         _scheduler.ShouldFlushTelemetry.Should().BeTrue();
     }
 
-    private TelemetryControllerV2.Scheduler GetScheduler()
+    private TelemetryController.Scheduler GetScheduler()
         => new(FlushInterval, _processExit, _clock, _delayFactory);
 
-    private class DelayFactory : TelemetryControllerV2.Scheduler.IDelayFactory
+    private class DelayFactory : TelemetryController.Scheduler.IDelayFactory
     {
         public Func<TimeSpan, Task> Task { get; set; } = _ => System.Threading.Tasks.Task.CompletedTask;
 

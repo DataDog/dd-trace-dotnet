@@ -1,4 +1,4 @@
-﻿// <copyright file="ApplicationTelemetryCollectorV2.cs" company="Datadog">
+﻿// <copyright file="ApplicationTelemetryCollector.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,17 +11,17 @@ using Datadog.Trace.PlatformHelpers;
 
 namespace Datadog.Trace.Telemetry.Collectors;
 
-internal class ApplicationTelemetryCollectorV2
+internal class ApplicationTelemetryCollector
 {
-    private ApplicationTelemetryDataV2? _applicationData = null;
-    private HostTelemetryDataV2? _hostData = null;
+    private ApplicationTelemetryData? _applicationData = null;
+    private HostTelemetryData? _hostData = null;
 
     public void RecordTracerSettings(
         ImmutableTracerSettings tracerSettings,
         string defaultServiceName)
     {
         var frameworkDescription = FrameworkDescription.Instance;
-        var application = new ApplicationTelemetryDataV2(
+        var application = new ApplicationTelemetryData(
             serviceName: defaultServiceName,
             env: tracerSettings.EnvironmentInternal ?? string.Empty, // required, but we don't have it
             serviceVersion: tracerSettings.ServiceVersionInternal ?? string.Empty, // required, but we don't have it
@@ -40,7 +40,7 @@ internal class ApplicationTelemetryCollectorV2
         }
 
         var host = HostMetadata.Instance;
-        _hostData = new HostTelemetryDataV2(
+        _hostData = new HostTelemetryData(
             hostname: host.Hostname ?? string.Empty, // this is required, but we don't have it
             os: frameworkDescription.OSPlatform,
             architecture: frameworkDescription.ProcessArchitecture)
@@ -55,10 +55,10 @@ internal class ApplicationTelemetryCollectorV2
     /// <summary>
     /// Get the application data. Will be null if not yet initialized.
     /// </summary>
-    public ApplicationTelemetryDataV2? GetApplicationData() => _applicationData;
+    public ApplicationTelemetryData? GetApplicationData() => _applicationData;
 
     /// <summary>
     /// Get the host data. Will be null if not yet initialized.
     /// </summary>
-    public HostTelemetryDataV2? GetHostData() => _hostData;
+    public HostTelemetryData? GetHostData() => _hostData;
 }

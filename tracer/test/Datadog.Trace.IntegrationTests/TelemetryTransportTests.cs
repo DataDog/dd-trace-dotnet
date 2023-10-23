@@ -171,7 +171,7 @@ namespace Datadog.Trace.IntegrationTests
                                tracerTime: 1234,
                                runtimeId: "some-value",
                                seqId: 23,
-                               application: new ApplicationTelemetryDataV2(
+                               application: new ApplicationTelemetryData(
                                    serviceName: "TelemetryTransportTests",
                                    env: "TracerTelemetryTest",
                                    serviceVersion: "123",
@@ -180,7 +180,7 @@ namespace Datadog.Trace.IntegrationTests
                                    languageVersion: "1.2.3",
                                    runtimeName: "dotnet",
                                    runtimeVersion: "7.0.3"),
-                               host: new HostTelemetryDataV2("SOME_HOST", "Windows", "x64"),
+                               host: new HostTelemetryData("SOME_HOST", "Windows", "x64"),
                                payload: null));
         }
 

@@ -148,7 +148,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
             {
-                var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+                var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged);
                 return configurationChanged.Configuration;
             }
 

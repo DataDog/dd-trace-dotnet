@@ -18,11 +18,10 @@ namespace Datadog.Trace.Telemetry
     {
         // need to start collecting these immediately
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
-        private static IConfigurationTelemetry _configurationV2 = new ConfigurationTelemetry();
+        private static IConfigurationTelemetry _configuration = new ConfigurationTelemetry();
         private readonly object _sync = new();
 
-        // v2 integration only
-        private TelemetryControllerV2? _controllerV2;
+        private TelemetryController? _controller;
 
         // shared
         private IDependencyTelemetryCollector? _dependencies;
@@ -41,13 +40,13 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Gets the static configuration instance used to record telemetry
         /// </summary>
-        internal static IConfigurationTelemetry Config => Volatile.Read(ref _configurationV2);
+        internal static IConfigurationTelemetry Config => Volatile.Read(ref _configuration);
 
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
 
         internal static IConfigurationTelemetry SetConfigForTesting(IConfigurationTelemetry telemetry)
-            => Interlocked.Exchange(ref _configurationV2, telemetry);
+            => Interlocked.Exchange(ref _configuration, telemetry);
 
         /// <summary>
         /// For testing purposes only. Use <see cref="Instance"/> in production
@@ -105,7 +104,7 @@ namespace Datadog.Trace.Telemetry
                 }
 
                 log.Debug("Creating telemetry controller v2");
-                return CreateV2Controller(telemetryTransports, settings, discoveryService);
+                return CreateController(telemetryTransports, settings, discoveryService);
             }
             catch (Exception ex)
             {
@@ -136,8 +135,7 @@ namespace Datadog.Trace.Telemetry
 
         private static void DisableConfigCollector()
         {
-            // if we're not using V2, we don't need the config collector
-            var oldConfig = Interlocked.Exchange(ref _configurationV2, NullConfigurationTelemetry.Instance);
+            var oldConfig = Interlocked.Exchange(ref _configuration, NullConfigurationTelemetry.Instance);
             if (oldConfig is ConfigurationTelemetry config)
             {
                 // "clears" all the data stored so far
@@ -145,23 +143,23 @@ namespace Datadog.Trace.Telemetry
             }
         }
 
-        private ITelemetryController CreateV2Controller(
+        private ITelemetryController CreateController(
             TelemetryTransports telemetryTransports,
             TelemetrySettings settings,
             IDiscoveryService discoveryService)
         {
-            var transportManager = new TelemetryTransportManagerV2(telemetryTransports, discoveryService);
+            var transportManager = new TelemetryTransportManager(telemetryTransports, discoveryService);
             // The telemetry controller must be a singleton, so we initialize once
             // Note that any dependencies initialized inside the controller are also singletons (by design)
             // Initialized once so if we create a new controller from this factory we get the same collector instances.
             // (can't use LazyInitializer because that doesn't guarantee only a single instance is created,
             // and we start the task immediately)
 
-            if (_controllerV2 is null)
+            if (_controller is null)
             {
                 lock (_sync)
                 {
-                    _controllerV2 ??= new TelemetryControllerV2(
+                    _controller ??= new TelemetryController(
                         Config,
                         _dependencies!,
                         Metrics,
@@ -170,11 +168,11 @@ namespace Datadog.Trace.Telemetry
                 }
             }
 
-            _controllerV2.DisableSending(); // disable sending until fully configured
-            _controllerV2.SetTransportManager(transportManager);
-            _controllerV2.SetFlushInterval(settings.HeartbeatInterval);
+            _controller.DisableSending(); // disable sending until fully configured
+            _controller.SetTransportManager(transportManager);
+            _controller.SetFlushInterval(settings.HeartbeatInterval);
 
-            return _controllerV2;
+            return _controller;
         }
     }
 }

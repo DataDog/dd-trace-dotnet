@@ -104,8 +104,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .Select(
                         data => data switch
                         {
-                            _ when data.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
                             _ => null,
                         })
                    .Where(x => x is not null)

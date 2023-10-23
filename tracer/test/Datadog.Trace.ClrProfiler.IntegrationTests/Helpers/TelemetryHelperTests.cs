@@ -20,13 +20,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests;
 
 public class TelemetryHelperTests
 {
-    private readonly ApplicationTelemetryDataV2 _appV2;
-    private readonly HostTelemetryDataV2 _hostV2;
-    private readonly TelemetryDataBuilderV2 _dataBuilderV2 = new();
+    private readonly ApplicationTelemetryData _app;
+    private readonly HostTelemetryData _host;
+    private readonly TelemetryDataBuilder _dataBuilder = new();
 
     public TelemetryHelperTests()
     {
-        _appV2 = new ApplicationTelemetryDataV2(
+        _app = new ApplicationTelemetryData(
             "service",
             "env",
             "1.2.3",
@@ -35,11 +35,11 @@ public class TelemetryHelperTests
             FrameworkDescription.Instance.ProductVersion,
             runtimeName: "dotnet",
             runtimeVersion: "7.0.1");
-        _hostV2 = new HostTelemetryDataV2("MY_HOST", "Windows", "x64");
+        _host = new HostTelemetryData("MY_HOST", "Windows", "x64");
     }
 
     [Fact]
-    public void AssertIntegration_HandlesMultipleTelemetryPushes_v2()
+    public void AssertIntegration_HandlesMultipleTelemetryPushes()
     {
         var collector = new IntegrationTelemetryCollector();
         var telemetryData = new List<TelemetryWrapper>();
@@ -73,7 +73,7 @@ public class TelemetryHelperTests
     [Theory]
     [InlineData(true)]
     [InlineData(false)]
-    public void AssertIntegration_ErrorsWhenIntegrationError_V2(bool errorIsFirstTelemetry)
+    public void AssertIntegration_ErrorsWhenIntegrationError(bool errorIsFirstTelemetry)
     {
         var collector = new IntegrationTelemetryCollector();
         var telemetryData = new List<TelemetryWrapper>();
@@ -110,7 +110,7 @@ public class TelemetryHelperTests
     }
 
     [Fact]
-    public void AssertConfiguration_HandlesMultipleTelemetryPushes_v2()
+    public void AssertConfiguration_HandlesMultipleTelemetryPushes()
     {
         var collector = new ConfigurationTelemetry();
         var telemetryData = new List<TelemetryWrapper>();
@@ -144,9 +144,9 @@ public class TelemetryHelperTests
         bool sendAppStarted = true,
         bool sendAppClosing = false)
         => new TelemetryWrapper.V2(
-            _dataBuilderV2.BuildTelemetryData(
-                _appV2,
-                _hostV2,
+            _dataBuilder.BuildTelemetryData(
+                _app,
+                _host,
                 new TelemetryInput(configuration, null, integrations, null, null, sendAppStarted),
                 namingSchemeVersion: "1",
                 sendAppClosing));

@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataV2.cs" company="Datadog">
+﻿// <copyright file="TelemetryData.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -11,15 +11,15 @@ namespace Datadog.Trace.Telemetry
     /// DTO that is serialized.
     /// Be aware that the property names control serialization
     /// </summary>
-    internal class TelemetryDataV2
+    internal class TelemetryData
     {
-        public TelemetryDataV2(
+        public TelemetryData(
             string requestType,
             long tracerTime,
             string runtimeId,
             int seqId,
-            ApplicationTelemetryDataV2 application,
-            HostTelemetryDataV2 host,
+            ApplicationTelemetryData application,
+            HostTelemetryData host,
             IPayload? payload)
         {
             RequestType = requestType;
@@ -55,9 +55,9 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         public int SeqId { get; set; }
 
-        public ApplicationTelemetryDataV2 Application { get; set; }
+        public ApplicationTelemetryData Application { get; set; }
 
-        public HostTelemetryDataV2 Host { get; set; }
+        public HostTelemetryData Host { get; set; }
 
         public IPayload? Payload { get; set; }
     }

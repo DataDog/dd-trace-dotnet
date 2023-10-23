@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerV2Tests.cs" company="Datadog">
+﻿// <copyright file="TelemetryControllerTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -21,7 +21,7 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-public class TelemetryControllerV2Tests
+public class TelemetryControllerTests
 {
     private readonly TimeSpan _flushInterval = TimeSpan.FromMilliseconds(100);
     // private readonly TimeSpan _heartbeatInterval = TimeSpan.FromMilliseconds(10_000); // We don't need them for most tests
@@ -31,9 +31,9 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerShouldSendTelemetry()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
-        var controller = new TelemetryControllerV2(
+        var controller = new TelemetryController(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
@@ -51,10 +51,10 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerRecordsConfigurationFromTracerSettings()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var collector = new ConfigurationTelemetry();
-        var controller = new TelemetryControllerV2(
+        var controller = new TelemetryController(
             collector,
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
@@ -82,9 +82,9 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerCanBeDisposedTwice()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
-        var controller = new TelemetryControllerV2(
+        var controller = new TelemetryController(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
@@ -99,9 +99,9 @@ public class TelemetryControllerV2Tests
     public async Task TelemetrySendsHeartbeatAlongWithData()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
-        var controller = new TelemetryControllerV2(
+        var controller = new TelemetryController(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
@@ -136,7 +136,7 @@ public class TelemetryControllerV2Tests
     public async Task TelemetryControllerAddsAllAssembliesToCollector()
     {
         var transport = new TestTelemetryTransport(pushResult: TelemetryPushResult.Success);
-        var transportManager = new TelemetryTransportManagerV2(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
+        var transportManager = new TelemetryTransportManager(new TelemetryTransports(transport, null), NullDiscoveryService.Instance);
 
         var currentAssemblyNames = AppDomain.CurrentDomain
                                             .GetAssemblies()
@@ -145,7 +145,7 @@ public class TelemetryControllerV2Tests
                                             .Select(name => new { name.Name, Version = name.Version.ToString() });
 
         // creating a new controller so we have the same list of assemblies
-        var controller = new TelemetryControllerV2(
+        var controller = new TelemetryController(
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
@@ -177,7 +177,7 @@ public class TelemetryControllerV2Tests
         await controller.DisposeAsync();
     }
 
-    private async Task<List<TelemetryDataV2>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
+    private async Task<List<TelemetryData>> WaitForRequestStarted(TestTelemetryTransport transport, TimeSpan timeout)
     {
         var deadline = DateTimeOffset.UtcNow.Add(timeout);
         // The Task.Delay happens to give back control after the deadline so the test can fail randomly
@@ -199,10 +199,10 @@ public class TelemetryControllerV2Tests
         throw new TimeoutException($"Transport did not receive required data before the timeout {timeout.TotalMilliseconds}ms");
     }
 
-    private bool ContainsMessage(TelemetryDataV2 data, string requestType)
+    private bool ContainsMessage(TelemetryData data, string requestType)
         => GetPayload(data, requestType).Found;
 
-    private (bool Found, IPayload Payload) GetPayload(TelemetryDataV2 data, string requestType) =>
+    private (bool Found, IPayload Payload) GetPayload(TelemetryData data, string requestType) =>
         data.RequestType switch
         {
             { } t when t == requestType => (true, data.Payload),
@@ -220,7 +220,7 @@ public class TelemetryControllerV2Tests
 
     internal class TestTelemetryTransport : ITelemetryTransport
     {
-        private readonly ConcurrentStack<TelemetryDataV2> _data = new();
+        private readonly ConcurrentStack<TelemetryData> _data = new();
         private readonly TelemetryPushResult _pushResult;
 
         public TestTelemetryTransport(TelemetryPushResult pushResult)
@@ -228,12 +228,12 @@ public class TelemetryControllerV2Tests
             _pushResult = pushResult;
         }
 
-        public List<TelemetryDataV2> GetData()
+        public List<TelemetryData> GetData()
         {
             return _data.ToList();
         }
 
-        public Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             _data.Push(data);
             return Task.FromResult(_pushResult);
@@ -254,7 +254,7 @@ public class TelemetryControllerV2Tests
 
         public int Requests => Volatile.Read(ref _requests);
 
-        public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             Interlocked.Increment(ref _requests);
             await Task.Delay(_delay);
