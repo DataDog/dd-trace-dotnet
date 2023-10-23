@@ -87,9 +87,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 bool areAllVersion2 = true;
                 var versions = new HashSet<string>();
 
+                AnsiConsole.WriteLine("Found multiple tracers :(");
+
                 foreach (var tracer in tracerModules)
                 {
                     var version = FileVersionInfo.GetVersionInfo(tracer);
+
+                    AnsiConsole.WriteLine($" - {tracer} ({version}");
 
                     versions.Add(version.FileVersion ?? "{empty}");
 
