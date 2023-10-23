@@ -3813,14 +3813,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_x64_1
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -3857,14 +3857,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_windows_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_windows_x64_1
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -3900,14 +3900,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_arm64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_arm64_1
 
 - stage: throughput_profiler
   condition: >
@@ -4062,14 +4062,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_x64_asm_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_x64_asm_1
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
@@ -5768,26 +5768,30 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_arm64_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_arm64_1 #only download the first lot, ignores retries
+        artifact: crank_linux_arm64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_arm64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_x64_1 #only download the first lot, ignores retries
+        artifact: crank_linux_x64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_asm_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_x64_asm_1 #only download the first lot, ignores retries
+        artifact: crank_linux_x64_asm_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_windows_x64_1
+      continueOnError: true
       inputs:
-        artifact: crank_windows_x64_1 #only download the first lot, ignores retries
+        artifact: crank_windows_x64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_windows_x64_1
 
     - script: tracer\build.cmd CompareThroughputResults
