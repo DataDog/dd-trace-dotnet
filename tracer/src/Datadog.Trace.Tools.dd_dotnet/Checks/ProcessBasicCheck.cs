@@ -165,7 +165,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
-                    AnsiConsole.WriteLine(TracingWithInstallerWindows);
+                    AnsiConsole.WriteLine(runtime == ProcessInfo.Runtime.NetCore ? TracingWithInstallerWindowsNetCore : TracingWithInstallerWindowsNetFramework);
 
                     if (!CheckRegistry(CheckWindowsInstallation(process.Id, registryService), registryService))
                     {

@@ -155,7 +155,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
         {
-            console.Output.Should().Contain(TracingWithInstallerWindows);
+#if NETFRAMEWORK
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetFramework);
+#else
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetCore);
+#endif
         }
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
         {

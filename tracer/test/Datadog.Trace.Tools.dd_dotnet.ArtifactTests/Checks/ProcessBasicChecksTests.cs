@@ -145,7 +145,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             // Removing the spaces to make the assertion work, until we figure out a better way
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
-                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindows.Replace(" ", string.Empty));
+#if NETFRAMEWORK
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindowsNetFramework.Replace(" ", string.Empty));
+#else
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindowsNetCore.Replace(" ", string.Empty));
+#endif
             }
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
             {

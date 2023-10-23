@@ -32,7 +32,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
 
         public const string TracingWithBundleProfilerPath = "Datadog.Trace.Bundle Nuget related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithInstallerWindows = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
         public const string TracingWithInstallerLinux = "Installer related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core?tab=linux#install-the-tracer";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
