@@ -193,15 +193,17 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
-            console.Output.Should().NotContainAny(
+            console.Output.Should().NotContain(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+
+            console.Output.Should().Contain(
+                CorrectlySetupEnvironment(CorProfilerKey, Environment.GetEnvironmentVariable(CorProfilerKey)),
+                CorrectlySetupEnvironment(CorEnableKey, Environment.GetEnvironmentVariable(CorEnableKey)),
+                CorrectlySetupEnvironment(CorProfilerPathKey, Environment.GetEnvironmentVariable(CorProfilerPathKey)),
+                CorrectlySetupEnvironment(CorProfilerPath32Key, Environment.GetEnvironmentVariable(CorProfilerPath32Key)),
+                CorrectlySetupEnvironment(CorProfilerPath64Key, Environment.GetEnvironmentVariable(CorProfilerPath64Key)));
         }
 
         [SkippableFact]
@@ -240,7 +242,12 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
 
             console.Output.Should().ContainAll(
                 TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerEnabled);
+                ContinuousProfilerEnabled,
+                CorrectlySetupEnvironment(CorProfilerKey, Environment.GetEnvironmentVariable(CorProfilerKey)),
+                CorrectlySetupEnvironment(CorEnableKey, Environment.GetEnvironmentVariable(CorEnableKey)),
+                CorrectlySetupEnvironment(CorProfilerPathKey, Environment.GetEnvironmentVariable(CorProfilerPathKey)),
+                CorrectlySetupEnvironment(CorProfilerPath32Key, Environment.GetEnvironmentVariable(CorProfilerPath32Key)),
+                CorrectlySetupEnvironment(CorProfilerPath64Key, Environment.GetEnvironmentVariable(CorProfilerPath64Key)));
 
             console.Output.Should().NotContainAny(
                 NativeTracerNotLoaded,
@@ -248,12 +255,7 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 ContinuousProfilerNotSet,
                 ContinuousProfilerNotLoaded,
                 "LD_PRELOAD",
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
         }
 
         [SkippableFact]
@@ -464,7 +466,11 @@ namespace Datadog.Trace.Tools.Runner.IntegrationTests.Checks
                 using var console = ConsoleHelper.Redirect();
 
                 ProcessBasicCheck.CheckLinuxInstallation(tempDirectory);
-                console.Output.Should().BeEmpty();
+
+                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                {
+                    console.Output.Should().Contain(CorrectLinuxDirectoryFound(tempDirectory));
+                }
             }
             finally
             {
