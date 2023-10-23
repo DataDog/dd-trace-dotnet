@@ -3768,6 +3768,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
     # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
     runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
@@ -3920,14 +3921,7 @@ stages:
       or(
         eq(variables.isMainBranch, true),
         eq(variables.force_appsec_throughput_run, 'true'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'], 'True'),
-        eq(stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables.generate_variables_step.isAppSecChanged'], 'True'),
-        eq(stageDependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'),
-        eq(stageDependencies.generate_variables.outputs['generate_variables_step.isAppSecChanged'], 'True'),
-        eq(dependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'], 'True'),
-        eq(dependencies.generate_variables.generate_variables_job.outputs['generate_variables.generate_variables_step.isAppSecChanged'], 'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True'),
-        eq(dependencies.generate_variables.outputs['generate_variables_step.isAppSecChanged'], 'True')
+        eq(variables.isAppSecChanged, 'True')
       )
 
     steps:
