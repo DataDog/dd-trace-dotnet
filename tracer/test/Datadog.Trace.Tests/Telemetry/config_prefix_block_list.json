@@ -70,6 +70,8 @@
   "DD_Kafka_",
   "DD_TRACE_CosmosDb_",
   "DD_CosmosDb_",
+  "DD_TRACE_AwsLambda_",
+  "DD_AwsLambda_",
   "DD_TRACE_AwsSdk_",
   "DD_AwsSdk_",
   "DD_TRACE_AwsSqs_",

@@ -32,6 +32,20 @@
     }]
   },
   {
+    "IntegrationName": "AwsLambda",
+    "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
+    "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
+    "MinVersion": "1.4.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.8.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "1.4.0",
+      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSqs",
     "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",

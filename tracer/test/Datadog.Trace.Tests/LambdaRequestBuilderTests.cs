@@ -2,18 +2,13 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Net;
-
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
+#if NET6_0_OR_GREATER
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
 using FluentAssertions;
-using Moq;
 using Xunit;
+using LambdaCommon = Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda.LambdaCommon;
 
 namespace Datadog.Trace.Tests
 {
@@ -112,3 +107,4 @@ namespace Datadog.Trace.Tests
         }
     }
 }
+#endif

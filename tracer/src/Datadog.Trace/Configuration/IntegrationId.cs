@@ -40,6 +40,7 @@ namespace Datadog.Trace.Configuration
         AwsSdk,
         AwsSqs,
         AwsSns,
+        AwsLambda,
         ILogger,
         Aerospike,
         AzureFunctions,

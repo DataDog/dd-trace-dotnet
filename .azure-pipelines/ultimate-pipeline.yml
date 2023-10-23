@@ -1956,6 +1956,13 @@ stages:
         command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Aws.Lambda"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        baseImage: $(baseImage)
+        command: "BuildLinuxIntegrationTests --framework $(publishTargetFramework) --SampleName Samples.Amazon.Lambda.RuntimeSupport"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        
     - script: |
         # Include the serverless dockerfile
         docker-compose -p ddtrace_$(Build.BuildNumber) \
@@ -2041,7 +2048,8 @@ stages:
           serverless-lambda-generic-abstract \
           serverless-lambda-generic-abstract-async \
           serverless-lambda-generic-complex \
-          serverless-lambda-generic-complex-nested
+          serverless-lambda-generic-complex-nested \
+          serverless-lambda-toplevel-statement
       env:
         baseImage: $(baseImage)
         framework: $(publishTargetFramework)
@@ -2905,7 +2913,7 @@ stages:
 
 - stage: benchmarks
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [build_windows_tracer, merge_commit_id]
+  dependsOn: [build_windows_tracer, build_windows_profiler, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -2934,7 +2942,7 @@ stages:
         BenchmarkAgent7:
           agent: "BenchmarkAgent7"
 
-    timeoutInMinutes: 30
+    timeoutInMinutes: 45
     pool:
       name: $(agent)
 
@@ -2947,11 +2955,19 @@ stages:
     - template: steps/install-dotnet-sdks.yml
     - template: steps/restore-working-directory.yml
 
+    - task: DownloadPipelineArtifact@2
+      displayName: Download windows profiler home
+      inputs:
+        artifact: windows-profiler-home
+        path: $(monitoringHome)
+
     - script: tracer\build.cmd RunBenchmarks
       displayName: RunBenchmarks
       env:
         DD_CIVISIBILITY_AGENTLESS_ENABLED: true
+        DD_PROFILING_ENABLED: true
         DD_API_KEY: $(ddApiKey)
+        DD_DOTNET_TRACER_HOME: $(monitoringHome)
 
     - publish: tracer/build_data/benchmarks
       artifact: benchmarks_results_$(agent)
@@ -3146,12 +3162,16 @@ stages:
         artifact: dd-dotnet-linux-arm64
         path: $(monitoringHome)/linux-arm64
 
-    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool
-      displayName: Build Bundle NuGet and tools
+    - script: tracer\build.cmd CreateBundleHome BuildBundleNuget BuildRunnerTool PackRunnerToolNuget BuildStandaloneTool BuildBenchmarkNuget
+      displayName: Build Bundle, Benchmark NuGet and tools
 
     - publish: $(artifacts)/nuget/bundle
       displayName: Uploading Bundle package
       artifact: bundle-nuget-package
+
+    - publish: $(artifacts)/nuget/benchmark
+      displayName: Uploading Benchmark package
+      artifact: benchmark-nuget-package
 
     - publish: $(artifacts)/nuget/dd-trace
       displayName: Uploading runner dotnet tool artifact
@@ -3597,6 +3617,12 @@ stages:
             artifact: bundle-nuget-package
             path: $(Build.ArtifactStagingDirectory)
 
+        - task: DownloadPipelineArtifact@2
+          displayName: Download benchmark nuget package
+          inputs:
+            artifact: benchmark-nuget-package
+            path: $(Build.ArtifactStagingDirectory)
+
         # runner tool
         - task: DownloadPipelineArtifact@2
           displayName: Download runner dotnet tool
@@ -3787,14 +3813,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_x64_1
 
   - job: Windows64
     timeoutInMinutes: 60
@@ -3831,14 +3857,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_windows_x64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_windows_x64_1
 
   - job: LinuxArm64
     timeoutInMinutes: 60
@@ -3874,14 +3900,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_arm64_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_arm64_1
 
 - stage: throughput_profiler
   condition: >
@@ -4036,14 +4062,14 @@ stages:
     - script: |
         cp $(CrankDir)/*.json $(CrankDir)/results
       displayName: Copy the results to results dir
-      condition: succeededOrFailed()
-      continueOnError: true
 
     - publish: "$(CrankDir)/results"
       displayName: Publish results
-      artifact: crank_linux_x64_asm_$(System.JobAttempt)
-      condition: succeededOrFailed()
-      continueOnError: true
+      # We don't include the JobAttempt in this case, because we rely on a specific name
+      # and an error in the throughput tests probably means no usable data, so dont
+      # bother trying to upload these in case of failure, which means we can retry the
+      # stages without issue
+      artifact: crank_linux_x64_asm_1
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
@@ -5742,26 +5768,30 @@ stages:
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_arm64_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_arm64_1 #only download the first lot, ignores retries
+        artifact: crank_linux_arm64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_arm64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_x64_1 #only download the first lot, ignores retries
+        artifact: crank_linux_x64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_linux_x64_asm_1
+      continueOnError: true
       inputs:
-        artifact: crank_linux_x64_asm_1 #only download the first lot, ignores retries
+        artifact: crank_linux_x64_asm_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_linux_x64_asm_1
 
     - task: DownloadPipelineArtifact@2
       displayName: Download crank_windows_x64_1
+      continueOnError: true
       inputs:
-        artifact: crank_windows_x64_1 #only download the first lot, ignores retries
+        artifact: crank_windows_x64_1
         path: $(System.DefaultWorkingDirectory)/tracer/build_data/throughput/current/crank_windows_x64_1
 
     - script: tracer\build.cmd CompareThroughputResults

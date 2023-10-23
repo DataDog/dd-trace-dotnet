@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int DistributionSharedLength = 14;
+    private const int DistributionSharedLength = 13;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.DistributionShared" /> values.
@@ -26,7 +26,6 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "component:traceattributes_pinvoke" }),
             new(new[] { "component:managed" }),
             new(new[] { "component:calltarget_defs_pinvoke" }),
-            new(new[] { "component:serverless" }),
             new(new[] { "component:calltarget_derived_defs_pinvoke" }),
             new(new[] { "component:calltarget_interface_defs_pinvoke" }),
             new(new[] { "component:discovery_service" }),
@@ -42,7 +41,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] DistributionSharedEntryCounts { get; }
-        = new int[]{ 14, };
+        = new int[]{ 13, };
 
     public void RecordDistributionSharedInitTime(Datadog.Trace.Telemetry.Metrics.MetricTags.InitializationComponent tag, double value)
     {
