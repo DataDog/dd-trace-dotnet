@@ -366,6 +366,11 @@ namespace Datadog.Trace.Tools.Runner
             AnsiConsole.MarkupLine($"[lime] [[SUCCESS]]: {message.EscapeMarkup()}[/]");
         }
 
+        internal static void WriteInfo(string message)
+        {
+            AnsiConsole.MarkupLine($"[aqua] [[INFO]]: {message.EscapeMarkup()}[/]");
+        }
+
         internal static bool IsAlpine()
         {
             try

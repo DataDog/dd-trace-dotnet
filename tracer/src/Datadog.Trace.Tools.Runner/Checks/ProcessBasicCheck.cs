@@ -28,7 +28,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
             var runtime = process.DotnetRuntime;
             Version? nativeTracerVersion = null;
 
-            AnsiConsole.WriteLine(InitialCheckStart);
+            AnsiConsole.WriteLine(string.Empty);
+            AnsiConsole.WriteLine(SetupChecks);
 
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
@@ -207,7 +208,8 @@ namespace Datadog.Trace.Tools.Runner.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
-                AnsiConsole.WriteLine(CheckOptionalConfiguration);
+                AnsiConsole.WriteLine(string.Empty);
+                AnsiConsole.WriteLine(ConfigurationChecks);
 
                 AnsiConsole.WriteLine(TraceEnabledCheck);
 
@@ -220,7 +222,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                 }
                 else
                 {
-                    AnsiConsole.WriteLine(TraceEnabledNotSet);
+                    Utils.WriteInfo(TraceEnabledNotSet);
                 }
 
                 bool isContinuousProfilerEnabled;
@@ -236,13 +238,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     }
                     else
                     {
-                        AnsiConsole.WriteLine(ContinuousProfilerDisabled);
+                        Utils.WriteInfo(ContinuousProfilerDisabled);
                         isContinuousProfilerEnabled = false;
                     }
                 }
                 else
                 {
-                    AnsiConsole.WriteLine(ContinuousProfilerNotSet);
+                    Utils.WriteInfo(ContinuousProfilerNotSet);
                     isContinuousProfilerEnabled = false;
                 }
 
@@ -328,6 +330,7 @@ namespace Datadog.Trace.Tools.Runner.Checks
                     ok &= CheckClsid(registry, Clsid32Key);
                 }
 
+                // Look for registry keys that could have been set by other profilers
                 // Look for registry keys that could have been set by other profilers
                 var suspiciousNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
                 {
@@ -580,13 +583,13 @@ namespace Datadog.Trace.Tools.Runner.Checks
             const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
             const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
                 return tracerVersion;
             }
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
                 var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));

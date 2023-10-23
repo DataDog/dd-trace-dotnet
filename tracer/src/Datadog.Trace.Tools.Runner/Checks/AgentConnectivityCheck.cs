@@ -22,6 +22,9 @@ namespace Datadog.Trace.Tools.Runner.Checks
     {
         public static Task<bool> RunAsync(ProcessInfo process)
         {
+            AnsiConsole.WriteLine(string.Empty);
+            AnsiConsole.WriteLine(DdAgentChecks);
+
             var settings = new ExporterSettings(process.Configuration, NullConfigurationTelemetry.Instance);
 
             var url = settings.AgentUriInternal.ToString();
