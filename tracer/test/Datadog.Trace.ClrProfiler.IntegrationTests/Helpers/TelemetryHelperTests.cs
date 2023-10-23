@@ -42,15 +42,15 @@ public class TelemetryHelperTests
     public void AssertIntegration_HandlesMultipleTelemetryPushes()
     {
         var collector = new IntegrationTelemetryCollector();
-        var telemetryData = new List<TelemetryWrapper>();
+        var telemetryData = new List<TelemetryData>();
 
         collector.IntegrationRunning(IntegrationId.Aerospike);
 
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData()));
+        telemetryData.Add(BuildTelemetryData(collector.GetData()));
 
         collector.IntegrationGeneratedSpan(IntegrationId.Aerospike);
         collector.IntegrationRunning(IntegrationId.Couchbase);
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false));
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppStarted: false));
 
         collector.IntegrationRunning(IntegrationId.Kafka);
         collector.IntegrationGeneratedSpan(IntegrationId.Msmq);
@@ -60,7 +60,7 @@ public class TelemetryHelperTests
         };
 
         collector.RecordTracerSettings(new(tracerSettings));
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppClosing: true));
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppClosing: true));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
@@ -76,7 +76,7 @@ public class TelemetryHelperTests
     public void AssertIntegration_ErrorsWhenIntegrationError(bool errorIsFirstTelemetry)
     {
         var collector = new IntegrationTelemetryCollector();
-        var telemetryData = new List<TelemetryWrapper>();
+        var telemetryData = new List<TelemetryData>();
 
         if (errorIsFirstTelemetry)
         {
@@ -88,7 +88,7 @@ public class TelemetryHelperTests
         }
 
         collector.IntegrationRunning(IntegrationId.Aerospike);
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData()));
+        telemetryData.Add(BuildTelemetryData(collector.GetData()));
 
         if (errorIsFirstTelemetry)
         {
@@ -99,10 +99,10 @@ public class TelemetryHelperTests
             collector.IntegrationDisabledDueToError(IntegrationId.Grpc, "Some error");
         }
 
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false));
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppStarted: false));
 
         collector.IntegrationRunning(IntegrationId.Npgsql);
-        telemetryData.Add(BuildTelemetryDataV2(collector.GetData(), sendAppStarted: false, sendAppClosing: true));
+        telemetryData.Add(BuildTelemetryData(collector.GetData(), sendAppStarted: false, sendAppClosing: true));
 
         var checkTelemetryFunc = () => TelemetryHelper.AssertIntegration(telemetryData, IntegrationId.Aerospike, enabled: true, autoEnabled: true);
 
@@ -113,7 +113,7 @@ public class TelemetryHelperTests
     public void AssertConfiguration_HandlesMultipleTelemetryPushes()
     {
         var collector = new ConfigurationTelemetry();
-        var telemetryData = new List<TelemetryWrapper>();
+        var telemetryData = new List<TelemetryData>();
 
         var config = new NameValueConfigurationSource(new NameValueCollection()
         {
@@ -124,10 +124,10 @@ public class TelemetryHelperTests
 
         _ = new ImmutableTracerSettings(new TracerSettings(config, collector));
 
-        telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData()));
+        telemetryData.Add(BuildTelemetryData(null, collector.GetData()));
 
         _ = new SecuritySettings(config, collector);
-        telemetryData.Add(BuildTelemetryDataV2(null, collector.GetData(), sendAppStarted: false, sendAppClosing: true));
+        telemetryData.Add(BuildTelemetryData(null, collector.GetData(), sendAppStarted: false, sendAppClosing: true));
 
         using var s = new AssertionScope();
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled);
@@ -138,16 +138,15 @@ public class TelemetryHelperTests
         TelemetryHelper.AssertConfiguration(telemetryData, ConfigurationKeys.AppSec.Enabled, true);
     }
 
-    private TelemetryWrapper BuildTelemetryDataV2(
+    private TelemetryData BuildTelemetryData(
         ICollection<IntegrationTelemetryData> integrations,
         ICollection<ConfigurationKeyValue> configuration = null,
         bool sendAppStarted = true,
         bool sendAppClosing = false)
-        => new TelemetryWrapper.V2(
-            _dataBuilder.BuildTelemetryData(
+        => _dataBuilder.BuildTelemetryData(
                 _app,
                 _host,
                 new TelemetryInput(configuration, null, integrations, null, null, sendAppStarted),
                 namingSchemeVersion: "1",
-                sendAppClosing));
+                sendAppClosing);
 }

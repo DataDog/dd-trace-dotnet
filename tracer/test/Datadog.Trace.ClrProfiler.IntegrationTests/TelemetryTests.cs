@@ -282,8 +282,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppStarted));
-            AssertService(mockAgent.Telemetry.Cast<TelemetryWrapper>(), expectedServiceName, expectedServiceVersion);
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
+            AssertService(mockAgent.Telemetry.Cast<TelemetryData>(), expectedServiceName, expectedServiceVersion);
         }
 
         private static void AssertService(MockTelemetryAgent telemetry, string expectedServiceName, string expectedServiceVersion)
@@ -292,26 +292,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertService(telemetry.Telemetry, expectedServiceName, expectedServiceVersion);
         }
 
-        private static void AssertService(IEnumerable<TelemetryWrapper> allData, string expectedServiceName, string expectedServiceVersion)
+        private static void AssertService(IEnumerable<TelemetryData> allData, string expectedServiceName, string expectedServiceVersion)
         {
             var appClosing = allData.Should()
                                     .ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing))
                                     .Subject;
-            switch (appClosing)
-            {
-                case TelemetryWrapper.V2 v2:
-                    v2.Data.Application.ServiceName.Should().Be(expectedServiceName);
-                    v2.Data.Application.ServiceVersion.Should().Be(expectedServiceVersion);
-                    break;
-                default:
-                    throw new InvalidOperationException("Unknown telemetry wrapper type: " + appClosing?.GetType());
-            }
+            appClosing.Application.ServiceName.Should().Be(expectedServiceName);
+            appClosing.Application.ServiceVersion.Should().Be(expectedServiceVersion);
         }
 
         private static void AssertDependencies(MockTracerAgent mockAgent, bool? enableDependencies)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
-            AssertDependencies(mockAgent.Telemetry.Cast<TelemetryWrapper>(), enableDependencies);
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            AssertDependencies(mockAgent.Telemetry.Cast<TelemetryData>(), enableDependencies);
         }
 
         private static void AssertDependencies(MockTelemetryAgent telemetry, bool? enableDependencies)
@@ -320,7 +313,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             AssertDependencies(telemetry.Telemetry, enableDependencies);
         }
 
-        private static void AssertDependencies(IEnumerable<TelemetryWrapper> allData, bool? enableDependencies)
+        private static void AssertDependencies(IEnumerable<TelemetryData> allData, bool? enableDependencies)
         {
             var enabled = (enableDependencies ?? DependenciesEnabledDefault);
 
