@@ -99,7 +99,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error} Try to run the tool in administrator mode.";
 
-        public static string IisWorkerProcessError(string error) => $"Could not detect the worker process: {error} Try to run the tool in administrator mode.";
+        public static string IisWorkerProcessError(string error) => $"Could not detect the worker process: {error} Note that you must run the tool from an elevated prompt.";
 
         public static string ListAllIisApplications(IEnumerable<string> availableApplications)
         {
