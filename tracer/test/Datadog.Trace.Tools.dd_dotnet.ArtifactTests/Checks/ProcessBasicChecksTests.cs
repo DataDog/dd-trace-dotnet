@@ -143,7 +143,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             // Because TracingWithInstaller has a long URL, it gets split in the Spectre.Console output
             // Removing the spaces to make the assertion work, until we figure out a better way
-            standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstaller.Replace(" ", string.Empty));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindows.Replace(" ", string.Empty));
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerLinux.Replace(" ", string.Empty));
+            }
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(1);
