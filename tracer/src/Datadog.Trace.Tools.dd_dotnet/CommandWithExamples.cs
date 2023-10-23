@@ -21,7 +21,7 @@ internal class CommandWithExamples : Command
     }
 
     public static string Command =>
-        Environment.GetEnvironmentVariable("DD_OVERRIDE_COMMAND")
+        Environment.GetEnvironmentVariable("DD_INTERNAL_OVERRIDE_COMMAND")
         ?? Path.GetFileNameWithoutExtension(Environment.GetCommandLineArgs()[0]);
 
     public IReadOnlyList<string> Examples => _examples;

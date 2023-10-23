@@ -64,7 +64,7 @@ namespace Datadog.Trace.Tools.Runner
 
             var startInfo = new ProcessStartInfo(ddDotnet, commandLine) { UseShellExecute = false };
 
-            startInfo.EnvironmentVariables["DD_OVERRIDE_COMMAND"] = "dd-trace";
+            startInfo.EnvironmentVariables["DD_INTERNAL_OVERRIDE_COMMAND"] = "dd-trace";
 
             var process = Process.Start(startInfo);
             process.WaitForExit();
