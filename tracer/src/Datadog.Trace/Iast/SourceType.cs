@@ -33,8 +33,9 @@ internal static class SourceType
         SourceTypeName.RequestQuery => "http_request_query",
         SourceTypeName.RoutedParameterValue => "http_request_path_parameter",
         SourceTypeName.MatrixParameter => "http_request_matrix_parameter",
-        SourceTypeName.CookieName => "http_cookie_name",
-        SourceTypeName.CookieValue => "http_cookie_value",
+        SourceTypeName.CookieName => "http_request_cookie_name",
+        SourceTypeName.CookieValue => "http_request_cookie_value",
+        SourceTypeName.RequestUri => "http_request_uri",
         _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined in GetAsTag")
     };
 
