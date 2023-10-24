@@ -3776,6 +3776,7 @@ stages:
   - template: steps/update-github-status-jobs.yml
     parameters:
       jobs: [Linux64, Windows64, LinuxArm64, AsmLinux64]
+      allowSkipped: true
   #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
