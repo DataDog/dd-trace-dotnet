@@ -546,6 +546,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.dd_dotn
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.DynamoDBv2", "tracer\test\test-applications\integrations\Samples.AWS.DynamoDBv2\Samples.AWS.DynamoDBv2.csproj", "{D59C5649-BE0E-4A33-B868-B652D8614534}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Shared", "tracer\src\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj", "{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.Tests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.Tests\Datadog.Trace.Tools.dd_dotnet.Tests.csproj", "{4E9535E2-C918-4C39-9F1B-F182C185DE64}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Amazon.Lambda.RuntimeSupport", "tracer\test\test-applications\integrations\Samples.Amazon.Lambda.RuntimeSupport\Samples.Amazon.Lambda.RuntimeSupport.csproj", "{18A6904A-5AFD-4816-AC3F-9F5E433720B5}"
 EndProject
 Global
@@ -1304,6 +1308,14 @@ Global
 		{D59C5649-BE0E-4A33-B868-B652D8614534}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D59C5649-BE0E-4A33-B868-B652D8614534}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D59C5649-BE0E-4A33-B868-B652D8614534}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4E9535E2-C918-4C39-9F1B-F182C185DE64}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4E9535E2-C918-4C39-9F1B-F182C185DE64}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4E9535E2-C918-4C39-9F1B-F182C185DE64}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4E9535E2-C918-4C39-9F1B-F182C185DE64}.Release|Any CPU.Build.0 = Release|Any CPU
 		{18A6904A-5AFD-4816-AC3F-9F5E433720B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{18A6904A-5AFD-4816-AC3F-9F5E433720B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{18A6904A-5AFD-4816-AC3F-9F5E433720B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -1520,6 +1532,8 @@ Global
 		{A9632530-0FB8-4156-BD3C-DD432527768E} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 		{F594BFBE-1F71-4B3A-BBDA-C4372A6501E9} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{D59C5649-BE0E-4A33-B868-B652D8614534} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
+		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
+		{4E9535E2-C918-4C39-9F1B-F182C185DE64} = {8CEC2042-F11C-49F5-A674-2355793B600A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}

@@ -15,6 +15,7 @@ using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
 using Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS;
+using Datadog.Trace.Tools.Shared;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
@@ -129,11 +130,15 @@ internal class CheckIisCommand : Command
                 Utils.WriteWarning(ErrorExtractingConfiguration(ex.Message));
             }
 
-            var process = ProcessInfo.GetProcessInfo(pid, rootDirectory, appSettings);
+            ProcessInfo process;
 
-            if (process == null)
+            try
             {
-                Utils.WriteError(GetProcessError);
+                process = ProcessInfo.GetProcessInfo(pid);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(GetProcessError(ex.Message));
                 return 1;
             }
 
@@ -180,11 +185,13 @@ internal class CheckIisCommand : Command
 
                 AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
 
-                process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
-
-                if (process == null)
+                try
                 {
-                    Utils.WriteError(GetProcessError);
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+                }
+                catch (Exception ex)
+                {
+                    Utils.WriteError(GetProcessError(ex.Message));
                     return 1;
                 }
             }
@@ -195,7 +202,9 @@ internal class CheckIisCommand : Command
                 return 1;
             }
 
-            if (!await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false))
+            var configurationSource = process.ExtractConfigurationSource(rootDirectory, appSettings);
+
+            if (!await AgentConnectivityCheck.RunAsync(configurationSource).ConfigureAwait(false))
             {
                 return 1;
             }

@@ -76,6 +76,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Datadog.Trace.Tools.dd_dotnet.SourceGenerators\Datadog.Trace.Tools.dd_dotnet.SourceGenerators.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
   </ItemGroup>
 
   <Target Name="RemoveDuplicate" AfterTargets="ComputeFilesToPublish" BeforeTargets="_HandleFileConflictsForPublish">
