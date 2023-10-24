@@ -3764,22 +3764,24 @@ stages:
 
 - stage: throughput
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [package_linux, package_arm64, build_windows_tracer, merge_commit_id]
+  dependsOn: [package_linux, package_arm64, build_windows_tracer, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    isAppSecChanged: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.isAppSecChanged'] ]
     # By default all throughput tests happen on release or master branches only, or when running a benchmarks only build. Overridable by setting 'run_extended_throughput_tests' to true
     runExtendedThroughputTests: $[or(eq(variables.isMainOrReleaseBranch, 'true'), not(eq(variables['isBenchmarksOnlyBuild'], 'False')), eq(variables.run_extended_throughput_tests, 'true'))]
     CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
-  pool: Throughput
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
-      jobs: [Linux64, Windows64, LinuxArm64]
+      jobs: [Linux64, Windows64, LinuxArm64, AsmLinux64]
+      allowSkipped: true
   #### Throughput Linux 64, windows 64, linux arm 64
 
   - job: Linux64
     timeoutInMinutes: 60
+    pool: Throughput
 
     steps:
     - template: steps/clone-repo.yml
@@ -3824,6 +3826,7 @@ stages:
 
   - job: Windows64
     timeoutInMinutes: 60
+    pool: Throughput
 
     steps:
     - template: steps/clone-repo.yml
@@ -3868,6 +3871,7 @@ stages:
 
   - job: LinuxArm64
     timeoutInMinutes: 60
+    pool: Throughput
 
     steps:
     - template: steps/clone-repo.yml
@@ -3908,6 +3912,54 @@ stages:
       # bother trying to upload these in case of failure, which means we can retry the
       # stages without issue
       artifact: crank_linux_arm64_1
+    
+    #### Throughput-AppSec Linux 64
+
+  - job: AsmLinux64
+    timeoutInMinutes: 60
+    pool: Throughput-AppSec
+    condition: >
+      or(
+        eq(variables.isMainBranch, true),
+        eq(variables.force_appsec_throughput_run, 'true'),
+        eq(variables.isAppSecChanged, 'True')
+      )
+
+    steps:
+      - template: steps/clone-repo.yml
+        parameters:
+          targetShaId: $(targetShaId)
+          targetBranch: $(targetBranch)
+      - task: DownloadPipelineArtifact@2
+        displayName: Download linux native binary
+        inputs:
+          artifact: linux-monitoring-home-linux-x64
+          path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
+
+      - script: |
+          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
+          test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
+          test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
+          mkdir -p $(CrankDir)/results/logs
+          cd $(CrankDir)
+          chmod +x ./run-appsec.sh
+          ./run-appsec.sh "linux"
+        displayName: Crank
+        env:
+          DD_SERVICE: dd-trace-dotnet
+          DD_ENV: CI
+
+      - script: |
+          cp $(CrankDir)/*.json $(CrankDir)/results
+        displayName: Copy the results to results dir
+
+      - publish: "$(CrankDir)/results"
+        displayName: Publish results
+        # We don't include the JobAttempt in this case, because we rely on a specific name
+        # and an error in the throughput tests probably means no usable data, so dont
+        # bother trying to upload these in case of failure, which means we can retry the
+        # stages without issue
+        artifact: crank_linux_x64_asm_1
 
 - stage: throughput_profiler
   condition: >
@@ -4011,65 +4063,6 @@ stages:
       artifact: crank_profiler_windows64_$(System.JobAttempt)
       condition: succeededOrFailed()
       continueOnError: true
-
-- stage: throughput_appsec
-  condition: >
-    and(succeeded(), 
-        eq(variables.isMainRepository, true),
-        or(
-          eq(variables.isMainBranch, true),
-          eq(variables.force_appsec_throughput_run, 'true'),
-          eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.isAppSecChanged'], 'True')))
-  dependsOn: [package_linux, generate_variables, merge_commit_id]
-  variables:
-    targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
-    targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    CrankDir: $(System.DefaultWorkingDirectory)/tracer/build/crank
-  pool: Throughput-AppSec
-  jobs:
-  - template: steps/update-github-status-jobs.yml
-    parameters:
-      jobs: [Linux64]
-  #### Throughput-AppSec Linux 64
-
-  - job: Linux64
-    timeoutInMinutes: 60
-
-    steps:
-    - template: steps/clone-repo.yml
-      parameters:
-        targetShaId: $(targetShaId)
-        targetBranch: $(targetBranch)
-    - task: DownloadPipelineArtifact@2
-      displayName: Download linux native binary
-      inputs:
-        artifact: linux-monitoring-home-linux-x64
-        path: $(System.DefaultWorkingDirectory)/tracer/tracer-home-linux
-
-    - script: |
-        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Trace.ClrProfiler.Native.so (native loader) does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so" && echo "tracer/tracer-home-linux/linux-x64/Datadog.Tracer.Native.so does not exist" && exit 1
-        test ! -s "tracer/tracer-home-linux/linux-x64/libddwaf.so" && echo "tracer/tracer-home-linux/linux-x64/libddwaf.so does not exist" && exit 1
-        mkdir -p $(CrankDir)/results/logs
-        cd $(CrankDir)
-        chmod +x ./run-appsec.sh
-        ./run-appsec.sh "linux"
-      displayName: Crank
-      env:
-        DD_SERVICE: dd-trace-dotnet
-        DD_ENV: CI
-
-    - script: |
-        cp $(CrankDir)/*.json $(CrankDir)/results
-      displayName: Copy the results to results dir
-
-    - publish: "$(CrankDir)/results"
-      displayName: Publish results
-      # We don't include the JobAttempt in this case, because we rely on a specific name
-      # and an error in the throughput tests probably means no usable data, so dont
-      # bother trying to upload these in case of failure, which means we can retry the
-      # stages without issue
-      artifact: crank_linux_x64_asm_1
 
 - stage: coverage
   condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'), eq(variables['runCodeCoverage'], 'True'))
@@ -5748,7 +5741,7 @@ stages:
 
 - stage: compare_throughput
   condition: and(succeeded(), eq(variables.isMainRepository, true))
-  dependsOn: [throughput, throughput_appsec, merge_commit_id]
+  dependsOn: [throughput, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
@@ -5834,7 +5827,6 @@ stages:
     - exploration_tests_linux
     - benchmarks
     - throughput
-    - throughput_appsec
     - tool_artifacts_tests_windows
     - tool_artifacts_tests_linux
     - upload_to_s3
