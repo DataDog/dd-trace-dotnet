@@ -200,6 +200,10 @@
           "type": "boolean",
           "description": "Whether the current build version is a prerelease(for packaging purposes)"
         },
+        "LineScenario": {
+          "type": "boolean",
+          "description": "Indicates whether the line probe scenario should run"
+        },
         "MonitoringHome": {
           "type": "string",
           "description": "The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home "
