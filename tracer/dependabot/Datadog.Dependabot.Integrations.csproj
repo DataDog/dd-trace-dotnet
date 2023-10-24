@@ -24,7 +24,7 @@
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.3.0" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!-- Assembly: AWSSDK.DynamoDBv2 -->
