@@ -17,7 +17,7 @@ internal static partial class IntegrationIdExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 54;
+    public const int Length = 55;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.IntegrationId"/> value.

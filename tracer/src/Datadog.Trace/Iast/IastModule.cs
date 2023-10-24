@@ -127,7 +127,7 @@ internal static class IastModule
 
     internal static EvidenceRedactor? CreateRedactor(IastSettings settings)
     {
-        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, TimeSpan.FromMilliseconds(settings.RedactionRegexTimeout)) : null;
+        return settings.RedactionEnabled ? new EvidenceRedactor(settings.RedactionKeysRegex, settings.RedactionValuesRegex, TimeSpan.FromMilliseconds(settings.RegexTimeout)) : null;
     }
 
     private static string BuildCommandInjectionEvidence(string file, string argumentLine, Collection<string>? argumentList)

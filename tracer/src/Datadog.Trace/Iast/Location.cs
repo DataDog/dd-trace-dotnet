@@ -5,6 +5,8 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
