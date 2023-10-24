@@ -328,7 +328,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             TMessage message)
             where TMessage : IMessage
         {
-            if (!_headersInjectionEnabled || ((IDuckType)message).Instance is null)
+            if (!_headersInjectionEnabled || message.Instance is null)
             {
                 return;
             }
