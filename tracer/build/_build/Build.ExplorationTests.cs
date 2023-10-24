@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using Nuke.Common;
 using Nuke.Common.IO;
 using Nuke.Common.Tools.DotNet;
@@ -27,6 +28,9 @@ partial class Build
 
     [Parameter("Indicates if the Dynamic Instrumentation product should be disabled.")]
     readonly bool DisableDynamicInstrumentationProduct;
+
+    [Parameter("Indicates whether the line probe scenario should run.")]
+    readonly bool LineScenario;
 
     [Parameter("Indicates whether exploration tests should run on latest repository commit. Useful if you want to update tested repositories to the latest tags. Default false.",
                List = false)]
@@ -237,6 +241,11 @@ partial class Build
 
         void Test(TargetFramework targetFramework)
         {
+            if (LineScenario)
+            {
+                CreateLineProbesFile($"{ExplorationTestsDirectory}/{testDescription.Name}");
+            }
+
             DotNetTest(
                 x =>
                 {
@@ -254,6 +263,56 @@ partial class Build
                     return x;
                 });
         }
+    }
+
+    private static void CreateLineProbesFile(string rootFolder)
+    {
+        var lineProbes = new List<LineProbe>();
+        ScanFolders(rootFolder, lineProbes);
+
+        var allProbes = new StringBuilder();
+
+        foreach (var lineProbe in lineProbes)
+        {
+            allProbes.AppendLine($"{lineProbe.FilePath.Replace("/", "\\")},{lineProbe.LineNumber}");
+        }
+
+        File.WriteAllText(Path.Combine(rootFolder, "lineprobes"), allProbes.ToString());
+    }
+
+    static void ScanFolders(string path, List<LineProbe> lineProbes)
+    {
+        try
+        {
+            // Get all the *.cs files in the current folder
+            string[] files = Directory.GetFiles(path, "*.cs");
+            foreach (string file in files)
+            {
+                int lineCount = File.ReadAllLines(file).Length;
+                for (int lineNumber = 1; lineNumber <= lineCount; lineNumber++)
+                {
+                    lineProbes.Add(new LineProbe { FilePath = file, LineNumber = lineNumber });
+                }
+            }
+
+            // Get all subdirectories
+            string[] subDirs = Directory.GetDirectories(path);
+            foreach (string subDir in subDirs)
+            {
+                ScanFolders(subDir, lineProbes);
+            }
+        }
+        catch (Exception e)
+        {
+            // Handle exceptions accordingly
+            Console.WriteLine($"An error occurred: {e.Message}");
+        }
+    }
+
+    struct LineProbe
+    {
+        public string FilePath;
+        public int LineNumber;
     }
 
     void RunExplorationTestAssertions()
@@ -375,7 +434,7 @@ class ExplorationTestDescription
                 IsGitSubmodulesRequired = true,
                 PathToUnitTestProject = "csharp/src/Google.Protobuf.Test",
                 SupportedFrameworks = new[] { TargetFramework.NETCOREAPP2_1 },
-                ShouldRun = false // Dictates that this exploration test should not take part in the CI
+                ShouldRun = true // Dictates that this exploration test should not take part in the CI
             },
             ExplorationTestName.cake => new ExplorationTestDescription()
             {

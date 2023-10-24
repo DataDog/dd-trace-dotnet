@@ -8,10 +8,12 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Agent.DiscoveryService;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Debugger.Configurations;
 using Datadog.Trace.Debugger.Configurations.Models;
 using Datadog.Trace.Debugger.Expressions;
@@ -24,7 +26,9 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.DogStatsd;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Pdb;
 using Datadog.Trace.RemoteConfigurationManagement;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.StatsdClient;
 using ProbeInfo = Datadog.Trace.Debugger.Expressions.ProbeInfo;
 
@@ -132,6 +136,53 @@ namespace Datadog.Trace.Debugger
                 }
 
                 _isInitialized = true;
+            }
+
+            var debugEnabled = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES");
+            if (!string.IsNullOrEmpty(debugEnabled) && debugEnabled.Equals("1", StringComparison.Ordinal))
+            {
+                var lineProbes = new List<ProbeDefinition>();
+
+                var lineProbePath = EnvironmentHelpers.GetEnvironmentVariable("DD_INTERNAL_DEBUGGER_INSTRUMENT_ALL_LINES_PATH");
+                var allProbes = File.ReadAllLines(lineProbePath);
+
+                foreach (var probe in allProbes)
+                {
+                    var splittedProbe = probe.Split(',');
+
+                    if (splittedProbe.Length < 2)
+                    {
+                        continue;
+                    }
+
+                    var filePath = splittedProbe[0];
+                    var lineNumber = splittedProbe[1];
+
+                    var logProbe = new LogProbe
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Language = TracerConstants.Language,
+                    };
+
+                    var capture = new Capture
+                    {
+                        MaxCollectionSize = 1000,
+                        MaxFieldCount = 10000,
+                        MaxFieldDepth = 3,
+                        MaxLength = int.MaxValue,
+                        MaxReferenceDepth = 3
+                    };
+
+                    logProbe.CaptureSnapshot = true;
+                    logProbe.Capture = capture;
+                    logProbe.Sampling = new Configurations.Models.Sampling { SnapshotsPerSecond = 1 };
+                    var where = new Where { SourceFile = filePath, Lines = new[] { lineNumber } };
+                    logProbe.Where = where;
+
+                    lineProbes.Add(logProbe);
+                }
+
+                UpdateAddedProbeInstrumentations(lineProbes);
             }
 
             try
