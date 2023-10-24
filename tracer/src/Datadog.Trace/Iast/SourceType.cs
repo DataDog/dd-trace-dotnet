@@ -50,8 +50,9 @@ internal static class SourceType
             SourceTypeName.RequestQuery => "http.request.query",
             SourceTypeName.RoutedParameterValue => "http.request.path.parameter",
             SourceTypeName.MatrixParameter => "http.request.matrix.parameter",
-            SourceTypeName.CookieName => "http.cookie.name",
-            SourceTypeName.CookieValue => "http.cookie.value",
+            SourceTypeName.CookieName => "http.request.cookie.name",
+            SourceTypeName.CookieValue => "http.request.cookie.value",
+            SourceTypeName.RequestUri => "http.request.uri",
             _ => throw new System.Exception($"SourceTypeName TEXT for value {value} not defined")
         };
 
@@ -67,8 +68,9 @@ internal static class SourceType
             "http.request.query" => SourceTypeName.RequestQuery,
             "http.request.path.parameter" => SourceTypeName.RoutedParameterValue,
             "http.request.matrix.parameter" => SourceTypeName.MatrixParameter,
-            "http.cookie.name" => SourceTypeName.CookieName,
-            "http.cookie.value" => SourceTypeName.CookieValue,
+            "http.request.cookie.name" => SourceTypeName.CookieName,
+            "http.request.cookie.value" => SourceTypeName.CookieValue,
+            "http.request.uri" => SourceTypeName.RequestUri,
             _ => throw new System.Exception($"SourceTypeName VALUE for text {value ?? "NULL"} not defined")
         };
 }
