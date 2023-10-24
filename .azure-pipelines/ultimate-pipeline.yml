@@ -5837,8 +5837,6 @@ stages:
     - integration_tests_arm64
     - integration_tests_arm64_debugger
     - static_analysis_checks_tracer
-    - profiler_integration_tests_linux
-    - profiler_integration_tests_windows
     - exploration_tests_windows
     - exploration_tests_linux
     - benchmarks
