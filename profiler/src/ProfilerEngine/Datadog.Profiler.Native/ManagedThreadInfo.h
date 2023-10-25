@@ -17,6 +17,11 @@
 #include <memory>
 #include <utility>
 
+#ifdef LINUX
+#define _GNU_SOURCE
+#include <pthread.h>
+#endif
+
 static constexpr int32_t MinFieldAlignRequirement = 8;
 static constexpr int32_t FieldAlignRequirement = (MinFieldAlignRequirement >= alignof(std::uint64_t)) ? MinFieldAlignRequirement : alignof(std::uint64_t);
 
@@ -84,10 +89,13 @@ public:
 
     inline std::string GetProfileThreadId();
     inline std::string GetProfileThreadName();
+    inline std::uintptr_t GetStackBasedAddress();
 
 #ifdef LINUX
     inline void SetSharedMemory(volatile int* memoryArea);
     inline void MarkAsInterrupted();
+    static std::uintptr_t RetrieveStackBaseAdress();
+    void InitializeStackBoudaries();
 #endif
     inline bool CanBeInterrupted() const;
 
@@ -133,7 +141,19 @@ private:
     // to know (for now, maybe more later) if the profiler interrupted a thread which was
     // doing a syscalls.
     volatile int* _sharedMemoryArea;
+
+#ifdef LINUX
+    std::uintptr_t _stackBaseAddress;
+#endif
 };
+
+#ifdef LINUX
+
+std::uintptr_t ManagedThreadInfo::GetStackBasedAddress()
+{
+    return _stackBaseAddress;
+}
+#endif
 
 std::string ManagedThreadInfo::GetProfileThreadId()
 {
@@ -159,7 +179,7 @@ inline void ManagedThreadInfo::BuildProfileThreadId()
 {
     std::stringstream builder;
     builder << "<" << std::dec << _profilerThreadInfoId << "> [#" << _osThreadId << "]";
-    _profileThreadId = std::move(builder.str());
+    _profileThreadId = builder.str();
 }
 
 inline void ManagedThreadInfo::BuildProfileThreadName()

@@ -52,6 +52,7 @@ RUN apk update \
         xz-dev \
         gdb \
         musl-dbg \
+	musl-dev \
         cppcheck \
         build-base \
         libldap \

@@ -44,5 +44,60 @@ ManagedThreadInfo::ManagedThreadInfo(ThreadID clrThreadId, DWORD osThreadId, HAN
     _cpuConsumptionMilliseconds{0},
     _timestamp{0},
     _sharedMemoryArea{nullptr}
+#ifdef LINUX
+    ,
+    _stackBaseAddress{0}
+#endif
 {
 }
+
+#ifdef LINUX
+namespace {
+union pthread_attr_safe_t
+{
+    pthread_attr_t attrs;
+
+    // extra size to match glibc size
+    // cppcheck-suppress unusedStructMember
+    char reserved[64];
+};
+} // namespace
+
+// Safe version of pthread_getattr_np
+int pthread_getattr_np_safe(pthread_t th, pthread_attr_t* attr)
+{
+    // pad pthread_getattr_np argument with extra space to avoid out-of-bound
+    // write on the stack
+    pthread_attr_safe_t safe_attrs;
+    int res = pthread_getattr_np(th, &safe_attrs.attrs);
+    if (!res)
+    {
+        *attr = safe_attrs.attrs;
+    }
+    return res;
+}
+
+std::uintptr_t ManagedThreadInfo::RetrieveStackBaseAdress()
+{
+    void* stack_addr;
+    size_t stack_size;
+    pthread_attr_t attrs;
+    if (pthread_getattr_np_safe(pthread_self(), &attrs) != 0)
+    {
+        return 0;
+    }
+
+    // pthread_attr_destroy(&attrs);
+    if (pthread_attr_getstack(&attrs, &stack_addr, &stack_size) != 0)
+    {
+        return 0;
+    }
+    return (std::uintptr_t)((std::byte*)stack_addr + stack_size);
+}
+
+void ManagedThreadInfo::InitializeStackBoudaries()
+{
+    _stackBaseAddress = RetrieveStackBaseAdress();
+}
+
+#endif

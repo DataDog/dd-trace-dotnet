@@ -1341,6 +1341,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
 #endif
 
 #ifdef LINUX
+    auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
     if (_systemCallsShield != nullptr)
     {
         // Register/Unregister rely on the following assumption:
@@ -1349,9 +1350,10 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::ThreadAssignedToOSThread(ThreadID
         // If at some point, it's not true, we can remove Register/Unregister on the SystemCallsShield class.
         // Then initiliaze the TLS managedThreadInfo (by calling TryGetCurrentThreadInfo) the first time a call is made in SystemCallsShield
         // SystemCallsShield::SetSharedMemory callback.
-        auto threadInfo = _pManagedThreadList->GetOrCreate(managedThreadId);
         _systemCallsShield->Register(threadInfo);
     }
+
+    threadInfo->InitializeStackBoudaries();
 
     // TL;DR prevent the profiler from deadlocking application thread on malloc
     // When calling uwn_backtraceXX, libunwind will initialize data structures for the current

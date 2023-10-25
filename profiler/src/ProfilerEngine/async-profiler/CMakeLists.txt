@@ -1,8 +1,7 @@
 # ******************************************************
 # Project definition
 # ******************************************************
-
-project("Datadog.Profiler.Native.Linux" VERSION 2.44.0)
+project("async-profiler" VERSION 2.41.0)
 
 option(RUN_ASAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
 option(RUN_UBSAN "Build with Clang Undefined-Behavior Sanitizer" OFF)
@@ -13,6 +12,7 @@ message(STATUS "Run Clang Undefined-Behavior Sanitizer: " ${RUN_UBSAN})
 # ******************************************************
 # Compiler options
 # ******************************************************
+set(CMAKE_CXX_STANDARD 20)
 
 # Sets compiler options
 add_compile_options(-std=c++20 -fPIC -fms-extensions -g)
@@ -55,7 +55,7 @@ endif()
 # Environment detection
 # ******************************************************
 
-SET(PROFILER_BASENAME Datadog.Profiler.Native)
+SET(PROFILER_BASENAME async-profiler-lib)
 SET(PROFILER_STATIC_LIB_NAME ${PROFILER_BASENAME}.static)
 SET(PROFILER_SHARED_LIB_NAME ${PROFILER_BASENAME})
 
@@ -69,30 +69,14 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 
 FILE(GLOB LINUX_PROFILER_SRC CONFIGURE_DEPENDS "*.cpp")
 
-FILE(GLOB COMMON_PROFILER_SRC LIST_DIRECTORIES false "../Datadog.Profiler.Native/*.cpp")
-FILE(GLOB EXCLUDE_DLLMAIN "../Datadog.Profiler.Native/DllMain.cpp")
-
-list(REMOVE_ITEM COMMON_PROFILER_SRC "${EXCLUDE_DLLMAIN}")
-
 # ******************************************************
 # Define static target
 # ******************************************************
 add_library(${PROFILER_STATIC_LIB_NAME} STATIC
     ${LINUX_PROFILER_SRC}
-    ${COMMON_PROFILER_SRC}
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/string.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/util.cpp
-    ${DOTNET_TRACER_REPO_ROOT_PATH}/shared/src/native-src/miniutf.cpp
 )
 
 set_target_properties(${PROFILER_STATIC_LIB_NAME} PROPERTIES PREFIX "")
-
-# Define directories includes
-target_include_directories(${PROFILER_STATIC_LIB_NAME}
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native.Linux
-    PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/../Datadog.Profiler.Native
-    PUBLIC ${DOTNET_TRACER_REPO_ROOT_PATH}
-)
 
 # Define linker libraries
 
@@ -110,34 +94,3 @@ endif()
 
 target_compile_definitions(${PROFILER_STATIC_LIB_NAME} PUBLIC "-D_GLIBCXX_USE_CXX11_ABI=0")
 
-target_link_libraries(${PROFILER_STATIC_LIB_NAME}
-    libunwind-lib
-    libdatadog-lib
-    coreclr
-    PPDB
-    spdlog-headers
-    -static-libgcc
-    -static-libstdc++
-    -lstdc++fs
-    -pthread
-    -ldl
-    -Wl,--build-id
-    async-profiler-lib.static
-)
-
-add_dependencies(${PROFILER_STATIC_LIB_NAME} libdatadog-lib libunwind-lib coreclr spdlog-headers PPDB async-profiler-lib.static)
-
-# ******************************************************
-# Define shared target
-# ******************************************************
-
-add_library(${PROFILER_SHARED_LIB_NAME} SHARED
-    ../Datadog.Profiler.Native/DllMain.cpp
-)
-
-set_target_properties(${PROFILER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
-
-# Define linker libraries
-target_link_libraries(${PROFILER_SHARED_LIB_NAME}
-    -Wl,--whole-archive $<TARGET_FILE:${PROFILER_STATIC_LIB_NAME}> -Wl,--no-whole-archive
-    ${PROFILER_STATIC_LIB_NAME})

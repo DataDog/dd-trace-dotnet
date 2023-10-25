@@ -19,6 +19,7 @@
 #include "ProfilerSignalManager.h"
 #include "ScopeFinalizer.h"
 #include "StackSnapshotResultBuffer.h"
+#include "NativeLibraries.h"
 
 using namespace std::chrono_literals;
 
@@ -82,6 +83,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
                                                                                        bool selfCollect)
 {
     long errorCode;
+
+    NativeLibraries::Instance()->UpdateCache();
 
     if (selfCollect)
     {
@@ -175,8 +178,8 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
     {
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
-
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        return CollectStackWithAsyncProfilerUnwinder(ctx);
+        //return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
@@ -250,6 +253,173 @@ std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
     // Now walk the stack:
     auto [data, size] = Data();
     auto count = unw_backtrace2((void**)data, size, context);
+
+    if (count == 0)
+    {
+        return E_FAIL;
+    }
+
+    SetFrameCount(count);
+    return S_OK;
+}
+
+
+class SafeAccess
+{
+public:
+    NOINLINE __attribute__((aligned(16))) static void* load(void** ptr)
+    {
+        return *ptr;
+    }
+
+    static uintptr_t skipFaultInstruction(uintptr_t pc)
+    {
+        if ((pc - (uintptr_t)load) < 16)
+        {
+#if defined(__x86_64__)
+            return *(u16*)pc == 0x8b48 ? 3 : 0; // mov rax, [reg]
+#elif defined(__i386__)
+            return *(u8*)pc == 0x8b ? 2 : 0; // mov eax, [reg]
+#elif defined(__arm__) || defined(__thumb__)
+            return (*(instruction_t*)pc & 0x0e50f000) == 0x04100000 ? 4 : 0; // ldr r0, [reg]
+#elif defined(__aarch64__)
+            return (*(instruction_t*)pc & 0xffc0001f) == 0xf9400000 ? 4 : 0; // ldr x0, [reg]
+#else
+            return sizeof(instruction_t);
+#endif
+        }
+        return 0;
+    }
+};
+
+const intptr_t MIN_VALID_PC = 0x1000;
+const intptr_t MAX_WALK_SIZE = 0x100000;
+const intptr_t MAX_FRAME_SIZE = 0x40000;
+
+#define stripPointer(p) (p)
+
+std::uint16_t LinuxStackFramesCollector::stackWalkBro(ddprof::span<std::uintptr_t> callchain, StackFrame& frame)
+{
+    auto cache = NativeLibraries::Instance()->GetCache();
+    std::size_t depth = 0;
+
+    uintptr_t prev_sp;
+
+    const void* pc = (const void*)frame.pc();
+    uintptr_t fp = frame.fp();
+    uintptr_t sp = frame.sp();
+    uintptr_t bottom = _pCurrentCollectionThreadInfo->GetStackBasedAddress();
+    if (bottom == 0)
+    {
+        bottom = (uintptr_t)&sp + MAX_WALK_SIZE;
+    }
+
+    while (true)
+    {
+        if (depth >= callchain.size())
+        {
+            break;
+        }
+        callchain[depth++] = (uintptr_t)pc;
+        prev_sp = sp;
+
+        FrameDesc* f;
+        CodeCache* cc = cache.findLibraryByAddress(pc);
+        if (cc == NULL || (f = cc->findFrameDesc(pc)) == NULL)
+        {
+            //walkFp(pc, fp, sp); // how to break there is an issue
+            // Check if the next frame is below on the current stack
+            if (fp < sp || fp >= sp + MAX_FRAME_SIZE || fp >= bottom)
+            {
+                break;
+            }
+
+            // Frame pointer must be word aligned
+            if ((fp & (sizeof(uintptr_t) - 1)) != 0)
+            {
+                break;
+            }
+
+            pc = stripPointer(SafeAccess::load((void**)fp + FRAME_PC_SLOT));
+            if (pc < (const void*)MIN_VALID_PC || pc > (const void*)-MIN_VALID_PC)
+            {
+                break;
+            }
+
+            sp = fp + (FRAME_PC_SLOT + 1) * sizeof(void*);
+            fp = *(uintptr_t*)fp;
+            continue;
+        }
+
+        u8 cfa_reg = (u8)f->cfa;
+        int cfa_off = f->cfa >> 8;
+        if (cfa_reg == DW_REG_SP)
+        {
+            sp = sp + cfa_off;
+        }
+        else if (cfa_reg == DW_REG_FP)
+        {
+            sp = fp + cfa_off;
+        }
+        else if (cfa_reg == DW_REG_PLT)
+        {
+            sp += ((uintptr_t)pc & 15) >= 11 ? cfa_off * 2 : cfa_off;
+        }
+        else
+        {
+            break;
+        }
+
+        // Check if the next frame is below on the current stack
+        if (sp < prev_sp || sp >= prev_sp + MAX_FRAME_SIZE || sp >= bottom)
+        {
+            break;
+        }
+
+        // Stack pointer must be word aligned
+        if ((sp & (sizeof(uintptr_t) - 1)) != 0)
+        {
+            break;
+        }
+
+        if (f->fp_off & DW_PC_OFFSET)
+        {
+            pc = (const char*)pc + (f->fp_off >> 1);
+        }
+        else
+        {
+            if (f->fp_off != DW_SAME_FP && f->fp_off < MAX_FRAME_SIZE && f->fp_off > -MAX_FRAME_SIZE)
+            {
+                fp = (uintptr_t)SafeAccess::load((void**)(sp + f->fp_off));
+            }
+            pc = stripPointer(SafeAccess::load((void**)sp - 1));
+        }
+
+        if (pc < (const void*)MIN_VALID_PC || pc > (const void*)-MIN_VALID_PC)
+        {
+            break;
+        }
+    }
+    return depth;
+}
+
+std::int32_t LinuxStackFramesCollector::CollectStackWithAsyncProfilerUnwinder(void* ctx)
+{
+    auto* newCtx = ctx;
+    ucontext_t cttx;
+    if (ctx == nullptr)
+    {
+        cttx.uc_mcontext.gregs[REG_RIP] = (long long)__builtin_return_address(0);
+        cttx.uc_mcontext.gregs[REG_RBP] = (long long)__builtin_frame_address(1);
+        cttx.uc_mcontext.gregs[REG_RSP] = (long long)__builtin_frame_address(0);
+        newCtx = &cttx;
+    }
+
+    StackFrame frame(newCtx);
+    auto [data, max_depth] = Data();
+
+    auto callchain = ddprof::span<uintptr_t>(data, max_depth);
+    auto count = stackWalkBro(callchain, frame);
 
     if (count == 0)
     {

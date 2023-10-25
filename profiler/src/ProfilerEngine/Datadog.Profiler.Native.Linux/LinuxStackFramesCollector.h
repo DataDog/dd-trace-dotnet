@@ -17,6 +17,22 @@
 #include <signal.h>
 #include <unordered_map>
 
+
+#include "../async-profiler/stackFrame.h"
+#include "../async-profiler/dwarf.h"
+#include "../async-profiler/stackWalker.h"
+#include "../async-profiler/stack_context.h"
+#include "../async-profiler/span.hpp"
+#include "../async-profiler/arch.h"
+
+#include <stdint.h>
+
+#ifdef __clang__
+#define NOINLINE __attribute__((noinline))
+#else
+#define NOINLINE __attribute__((noinline, noclone))
+#endif
+
 class IManagedThreadList;
 class ProfilerSignalManager;
 class ProfilerSignalManager;
@@ -60,6 +76,7 @@ private:
     bool CanCollect(int32_t threadId, pid_t processId) const;
     std::int32_t CollectStackManually(void* ctx);
     std::int32_t CollectStackWithBacktrace2(void* ctx);
+    std::int32_t CollectStackWithAsyncProfilerUnwinder(void* ctx);
     void MarkAsInterrupted();
 
     std::int32_t _lastStackWalkErrorCode;
@@ -82,6 +99,7 @@ private:
     static LinuxStackFramesCollector* s_pInstanceCurrentlyStackWalking;
 
     std::int32_t CollectCallStackCurrentThread(void* ucontext);
+    std::uint16_t stackWalkBro(ddprof::span<std::uintptr_t> callchain, StackFrame& frame);
 
     ErrorStatistics _errorStatistics;
     bool _useBacktrace2;
