@@ -139,10 +139,13 @@ internal readonly partial struct SecurityCoordinator
                 var bytes = Encoding.UTF8.GetBytes(serializeObject);
                 if (bytes.Length <= MaxApiSecurityTagValueLength)
                 {
-                    using var memoryStream = new MemoryStream();
-                    using var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress);
-                    gZipStream.Write(bytes, 0, bytes.Length);
-                    gZipStream.Flush();
+                    var memoryStream = new MemoryStream();
+                    using (var gZipStream = new GZipStream(memoryStream, CompressionMode.Compress))
+                    {
+                        gZipStream.Write(bytes, 0, bytes.Length);
+                        gZipStream.Flush();
+                    }
+
                     var gzipBase64 = Convert.ToBase64String(memoryStream.ToArray());
                     _localRootSpan.SetTag(derivative.Key, gzipBase64);
                 }

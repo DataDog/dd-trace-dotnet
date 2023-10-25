@@ -550,8 +550,11 @@ namespace Datadog.Trace
 
             if (security.Settings.ApiSecurityEnabled)
             {
-                writer.WritePropertyName("apisecurity_enabled");
+                writer.WritePropertyName("appsec_apisecurity_enabled");
                 writer.WriteValue(security.Settings.ApiSecurityEnabled);
+
+                writer.WritePropertyName("appsec_apisecurity_sampling");
+                writer.WriteValue(security.Settings.ApiSecuritySampling);
             }
 
             writer.WritePropertyName("appsec_trace_rate_limit");
