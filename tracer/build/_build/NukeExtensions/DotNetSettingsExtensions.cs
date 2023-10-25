@@ -227,7 +227,7 @@ internal static partial class DotNetSettingsExtensions
         );
     }
 
-    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings)
+    public static DotNetTestSettings WithDatadogLogger(this DotNetTestSettings settings, bool useSettingsFile = true)
     {
         var enabled = NukeBuild.IsServerBuild;
         try
@@ -245,10 +245,20 @@ internal static partial class DotNetSettingsExtensions
 
         if (enabled)
         {
-            return settings
-                  .SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory)
-                  .SetProcessEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH", NukeBuild.RootDirectory / "Datadog.Trace.snk")
-                  .SetSettingsFile(NukeBuild.RootDirectory / "tracer" / "test" / "test.settings");
+            if (useSettingsFile)
+            {
+                return settings
+                      .SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory)
+                      .SetProcessEnvironmentVariable("DD_CIVISIBILITY_CODE_COVERAGE_SNK_FILEPATH", NukeBuild.RootDirectory / "Datadog.Trace.snk")
+                      .SetSettingsFile(NukeBuild.RootDirectory / "tracer" / "test" / "test.settings");
+            }
+            else
+            {
+                settings = settings.SetProcessEnvironmentVariable("DD_LOGGER_BUILD_SOURCESDIRECTORY", NukeBuild.RootDirectory);
+                var pArgConf = settings.ProcessArgumentConfigurator ?? (args => args);
+                return settings.SetProcessArgumentConfigurator(
+                    args => pArgConf(args.Add("--logger:datadog")));
+            }
         }
 
         return settings;

@@ -981,7 +981,7 @@ partial class Build
                             .When(!string.IsNullOrWhiteSpace(Filter), c => c.SetFilter(Filter))
                             .CombineWith(testProjects, (x, project) => x
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
+                                .WithDatadogLogger(useSettingsFile: targetFramework != TargetFramework.NET461 && targetFramework != TargetFramework.NET462)
                                 .SetProjectFile(project)));
                     }
                     catch (Exception ex)
@@ -1331,7 +1331,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ParallelIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                         .SetProjectFile(project)), degreeOfParallelism: 4);
 
 
@@ -1354,7 +1354,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                         .SetProjectFile(project)));
             }
             finally
@@ -1422,7 +1422,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(project))
-                    .WithDatadogLogger()
+                    .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                     .SetProjectFile(project));
             }
             finally
@@ -1464,7 +1464,7 @@ partial class Build
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .CombineWith(ClrProfilerIntegrationTests, (s, project) => s
                         .EnableTrxLogOutput(GetResultsDirectory(project))
-                        .WithDatadogLogger()
+                        .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                         .SetProjectFile(project)));
             }
             finally
@@ -1515,7 +1515,7 @@ partial class Build
                                 .SetLogsDirectory(TestLogsDirectory)
                                 .When(CodeCoverage, ConfigureCodeCoverage)
                                 .EnableTrxLogOutput(GetResultsDirectory(project))
-                                .WithDatadogLogger()
+                                .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                                 .SetProjectFile(project));
         }
         finally
@@ -1554,7 +1554,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(resultsDirectory)
-                    .WithDatadogLogger()
+                    .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
                     .SetProjectFile(project));
             }
             finally
@@ -2101,7 +2101,7 @@ partial class Build
                    .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
                    .SetLogsDirectory(TestLogsDirectory)
                    .EnableTrxLogOutput(GetResultsDirectory(project))
-                   .WithDatadogLogger());
+                   .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462));
        });
 
     Target CopyServerlessArtifacts => _ => _
