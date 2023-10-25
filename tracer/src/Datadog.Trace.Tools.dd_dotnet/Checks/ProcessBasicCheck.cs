@@ -579,13 +579,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
             const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
                 return tracerVersion;
             }
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
                 var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));
