@@ -35,6 +35,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 #endif
 
         private const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+        private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
@@ -172,15 +173,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 standardOutput.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
-            standardOutput.Should().NotContainAny(
+            standardOutput.Should().NotContain(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+
+            standardOutput.Should().Contain(
+                CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
+                CorrectlySetupEnvironment(CorEnableKey, "1"),
+                CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(0);
@@ -222,7 +223,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             standardOutput.Should().ContainAll(
                 TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerEnabled);
+                ContinuousProfilerEnabled,
+                CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
+                CorrectlySetupEnvironment(CorEnableKey, "1"),
+                CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
 
             standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
@@ -230,12 +234,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 ContinuousProfilerNotSet,
                 ContinuousProfilerNotLoaded,
                 "LD_PRELOAD",
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(0);
