@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -14,20 +13,21 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
 {
     internal class UpdateResult
     {
-        internal UpdateResult(DdwafRuleSetInfo? ruleSetInfo, bool success, bool unusableRules = false)
+        internal UpdateResult(DdwafObjectStruct? diagObject, bool success, bool unusableRules = false)
         {
-            if (ruleSetInfo != null)
+            if (diagObject != null)
             {
-                var errors = ruleSetInfo.Errors.Decode();
-                HasErrors = errors.Count > 0;
-                Errors = errors;
-                FailedToLoadRules = ruleSetInfo.Failed;
-                LoadedRules = ruleSetInfo.Loaded;
-                RuleFileVersion = Marshal.PtrToStringAnsi(ruleSetInfo.Version);
-                if (errors.Count > 0)
+                var reportedDiag = DiagnosticResultUtils.ExtractReportedDiagnostics(diagObject.Value, false);
+
+                FailedToLoadRules = reportedDiag.FailedCount;
+                LoadedRules = reportedDiag.LoadedCount;
+                Errors = reportedDiag.Errors;
+                RuleFileVersion = reportedDiag.RulesetVersion;
+
+                if (Errors is { Count: > 0 })
                 {
                     HasErrors = true;
-                    ErrorMessage = JsonConvert.SerializeObject(errors);
+                    ErrorMessage = JsonConvert.SerializeObject(Errors);
                 }
             }
 
@@ -46,16 +46,16 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed
         /// </summary>
         internal ushort? LoadedRules { get; }
 
-        internal IReadOnlyDictionary<string, string[]>? Errors { get; }
+        internal IReadOnlyDictionary<string, object>? Errors { get; }
 
         internal string? ErrorMessage { get; }
 
-        internal bool? HasErrors { get; }
+        internal bool HasErrors { get; }
 
         internal string? RuleFileVersion { get; }
 
-        public static UpdateResult FromUnusableRules() => new UpdateResult(null, false, true);
+        public static UpdateResult FromUnusableRules() => new(null, false, true);
 
-        public static UpdateResult FromFailed() => new UpdateResult(null, false);
+        public static UpdateResult FromFailed() => new(null, false);
     }
 }

@@ -45,16 +45,7 @@ public class DataStreamsMonitoringRabbitMQTests : TestHelper
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
             settings.UseParameters(packageVersion);
-            settings.ModifySerialization(
-                _ =>
-                {
-                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
-                        x => x.EdgeLatency,
-                        (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
-                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
-                        x => x.PathwayLatency,
-                        (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
-                });
+            settings.AddDataStreamsScrubber();
             await Verifier.Verify(PayloadsToPoints(agent.DataStreams), settings)
                           .UseFileName($"{nameof(DataStreamsMonitoringRabbitMQTests)}.{nameof(HandleProduceAndConsume)}")
                           .DisableRequireUniquePrefix();

@@ -57,7 +57,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 return CallTargetReturn.GetDefault();
             }
 
-            LoggerFactoryIntegrationCommon<TTarget>.AddDirectSubmissionLoggerProvider(instance);
+            if (LoggerFactoryIntegrationCommon<TTarget>.TryAddDirectSubmissionLoggerProvider(instance))
+            {
+                TracerManager.Instance.Telemetry.IntegrationGeneratedSpan(IntegrationId.ILogger);
+            }
+
             return CallTargetReturn.GetDefault();
         }
     }

@@ -283,7 +283,8 @@ public class StringReplaceTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted6()
     {
         string str = String.Concat("-", "Payload", "-", _otherTaintedString, "end");
-        AssertTaintedFormatWithOriginalCallCheck(":+--Payload-OtherTaintedStringend-+:",
+        // if no replacement is done, string remains inmutable
+        AssertTaintedFormatWithOriginalCallCheck("-Payload-:+-OtherTaintedString-+:end",
             str.Replace(@"-Payload-([A-Za-z0-9\-]+)\end", _untaintedString),
             () => str.Replace(@"-Payload-([A-Za-z0-9\-]+)\end", _untaintedString));
     }
@@ -292,8 +293,9 @@ public class StringReplaceTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted5()
     {
         string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        // if no replacement is done, string remains inmutable
         AssertTaintedFormatWithOriginalCallCheck(
-            ":+-TaintedString joining OtherTaintedString and LargeTaintedString-+:",
+            ":+-TaintedString-+: joining :+-OtherTaintedString-+: and :+-LargeTaintedString-+:",
             str.Replace("^[a-zA-Z]*$", "Small"),
             () => str.Replace("^[a-zA-Z]*$", "Small"));
     }
@@ -302,30 +304,11 @@ public class StringReplaceTests : InstrumentationTestsBase
     public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted4()
     {
         string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
+        // if no replacement is done, string remains inmutable
         AssertTaintedFormatWithOriginalCallCheck(
-            ":+-TaintedString joining OtherTaintedString and LargeTaintedString-+:",
+            ":+-TaintedString-+: joining :+-OtherTaintedString-+: and :+-LargeTaintedString-+:",
             str.Replace(@"T.*g-+:", "Small"),
             () => str.Replace(@"T.*g-+:", "Small"));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted3()
-    {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
-        AssertTaintedFormatWithOriginalCallCheck(
-            ":+-TaintedString joining OtherTaintedString and LargeTaintedString-+:",
-            str.Replace("\\s+", "Small"),
-            () => str.Replace("\\s+", "Small"));
-    }
-
-    [Fact]
-    public void GivenATaintedObject_WhenCallingReplaceWith2Parameters_ResultIsTainted2()
-    {
-        string str = String.Concat(_taintedString, " joining ", _otherTaintedString, " and ", _largeTaintedString);
-        AssertTaintedFormatWithOriginalCallCheck(
-            ":+-TaintedString joining OtherTaintedString and LargeTaintedString-+:",
-            str.Replace("^[A-Z] [a-zA-Z]*$", "Small"),
-            () => str.Replace("^[A-Z] [a-zA-Z]*$", "Small"));
     }
 
     [Fact]

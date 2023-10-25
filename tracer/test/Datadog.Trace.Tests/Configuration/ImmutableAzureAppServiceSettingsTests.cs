@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.PlatformHelpers;
@@ -192,6 +193,48 @@ namespace Datadog.Trace.Tests.Configuration
             var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
 
             settings.NeedsDogStatsD.Should().Be(expected);
+        }
+
+        [Fact]
+        public void GetIsAzureConsumptionPlanFunctionFalseWhenNoFunctionsEnvVars()
+        {
+            var settings = new ImmutableAzureAppServiceSettings(CreateConfigurationSource(), NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GetIsAzureConsumptionPlanFunctionFalseWhenNotConsumptionPlan()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "basic"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeFalse();
+        }
+
+        [Fact]
+        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithNoSKU()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
+        }
+
+        [Fact]
+        public void GetIsAzureConsumptionPlanFunctionTrueWhenConsumptionPlanWithDynamicSKU()
+        {
+            var source = CreateConfigurationSource(
+                (ConfigurationKeys.AzureAppService.FunctionsWorkerRuntimeKey, "value"),
+                (ConfigurationKeys.AzureAppService.FunctionsExtensionVersionKey, "value"),
+                (ConfigurationKeys.AzureAppService.WebsiteSKU, "Dynamic"));
+
+            var settings = new ImmutableAzureAppServiceSettings(source, NullConfigurationTelemetry.Instance);
+            settings.IsFunctionsAppConsumptionPlan.Should().BeTrue();
         }
     }
 }

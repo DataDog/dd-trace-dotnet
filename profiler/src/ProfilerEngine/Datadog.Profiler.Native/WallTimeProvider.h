@@ -13,6 +13,7 @@ class IAppDomainStore;
 class IRuntimeIdStore;
 class IThreadsCpuManager;
 class IConfiguration;
+class SampleValueTypeProvider;
 
 
 class WallTimeProvider
@@ -20,15 +21,15 @@ class WallTimeProvider
     public CollectorBase<RawWallTimeSample> // accepts raw walltime samples
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     WallTimeProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& sampleValueTypeProvider,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
         IRuntimeIdStore* pRuntimeIdStore,
         IConfiguration* pConfiguration
         );
+
+private:
+    static std::vector<SampleValueType> SampleTypeDefinitions;
 };

@@ -685,6 +685,26 @@ TEST(ConfigurationTest, CheckGcThreadsCpuTimeIsDisabledIfEnvVarSetToFalse)
     ASSERT_THAT(configuration.IsGcThreadsCpuTimeEnabled(), false);
 }
 
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledByDefault)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckThreadLifetimeIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::ThreadLifetimeEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsThreadLifetimeEnabled(), false);
+}
+
 TEST(ConfigurationTest, CheckGitMetadataIfNotSet)
 {
     auto configuration = Configuration{};
@@ -702,4 +722,79 @@ TEST(ConfigurationTest, CheckGitMetadataIfSet)
     auto configuration = Configuration{};
     ASSERT_THAT(configuration.GetGitRepositoryUrl(), expectedRepoUrl);
     ASSERT_THAT(configuration.GetGitCommitSha(), expectedCommitSha);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledByDefault)
+{
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false;
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    auto expectedValue =
+#ifdef LINUX
+        true;
+#else
+        false; // even other platform it's disabled
+#endif
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckSystemCallsShieldIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::SystemCallsShieldEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    auto expectedValue = false;
+    ASSERT_THAT(configuration.IsSystemCallsShieldEnabled(), expectedValue);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledDefaultValueIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledIfEnvVarSetToTrue)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), true);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilityEnabledIsDisabledIfEnvVarSetToFalse)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.IsCIVisibilityEnabled(), false);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdDefaultValueIfNotSet)
+{
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSet)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("12345678909"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 12345678909ull);
+}
+
+TEST(ConfigurationTest, CheckCIVisibilitySpanIdValueIfSetTo0)
+{
+    EnvironmentHelper::EnvironmentVariable ar(EnvironmentVariables::CIVisibilityEnabled, WStr("1"));
+    EnvironmentHelper::EnvironmentVariable ar2(EnvironmentVariables::InternalCIVisibilitySpanId, WStr("0"));
+    auto configuration = Configuration{};
+    ASSERT_THAT(configuration.GetCIVisibilitySpanId(), 0ull);
 }

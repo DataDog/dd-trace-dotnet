@@ -7,6 +7,8 @@
 #pragma warning disable SA1402 // File may only contain a single class
 #pragma warning disable SA1649 // File name must match first type name
 
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -16,6 +18,7 @@ using Datadog.Trace.TestHelpers;
 using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
+using Expectations = System.Collections.Generic.Dictionary<string, (int StatusCode, int ExpectedSpanCount)>;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
@@ -114,8 +117,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     [UsesVerify]
     public abstract class AspNetWebApi2Tests : TracingIntegrationTest, IClassFixture<IisFixture>
     {
+        private static readonly Expectations ClassicExpectations = CreateExpectations(classicMode: true);
+        private static readonly Expectations IntegratedExpectations = CreateExpectations(classicMode: false);
+
         private readonly IisFixture _iisFixture;
         private readonly string _testName;
+        private readonly Expectations _expectations;
 
         public AspNetWebApi2Tests(IisFixture iisFixture, ITestOutputHelper output, bool classicMode, bool enableRouteTemplateResourceNames, bool enableRouteTemplateExpansion = false, bool virtualApp = false)
             : base("AspNetMvc5", @"test\test-applications\aspnet", output)
@@ -124,6 +131,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable(ConfigurationKeys.FeatureFlags.RouteTemplateResourceNamesEnabled, enableRouteTemplateResourceNames.ToString());
             SetEnvironmentVariable(ConfigurationKeys.ExpandRouteTemplatesEnabled, enableRouteTemplateExpansion.ToString());
 
+            _expectations = classicMode ? ClassicExpectations : IntegratedExpectations;
             _iisFixture = iisFixture;
             _iisFixture.ShutdownPath = "/home/shutdown";
             if (virtualApp)
@@ -141,44 +149,47 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         protected virtual string ExpectedServiceName => "sample";
 
-        public static TheoryData<string, int, int> Data() => new()
+        // classicMode doesn't change the paths we test, just the expectations, so can use either
+        public static IEnumerable<object[]> Data() => IntegratedExpectations.Keys.Select(x => new object[] { x });
+
+        public static Dictionary<string, (int StatusCode, int ExpectedSpanCount)> CreateExpectations(bool classicMode) => new()
         {
-            { "/api/environment", 200, 2 },
-            { "/api/absolute-route", 200, 2 },
-            { "/api/delay/0", 200, 2 },
-            { "/api/delay-optional", 200, 2 },
-            { "/api/delay-optional/1", 200, 2 },
-            { "/api/delay-async/0", 200, 2 },
-            { "/api/transient-failure/true", 200, 2 },
-            { "/api/transient-failure/false", 500, 3 },
-            { "/api/statuscode/201", 201, 2 },
-            { "/api/statuscode/503", 503, 2 },
-            { "/api/constraints", 200, 2 },
-            { "/api/constraints/201", 201, 2 },
-            { "/api/TransferRequest/401", 401, 4 },
-            { "/api/TransferRequest/503", 503, 4 },
-            { "/api2/delay/0", 200, 2 },
-            { "/api2/optional", 200, 2 },
-            { "/api2/optional/1", 200, 2 },
-            { "/api2/delayAsync/0", 200, 2 },
-            { "/api2/transientfailure/true", 200, 2 },
-            { "/api2/transientfailure/false", 500, 3 },
-            { "/api2/statuscode/201", 201, 2 },
-            { "/api2/statuscode/503", 503, 3 },
+            { "/api/environment", (200, 2) },
+            { "/api/absolute-route", (200, 2) },
+            { "/api/delay/0", (200, 2) },
+            { "/api/delay-optional", (200, 2) },
+            { "/api/delay-optional/1", (200, 2) },
+            { "/api/delay-async/0", (200, 2) },
+            { "/api/transient-failure/true", (200, 2) },
+            { "/api/transient-failure/false", (500, 3) },
+            { "/api/statuscode/201", (201, 2) },
+            { "/api/statuscode/503", (503, 2) },
+            { "/api/constraints", (200, 2) },
+            { "/api/constraints/201", (201, 2) },
+            { "/api/TransferRequest/401", (401, classicMode ? 2 : 4) },
+            { "/api/TransferRequest/503", (503, classicMode ? 2 : 4) },
+            { "/api2/delay/0", (200, 2) },
+            { "/api2/optional", (200, 2) },
+            { "/api2/optional/1", (200, 2) },
+            { "/api2/delayAsync/0", (200, 2) },
+            { "/api2/transientfailure/true", (200, 2) },
+            { "/api2/transientfailure/false", (500, 3) },
+            { "/api2/statuscode/201", (201, 2) },
+            { "/api2/statuscode/503", (503, 2) },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect
-            { "/api2/statuscode/201?ps=true&ts=true", 201, 2 },
-            { "/api2/statuscode/201?ps=true&ts=false", 201, 2 },
-            { "/api2/statuscode/201?ps=false&ts=true", 500, 2 },
-            { "/api2/statuscode/201?ps=false&ts=false", 500, 2 },
+            { "/api2/statuscode/201?ps=true&ts=true", (201, 2) },
+            { "/api2/statuscode/201?ps=true&ts=false", (201, 2) },
+            { "/api2/statuscode/201?ps=false&ts=true", (500, 2) },
+            { "/api2/statuscode/201?ps=false&ts=false", (500, 2) },
 
             // The global message handler will fail when ps=false
             // The global and per-route message handler is invoked with the route /handler-api, so ts=false will also fail the request
-            { "/handler-api/api?ps=true&ts=true", 200, 1 },
-            { "/handler-api/api?ps=true&ts=false", 500, 2 },
-            { "/handler-api/api?ps=false&ts=true", 500, 2 },
-            { "/handler-api/api?ps=false&ts=false", 500, 2 },
+            { "/handler-api/api?ps=true&ts=true", (200, 1) },
+            { "/handler-api/api?ps=true&ts=false", (500, 2) },
+            { "/handler-api/api?ps=false&ts=true", (500, 2) },
+            { "/handler-api/api?ps=false&ts=false", (500, 2) },
         };
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) =>
@@ -195,27 +206,29 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         [Trait("LoadFromGAC", "True")]
         [MemberData(nameof(Data))]
-        public async Task SubmitsTraces(string path, HttpStatusCode statusCode, int expectedSpanCount)
+        public async Task SubmitsTraces(string path)
         {
+            var (statusCode, expectedSpanCount) = _expectations[path];
+
             // TransferRequest cannot be called in the classic mode, so we expect a 500 when this happens
             var toLowerPath = path.ToLower();
             if (_testName.Contains(".Classic") && toLowerPath.Contains("transferrequest"))
             {
-                statusCode = (HttpStatusCode)500;
+                statusCode = 500;
             }
 
             // Append virtual directory to the actual request
-            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, statusCode, expectedSpanCount);
+            var spans = await GetWebServerSpans(_iisFixture.VirtualApplicationPath + path, _iisFixture.Agent, _iisFixture.HttpPort, (HttpStatusCode)statusCode, expectedSpanCount);
             ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: ExpectedServiceName, isExternalSpan: false);
 
             var sanitisedPath = VerifyHelper.SanitisePathsForVerify(path);
-            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, (int)statusCode);
+            var settings = VerifyHelper.GetSpanVerifierSettings(sanitisedPath, statusCode);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Overriding the method name to _
             // Overriding the parameters to remove the expectedSpanCount parameter, which is necessary for operation but unnecessary for the filename
             await Verifier.Verify(spans, settings)
-                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={(int)statusCode}")
+                          .UseFileName($"{_testName}.__path={sanitisedPath}_statusCode={statusCode}")
                           .DisableRequireUniquePrefix(); // sharing snapshots between web api and owin
         }
     }

@@ -28,6 +28,7 @@ namespace NetCoreAssemblyLoadFailureOlderNuGet
             System.Threading.Thread.Sleep(5000);
 #endif
 
+            Console.WriteLine("App completed successfully");
             return (int)ExitCode.Success;
         }
 

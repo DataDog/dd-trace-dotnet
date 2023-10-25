@@ -6,7 +6,6 @@
 #nullable enable
 
 using System;
-using Datadog.Trace.Ci;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Util;
@@ -59,10 +58,10 @@ namespace Datadog.Trace.Telemetry
 
         public bool MetricsEnabled { get; }
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
-            => FromSource(source, telemetry, IsAgentAvailable);
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, ImmutableTracerSettings tracerSettings, bool? isAgentAvailable)
+            => FromSource(source, telemetry, isAgentAvailable, isServerless: tracerSettings.LambdaMetadata.IsRunningInLambda || tracerSettings.IsRunningInAzureFunctionsConsumptionPlan || tracerSettings.IsRunningInGCPFunctions);
 
-        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, Func<bool?> isAgentAvailable)
+        public static TelemetrySettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry, bool? isAgentAvailable, bool isServerless)
         {
             string? configurationError = null;
             var config = new ConfigurationBuilder(source, telemetry);
@@ -91,8 +90,7 @@ namespace Datadog.Trace.Telemetry
 
             var agentProxyEnabled = config
                                    .WithKeys(ConfigurationKeys.Telemetry.AgentProxyEnabled)
-                                   .AsBool(() => isAgentAvailable() ?? true, validator: null)
-                                   .Value;
+                                   .AsBool(isAgentAvailable ?? true);
 
             // enabled by default if we have any transports
             var telemetryEnabled = config
@@ -134,7 +132,7 @@ namespace Datadog.Trace.Telemetry
 
                 // The uri is already validated in the above code, so this won't fail
                 var finalUri = UriHelpers.Combine(new Uri(agentlessUri, UriKind.Absolute), "/");
-                agentless = new AgentlessSettings(finalUri, apiKey!);
+                agentless = AgentlessSettings.Create(finalUri, apiKey!);
             }
 
             var heartbeatInterval = config
@@ -143,18 +141,26 @@ namespace Datadog.Trace.Telemetry
                                    .Value;
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
-            // Currently disabled, will be flipped to true in later versions as part of the rollout
-            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(false);
+
+            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(defaultValue: true);
 
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
-            // Currently disabled, will be flipped to true in later versions as part of the rollout
-            // Also, will require v2 enabled
-            var metricsEnabled = config
+            // Requires v2 enabled
+            bool metricsEnabled;
+            if (isServerless)
+            {
+                // disable metrics by default in serverless, because we can't guarantee the correctness
+                metricsEnabled = false;
+                telemetry.Record(ConfigurationKeys.Telemetry.MetricsEnabled, false, ConfigurationOrigins.Default);
+            }
+            else
+            {
+                metricsEnabled = config
                                 .WithKeys(ConfigurationKeys.Telemetry.MetricsEnabled)
                                 .AsBool(
-                                     defaultValue: false,
+                                     defaultValue: v2Enabled,
                                      validator: enabled =>
                                      {
                                          if (v2Enabled || !enabled)
@@ -167,6 +173,7 @@ namespace Datadog.Trace.Telemetry
                                                                   : configurationError + ", Cannot enable telemetry metrics unless telemetry V2 is enabled";
                                          return false;
                                      });
+            }
 
             return new TelemetrySettings(
                 telemetryEnabled,
@@ -180,23 +187,20 @@ namespace Datadog.Trace.Telemetry
                 debugEnabled);
         }
 
-        private static bool? IsAgentAvailable()
-        {
-            // if CIVisibility is enabled and in agentless mode, we probably don't have an agent available
-            if (CIVisibility.IsRunning || CIVisibility.Enabled)
-            {
-                return !CIVisibility.Settings.Agentless;
-            }
-
-            return null;
-        }
-
         public class AgentlessSettings
         {
-            public AgentlessSettings(Uri agentlessUri, string apiKey)
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AgentlessSettings"/> class.
+            /// For testing only, prefer using <see cref="Create"/> instead
+            /// </summary>
+            public AgentlessSettings(
+                Uri agentlessUri,
+                string apiKey,
+                CloudSettings? cloudSettings)
             {
                 AgentlessUri = agentlessUri;
                 ApiKey = apiKey;
+                Cloud = cloudSettings;
             }
 
             /// <summary>
@@ -208,6 +212,49 @@ namespace Datadog.Trace.Telemetry
             /// Gets the api key to use when sending requests to the agentless telemetry intake
             /// </summary>
             public string ApiKey { get; }
+
+            public CloudSettings? Cloud { get; }
+
+            public static AgentlessSettings Create(Uri agentlessUri, string apiKey)
+            {
+                CloudSettings? cloud = null;
+                if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.GcpServiceVariable) is { Length: >0 } gcp)
+                {
+                    cloud = new("GCP", "GCPCloudRun", gcp);
+                }
+                else if (EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureContainerAppVariable) is { Length: >0 } aca)
+                {
+                    cloud = new("Azure", "AzureContainerApp", aca);
+                }
+                else if (!string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable1))
+                    || !string.IsNullOrEmpty(EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceVariable2)))
+                {
+                    cloud = new("Azure", "AzureAppService", EnvironmentHelpers.GetEnvironmentVariable(TelemetryConstants.AzureAppServiceIdentifierVariable));
+                }
+
+                // TODO: Handle AWS Lambda. We don't currently have a good way to get the ARN as the identifier so skip for now
+
+                return new AgentlessSettings(agentlessUri, apiKey, cloud);
+            }
+
+            public class CloudSettings
+            {
+                public CloudSettings(
+                    string provider,
+                    string resourceType,
+                    string resourceIdentifier)
+                {
+                    Provider = provider;
+                    ResourceType = resourceType;
+                    ResourceIdentifier = resourceIdentifier;
+                }
+
+                public string Provider { get; }
+
+                public string ResourceType { get; }
+
+                public string ResourceIdentifier { get; }
+            }
         }
     }
 }

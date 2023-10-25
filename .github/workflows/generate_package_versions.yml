@@ -1,0 +1,39 @@
+name: Generate package versions and push
+
+on:
+  workflow_dispatch:
+
+jobs:
+  generate_package_versions:
+    runs-on: windows-latest
+    env:
+      GITHUB_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
+
+    steps:
+      - name: Fail if branch is on master
+        if: github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/master'
+        run: |
+          echo "This workflow should not be triggered with workflow_dispatch on the master branch"
+          exit 1
+
+      - name: Support longpaths
+        run: git config --system core.longpaths true
+
+      - name: Checkout
+        uses: actions/checkout@v2
+
+      - uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: '7.0.306'
+
+      - name: "Regenerating package versions"
+        run: .\tracer\build.ps1 GeneratePackageVersions
+
+      - name: Create commits
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git commit -am "Updated package versions"
+          git push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

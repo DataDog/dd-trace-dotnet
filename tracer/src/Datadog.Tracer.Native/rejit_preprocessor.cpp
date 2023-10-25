@@ -3,6 +3,7 @@
 #include "integration.h"
 #include "logger.h"
 #include "debugger_members.h"
+#include "fault_tolerant_tracker.h"
 
 namespace trace
 {
@@ -17,6 +18,26 @@ RejitPreprocessor<RejitRequestDefinition>::RejitPreprocessor(CorProfiler* corPro
 }
 
 template <class RejitRequestDefinition>
+void RejitPreprocessor<RejitRequestDefinition>::EnqueueFaultTolerantMethods(const RejitRequestDefinition& definition, ComPtr<IMetaDataImport2>& metadataImport, ComPtr<IMetaDataEmit2>& metadataEmit, const ModuleInfo& moduleInfo, const mdTypeDef typeDef, std::vector<MethodIdentifier>& rejitRequests, unsigned methodDef, const FunctionInfo& functionInfo, RejitHandlerModule* moduleHandler)
+{
+    if (fault_tolerant::FaultTolerantTracker::Instance()->IsKickoffMethod(moduleInfo.id, methodDef))
+    {
+        const auto originalMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetOriginalMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests,
+                                            originalMethod,
+                                            functionInfo, moduleHandler);
+
+        const auto instrumentedMethod =
+            fault_tolerant::FaultTolerantTracker::Instance()->GetInstrumentedMethod(moduleInfo.id, methodDef);
+        RejitPreprocessor::EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef,
+                                            rejitRequests,
+                                            instrumentedMethod,
+                                            functionInfo, moduleHandler);
+    }
+}
+
+template <class RejitRequestDefinition>
 void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequestDefinition& definition, 
     ComPtr<IMetaDataImport2>& metadataImport, 
     ComPtr<IMetaDataEmit2>& metadataEmit, 
@@ -27,6 +48,9 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequ
     const FunctionInfo& functionInfo, 
     RejitHandlerModule* moduleHandler)
 {
+    EnqueueFaultTolerantMethods(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
+                               functionInfo, moduleHandler);
+
     RejitHandlerModuleMethodCreatorFunc creator = [=, request = definition, fInfo = functionInfo](
         const mdMethodDef method, RejitHandlerModule* module) {
         return CreateMethod(method, module, fInfo, request);
@@ -37,7 +61,7 @@ void RejitPreprocessor<RejitRequestDefinition>::EnqueueNewMethod(const RejitRequ
     };
 
     moduleHandler->CreateMethodIfNotExists(methodDef, creator, updater);
-
+    
     // Store module_id and methodDef to request the ReJIT after analyzing all integrations.
     rejitRequests.emplace_back(MethodIdentifier(moduleInfo.id, methodDef));
 }
@@ -113,7 +137,7 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         const auto caller = GetFunctionInfo(metadataImport, methodDef);
         if (!caller.IsValid())
         {
-            Logger::Warn("    * The caller for the methoddef: ", shared::TokenStr(&methodDef), " is not valid!");
+            Logger::Warn("    * Skipping ", shared::TokenStr(&methodDef), ": the methoddef is not valid!");
             continue;
         }
 
@@ -123,7 +147,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
         auto hr = functionInfo.method_signature.TryParse();
         if (FAILED(hr))
         {
-            Logger::Warn("    * The method signature: ", functionInfo.method_signature.str(), " cannot be parsed.");
+            Logger::Warn("    * Skipping ", functionInfo.method_signature.str(),
+                ": the method signature cannot be parsed.");
             continue;
         }
 
@@ -148,8 +173,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             // instrumentation target
             if (numOfArgs != target_method.signature_types.size() - 1)
             {
-                Logger::Debug("    * The caller for the methoddef: ", caller.name,
-                              " doesn't have the right number of arguments (", numOfArgs, " arguments).");
+                Logger::Info("    * Skipping ", caller.type.name, ".", caller.name,
+                    ": the methoddef doesn't have the right number of arguments (", numOfArgs, " arguments).");
                 continue;
             }
 
@@ -171,8 +196,8 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
             }
             if (argumentsMismatch)
             {
-                Logger::Debug("    * The caller for the methoddef: ", target_method.method_name,
-                              " doesn't have the right type of arguments.");
+                Logger::Info("    * Skipping ", target_method.method_name,
+                    ": the methoddef doesn't have the right type of arguments.");
                 continue;
             }
         }
@@ -194,12 +219,14 @@ void RejitPreprocessor<RejitRequestDefinition>::ProcessTypeDefForRejit(const Rej
                                    moduleInfo.assembly.app_domain_id, pCorAssemblyProperty,
                                    enable_by_ref_instrumentation, enable_calltarget_state_by_ref);
 
-            Logger::Info("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
+            Logger::Debug("ReJIT handler stored metadata for ", moduleInfo.id, " ", moduleInfo.assembly.name,
                          " AppDomain ", moduleInfo.assembly.app_domain_id, " ", moduleInfo.assembly.app_domain_name);
 
             moduleHandler->SetModuleMetadata(moduleMetadata);
         }
 
+        Logger::Info("Method enqueued for ReJIT for ", target_method.type.name, ".", target_method.method_name,
+                  "(", (target_method.signature_types.size() - 1), " params).");
         EnqueueNewMethod(definition, metadataImport, metadataEmit, moduleInfo, typeDef, rejitRequests, methodDef,
                          functionInfo, moduleHandler);
 

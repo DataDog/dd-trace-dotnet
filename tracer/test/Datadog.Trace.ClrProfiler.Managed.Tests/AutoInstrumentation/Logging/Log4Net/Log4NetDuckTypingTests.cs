@@ -16,10 +16,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
         public void CanIncreaseSizeOfIAppenderArray()
         {
             var appenders = new IAppender[] { };
-            var results = Log4NetCommon<IAppender[]>.AddAppenderToResponse(
+            var success = Log4NetCommon<IAppender[]>.TryAddAppenderToResponse(
                 appenders,
-                new DirectSubmissionLog4NetAppender(null, 0));
+                new DirectSubmissionLog4NetAppender(null, 0),
+                out var results);
 
+            success.Should().BeTrue();
             results.Length.Should().Be(1);
         }
 
@@ -27,10 +29,12 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests.AutoInstrumentation.Logging.Lo
         public void CanWriteLogToAppender()
         {
             var appenders = new IAppender[] { };
-            var results = Log4NetCommon<IAppender[]>.AddAppenderToResponse(
+            var success = Log4NetCommon<IAppender[]>.TryAddAppenderToResponse(
                 appenders,
-                new DirectSubmissionLog4NetAppender(null, 0));
+                new DirectSubmissionLog4NetAppender(null, 0),
+                out var results);
 
+            success.Should().BeTrue();
             results.Length.Should().Be(1);
 
             foreach (var result in results)

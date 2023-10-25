@@ -31,6 +31,9 @@
     <Content Include="..\..\..\src\Datadog.Trace\AppSec\Waf\rule-set.json">
       <Link>rule-set.json</Link>
     </Content>
+    <Content Update="Asm\rule-set.1.7.2.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.13.5" />
@@ -40,7 +43,14 @@
     <PackageReference Include="Serilog" Version="2.10.0" />
     <PackageReference Include="System.Net.Http" Version="4.3.4" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="3.1.18" />
+    <PackageReference Include="System.Diagnostics.DiagnosticSource" Version="7.0.0" />
   </ItemGroup>
+
+  <PropertyGroup>
+    <!-- System.Diagnostics.DiagnosticSource doesn't support netcoreapp3.1-->
+    <!-- https://andrewlock.net/stop-lying-about-netstandard-2-support/ -->
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Datadog.Trace.BenchmarkDotNet\Datadog.Trace.BenchmarkDotNet.csproj" />

@@ -3,35 +3,43 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
+using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.AppSec.Waf
 {
     internal class Result : IResult
     {
-        private readonly DDWAF_RET_CODE returnCode;
-
-        public Result(DdwafResultStruct returnStruct, DDWAF_RET_CODE returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
+        public Result(DdwafResultStruct returnStruct, WafReturnCode returnCode, ulong aggregatedTotalRuntime, ulong aggregatedTotalRuntimeWithBindings)
         {
-            this.returnCode = returnCode;
-            Actions = new((int)returnStruct.ActionsSize);
-            ReadActions(returnStruct);
+            ReturnCode = returnCode;
+            Actions = returnStruct.Actions.DecodeStringArray();
+            Derivatives = returnStruct.Derivatives.DecodeMap();
+            ShouldBeReported = returnCode >= WafReturnCode.Match;
+            var events = returnStruct.Events.DecodeObjectArray();
+            if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
+            else
+            {
+                // Serialize all the events
+                Data = JsonConvert.SerializeObject(events);
+            }
+
             ShouldBlock = Actions.Contains("block");
-            ShouldBeReported = returnCode >= DDWAF_RET_CODE.DDWAF_MATCH;
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
-            Data = ShouldBeReported ? Marshal.PtrToStringAnsi(returnStruct.Data) : string.Empty;
             Timeout = returnStruct.Timeout;
         }
 
-        public ReturnCode ReturnCode => Encoder.DecodeReturnCode(returnCode);
+        public WafReturnCode ReturnCode { get; }
 
         public string Data { get; }
 
         public List<string> Actions { get; }
+
+        public List<object> Events { get; }
+
+        public Dictionary<string, object> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -48,16 +56,5 @@ namespace Datadog.Trace.AppSec.Waf
         public bool ShouldBeReported { get; }
 
         public bool Timeout { get; }
-
-        private void ReadActions(DdwafResultStruct returnStruct)
-        {
-            var pointer = returnStruct.ActionsArray;
-            for (var i = 0; i < returnStruct.ActionsSize; i++)
-            {
-                var pointerString = Marshal.ReadIntPtr(pointer, IntPtr.Size * i);
-                var action = Marshal.PtrToStringAnsi(pointerString);
-                Actions.Add(action);
-            }
-        }
     }
 }

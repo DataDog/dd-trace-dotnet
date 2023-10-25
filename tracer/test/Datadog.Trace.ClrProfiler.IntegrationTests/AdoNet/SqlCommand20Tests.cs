@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
         [Trait("RunOnWindows", "True")]
         public void IntegrationDisabled()
         {
-            const int totalSpanCount = 21;
+            const int totalSpanCount = 9;
             const string expectedOperationName = "sql-server.query";
 
             SetEnvironmentVariable($"DD_TRACE_{nameof(IntegrationId.SqlClient)}_ENABLED", "false");

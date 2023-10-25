@@ -19,7 +19,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
 {
     public class NUnitTests : TestHelper
     {
-        private const int ExpectedSpanCount = 31;
+        private const int ExpectedSpanCount = 33;
 
         private const string TestBundleName = "Samples.NUnitTests";
         private static string[] _testSuiteNames =
@@ -33,6 +33,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
             "Samples.NUnitTests.TestSetupError",
             "Samples.NUnitTests.TestTearDownError",
             "Samples.NUnitTests.TestTearDown2Error",
+            "Samples.NUnitTests.UnSkippableSuite",
         };
 
         public NUnitTests(ITestOutputHelper output)
@@ -135,6 +136,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                             AssertTargetSpanExists(targetSpan, TestTags.Command);
                             AssertTargetSpanExists(targetSpan, TestTags.CommandWorkingDirectory);
 
+                            // Unskippable data
+                            if (targetSpan.Tags[TestTags.Name] != "UnskippableTest")
+                            {
+                                AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "false");
+                                AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                            }
+
                             // check specific test span
                             switch (targetSpan.Tags[TestTags.Name])
                             {
@@ -224,6 +232,12 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.CI
                                 case "Test05" when suite.Contains("SetupError"):
                                 case "IsNull" when suite.Contains("SetupError"):
                                     CheckSetupErrorTest(targetSpan);
+                                    break;
+
+                                case "UnskippableTest":
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.UnskippableTag, "true");
+                                    AssertTargetSpanEqual(targetSpan, IntelligentTestRunnerTags.ForcedRunTag, "false");
+                                    CheckSimpleTestSpan(targetSpan);
                                     break;
                             }
 

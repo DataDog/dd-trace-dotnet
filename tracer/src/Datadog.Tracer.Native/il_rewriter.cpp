@@ -199,6 +199,11 @@ HRESULT ILRewriter::Import()
 
     IfFailRet(m_pICorProfilerInfo->GetILFunctionBody(m_moduleId, m_tkMethod, &pMethodBytes, nullptr));
 
+    return Import(pMethodBytes);
+}
+
+HRESULT ILRewriter::Import(LPCBYTE pMethodBytes)
+{
     COR_ILMETHOD_DECODER decoder((COR_ILMETHOD*) pMethodBytes);
 
     // Import the header flags

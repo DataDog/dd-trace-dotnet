@@ -10,17 +10,19 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Text;
 using Castle.Core.Internal;
 using FluentAssertions;
 
 namespace Samples.InstrumentedTests.Iast.Vulnerabilities;
 
-public class InstrumentationTestsBase
+public class InstrumentationTestsBase : IDisposable
 {
     private object _iastRequestContext;
     private object _traceContext;
     private object _taintedObjects;
+    private IDisposable Scope;
     private static readonly Type _taintedObjectsType = Type.GetType("Datadog.Trace.Iast.TaintedObjects, Datadog.Trace");
     private static readonly Type _taintedObjectType = Type.GetType("Datadog.Trace.Iast.TaintedObject, Datadog.Trace");
     private static readonly Type _iastRequestContextType = Type.GetType("Datadog.Trace.Iast.IastRequestContext, Datadog.Trace");
@@ -46,14 +48,14 @@ public class InstrumentationTestsBase
     private static MethodInfo _StartProperty = _rangeType.GetProperty("Start", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _LengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _lengthProperty = _rangeType.GetProperty("Length", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _sourceProperty = _rangeType.GetProperty("Source", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilitiesProperty = _vulnerabilityBatchType.GetProperty("Vulnerabilities", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _vulnerabilityTypeProperty = _vulnerabilityType.GetProperty("Type", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _evidenceProperty = _vulnerabilityType.GetProperty("Evidence", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _locationProperty = _vulnerabilityType.GetProperty("Location", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _pathProperty = _locationType.GetProperty("Path", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
-    private static MethodInfo _methodProperty = _locationType.GetProperty("Method", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
+    private static MethodInfo _lineProperty = _locationType.GetProperty("Line", BindingFlags.Public | BindingFlags.Instance)?.GetMethod;
     private static MethodInfo _getTaintedObjectsMethod = _taintedObjectsType.GetMethod("Get", BindingFlags.Instance | BindingFlags.Public);
-    private static MethodInfo _taintInputStringMethod = _taintedObjectsType.GetMethod("TaintInputString", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _taintMethod = _taintedObjectsType.GetMethod("Taint", BindingFlags.Instance | BindingFlags.Public);
     private static MethodInfo _enableIastInRequestMethod = _traceContextType.GetMethod("EnableIastInRequest", BindingFlags.Instance | BindingFlags.NonPublic);
     private static MethodInfo _getArrayMethod = _arrayBuilderOfSpanType.GetMethod("GetArray");
@@ -61,16 +63,18 @@ public class InstrumentationTestsBase
     private static FieldInfo _spansField = _traceContextType.GetField("_spans", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _vulnerabilityBatchField = _iastRequestContextType.GetField("_vulnerabilityBatch", BindingFlags.NonPublic | BindingFlags.Instance);
     private static FieldInfo _evidenceValueField = _evidenceType.GetField("_value", BindingFlags.NonPublic | BindingFlags.Instance);
-    
+    private static FieldInfo _evidenceRangesField = _evidenceType.GetField("_ranges", BindingFlags.NonPublic | BindingFlags.Instance);
+    private static FieldInfo _sourceOriginField = _sourceType.GetField("_origin", BindingFlags.NonPublic | BindingFlags.Instance);
+
     protected static string WeakHashVulnerabilityType = "WEAK_HASH";
     protected static string commandInjectionType = "COMMAND_INJECTION";
 
     public InstrumentationTestsBase()
     {
         AssertInstrumented();
-        var scope = SampleHelpers.GetActiveScope();
-        scope.Should().NotBeNull();
-        var span = _spanProperty.Invoke(scope, Array.Empty<object>());
+        Scope = SampleHelpers.CreateScope("IAST test");
+        Scope.Should().NotBeNull();
+        var span = _spanProperty.Invoke(Scope, Array.Empty<object>());
         span.Should().NotBeNull();
         _setSpanTypeProperty.Invoke(span, new object[] { "web" });
         var context = _contextProperty.Invoke(span, Array.Empty<object>());
@@ -82,6 +86,11 @@ public class InstrumentationTestsBase
         _taintedObjects.Should().NotBeNull();
     }
 
+    public virtual void Dispose()
+    {
+        Scope?.Dispose();
+    }
+
     protected string AddTaintedString(string tainted)
     {
         return (string)AddTainted(tainted);
@@ -89,7 +98,12 @@ public class InstrumentationTestsBase
 
     protected object AddTainted(object tainted)
     {
-        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)0, (string)null, tainted.ToString() });
+        return AddTainted(tainted, 0);
+    }
+
+    protected object AddTainted(object tainted, byte sourceType)
+    {
+        var source = Activator.CreateInstance(_sourceType, new object[] { (byte)sourceType, (string)null, tainted.ToString() });
         var defaultRange = Activator.CreateInstance(_rangeType, new object[] { 0, tainted.ToString().Length, source });
         var rangeArray = Array.CreateInstance(_rangeType, 1);
         rangeArray.SetValue(defaultRange, 0);
@@ -124,25 +138,28 @@ public class InstrumentationTestsBase
         spans.Count.Should().Be(spansGenerated);
     }
 
-    protected void AssertVulnerable(int vulnerabilities = 1)
+    protected void AssertVulnerable(string expectedType = null, string expectedEvidence = null, bool evidenceTainted = true, byte sourceType = 0, int vulnerabilities = 1)
     {
         var vulnerabilityList = GetGeneratedVulnerabilities();
         vulnerabilityList.Count.Should().Be(vulnerabilities);
-        var locations = new List<string>();
-        bool locationOk = LocationIsOk(this.GetType().Name, locations) || LocationIsOk(this.GetType().BaseType.Name);
-        var incorrectLocationMessage = "Incorrect vulnerability locations: ";
-        locations.ForEach(x => incorrectLocationMessage += x + " ");
-        locationOk.Should().BeTrue(incorrectLocationMessage);
-    }
 
-    protected void AssertVulnerable(string expectedType, string expectedEvidence = "", bool evidenceTainted = true)
-    {
-        var vulnerabilityList = GetGeneratedVulnerabilities();
-        vulnerabilityList.Count.Should().Be(1);
-        var vulnerabilityType = _vulnerabilityTypeProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
-        vulnerabilityType.Should().Be(expectedType);
+        if (!string.IsNullOrEmpty(expectedType))
+        {
+            var vulnerabilityType = _vulnerabilityTypeProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
+            vulnerabilityType.Should().Be(expectedType);
+        }
+
         var evidence = _evidenceProperty.Invoke(vulnerabilityList[0], Array.Empty<object>());
         var evidenceValue = _evidenceValueField.GetValue(evidence);
+
+        if (evidenceTainted)
+        {
+            var range = (_evidenceRangesField.GetValue(evidence) as Array).GetValue(0);
+            var source = _sourceProperty.Invoke(range, Array.Empty<object>());
+            var origin = _sourceOriginField.GetValue(source) as byte?;
+            origin.Should().Be(sourceType);
+        }
+
         if (!string.IsNullOrEmpty(expectedEvidence))
         {
             if (evidenceTainted)
@@ -154,11 +171,18 @@ public class InstrumentationTestsBase
                 evidenceValue.Should().Be(expectedEvidence);
             }
         }
+
+        var locations = new List<string>();
+        bool locationOk = LocationIsOk(this.GetType().Name, locations) || LocationIsOk(this.GetType().BaseType.Name) || LocationIsOk(typeof(InstrumentationTestsBase).Name);
+        var incorrectLocationMessage = "Incorrect vulnerability locations: ";
+        locations.ForEach(x => incorrectLocationMessage += x + " ");
+        locationOk.Should().BeTrue(incorrectLocationMessage);
     }
 
     protected void AssertNotVulnerable()
     {
-        AssertVulnerable(0);
+        var vulnerabilityList = GetGeneratedVulnerabilities();
+        vulnerabilityList.Count.Should().Be(0);
     }
 
     protected bool LocationIsOk(string location, List<string> locations = null)
@@ -168,6 +192,13 @@ public class InstrumentationTestsBase
         {
             var locationProperty = _locationProperty.Invoke(vulnerability, Array.Empty<object>());
             var path = _pathProperty.Invoke(locationProperty, Array.Empty<object>());
+            var line = _lineProperty.Invoke(locationProperty, Array.Empty<object>());
+
+            if (line != null)
+            {
+                ((int)line).Should().BeGreaterThan(0);
+            }
+
             locations?.Add(path.ToString());
 
             if (!string.IsNullOrEmpty(path as string))
@@ -214,10 +245,19 @@ public class InstrumentationTestsBase
         return spans;
     }
 
+    protected void AssertTaintedFormatWithOriginalCallCheck(object instrumented, Expression<Func<Object>> notInstrumented)
+    {
+        AssertTaintedFormatWithOriginalCallCheck(null, instrumented, notInstrumented);
+    }
+
     protected void AssertTaintedFormatWithOriginalCallCheck(object expected, object instrumented, Expression<Func<Object>> notInstrumented)
     {
         AssertTainted(instrumented);
-        FormatTainted(instrumented).Should().Be(expected.ToString());
+        if (expected is not null)
+        {
+            FormatTainted(instrumented).Should().Be(expected.ToString());
+        }
+
         var notInstrumentedCompiled = notInstrumented.Compile();
         var notInstrumentedResult = ExecuteFunc(notInstrumentedCompiled);
         instrumented.ToString().Should().Be(notInstrumentedResult.ToString());
@@ -250,7 +290,7 @@ public class InstrumentationTestsBase
         AssertNotTainted(instrumented);
     }
 
-    private static object ExecuteFunc(Action function)
+    protected static object ExecuteFunc(Action function)
     {
         try
         {
@@ -264,7 +304,7 @@ public class InstrumentationTestsBase
         return null;
     }
 
-    private static object ExecuteFunc(Func<Object> function)
+    protected static object ExecuteFunc(Func<Object> function)
     {
         try
         {

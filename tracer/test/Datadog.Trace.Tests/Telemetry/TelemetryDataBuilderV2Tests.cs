@@ -249,7 +249,7 @@ public class TelemetryDataBuilderV2Tests
                    let payloads = potentialPayloads
                                  .Where(x => !string.IsNullOrEmpty(x))
                                   // we only send heartbeat _or_ app-closing
-                                 .Concat(hasSendAppClosing ? Array.Empty<string>() : heartbeat)
+                                 .Concat(hasSendAppClosing || !hasSentAppStarted ? Array.Empty<string>() : heartbeat)
                                  .ToArray()
                    select new object[] { hasConfig, hasDeps, hasIntegrations, hasMetrics, hasDistributions, hasProducts, hasSentAppStarted, hasSendAppClosing, payloads };
         }

@@ -58,7 +58,14 @@ namespace Datadog.Trace.RemoteConfigurationManagement
             discoveryService.SubscribeToChanges(SetRcmEnabled);
         }
 
-        public static RemoteConfigurationManager Create(IDiscoveryService discoveryService, IRemoteConfigurationApi remoteConfigurationApi, RemoteConfigurationSettings settings, string serviceName, ImmutableTracerSettings tracerSettings, IGitMetadataTagsProvider gitMetadataTagsProvider, IRcmSubscriptionManager subscriptionManager)
+        public static RemoteConfigurationManager Create(
+            IDiscoveryService discoveryService,
+            IRemoteConfigurationApi remoteConfigurationApi,
+            RemoteConfigurationSettings settings,
+            string serviceName,
+            ImmutableTracerSettings tracerSettings,
+            IGitMetadataTagsProvider gitMetadataTagsProvider,
+            IRcmSubscriptionManager subscriptionManager)
         {
             var tags = GetTags(settings, tracerSettings);
 
@@ -150,6 +157,7 @@ namespace Datadog.Trace.RemoteConfigurationManagement
                 var request = _subscriptionManager.BuildRequest(_rcmTracer, _lastPollError);
 
                 EnrichTagsWithGitMetadata(request.Client.ClientTracer.Tags);
+                request.Client.ClientTracer.ExtraServices = ExtraServicesProvider.Instance.GetExtraServices();
 
                 var response = await _remoteConfigurationApi.GetConfigs(request).ConfigureAwait(false);
 

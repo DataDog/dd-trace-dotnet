@@ -293,7 +293,7 @@ namespace Datadog.Trace.Tools.Runner.Aot
                     {
                         var localPtr = Marshal.ReadIntPtr(ptr);
                         var localString = Marshal.PtrToStringUni(localPtr);
-                        ptr += Marshal.SizeOf(typeof(IntPtr));
+                        ptr += Marshal.SizeOf<IntPtr>();
 
                         if (localString == "_")
                         {

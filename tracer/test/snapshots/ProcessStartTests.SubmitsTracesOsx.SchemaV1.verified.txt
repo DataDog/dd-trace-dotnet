@@ -7,6 +7,7 @@
     Service: Samples.ProcessStart,
     Type: system,
     Tags: {
+      cmd.component: process,
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
@@ -31,6 +32,7 @@
     Type: system,
     Error: 1,
     Tags: {
+      cmd.component: process,
       cmd.environment_variables:
 PATH=testPath
 ,
@@ -59,6 +61,7 @@ PATH=testPath
     Type: system,
     Error: 1,
     Tags: {
+      cmd.component: process,
       cmd.environment_variables:
 PATH=testPath
 ,

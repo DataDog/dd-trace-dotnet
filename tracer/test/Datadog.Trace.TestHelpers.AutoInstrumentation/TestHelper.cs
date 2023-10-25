@@ -17,8 +17,11 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Debugger.Helpers;
 using Datadog.Trace.ExtensionMethods;
+using Datadog.Trace.Iast.Telemetry;
+using Datadog.Trace.Logging;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol;
 using Datadog.Trace.RemoteConfigurationManagement.Protocol.Tuf;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
@@ -30,8 +33,6 @@ namespace Datadog.Trace.TestHelpers
 {
     public abstract class TestHelper : IDisposable
     {
-        private HttpClient _client = new();
-
         protected TestHelper(string sampleAppName, string samplePathOverrides, ITestOutputHelper output)
             : this(new EnvironmentHelper(sampleAppName, typeof(TestHelper), output, samplePathOverrides), output)
         {
@@ -59,10 +60,14 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($".NET Core: {EnvironmentHelper.IsCoreClr()}");
             Output.WriteLine($"Native Loader DLL: {EnvironmentHelper.GetNativeLoaderPath()}");
 
-            _client.DefaultRequestHeaders.Add("DD-API-KEY", Environment.GetEnvironmentVariable("DD_LOGGER_DD_API_KEY"));
+            // the directory would be created anyway, but in certain case a delay can lead to an exception from the LogEntryWatcher
+            Directory.CreateDirectory(LogDirectory);
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, LogDirectory);
         }
 
         public bool SecurityEnabled { get; private set; }
+
+        protected virtual string LogDirectory => Path.Combine(DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance), $"{GetType().Name}Logs");
 
         protected EnvironmentHelper EnvironmentHelper { get; }
 
@@ -203,20 +208,7 @@ namespace Datadog.Trace.TestHelpers
             Output.WriteLine($"ProcessId: " + process.Id);
             Output.WriteLine($"Exit Code: " + exitCode);
 
-#if NETCOREAPP2_1
-            if (exitCode == 139)
-            {
-                // Segmentation faults are expected on .NET Core because of a bug in the runtime: https://github.com/dotnet/runtime/issues/11885
-                throw new SkipException("Segmentation fault on .NET Core 2.1");
-            }
-#endif
-            if (exitCode == 134
-             && standardError?.Contains("System.Threading.AbandonedMutexException: The wait completed due to an abandoned mutex") == true
-             && standardError?.Contains("Coverlet.Core.Instrumentation.Tracker") == true)
-            {
-                // Coverlet occasionally throws AbandonedMutexException during clean up
-                throw new SkipException("Coverlet threw AbandonedMutexException during cleanup");
-            }
+            ErrorHelpers.CheckForKnownSkipConditions(Output, exitCode, standardError, EnvironmentHelper);
 
             ExitCodeException.ThrowIfNonExpected(exitCode, expectedExitCode);
 
@@ -361,6 +353,11 @@ namespace Datadog.Trace.TestHelpers
             {
                 SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, enable.ToString().ToLower());
             }
+        }
+
+        public void EnableIastTelemetry(int level)
+        {
+            SetEnvironmentVariable(ConfigurationKeys.Iast.IastTelemetryVerbosity, ((IastMetricsVerbosityLevel)level).ToString());
         }
 
         public void DisableObfuscationQueryString()
@@ -641,67 +638,14 @@ namespace Datadog.Trace.TestHelpers
             Assert.Equal(expectedServiceVersion, span.Tags.GetValueOrDefault(Tags.Version));
         }
 
-        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Type testType, Exception ex = null)
+        protected async Task ReportRetry(ITestOutputHelper outputHelper, int attemptsRemaining, Exception ex = null)
         {
-            var type = outputHelper.GetType();
-            var testMember = type.GetField("test", BindingFlags.Instance | BindingFlags.NonPublic);
-            var test = (ITest)testMember?.GetValue(outputHelper);
-            var testFullName = type.FullName + test?.TestCase.DisplayName;
+            outputHelper.WriteLine($"Error executing test. {attemptsRemaining} attempts remaining. {ex}");
 
-            outputHelper.WriteLine($"Error executing test: {testFullName}. {attemptsRemaining} attempts remaining. {ex}");
-
-            // In addition to logging, send a metric that will help us get more information through tags
-            var srcBranch = Environment.GetEnvironmentVariable("DD_LOGGER_BUILD_SOURCEBRANCH");
-
-            var tags = $$"""
-                "os.platform:{{SanitizeTagValue(FrameworkDescription.Instance.OSPlatform)}}",
-                "os.architecture:{{SanitizeTagValue(EnvironmentTools.GetPlatform())}}",
-                "target.framework:{{SanitizeTagValue(EnvironmentHelper.GetTargetFramework())}}",
-                "test.name:{{SanitizeTagValue(testFullName)}}",
-                "git.branch:{{SanitizeTagValue(srcBranch)}}"
-            """;
-
-            var payload = $$"""
-                {
-                    "series": [{
-                        "metric": "dd_trace_dotnet.ci.tests.retries",
-                        "type": 1,
-                        "points": [{
-                            "timestamp": {{((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds()}},
-                            "value": 1
-                            }],
-                        "tags": [
-                            {{tags}}
-                        ]
-                    }]
-                }
-            """;
-
-            var content = new StringContent(payload, Encoding.UTF8, "application/json");
-            var response = await _client.PostAsync("https://api.datadoghq.com/api/v2/series", content);
-            var responseContent = await response.Content.ReadAsStringAsync();
-
-            if (response.StatusCode != HttpStatusCode.Accepted)
-            {
-                outputHelper.WriteLine($"Failed to submit metric to monitor retry. Response was: Code: {response.StatusCode}. Response: {responseContent}. Payload sent was: \"{payload}\"");
-            }
-        }
-
-        private string SanitizeTagValue(string tag)
-        {
-            tag.TryConvertToNormalizedTagName(true, out var normalizedTag);
-            return normalizedTag;
+            await ErrorHelpers.SendMetric(outputHelper, "dd_trace_dotnet.ci.tests.retries", EnvironmentHelper);
         }
 
         private bool IsServerSpan(MockSpan span) =>
             span.Tags.GetValueOrDefault(Tags.SpanKind) == SpanKinds.Server;
-
-        protected internal class TupleList<T1, T2> : List<Tuple<T1, T2>>
-        {
-            public void Add(T1 item, T2 item2)
-            {
-                Add(new Tuple<T1, T2>(item, item2));
-            }
-        }
     }
 }

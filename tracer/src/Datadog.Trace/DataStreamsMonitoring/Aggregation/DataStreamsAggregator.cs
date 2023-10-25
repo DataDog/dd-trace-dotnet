@@ -27,10 +27,13 @@ internal class DataStreamsAggregator
     // but the outer dictionary is unconstrained, which could be problematic...
     private readonly Dictionary<long, Dictionary<ulong, StatsBucket>> _originBuckets = new();
 
+    private readonly Dictionary<long, Dictionary<string, BacklogBucket>> _backlogBuckets = new();
+
     private readonly DataStreamsMessagePackFormatter _formatter;
     private readonly DDSketchPool _sketchPool = new();
     private readonly long _bucketDurationInNs;
     private List<SerializableStatsBucket>? _statsToWrite;
+    private List<SerializableBacklogBucket>? _backlogsToWrite;
 
     public DataStreamsAggregator(DataStreamsMessagePackFormatter formatter, int bucketDurationMs)
     {
@@ -51,6 +54,21 @@ internal class DataStreamsAggregator
         AddToBuckets(point, originBucketStartTime, _originBuckets);
     }
 
+    public void AddBacklog(in BacklogPoint point)
+    {
+        var currentBucketStartTime = BucketStartTimeForTimestamp(point.TimestampNs);
+        if (!_backlogBuckets.TryGetValue(currentBucketStartTime, out var bucket))
+        {
+            bucket = new Dictionary<string, BacklogBucket>();
+            _backlogBuckets[currentBucketStartTime] = bucket;
+        }
+
+        if (!bucket.TryGetValue(point.Tags, out var group) || group.Value < point.Value)
+        {
+            bucket[point.Tags] = new BacklogBucket(point.Tags, point.Value);
+        }
+    }
+
     /// <summary>
     /// Serialize the aggregated results using message pack
     /// </summary>
@@ -59,17 +77,36 @@ internal class DataStreamsAggregator
     /// <returns>True if data was serialized to the stream</returns>
     public bool Serialize(Stream stream, long maxBucketFlushTimeNs)
     {
-        var statsToAdd = Export(maxBucketFlushTimeNs);
-        if (statsToAdd?.Count > 0)
+        var statsToAdd = Export(maxBucketFlushTimeNs) ?? new();
+        var backlogsToAdd = ExportBacklogs(maxBucketFlushTimeNs) ?? new();
+        if (statsToAdd.Count > 0 || backlogsToAdd.Count > 0)
         {
-            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd);
-
-            Clear(statsToAdd);
+            _formatter.Serialize(stream, _bucketDurationInNs, statsToAdd, backlogsToAdd);
+            Clear(statsToAdd, backlogsToAdd);
 
             return true;
         }
 
         return false;
+    }
+
+    internal List<SerializableBacklogBucket> ExportBacklogs(long maxBucketFlushTimeNs)
+    {
+        var currentBucketStart = maxBucketFlushTimeNs - _bucketDurationInNs;
+        _backlogsToWrite ??= new List<SerializableBacklogBucket>(_backlogBuckets.Count);
+        _backlogsToWrite.Clear();
+
+        foreach (var kvp in _backlogBuckets)
+        {
+            if (kvp.Key > currentBucketStart)
+            {
+                continue;
+            }
+
+            _backlogsToWrite.Add(new SerializableBacklogBucket(kvp.Key, kvp.Value));
+        }
+
+        return _backlogsToWrite;
     }
 
     /// <summary>
@@ -108,7 +145,7 @@ internal class DataStreamsAggregator
         return _statsToWrite;
     }
 
-    internal void Clear(List<SerializableStatsBucket> statsToRemove)
+    internal void Clear(List<SerializableStatsBucket> statsToRemove, List<SerializableBacklogBucket> backlogsToRemove)
     {
         // remove the old buckets
         foreach (var statsBucket in statsToRemove)
@@ -127,7 +164,13 @@ internal class DataStreamsAggregator
             {
                 _sketchPool.Release(bucket.Value.EdgeLatency);
                 _sketchPool.Release(bucket.Value.PathwayLatency);
+                _sketchPool.Release(bucket.Value.PayloadSize);
             }
+        }
+
+        foreach (var backlogBucket in backlogsToRemove)
+        {
+            _backlogBuckets.Remove(backlogBucket.BucketStartTimeNs);
         }
     }
 
@@ -149,7 +192,8 @@ internal class DataStreamsAggregator
                 hash: point.Hash,
                 parentHash: point.ParentHash,
                 pathwayLatency: _sketchPool.Get(),
-                edgeLatency: _sketchPool.Get());
+                edgeLatency: _sketchPool.Get(),
+                payloadSize: _sketchPool.Get());
             bucket[point.Hash.Value] = group;
         }
 
@@ -158,6 +202,7 @@ internal class DataStreamsAggregator
 
         var edgeLatencySeconds = Convert.ToDouble(point.EdgeLatencyNs) / 1_000_000_000;
         group.EdgeLatency.Add(Math.Max(edgeLatencySeconds, 0));
+        group.PayloadSize.Add(point.PayloadSizeBytes);
     }
 
     /// <summary>

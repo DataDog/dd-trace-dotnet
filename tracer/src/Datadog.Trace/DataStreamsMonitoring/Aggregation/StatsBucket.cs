@@ -16,13 +16,15 @@ internal readonly struct StatsBucket
     public readonly PathwayHash ParentHash;
     public readonly DDSketch PathwayLatency;
     public readonly DDSketch EdgeLatency;
+    public readonly DDSketch PayloadSize;
 
-    public StatsBucket(string[] edgeTags, PathwayHash hash, PathwayHash parentHash, DDSketch pathwayLatency, DDSketch edgeLatency)
+    public StatsBucket(string[] edgeTags, PathwayHash hash, PathwayHash parentHash, DDSketch pathwayLatency, DDSketch edgeLatency, DDSketch payloadSize)
     {
         EdgeTags = edgeTags;
         Hash = hash;
         ParentHash = parentHash;
         PathwayLatency = pathwayLatency;
         EdgeLatency = edgeLatency;
+        PayloadSize = payloadSize;
     }
 }

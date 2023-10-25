@@ -88,7 +88,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             Output.WriteLine("Starting WcfTests.SubmitsTraces. Starting the Samples.Wcf requires ADMIN privileges");
 
-            var expectedSpanCount = 14;
+            var expectedSpanCount = binding switch
+            {
+                "Custom" => 1,
+                _ => 14,
+            };
 
             using var telemetry = this.ConfigureTelemetry();
             int wcfPort = 8585;

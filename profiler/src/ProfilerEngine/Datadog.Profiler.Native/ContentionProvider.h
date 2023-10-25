@@ -21,6 +21,7 @@ class IFrameStore;
 class IThreadsCpuManager;
 class IAppDomainStore;
 class IRuntimeIdStore;
+class SampleValueTypeProvider;
 
 
 class ContentionProvider :
@@ -29,11 +30,8 @@ class ContentionProvider :
     public IUpscaleProvider
 {
 public:
-    static std::vector<SampleValueType> SampleTypeDefinitions;
-
-public:
     ContentionProvider(
-        uint32_t valueOffset,
+        SampleValueTypeProvider& valueTypeProvider,
         ICorProfilerInfo4* pCorProfilerInfo,
         IManagedThreadList* pManagedThreadList,
         IFrameStore* pFrameStore,
@@ -49,6 +47,8 @@ public:
 
 private:
     static std::string GetBucket(double contentionDurationNs);
+
+    static std::vector<SampleValueType> SampleTypeDefinitions;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
     IManagedThreadList* _pManagedThreadList;

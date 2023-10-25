@@ -126,7 +126,11 @@ internal class TelemetryDataBuilderV2
                 return GetRequest(application, host, TelemetryRequestTypes.AppHeartbeat, payload: null, namingSchemeVersion);
             }
 
-            data.Add(new(TelemetryRequestTypes.AppHeartbeat, payload: null));
+            if (!input.SendAppStarted)
+            {
+                // don't include the app heartbeat in the app-started request batch
+                data.Add(new(TelemetryRequestTypes.AppHeartbeat, payload: null));
+            }
         }
 
         return GetRequest(application, host, new MessageBatchPayload(data), namingSchemeVersion);

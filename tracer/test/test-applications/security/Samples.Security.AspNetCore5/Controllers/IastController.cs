@@ -3,11 +3,16 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data.SQLite;
 using System.Diagnostics;
+using System.DirectoryServices;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Runtime.Versioning;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
 using Samples.Security.Data;
 
 namespace Samples.Security.AspNetCore5.Controllers
@@ -113,6 +118,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
         }
 
+        //It uses Newtonsoft by default for netcore 2.1
         [Route("ExecuteQueryFromBodyQueryData")]
         public ActionResult ExecuteQueryFromBodyQueryData([FromBody] QueryData query)
         {
@@ -175,7 +181,7 @@ namespace Samples.Security.AspNetCore5.Controllers
                 }
             }
 
-            if (query.InnerQuery !=null)
+            if (query.InnerQuery != null)
             {
                 return Query(query.InnerQuery);
             }
@@ -184,7 +190,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         }
 
         [Route("ExecuteQueryFromBodyText")]
-        [Consumes("text/plain")]
         public ActionResult ExecuteQueryFromBodyText([FromBody] string query)
         {
             try
@@ -206,6 +211,30 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
 
             return Content($"No query or username was provided");
+        }
+
+        [Route("ExecuteQueryFromBodySerializeManual")]
+        public ActionResult ExecuteQueryFromBodySerializeManual(string queryjson)
+        {
+            try
+            {
+                if (dbConnection is null)
+                {
+                    dbConnection = IastControllerHelper.CreateDatabase();
+                }
+
+                if (!string.IsNullOrEmpty(queryjson))
+                {
+                    var query = JsonConvert.DeserializeObject<QueryData>(queryjson);
+                    return Query(query);
+                }
+            }
+            catch (Exception ex)
+            {
+                return Content(IastControllerHelper.ToFormattedString(ex));
+            }
+
+            return Content($"No query was provided");
         }
 
         [HttpGet("ExecuteCommandFromCookie")]
@@ -257,7 +286,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             }
             catch
             {
-                return Content("The provided file could not be opened");
+                return Content("The provided file " + file + " could not be opened");
             }
         }
 
@@ -268,6 +297,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.Secure = false;
             Response.Cookies.Append("insecureKey", "insecureValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending InsecureCookie");
         }
 
@@ -278,6 +308,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.HttpOnly = false;
             Response.Cookies.Append("NoHttpOnlyKey", "NoHttpOnlyValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending NoHttpOnlyCookie");
         }
 
@@ -288,6 +319,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             var cookieOptions = GetDefaultCookieOptionsInstance();
             cookieOptions.SameSite = SameSiteMode.None;
             Response.Cookies.Append("NoSameSiteKey", "NoSameSiteValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             var cookieOptionsLax = GetDefaultCookieOptionsInstance();
             cookieOptionsLax.SameSite = SameSiteMode.Lax;
             Response.Cookies.Append("NoSameSiteKeyLax", "NoSameSiteValueLax", cookieOptionsLax);
@@ -324,7 +356,32 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.HttpOnly = false;
             cookieOptions.Secure = false;
             Response.Cookies.Append("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue", cookieOptions);
+            Response.Cookies.Append(".AspNetCore.Correlation.oidc.xxxxxxxxxxxxxxxxxxx", "ExcludedCookieVulnValue", cookieOptions);
             return Content("Sending AllVulnerabilitiesCookie");
+        }
+
+        [HttpGet("SSRF")]
+        [Route("SSRF")]
+        public ActionResult Ssrf(string url, string host)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(url))
+                {
+                    result = new HttpClient().GetStringAsync(url).Result;
+                }
+                else
+                {
+                    result = new HttpClient().GetStringAsync("https://user:password@" + host + ":443/api/v1/test/123/?param1=pone&param2=ptwo#fragment1=fone&fragment2=ftwo").Result;
+                }
+            }
+            catch
+            {
+                result = "Error in request.";
+            }
+
+            return Content(result, "text/html");
         }
 
         private ActionResult ExecuteQuery(string query)
@@ -341,6 +398,54 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookieOptions.Secure = true;
 
             return cookieOptions;
+        }
+
+#if NET5_0_OR_GREATER
+        [SupportedOSPlatform("windows")]
+#endif
+        [HttpGet("LDAP")]
+        [Route("LDAP")]
+        public ActionResult Ldap(string path, string userName)
+        {
+            try
+            {
+                DirectoryEntry entry = null;
+                try
+                {
+                    var directoryEntryPath = !string.IsNullOrEmpty(path) ? path : "LDAP://fakeorg";
+                    entry = new DirectoryEntry(directoryEntryPath, string.Empty, string.Empty, AuthenticationTypes.None);
+                }
+                catch
+                {
+                    entry = new DirectoryEntry();
+                }
+                DirectorySearcher search = new DirectorySearcher(entry);
+                if (!string.IsNullOrEmpty(userName))
+                {
+                    search.Filter = "(uid=" + userName + ")";
+                }
+                var result = search.FindAll();
+
+                string resultString = string.Empty;
+
+                for (int i = 0; i < result.Count; i++)
+                {
+                    resultString += result[i].Path + Environment.NewLine;
+                }
+
+                return Content($"Result: " + resultString);
+            }
+            catch
+            {
+                return Content($"Result: Not connected");
+            }
+        }
+
+        [HttpGet("WeakRandomness")]
+        [Route("WeakRandomness")]
+        public ActionResult WeakRandomness()
+        {
+            return Content("Random number: " + (new Random()).Next().ToString(), "text/html");
         }
     }
 }

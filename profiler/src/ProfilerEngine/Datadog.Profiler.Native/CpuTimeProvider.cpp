@@ -17,7 +17,7 @@ std::vector<SampleValueType> CpuTimeProvider::SampleTypeDefinitions(
 
 
 CpuTimeProvider::CpuTimeProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     IThreadsCpuManager* pThreadsCpuManager,
     IFrameStore* pFrameStore,
     IAppDomainStore* pAppDomainStore,
@@ -25,6 +25,6 @@ CpuTimeProvider::CpuTimeProvider(
     IConfiguration* pConfiguration
     )
     :
-    CollectorBase<RawCpuSample>("CpuTimeProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawCpuSample>("CpuTimeProvider", valueTypeProvider.GetOrRegister(SampleTypeDefinitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
 }

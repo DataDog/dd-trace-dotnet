@@ -29,8 +29,8 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.OutHost)]
         public string OutHost { get; set; }
 
-        [Tag(Trace.Tags.DbmDataPropagated)]
-        public string DbmDataPropagated { get; set; }
+        [Tag(Trace.Tags.DbmTraceInjected)]
+        public string DbmTraceInjected { get; set; }
     }
 
     internal partial class SqlV1Tags : SqlTags

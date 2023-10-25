@@ -34,10 +34,11 @@ public class DapperTests : InstrumentationTestsBase, IDisposable
         CommandSafe = "Update books set Title = Title where Title ='" + notTaintedValue + "'";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         dbConnection?.Close();
         dbConnection = null;
+        base.Dispose();
     }
 
     [Fact]

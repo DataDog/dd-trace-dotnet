@@ -44,5 +44,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining.ProxiesDefiniti
         public virtual IDummyFieldObject ProtectedGetSetSelfType { get; set; }
 
         public virtual IDummyFieldObject PrivateGetSetSelfType { get; set; }
+
+        // *
+        [Duck(Name = "PublicGetSetSelfType")]
+        public virtual ValueWithType<IDummyFieldObject> PublicGetSetSelfTypeWithType { get; set; }
     }
 }

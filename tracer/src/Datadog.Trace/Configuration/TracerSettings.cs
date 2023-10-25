@@ -36,11 +36,6 @@ namespace Datadog.Trace.Configuration
         private readonly TracerSettingsSnapshot _initialSettings;
 
         /// <summary>
-        /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
-        /// </summary>
-        internal const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
         [PublicApi]
@@ -139,7 +134,7 @@ namespace Datadog.Trace.Configuration
                                          .AsInt32(defaultValue: 100);
 
             GlobalTagsInternal = config
-                         // backwards compatibility for names used in the past
+                        // backwards compatibility for names used in the past
                         .WithKeys(ConfigurationKeys.GlobalTags, "DD_TRACE_GLOBAL_TAGS")
                         .AsDictionary()
                        // Filter out tags with empty keys or empty values, and trim whitespace
@@ -148,12 +143,12 @@ namespace Datadog.Trace.Configuration
                       // default value (empty)
                       ?? (IDictionary<string, string>)new ConcurrentDictionary<string, string>();
 
-            var headerTagsNormalizationFixEnabled = config
-                                                   .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
-                                                   .AsBool(defaultValue: true);
+            HeaderTagsNormalizationFixEnabled = config
+                                               .WithKeys(ConfigurationKeys.FeatureFlags.HeaderTagsNormalizationFixEnabled)
+                                               .AsBool(defaultValue: true);
 
             // Filter out tags with empty keys or empty values, and trim whitespaces
-            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, headerTagsNormalizationFixEnabled)
+            HeaderTagsInternal = InitializeHeaderTags(config, ConfigurationKeys.HeaderTags, HeaderTagsNormalizationFixEnabled)
                 ?? new Dictionary<string, string>();
 
             PeerServiceTagsEnabled = config
@@ -182,10 +177,6 @@ namespace Datadog.Trace.Configuration
             TracerMetricsEnabledInternal = config
                                   .WithKeys(ConfigurationKeys.TracerMetricsEnabled)
                                   .AsBool(defaultValue: false);
-
-            StatsComputationEnabledInternal = config
-                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
-                                     .AsBool(defaultValue: false);
 
             StatsComputationInterval = config.WithKeys(ConfigurationKeys.StatsComputationInterval).AsInt32(defaultValue: 10);
 
@@ -241,7 +232,7 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: DefaultObfuscationQueryStringRegex);
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -339,9 +330,10 @@ namespace Datadog.Trace.Configuration
                                   .WithKeys(ConfigurationKeys.RareSamplerEnabled)
                                   .AsBool(false);
 
-            IsRunningInAzureAppService = config
-                                        .WithKeys(ConfigurationKeys.AzureAppService.AzureAppServicesContextKey)
-                                        .AsBool(false);
+            IsRunningInAzureAppService = ImmutableAzureAppServiceSettings.GetIsAzureAppService(source, telemetry);
+
+            IsRunningInAzureFunctionsConsumptionPlan = ImmutableAzureAppServiceSettings.GetIsFunctionsAppConsumptionPlan(source, telemetry);
+
             if (IsRunningInAzureAppService)
             {
                 AzureAppServiceMetadata = new ImmutableAzureAppServiceSettings(source, _telemetry);
@@ -351,11 +343,21 @@ namespace Datadog.Trace.Configuration
                 }
             }
 
+            GCPFunctionSettings = new ImmutableGCPFunctionSettings(source, _telemetry);
+
+            IsRunningInGCPFunctions = GCPFunctionSettings.IsGCPFunction;
+
+            LambdaMetadata = LambdaMetadata.Create();
+
+            StatsComputationEnabledInternal = config
+                                     .WithKeys(ConfigurationKeys.StatsComputationEnabled)
+                                     .AsBool(defaultValue: (IsRunningInGCPFunctions || IsRunningInAzureFunctionsConsumptionPlan));
+
             var urlSubstringSkips = config
                                    .WithKeys(ConfigurationKeys.HttpClientExcludedUrlSubstrings)
                                    .AsString(
                                         IsRunningInAzureAppService ? ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions :
-                                        Serverless.Metadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
+                                        LambdaMetadata is { IsRunningInLambda: true } m ? m.DefaultHttpClientExclusions : string.Empty);
 
             HttpClientExcludedUrlSubstrings = !string.IsNullOrEmpty(urlSubstringSkips)
                                                   ? TrimSplitString(urlSubstringSkips.ToUpperInvariant(), commaSeparator)
@@ -375,9 +377,14 @@ namespace Datadog.Trace.Configuration
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);
 
+            CommandsCollectionEnabled = config
+                                       .WithKeys(ConfigurationKeys.FeatureFlags.CommandsCollectionEnabled)
+                                       .AsBool(false);
+
             // we "enrich" with these values which aren't _strictly_ configuration, but which we want to track as we tracked them in v1
             telemetry.Record(ConfigTelemetryData.NativeTracerVersion, Instrumentation.GetNativeTracerVersion(), recordValue: true, ConfigurationOrigins.Default);
             telemetry.Record(ConfigTelemetryData.FullTrustAppDomain, value: AppDomain.CurrentDomain.IsFullyTrusted, ConfigurationOrigins.Default);
+            telemetry.Record(ConfigTelemetryData.ManagedTracerTfm, value: ConfigTelemetryData.ManagedTracerTfmValue, recordValue: true, ConfigurationOrigins.Default);
 
             if (AzureAppServiceMetadata is not null)
             {
@@ -671,6 +678,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
 
@@ -744,7 +752,7 @@ namespace Datadog.Trace.Configuration
         /// </summary>
         /// <seealso cref="ConfigurationKeys.HttpServerErrorStatusCodes"/>
         [IgnoreForSnapshot] // Changes are recorded in SetHttpServerErrorStatusCodes
-        internal bool[] HttpServerErrorStatusCodes { get; private set;  }
+        internal bool[] HttpServerErrorStatusCodes { get; private set; }
 
         /// <summary>
         /// Gets the HTTP status code that should be marked as errors for client integrations.
@@ -804,7 +812,7 @@ namespace Datadog.Trace.Configuration
         /// <summary>
         /// Gets a value indicating whether <see cref="ISpan.OperationName"/> should be set to the legacy value for OpenTelemetry.
         /// </summary>
-        internal bool OpenTelemetryLegacyOperationNameEnabled { get;  }
+        internal bool OpenTelemetryLegacyOperationNameEnabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether data streams monitoring is enabled or not.
@@ -820,6 +828,22 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating whether the tracer is running in AAS
         /// </summary>
         internal bool IsRunningInAzureAppService { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in an Azure Function on a
+        /// consumption plan
+        /// </summary>
+        internal bool IsRunningInAzureFunctionsConsumptionPlan { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the tracer is running in Google Cloud Functions
+        /// </summary>
+        internal bool IsRunningInGCPFunctions { get; }
+
+        /// <summary>
+        /// Gets the AWS Lambda settings, including whether we're currently running in Lambda
+        /// </summary>
+        internal LambdaMetadata LambdaMetadata { get; }
 
         /// <summary>
         /// Gets a value indicating whether the tracer should propagate service data in db queries
@@ -840,9 +864,20 @@ namespace Datadog.Trace.Configuration
         internal bool TraceId128BitLoggingEnabled { get; }
 
         /// <summary>
+        /// Gets a value indicating whether the tracer will send the shell commands of
+        /// the "command_execution" integration to the agent.
+        /// </summary>
+        internal bool CommandsCollectionEnabled { get; }
+
+        /// <summary>
         /// Gets the AAS settings
         /// </summary>
         internal ImmutableAzureAppServiceSettings? AzureAppServiceMetadata { get; }
+
+        /// <summary>
+        /// Gets the GCP Function settings
+        /// </summary>
+        internal ImmutableGCPFunctionSettings? GCPFunctionSettings { get; }
 
         /// <summary>
         /// Gets a value indicating whether to calculate the peer.service tag from predefined precursor attributes when using the v0 schema.

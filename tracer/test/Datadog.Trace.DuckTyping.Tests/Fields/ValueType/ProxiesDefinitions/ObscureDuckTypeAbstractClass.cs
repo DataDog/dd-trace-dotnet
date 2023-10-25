@@ -74,5 +74,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ValueType.ProxiesDefinitions
 
         [DuckField(Name = "_privateNullableIntField")]
         public abstract int? PrivateNullableIntField { get; set; }
+
+        // *
+
+        [DuckField(Name = "_publicStaticNullableIntField")]
+        public abstract ValueWithType<int?> PublicStaticNullableIntFieldWithType { get; set; }
     }
 }

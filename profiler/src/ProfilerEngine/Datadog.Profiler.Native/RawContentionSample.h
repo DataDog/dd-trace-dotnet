@@ -35,10 +35,11 @@ public:
         return *this;
     }
 
-    void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
+    void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
-        uint32_t contentionCountIndex = valueOffset;
-        uint32_t contentionDurationIndex = valueOffset + 1;
+        assert(valueOffsets.size() == 2);
+        auto contentionCountIndex = valueOffsets[0];
+        auto contentionDurationIndex = valueOffsets[1];
 
         sample->AddLabel(Label{BucketLabelName, std::move(Bucket)});
         sample->AddValue(1, contentionCountIndex);

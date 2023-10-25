@@ -1,4 +1,4 @@
-﻿// <copyright file="Count.cs" company="Datadog">
+// <copyright file="Count.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -24,11 +24,6 @@ internal enum Count
     [TelemetryMetric<MetricTags.LogLevel>("logs_created", isCommon: true, NS.General)] LogCreated,
 #endregion
 #region Tracers Namespace
-
-    /// <summary>
-    /// The number of errors/failures in the library integration, tagged by the integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) and ErrorType (e.g. `error:duck_type`, `error:runtime`). Both tags will vary by implementation language",
-    /// </summary>
-    [TelemetryMetric<MetricTags.IntegrationName, MetricTags.InstrumentationError>("integration_errors")] IntegrationsError,
 
     /// <summary>
     /// The number of spans created by the tracer, tagged by automatic integration name (e.g. `integration_name:kafka`, `integration_name:rabbitmq`) or manual API (`integration_name:datadog`, `integration_name:otel` or `integration_name:opentracing`)
@@ -162,7 +157,7 @@ internal enum Count
     /// <summary>
     /// The number of requests sent to the api endpoint that errored, tagged by the error type (e.g. Timeout, NetworkError, status_code)
     /// </summary>
-    [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors.responses", isCommon: false)] DirectLogApiErrors,
+    [TelemetryMetric<MetricTags.ApiError>("direct_log_api.errors", isCommon: false)] DirectLogApiErrors,
 
 #endregion
 #region AppSec Namespace
@@ -182,5 +177,27 @@ internal enum Count
     /// </summary>
     [TelemetryMetric<MetricTags.WafAnalysis>("waf.requests", isCommon: true, NS.ASM)] WafRequests,
 
+#endregion
+#region Iast Namespace
+
+    /// <summary>
+    /// Counts the number of source methods that have been called
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastInstrumentedSources>("executed.source", isCommon: true, NS.Iast)] IastExecutedSources,
+
+    /// <summary>
+    /// Counts the number of proopagation methods that have been called
+    /// </summary>
+    [TelemetryMetric("executed.propagation", isCommon: true, NS.Iast)] IastExecutedPropagations,
+
+    /// <summary>
+    /// Counts the number of sinks that have been called
+    /// </summary>
+    [TelemetryMetric<MetricTags.IastInstrumentedSinks>("executed.sink", isCommon: true, NS.Iast)] IastExecutedSinks,
+
+    /// <summary>
+    /// Counts the number of tainted objects after a request
+    /// </summary>
+    [TelemetryMetric("request.tainted", isCommon: true, NS.Iast)] IastRequestTainted,
 #endregion
 }

@@ -15,12 +15,14 @@ namespace Datadog.Trace.Security.IntegrationTests.IAST
         private static readonly Regex ClientIp = new(@"["" ""]*http.client_ip: .*,(\r|\n){1,2}");
         private static readonly Regex NetworkClientIp = new(@"["" ""]*network.client.ip: .*,(\r|\n){1,2}");
         private static readonly Regex HashRegex = new(@"(\S)*""hash"": (-){0,1}([0-9]){1,12},(\r|\n){1,2}      ");
+        private static readonly Regex RequestTaintedRegex = new(@"_dd.iast.telemetry.request.tainted:(\s)*([1-9])(\d*).?(\d*),");
 
         public static VerifySettings AddIastScrubbing(this VerifySettings settings, bool scrubHash = true)
         {
             settings.AddRegexScrubber(LocationMsgRegex, string.Empty);
             settings.AddRegexScrubber(ClientIp, string.Empty);
             settings.AddRegexScrubber(NetworkClientIp, string.Empty);
+            settings.AddRegexScrubber(RequestTaintedRegex, "_dd.iast.telemetry.request.tainted:,");
 
             if (scrubHash)
             {

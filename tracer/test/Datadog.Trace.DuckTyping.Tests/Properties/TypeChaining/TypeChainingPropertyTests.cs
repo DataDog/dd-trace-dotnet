@@ -213,6 +213,17 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
             Assert.Equal(42, duckAbstract.PublicGetSetSelfType.MagicNumber);
             Assert.Equal(42, duckVirtual.PublicGetSetSelfType.MagicNumber);
 
+            duckInterface.PublicGetSetSelfTypeWithType = ValueWithType<IDummyFieldObject>.Create(newDummy, null!);
+            Assert.Equal(42, duckInterface.PublicGetSetSelfTypeWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckInterface.PublicGetSetSelfTypeWithType.Type);
+            Assert.Equal(42, duckAbstract.PublicGetSetSelfTypeWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckAbstract.PublicGetSetSelfTypeWithType.Type);
+            Assert.Equal(42, duckVirtual.PublicGetSetSelfTypeWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckVirtual.PublicGetSetSelfTypeWithType.Type);
+
+            newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 42 }).DuckCast<IDummyFieldObject>();
+            duckInterface.PublicGetSetSelfType = newDummy;
+
             // *
             newDummy = (new ObscureObject.DummyFieldObject { MagicNumber = 52 }).DuckCast<IDummyFieldObject>();
             duckInterface.InternalGetSetSelfType = newDummy;
@@ -273,6 +284,9 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.TypeChaining
             Assert.Equal(42, duckStructCopy.InternalGetSetSelfType.MagicNumber);
             Assert.Equal(42, duckStructCopy.ProtectedGetSetSelfType.MagicNumber);
             Assert.Equal(42, duckStructCopy.PrivateGetSetSelfType.MagicNumber);
+
+            Assert.Equal(42, duckStructCopy.PublicGetSetSelfTypeWithType.Value.MagicNumber);
+            Assert.Equal(typeof(ObscureObject.DummyFieldObject), duckStructCopy.PublicGetSetSelfTypeWithType.Type);
         }
     }
 }

@@ -1,9 +1,11 @@
 #if !NETCOREAPP2_1
+using System;
 using System.Data;
 using System.Data.Entity.Core.EntityClient;
 using System.Data.Entity.Infrastructure;
 using System.Data.SqlClient;
 using System.Linq;
+using DelegateDecompiler;
 using FluentAssertions;
 using Xunit;
 
@@ -51,5 +53,49 @@ public class EFTests : EFBaseTests
         var query = new EntityCommand(queryString, conn);
         return query;
     }
+
+    [Fact]
+    public void TestDelegateDecompileLibBug_PropertyAttribute()
+    {
+        var all = (db as ApplicationDbContext).Books.ToList();
+        all.Count.Should().Be(2);
+        var book = all[1];
+        var txt = book.FullId;
+        var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullId == txt).ToList();
+        res.Count().Should().Be(1);
+    }
+
+    [Fact]
+    public void TestDelegateDecompileLibBug_PropertyGetterAttribute()
+    {
+        // DecompileDelegate does not support the use of the attribute only on the getter
+        Assert.Throws<NotSupportedException>(() =>
+        {
+            var all = (db as ApplicationDbContext).Books.ToList();
+            all.Count.Should().Be(2);
+            var book = all[1];
+            var txt = book.FullTitle;
+            var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullTitle == txt).ToList();
+            res.Count().Should().Be(1);
+        });
+    }
+
+
+    [Fact]
+    public void TestDelegateDecompileLibBug_NoAttribute()
+    {
+        // We don't support this scenario
+        Assert.Throws<NotSupportedException>(() =>
+        {
+            var all = (db as ApplicationDbContext).Books.ToList();
+            all.Count.Should().Be(2);
+            var book = all[1];
+            var txt = book.FullAuthor;
+            var res = (db as ApplicationDbContext).Books.Decompile().Where(x => x.FullAuthor == txt).ToList();
+            res.Count().Should().Be(1);
+        });
+    }
+
+
 }
 #endif

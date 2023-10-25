@@ -3,21 +3,32 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Spectre.Console.Cli;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 
 namespace Datadog.Trace.Tools.Runner;
 
-internal class CoverageMergerCommand : Command<CoverageMergerSettings>
+internal class CoverageMergerCommand : CommandWithExamples
 {
-    public CoverageMergerCommand(ApplicationContext applicationContext)
+    private readonly Argument<string> _inputFolderArgument = new("input-folder", "Sets the folder path where the code coverage json files are located.");
+    private readonly Argument<string> _outputFolderArgument = new("output-file", "Sets the output json file.");
+
+    public CoverageMergerCommand()
+        : base("coverage-merge", "Merges all coverage json files into a single one.")
     {
-        ApplicationContext = applicationContext;
+        AddArgument(_inputFolderArgument);
+        AddArgument(_outputFolderArgument);
+
+        AddExample(@"dd-trace coverage-merge c:\coverage_folder\ total-coverage.json");
+
+        this.SetHandler(Execute);
     }
 
-    protected ApplicationContext ApplicationContext { get; }
-
-    public override int Execute(CommandContext context, CoverageMergerSettings settings)
+    private void Execute(InvocationContext context)
     {
-        return CoverageUtils.TryCombineAndGetTotalCoverage(settings.InputFolder, settings.OutputFile, true) ? 0 : 1;
+        var inputFolder = _inputFolderArgument.GetValue(context);
+        var outputFile = _outputFolderArgument.GetValue(context);
+
+        context.ExitCode = CoverageUtils.TryCombineAndGetTotalCoverage(inputFolder, outputFile, true) ? 0 : 1;
     }
 }

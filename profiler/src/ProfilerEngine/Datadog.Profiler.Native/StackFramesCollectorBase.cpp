@@ -3,6 +3,8 @@
 
 #include "StackFramesCollectorBase.h"
 
+#include "Configuration.h"
+#include "EnvironmentVariables.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
 
@@ -11,12 +13,14 @@
 #include <condition_variable>
 #include <mutex>
 
-StackFramesCollectorBase::StackFramesCollectorBase()
+StackFramesCollectorBase::StackFramesCollectorBase(IConfiguration const* _configuration)
 {
     _isRequestedCollectionAbortSuccessful = false;
     _pStackSnapshotResult = std::make_unique<StackSnapshotResultBuffer>();
     _pCurrentCollectionThreadInfo = nullptr;
     _isCurrentCollectionAbortRequested.store(false);
+    _isCIVisibilityEnabled = _configuration->IsCIVisibilityEnabled();
+    _ciVisibilitySpanId = _configuration->GetCIVisibilitySpanId();
 }
 
 bool StackFramesCollectorBase::AddFrame(std::uintptr_t ip)
@@ -106,6 +110,13 @@ bool StackFramesCollectorBase::IsCurrentCollectionAbortRequested()
 
 bool StackFramesCollectorBase::TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot()
 {
+    if (_isCIVisibilityEnabled && _ciVisibilitySpanId > 0)
+    {
+        _pStackSnapshotResult->SetLocalRootSpanId(_ciVisibilitySpanId);
+        _pStackSnapshotResult->SetSpanId(_ciVisibilitySpanId);
+        return true;
+    }
+
     // If TraceContext Tracking is not enabled, then we will simply get zero IDs.
     ManagedThreadInfo* pCurrentCollectionThreadInfo = _pCurrentCollectionThreadInfo;
     if (nullptr != pCurrentCollectionThreadInfo && pCurrentCollectionThreadInfo->CanReadTraceContext())

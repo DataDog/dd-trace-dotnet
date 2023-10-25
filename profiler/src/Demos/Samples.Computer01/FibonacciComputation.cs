@@ -13,7 +13,7 @@ namespace Samples.Computer01
         private readonly int _value;
 
         public FibonacciComputation(int nbThreads)
-            : this(32, nbThreads)
+            : this(42, nbThreads)
         {
         }
 

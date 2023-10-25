@@ -1,10 +1,10 @@
 version: '3'
 services:
   # ARM64 dependencies
-  aws_sns_arm64:
+  localstack_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -12,11 +12,6 @@ services:
       - "4566:4566"
     volumes:
       - "./tracer/build_data/localstack:/tmp/localstack"
-
-  aws_sqs_arm64:
-    image: softwaremill/elasticmq
-    ports:
-    - "9324"
 
   elasticsearch7_arm64:
     image: elasticsearch:7.10.1
@@ -94,12 +89,11 @@ services:
     ports:
     - "127.0.0.1:6391:6379"
 
-
 # Dependencies
-  aws_sns:
+  localstack:
     image: localstack/localstack
     environment:
-      - SERVICES=sns
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -107,11 +101,6 @@ services:
       - "4566:4566"
     volumes:
       - "./.localstack:/tmp/localstack"
-
-  aws_sqs:
-    image: softwaremill/elasticmq
-    ports:
-    - "127.0.0.1:9324:9324"
 
   aerospike:
     # pinning to a known good version because latest version (6.3.0.5 at time of issue)
@@ -328,6 +317,19 @@ services:
       KAFKA_REST_LISTENERS: "http://0.0.0.0:8082"
       KAFKA_REST_SCHEMA_REGISTRY_URL: 'http://kafka-schema-registry:8081'
 
+  openldap:
+    image: osixia/openldap:latest
+    ports:
+      - "389:369"
+      - "636:636"
+    hostname: openldap-server
+    environment:
+      LDAP_ORGANISATION: "Datadog"
+      LDAP_DOMAIN: "dd-trace-dotnet.com"
+      LDAP_ADMIN_PASSWORD: "Passw0rd"
+      LDAP_BASE_DN: "dc=dd-trace-dotnet,dc=com"
+
+
   # The IIS images are based on Windows images, so they can only be run on Docker for Windows,
   # and only after switching to run Windows containers
   IntegrationTests.IIS:
@@ -417,7 +419,10 @@ services:
       - DD_LOGGER_DD_TAGS
       - DD_INTERNAL_TELEMETRY_V2_ENABLED
       - DD_TELEMETRY_METRICS_ENABLED
+      - LDAP_SERVER=openldap-server:389
     hostname: integrationtests
+    depends_on:
+      - openldap
 
   IntegrationTests:
     build:
@@ -461,8 +466,7 @@ services:
       - MYSQL57_PORT=3306
       - RABBITMQ_HOST=rabbitmq
       - KAFKA_BROKER_HOST=kafka-broker:29092
-      - AWS_SQS_HOST=aws_sqs:9324
-      - AWS_SNS_HOST=aws_sns:4566
+      - AWS_SDK_HOST=localstack:4566
       - AEROSPIKE_HOST=aerospike:3000
       - COUCHBASE_HOST=couchbase
       - COUCHBASE_PORT=8091
@@ -512,8 +516,7 @@ services:
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
-      - aws_sns
-      - aws_sqs
+      - localstack
       - couchbase
 
   IntegrationTests.Debugger:
@@ -691,12 +694,11 @@ services:
       - rabbitmq
       - kafka-broker
       - kafka-zookeeper
-      - aws_sns
-      - aws_sqs
+      - localstack
       - couchbase
     environment:
       - TIMEOUT_LENGTH=120
-    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 aws_sns:4566 aws_sqs:9324 couchbase:11210
+    command: aerospike:3000 servicestackredis:6379 stackexchangeredis:6379 stackexchangeredis-replica:6379 stackexchangeredis-single:6379 elasticsearch5:9200 elasticsearch6:9200 elasticsearch7:9200 sqlserver:1433 mongo:27017 postgres:5432 mysql:3306 mysql57:3306 rabbitmq:5672 kafka-broker:9092 kafka-zookeeper:2181 localstack:4566 couchbase:11210
 
   IntegrationTests.ARM64:
     build:
@@ -736,8 +738,7 @@ services:
       - MYSQL_HOST=mysql_arm64
       - MYSQL_PORT=3306
       - RABBITMQ_HOST=rabbitmq_arm64
-      - AWS_SQS_HOST=aws_sqs_arm64:9324
-      - AWS_SNS_HOST=aws_sns_arm64:4566
+      - AWS_SDK_HOST=localstack_arm64:4566
       - DD_LOGGER_DD_API_KEY
       - DD_LOGGER_DD_SERVICE
       - DD_LOGGER_DD_ENV
@@ -776,8 +777,7 @@ services:
       - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
-      - aws_sqs_arm64
-      - aws_sns_arm64
+      - localstack_arm64
 
   StartDependencies.ARM64:
     image: andrewlock/wait-for-dependencies
@@ -792,11 +792,10 @@ services:
       - postgres_arm64
       - mysql_arm64
       - rabbitmq_arm64
-      - aws_sqs_arm64
-      - aws_sns_arm64
+      - localstack_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 aws_sns_arm64:4566 aws_sqs_arm64:9324
+    command: servicestackredis_arm64:6379 stackexchangeredis_arm64:6379 stackexchangeredis_arm64-replica:6379 stackexchangeredis_arm64-single:6379 elasticsearch7_arm64:9200 sqledge_arm64:1433 mongo_arm64:27017 postgres_arm64:5432 mysql_arm64:3306 rabbitmq_arm64:5672 localstack_arm64:4566
 
   IntegrationTests.ARM64.Debugger:
     build:
@@ -907,6 +906,27 @@ services:
     depends_on:
     - test-agent
 
+  nuget-dddotnet-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.nuget.dd-dotnet.dockerfile
+      # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - RELATIVE_PROFILER_PATH=
+        # - RELATIVE_API_WRAPPER_PATH=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-nuget-tester
+    volumes:
+    - ./:/project
+    - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+    - dockerTag=${dockerTag:-unset}
+    - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+    - test-agent
+
   dotnet-tool-smoke-tests:
     build:
       context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
@@ -965,6 +985,26 @@ services:
     depends_on:
     - test-agent
 
+  dd-dotnet-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.dd-dotnet.dockerfile
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - INSTALL_CMD=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
   StartDependencies.OSXARM64:
     image: andrewlock/wait-for-dependencies
     depends_on:
@@ -978,18 +1018,17 @@ services:
       - postgres_osx_arm64
       - mysql_osx_arm64
       - rabbitmq_osx_arm64
-      - aws_sns_osx_arm64
-      - aws_sqs_osx_arm64
+      - localstack_osx_arm64
     environment:
       - TIMEOUT_LENGTH=120
-    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 aws_sns_osx_arm64:4566 aws_sqs_osx_arm64:9324
+    command: servicestackredis_osx_arm64:6379 stackexchangeredis_osx_arm64:6379 stackexchangeredis_osx_arm64-replica:6379 stackexchangeredis_osx_arm64-single:6379 elasticsearch7_osx_arm64:9200 sqledge_osx_arm64:1433 mongo_osx_arm64:27017 postgres_osx_arm64:5432 mysql_osx_arm64:3306 rabbitmq_osx_arm64:5672 localstack_osx_arm64:4566
 
   # OSX ARM64 dependencies
 
-  aws_sns_osx_arm64:
+  localstack_osx_arm64:
     image: localstack/localstack
     environment:
-      - SERVICES=sns
+      - SERVICES=sns,sqs,kinesis,dynamodb
       - DEBUG=1
       - DATA_DIR=/tmp/localstack/data
       - DEFAULT_REGION=us-east-1
@@ -997,11 +1036,6 @@ services:
       - "4566:4566"
     volumes:
       - "./.localstack:/tmp/localstack"
-
-  aws_sqs_osx_arm64:
-    image: softwaremill/elasticmq
-    ports:
-      - "9324:9324"
 
   elasticsearch7_osx_arm64:
     image: elasticsearch:7.10.1

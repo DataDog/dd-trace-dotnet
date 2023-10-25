@@ -13,7 +13,8 @@
 // This method is called from the CLR so we need to use STDMETHODCALLTYPE macro to match the CLR declaration
 HRESULT STDMETHODCALLTYPE StackSnapshotCallbackHandlerImpl(FunctionID funcId, UINT_PTR ip, COR_PRF_FRAME_INFO frameInfo, ULONG32 contextSize, BYTE context[], void* clientData);
 
-Windows32BitStackFramesCollector::Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo) :
+Windows32BitStackFramesCollector::Windows32BitStackFramesCollector(ICorProfilerInfo4* const _pCorProfilerInfo, IConfiguration const* configuration) :
+    StackFramesCollectorBase(configuration),
     _pCorProfilerInfo(_pCorProfilerInfo)
 {
     _pCorProfilerInfo->AddRef();

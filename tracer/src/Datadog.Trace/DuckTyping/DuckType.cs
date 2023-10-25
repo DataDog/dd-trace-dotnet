@@ -9,11 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Runtime.CompilerServices;
 using System.Runtime.ExceptionServices;
+using System.Threading;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.DuckTyping
@@ -373,10 +375,18 @@ namespace Datadog.Trace.DuckTyping
                 assembly = assembly.Replace(".", "_").Replace("+", "__");
             }
 
-            // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-            string proxyTypeName = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
+            // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
+            // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
+            var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
 
-            // Create Type
+            // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
+            var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
+            var proxyTypeName = (proxyTypeNamePrefix.Length > maxPrefixSize
+                                     ? proxyTypeNamePrefix.Substring(0, maxPrefixSize)
+                                     : proxyTypeNamePrefix)
+                              + proxyTypeNameSuffix;
+
             proxyTypeBuilder = moduleBuilder.DefineType(
                 proxyTypeName,
                 typeAttributes,
@@ -1006,14 +1016,7 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Ldarg_0);
             if (UseDirectAccessTo(moduleBuilder, targetType))
             {
-                if (targetType.IsValueType)
-                {
-                    il.Emit(OpCodes.Unbox_Any, targetType);
-                }
-                else
-                {
-                    il.Emit(OpCodes.Castclass, targetType);
-                }
+                il.Emit(targetType.IsValueType ? OpCodes.Unbox_Any : OpCodes.Castclass, targetType);
             }
 
             il.Emit(OpCodes.Call, ctor);
@@ -1023,7 +1026,8 @@ namespace Datadog.Trace.DuckTyping
             il.Emit(OpCodes.Initobj, proxyDefinitionType);
 
             // Start copy properties from the proxy to the structure
-            foreach (FieldInfo finfo in proxyDefinitionType.GetFields())
+            bool containsFields = false;
+            foreach (var finfo in proxyDefinitionType.GetFields())
             {
                 // Skip readonly fields
                 if ((finfo.Attributes & FieldAttributes.InitOnly) != 0)
@@ -1037,19 +1041,24 @@ namespace Datadog.Trace.DuckTyping
                     continue;
                 }
 
-                PropertyInfo? prop = proxyType.GetProperty(finfo.Name);
-                if (prop?.GetMethod is not null)
+                if (proxyType.GetProperty(finfo.Name) is { GetMethod: { } propGetMethod })
                 {
                     il.Emit(OpCodes.Ldloca_S, structLocal.LocalIndex);
                     il.Emit(OpCodes.Ldloca_S, proxyLocal.LocalIndex);
-                    il.EmitCall(OpCodes.Call, prop.GetMethod, null);
+                    il.EmitCall(OpCodes.Call, propGetMethod, null);
                     il.Emit(OpCodes.Stfld, finfo);
+                    containsFields = true;
                 }
             }
 
             // Return
             il.WriteLoadLocal(structLocal.LocalIndex);
             il.Emit(OpCodes.Ret);
+
+            if (!containsFields && proxyDefinitionType.GetProperties().Length != 0)
+            {
+                DuckTypeDuckCopyStructDoesNotContainsAnyField.Throw(proxyDefinitionType);
+            }
 
             Type delegateType = typeof(CreateProxyInstance<>).MakeGenericType(proxyDefinitionType);
             return createStructMethod.CreateDelegate(delegateType);
@@ -1264,7 +1273,8 @@ namespace Datadog.Trace.DuckTyping
         /// <typeparam name="T">Type of proxy definition</typeparam>
         public static class CreateCache<T>
         {
-            private static CreateTypeResult _fastPath = default;
+            // Because CreateTypeResult is a struct, it needs to be boxed for safe concurrent access
+            private static StrongBox<CreateTypeResult>? _fastPath;
 
             /// <summary>
             /// Gets the type of T
@@ -1280,19 +1290,16 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
-                if (fastPath.TargetType == targetType)
+                var fastPath = Volatile.Read(ref _fastPath);
+
+                if (fastPath?.Value.TargetType == targetType)
                 {
-                    return fastPath;
+                    return fastPath.Value;
                 }
 
                 CreateTypeResult result = GetOrCreateProxyType(Type, targetType);
 
-                fastPath = _fastPath;
-                if (fastPath.TargetType is null)
-                {
-                    _fastPath = result;
-                }
+                _fastPath ??= new(result);
 
                 return result;
             }
@@ -1374,19 +1381,16 @@ namespace Datadog.Trace.DuckTyping
             public static CreateTypeResult GetReverseProxy(Type targetType)
             {
                 // We set a fast path for the first proxy type for a proxy definition. (It's likely to have a proxy definition just for one target type)
-                CreateTypeResult fastPath = _fastPath;
-                if (fastPath.TargetType == targetType)
+                var fastPath = Volatile.Read(ref _fastPath);
+
+                if (fastPath?.Value.TargetType == targetType)
                 {
-                    return fastPath;
+                    return fastPath.Value;
                 }
 
                 CreateTypeResult result = GetOrCreateReverseProxyType(Type, targetType);
 
-                fastPath = _fastPath;
-                if (fastPath.TargetType is null)
-                {
-                    _fastPath = result;
-                }
+                _fastPath ??= new(result);
 
                 return result;
             }

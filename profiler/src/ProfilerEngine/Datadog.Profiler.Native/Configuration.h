@@ -59,8 +59,13 @@ public:
     bool IsAllocationRecorderEnabled() const override;
     bool IsDebugInfoEnabled() const override;
     bool IsGcThreadsCpuTimeEnabled() const override;
+    bool IsThreadLifetimeEnabled() const override;
     std::string const& GetGitRepositoryUrl() const override;
     std::string const& GetGitCommitSha() const override;
+    bool IsInternalMetricsEnabled() const override;
+    bool IsSystemCallsShieldEnabled() const override;
+    bool IsCIVisibilityEnabled() const override;
+    std::uint64_t GetCIVisibilitySpanId() const override;
 
 private:
     static tags ExtractUserTags();
@@ -77,7 +82,7 @@ private:
     static T GetEnvironmentValue(shared::WSTRING const& name, T const& defaultValue);
     template <typename T>
     static bool IsEnvironmentValueSet(shared::WSTRING const& name, T& value);
-    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate();
+    static std::chrono::nanoseconds ExtractCpuWallTimeSamplingRate(int minimum = 5);
     static int32_t ExtractWallTimeThreadsThreshold();
     static int32_t ExtractCpuThreadsThreshold();
     static int32_t ExtractCodeHotspotsThreadsThreshold();
@@ -102,6 +107,7 @@ private:
     bool _isContentionProfilingEnabled;
     bool _isGarbageCollectionProfilingEnabled;
     bool _isHeapProfilingEnabled;
+    bool _isThreadLifetimeEnabled;
     bool _debugLogEnabled;
     fs::path _logDirectory;
     fs::path _pprofDirectory;
@@ -137,4 +143,9 @@ private:
     std::string _namedPipeName;
     bool _isTimestampsAsLabelEnabled;
     bool _isDebugInfoEnabled;
+    bool _isInternalMetricsEnabled;
+    bool _isSystemCallsShieldEnabled;
+
+    bool _isCIVisibilityEnabled;
+    std::uint64_t _internalCIVisibilitySpanId;
 };

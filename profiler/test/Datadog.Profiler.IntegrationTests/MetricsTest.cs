@@ -5,9 +5,7 @@
 
 using System.Linq;
 using System.Net;
-using System.Threading;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using Xunit;
 using Xunit.Abstractions;
 

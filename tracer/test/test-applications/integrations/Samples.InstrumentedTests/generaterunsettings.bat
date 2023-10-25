@@ -15,5 +15,6 @@ echo ^<DD_DOTNET_TRACER_HOME^>%solutionFolder%shared\bin\monitoring-home^</DD_DO
 echo ^<DD_VERSION^>1.0.0^</DD_VERSION^> >> %file%
 echo ^<DD_TRACE_DEBUG^>1^</DD_TRACE_DEBUG^> >> %file%
 echo ^<DD_IAST_ENABLED^>1^</DD_IAST_ENABLED^> >> %file%
+echo ^<DD_CIVISIBILITY_ENABLED^>0^</DD_CIVISIBILITY_ENABLED^> >> %file%
 echo ^<DD_IAST_DEDUPLICATION_ENABLED^>0^</DD_IAST_DEDUPLICATION_ENABLED^> >> %file%
 echo ^</EnvironmentVariables^>^</RunConfiguration^>^</RunSettings^> >> %file%

@@ -63,7 +63,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
                 {
-                    await ReportRetry(_output, attemptsRemaining, this.GetType(), ex);
+                    await ReportRetry(_output, attemptsRemaining, ex);
                 }
             }
         }

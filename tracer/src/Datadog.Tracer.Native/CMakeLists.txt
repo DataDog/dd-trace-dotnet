@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.36.0)
+project("Datadog.Tracer.Native" VERSION 2.41.0)
 
 # ******************************************************
 # Environment detection
@@ -185,6 +185,12 @@ add_library("Datadog.Tracer.Native.static" STATIC
         iast/signature_types.cpp
         iast/string_literal_aspect_filter.cpp
         iast/string_optimization_aspect_filter.cpp
+        fault_tolerant_envionrment_variables_util.cpp
+        fault_tolerant_method_duplicator.cpp
+        fault_tolerant_rewriter.cpp
+        fault_tolerant_tokens.cpp
+        fault_tolerant_tracker.cpp
+        fault_tolerant_cor_profiler_function_control.cpp
 )
 
 set_target_properties("Datadog.Tracer.Native.static" PROPERTIES PREFIX "")
@@ -210,6 +216,7 @@ elseif(ISLINUX)
         ${CMAKE_DL_LIBS}
         -static-libgcc
         -static-libstdc++
+        -Wl,--build-id
     )
 endif()
 

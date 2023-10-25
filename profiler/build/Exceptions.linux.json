@@ -1,0 +1,56 @@
+{
+  "enableDatadog": true,
+  "warmUpCount": 2,
+  "count": 10,
+  "scenarios": [
+    {
+      "name": "Baseline_exception",
+      "environmentVariables": {
+        "CORECLR_ENABLE_PROFILING": "0",
+        "COR_ENABLE_PROFILING": "0"
+      }
+    },
+    {
+      "name": "Profiler_exceptions",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "0",
+        "DD_PROFILING_CPU_ENABLED": "0",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
+        "DD_TRACE_ENABLED" : "0"
+      }
+    },
+    {
+      "name": "Profiler_exceptions_cpu_walltime",
+      "environmentVariables": {
+        "DD_CLR_ENABLE_NGEN": "true",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_PROFILING_WALLTIME_ENABLED": "1",
+        "DD_PROFILING_CPU_ENABLED": "1",
+        "DD_PROFILING_EXCEPTION_ENABLED": "1",
+        "DD_TRACE_ENABLED" : "0"
+      }
+    }
+  ],
+  "processName": "./Samples.ExceptionGenerator",
+  "processArguments": "--scenario 5 --iterations 100",
+  "processTimeout": 15,
+  "workingDirectory": "$(CWD)/../_build/bin/Release-x64/profiler/src/Demos/Samples.ExceptionGenerator/net7.0",
+  "environmentVariables": {
+    "CORECLR_ENABLE_PROFILING": "1",
+    "CORECLR_PROFILER": "{BD1A650D-AC5D-4896-B64F-D6FA25D6B26A}",
+    "CORECLR_PROFILER_PATH_64": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Profiler.Native.so",
+    "LD_PRELOAD": "$(CWD)/../../shared/bin/monitoring-home/linux-x64/Datadog.Linux.ApiWrapper.x64.so",
+    "DD_PROFILING_METRICS_FILEPATH": "metrics.json",
+    "DD_PROFILING_GC_ENABLED": "0"
+  },
+  "tags": {
+    "runtime.architecture": "x64",
+    "runtime.name": ".NET Core",
+    "runtime.version": "7.0",
+    "benchmark.job.runtime.name": ".NET 7.0",
+    "benchmark.job.runtime.moniker": "net7.0"
+  },
+  "metricsFilePath": "*metrics.json"
+}

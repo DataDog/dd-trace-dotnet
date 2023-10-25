@@ -5,17 +5,14 @@
 
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
 using Datadog.Profiler.IntegrationTests.Helpers;
-using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
 using Perftools.Profiles;
 using Xunit;
 using Xunit.Abstractions;
-using static Google.Protobuf.Reflection.SourceCodeInfo.Types;
 
 namespace Datadog.Profiler.IntegrationTests.Allocations
 {

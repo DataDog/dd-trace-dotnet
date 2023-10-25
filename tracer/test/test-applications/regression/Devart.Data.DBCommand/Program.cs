@@ -31,6 +31,7 @@ namespace Devart.Data.DBCommand
             catch (Exception)
             {
             }
+            Console.WriteLine("App completed successfully");
         }
     }
 }

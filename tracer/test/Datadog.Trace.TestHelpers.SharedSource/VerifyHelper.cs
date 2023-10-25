@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using VerifyTests;
 using VerifyXunit;
 
@@ -159,6 +160,23 @@ namespace Datadog.Trace.TestHelpers
                        })
                   .OrderBy(x => x.Key)
                   .ToDictionary(x => x.Key, x => x.Value);
+        }
+
+        public static void AddDataStreamsScrubber(this VerifySettings settings)
+        {
+            settings.ModifySerialization(
+                _ =>
+                {
+                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
+                        x => x.EdgeLatency,
+                        (_, v) => v?.Length == 0 ? v : new byte[] { 0xFF });
+                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
+                        x => x.PathwayLatency,
+                        (_, v) => v?.Length == 0 ? v : new byte[] { 0xFF });
+                    _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(
+                        x => x.PayloadSize,
+                        (_, v) =>  v?.Length == 0 ? v : new byte[] { 0xFF });
+                });
         }
 
         private static void ReplaceRegex(StringBuilder builder, Regex regex, string replacement)

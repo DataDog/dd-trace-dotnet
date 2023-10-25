@@ -15,6 +15,7 @@ public:
     uint16_t GetDotnetMajorVersion() const override;
     uint16_t GetDotnetMinorVersion() const override;
     std::string GetOs() const override;
+    std::string GetClrString() const override;
 
 private:
     uint16_t _dotnetMajor;

@@ -28,11 +28,12 @@ public class MySqlTests : InstrumentationTestsBase, IDisposable
         _querySafe = "SELECT * from Books where Title = '" + _notTaintedValue + "'";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         _connection.Close();
         _connection.Dispose();
         _connection = null;
+        base.Dispose();
     }
 
     // We exclude the tests that only pass when using a real MySql Connection

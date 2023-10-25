@@ -13,6 +13,7 @@ using Datadog.Trace.Agent;
 using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler;
+using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Schema;
 using Datadog.Trace.ContinuousProfiler;
@@ -203,6 +204,9 @@ namespace Datadog.Trace
         /// </summary>
         internal void Start()
         {
+            // Start the Serverless Mini Agent in GCP Functions & Azure Consumption Plan Functions.
+            ServerlessMiniAgent.StartServerlessMiniAgent(Settings);
+
             // Must be idempotent and thread safe
             DirectLogSubmission?.Sink.Start();
             Telemetry?.Start();
@@ -439,7 +443,7 @@ namespace Datadog.Trace
                     writer.WritePropertyName("obfuscation_querystring_size");
                     writer.WriteValue(instanceSettings.QueryStringReportingSize);
 
-                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettings.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
+                    if (string.Compare(instanceSettings.ObfuscationQueryStringRegex, TracerSettingsConstants.DefaultObfuscationQueryStringRegex, StringComparison.Ordinal) != 0)
                     {
                         writer.WritePropertyName("obfuscation_querystring_regex");
                         writer.WriteValue(instanceSettings.ObfuscationQueryStringRegex);

@@ -1,0 +1,238 @@
+[
+  {
+    TraceId: Id_1,
+    SpanId: Id_2,
+    Name: async-methods,
+    Resource: async-methods,
+    Service: Samples.AWS.Kinesis,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_3,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.Kinesis-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      out.host: aws_kinesis,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_4,
+    Name: aws.kinesis.produce,
+    Resource: Kinesis.PutRecord,
+    Service: Samples.AWS.Kinesis-aws-kinesis,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutRecord,
+      aws.requestId: Guid_2,
+      aws.service: Kinesis,
+      aws_service: Kinesis,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      streamname: MyStreamName
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_5,
+    Name: aws.kinesis.produce,
+    Resource: Kinesis.PutRecords,
+    Service: Samples.AWS.Kinesis-aws-kinesis,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutRecords,
+      aws.requestId: Guid_3,
+      aws.service: Kinesis,
+      aws_service: Kinesis,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      streamname: MyStreamName
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_6,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.Kinesis-http-client,
+    Type: http,
+    ParentId: Id_2,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      out.host: aws_kinesis,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_8,
+    Name: sync-methods,
+    Resource: sync-methods,
+    Service: Samples.AWS.Kinesis,
+    Tags: {
+      env: integration_tests,
+      language: dotnet,
+      runtime-id: Guid_1,
+      _dd.p.dm: -0
+    },
+    Metrics: {
+      process_id: 0,
+      _dd.agent_psr: 1.0,
+      _dd.top_level: 1.0,
+      _dd.tracer_kr: 1.0,
+      _sampling_priority_v1: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_9,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.Kinesis-http-client,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      out.host: aws_kinesis,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_10,
+    Name: aws.kinesis.produce,
+    Resource: Kinesis.PutRecord,
+    Service: Samples.AWS.Kinesis-aws-kinesis,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutRecord,
+      aws.requestId: Guid_4,
+      aws.service: Kinesis,
+      aws_service: Kinesis,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      streamname: MyStreamName
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_11,
+    Name: aws.kinesis.produce,
+    Resource: Kinesis.PutRecords,
+    Service: Samples.AWS.Kinesis-aws-kinesis,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      aws.agent: dotnet-aws-sdk,
+      aws.operation: PutRecords,
+      aws.requestId: Guid_5,
+      aws.service: Kinesis,
+      aws_service: Kinesis,
+      component: aws-sdk,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      runtime-id: Guid_1,
+      span.kind: producer,
+      streamname: MyStreamName
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_7,
+    SpanId: Id_12,
+    Name: http.request,
+    Resource: POST localhost:00000/,
+    Service: Samples.AWS.Kinesis-http-client,
+    Type: http,
+    ParentId: Id_8,
+    Tags: {
+      component: WebRequest,
+      env: integration_tests,
+      http.method: POST,
+      http.status_code: 200,
+      http.url: http://localhost:00000/,
+      out.host: aws_kinesis,
+      runtime-id: Guid_1,
+      span.kind: client
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  }
+]

@@ -60,5 +60,10 @@ namespace Datadog.Trace.DuckTyping.Tests.Fields.ReferenceType.ProxiesDefinitions
 
         [DuckField(Name = "_privateReferenceTypeField")]
         string PrivateReferenceTypeField { get; set; }
+
+        // *
+
+        [DuckField(Name = "_publicReferenceTypeField")]
+        ValueWithType<string> PublicReferenceTypeFieldWithType { get; set; }
     }
 }

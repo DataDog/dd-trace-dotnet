@@ -10,6 +10,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Xunit;
@@ -170,7 +171,9 @@ namespace Datadog.Trace.Tests.Telemetry
             {
                 payload.Dependencies
                        .Should()
-                       .ContainEquivalentOf(assemblyName);
+                       .Contain(
+                            x => x.Name.Equals(assemblyName.Name, StringComparison.OrdinalIgnoreCase)
+                              && x.Version.Equals(assemblyName.Version, StringComparison.OrdinalIgnoreCase));
             }
 
             await controller.DisposeAsync(false);

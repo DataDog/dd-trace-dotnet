@@ -500,6 +500,11 @@ public:
     {
         return len == 0;
     }
+
+    std::tuple<PCCOR_SIGNATURE, unsigned> GetFunctionSignatureAndLength()
+    {
+        return {pbBase, len};
+    }
 };
 
 struct FunctionLocalSignature

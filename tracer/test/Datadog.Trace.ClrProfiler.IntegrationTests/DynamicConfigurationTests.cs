@@ -46,8 +46,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
-            using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
+            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {
@@ -78,7 +78,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         TraceSampleRate = .5,
                         // CustomSamplingRules = "[{\"sample_rate\":0.1}]",
                         // ServiceNameMapping = "foo:bar",
-                        TraceHeaderTags = "User-Agent:http_user_agent"
+                        TraceHeaderTags = "User-Agent:http.user_agent"
                     });
 
                 await UpdateAndValidateConfig(
@@ -110,10 +110,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
 
             SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
-            using var sample = StartSample(agent, string.Empty, string.Empty, aspNetCorePort: 5000);
+            using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
             {

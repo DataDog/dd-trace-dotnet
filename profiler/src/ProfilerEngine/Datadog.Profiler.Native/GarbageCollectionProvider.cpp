@@ -3,14 +3,11 @@
 
 #include "GarbageCollectionProvider.h"
 
-
-std::vector<SampleValueType> GarbageCollectionProvider::SampleTypeDefinitions(
-    {
-        {"timeline", "nanoseconds"}
-    });
+#include "SampleValueTypeProvider.h"
+#include "TimelineSampleType.h"
 
 GarbageCollectionProvider::GarbageCollectionProvider(
-    uint32_t valueOffset,
+    SampleValueTypeProvider& valueTypeProvider,
     IFrameStore* pFrameStore,
     IThreadsCpuManager* pThreadsCpuManager,
     IAppDomainStore* pAppDomainStore,
@@ -18,7 +15,7 @@ GarbageCollectionProvider::GarbageCollectionProvider(
     IConfiguration* pConfiguration,
     MetricsRegistry& metricsRegistry)
     :
-    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueOffset, SampleTypeDefinitions.size(), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
+    CollectorBase<RawGarbageCollectionSample>("GarbageCollectorProvider", valueTypeProvider.GetOrRegister(TimelineSampleType::Definitions), pThreadsCpuManager, pFrameStore, pAppDomainStore, pRuntimeIdStore, pConfiguration)
 {
     _gen0CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen0");
     _gen1CountMetric = metricsRegistry.GetOrRegister<CounterMetric>("dotnet_gc_gen1");
@@ -72,6 +69,11 @@ void GarbageCollectionProvider::OnGarbageCollectionEnd(
     if (reason == GCReason::InducedLowMemory)
     {
         _memoryPressureCountMetric->Incr();
+    }
+
+    if ((generation == 2) && (isCompacting))
+    {
+        _compactingGen2CountMetric->Incr();
     }
 
     RawGarbageCollectionSample rawSample;

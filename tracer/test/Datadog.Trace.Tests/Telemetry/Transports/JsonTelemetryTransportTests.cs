@@ -8,7 +8,7 @@ using System.Collections.Generic;
 using System.IO;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Transports;
-using Datadog.Trace.Tests.Util.JsonAssertions;
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using Xunit;
@@ -67,7 +67,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
-            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+            actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
         [Fact]
@@ -122,7 +122,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
-            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+            actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
         [Fact]
@@ -191,7 +191,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
-            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+            actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
         [Fact]
@@ -255,7 +255,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
-            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+            actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
         [Fact]
@@ -323,7 +323,7 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
             serialized.Should().NotBeNullOrEmpty();
             var actualJson = JToken.Parse(serialized);
 
-            actualJson.JsonShould().BeEquivalentTo(expectedJson);
+            actualJson.Should().BeEquivalentTo(expectedJson);
         }
 
         private static string GetAppStartedDataV1()

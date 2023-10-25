@@ -2,14 +2,14 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 2.36.0)
+project("Datadog.Linux.ApiWrapper" VERSION 2.41.0)
 
 # ******************************************************
 # Compiler options
 # ******************************************************
 
 # Sets compiler options
-add_compile_options(-std=c11 -fPIC) 
+add_compile_options(-std=c11 -fPIC -gdwarf-4) 
 
 
 if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
@@ -33,12 +33,15 @@ SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${DEPLOY_DIR})
 
 add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
     functions_to_wrap.c
+    socket_operations.c
+    common.c
 )
 
 # Define linker libraries
 target_link_libraries(${API_WRAPPER_SHARED_LIB_NAME}
     -pthread
     -ldl
+    -Wl,--build-id
 )
 
 set_target_properties(${API_WRAPPER_SHARED_LIB_NAME} PROPERTIES PREFIX "")

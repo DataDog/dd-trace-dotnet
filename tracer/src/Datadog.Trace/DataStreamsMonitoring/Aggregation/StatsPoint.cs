@@ -16,6 +16,7 @@ internal readonly struct StatsPoint
     public readonly long TimestampNs;
     public readonly long PathwayLatencyNs;
     public readonly long EdgeLatencyNs;
+    public readonly long PayloadSizeBytes;
 
     public StatsPoint(
         string[] edgeTags,
@@ -23,7 +24,8 @@ internal readonly struct StatsPoint
         PathwayHash parentHash,
         long timestampNs,
         long pathwayLatencyNs,
-        long edgeLatencyNs)
+        long edgeLatencyNs,
+        long payloadSizeBytes)
     {
         EdgeTags = edgeTags;
         Hash = hash;
@@ -31,5 +33,6 @@ internal readonly struct StatsPoint
         TimestampNs = timestampNs;
         PathwayLatencyNs = pathwayLatencyNs;
         EdgeLatencyNs = edgeLatencyNs;
+        PayloadSizeBytes = payloadSizeBytes;
     }
 }

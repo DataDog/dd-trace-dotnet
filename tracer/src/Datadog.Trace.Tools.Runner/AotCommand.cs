@@ -3,24 +3,40 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Spectre.Console.Cli;
+using System.CommandLine;
+using System.CommandLine.Invocation;
 
 namespace Datadog.Trace.Tools.Runner
 {
-    internal class AotCommand : Command<AotSettings>
+    internal class AotCommand : CommandWithExamples
     {
-        public override int Execute(CommandContext context, AotSettings settings)
+        private readonly Argument<string> _inputFolderArgument = new("input-folder");
+        private readonly Argument<string> _outputFolderArgument = new("output-folder");
+
+        public AotCommand()
+            : base("apply-aot", "Apply AOT automatic instrumentation on application folder")
         {
+            AddArgument(_inputFolderArgument);
+            AddArgument(_outputFolderArgument);
+
+            AddExample(@"dd-trace apply-aot c:\input\ c:\output\");
+
+            this.SetHandler(Execute);
+        }
+
+        private void Execute(InvocationContext context)
+        {
+            var inputFolder = _inputFolderArgument.GetValue(context);
+            var outputFolder = _outputFolderArgument.GetValue(context);
+
             try
             {
-                Aot.AotProcessor.ProcessFolder(settings.InputFolder, settings.OutputFolder);
+                Aot.AotProcessor.ProcessFolder(inputFolder, outputFolder);
             }
             catch
             {
-                return 1;
+                context.ExitCode = 1;
             }
-
-            return 0;
         }
     }
 }

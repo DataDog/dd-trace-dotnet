@@ -158,7 +158,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                var spans = agent.WaitForSpans(1, 2000);
+                var spans = agent.Spans;
 
                 using var s = new AssertionScope();
                 spans.Should().BeEmpty();

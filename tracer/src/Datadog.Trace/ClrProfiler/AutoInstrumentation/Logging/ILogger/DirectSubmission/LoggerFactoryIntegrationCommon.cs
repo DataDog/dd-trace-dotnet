@@ -65,15 +65,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
             }
         }
 
-        internal static void AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
-            => AddDirectSubmissionLoggerProvider(loggerFactory, scopeProvider: null);
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory)
+            => TryAddDirectSubmissionLoggerProvider(loggerFactory, scopeProvider: null);
 
-        internal static void AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, IExternalScopeProvider? scopeProvider)
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, IExternalScopeProvider? scopeProvider)
         {
             if (ProviderInterfaces is null)
             {
                 // there was a problem loading the assembly for some reason
-                return;
+                return false;
             }
 
             var provider = new DirectSubmissionLoggerProvider(
@@ -81,16 +81,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 TracerManager.Instance.DirectLogSubmission.Settings.MinimumLevel,
                 scopeProvider);
 
-            AddDirectSubmissionLoggerProvider(loggerFactory, provider);
+            return TryAddDirectSubmissionLoggerProvider(loggerFactory, provider);
         }
 
         // Internal for testing
-        internal static object? AddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
+        internal static bool TryAddDirectSubmissionLoggerProvider(TLoggerFactory loggerFactory, DirectSubmissionLoggerProvider provider)
         {
             if (ProviderInterfaces is null)
             {
                 // there was a problem loading the assembly for some reason
-                return null;
+                return false;
             }
 
             var proxy = provider.DuckImplement(ProviderInterfaces);
@@ -99,9 +99,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.ILogger.DirectSu
                 var loggerFactoryProxy = loggerFactory.DuckCast<ILoggerFactory>();
                 loggerFactoryProxy.AddProvider(proxy);
                 Log.Information("Direct log submission via ILogger enabled");
+                return true;
             }
 
-            return proxy;
+            return false;
         }
     }
 }

@@ -8,13 +8,14 @@
 #include <vector>
 
 #include "GroupSampler.h"
+#include "SampleValueTypeProvider.h"
 
 using UpscaleStringGroup = UpscaleGroupInfo<std::string>;
 
 struct UpscalingInfo
 {
 public:
-    std::vector<std::uintptr_t> const& Offsets;
+    std::vector<SampleValueTypeProvider::Offset> const& Offsets;
     std::string LabelName;
     std::vector<UpscaleStringGroup> UpscaleGroups;
 };

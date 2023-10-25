@@ -1,5 +1,51 @@
 [
   {
+    "IntegrationName": "AwsDynamoDb",
+    "SampleProjectName": "Samples.AWS.DynamoDBv2",
+    "NugetPackageSearchName": "AWSSDK.DynamoDBv2",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.8.0",
+    "SpecificVersions": [
+      "3.1.*",
+      "3.3.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "AwsKinesis",
+    "SampleProjectName": "Samples.AWS.Kinesis",
+    "NugetPackageSearchName": "AWSSDK.Kinesis",
+    "MinVersion": "3.0.0",
+    "MaxVersionExclusive": "3.8.0",
+    "SpecificVersions": [
+      "3.1.*",
+      "3.3.*",
+      "3.*.*"
+    ],
+    "VersionConditions": [{
+      "MaxVersionExclusive": "3.3.0",
+      "IncludeOnlyTargetFrameworks": ["net462"]
+    }]
+  },
+  {
+    "IntegrationName": "AwsLambda",
+    "SampleProjectName": "Samples.Amazon.Lambda.RuntimeSupport",
+    "NugetPackageSearchName": "Amazon.Lambda.RuntimeSupport",
+    "MinVersion": "1.4.0",
+    "MaxVersionExclusive": "2.0.0",
+    "SpecificVersions": [
+      "1.8.*"
+    ],
+    "VersionConditions": [{
+      "MinVersion": "1.4.0",
+      "IncludeOnlyTargetFrameworks": ["net6.0","net7.0"]
+    }]
+  },
+  {
     "IntegrationName": "AwsSqs",
     "SampleProjectName": "Samples.AWS.SQS",
     "NugetPackageSearchName": "AWSSDK.SQS",
@@ -487,6 +533,9 @@
     }, {
       "MaxVersionExclusive": "2.38.1",
       "SkipArm64": true
+    }, {
+      "MinVersion": "2.57.0",
+      "ExcludeTargetFrameworks": ["netcoreapp3.0", "netcoreapp3.1", "net5.0"]
     }]
   },
   {

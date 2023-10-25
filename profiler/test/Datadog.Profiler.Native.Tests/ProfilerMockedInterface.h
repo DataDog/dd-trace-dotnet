@@ -61,8 +61,13 @@ public:
     MOCK_METHOD(bool, IsAllocationRecorderEnabled, (), (const override));
     MOCK_METHOD(bool, IsDebugInfoEnabled, (), (const override));
     MOCK_METHOD(bool, IsGcThreadsCpuTimeEnabled, (), (const override));
+    MOCK_METHOD(bool, IsThreadLifetimeEnabled, (), (const override));
     MOCK_METHOD(std::string const&, GetGitRepositoryUrl, (), (const override));
     MOCK_METHOD(std::string const&, GetGitCommitSha, (), (const override));
+    MOCK_METHOD(bool, IsInternalMetricsEnabled, (), (const override));
+    MOCK_METHOD(bool, IsSystemCallsShieldEnabled, (), (const override));
+    MOCK_METHOD(bool, IsCIVisibilityEnabled, (), (const override));
+    MOCK_METHOD(std::uint64_t, GetCIVisibilitySpanId, (), (const override));
 };
 
 class MockExporter : public IExporter

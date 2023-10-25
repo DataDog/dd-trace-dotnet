@@ -98,8 +98,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 SetEnvironmentVariable("Logging__Datadog__LogLevel__LogsInjection.ILogger.Startup", "Warning");
             }
 
-            var agentPort = TcpPortProvider.GetOpenPort();
-            using var agent = MockTracerAgent.Create(Output, agentPort);
+            using var telemetry = this.ConfigureTelemetry();
+            using var agent = EnvironmentHelper.GetMockAgent();
             using var processResult = RunSampleAndWaitForExit(agent, aspNetCorePort: 0);
 
             ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
@@ -134,6 +134,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 .HaveCount(expectedLogCount);
 
             VerifyInstrumentation(processResult.Process);
+            telemetry.AssertIntegrationEnabled(IntegrationId.ILogger);
         }
     }
 }

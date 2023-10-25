@@ -10,6 +10,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Logging;
+using static Datadog.Trace.Telemetry.Metrics.MetricTags;
 
 namespace Datadog.Trace.Iast.Propagation;
 
@@ -17,10 +18,12 @@ internal static class PropagationModuleImpl
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(PropagationModuleImpl));
 
-    public static void AddTainted(string? input, Source source)
+    public static void AddTaintedSource(string? input, Source source)
     {
         try
         {
+            IastModule.OnExecutedSourceTelemetry((IastInstrumentedSources)source.OriginByte);
+
             if (input is null || input == string.Empty)
             {
                 return;
@@ -56,6 +59,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (result is null || target is null)
             {
                 return result;
@@ -88,10 +92,11 @@ internal static class PropagationModuleImpl
         return result;
     }
 
-    public static object? PropagateResultWhenInputTainted(string result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
+    public static object? PropagateResultWhenInputTainted(string? result, object? firstInput, object? secondInput = null, object? thirdInput = null, object? fourthInput = null)
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -105,10 +110,10 @@ internal static class PropagationModuleImpl
 
             var taintedObjects = iastContext.GetTaintedObjects();
 
-            if (PropagateResultWhenInputTainted(result, firstInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result, secondInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result, thirdInput, taintedObjects) ||
-                PropagateResultWhenInputTainted(result, fourthInput, taintedObjects))
+            if (PropagateResultWhenInputTainted(result!, firstInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result!, secondInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result!, thirdInput, taintedObjects) ||
+                PropagateResultWhenInputTainted(result!, fourthInput, taintedObjects))
             {
                 return result;
             }
@@ -125,6 +130,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (string.IsNullOrEmpty(result))
             {
                 return result;
@@ -156,7 +162,7 @@ internal static class PropagationModuleImpl
         }
         catch (Exception error)
         {
-            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputTainted)} exception");
+            Log.Error(error, $"{nameof(PropagationModuleImpl)}.{nameof(PropagateResultWhenInputArrayTainted)} exception");
         }
 
         return result;
@@ -167,7 +173,7 @@ internal static class PropagationModuleImpl
         if (input is not null)
         {
             var tainted = taintedObjects.Get(input);
-            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null)
+            if (tainted?.Ranges?.Count() > 0 && tainted.Ranges[0].Source is not null && taintedObjects.Get(result) is null)
             {
                 taintedObjects.Taint(result, new Range[] { new Range(0, result.Length, tainted.Ranges[0].Source) });
                 return true;
@@ -181,6 +187,7 @@ internal static class PropagationModuleImpl
     {
         try
         {
+            IastModule.OnExecutedPropagationTelemetry();
             if (!(results?.Length > 0) || input is null)
             {
                 return results;
@@ -216,10 +223,15 @@ internal static class PropagationModuleImpl
         return results;
     }
 
-    public static object? PropagateTaint(object? input, object result, int offset = 0)
+    public static object? PropagateTaint(object? input, object? result, int offset = 0, bool addTelemetry = true)
     {
         try
         {
+            if (addTelemetry)
+            {
+                IastModule.OnExecutedPropagationTelemetry();
+            }
+
             if (result is null || input is null)
             {
                 return result;
@@ -268,10 +280,16 @@ internal static class PropagationModuleImpl
     /// <param name="beginIndex"> start index </param>
     /// <param name="result"> the substring result </param>
     /// <param name="resultLength"> Result's length </param>
-    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength)
+    /// <param name="addTelemetry"> true to add a telemetry instrumentation point </param>
+    public static void OnStringSubSequence(object self, int beginIndex, object result, int resultLength, bool addTelemetry = true)
     {
         try
         {
+            if (addTelemetry)
+            {
+                IastModule.OnExecutedPropagationTelemetry();
+            }
+
             var iastContext = IastModule.GetIastContext();
             if (iastContext == null)
             {
@@ -309,54 +327,57 @@ internal static class PropagationModuleImpl
     // This situation could affect the string builder class, but not the string class because the string methods return new instances
     // After discussion, we assume that we can have incorrect ranges in special situations, but we should make sure that the ranges do not
     // exceed the string length
-    public static void FixRangesIfNeeded(string result)
+    public static void FixRangesIfNeeded(string? result)
     {
         try
         {
-            var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
-            var ranges = tainted?.Ranges;
-
-            if (ranges == null)
+            if (result is not null)
             {
-                return;
-            }
+                var tainted = IastModule.GetIastContext()?.GetTaintedObjects()?.Get(result);
+                var ranges = tainted?.Ranges;
 
-            var incorrectRanges = false;
-            List<Range>? newRanges = null;
-
-            for (int i = 0; i < ranges.Length; i++)
-            {
-                var range = ranges[i];
-                if (range.Start >= result.Length)
+                if (ranges == null)
                 {
-                    if (!incorrectRanges)
+                    return;
+                }
+
+                var incorrectRanges = false;
+                List<Range>? newRanges = null;
+
+                for (int i = 0; i < ranges.Length; i++)
+                {
+                    var range = ranges[i];
+                    if (range.Start >= result.Length)
                     {
-                        newRanges = FillValidRangesArray(ranges, i - 1);
-                        incorrectRanges = true;
+                        if (!incorrectRanges)
+                        {
+                            newRanges = FillValidRangesArray(ranges, i - 1);
+                            incorrectRanges = true;
+                        }
+                    }
+                    else if (range.Start + range.Length > result.Length)
+                    {
+                        if (!incorrectRanges)
+                        {
+                            newRanges = FillValidRangesArray(ranges, i - 1);
+                            incorrectRanges = true;
+                        }
+
+                        newRanges?.Add(new Range(range.Start, result.Length - range.Start, range.Source));
+                    }
+                    else
+                    {
+                        if (incorrectRanges)
+                        {
+                            newRanges?.Add(range);
+                        }
                     }
                 }
-                else if (range.Start + range.Length > result.Length)
-                {
-                    if (!incorrectRanges)
-                    {
-                        newRanges = FillValidRangesArray(ranges, i - 1);
-                        incorrectRanges = true;
-                    }
 
-                    newRanges?.Add(new Range(range.Start, result.Length - range.Start, range.Source));
-                }
-                else
+                if (incorrectRanges)
                 {
-                    if (incorrectRanges)
-                    {
-                        newRanges?.Add(range);
-                    }
+                    tainted!.Ranges = newRanges!.ToArray();
                 }
-            }
-
-            if (incorrectRanges)
-            {
-                tainted!.Ranges = newRanges!.ToArray();
             }
         }
         catch (Exception error)

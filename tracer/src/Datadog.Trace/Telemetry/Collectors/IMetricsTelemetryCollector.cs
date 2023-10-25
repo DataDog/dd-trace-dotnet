@@ -4,6 +4,7 @@
 // </copyright>
 
 #nullable enable
+using System.Threading.Tasks;
 using Datadog.Trace.Telemetry.Metrics;
 
 namespace Datadog.Trace.Telemetry;
@@ -16,12 +17,12 @@ internal partial interface IMetricsTelemetryCollector
     /// <param name="api">The API that was accessed</param>
     public void Record(PublicApiUsage api);
 
-    void AggregateMetrics();
-
     MetricResults GetMetrics();
 
     /// <summary>
     /// Sets the version of the WAF used for future metrics
     /// </summary>
     public void SetWafVersion(string wafVersion);
+
+    public Task DisposeAsync();
 }

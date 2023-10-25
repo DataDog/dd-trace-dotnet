@@ -72,7 +72,9 @@ public class DataStreamsWriterTests
         var writer = CreateWriter(api, out var discovery, bucketDurationMs);
         TriggerSupportUpdate(discovery, isSupported: true);
 
+        // stats and backlogs will be sent as the same payload
         writer.Add(CreateStatsPoint());
+        writer.AddBacklog(CreateBacklogPoint());
 
         await api.WaitForCount(1, 30_000);
 
@@ -251,6 +253,7 @@ public class DataStreamsWriterTests
         TriggerSupportUpdate(discovery, isSupported: true);
 
         writer.Add(CreateStatsPoint());
+        writer.AddBacklog(CreateBacklogPoint());
 
         await writer.DisposeAsync();
 
@@ -271,8 +274,9 @@ public class DataStreamsWriterTests
 
         payloads.Should().OnlyContain(x => x.Env == Environment);
         payloads.Should().OnlyContain(x => x.Service == Service);
-        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "current")));
-        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats.Any(z => z.TimestampType == "origin")));
+        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats != null && y.Stats.Any(z => z.TimestampType == "current")));
+        payloads.Should().Contain(x => x.Stats.Any(y => y.Stats != null && y.Stats.Any(z => z.TimestampType == "origin")));
+        payloads.Should().Contain(x => x.Stats.Any(y => y.Backlogs != null && y.Backlogs.Any(b => b.Tags.Contains("type:produce"))));
     }
 
     [Fact]
@@ -286,9 +290,10 @@ public class DataStreamsWriterTests
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
+        writer.AddBacklog(CreateBacklogPoint());
 
         var pointsDropped = writer.PointsDropped;
-        pointsDropped.Should().Be(3);
+        pointsDropped.Should().Be(4);
 
         // enable support
         TriggerSupportUpdate(discovery, isSupported: true);
@@ -297,6 +302,7 @@ public class DataStreamsWriterTests
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
+        writer.AddBacklog(CreateBacklogPoint());
 
         writer.PointsDropped.Should().Be(pointsDropped, "Should be unchanged");
 
@@ -314,6 +320,7 @@ public class DataStreamsWriterTests
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
         writer.Add(CreateStatsPoint());
+        writer.AddBacklog(CreateBacklogPoint());
 
         writer.PointsDropped.Should().Be(0);
 
@@ -360,7 +367,11 @@ public class DataStreamsWriterTests
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
             timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
             pathwayLatencyNs: 5_000_000_000,
-            edgeLatencyNs: 2_000_000_000);
+            edgeLatencyNs: 2_000_000_000,
+            payloadSizeBytes: 1024);
+
+    private static BacklogPoint CreateBacklogPoint()
+        => new BacklogPoint("type:produce", 100, DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
     private async Task WaitForFlushCount(int timeout, int flushCount = 2)
     {

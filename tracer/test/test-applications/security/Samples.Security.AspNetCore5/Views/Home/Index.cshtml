@@ -70,9 +70,9 @@
 
     <div><a href="/Iast/GetFileContent?file=nonexisting.txt">GET /Iast/GetFileContent?file=nonexisting.txt</a></div>
 
-    <div><a href="javascript:postJson('/Iast/ExecuteQueryFromBodyQueryData','SELECT Surname from Persons where name=\'Vicent\'')">POST /Iast/ExecuteQueryFromBodyText</a></div>
+    <div><a href="javascript:post('/Iast/ExecuteQueryFromBodyText','&quot;SELECT Surname from Persons where name=\'Vicent\'&quot;')">POST /Iast/ExecuteQueryFromBodyText</a></div>
 
-    <div><a href="javascript:post('/Iast/ExecuteQueryFromBodyQueryData', '{%22InnerQuery%22: {%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22]}, %22Query%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22QueryNotUsed%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22IntField%22: 1,%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22],%22StringMap%22: {%22query1%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22query2%22: %22SELECT Surname from Persons where name=\'Vicent\'%22},%22StringArrayArguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22]}')">POST /Iast/ExecuteQueryFromBodyText</a></div>
+    <div><a href="javascript:post('/Iast/ExecuteQueryFromBodyQueryData', '{%22InnerQuery%22: {%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22]}, %22Query%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22QueryNotUsed%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22IntField%22: 1,%22Arguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22],%22StringMap%22: {%22query1%22: %22SELECT Surname from Persons where name=\'Vicent\'%22,%22query2%22: %22SELECT Surname from Persons where name=\'Vicent\'%22},%22StringArrayArguments%22: [%22SELECT Surname from Persons where name=\'Vicent\'%22, %22SELECT Surname from Persons where name=\'Mark\'%22]}')">POST /Iast/ExecuteQueryFromBodyQueryData</a></div>
 
     <div><a href="#" onclick="postJson2('/DataRazorIastPage', 'property=Execute&property3=2&Property2=nonexisting.exe')">POST Razor</a></div>
 
@@ -85,6 +85,12 @@
     <div><a href="/Iast/NoSameSiteCookie">GET /Iast/NoSameSiteCookie</a></div>
 
     <div><a href="/Iast/AllVulnerabilitiesCookie">GET /Iast/AllVulnerabilitiesCookie</a></div>
+
+    <div><a href="/Iast/Ssrf?url=http://www.google.com">GET /Iast/Ssrf?url=http://www.google.com</a></div>
+
+    <div><a href="/Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com">GET /Iast/Ldap?path=LDAP://ldap.forumsys.com:389/dc=example,dc=com</a></div>
+
+    <div><a href="/Iast/WeakRandomness">GET /Iast/WeakRandomness</a></div>
 
     <div>
         @Html.Raw(Context.Request.Query["q"])

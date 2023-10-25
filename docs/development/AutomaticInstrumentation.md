@@ -23,8 +23,11 @@ The _ClrProfiler_ folder contains the majority of code required for automatic in
     - [Add required docker services](#add-required-docker-services)
   - [Local testing using Nuke](#local-testing-using-nuke)
   - [Testing in CI](#testing-in-ci)
+- [Rollout](#rollout)
 
 ### Creating a new automatic instrumentation implementation
+
+> Note that you can use the [AutoInstrumentation Generator](#autoinstrumentation-generator) tool to help you with this process.
 
 Creating a new instrumentation implementation typically uses the following process:
 
@@ -286,6 +289,24 @@ There are some current limitations with what types/methods with our `CallTarget`
 
 Additional information regarding the specific limitations with these can be found in the `method_rewriter.cpp` class [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L239) and [here](https://github.com/DataDog/dd-trace-dotnet/blob/master/tracer/src/Datadog.Tracer.Native/method_rewriter.cpp#L203).
 
+### AutoInstrumentation Generator
+
+There's a tool to help developers in the process of creating all the boilerplate code for new instrumentations.
+
+To run the tool use: `./tracer/build.ps1 RunInstrumentationGenerator`
+
+#### Nuke command:
+
+![nuke command](./images/gen01.jpg)
+
+#### Main window:
+
+![tool main window](./images/gen02.jpg)
+
+#### Creating a new Instrumentation class with the DuckType proxies:
+
+![tool main window](./images/gen03.jpg)
+
 ### Testing
 
 When adding a new integration or making changes, you must make sure to include _integration_ tests, in addition to any unit tests that you deem useful. Integration tests run real sample application that use the target libraries, are instrumented using automatic instrumentation, and create traces that are sent to a mock agent. They are one of the best ways of knowing for sure that your integration is _actually_ working as you expect!
@@ -421,6 +442,7 @@ On MacOs, you won't be able to run all tests as some images aren't arm compatibl
 # your sample, and running only your new tests
 # You can choose whichever framework is appropriate
 ./tracer/build.sh BuildAndRunOSxIntegrationTests -buildConfiguration Debug -framework net6.0 -Filter MyNewIntegrationTests -SampleName Samples.MyNewSample
+```
 
 #### Testing in CI
 
@@ -445,3 +467,7 @@ You can do this [by going to Azure DevOps](https://dev.azure.com/datadoghq/dd-tr
   - `TEST_FILTER` = `MyNewIntegrationTests` - the test class to run
   - `TEST_SAMPLE_NAME` = `Samples.MyNewSample` - the sample to build
 - Click **Run**
+
+### Rollout
+
+Before rolling out, make sure you have updated the block list of telemetry configuration in the telemetry repository. Indeed, we do not keep track of all configuration and that will avoid useless alerts after the release.

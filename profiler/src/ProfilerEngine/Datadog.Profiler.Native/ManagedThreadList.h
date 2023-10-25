@@ -30,7 +30,6 @@ public:
     const char* GetName() override;
     bool Start() override;
     bool Stop() override;
-    bool GetOrCreateThread(ThreadID clrThreadId) override;
     bool RegisterThread(std::shared_ptr<ManagedThreadInfo>& pThreadInfo) override;
     bool UnregisterThread(ThreadID clrThreadId, std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
     bool SetThreadOsInfo(ThreadID clrThreadId, DWORD osThreadId, HANDLE osThreadHandle) override;
@@ -39,9 +38,7 @@ public:
     uint32_t CreateIterator() override;
     std::shared_ptr<ManagedThreadInfo> LoopNext(uint32_t iterator) override;
     HRESULT TryGetCurrentThreadInfo(std::shared_ptr<ManagedThreadInfo>& ppThreadInfo) override;
-
-private:
-    std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId);
+    std::shared_ptr<ManagedThreadInfo> GetOrCreate(ThreadID clrThreadId) override;
 
 private:
     const char* _serviceName = "ManagedThreadList";
@@ -62,19 +59,6 @@ private:
     // An iterator is just a position in the vector corresponding to the next thread to be returned by LoopNext
     // so keep track of them in a vector of positions initialized to 0
     std::vector<uint32_t> _iterators;
-
-    // ProfilerThreadInfoId is unique numeric ID of a ManagedThreadInfo record.
-    // We cannot use the OS id, because we do not always have it, and we cannot use the Clr internal thread id,
-    // because we do not want to architecturally restrict ourselves to never profile native threads in the future
-    // + it could be reused for a different thread by the CLR since this is the value of the pointer to the internal
-    // representation of the managed thread.
-    //
-    // We tag all collected stack samples using the ProfilerThreadInfoId.
-    // When the managed engine subsequently processes the stack samples, it may request
-    // the info from the corresponding ManagedThreadInfo.
-    // When that happens, we use the '_lookupByProfilerThreadInfoId' table to look up the ManagedThreadInfo instance
-    // that corresponds to the id. If the thread is dead, it will no longer be in the table.
-    std::unordered_map<std::uint32_t, std::shared_ptr<ManagedThreadInfo>> _lookupByProfilerThreadInfoId;
 
     ICorProfilerInfo4* _pCorProfilerInfo;
 

@@ -100,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             { "/api2/transientfailure/true", 200, 2 },
             { "/api2/transientfailure/false", 500, 3 },
             { "/api2/statuscode/201", 201, 2 },
-            { "/api2/statuscode/503", 503, 3 },
+            { "/api2/statuscode/503", 503, 2 },
 
             // The global message handler will fail when ps=false
             // The per-route message handler is not invoked with the route /api2, so ts=true|false has no effect

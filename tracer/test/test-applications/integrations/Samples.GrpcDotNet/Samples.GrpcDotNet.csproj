@@ -6,7 +6,7 @@
     <!-- Suppress warnings about lowercase variable names in generated code -->
     <NoWarn>0618;NETSDK1138;CS8981</NoWarn>
 
-    <ApiVersion Condition="'$(ApiVersion)' == ''">2.32.0</ApiVersion>
+    <ApiVersion Condition="'$(ApiVersion)' == ''">2.43.0</ApiVersion>
     <DefineConstants Condition="'$(ApiVersion)'&gt;='2.29.0'">$(DefineConstants);GRPC_2_29</DefineConstants>
 
     <!-- Required to build multiple projects with the same Configuration|Platform, which is needed for the CI library/version matrix -->

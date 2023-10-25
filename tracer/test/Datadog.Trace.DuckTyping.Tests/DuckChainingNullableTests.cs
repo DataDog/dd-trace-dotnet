@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.TestHelpers.FluentAssertionsExtensions;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.DuckTyping.Tests
@@ -30,6 +32,33 @@ namespace Datadog.Trace.DuckTyping.Tests
             var proxy = DuckType.CreateCache<NullableProxyTestStruct>.CreateFrom(instance);
         }
 
+        [Fact]
+        public void CanDuckChainWithNullInstance()
+        {
+            var firstClass = new FirstClass();
+            var firstClassProxy = firstClass.DuckCast<IFirstClass>();
+
+            firstClass.Value.Should().BeNull();
+            firstClassProxy.Value.Should().BeNull();
+        }
+
+        [Fact]
+        public void CanDuckChainWithNullInstanceAndANullableDuckCopy()
+        {
+            var firstClass = new FirstClass();
+            var firstClassCopy = firstClass.DuckCast<SFirstClass>();
+            firstClassCopy.Value.Should().BeNull();
+
+            firstClass.Value = new SecondClass
+            {
+                Name = "Hello World"
+            };
+
+            var firstClassCopy2 = firstClass.DuckCast<SFirstClass>();
+            firstClassCopy2.Value.Should().NotBeNull();
+            firstClassCopy2.Value!.Value.Name.Should().Be(firstClass.Value.Name);
+        }
+
         // Proxies
         [DuckCopy]
         public struct GenericProxyStruct
@@ -48,6 +77,30 @@ namespace Datadog.Trace.DuckTyping.Tests
         {
         }
 
+#pragma warning disable SA1201
+        public interface IFirstClass
+#pragma warning restore SA1201
+        {
+            ISecondClass Value { get; set; }
+        }
+
+        public interface ISecondClass
+        {
+            string Name { get; set; }
+        }
+
+        [DuckCopy]
+        public struct SFirstClass
+        {
+            public SSecondClass? Value;
+        }
+
+        [DuckCopy]
+        public struct SSecondClass
+        {
+            public string Name;
+        }
+
         // Originals
         public struct TestStruct
         {
@@ -56,6 +109,16 @@ namespace Datadog.Trace.DuckTyping.Tests
         public class GenericTestClass
         {
             public TestStruct? MyTestStruct { get; set; }
+        }
+
+        public class FirstClass
+        {
+            public SecondClass Value { get; set; }
+        }
+
+        public class SecondClass
+        {
+            public string Name { get; set; }
         }
     }
 }

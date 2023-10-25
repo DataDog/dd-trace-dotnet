@@ -119,4 +119,4 @@ enable_testing()
 add_subdirectory(test)
 
 add_custom_target(all-profiler)
-add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 Datadog.Profiler.Native.Tests)
+add_dependencies(all-profiler Datadog.Profiler.Native Datadog.Linux.ApiWrapper.x64 profiler-native-tests)

@@ -66,10 +66,10 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
 #else
     assert(8 * sizeof(void*) == 32);
-    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
 #endif
 }
 
@@ -295,6 +295,37 @@ std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads()
         }
     }
     return result;
+}
+
+std::string GetProcessStartTime()
+{
+    HANDLE hProcess = ::GetCurrentProcess();
+    FILETIME creationTime;
+    FILETIME exitTime;
+    FILETIME userTime;
+    FILETIME kernelTime;
+    if (!::GetProcessTimes(hProcess, &creationTime, &exitTime, &kernelTime, &userTime))
+    {
+        return "";
+    }
+
+    SYSTEMTIME sCreationTime;
+    if (!::FileTimeToSystemTime(&creationTime, &sCreationTime))
+    {
+        return "";
+    }
+
+    std::stringstream builder;
+    builder
+        << sCreationTime.wYear
+        << "-" << std::setfill('0') << std::setw(2) << sCreationTime.wMonth
+        << "-" << std::setfill('0') << std::setw(2) << sCreationTime.wDay
+        << "T" << std::setfill('0') << std::setw(2) << sCreationTime.wHour
+        << ":" << std::setfill('0') << std::setw(2) << sCreationTime.wMinute
+        << ":" << std::setfill('0') << std::setw(2) << sCreationTime.wSecond
+        << "Z"; // for UTC
+    return builder.str();
+
 }
 
 } // namespace OsSpecificApi

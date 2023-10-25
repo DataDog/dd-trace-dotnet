@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.36.0</Version>
+    <Version>2.41.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
@@ -14,6 +14,7 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
@@ -121,6 +122,7 @@
     <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Mono.Cecil" Version="0.11.5" />
     <PackageReference Include="Spectre.Console" Version="0.43.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
     <PackageReference Include="StrongNamer" Version="0.2.5" />
     <PackageReference Include="Microsoft.Web.Administration" Version="11.1.0" />
     <PackageReference Include="NETStandard.Library" Version="2.0.3" />
@@ -131,6 +133,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
   </ItemGroup>

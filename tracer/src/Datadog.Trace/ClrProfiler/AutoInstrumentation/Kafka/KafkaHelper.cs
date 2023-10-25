@@ -3,11 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
-using System.Collections.Generic;
 using System.Text;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
+using Datadog.Trace.DataStreamsMonitoring.Utils;
+using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
 using Datadog.Trace.Tagging;
@@ -18,19 +20,20 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
     {
         internal const string GroupIdKey = "group.id";
         internal const string BootstrapServersKey = "bootstrap.servers";
+        internal const string EnableDeliveryReportsField = "dotnet.producer.enable.delivery.reports";
         private const string MessagingType = "kafka";
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(KafkaHelper));
         private static bool _headersInjectionEnabled = true;
         private static string[] defaultProduceEdgeTags = new[] { "direction:out", "type:kafka" };
 
-        internal static Scope CreateProducerScope(
+        internal static Scope? CreateProducerScope(
             Tracer tracer,
             object producer,
             ITopicPartition topicPartition,
             bool isTombstone,
             bool finishOnClose)
         {
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -94,7 +97,37 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             return scope;
         }
 
-        internal static Scope CreateConsumerScope(
+        private static long GetMessageSize<T>(T message)
+            where T : IMessage
+        {
+            if (((IDuckType)message).Instance is null)
+            {
+                return 0;
+            }
+
+            var size = MessageSizeHelper.TryGetSize(message.Key);
+            size += MessageSizeHelper.TryGetSize(message.Value);
+
+            if (message.Headers == null)
+            {
+                return size;
+            }
+
+            for (var i = 0; i < message.Headers.Count; i++)
+            {
+                var header = message.Headers[i];
+                size += Encoding.UTF8.GetByteCount(header.Key);
+                var value = header.GetValueBytes();
+                if (value != null)
+                {
+                    size += value.Length;
+                }
+            }
+
+            return size;
+        }
+
+        internal static Scope? CreateConsumerScope(
             Tracer tracer,
             DataStreamsManager dataStreamsManager,
             object consumer,
@@ -103,7 +136,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             Offset? offset,
             IMessage message)
         {
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -122,7 +155,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     return null;
                 }
 
-                SpanContext propagatedContext = null;
+                SpanContext? propagatedContext = null;
                 PathwayContext? pathwayContext = null;
 
                 // Try to extract propagated context from headers
@@ -174,7 +207,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     tags.Offset = offset.ToString();
                 }
 
-                if (ConsumerGroupHelper.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
+                if (ConsumerCache.TryGetConsumerGroup(consumer, out var groupId, out var bootstrapServers))
                 {
                     tags.ConsumerGroup = groupId;
                     tags.BootstrapServers = bootstrapServers;
@@ -234,7 +267,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                                            ? new[] { "direction:in", $"group:{groupId}", "type:kafka" }
                                            : new[] { "direction:in", $"group:{groupId}", $"topic:{topic}", "type:kafka" };
 
-                        span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Consume, edgeTags);
+                        span.SetDataStreamsCheckpoint(
+                            dataStreamsManager,
+                            CheckpointKind.Consume,
+                            edgeTags,
+                            message is null ? 0 : GetMessageSize(message),
+                            tags.MessageQueueTimeMs == null ? 0 : (long)tags.MessageQueueTimeMs);
                     }
                 }
             }
@@ -266,7 +304,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                 }
 
                 // TODO: record end-to-end time?
-                activeScope.Dispose();
+                activeScope!.Dispose();
             }
             catch (Exception ex)
             {
@@ -290,7 +328,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
             TMessage message)
             where TMessage : IMessage
         {
-            if (!_headersInjectionEnabled)
+            if (!_headersInjectionEnabled || message.Instance is null)
             {
                 return;
             }
@@ -311,7 +349,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka
                     var edgeTags = string.IsNullOrEmpty(topic)
                         ? defaultProduceEdgeTags
                         : new[] { "direction:out", $"topic:{topic}", "type:kafka" };
-                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags);
+                    // produce is always the start of the edge, so defaultEdgeStartMs is always 0
+                    span.SetDataStreamsCheckpoint(dataStreamsManager, CheckpointKind.Produce, edgeTags, GetMessageSize(message), 0);
                     dataStreamsManager.InjectPathwayContext(span.Context.PathwayContext, adapter);
                 }
             }

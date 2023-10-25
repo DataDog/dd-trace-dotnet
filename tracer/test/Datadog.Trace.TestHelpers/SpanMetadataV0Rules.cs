@@ -17,6 +17,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("db.type")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "AdoNet")
                 .Matches("span.kind", "client"));
 
@@ -29,6 +30,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("aerospike.namespace")
                 .IsOptional("aerospike.setname")
                 .IsOptional("aerospike.userkey")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "aerospike")
                 .Matches("span.kind", "client"));
 
@@ -45,6 +47,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -63,6 +66,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -90,6 +94,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 // BUG: component tag is not set
                 // .Matches("component", "aspnet")
                 .Matches("span.kind", "server"));
@@ -109,6 +114,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.useragent")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
 
@@ -123,8 +129,48 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("aspnet_core.controller")
                 .IsOptional("aspnet_core.page")
                 .IsPresent("aspnet_core.route")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "aspnet_core")
                 .Matches("span.kind", "server"));
+
+        public static Result IsAwsDynamoDbV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.dynamodb.request")
+                .Matches(Type, "dynamodb"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("region")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "DynamoDB")
+                .Matches("aws_service", "DynamoDB")
+                .IsPresent("tablename")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
+        public static Result IsAwsKinesisOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "aws.kinesis.produce")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("aws.agent", "dotnet-aws-sdk")
+                .IsPresent("aws.operation")
+                .IsOptional("region")
+                .IsOptional("aws.region")
+                .IsPresent("aws.requestId")
+                .Matches("aws.service", "Kinesis")
+                .Matches("aws_service", "Kinesis")
+                .IsPresent("streamname")
+                .IsOptional("aws.stream.url")
+                .IsPresent("http.method")
+                .IsPresent("http.status_code")
+                .IsPresent("http.url")
+                .Matches("component", "aws-sdk")
+                .Matches("span.kind", "producer"));
 
         public static Result IsAwsSqsRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -144,6 +190,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
                 .Matches("span.kind", "client"));
 
@@ -165,7 +212,62 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.method")
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "aws-sdk")
+                .Matches("span.kind", "client"));
+
+        public static Result IsAzureServiceBusInboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name, "Message", "ServiceBusReceiver.Peek", "ServiceBusReceiver.Receive", "ServiceBusReceiver.ReceiveDeferred", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionProcessor.ProcessSessionMessage")
+                .MatchesOneOf(Type, "http", "custom"))
+            .Tags(s => s
+                .Matches("az.namespace", "Microsoft.ServiceBus")
+                .IsPresent("az.schema_url")
+                .MatchesOneOf("messaging.operation", "receive", "process")
+                .IsPresent("messaging.source.name")
+                .Matches("messaging.system", "servicebus")
+                .IsPresent("net.peer.name")
+                .IsPresent("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
+                .IsOptional("otel.status_description")
+                .Matches("span.kind", "consumer"));
+
+        public static Result IsAzureServiceBusOutboundV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .Matches(Name, "Message")
+                .Matches(Type, "custom"))
+            .Tags(s => s
+                .Matches("az.namespace", "Microsoft.ServiceBus")
+                .IsPresent("az.schema_url")
+                .IsPresent("messaging.destination.name")
+                .Matches("messaging.system", "servicebus")
+                .IsPresent("net.peer.name")
+                .IsPresent("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
+                .IsOptional("otel.status_description")
+                .Matches("span.kind", "producer"));
+
+        public static Result IsAzureServiceBusRequestV0(this MockSpan span) => Result.FromSpan(span)
+            .Properties(s => s
+                .MatchesOneOf(Name, "ServiceBusSender.Send", "ServiceBusReceiver.Complete", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSender.Schedule", "ServiceBusSender.Cancel", "ServiceBusReceiver.RenewMessageLock", "ServiceBusReceiver.Abandon", "ServiceBusReceiver.Defer", "ServiceBusReceiver.DeadLetter")
+                .Matches(Type, "http"))
+            .Tags(s => s
+                .Matches("az.namespace", "Microsoft.ServiceBus")
+                .IsPresent("az.schema_url")
+                .IsOptional("messaging.destination.name")
+                .IfPresentMatchesOneOf("messaging.operation", "publish", "receive", "settle")
+                .IsOptional("messaging.source.name")
+                .Matches("messaging.system", "servicebus")
+                .IsPresent("net.peer.name")
+                .IsPresent("otel.library.name")
+                .IsOptional("otel.library.version")
+                .IsPresent("otel.trace_id")
+                .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
+                .IsOptional("otel.status_description")
                 .Matches("span.kind", "client"));
 
         public static Result IsCosmosDbV0(this MockSpan span) => Result.FromSpan(span)
@@ -177,6 +279,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("db.name")
                 .Matches("db.type", "cosmosdb")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "CosmosDb")
                 .Matches("span.kind", "client"));
 
@@ -191,6 +294,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("couchbase.operation.key")
                 .IsOptional("out.port")
                 .IsOptional("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "Couchbase")
                 .Matches("span.kind", "client"));
 
@@ -203,6 +307,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("elasticsearch.method")
                 .IsPresent("elasticsearch.url")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "elasticsearch-net")
                 .Matches("span.kind", "client"));
 
@@ -214,6 +319,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("graphql.operation.name")
                 .IsOptional("graphql.operation.type")
                 .IsPresent("graphql.source")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "GraphQL")
                 .Matches("span.kind", "server"));
 
@@ -230,6 +336,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "client"));
 
@@ -245,6 +352,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("grpc.method.path")
                 .IsPresent("grpc.method.service")
                 .IsPresent("grpc.status.code")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "Grpc")
                 .Matches("span.kind", "server"));
 
@@ -270,6 +378,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.url")
                 .IsPresent("out.host")
                 .IsPresent("component")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
         public static Result IsKafkaInboundV0(this MockSpan span) => Result.FromSpan(span)
@@ -286,6 +395,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "consumer"));
 
@@ -303,6 +413,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("kafka.partition")
                 .IsOptional("kafka.tombstone")
                 .IsPresent("messaging.kafka.bootstrap.servers")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "kafka")
                 .Matches("span.kind", "producer"));
 
@@ -316,6 +427,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("mongodb.query")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "MongoDb")
                 .Matches("span.kind", "client"));
 
@@ -329,6 +441,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("msmq.queue.path")
                 .IsOptional("msmq.queue.transactional")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "msmq")
                 .MatchesOneOf("span.kind", "client", "producer", "consumer"));
 
@@ -342,7 +455,8 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("out.host")
                 .Matches("db.type", "mysql")
                 .Matches("component", "MySql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsNpgsqlV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -351,9 +465,11 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("db.name")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("db.type", "postgres")
                 .Matches("component", "Npgsql")
-                .Matches("span.kind", "client"));
+                .Matches("span.kind", "client")
+                .IsOptional("_dd.dbm_trace_injected"));
 
         public static Result IsOpenTelemetryV0(this MockSpan span, ISet<string> resources, ISet<string> excludeTags = null) => Result.FromSpan(span, excludeTags)
             .Properties(s => { })
@@ -364,6 +480,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("otel.library.name")
                 .IsOptional("otel.library.version")
                 .IsPresent("otel.trace_id")
+                .IsOptional("_dd.base_service")
                 .MatchesOneOf("otel.status_code", "STATUS_CODE_UNSET", "STATUS_CODE_OK", "STATUS_CODE_ERROR")
                 .IsOptional("otel.status_description")
                 .MatchesOneOf("span.kind", "internal", "server", "client", "producer", "consumer"));
@@ -375,6 +492,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsPresent("db.name")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("db.type", "oracle")
                 .Matches("component", "Oracle")
                 .Matches("span.kind", "client"));
@@ -385,6 +503,11 @@ namespace Datadog.Trace.TestHelpers
                 .Matches(Type, "system"))
             .Tags(s => s
                 .IsOptional("cmd.environment_variables")
+                .IsOptional("cmd.exec")
+                .IsOptional("cmd.shell")
+                .IsOptional("cmd.truncated")
+                .IsOptional("_dd.base_service")
+                .Matches("cmd.component", "process")
                 .Matches("span.kind", "internal"));
 
         public static Result IsRabbitMQV0(this MockSpan span) => Result.FromSpan(span)
@@ -399,6 +522,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("amqp.routing_key")
                 .IsOptional("amqp.queue")
                 .IsOptional("message.size")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
 
@@ -419,6 +543,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.method-id")
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "client"));
 
         public static Result IsServiceRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
@@ -438,6 +563,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("service-fabric.service-remoting.method-id")
                 .IsOptional("service-fabric.service-remoting.interface-id")
                 .IsOptional("service-fabric.service-remoting.invocation-id")
+                .IsOptional("_dd.base_service")
                 .Matches("span.kind", "server"));
 
         public static Result IsServiceStackRedisV0(this MockSpan span) => Result.FromSpan(span)
@@ -450,6 +576,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("redis.raw_command")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "ServiceStackRedis")
                 .Matches("span.kind", "client"));
 
@@ -463,6 +590,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("redis.raw_command")
                 .IsPresent("out.host")
                 .IsPresent("out.port")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "StackExchangeRedis")
                 .Matches("span.kind", "client"));
 
@@ -473,6 +601,7 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("db.type", "sqlite")
                 .Matches("component", "Sqlite")
                 .Matches("span.kind", "client"));
@@ -484,10 +613,10 @@ namespace Datadog.Trace.TestHelpers
             .Tags(s => s
                 .IsOptional("db.name")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .Matches("db.type", "sql-server")
                 .Matches("component", "SqlClient")
-                .Matches("span.kind", "client")
-                .IsOptional("_dd.dbm_trace_injected"));
+                .Matches("span.kind", "client"));
 
         public static Result IsWcfV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
@@ -497,6 +626,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("http.method")
                 .IsOptional("http.request.headers.host")
                 .IsPresent("http.url")
+                .IsOptional("_dd.base_service")
                 .Matches("component", "Wcf")
                 .Matches("span.kind", "server"));
 
@@ -510,6 +640,7 @@ namespace Datadog.Trace.TestHelpers
                 .IsPresent("http.status_code")
                 .IsPresent("http.url")
                 .IsPresent("out.host")
+                .IsOptional("_dd.base_service")
                 .MatchesOneOf("component", "HttpMessageHandler", "WebRequest")
                 .Matches("span.kind", "client"));
     }

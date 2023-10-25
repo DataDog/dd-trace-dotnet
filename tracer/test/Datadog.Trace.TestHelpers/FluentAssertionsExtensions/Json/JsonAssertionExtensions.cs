@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+// Originally Based on https://github.com/fluentassertions/fluentassertions.json
+// License: https://github.com/fluentassertions/fluentassertions.json/blob/master/LICENSE
+
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;

@@ -36,6 +36,7 @@ public class DataStreamsMessagePackFormatterTests
 
         var pathwaySketch = CreateSketch(5);
         var edgeSketch = CreateSketch(2);
+        var payloadSizeSketch = CreateSketch(2);
 
         var hash1 = new PathwayHash(2);
         var hash2 = new PathwayHash(3);
@@ -53,7 +54,8 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash1,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
             new SerializableStatsBucket(
@@ -67,13 +69,26 @@ public class DataStreamsMessagePackFormatterTests
                             hash: hash2,
                             parentHash: parentHash,
                             pathwayLatency: pathwaySketch,
-                            edgeLatency: edgeSketch)
+                            edgeLatency: edgeSketch,
+                            payloadSize: payloadSizeSketch)
                     },
                 }),
         };
 
+        List<SerializableBacklogBucket> backlogBuckets = new()
+        {
+            new SerializableBacklogBucket(bucketStartTimeNs1, new()
+            {
+                { "type:produce", new BacklogBucket("type:produce", 1) }
+            }),
+            new SerializableBacklogBucket(bucketStartTimeNs2, new()
+            {
+                { "type:consume", new BacklogBucket("type:consume", 2) }
+            }),
+        };
+
         using var ms = new MemoryStream();
-        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets);
+        formatter.Serialize(ms, bucketDurationNs: bucketDuration, statsBuckets: buckets, backlogBuckets);
 
         var data = new ArraySegment<byte>(ms.GetBuffer());
 
@@ -85,6 +100,9 @@ public class DataStreamsMessagePackFormatterTests
         var edgeBytes = new byte[edgeSketch.ComputeSerializedSize()];
         using var ms2 = new MemoryStream(edgeBytes);
         edgeSketch.Serialize(ms2);
+        var payloadSizeBytes = new byte[payloadSizeSketch.ComputeSerializedSize()];
+        using var ms3 = new MemoryStream(payloadSizeBytes);
+        payloadSizeSketch.Serialize(ms3);
 
         var expected = new MockDataStreamsPayload
         {
@@ -98,6 +116,32 @@ public class DataStreamsMessagePackFormatterTests
                 {
                     Duration = (ulong)bucketDuration,
                     Start = (ulong)bucketStartTimeNs1,
+                    Backlogs = new MockDataStreamsBacklog[]
+                    {
+                        new()
+                        {
+                            Tags = new[] { "type:produce" },
+                            Value = 1,
+                        }
+                    }
+                },
+                new()
+                {
+                    Duration = (ulong)bucketDuration,
+                    Start = (ulong)bucketStartTimeNs2,
+                    Backlogs = new MockDataStreamsBacklog[]
+                    {
+                        new()
+                        {
+                            Tags = new[] { "type:consume" },
+                            Value = 2,
+                        }
+                    }
+                },
+                new()
+                {
+                    Duration = (ulong)bucketDuration,
+                    Start = (ulong)bucketStartTimeNs1,
                     Stats = new MockDataStreamsStatsPoint[]
                     {
                         new()
@@ -107,6 +151,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "current",
                         }
                     }
@@ -124,6 +169,7 @@ public class DataStreamsMessagePackFormatterTests
                             ParentHash = parentHash.Value,
                             EdgeLatency = edgeBytes,
                             PathwayLatency = pathwayBytes,
+                            PayloadSize = payloadSizeBytes,
                             TimestampType = "origin",
                         }
                     }

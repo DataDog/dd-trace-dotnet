@@ -26,5 +26,5 @@ internal enum Gauge
     /// <summary>
     /// The number of logs currently enqueued to the direct log submission sink
     /// </summary>
-    [TelemetryMetric("direct_log_queue", isCommon: false)] DirectLogQueue,
+    [TelemetryMetric("direct_log_queue.length", isCommon: false)] DirectLogQueue,
 }

@@ -107,7 +107,7 @@ public:
     }
 #endif
 
-    static bool IsSafeToStartProfiler(double coresThreshold);
+    static bool IsSafeToStartProfiler(double coresThreshold, double& cpuLimit);
     static std::int64_t GetHighPrecisionTimestamp();
 
     static void Sleep(std::chrono::nanoseconds duration);

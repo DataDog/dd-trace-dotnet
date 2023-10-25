@@ -5,6 +5,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Datadog.Trace.Logging;
 
@@ -34,6 +35,15 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
 
         [FieldOffset(16)]
         public long IntValue;
+
+        /// <summary>
+        /// Dont use non blittable type as we use unsafe to marshall/unmarshall for faster performances.
+        /// </summary>
+        [FieldOffset(16)]
+        public byte ByteValue;
+
+        [FieldOffset(16)]
+        public double DoubleValue;
         // };
 
         [FieldOffset(24)]
@@ -42,10 +52,43 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         [FieldOffset(32)]
         public DDWAF_OBJ_TYPE Type;
 
-        internal IReadOnlyDictionary<string, string[]> Decode()
+        public bool BoolValue => ByteValue == 1;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal object Decode()
+        {
+            object res = Type switch
+            {
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => Marshal.PtrToStringAnsi(Array, (int)NbEntries),
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => IntValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_UNSIGNED => UintValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_BOOL => BoolValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_DOUBLE => DoubleValue,
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY => DecodeArray<object>(),
+                DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP => DecodeMap(),
+                _ => null
+            };
+
+            return res;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal List<string> DecodeStringArray()
+        {
+            return DecodeArray<string>();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal List<object> DecodeObjectArray()
+        {
+            return DecodeArray<object>();
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal Dictionary<string, object> DecodeMap()
         {
             var nbEntriesStart = (int)NbEntries;
-            var errorsDic = new Dictionary<string, string[]>(nbEntriesStart);
+            var res = new Dictionary<string, object>(nbEntriesStart);
             if (nbEntriesStart > 0)
             {
                 if (Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
@@ -57,28 +100,49 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                     var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
                     for (var i = 0; i < nbEntriesStart; i++)
                     {
-                        var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
-                        var array = (DdwafObjectStruct?)Marshal.PtrToStructure(arrayPtr, typeof(DdwafObjectStruct));
-                        if (array is { } arrayValue)
+                        unsafe
                         {
-                            var key = Marshal.PtrToStringAnsi(arrayValue.ParameterName, (int)arrayValue.ParameterNameLength);
-                            var nbEntries = (int)arrayValue.NbEntries;
-                            var ruleIds = new string[nbEntries];
-                            for (var j = 0; j < nbEntries; j++)
-                            {
-                                var errorPtr = new IntPtr(arrayValue.Array.ToInt64() + (structSize * j));
-                                var error = (DdwafObjectStruct?)Marshal.PtrToStructure(errorPtr, typeof(DdwafObjectStruct));
-                                var ruleId = Marshal.PtrToStringAnsi(error!.Value.Array);
-                                ruleIds[j] = ruleId!;
-                            }
-
-                            errorsDic.Add(key, ruleIds);
+                            var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
+                            var array = (DdwafObjectStruct*)arrayPtr;
+                            var key = Marshal.PtrToStringAnsi(array->ParameterName, (int)array->ParameterNameLength);
+                            var value = array->Decode();
+                            res.Add(key, value);
                         }
                     }
                 }
             }
 
-            return errorsDic;
+            return res;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private List<T> DecodeArray<T>()
+        {
+            var nbEntriesStart = (int)NbEntries;
+            var res = new List<T>(nbEntriesStart);
+            if (nbEntriesStart > 0)
+            {
+                if (Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY)
+                {
+                    Log.Warning("Expecting type {DDWAF_OBJ_ARRAY} to decode waf errors and instead got a {Type} ", nameof(DDWAF_OBJ_TYPE.DDWAF_OBJ_ARRAY), Type);
+                }
+                else
+                {
+                    var structSize = Marshal.SizeOf(typeof(DdwafObjectStruct));
+                    for (var i = 0; i < nbEntriesStart; i++)
+                    {
+                        unsafe
+                        {
+                            var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
+                            var array = (DdwafObjectStruct*)arrayPtr;
+                            var value = (T)array->Decode();
+                            res.Add(value);
+                        }
+                    }
+                }
+            }
+
+            return res;
         }
     }
 }

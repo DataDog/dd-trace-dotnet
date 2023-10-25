@@ -19,11 +19,10 @@ namespace Datadog.Trace.Ci.Configuration
         public CIVisibilitySettings(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {
             var config = new ConfigurationBuilder(source, telemetry);
-            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool(false);
+            Enabled = config.WithKeys(ConfigurationKeys.CIVisibility.Enabled).AsBool();
             Agentless = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessEnabled).AsBool(false);
             Logs = config.WithKeys(ConfigurationKeys.CIVisibility.Logs).AsBool(false);
             ApiKey = config.WithKeys(ConfigurationKeys.ApiKey).AsRedactedString();
-            ApplicationKey = config.WithKeys(ConfigurationKeys.ApplicationKey).AsRedactedString();
             Site = config.WithKeys(ConfigurationKeys.Site).AsString("datadoghq.com");
             AgentlessUrl = config.WithKeys(ConfigurationKeys.CIVisibility.AgentlessUrl).AsString();
 
@@ -54,9 +53,9 @@ namespace Datadog.Trace.Ci.Configuration
         }
 
         /// <summary>
-        /// Gets a value indicating whether the CI Visibility mode was enabled by configuration
+        /// Gets a value indicating whether the CI Visibility mode was explicitly enabled by configuration
         /// </summary>
-        public bool Enabled { get; }
+        public bool? Enabled { get; }
 
         /// <summary>
         /// Gets a value indicating whether the Agentless writer is going to be used.
@@ -72,11 +71,6 @@ namespace Datadog.Trace.Ci.Configuration
         /// Gets the Api Key to use in Agentless mode
         /// </summary>
         public string? ApiKey { get; private set; }
-
-        /// <summary>
-        /// Gets the Application Key to use in ITR
-        /// </summary>
-        public string? ApplicationKey { get; private set; }
 
         /// <summary>
         /// Gets the Datadog site
@@ -163,11 +157,10 @@ namespace Datadog.Trace.Ci.Configuration
             TestsSkippingEnabled = value;
         }
 
-        internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? applicationKey, string? agentlessUrl)
+        internal void SetAgentlessConfiguration(bool enabled, string? apiKey, string? agentlessUrl)
         {
             Agentless = enabled;
             ApiKey = apiKey;
-            ApplicationKey = applicationKey;
             AgentlessUrl = agentlessUrl;
         }
 

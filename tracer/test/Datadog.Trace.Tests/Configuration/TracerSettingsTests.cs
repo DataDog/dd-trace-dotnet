@@ -8,7 +8,6 @@ using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Linq;
 using Datadog.Trace.Agent;
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.ExtensionMethods;
@@ -564,7 +563,7 @@ namespace Datadog.Trace.Tests.Configuration
         }
 
         [Theory]
-        [MemberData(nameof(StringTestCases), TracerSettings.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
+        [MemberData(nameof(StringTestCases), TracerSettingsConstants.DefaultObfuscationQueryStringRegex, Strings.AllowEmpty)]
         public void ObfuscationQueryStringRegex(string value, string expected)
         {
             var source = CreateConfigurationSource((ConfigurationKeys.ObfuscationQueryStringRegex, value));
@@ -780,43 +779,8 @@ namespace Datadog.Trace.Tests.Configuration
             settings.TraceEnabled.Should().BeFalse();
         }
 
-        [Theory]
-        [InlineData("test1,, ,test2", false, false, new[] { "TEST1", "TEST2" })]
-        [InlineData("test1,, ,test2", true, true, new[] { "TEST1", "TEST2" })]
-        [InlineData(null, true, true, new[] { "azuredefault" })]
-        [InlineData(null, false, true, new[] { "SERVERLESS" })]
-        [InlineData(null, false, false, new string[0])]
-        [InlineData("", true, true, new string[0])]
-        public void HttpClientExcludedUrlSubstrings(string value, bool isRunningInAppService, bool isRunningInLambda, string[] expected)
-        {
-            if (expected.Length == 1 && expected[0] == "azuredefault")
-            {
-                expected = ImmutableAzureAppServiceSettings.DefaultHttpClientExclusions.Split(',').Select(s => s.Trim()).ToArray();
-            }
-
-            var oldMetadata = Serverless.Metadata;
-
-            try
-            {
-                var source = CreateConfigurationSource(
-                    (ConfigurationKeys.HttpClientExcludedUrlSubstrings, value),
-                    (ConfigurationKeys.AzureAppService.AzureAppServicesContextKey, isRunningInAppService ? "1" : "0"));
-
-                if (isRunningInLambda)
-                {
-                    var metadata = Serverless.LambdaMetadata.CreateForTests(true, "functionName", "handlerName", "serviceName", "serverless");
-                    Serverless.SetMetadataTestsOnly(metadata);
-                }
-
-                var settings = new TracerSettings(source);
-
-                settings.HttpClientExcludedUrlSubstrings.Should().BeEquivalentTo(expected);
-            }
-            finally
-            {
-                Serverless.SetMetadataTestsOnly(oldMetadata);
-            }
-        }
+        // The HttpClientExcludedUrlSubstrings tests rely on Lambda.Create() which uses environment variables
+        // See TracerSettingsServerlessTests for tests which rely on environment variables
 
         [Theory]
         [InlineData("", DbmPropagationLevel.Disabled)]
@@ -899,6 +863,35 @@ namespace Datadog.Trace.Tests.Configuration
             configKeyValue.Name.Should().Be(ConfigurationKeys.ServiceName);
             configKeyValue.Value.Should().Be(serviceName);
             configKeyValue.Origin.Should().Be(ConfigurationOrigins.Code.ToStringFast());
+        }
+
+        [Fact]
+        public void RecordsTelemetryAboutTfm()
+        {
+            var tracerSettings = new TracerSettings(NullConfigurationSource.Instance);
+            var collector = new ConfigurationTelemetry();
+            tracerSettings.CollectTelemetry(collector);
+            var data = collector.GetData();
+            var value = data
+                       .GroupBy(x => x.Name)
+                       .Should()
+                       .ContainSingle(x => x.Key == ConfigTelemetryData.ManagedTracerTfm)
+                       .Which
+                       .OrderByDescending(x => x.SeqId)
+                       .First();
+
+#if NET6_0_OR_GREATER
+            var expected = "net6.0";
+#elif NETCOREAPP3_1_OR_GREATER
+            var expected = "netcoreapp3.1";
+#elif NETCOREAPP2_1_OR_GREATER || NETSTANDARD2_0
+            var expected = "netstandard2.0";
+#elif NETFRAMEWORK
+            var expected = "net461";
+#else
+            #error Unexpected TFM
+#endif
+            value.Value.Should().Be(expected);
         }
 
         private void SetAndValidateStatusCodes(Action<TracerSettings, IEnumerable<int>> setStatusCodes, Func<TracerSettings, bool[]> getStatusCodes)

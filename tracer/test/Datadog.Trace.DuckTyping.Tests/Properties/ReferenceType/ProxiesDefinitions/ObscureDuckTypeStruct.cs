@@ -31,5 +31,8 @@ namespace Datadog.Trace.DuckTyping.Tests.Properties.ReferenceType.ProxiesDefinit
         public string InternalGetSetReferenceType;
         public string ProtectedGetSetReferenceType;
         public string PrivateGetSetReferenceType;
+
+        [Duck(Name = "PublicStaticGetSetReferenceType")]
+        public ValueWithType<string> PublicStaticOnlyGetWithType;
     }
 }

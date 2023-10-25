@@ -1,4 +1,4 @@
-﻿// <copyright file="MetricTags.cs" company="Datadog">
+// <copyright file="MetricTags.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -29,7 +29,6 @@ internal static class MetricTags
         [Description("component:traceattributes_pinvoke")] TraceAttributesPinvoke,
         [Description("component:managed")] Managed,
         [Description("component:calltarget_defs_pinvoke")] CallTargetDefsPinvoke,
-        [Description("component:serverless")] Serverless,
         [Description("component:calltarget_derived_defs_pinvoke")] CallTargetDerivedDefsPinvoke,
         [Description("component:calltarget_interface_defs_pinvoke")] CallTargetInterfaceDefsPinvoke,
         [Description("component:discovery_service")] DiscoveryService,
@@ -207,6 +206,12 @@ internal static class MetricTags
         [Description("integration_name:symmetricalgorithm")]SymmetricAlgorithm,
         [Description("integration_name:opentelemetry")]OpenTelemetry,
         [Description("integration_name:pathtraversal")]PathTraversal,
+        [Description("integration_name:ssrf")]Ssrf,
+        [Description("integration_name:ldap")]Ldap,
+        [Description("integration_name:awskinesis")]AwsKinesis,
+        [Description("integration_name:azureservicebus")]AzureServiceBus,
+        [Description("integration_name:systemrandom")] SystemRandom,
+        [Description("integration_name:awsdynamodb")]AwsDynamoDb,
     }
 
     public enum InstrumentationError
@@ -227,5 +232,121 @@ internal static class MetricTags
         [Description("waf_version;rule_triggered:true;request_blocked:true;waf_timeout:false;request_excluded:false")]RuleTriggeredAndBlocked,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:true;request_excluded:false")]WafTimeout,
         [Description("waf_version;rule_triggered:false;request_blocked:false;waf_timeout:false;request_excluded:true")]RequestExcludedViaFilter,
+    }
+
+    [EnumExtensions]
+    public enum IastInstrumentedSources
+    {
+        [Description("source_type:http.request.body")] RequestBody = 0,
+        [Description("source_type:http.request.path")] RequestPath = 1,
+        [Description("source_type:http.request.parameter.name")] RequestParameterName = 2,
+        [Description("source_type:http.request.parameter")] RequestParameterValue = 3,
+        [Description("source_type:http.request.path.parameter")] RoutedParameterValue = 4,
+        [Description("source_type:http.request.header")] RequestHeaderValue = 5,
+        [Description("source_type:http.request.header.name")] RequestHeaderName = 6,
+        [Description("source_type:http.request.query")] RequestQuery = 7,
+        [Description("source_type:http.cookie.name")] CookieName = 8,
+        [Description("source_type:http.cookie.value")] CookieValue = 9,
+        [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
+    }
+
+    [EnumExtensions]
+    public enum IastInstrumentedSinks
+    {
+        [Description("vulnerability_type:none")] None = 0,
+        [Description("vulnerability_type:weak_cipher")] WeakCipher = 1,
+        [Description("vulnerability_type:weak_hash")] WeakHash = 2,
+        [Description("vulnerability_type:sql_injection")] SqlInjection = 3,
+        [Description("vulnerability_type:command_injection")] CommandInjection = 4,
+        [Description("vulnerability_type:path_traversal")] PathTraversal = 5,
+        [Description("vulnerability_type:ldap_injection")] LdapInjection = 6,
+        [Description("vulnerability_type:ssrf")] Ssrf = 7,
+        [Description("vulnerability_type:unvalidated_redirect")] UnvalidatedRedirect = 8,
+        [Description("vulnerability_type:insecure_cookie")] InsecureCookie = 9,
+        [Description("vulnerability_type:no_httponly_cookie")] NoHttpOnlyCookie = 10,
+        [Description("vulnerability_type:no_samesite_cookie")] NoSameSiteCookie = 11,
+        [Description("vulnerability_type:weak_randomness")] WeakRandomness = 12,
+    }
+
+    public enum CIVisibilityTestFramework
+    {
+        [Description("test_framework:xunit")] XUnit,
+        [Description("test_framework:nunit")] NUnit,
+        [Description("test_framework:mstest")] MSTest,
+        [Description("test_framework:benchmarkdotnet")] BenchmarkDotNet,
+        [Description("test_framework:unknown")] Unknown,
+    }
+
+    public enum CIVisibilityTestingEventTypeWithCodeOwnerAndSupportedCiAndBenchmark
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:test;is_benchmark")] Test_IsBenchmark,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session_NoCodeOwner_IsSupportedCi,
+        [Description("event_type:session;is_unsupported_ci")] Session_NoCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner;is_unsupported_ci")] Session_HasCodeOwner_UnsupportedCi,
+        [Description("event_type:session;has_codeowner")] Session_HasCodeOwner_IsSupportedCi,
+    }
+
+    public enum CIVisibilityCoverageLibrary
+    {
+        [Description("library:custom")] Custom,
+        [Description("library:unknown")] Unknown,
+    }
+
+    public enum CIVisibilityTestingEventType
+    {
+        [Description("event_type:test")] Test,
+        [Description("event_type:suite")] Suite,
+        [Description("event_type:module")] Module,
+        [Description("event_type:session")] Session,
+    }
+
+    public enum CIVisibilityEndpoints
+    {
+        [Description("endpoint:test_cycle")] TestCycle,
+        [Description("endpoint:code_coverage")] CodeCoverage,
+    }
+
+    public enum CIVisibilityErrorType
+    {
+        [Description("error_type:timeout")] Timeout,
+        [Description("error_type:network")] Network,
+        [Description("error_type:status_code")] StatusCode,
+        [Description("error_type:status_code_4xx_response")] StatusCode4xx,
+        [Description("error_type:status_code_5xx_response")] StatusCode5xx,
+    }
+
+    public enum CIVisibilityCommands
+    {
+        [Description("command:get_repository")] GetRepository,
+        [Description("command:get_branch")] GetBranch,
+        [Description("command:get_remote")] GetRemote,
+        [Description("command:get_head")] GetHead,
+        [Description("command:check_shallow")] CheckShallow,
+        [Description("command:unshallow")] Unshallow,
+        [Description("command:get_local_commits")] GetLocalCommits,
+        [Description("command:get_objects")] GetObjects,
+        [Description("command:pack_objects")] PackObjects,
+    }
+
+    public enum CIVisibilityExitCodes
+    {
+        [Description("exit_code:unknown")] Unknown,
+        [Description("exit_code:-1")] ECMinus1,
+        [Description("exit_code:1")] EC1,
+        [Description("exit_code:2")] EC2,
+        [Description("exit_code:127")] EC127,
+        [Description("exit_code:128")] EC128,
+        [Description("exit_code:129")] EC129,
+    }
+
+    public enum CIVisibilityITRSettingsResponse
+    {
+        [Description("")] CoverageDisabled_ItrSkipDisabled,
+        [Description("coverage_enabled")] CoverageEnabled_ItrSkipDisabled,
+        [Description("itrskip_enabled")] CoverageDisabled_ItrSkipEnabled,
+        [Description("coverage_enabled;itrskip_enabled")] CoverageEnabled_ItrSkipEnabled,
     }
 }

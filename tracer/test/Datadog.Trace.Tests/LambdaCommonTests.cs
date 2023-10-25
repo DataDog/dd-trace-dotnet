@@ -2,13 +2,12 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
-
+#if NET6_0_OR_GREATER
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Net;
-
-using Datadog.Trace.ClrProfiler.ServerlessInstrumentation.AWS;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.Lambda;
 using Datadog.Trace.TestHelpers;
 
 using FluentAssertions;
@@ -163,7 +162,7 @@ namespace Datadog.Trace.Tests
 
         [Fact]
         [Trait("Category", "ArmUnsupported")]
-        public void TestSendEndInvocationTrue()
+        public void TestSendEndInvocationSuccess()
         {
             var tracer = TracerHelper.Create();
             var scope = LambdaCommon.CreatePlaceholderScope(tracer, "1234", "-1");
@@ -177,8 +176,11 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
-
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}").Should().Be(true);
+            var output = new StringWriter();
+            Console.SetOut(output);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            httpRequest.Verify(r => r.GetResponse(), Times.Once);
+            Assert.Empty(output.ToString());
         }
 
         [Fact]
@@ -197,8 +199,12 @@ namespace Datadog.Trace.Tests
             httpRequest.Setup(h => h.GetRequestStream()).Returns(responseStream.Object);
 
             _lambdaRequestMock.Setup(lr => lr.GetEndInvocationRequest(scope, true)).Returns(httpRequest.Object);
-
-            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}").Should().Be(false);
+            var output = new StringWriter();
+            Console.SetOut(output);
+            LambdaCommon.SendEndInvocation(_lambdaRequestMock.Object, scope, true, "{}");
+            httpRequest.Verify(r => r.GetResponse(), Times.Once);
+            Assert.Contains("Extension does not send a status 200 OK", output.ToString());
         }
     }
 }
+#endif

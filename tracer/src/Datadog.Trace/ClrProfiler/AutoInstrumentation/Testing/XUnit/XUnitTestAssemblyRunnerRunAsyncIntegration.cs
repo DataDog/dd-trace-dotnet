@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using Datadog.Trace.Ci;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
+using Datadog.Trace.Tagging;
+using CommonTags = Datadog.Trace.Ci.Tags.CommonTags;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Testing.XUnit;
 
@@ -62,7 +64,7 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
             }
 
             CIVisibility.WaitForSkippableTaskToFinish();
-            return new CallTargetState(null, TestModule.Create(testBundleString, "xUnit", frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty));
+            return new CallTargetState(null, TestModule.InternalCreate(testBundleString, CommonTags.TestingFrameworkNameXUnit, frameworkType.Assembly.GetName().Version?.ToString() ?? string.Empty));
         }
 
         return CallTargetState.GetDefault();
@@ -107,6 +109,9 @@ public static class XUnitTestAssemblyRunnerRunAsyncIntegration
         if (state.State is TestModule testModule)
         {
             await testModule.CloseAsync().ConfigureAwait(false);
+
+            // Because we are auto-instrumenting a VSTest testhost process we need to manually call the shutdown process
+            CIVisibility.Close();
         }
 
         return returnValue;

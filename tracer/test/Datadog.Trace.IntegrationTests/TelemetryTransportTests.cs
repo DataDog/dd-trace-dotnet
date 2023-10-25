@@ -63,19 +63,25 @@ namespace Datadog.Trace.IntegrationTests
         }
 
         [SkippableTheory]
-        [InlineData(true, true)]
-        [InlineData(true, false)]
-        [InlineData(false, true)]
-        [InlineData(false, false)]
-        public async Task SetsRequiredHeaders(bool agentless, bool useV2)
+        [InlineData(true, false, true)]
+        [InlineData(true, true, true)]
+        [InlineData(true, false, false)]
+        [InlineData(true, true, false)]
+        [InlineData(false, false, true)]
+        [InlineData(false, false, false)]
+        public async Task SetsRequiredHeaders(bool agentless, bool useCloudAgentless, bool useV2)
         {
             const string apiKey = "some key";
             using var agent = new MockTelemetryAgent(TcpPortProvider.GetOpenPort());
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
 
+            var cloud = useCloudAgentless
+                            ? new TelemetrySettings.AgentlessSettings.CloudSettings("Provider", "Resource", "ID")
+                            : null;
+
             // Uses framework specific transport
             var transport = agentless
-                                ? GetAgentlessOnlyTransport(telemetryUri, apiKey)
+                                ? GetAgentlessOnlyTransport(telemetryUri, apiKey, cloud)
                                 : GetAgentOnlyTransport(telemetryUri);
 
             var data = GetSampleData(useV2);
@@ -104,6 +110,13 @@ namespace Datadog.Trace.IntegrationTests
             if (agentless)
             {
                 allExpected.Add(TelemetryConstants.ApiKeyHeader, apiKey);
+            }
+
+            if (useCloudAgentless)
+            {
+                allExpected.Add(TelemetryConstants.CloudProviderHeader, cloud.Provider);
+                allExpected.Add(TelemetryConstants.CloudResourceTypeHeader, cloud.ResourceType);
+                allExpected.Add(TelemetryConstants.CloudResourceIdentifierHeader, cloud.ResourceIdentifier);
             }
 
             foreach (var headers in agent.RequestHeaders)
@@ -212,9 +225,9 @@ namespace Datadog.Trace.IntegrationTests
             return transport.AgentTransport;
         }
 
-        private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey)
+        private static ITelemetryTransport GetAgentlessOnlyTransport(Uri telemetryUri, string apiKey, TelemetrySettings.AgentlessSettings.CloudSettings cloudSettings)
         {
-            var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey);
+            var agentlessSettings = new TelemetrySettings.AgentlessSettings(telemetryUri, apiKey, cloudSettings);
 
             var transport = TelemetryTransportFactory.Create(
                 new TelemetrySettings(telemetryEnabled: true, configurationError: null, agentlessSettings, agentProxyEnabled: false, heartbeatInterval: HeartbeatInterval, dependencyCollectionEnabled: true, v2Enabled: false, metricsEnabled: false, debugEnabled: false),

@@ -270,6 +270,9 @@ namespace Datadog.Trace.Configuration
         public bool StatsComputationEnabled { get; }
         public bool TraceEnabled { get; }
         public bool TracerMetricsEnabled { get; }
+        public virtual bool Equals(Datadog.Trace.Configuration.ImmutableTracerSettings? other) { }
+        public override int GetHashCode() { }
+        public override string? ToString() { }
         public static Datadog.Trace.Configuration.ImmutableTracerSettings FromDefaultSources() { }
     }
     public class IntegrationSettings

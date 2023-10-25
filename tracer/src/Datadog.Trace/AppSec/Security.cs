@@ -330,7 +330,11 @@ namespace Datadog.Trace.AppSec
         }
 
         /// <summary> Frees resources </summary>
-        public void Dispose() => _waf?.Dispose();
+        public void Dispose()
+        {
+            _waf?.Dispose();
+            Encoder.Pool.Dispose();
+        }
 
         internal void SetDebugEnabled(bool enabled)
         {
@@ -344,11 +348,13 @@ namespace Datadog.Trace.AppSec
             rcm.SetCapability(RcmCapabilitiesIndices.AsmActivation, _settings.CanBeToggled);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmDdRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmIpBlocking, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmUserBlocking, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmExclusion, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmRequestBlocking, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmResponseBlocking, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomRules, _noLocalRules);
             rcm.SetCapability(RcmCapabilitiesIndices.AsmCustomBlockingResponse, _noLocalRules);
+            rcm.SetCapability(RcmCapabilitiesIndices.AsmTrustedIps, _noLocalRules);
         }
 
         private void InitWafAndInstrumentations(bool fromRemoteConfig = false)

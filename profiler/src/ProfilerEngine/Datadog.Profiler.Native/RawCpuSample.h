@@ -28,9 +28,10 @@ public:
         return *this;
     }
 
-    inline void OnTransform(std::shared_ptr<Sample>& sample, uint32_t valueOffset) const override
+    inline void OnTransform(std::shared_ptr<Sample>& sample, std::vector<SampleValueTypeProvider::Offset> const& valueOffsets) const override
     {
-        sample->AddValue(Duration * 1000000, valueOffset);
+        assert(valueOffsets.size() == 1);
+        sample->AddValue(Duration * 1000000, valueOffsets[0]);
     }
 
     std::uint64_t Duration; // in milliseconds

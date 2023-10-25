@@ -16,11 +16,12 @@ public class SystemDataSqLiteTests : InstrumentationTestsBase, IDisposable
     string taintedQuery;
     string notTaintedQuery;
 
-    public void Dispose()
+    public override void Dispose()
     {
         dbConnection.Close();
         dbConnection.Dispose();
         dbConnection = null;
+        base.Dispose();
     }
 
     public SystemDataSqLiteTests()

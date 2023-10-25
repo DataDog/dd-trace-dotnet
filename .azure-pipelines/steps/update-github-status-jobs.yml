@@ -3,6 +3,10 @@ parameters:
     type: object
     default: {}
 
+  - name: allowSkipped
+    type: boolean
+    default: false
+
 jobs:
   - job: set_pending
     timeoutInMinutes: 60 #default value
@@ -24,7 +28,14 @@ jobs:
     - set_pending
     - ${{ each job in parameters.jobs }}:
       - ${{ job }}
-    condition: succeeded()
+    condition: >
+      or(
+        succeeded(),
+        and(
+          eq('${{ parameters.allowSkipped }}', true),
+          not(failed())
+        )
+      )
     steps:
     - checkout: none
     - template: update-github-status.yml
@@ -41,7 +52,14 @@ jobs:
       - set_pending
       - ${{ each job in parameters.jobs }}:
           - ${{ job }}
-    condition: not(succeeded())
+    condition: >
+      not(or(
+        succeeded(),
+        and(
+          eq('${{ parameters.allowSkipped }}', true),
+          not(failed())
+        )
+      ))
     steps:
     - checkout: none
     - template: update-github-status.yml

@@ -22,10 +22,13 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
         cpuTime += OsSpecificApi::GetThreadCpuTime(thread.get());
     }
 
+
     auto currentTotalCpuTime = cpuTime;
     // There is a case where it's possible to have currentTotalCpuTime < _previousTotalCpuTime: native threads died in the meantime
     // To avoid sending negative values, just check and returns 0 instead.
     cpuTime = currentTotalCpuTime >= _previousTotalCpuTime ? currentTotalCpuTime - _previousTotalCpuTime : 0;
+    OnCpuDuration(cpuTime);
+
     // For native threads, we need to keep the last cpu time
     _previousTotalCpuTime = currentTotalCpuTime;
 
@@ -46,8 +49,15 @@ std::list<std::shared_ptr<Sample>> NativeThreadsCpuProviderBase::GetSamples()
     // The resulting callstack of the transformation is empty
     // Add a fake "GC" frame to the sample
     // TODO add strings as static field ? (from framestore ?)
-    sample->AddFrame(GetFrameInfo());
+    for (auto frame : GetFrames())
+    {
+        sample->AddFrame(frame);
+    }
 
     samples.push_back(sample);
     return samples;
+}
+
+void NativeThreadsCpuProviderBase::OnCpuDuration(std::uint64_t cpuTime)
+{
 }

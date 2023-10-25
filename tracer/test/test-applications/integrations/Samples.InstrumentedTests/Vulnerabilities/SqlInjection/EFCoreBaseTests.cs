@@ -32,9 +32,10 @@ public abstract class EFCoreBaseTests: InstrumentationTestsBase, IDisposable
         queryUnsafe = "Select * from Books where title ='" + taintedTitle + "'";
     }
 
-    public void Dispose()
+    public override void Dispose()
     {
         dbContext.Database.CloseConnection();
+        base.Dispose();
     }
 
 #if NET5_0_OR_GREATER

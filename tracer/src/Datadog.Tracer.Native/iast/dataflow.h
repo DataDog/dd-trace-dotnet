@@ -63,6 +63,8 @@ namespace iast
         std::vector<WSTRING> _assemblyExcludeFilters;
         std::vector<WSTRING> _methodIncludeFilters;
         std::vector<WSTRING> _methodExcludeFilters;
+        std::vector<WSTRING> _methodAttributeIncludeFilters;
+        std::vector<WSTRING> _methodAttributeExcludeFilters;
 
         bool _traceJitMethods = false;
 
@@ -101,8 +103,11 @@ namespace iast
                                  MatchResult* excludedMatch = nullptr);
         bool IsAssemblyExcluded(const WSTRING& assemblyName, MatchResult* includedMatch = nullptr,
                                 MatchResult* excludedMatch = nullptr);
-        bool IsMethodExcluded(const WSTRING& signature, MatchResult* includedMatch = nullptr,
+        bool IsMethodExcluded(const WSTRING& methodSignature, MatchResult* includedMatch = nullptr,
                               MatchResult* excludedMatch = nullptr);
+        bool IsMethodAttributeExcluded(const WSTRING& attributeName, MatchResult* includedMatch = nullptr,
+                              MatchResult* excludedMatch = nullptr);
+        bool HasMethodAttributeExclusions();
 
         AppDomainInfo* GetAppDomain(AppDomainID id);
         ModuleInfo* GetModuleInfo(ModuleID moduleId);

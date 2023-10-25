@@ -7,8 +7,10 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Security.Policy;
 using System.Threading.Tasks;
 using Datadog.Trace.AppSec;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.TestHelpers;
 using Xunit;
@@ -47,6 +49,49 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
+public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
+{
+    private readonly IisFixture _iisFixture;
+    private readonly string _testName;
+
+    public AspNetMvc5ClassicWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableIast(true);
+        EnableEvidenceRedaction(false);
+        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Debug);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+
+        _iisFixture = iisFixture;
+        _iisFixture.TryStartIis(this, IisAppType.AspNetClassic);
+        _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
+                 ".Classic" + ".enableIast=true";
+        SetHttpPort(iisFixture.HttpPort);
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/GetFileContent?file=nonexisting.txt")]
+    public async Task TestIastTelemetry(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(true);
+        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{_testName}.path={sanitisedPath}")
+                          .DisableRequireUniquePrefix();
+    }
+}
+
+[Collection("IisTests")]
 public class AspNetMvc5ClassicWithoutIast : AspNetMvc5IastTests
 {
     public AspNetMvc5ClassicWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
@@ -65,6 +110,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
     {
         EnableIast(enableIast);
+        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
         EnableEvidenceRedaction(false);
         SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
@@ -148,6 +194,80 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var filename = _enableIast ? "Iast.CommandInjection.AspNetMvc5.IastEnabled" : "Iast.CommandInjection.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/SSRF?host=localhost", null)]
+    public async Task TestIastSSRFRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.SSRF.AspNetMvc5.IastEnabled" : "Iast.SSRF.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/WeakRandomness", null)]
+    public async Task TestIastWeakRandomnessRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.WeakRandomness.AspNetMvc5.IastEnabled" : "Iast.WeakRandomness.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/ExecuteQueryFromBodyQueryData", "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}")]
+    public async Task TestRequestBodyTainting(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, url, body, 1, 1, string.Empty, "application/json", null);
+        var filename = _enableIast ? "Iast.RequestBodyTest.AspNetMvc5.IastEnabled" : "Iast.RequestBodyTest.AspNetMvc5.IastDisabled";
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    [Trait("Category", "LinuxUnsupported")]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/Ldap?path=LDAP://fakeorg,DC=com&userName=BabsJensen", null)]
+    public async Task TestIastLdapRequest(string test, string url, string body)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, body);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var filename = _enableIast ? "Iast.Ldap.AspNetMvc5.IastEnabled" : "Iast.Ldap.AspNetMvc5.IastDisabled";
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
         await VerifyHelper.VerifySpans(spansFiltered, settings)

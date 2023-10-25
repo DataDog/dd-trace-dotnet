@@ -8,9 +8,10 @@
 #include "OsSpecificApi.h"
 #include "RawCpuSample.h"
 
-GCThreadsCpuProvider::GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider) :
+GCThreadsCpuProvider::GCThreadsCpuProvider(CpuTimeProvider* cpuTimeProvider, MetricsRegistry& metricsRegistry) :
     NativeThreadsCpuProviderBase(cpuTimeProvider)
 {
+    _cpuDurationMetric = metricsRegistry.GetOrRegister<MeanMaxMetric>("dotnet_gc_cpu_duration");
 }
 
 const char* GCThreadsCpuProvider::GetName()
@@ -63,7 +64,16 @@ std::vector<std::shared_ptr<IThreadInfo>> const& GCThreadsCpuProvider::GetThread
     return _gcThreads;
 }
 
-FrameInfoView GCThreadsCpuProvider::GetFrameInfo()
+std::vector<FrameInfoView> GCThreadsCpuProvider::GetFrames()
 {
-    return {"CLR", "|lm: |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:", "", 0};
+    return
+    {
+        {"", "|lm:[native] GC |ns: |ct: |cg: |fn:Garbage Collector |fg: |sg:", "", 0},
+        {"", "|lm:[native] CLR |ns: |ct: |cg: |fn:.NET |fg: |sg:", "", 0}
+    };
+}
+
+void GCThreadsCpuProvider::OnCpuDuration(std::uint64_t cpuTime)
+{
+    _cpuDurationMetric->Add(static_cast<double>(cpuTime));
 }

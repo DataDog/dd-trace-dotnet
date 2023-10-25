@@ -25,6 +25,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         // private readonly byte[] _primaryTagBytes = StringEncoding.UTF8.GetBytes("PrimaryTag");
         // private readonly byte[] _primaryTagValueBytes;
         private readonly byte[] _statsBytes = StringEncoding.UTF8.GetBytes("Stats");
+        private readonly byte[] _backlogsBytes = StringEncoding.UTF8.GetBytes("Backlogs");
         private readonly byte[] _tracerVersionBytes = StringEncoding.UTF8.GetBytes("TracerVersion");
         private readonly byte[] _tracerVersionValueBytes = StringEncoding.UTF8.GetBytes(TracerConstants.AssemblyVersion);
         private readonly byte[] _langBytes = StringEncoding.UTF8.GetBytes("Lang");
@@ -38,9 +39,13 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
         private readonly byte[] _parentHashBytes = StringEncoding.UTF8.GetBytes("ParentHash");
         private readonly byte[] _pathwayLatencyBytes = StringEncoding.UTF8.GetBytes("PathwayLatency");
         private readonly byte[] _edgeLatencyBytes = StringEncoding.UTF8.GetBytes("EdgeLatency");
+        private readonly byte[] _payloadSizeBytes = StringEncoding.UTF8.GetBytes("PayloadSize");
         private readonly byte[] _timestampTypeBytes = StringEncoding.UTF8.GetBytes("TimestampType");
         private readonly byte[] _currentTimestampTypeBytes = StringEncoding.UTF8.GetBytes("current");
         private readonly byte[] _originTimestampTypeBytes = StringEncoding.UTF8.GetBytes("origin");
+
+        private readonly byte[] _backlogTagsBytes = StringEncoding.UTF8.GetBytes("Tags");
+        private readonly byte[] _backlogValueBytes = StringEncoding.UTF8.GetBytes("Value");
 
         public DataStreamsMessagePackFormatter(ImmutableTracerSettings tracerSettings, string defaultServiceName)
             : this(tracerSettings.EnvironmentInternal, defaultServiceName)
@@ -57,7 +62,7 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             _serviceValueBytes = StringEncoding.UTF8.GetBytes(defaultServiceName);
         }
 
-        public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets)
+        public int Serialize(Stream stream, long bucketDurationNs, List<SerializableStatsBucket> statsBuckets, List<SerializableBacklogBucket> backlogsBuckets)
         {
             var bytesWritten = 0;
 
@@ -83,35 +88,45 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _tracerVersionValueBytes);
 
             bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
-            bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count);
+            bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBuckets.Count + backlogsBuckets.Count);
+
+            foreach (var backlogBucket in backlogsBuckets)
+            {
+                bytesWritten += WriteBucketsHeader(stream, backlogBucket.BucketStartTimeNs, bucketDurationNs, 0, backlogBucket.Bucket.Values.Count);
+
+                foreach (var point in backlogBucket.Bucket.Values)
+                {
+                    bytesWritten += MessagePackBinary.WriteMapHeader(stream, 2);
+
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogValueBytes);
+                    bytesWritten += MessagePackBinary.WriteInt64(stream, point.Value);
+
+                    var tags = point.Tags.Split(',');
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogTagsBytes);
+                    bytesWritten += MessagePackBinary.WriteArrayHeader(stream, tags.Length);
+                    foreach (var tag in tags)
+                    {
+                        bytesWritten += MessagePackBinary.WriteString(stream, tag);
+                    }
+                }
+            }
 
             foreach (var statsBucket in statsBuckets)
             {
-                // 3 entries per StatsBucket:
-                // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L27
-                bytesWritten += MessagePackBinary.WriteMapHeader(stream, 3);
-
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _startBytes);
-                bytesWritten += MessagePackBinary.WriteInt64(stream, statsBucket.BucketStartTimeNs);
-
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _durationBytes);
-                bytesWritten += MessagePackBinary.WriteInt64(stream, bucketDurationNs);
-
-                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
-                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBucket.Bucket.Values.Count);
+                bytesWritten += WriteBucketsHeader(stream, statsBucket.BucketStartTimeNs, bucketDurationNs, statsBucket.Bucket.Values.Count, 0);
 
                 var timestampTypeBytes = statsBucket.TimestampType == TimestampType.Current
-                                         ? _currentTimestampTypeBytes
-                                         : _originTimestampTypeBytes;
+                                             ? _currentTimestampTypeBytes
+                                             : _originTimestampTypeBytes;
 
                 foreach (var point in statsBucket.Bucket.Values)
                 {
                     var hasEdges = point.EdgeTags.Length > 0;
 
-                    // 6 entries per StatsPoint:
-                    // 5 if no edge tags
+                    // 7 entries per StatsPoint:
+                    // 6 if no edge tags
                     // https://github.com/DataDog/data-streams-go/blob/6772b163707c0a8ecc8c9a3b28e0dab7e0cf58d4/datastreams/payload.go#L44
-                    var itemCount = hasEdges ? 6 : 5;
+                    var itemCount = hasEdges ? 7 : 6;
                     bytesWritten += MessagePackBinary.WriteMapHeader(stream, itemCount);
 
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, _hashBytes);
@@ -128,6 +143,9 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
                     bytesWritten += MessagePackBinary.WriteStringBytes(stream, _edgeLatencyBytes);
                     bytesWritten += SerializeSketch(stream, point.EdgeLatency);
+
+                    bytesWritten += MessagePackBinary.WriteStringBytes(stream, _payloadSizeBytes);
+                    bytesWritten += SerializeSketch(stream, point.PayloadSize);
 
                     if (hasEdges)
                     {
@@ -156,6 +174,38 @@ namespace Datadog.Trace.DataStreamsMonitoring.Aggregation
 
             sketch.Serialize(stream);
             return size + 5; // 5 headers
+        }
+
+        private int WriteBucketsHeader(Stream stream, long bucketStartTimeNs, long bucketDurationNs, int statsBucketCount, int backlogBucketCount)
+        {
+            int bytesWritten = 0;
+            int count = 2;
+            count += statsBucketCount > 0 ? 1 : 0;
+            count += backlogBucketCount > 0 ? 1 : 0;
+
+            // 2-4 entries per StatsBucket (Backlogs and Stats are both optional):
+            // https://github.com/DataDog/data-streams-go/blob/60ba06aec619850aef8ed0b9b1f0f5e310438362/datastreams/payload.go#L48
+            bytesWritten += MessagePackBinary.WriteMapHeader(stream, count);
+
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _startBytes);
+            bytesWritten += MessagePackBinary.WriteInt64(stream, bucketStartTimeNs);
+
+            bytesWritten += MessagePackBinary.WriteStringBytes(stream, _durationBytes);
+            bytesWritten += MessagePackBinary.WriteInt64(stream, bucketDurationNs);
+
+            if (statsBucketCount > 0)
+            {
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _statsBytes);
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, statsBucketCount);
+            }
+
+            if (backlogBucketCount > 0)
+            {
+                bytesWritten += MessagePackBinary.WriteStringBytes(stream, _backlogsBytes);
+                bytesWritten += MessagePackBinary.WriteArrayHeader(stream, backlogBucketCount);
+            }
+
+            return bytesWritten;
         }
     }
 }

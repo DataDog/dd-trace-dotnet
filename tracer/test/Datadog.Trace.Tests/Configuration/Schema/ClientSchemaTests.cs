@@ -139,5 +139,20 @@ namespace Datadog.Trace.Tests.Configuration.Schema
             var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
             namingSchema.Client.CreateServiceRemotingClientTags().Should().BeOfType(expectedType);
         }
+
+        [Theory]
+        [MemberData(nameof(GetAllConfigs))]
+        public void CreateAzureServiceBusTagsReturnsCorrectImplementation(object schemaVersionObject, bool peerServiceTagsEnabled, bool removeClientServiceNamesEnabled)
+        {
+            var schemaVersion = (SchemaVersion)schemaVersionObject; // Unbox SchemaVersion, which is only defined internally
+            var expectedType = schemaVersion switch
+            {
+                SchemaVersion.V0 when peerServiceTagsEnabled == false => typeof(AzureServiceBusTags),
+                _ => typeof(AzureServiceBusV1Tags),
+            };
+
+            var namingSchema = new NamingSchema(schemaVersion, peerServiceTagsEnabled, removeClientServiceNamesEnabled, DefaultServiceName, _mappings, new Dictionary<string, string>());
+            namingSchema.Client.CreateAzureServiceBusTags().Should().BeOfType(expectedType);
+        }
     }
 }

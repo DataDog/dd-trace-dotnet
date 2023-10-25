@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Security.IntegrationTests.IAST;
 using Datadog.Trace.Security.IntegrationTests.Rcm;
 using Datadog.Trace.TestHelpers;
@@ -35,6 +36,7 @@ public class AspNetCore5IastAsm : RcmBase
         SetEnvironmentVariable(ConfigurationKeys.Iast.VulnerabilitiesPerRequest, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RequestSampling, "100");
         SetEnvironmentVariable(ConfigurationKeys.Iast.RedactionEnabled, "false");
+        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Off);
 
         var url = "/Iast/ExecuteQueryFromBodyQueryData";
         var body = "{\"Query\": \"SELECT Surname from Persons where name='Vicent'\"}";

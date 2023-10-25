@@ -9,21 +9,40 @@ namespace Samples.Kafka
     {
 
         // based on https://github.com/confluentinc/examples/blob/6.1.1-post/clients/cloud/csharp/Program.cs
-        static async Task Main(string[] args)
+        static async Task<int> Main(string[] args)
         {
-            var topic = args.Length > 0
-                            ? args[0]
-                            : "sample-topic";
+            try
+            {
+                var topic = args.Length > 0
+                                ? args[0]
+                                : "sample-topic";
 
-            var config = Config.Create();
+                var config = Config.Create();
 
-            await TopicHelpers.TryDeleteTopic(topic, config);
+                await TopicHelpers.TryDeleteTopic(topic, config);
 
-            await ConsumeAgainstNonExistentTopic(topic, config);
+                await ConsumeAgainstNonExistentTopic(topic, config);
 
-            await ConsumeAndProduceMessages(topic, config);
+                await ConsumeAndProduceMessages(topic, config);
 
-            Console.WriteLine($"Shut down complete");
+                Console.WriteLine($"Shut down complete");
+                return 0;
+            }
+            catch (KafkaException ex) 
+                when(
+                    ex.Message.Contains("Failed while waiting for response from broker: Local: Timed out") 
+                  || ex.Message.Contains("Failed while waiting for controller: Local: Timed out"))
+            {
+                // If the brokers are too slow in responding, we can end up with timeouts
+                // However, we can't just do retries, as that would change the number
+                // of spans causing the tests to fail. As a workaround, we use the specific
+                // (arbitrary) exit code 13 to indicate a faulty program, and skip the test
+                // We need to keep the catch very specific here, so that we don't accidentally
+                // start skipping tests when we shouldn't be
+                Console.WriteLine("Unexpected exception during execution " + ex);
+                Console.WriteLine("Exiting with skip code (13)");
+                return 13;
+            }
         }
 
         private static async Task ConsumeAgainstNonExistentTopic(string topic, ClientConfig config)

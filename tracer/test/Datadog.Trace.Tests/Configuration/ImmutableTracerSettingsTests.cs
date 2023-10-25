@@ -85,5 +85,13 @@ namespace Datadog.Trace.Tests.Configuration
                               .Be(config.GetQueueForTesting().Count)
                               .And.NotBe(0);
         }
+
+        [Fact]
+        public void DoesntInvokeBuiltInToStringMethod()
+        {
+            var settings = new ImmutableTracerSettings(NullConfigurationSource.Instance);
+            var result = settings.ToString();
+            result.Should().Be(typeof(ImmutableTracerSettings).FullName);
+        }
     }
 }

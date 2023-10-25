@@ -51,7 +51,9 @@ public class DataStreamsMonitoringTransportTests
     {
         using var agent = Create((TracesTransportType)transport);
 
-        var bucketDurationMs = 100; // 100 ms
+        // We don't want to trigger a flush based on the timer, only based on the disposal of the writer
+        // That ensures we only get a single payload
+        var bucketDurationMs = (int)TimeSpan.FromMinutes(60).TotalMilliseconds;
         var tracerSettings = new TracerSettings { Exporter = GetExporterSettings(agent) };
         var api = new DataStreamsApi(
             DataStreamsTransportStrategy.GetAgentIntakeFactory(tracerSettings.Build().Exporter));
@@ -67,7 +69,9 @@ public class DataStreamsMonitoringTransportTests
 
         discovery.TriggerChange();
 
-        writer.Add(CreateStatsPoint());
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeNanoseconds();
+        writer.Add(CreateStatsPoint(timestamp));
+        writer.AddBacklog(CreateBacklogPoint(timestamp));
 
         await writer.DisposeAsync();
 
@@ -80,16 +84,21 @@ public class DataStreamsMonitoringTransportTests
         headers.AllKeys.ToDictionary(x => x, x => headers[x])
                .Should()
                .ContainKey("Content-Encoding", "gzip");
+        payload.Stats.Should().ContainSingle(s => s.Backlogs != null);
     }
 
-    private StatsPoint CreateStatsPoint()
+    private StatsPoint CreateStatsPoint(long timestamp = 0)
         => new StatsPoint(
             edgeTags: new[] { "direction:out", "type:kafka" },
             hash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
             parentHash: new PathwayHash((ulong)Math.Abs(ThreadSafeRandom.Shared.Next(int.MaxValue))),
-            timestampNs: DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
+            timestampNs: timestamp != 0 ? timestamp : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds(),
             pathwayLatencyNs: 5_000_000_000,
-            edgeLatencyNs: 2_000_000_000);
+            edgeLatencyNs: 2_000_000_000,
+            payloadSizeBytes: 1024);
+
+    private BacklogPoint CreateBacklogPoint(long timestamp = 0)
+        => new BacklogPoint("type:produce", 100, timestamp != 0 ? timestamp : DateTimeOffset.UtcNow.ToUnixTimeNanoseconds());
 
     private MockTracerAgent Create(TracesTransportType transportType)
         => transportType switch

@@ -35,7 +35,10 @@ namespace Honeypot
             NugetPackages.Add("AerospikeClient", new [] { "Aerospike.Client" });
             NugetPackages.Add("Microsoft.AspNetCore.Http", new string[] { });
             NugetPackages.Add("System.Web.Mvc", new [] { "Microsoft.AspNet.Mvc" });
+            NugetPackages.Add("Amazon.Lambda.RuntimeSupport", new [] { "Amazon.Lambda.RuntimeSupport" });
+            NugetPackages.Add("AWSSDK.DynamoDBv2", new [] { "AWSSDK.DynamoDBv2" });
             NugetPackages.Add("AWSSDK.Core", new [] { "AWSSDK.Core" });
+            NugetPackages.Add("AWSSDK.Kinesis", new [] { "AWSSDK.Kinesis" });
             NugetPackages.Add("AWSSDK.SQS", new [] { "AWSSDK.SQS" });
             NugetPackages.Add("AWSSDK.SimpleNotificationService", new [] { "AWSSDK.SimpleNotificationService" });
             NugetPackages.Add("Microsoft.Azure.Cosmos.Client", new [] { "Microsoft.Azure.Cosmos" });
@@ -89,6 +92,7 @@ namespace Honeypot
             NugetPackages.Add("OpenTelemetry", new [] { "OpenTelemetry" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
+            NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
         }
 
         private IntegrationMap()

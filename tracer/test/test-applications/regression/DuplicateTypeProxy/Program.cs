@@ -28,6 +28,7 @@ namespace DuplicateTypeProxy
                 await RunAsync(assembly.GetType("System.Net.Http.HttpClient"), uri);
             }
 #endif
+            Console.WriteLine("App completed successfully");
         }
 
         public static async Task RunAsync(Type httpClientType, string uri)

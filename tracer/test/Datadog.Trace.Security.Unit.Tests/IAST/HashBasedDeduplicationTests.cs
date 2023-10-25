@@ -192,7 +192,7 @@ public class HashBasedDeduplicationTests
     [InlineData(61, true, 65, true)]
     public void GivenHashBasedDeduplication_WhenTestDeduplicationTimeout_ResultIsOk(int minutesAfter1, bool expectedResult1, int minutesAfter2, bool expectedResult2)
     {
-        var date = new System.DateTime(2001, 1, 1, 1, 0, 0);
+        var date = new System.DateTime(2001, 1, 1, 1, 0, 0).ToUniversalTime();
         var instance = new HashBasedDeduplication(date);
         Assert.True(instance.Add(new Vulnerability(VulnerabilityTypeName.NoSameSiteCookie, null, new Evidence("value")), date));
         date = date.AddMinutes(minutesAfter1);

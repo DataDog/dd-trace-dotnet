@@ -9,7 +9,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using FluentAssertions;
@@ -80,12 +79,7 @@ public class DataStreamsMonitoringTests : TestHelper
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
-        settings.ModifySerialization(
-            _ =>
-            {
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
-            });
+        settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(SubmitsDataStreams)}")
                       .DisableRequireUniquePrefix();
@@ -140,13 +134,7 @@ public class DataStreamsMonitoringTests : TestHelper
         // using span verifier to add all the default scrubbers
         var settings = VerifyHelper.GetSpanVerifierSettings();
         settings.AddSimpleScrubber(TracerConstants.AssemblyVersion, "2.x.x.x");
-        settings.ModifySerialization(
-            _ =>
-            {
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.EdgeLatency, ScrubByteArray);
-                _.MemberConverter<MockDataStreamsStatsPoint, byte[]>(x => x.PathwayLatency, ScrubByteArray);
-            });
-
+        settings.AddDataStreamsScrubber();
         await Verifier.Verify(payload, settings)
                       .UseFileName($"{nameof(DataStreamsMonitoringTests)}.{nameof(HandlesFanIn)}")
                       .DisableRequireUniquePrefix();
@@ -163,7 +151,8 @@ public class DataStreamsMonitoringTests : TestHelper
         using var processResult = RunSampleAndWaitForExit(agent);
 
         using var assertionScope = new AssertionScope();
-        var dataStreams = agent.WaitForDataStreams(2);
+        // We don't expect any streams here, so no point waiting for ages
+        var dataStreams = agent.WaitForDataStreams(2, timeoutInMilliseconds: 2_000);
         dataStreams.Should().BeEmpty();
     }
 
@@ -181,17 +170,6 @@ public class DataStreamsMonitoringTests : TestHelper
         using var assertionScope = new AssertionScope();
         var dataStreams = agent.DataStreams;
         dataStreams.Should().BeEmpty();
-    }
-
-    private static byte[] ScrubByteArray(MockDataStreamsStatsPoint target, byte[] value)
-    {
-        if (value is null || value.Length == 0)
-        {
-            return value;
-        }
-
-        // return a different value so we can identify that we have some data
-        return new byte[] { 0xFF };
     }
 
     private static MockDataStreamsPayload NormalizeDataStreams(IImmutableList<MockDataStreamsPayload> dataStreams)
@@ -215,6 +193,7 @@ public class DataStreamsMonitoringTests : TestHelper
 
         var currentBucketStats = new List<MockDataStreamsStatsPoint>();
         var originBucketStats = new List<MockDataStreamsStatsPoint>();
+        var backlogs = new List<MockDataStreamsBacklog>();
         foreach (var mockPayload in dataStreams)
         {
             foreach (var bucket in mockPayload.Stats)
@@ -222,17 +201,28 @@ public class DataStreamsMonitoringTests : TestHelper
                 bucket.Duration.Should().Be(10_000_000_000); // 10s in ns
                 bucket.Start.Should().BePositive();
 
-                var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
-                foreach (var bucketStat in bucket.Stats)
+                if (bucket.Stats != null)
                 {
-                    if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
+                    var buckets = bucket.Stats.First().TimestampType == "current" ? currentBucketStats : originBucketStats;
+                    foreach (var bucketStat in bucket.Stats)
                     {
-                        buckets.Add(bucketStat);
+                        if (!buckets.Any(x => x.Hash == bucketStat.Hash && x.ParentHash == bucketStat.ParentHash))
+                        {
+                            buckets.Add(bucketStat);
+                        }
                     }
+                }
+
+                if (bucket.Backlogs != null)
+                {
+                    backlogs.AddRange(bucket.Backlogs);
                 }
             }
         }
 
+        // order and reset tag offset values, since
+        // there's no guarantee that messages will be routed the same way on every run.
+        currentBucket.Backlogs = GroupBacklogs(backlogs);
         currentBucket.Stats = StableSort(currentBucketStats);
         originBucket.Stats = StableSort(originBucketStats);
         payload.Stats = new[] { currentBucket, originBucket };
@@ -283,6 +273,27 @@ public class DataStreamsMonitoringTests : TestHelper
             }
 
             return depth;
+        }
+
+        static MockDataStreamsBacklog[] GroupBacklogs(List<MockDataStreamsBacklog> backlogs)
+        {
+            var tuples = backlogs.Select(s =>
+                {
+                    Array.Sort(s.Tags);
+                    return new Tuple<string, long>(string.Join(",", s.Tags), s.Value);
+                });
+
+            var maxByTags = tuples.GroupBy(
+                g => g.Item1,
+                (tags, values) => tags);
+
+            return maxByTags
+                  .OrderBy(o => o)
+                  .Select(s => new MockDataStreamsBacklog()
+                   {
+                       Tags = s.Split(',')
+                   })
+                  .ToArray();
         }
     }
 }

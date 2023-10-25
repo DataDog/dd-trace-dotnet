@@ -5,7 +5,6 @@
 
 using System.IO;
 using System.Linq;
-using System.Text.RegularExpressions;
 using Datadog.Profiler.IntegrationTests.Helpers;
 using Datadog.Profiler.SmokeTests;
 using FluentAssertions;
@@ -27,7 +26,7 @@ namespace Datadog.Profiler.IntegrationTests.WindowsOnly
         [TestAppFact("Samples.Computer01")]
         public void CheckProfilesSentThroughNamedPipe(string appName, string framework, string appAssembly)
         {
-            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", _output, TransportType.NamedPipe).RunAndCheck();
+            new SmokeTestRunner(appName, framework, appAssembly, commandLine: "--scenario 1", output: _output, transportType: TransportType.NamedPipe).RunAndCheck();
         }
 
         [TestAppFact("Samples.Computer01")]

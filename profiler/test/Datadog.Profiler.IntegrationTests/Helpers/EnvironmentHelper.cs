@@ -6,10 +6,10 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Runtime.InteropServices;
+using Datadog.Profiler.IntegrationTests.Xunit;
 
 namespace Datadog.Profiler.IntegrationTests.Helpers
 {
@@ -17,14 +17,12 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
     {
         private static string _solutionDirectory = null;
         private readonly string _framework;
-        private readonly string _appName;
-        private readonly string _testId;
+        private readonly string _testOutputPath;
 
-        public EnvironmentHelper(string appName, string framework, bool enableTracer)
+        public EnvironmentHelper(string framework, bool enableTracer)
         {
             _framework = framework;
-            _appName = appName;
-            _testId = Guid.NewGuid().ToString("n").Substring(0, 8);
+            _testOutputPath = BuildTestOutputPath(framework);
 
             if (enableTracer)
             {
@@ -191,9 +189,24 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
 
         internal string GetTestOutputPath()
         {
+            return _testOutputPath;
+        }
+
+        private static string BuildTestOutputPath(string framework)
+        {
             // DD_TESTING_OUPUT_DIR is set by the CI
-            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.GetTempPath();
-            var testOutputPath = Path.Combine(baseTestOutputDir, $"TestApplication_{_appName}{_testId}_{Process.GetCurrentProcess().Id}", _framework);
+            var baseTestOutputDir = Environment.GetEnvironmentVariable("DD_TESTING_OUPUT_DIR") ?? Path.Combine(Path.GetTempPath(), "ProfilerTest");
+
+            var testName = TestContext.Current.TestName ?? "UnknownTestClass.UnknownTestMethod";
+            var testOutputPath = Path.Combine(testName.Split('.'));
+
+            testOutputPath = Path.Combine(baseTestOutputDir, testOutputPath, framework);
+
+            // needed only for local test to ensure that we do not have artifacts from previous runs
+            if (Directory.Exists(testOutputPath))
+            {
+                Directory.Delete(testOutputPath, recursive: true);
+            }
 
             return testOutputPath;
         }

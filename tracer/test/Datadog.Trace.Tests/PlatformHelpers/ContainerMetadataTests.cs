@@ -96,6 +96,24 @@ namespace Datadog.Trace.Tests.PlatformHelpers
 1:name=systemd:/kubepods.slice/kubepods-pod9508fe66_7675_4003_b7c9_d83e9f8f85e5.slice/cri-containerd-26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4.scope
 ";
 
+        public const string PcfContainer1 =
+            """
+            12:memory:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            11:rdma:/
+            10:freezer:/garden/6f265890-5165-7fab-6b52-18d1
+            9:hugetlb:/garden/6f265890-5165-7fab-6b52-18d1
+            8:pids:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            7:perf_event:/garden/6f265890-5165-7fab-6b52-18d1
+            6:cpu,cpuacct:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            5:net_cls,net_prio:/garden/6f265890-5165-7fab-6b52-18d1
+            4:cpuset:/garden/6f265890-5165-7fab-6b52-18d1
+            3:blkio:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            2:devices:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            1:name=systemd:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1
+            """;
+
+        public const string PcfContainer2 = "1:name=systemd:/system.slice/garden.service/garden/6f265890-5165-7fab-6b52-18d1";
+
         public static IEnumerable<object[]> GetCgroupFiles()
         {
             yield return new object[] { Docker, "3726184226f5d3147c25fdeab5b60097e378e8a720503a5e19ecfdf29f869860" };
@@ -104,6 +122,8 @@ namespace Datadog.Trace.Tests.PlatformHelpers
             yield return new object[] { Fargate1Dot3, "432624d2150b349fe35ba397284dea788c2bf66b885d14dfc1569b01890ca7da" };
             yield return new object[] { Fargate1Dot4, "34dc0b5e626f2c5c4c5170e34b10e765-1234567890" };
             yield return new object[] { EksNodegroup, "26cfbe35e08b24f053011af4ada23d8fcbf81f27f8331a94f56de5b677c903e4" };
+            yield return new object[] { PcfContainer1, "6f265890-5165-7fab-6b52-18d1" };
+            yield return new object[] { PcfContainer2, "6f265890-5165-7fab-6b52-18d1" };
         }
 
         /// <summary>

@@ -2,16 +2,11 @@
 
 namespace Datadog.Trace.BenchmarkDotNet
 {
-    public class DatadogColumnHidingRule : BenchmarkDotNet.Columns.IColumnHidingRule
-    {
-        public DatadogColumnHidingRule() { }
-        public static BenchmarkDotNet.Columns.IColumnHidingRule Default { get; }
-        public bool NeedToHide(BenchmarkDotNet.Columns.IColumn column) { }
-    }
     public class DatadogDiagnoser : BenchmarkDotNet.Diagnosers.IDiagnoser
     {
         public static readonly BenchmarkDotNet.Diagnosers.IDiagnoser Default;
         public DatadogDiagnoser() { }
+        public DatadogDiagnoser(bool enableProfiler) { }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Analysers.IAnalyser> Analysers { get; }
         public System.Collections.Generic.IEnumerable<BenchmarkDotNet.Exporters.IExporter> Exporters { get; }
         public System.Collections.Generic.IEnumerable<string> Ids { get; }

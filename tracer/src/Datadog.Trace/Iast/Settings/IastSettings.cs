@@ -6,7 +6,9 @@
 #nullable enable
 
 using Datadog.Trace.Configuration;
+using Datadog.Trace.Configuration.ConfigurationSources.Telemetry;
 using Datadog.Trace.Configuration.Telemetry;
+using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Telemetry;
 
 namespace Datadog.Trace.Iast.Settings;
@@ -62,6 +64,20 @@ internal class IastSettings
         RedactionRegexTimeout = config
                                 .WithKeys(ConfigurationKeys.Iast.RedactionRegexTimeout)
                                 .AsDouble(200, val1 => val1 is > 0).Value;
+
+        IastTelemetryVerbosity = config
+            .WithKeys(ConfigurationKeys.Iast.IastTelemetryVerbosity)
+            .GetAs(
+                getDefaultValue: () => IastMetricsVerbosityLevel.Information,
+                converter: value => value.ToLowerInvariant() switch
+                {
+                    "off" => IastMetricsVerbosityLevel.Off,
+                    "debug" => IastMetricsVerbosityLevel.Debug,
+                    "mandatory" => IastMetricsVerbosityLevel.Mandatory,
+                    "information" => IastMetricsVerbosityLevel.Information,
+                    _ => ParsingResult<IastMetricsVerbosityLevel>.Failure()
+                },
+                validator: null);
     }
 
     public bool Enabled { get; set; }
@@ -89,6 +105,8 @@ internal class IastSettings
     public string RedactionValuesRegex { get; }
 
     public double RedactionRegexTimeout { get; }
+
+    public IastMetricsVerbosityLevel IastTelemetryVerbosity { get; }
 
     public static IastSettings FromDefaultSources()
     {

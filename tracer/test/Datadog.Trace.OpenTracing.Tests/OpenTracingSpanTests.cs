@@ -7,6 +7,7 @@ using System;
 using Datadog.Trace.Agent;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Sampling;
+using FluentAssertions;
 using Moq;
 using OpenTracing;
 using Xunit;
@@ -90,8 +91,9 @@ namespace Datadog.Trace.OpenTracing.Tests
 
             var otSpan = (OpenTracingSpan)span;
             var ddSpan = (Span)otSpan.Span;
-            double durationDifference = Math.Abs((ddSpan.Duration - expectedDuration).TotalMilliseconds);
-            Assert.True(durationDifference < 100);
+
+            var precision = TimeSpan.FromSeconds(1);
+            ddSpan.Duration.Should().BeCloseTo(expectedDuration, precision);
         }
 
         /*

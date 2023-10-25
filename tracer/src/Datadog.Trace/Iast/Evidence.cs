@@ -7,6 +7,7 @@
 
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.ExtensionMethods;
 
 namespace Datadog.Trace.Iast;
 
@@ -18,7 +19,7 @@ internal readonly struct Evidence
 
     public Evidence(string value, Range[]? ranges = null, Range[]? sensitive = null)
     {
-        this._value = value;
+        this._value = value.SanitizeNulls();
         this._ranges = ranges;
         this._sensitive = sensitive;
     }

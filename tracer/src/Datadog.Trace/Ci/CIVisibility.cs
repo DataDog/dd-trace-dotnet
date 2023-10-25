@@ -246,6 +246,24 @@ namespace Datadog.Trace.Ci
             }
         }
 
+        /// <summary>
+        /// Manually close the CI Visibility mode triggering the LifeManager to run the shutdown tasks
+        /// This is required due to a weird behavior on the VSTest framework were the shutdown tasks are not awaited:
+        /// ` if testhost doesn't shut down within 100ms(as the execution is completed, we expect it to shutdown fast).
+        ///   vstest.console forcefully kills the process.`
+        /// https://github.com/microsoft/vstest/issues/1900#issuecomment-457488472
+        /// https://github.com/Microsoft/vstest/blob/2d4508232b6655a4f363b8bbcc887441c7d1d334/src/Microsoft.TestPlatform.CrossPlatEngine/Client/ProxyOperationManager.cs#L197
+        /// </summary>
+        internal static void Close()
+        {
+            if (IsRunning)
+            {
+                Log.Information("CI Visibility is exiting.");
+                LifetimeManager.Instance.RunShutdownTasks();
+                Interlocked.Exchange(ref _firstInitialization, 1);
+            }
+        }
+
         internal static void WaitForSkippableTaskToFinish()
         {
             if (_skippableTestsTask is { IsCompleted: false })
@@ -448,18 +466,25 @@ namespace Datadog.Trace.Ci
             string? processName = null;
 
             // By configuration
-            if (Settings.Enabled)
+            if (Settings.Enabled is { } enabled)
             {
-                processName ??= GetProcessName();
-                // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
-                if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                if (enabled)
                 {
-                    Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
-                    return false;
+                    processName ??= GetProcessName();
+                    // When is enabled by configuration we only enable it to the testhost child process if the process name is dotnet.
+                    if (processName.Equals("dotnet", StringComparison.OrdinalIgnoreCase) && Environment.CommandLine.IndexOf("testhost.dll", StringComparison.OrdinalIgnoreCase) == -1)
+                    {
+                        Log.Information("CI Visibility disabled because the process name is 'dotnet' but the commandline doesn't contain 'testhost.dll': {Cmdline}", Environment.CommandLine);
+                        return false;
+                    }
+
+                    Log.Information("CI Visibility Enabled by Configuration");
+                    return true;
                 }
 
-                Log.Information("CI Visibility Enabled by Configuration");
-                return true;
+                // explicitly disabled
+                Log.Information("CI Visibility Disabled by Configuration");
+                return false;
             }
 
             // Try to autodetect based in the domain name.
@@ -540,25 +565,22 @@ namespace Datadog.Trace.Ci
                     uploadRepositoryChangesTask = Task.Run(() => lazyItrClient.Value.UploadRepositoryChangesAsync());
                 }
 
-                if (!settings.Agentless || !string.IsNullOrEmpty(settings.ApplicationKey))
+                // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
+                // We query the settings api for those
+                if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
                 {
-                    // If any DD_CIVISIBILITY_CODE_COVERAGE_ENABLED or DD_CIVISIBILITY_TESTSSKIPPING_ENABLED has not been set
-                    // We query the settings api for those
-                    if (settings.CodeCoverageEnabled == null || settings.TestsSkippingEnabled == null)
+                    var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+
+                    if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
                     {
-                        var itrSettings = await lazyItrClient.Value.GetSettingsAsync().ConfigureAwait(false);
+                        Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", itrSettings.CodeCoverage.Value);
+                        settings.SetCodeCoverageEnabled(itrSettings.CodeCoverage.Value);
+                    }
 
-                        if (settings.CodeCoverageEnabled == null && itrSettings.CodeCoverage.HasValue)
-                        {
-                            Log.Information("ITR: Code Coverage has been changed to {Value} by settings api.", itrSettings.CodeCoverage.Value);
-                            settings.SetCodeCoverageEnabled(itrSettings.CodeCoverage.Value);
-                        }
-
-                        if (settings.TestsSkippingEnabled == null && itrSettings.TestsSkipping.HasValue)
-                        {
-                            Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", itrSettings.TestsSkipping.Value);
-                            settings.SetTestsSkippingEnabled(itrSettings.TestsSkipping.Value);
-                        }
+                    if (settings.TestsSkippingEnabled == null && itrSettings.TestsSkipping.HasValue)
+                    {
+                        Log.Information("ITR: Tests Skipping has been changed to {Value} by settings api.", itrSettings.TestsSkipping.Value);
+                        settings.SetTestsSkippingEnabled(itrSettings.TestsSkipping.Value);
                     }
                 }
 

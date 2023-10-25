@@ -20,6 +20,7 @@
 #include "IThreadsCpuManager.h"
 #include "ProviderBase.h"
 #include "RawSample.h"
+#include "SampleValueTypeProvider.h"
 
 #include "shared/src/native-src/string.h"
 
@@ -51,8 +52,7 @@ class CollectorBase
 public:
     CollectorBase<TRawSample>(
         const char* name,
-        uint32_t valueOffset,
-        std::size_t nbValues,
+        std::vector<SampleValueTypeProvider::Offset> valueOffsets,
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
@@ -60,18 +60,13 @@ public:
         IConfiguration* pConfiguration
         ) :
         ProviderBase(name),
-        _valueOffset{valueOffset},
         _pFrameStore{pFrameStore},
         _pAppDomainStore{pAppDomainStore},
         _pRuntimeIdStore{pRuntimeIdStore},
         _pThreadsCpuManager{pThreadsCpuManager},
         _isTimestampsAsLabelEnabled{pConfiguration->IsTimestampsAsLabelEnabled()}
     {
-        _valueOffsets.reserve(nbValues);
-        for (auto i = _valueOffset; i < _valueOffset + nbValues; i++)
-        {
-            _valueOffsets.push_back(i);
-        }
+        _valueOffsets = std::move(valueOffsets);
     }
 
 // interfaces implementation
@@ -130,7 +125,7 @@ public:
         }
 
         // allow inherited classes to add values and specific labels
-        rawSample.OnTransform(sample, _valueOffset);
+        rawSample.OnTransform(sample, _valueOffsets);
 
         return sample;
     }
@@ -141,7 +136,7 @@ protected:
         return OpSysTools::GetHighPrecisionTimestamp();
     }
 
-    std::vector<std::uintptr_t> const& GetValueOffsets() const
+    std::vector<SampleValueTypeProvider::Offset> const& GetValueOffsets() const
     {
         return _valueOffsets;
     }
@@ -239,7 +234,6 @@ private:
     }
 
 private:
-    uint32_t _valueOffset = 0;
     IFrameStore* _pFrameStore = nullptr;
     IAppDomainStore* _pAppDomainStore = nullptr;
     IRuntimeIdStore* _pRuntimeIdStore = nullptr;
@@ -253,5 +247,5 @@ private:
 
     std::mutex _rawSamplesLock;
     std::list<TRawSample> _collectedSamples;
-    std::vector<std::uintptr_t> _valueOffsets;
+    std::vector<SampleValueTypeProvider::Offset> _valueOffsets;
 };

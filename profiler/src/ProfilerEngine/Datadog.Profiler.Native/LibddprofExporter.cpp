@@ -7,6 +7,7 @@
 #include "IAllocationsRecorder.h"
 #include "IApplicationStore.h"
 #include "IEnabledProfilers.h"
+#include "IMetadataProvider.h"
 #include "IMetricsSender.h"
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
@@ -63,17 +64,20 @@ std::string const LibddprofExporter::ProfileExtension = ".pprof";
 std::string const LibddprofExporter::AllocationsExtension = ".balloc";
 
 LibddprofExporter::LibddprofExporter(
-    std::vector<SampleValueType>&& sampleTypeDefinitions,
+    std::vector<SampleValueType> sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder) :
+    IMetadataProvider* metadataProvider,
+    IAllocationsRecorder* allocationsRecorder
+    ) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
+    _metadataProvider{metadataProvider},
     _allocationsRecorder{allocationsRecorder}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
@@ -173,21 +177,7 @@ LibddprofExporter::Tags LibddprofExporter::CreateTags(
 
     tags.Add("process_id", ProcessId);
     tags.Add("host", configuration->GetHostname());
-
-    // runtime_version:
-    //    framework-4.8
-    //    core-6.0
-    std::stringstream buffer;
-    if (runtimeInfo->IsDotnetFramework())
-    {
-        buffer << "framework";
-    }
-    else
-    {
-        buffer << "core";
-    }
-    buffer << "-" << std::dec << runtimeInfo->GetDotnetMajorVersion() << "." << runtimeInfo->GetDotnetMinorVersion();
-    tags.Add("runtime_version", buffer.str());
+    tags.Add("runtime_version", runtimeInfo->GetClrString());
 
     // list of enabled profilers
     std::string profilersTag = GetEnabledProfilersTag(enabledProfilers);
@@ -684,10 +674,10 @@ bool LibddprofExporter::Export()
     return exported;
 }
 
-void LibddprofExporter::SaveMetricsToDisk(const std::string& content) const
+void LibddprofExporter::SaveJsonToDisk(const std::string prefix, const std::string& content) const
 {
     std::stringstream filename;
-    filename << "metrics-" << std::to_string(OpSysTools::GetProcId()) << ".json";
+    filename << prefix << "-" << std::to_string(OpSysTools::GetProcId()) << ".json";
     auto filepath = fs::path(_metricsFileFolder) / filename.str();
     std::ofstream file{filepath.string(), std::ios::out | std::ios::binary};
 
@@ -800,7 +790,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     {
         // Add metric files
 #ifdef _DEBUG
-        SaveMetricsToDisk(metricsFileContent);
+        SaveJsonToDisk("metrics", metricsFileContent);
 #endif
         ddog_Slice_U8 metricsFileSlice{reinterpret_cast<const uint8_t*>(metricsFileContent.c_str()), metricsFileContent.size()};
 
@@ -808,7 +798,20 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, nullptr, RequestTimeOutMs);
+    // compute metadata
+    ddog_CharSlice* pMetadata = nullptr;
+    ddog_CharSlice metadata;
+    std::string json = GetMetadata();
+    if (!json.empty())
+    {
+#ifdef _DEBUG
+        SaveJsonToDisk("metadata", json);
+#endif
+        metadata = FfiHelper::StringToCharSlice(json);
+        pMetadata = &metadata;
+    }
+
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, pMetadata, RequestTimeOutMs);
     if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);
@@ -818,6 +821,66 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     }
 
     return result.ok;
+}
+std::string LibddprofExporter::GetMetadata() const
+{
+    // in tests, the metadata provider might be null
+    if (_metadataProvider == nullptr)
+    {
+        return "";
+    }
+
+    // TODO: check if we plan to update the metadata after the application starts
+    //       otherwise, we could cache the result once for all.
+
+    auto const& metadata = _metadataProvider->Get();
+    if (metadata.empty())
+    {
+        return "";
+    }
+    auto sectionCount = metadata.size();
+    auto currentSection = 0;
+
+    // the json schema is supposed to send sections under the systemInfo element
+    std::stringstream builder;
+    builder << "{ \"systemInfo\": ";
+    builder << "{";
+    for (auto const& [section, kvp] : metadata)
+    {
+        currentSection++;
+
+        builder << "\"";
+        builder << section;
+        builder << "\":";
+        builder << "{";
+
+        auto keyCount = kvp.size();
+        auto currentKey = 0;
+        for (auto const& [key, value] : kvp)
+        {
+            currentKey++;
+            builder << "\"";
+            builder << key;
+            builder << "\":";
+            builder << "\"";
+            builder << value;
+            builder << "\"";
+
+            if (currentKey < keyCount)
+            {
+                builder << ", ";
+            }
+        }
+        builder << "}";
+
+        if (currentSection < sectionCount)
+        {
+            builder << ", ";
+        }
+    }
+    builder << "}}";
+
+    return builder.str();
 }
 
 bool LibddprofExporter::Send(ddog_prof_Exporter_Request*& request, ddog_prof_Exporter* exporter)
