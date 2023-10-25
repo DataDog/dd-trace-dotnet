@@ -1512,6 +1512,17 @@ HRESULT STDMETHODCALLTYPE CorProfiler::JITCompilationStarted(FunctionID function
                 
             pType = pType->parent_type;
         }
+
+        // *********************************************************************
+        // Checking if the caller is inside of the <CrtImplementationDetails> type
+        // *********************************************************************
+
+        if (caller.type.name.find(WStr("<CrtImplementationDetails>")) != shared::WSTRING::npos)
+        {
+            Logger::Debug("JITCompilationStarted: Startup hook skipped from ", caller.type.name, ".", caller.name, "()");
+            return S_OK;
+        }
+
         // *********************************************************************
 
         bool domain_neutral_assembly = runtime_information_.is_desktop() && corlib_module_loaded &&
