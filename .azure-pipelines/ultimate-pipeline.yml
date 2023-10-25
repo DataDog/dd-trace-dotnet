@@ -2197,7 +2197,15 @@ stages:
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
 - stage: profiler_integration_tests_windows
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      or(
+        eq(variables.isMainBranch, true),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+      )
+    )
   dependsOn: [package_windows, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -2263,7 +2271,15 @@ stages:
       condition: succeededOrFailed()
 
 - stage: profiler_integration_tests_linux
-  condition: and(succeeded(), eq(variables['isBenchmarksOnlyBuild'], 'False'))
+  condition: >
+    and(
+      succeeded(),
+      eq(variables['isBenchmarksOnlyBuild'], 'False'),
+      or(
+        eq(variables.isMainBranch, true),
+        eq(dependencies.generate_variables.outputs['generate_variables_job.generate_variables_step.IsProfilerChanged'], 'True')
+      )
+    )
   dependsOn: [package_linux, generate_variables, merge_commit_id]
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
@@ -5821,8 +5837,6 @@ stages:
     - integration_tests_arm64
     - integration_tests_arm64_debugger
     - static_analysis_checks_tracer
-    - profiler_integration_tests_linux
-    - profiler_integration_tests_windows
     - exploration_tests_windows
     - exploration_tests_linux
     - benchmarks
