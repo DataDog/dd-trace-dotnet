@@ -166,10 +166,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
 
-        private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
-
         public static string EnvVarCheck(string number, string envVar) => $"{number}. Checking {envVar} and related configuration value:";
 
         public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
+
+        private static string EscapeOrNotSet(string? str) => str == null ? "not set" : $"'{str}'";
     }
 }
