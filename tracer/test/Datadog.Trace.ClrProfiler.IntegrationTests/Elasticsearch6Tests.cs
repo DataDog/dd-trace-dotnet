@@ -6,14 +6,17 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
+    [UsesVerify]
     [Trait("RequiresDockerDependency", "true")]
     public class Elasticsearch6Tests : TracingIntegrationTest
     {
@@ -34,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
@@ -153,6 +156,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);
                 telemetry.AssertIntegrationEnabled(IntegrationId.ElasticsearchNet);
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .DisableRequireUniquePrefix()
+                                  .UseFileName(nameof(Elasticsearch5Tests));
             }
         }
 
