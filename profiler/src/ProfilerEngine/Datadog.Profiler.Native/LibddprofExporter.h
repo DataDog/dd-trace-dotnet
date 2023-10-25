@@ -120,11 +120,6 @@ private:
     std::vector<SampleValueType> _sampleTypeDefinitions;
     fs::path _pprofOutputPath;
 
-    // std::vector<ddog_prof_Location> _locations;
-    // std::vector<ddog_prof_Line> _lines;
-    std::string _agentUrl;
-    std::size_t _locationsAndLinesSize;
-
     // for each application, keep track of a profile, a samples count since the last export and an export count
     std::unordered_map<std::string_view, ProfileInfo> _perAppInfo;
     // ddog_Endpoint _endpoint;

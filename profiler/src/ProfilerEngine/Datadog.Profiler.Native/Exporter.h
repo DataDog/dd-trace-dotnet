@@ -64,10 +64,10 @@ public:
         struct AgentEndpoint;
         AgentEndpoint CreateEndpoint();
 
-        bool _agentless;
+        bool _agentless = false;
         std::string _site;
         std::string _apiKey;
-        bool _withAgent;
+        bool _withAgent = false;
         std::string _url;
         //
         std::string _libraryName;

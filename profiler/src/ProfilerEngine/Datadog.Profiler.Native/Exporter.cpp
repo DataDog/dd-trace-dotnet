@@ -3,8 +3,10 @@
 
 #include "Exporter.h"
 
+#include "EncodedProfile.hpp"
 #include "Exception.h"
 #include "FfiHelper.h"
+#include "Log.h"
 #include "Profile.h"
 #include "Tags.h"
 #include "libdatadog_details/AgentExporter.hpp"
@@ -14,7 +16,6 @@
 #include "libdatadog_details/Tags.hpp"
 #include "libdatadog_details/error_code.hpp"
 #include "libdatadog_helper.hpp"
-#include "EncodedProfile.hpp"
 #include "std_extensions.hpp"
 
 #include <cassert>
@@ -39,7 +40,7 @@ Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithAgent(std::string url)
 
 Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithoutAgent(std::string site, std::string apiKey)
 {
-    assert(_withAgent == false);
+    assert(!_withAgent);
     _agentless = true;
 
     _site = std::move(site);
@@ -71,8 +72,8 @@ std::unique_ptr<libdatadog::detail::AgentExporter> Exporter::ExporterBuilder::Cr
 
     if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_ERR)
     {
-        std::unique_ptr<ddog_Error> error(&result.err);
-        throw Exception(std::to_string(error.get()));
+        auto error = detail::make_error(result.err);
+        throw Exception(error.message());
     }
 
     // the AgentExporter instance is acquiring the ownership of the ok ptr
@@ -145,8 +146,11 @@ libdatadog::error_code Exporter::Send(Profile* profile, Tags tags, std::vector<s
 
     if (_fileExporter != nullptr)
     {
-        // link error code ? or log ??
-        _fileExporter->WriteToDisk(ep, profile->GetApplicationName());
+        auto error_code = _fileExporter->WriteToDisk(ep, profile->GetApplicationName());
+        if (!error_code)
+        {
+            Log::Error(error_code.message());
+        }
     }
 
     assert(_exporterImpl != nullptr);

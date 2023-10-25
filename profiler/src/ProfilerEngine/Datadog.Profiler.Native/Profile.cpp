@@ -116,18 +116,10 @@ libdatadog::error_code Profile::AddUpscalingRuleProportional(std::vector<std::ui
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
     if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
     {
-        // TODO, TO REWRITE
-        struct ErrorDeleter
-        {
-            void operator()(ddog_Error* o)
-            {
-                ddog_Error_drop(o);
-            }
-        };
-        auto error = std::unique_ptr<ddog_Error, ErrorDeleter>(&upscalingRuleAdd.err);
+        auto error = detail::make_error(upscalingRuleAdd.err);
         std::stringstream ss;
         ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
-           << std::to_string(error.get());
+           << error.message();
         return detail::make_error(ss.str());
     }
 

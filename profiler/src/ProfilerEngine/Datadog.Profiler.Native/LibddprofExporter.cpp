@@ -76,7 +76,6 @@ LibddprofExporter::LibddprofExporter(
     IMetadataProvider* metadataProvider,
     IAllocationsRecorder* allocationsRecorder) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
-    _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
     _metadataProvider{metadataProvider},
@@ -89,7 +88,7 @@ LibddprofExporter::LibddprofExporter(
 
 LibddprofExporter::~LibddprofExporter()
 {
-    std::lock_guard lock(_perAppInfoLock);
+    std::lock_guard lck(_perAppInfoLock);
 
     for (auto& [runtimeId, appInfo] : _perAppInfo)
     {
@@ -134,7 +133,7 @@ std::unique_ptr<libdatadog::Exporter> LibddprofExporter::CreateExporter(IConfigu
             exporterBuilder.WithAgent(BuildAgentEndpoint(configuration));
         }
 
-        exporterBuilder.Build();
+        return exporterBuilder.Build();
     }
     catch (libdatadog::Exception const& e)
     {
@@ -266,48 +265,40 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabled
 std::string LibddprofExporter::BuildAgentEndpoint(IConfiguration* configuration)
 {
     // handle "with agent" case
-    auto const& url = configuration->GetAgentUrl();
-    if (!url.empty())
-    {
-        _agentUrl = url;
-    }
-    else
+    auto url = configuration->GetAgentUrl(); // copy expected here
+
+    if (url.empty())
     {
         // Agent mode
 
-        std::string agentUrl;
 #if _WINDOWS
         const std::string& namePipeName = configuration->GetNamedPipeName();
         if (!namePipeName.empty())
         {
-            agentUrl = R"(windows:\\.\pipe\)" + namePipeName;
+            url = R"(windows:\\.\pipe\)" + namePipeName;
         }
 #else
         std::error_code ec; // fs::exists might throw if no error_code parameter is provided
         const std::string socketPath = "/var/run/datadog/apm.socket";
         if (fs::exists(socketPath, ec))
         {
-            agentUrl = "unix://" + socketPath;
+            url = "unix://" + socketPath;
         }
 
 #endif
 
-        if (!agentUrl.empty())
-        {
-            _agentUrl = agentUrl;
-        }
-        else
+        if (url.empty())
         {
             // Use default HTTP endpoint
             std::stringstream oss;
             oss << "http://" << configuration->GetAgentHost() << ":" << configuration->GetAgentPort();
-            _agentUrl = oss.str();
+            url = oss.str();
         }
     }
 
-    Log::Info("Using agent endpoint ", _agentUrl);
+    Log::Info("Using agent endpoint ", url);
 
-    return _agentUrl;
+    return url;
 }
 
 LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::string_view runtimeId)
@@ -327,7 +318,7 @@ void LibddprofExporter::Add(libdatadog::Profile* profile, std::shared_ptr<Sample
         static bool firstTimeError = true;
         if (firstTimeError)
         {
-            Log::Error(success.message());
+            Log::Error("Failed to add a sample: ", success.message());
 
             firstTimeError = false;
         }
@@ -531,8 +522,6 @@ bool LibddprofExporter::Export()
 
         if (_exporter == nullptr)
         {
-            // maybe no need to log error. It was already logged
-            Log::Error("Unable to create exporter for application ", runtimeId);
             return false;
         }
 
@@ -559,20 +548,13 @@ bool LibddprofExporter::Export()
 
         auto filesToSend = std::vector<std::pair<std::string, std::string>>{{MetricsFilename, CreateMetricsFileContent()}};
         std::string json = GetMetadata();
-        try
+
+        auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(json));
+        if (!error_code)
         {
-            auto succeeded = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(json));
-            if (!succeeded)
-            {
-                Log::Error(succeeded.message());
-            }
-            exported &= succeeded;
+            Log::Error(error_code.message());
         }
-        catch (libdatadog::Exception const& e)
-        {
-            Log::Error("Unable to create a request to send the profile: ", e.what());
-            exported = false;
-        }
+        exported &= error_code;
     }
 
     return exported;
@@ -609,34 +591,6 @@ std::string LibddprofExporter::GenerateFilePath(const std::string& applicationNa
 
     return pprofFilePath.string();
 }
-
-// void LibddprofExporter::ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int32_t idx)
-//{
-//     auto pprofFilePath = GenerateFilePath(applicationName, idx, ProfileExtension);
-//
-//     std::ofstream file{pprofFilePath, std::ios::out | std::ios::binary};
-//
-//     auto buffer = encodedProfile.GetBuffer();
-//
-//     file.write((char const*)buffer.ptr, buffer.len);
-//     file.close();
-//
-//     if (file.fail())
-//     {
-//         char message[BUFFER_MAX_SIZE];
-//         auto errorCode = errno;
-// #ifdef _WINDOWS
-//         strerror_s(message, BUFFER_MAX_SIZE, errorCode);
-// #else
-//         strerror_r(errorCode, message, BUFFER_MAX_SIZE);
-// #endif
-//         Log::Error("Unable to write profiles on disk: ", pprofFilePath, ". Message (code): ", message, " (", errorCode, ")");
-//     }
-//     else
-//     {
-//         Log::Debug("Profile serialized in ", pprofFilePath);
-//     }
-// }
 
 std::string LibddprofExporter::CreateMetricsFileContent() const
 {

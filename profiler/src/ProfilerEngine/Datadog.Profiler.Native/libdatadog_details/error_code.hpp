@@ -20,17 +20,20 @@ namespace libdatadog::detail {
 struct ErrorImpl
 {
     ErrorImpl(ddog_Error error) :
-        ErrorImpl(error, std::string())
+        ErrorImpl(error, std::string(), true)
     {
     }
     ErrorImpl(std::string error) :
-        ErrorImpl({}, std::move(error))
+        ErrorImpl({}, std::move(error), false)
     {
     }
 
     ~ErrorImpl()
     {
-        ddog_Error_drop(&_error);
+        if (_freeError)
+        {
+            ddog_Error_drop(&_error);
+        }
     }
 
     ErrorImpl(ErrorImpl const&) = delete;
@@ -47,6 +50,7 @@ struct ErrorImpl
         {
             _error = std::exchange(o._error, {});
             _message.swap(o._message);
+            _freeError = o._freeError;
         }
         return *this;
     }
@@ -61,13 +65,14 @@ struct ErrorImpl
     }
 
 private:
-    ErrorImpl(ddog_Error error, std::string m) :
-        _error{error}, _message{std::move(m)}
+    ErrorImpl(ddog_Error error, std::string m, bool freeError) :
+        _error{error}, _message{std::move(m)}, _freeError{freeError}
     {
     }
 
     ddog_Error _error;
     std::string _message;
+    bool _freeError;
 };
 
 template<class T>

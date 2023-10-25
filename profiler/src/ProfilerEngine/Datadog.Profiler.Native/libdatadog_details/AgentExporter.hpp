@@ -35,7 +35,9 @@ public:
             return std::move(ec); // ?? really ?? otherwise it calls the copy constructore :sad:
         }
 
-        // should we use a cancellation token (third parameter) when shutting down takes to much time ?
+        assert(request != nullptr);
+
+        // TODO: should we use a cancellation token (third parameter) when shutting down takes to much time ?
         auto result = ddog_prof_Exporter_send(_exporter.get(), request, nullptr);
 
         if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
@@ -85,6 +87,7 @@ private:
         Request& operator=(Request&& o) noexcept
         {
             _inner = std::exchange(o._inner, nullptr);
+            return *this;
         }
 
         operator ddog_prof_Exporter_Request** ()
