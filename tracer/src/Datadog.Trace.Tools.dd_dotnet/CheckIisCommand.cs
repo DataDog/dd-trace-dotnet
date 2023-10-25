@@ -274,7 +274,7 @@ internal class CheckIisCommand : Command
 
         if (foundVariables.Count != 0 || foundPathVariables.Count != 0)
         {
-            Utils.WriteWarning(AppPoolCheckFindings(poolName));
+            AnsiConsole.WriteLine(AppPoolCheckFindings(poolName));
 
             foreach (var variable in foundVariables)
             {
