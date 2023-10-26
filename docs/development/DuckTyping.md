@@ -5,7 +5,7 @@ The duck typing library allows us to get and set data from fields and properties
 The goal of the library is to have an unify code to access unknown types as fastest and with the minimum allocations as possible.
 
 > [!NOTE]  
-> Please ensure you check the [Best Practices](#best-practices) section for details on how to choose the type of 
+> Please ensure you check the [Best Practices](#best-practices) section for details on how to choose the type of proxy.
 
 ### Example
 Given the following scenario, where we want to access the data from an anonymous class instance in another method, a code example to do that would be:
@@ -686,7 +686,7 @@ In the above example, the `ProxyMyHandlerStruct.Configuration` field is of type 
 
 What's more, the `[DuckCopy]` `struct` does _not_ implement `IDuckType`. So with the above duck-types, there's no way to detect when `originalObject.Configuration` is `null`! This is a problem, as it could mean accidentally using the `default` value for `MaxConnections` (i.e. `0`) when in practice the `Configuration` property was `null`. 
 
-The solution to this problem, is to always define duck-chained `[DuckCopy` `struct`s as nullable:
+The solution to this problem is to always define duck-chained `[DuckCopy]` `struct`s as nullable:
 
 ```csharp
 [DuckCopy]
@@ -750,7 +750,7 @@ internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instanc
     if(DuckType.HasValue(proxy))
     {
         // safe to use proxy - underlying type is not null
-        if(DuckType.HasValue(proxy.Configuration)
+        if(DuckType.HasValue(proxy.Configuration))
         {
             // safe to use duck-chained property - underlying type is not null
         }
@@ -758,8 +758,7 @@ internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instanc
 }
 ```
 
-Yes this may be a bit annoying, but the consistently will make it easier to be confident about the nullability of the type, it helps the compiler with its nullability flow analysis, and it makes it easier to review. Note that it's important you also follow the other recommended steps however. 
-
+Yes, this may be a bit annoying, but the consistency will make it easier to be confident about the nullability of the type, it helps the compiler with its nullability flow analysis, and it makes it easier to review. Note that it's important you also follow the other recommended steps, however. 
 
 > Note, the above method has not yet been added. Added to the documentation for now to get feedback, and will implement and test in a subsequent PR if people agree. I intend to implement it as the following: 
 
