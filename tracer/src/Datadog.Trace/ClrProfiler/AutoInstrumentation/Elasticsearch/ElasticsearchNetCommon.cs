@@ -30,17 +30,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
                 return null;
             }
 
-            var pathAndQuery = requestData.Path;
-            string method = requestData.Method;
+            string method = requestData.Method.ToString();
             var url = requestData.Uri?.ToString();
 
-            var scope = CreateScope(tracer, integrationId, pathAndQuery, method, pipeline.RequestParameters, out var tags);
+            var scope = CreateScope(tracer, integrationId, method, pipeline.RequestParameters, out var tags);
             tags.Url = url;
             tags.Host = HttpRequestUtils.GetNormalizedHost(requestData.Uri?.Host);
             return scope;
         }
 
-        public static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string path, string method, object requestParameters, out ElasticsearchTags tags)
+        public static Scope CreateScope(Tracer tracer, IntegrationId integrationId, string method, object requestParameters, out ElasticsearchTags tags)
         {
             if (!tracer.Settings.IsIntegrationEnabled(integrationId))
             {
@@ -61,7 +60,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Elasticsearch
             {
                 scope = tracer.StartActiveInternal(operationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
-                span.ResourceName = requestName ?? path ?? string.Empty;
+                span.ResourceName = requestName ?? string.Empty;
                 span.Type = DatabaseType;
                 tags.Action = requestName;
                 tags.Method = method;
