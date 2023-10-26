@@ -9,6 +9,7 @@
 // end
 
 #include <string_view>
+#include <cstdint>
 
 struct SymbolDebugInfo
 {
