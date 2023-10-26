@@ -6,6 +6,7 @@
 #include <string>
 #include <tuple>
 #include <vector>
+#include <cstdint>
 
 #include "TagsHelper.h"
 

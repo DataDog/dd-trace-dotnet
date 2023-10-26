@@ -6,6 +6,7 @@
 #include "corprof.h"
 
 #include <string>
+#include <cstdint>
 
 struct FrameInfoView
 {
