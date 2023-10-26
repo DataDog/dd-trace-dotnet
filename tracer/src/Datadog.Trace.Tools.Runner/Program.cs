@@ -102,7 +102,10 @@ namespace Datadog.Trace.Tools.Runner
             ciCommand.AddCommand(new RunCiCommand(applicationContext));
             ciCommand.AddCommand(new CrankCommand());
 
-            builder.Command.AddCommand(new CheckCommand(applicationContext));
+            if (platform != Platform.MacOS)
+            {
+                builder.Command.AddCommand(new CheckCommand(applicationContext));
+            }
 
             builder.Command.AddCommand(new RunCommand(applicationContext));
             builder.Command.AddCommand(new AotCommand { IsHidden = true });
