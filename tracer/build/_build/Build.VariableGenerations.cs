@@ -32,7 +32,15 @@ partial class Build : NukeBuild
 
             void GenerateConditionVariables()
             {
-                GenerateConditionVariableBasedOnGitChange("isAppSecChanged", new[] { "tracer/src/Datadog.Trace/Iast", "tracer/src/Datadog.Tracer.Native/iast", "tracer/src/Datadog.Trace/AppSec" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isAppSecChanged",
+                new[] {
+                    "tracer/src/Datadog.Trace/Iast",
+                    "tracer/src/Datadog.Tracer.Native/iast",
+                    "tracer/src/Datadog.Trace/AppSec",
+                    "tracer/test/Datadog.Trace.Security.IntegrationTests",
+                    "tracer/test/Datadog.Trace.Security.Unit.Tests",
+                    "tracer/test/test-applications/security",
+                }, new string[] { });
                 GenerateConditionVariableBasedOnGitChange("isTracerChanged", new[] { "tracer/src/Datadog.Trace/ClrProfiler/AutoInstrumentation", "tracer/src/Datadog.Tracer.Native" }, new string[] {  });
                 GenerateConditionVariableBasedOnGitChange("isDebuggerChanged", new[]
                 {
@@ -40,9 +48,16 @@ partial class Build : NukeBuild
                     "tracer/src/Datadog.Tracer.Native",
                     "tracer/test/Datadog.Trace.Debugger.IntegrationTests",
                     "tracer/test/test-applications/debugger",
-                    "tracer/build/_build/Build.Steps.Debugger.cs"
+                    "tracer/build/_build/Build.Steps.Debugger.cs",
                 }, new string[] { });
-                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[] { "profiler/src", "profiler/test" }, new string[] { });
+                GenerateConditionVariableBasedOnGitChange("isProfilerChanged", new[]
+                {
+                    "profiler/",
+                    "shared/",
+                    "build/",
+                    "tracer/build/_build/Build.Shared.Steps.cs",
+                    "tracer/build/_build/Build.Profiler.Steps.cs",
+                }, new string[] { });
 
                 void GenerateConditionVariableBasedOnGitChange(string variableName, string[] filters, string[] exclusionFilters)
                 {
@@ -70,7 +85,7 @@ partial class Build : NukeBuild
                         var changedFiles = GetGitChangedFiles(baseBranch);
 
                         // Choose changedFiles that meet any of the filters => Choose changedFiles that DON'T meet any of the exclusion filters
-                        isChanged = changedFiles.Any(s => filters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
+                        isChanged = changedFiles.Any(s => filters.Any(filter => s.StartsWith(filter, StringComparison.OrdinalIgnoreCase)) && !exclusionFilters.Any(filter => s.Contains(filter, StringComparison.OrdinalIgnoreCase)));
                     }
 
                     Logger.Information($"{variableName} - {isChanged}");

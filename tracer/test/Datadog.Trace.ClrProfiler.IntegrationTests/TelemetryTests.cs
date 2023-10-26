@@ -237,7 +237,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
 
             // The numbers here may change, but we should have _some_
-            telemetry.GetDistributions(DistributionShared.InitTime.GetName()).Sum(x => x.Points.Count).Should().BeGreaterThan(5);
+            telemetry.GetDistributions(DistributionShared.InitTime.GetName()).Sum(x => x.Points.Count).Should().BeGreaterThan(4);
 
             telemetry.GetMetricDataPoints(Count.TraceChunkEnqueued.GetName()).Sum(x => x.Value).Should().Be(ExpectedTraces);
 

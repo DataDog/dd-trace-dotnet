@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
@@ -374,10 +375,18 @@ namespace Datadog.Trace.DuckTyping
                 assembly = assembly.Replace(".", "_").Replace("+", "__");
             }
 
-            // Create a valid type name that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
-            string proxyTypeName = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}_{++_typeCount}";
+            // Create a "valid" type name (doesn't always hold) that can be used as a member of a class. (BenchmarkDotNet fails if is an invalid name)
+            // The name we generate here is primarily for debugging purposes (stack traces etc), so we don't try too hard
+            var proxyTypeNameSuffix = $"_{(++_typeCount).ToString(CultureInfo.InvariantCulture)}";
+            var proxyTypeNamePrefix = $"{assembly}.{typeToDelegateTo.FullName?.Replace(".", "_").Replace("+", "__")}.{typeToDeriveFrom.FullName?.Replace(".", "_").Replace("+", "__")}";
 
-            // Create Type
+            // the maximum length for an assembly-qualified type name is 1024, so we need to account for that
+            var maxPrefixSize = 1023 - proxyTypeNameSuffix.Length;
+            var proxyTypeName = (proxyTypeNamePrefix.Length > maxPrefixSize
+                                     ? proxyTypeNamePrefix.Substring(0, maxPrefixSize)
+                                     : proxyTypeNamePrefix)
+                              + proxyTypeNameSuffix;
+
             proxyTypeBuilder = moduleBuilder.DefineType(
                 proxyTypeName,
                 typeAttributes,
