@@ -183,7 +183,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             console.Output.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
         }
 
-        console.Output.Should().NotContain(
+        console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
             TracerNotLoaded,
             TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));

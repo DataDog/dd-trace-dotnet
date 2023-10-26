@@ -27,7 +27,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             bool ok = true;
             var runtime = process.DotnetRuntime;
 
-            AnsiConsole.WriteLine(string.Empty);
+            AnsiConsole.WriteLine();
             AnsiConsole.WriteLine(SetupChecks);
 
             if (runtime == ProcessInfo.Runtime.NetFx)
@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            AnsiConsole.WriteLine(ModuleCheck);
+            AnsiConsole.WriteLine(ModuleCheck("1"));
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
 
@@ -183,12 +183,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             if (!ok && isTracingUsingBundle)
             {
-                AnsiConsole.WriteLine(TracerCheck);
+                AnsiConsole.WriteLine(TracerCheck("6"));
                 Utils.WriteWarning(TracingWithBundleProfilerPath);
             }
             else if (!ok)
             {
-                AnsiConsole.WriteLine(TracerCheck);
+                AnsiConsole.WriteLine(TracerCheck("6"));
                 Utils.WriteWarning(TracingWithInstaller);
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -207,9 +207,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
-                AnsiConsole.WriteLine(string.Empty);
+                AnsiConsole.WriteLine();
                 AnsiConsole.WriteLine(ConfigurationChecks);
-                AnsiConsole.WriteLine(TraceEnabledCheck);
+                AnsiConsole.WriteLine(TraceEnabledCheck("1"));
 
                 if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
@@ -223,7 +223,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     Utils.WriteInfo(TraceEnabledNotSet);
                 }
 
-                AnsiConsole.WriteLine(ContinuousProfilerCheck);
+                AnsiConsole.WriteLine(ContinuousProfilerCheck("2"));
                 bool isContinuousProfilerEnabled;
 
                 if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))

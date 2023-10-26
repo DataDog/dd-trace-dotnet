@@ -35,15 +35,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string TracingWithInstaller = "Check failing with Installer/MSI, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
-        public const string ModuleCheck = "1. Checking Modules Needed so the Tracer Loads:";
-        public const string TracerCheck = "6. Checking if process tracing configuration matches Installer or Bundler:";
-        public const string TraceEnabledCheck = "1. Checking if tracing is disabled using DD_TRACE_ENABLED.";
         public const string TraceEnabledNotSet = "DD_TRACE_ENABLED is not set, the default value is true.";
         public const string SetupChecks = "---- STARTING TRACER SETUP CHECKS -----";
         public const string ConfigurationChecks = "---- CONFIGURATION CHECKS -----";
         public const string DdAgentChecks = "---- DATADOG AGENT CHECKS -----";
 
-        public const string ContinuousProfilerCheck = "2. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerEnabled = "DD_PROFILING_ENABLED is set.";
         public const string ContinuousProfilerDisabled = "The continuous profiler is explicitly disabled through DD_PROFILING_ENABLED.";
         public const string ContinuousProfilerNotSet = "DD_PROFILING_ENABLED is not set, the continuous profiler is disabled.";
@@ -166,7 +162,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
 
-        public static string EnvVarCheck(string number, string envVar) => $"{number}. Checking {envVar} and related configuration value:";
+        public static string EnvVarCheck(string checkNumber, string envVar) => $"{checkNumber}. Checking {envVar} and related configuration value:";
+
+        public static string ModuleCheck(string checkNumber) => $"{checkNumber}. Checking Modules Needed so the Tracer Loads:";
+
+        public static string TracerCheck(string checkNumber) => $"{checkNumber}. Checking if process tracing configuration matches Installer or Bundler:";
+
+        public static string TraceEnabledCheck(string checkNumber) => $"{checkNumber}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
+
+        public static string ContinuousProfilerCheck(string checkNumber) => $"{checkNumber}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
 
         public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
 

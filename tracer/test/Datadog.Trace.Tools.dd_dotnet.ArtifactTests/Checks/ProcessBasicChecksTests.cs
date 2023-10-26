@@ -173,7 +173,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 standardOutput.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
             }
 
-            standardOutput.Should().NotContain(
+            standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
                 TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
@@ -225,8 +225,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 TracerVersion(TracerConstants.AssemblyVersion),
                 ContinuousProfilerEnabled,
                 CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
-                CorrectlySetupEnvironment(CorEnableKey, "1"),
-                CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
+                CorrectlySetupEnvironment(CorEnableKey, "1"));
+
+            standardOutput.Replace(" ", string.Empty).Should().Contain(CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath).Replace(" ", string.Empty));
 
             standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,

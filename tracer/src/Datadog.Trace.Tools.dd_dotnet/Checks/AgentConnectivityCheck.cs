@@ -22,7 +22,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
     {
         public static Task<bool> RunAsync(IConfigurationSource? configurationSource)
         {
-            AnsiConsole.WriteLine(string.Empty);
+            AnsiConsole.WriteLine();
             AnsiConsole.WriteLine(DdAgentChecks);
 
             var settings = new ExporterSettings(configurationSource);
