@@ -392,16 +392,16 @@
     <ClInclude Include="Profile.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="error_code.h">
+    <ClInclude Include="ErrorCode.h">
       <Filter>libdatadog\error_handling</Filter>
     </ClInclude>
     <ClInclude Include="Exporter.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\Exporter.hpp">
+    <ClInclude Include="Exporter.hpp">
       <Filter>libdatadog\details</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\Tags.hpp">
+    <ClInclude Include="Tags.hpp">
       <Filter>libdatadog\details</Filter>
     </ClInclude>
     <ClInclude Include="Tags.h">
@@ -410,20 +410,17 @@
     <ClInclude Include="Exception.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\Profile.hpp">
+    <ClInclude Include="Profile.hpp">
       <Filter>libdatadog\details</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\error_code.hpp">
+    <ClInclude Include="ErrorCodeImpl.hpp">
       <Filter>libdatadog\details</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\FileExporter.hpp">
+    <ClInclude Include="FileExporter.hpp">
       <Filter>libdatadog\details</Filter>
     </ClInclude>
-    <ClInclude Include="libdatadog_details\AgentExporter.hpp">
+    <ClInclude Include="AgentExporter.hpp">
       <Filter>libdatadog\details</Filter>
-    </ClInclude>
-    <ClInclude Include="libdatadog_helper.hpp">
-      <Filter>libdatadog</Filter>
     </ClInclude>
     <ClInclude Include="EncodedProfile.hpp" />
   </ItemGroup>
@@ -617,7 +614,7 @@
     <ClCompile Include="Profile.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
-    <ClCompile Include="error_code.cpp">
+    <ClCompile Include="ErrorCode.cpp">
       <Filter>libdatadog\error_handling</Filter>
     </ClCompile>
     <ClCompile Include="Exporter.cpp">

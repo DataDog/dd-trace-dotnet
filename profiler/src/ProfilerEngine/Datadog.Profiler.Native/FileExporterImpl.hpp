@@ -30,7 +30,7 @@ public:
     {
     }
 
-    error_code WriteToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName)
+    ErrorCode WriteToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName)
     {
         // TODO move to extension to static field ?
         auto pprofFilePath = GenerateFilePath(serviceName, ".pprof");

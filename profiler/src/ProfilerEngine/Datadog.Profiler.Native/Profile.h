@@ -3,7 +3,8 @@
 
 #pragma once
 #include "IUpscaleProvider.h"
-#include "error_code.h"
+
+#include "ErrorCode.h"
 
 #include <memory>
 #include <string>
@@ -29,10 +30,10 @@ public:
     Profile(Profile const&) = delete;
     Profile& operator=(Profile const&) = delete;
 
-    error_code Add(std::shared_ptr<Sample> const& sample);
+    ErrorCode Add(std::shared_ptr<Sample> const& sample);
     void SetEndpoint(int64_t traceId, std::string const& endpoint);
     void AddEndpointCount(std::string const& endpoint, int64_t count);
-    error_code AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uint64_t sampled, uint64_t real);
+    ErrorCode AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName, uint64_t sampled, uint64_t real);
     std::string const& GetApplicationName() const;
 
 private:

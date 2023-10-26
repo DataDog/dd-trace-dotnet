@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "error_code.h"
+#include "ErrorCode.h"
 
 namespace libdatadog {
 namespace detail {
@@ -23,7 +23,7 @@ public:
     Tags(Tags&& tags) noexcept;
     Tags& operator=(Tags&& tags) noexcept;
 
-    error_code Add(std::string const& name, std::string const& value);
+    ErrorCode Add(std::string const& name, std::string const& value);
 
 private:
     friend class Exporter; // due to the libdatadog design, we need to access the implementation of the tags

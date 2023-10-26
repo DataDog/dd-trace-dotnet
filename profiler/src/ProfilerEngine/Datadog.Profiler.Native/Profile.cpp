@@ -5,8 +5,8 @@
 
 #include "FfiHelper.h"
 #include "Sample.h"
-#include "libdatadog_details/Profile.hpp"
-#include "libdatadog_details/error_code.hpp"
+#include "ProfileImpl.hpp"
+#include "ErrorCodeImpl.hpp"
 
 namespace libdatadog {
 
@@ -23,7 +23,7 @@ Profile::Profile(std::vector<SampleValueType> const& valueTypes, std::string con
 
 Profile::~Profile() = default;
 
-libdatadog::error_code Profile::Add(std::shared_ptr<Sample> const& sample)
+libdatadog::ErrorCode Profile::Add(std::shared_ptr<Sample> const& sample)
 {
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
@@ -105,7 +105,7 @@ void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
     ddog_prof_Profile_add_endpoint_count(_impl->_inner.get(), endpointName, 1);
 }
 
-libdatadog::error_code Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
+libdatadog::ErrorCode Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
                                                              uint64_t sampled, uint64_t real)
 {
     ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
@@ -115,7 +115,7 @@ libdatadog::error_code Profile::AddUpscalingRuleProportional(std::vector<std::ui
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
     if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
     {
-        // not great, we create 2 error_code
+        // not great, we create 2 ErrorCode
         // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
         // - the second one is to provide the caller with the actual error.
         // TODO: have a make_error(<format>, vars, ...) approach ?

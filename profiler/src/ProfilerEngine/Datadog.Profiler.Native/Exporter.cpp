@@ -9,12 +9,12 @@
 #include "Log.h"
 #include "Profile.h"
 #include "Tags.h"
-#include "libdatadog_details/AgentExporter.hpp"
-#include "libdatadog_details/Exporter.hpp"
-#include "libdatadog_details/FileExporter.hpp"
-#include "libdatadog_details/Profile.hpp"
-#include "libdatadog_details/Tags.hpp"
-#include "libdatadog_details/error_code.hpp"
+#include "AgentExporterImpl.hpp"
+#include "ExporterImpl.hpp"
+#include "FileExporterImpl.hpp"
+#include "ProfileImpl.hpp"
+#include "TagsImpl.hpp"
+#include "ErrorCodeImpl.hpp"
 
 #include <cassert>
 
@@ -69,7 +69,7 @@ std::unique_ptr<libdatadog::detail::AgentExporter> Exporter::ExporterBuilder::Cr
 
     if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_ERR)
     {
-        throw Exception(std::make_unique<detail::ErrorImpl>(result.err));
+        throw Exception(std::make_unique<detail::ErrorCodeImpl>(result.err));
     }
 
     // the AgentExporter instance is acquiring the ownership of the ok ptr
@@ -128,7 +128,7 @@ std::unique_ptr<Exporter> Exporter::ExporterBuilder::Build()
     return std::unique_ptr<Exporter>(new Exporter(std::move(datadogAgentExporter), std::move(fileExporter)));
 }
 
-libdatadog::error_code Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+libdatadog::ErrorCode Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
 {
     auto s = ddog_prof_Profile_serialize(*(profile->_impl), nullptr, nullptr);
 

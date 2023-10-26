@@ -7,8 +7,9 @@
 #include <memory>
 #include <vector>
 
+#include "ErrorCode.h"
 #include "Tags.h"
-#include "error_code.h"
+
 #include "shared/src/native-src/dd_filesystem.hpp"
 
 namespace libdatadog {
@@ -34,10 +35,9 @@ private:
     std::unique_ptr<detail::FileExporter> _fileExporter;
 
 public:
-    error_code Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
+    ErrorCode Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
 
 public:
-
     class FileExporterBuilder
     {
     public:

@@ -2,10 +2,15 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "Tags.h"
-#include "libdatadog_details/Tags.hpp"
-#include "libdatadog_details/error_code.hpp"
+
+#include "Log.h"
 
 #include "FfiHelper.h"
+
+#include "TagsImpl.hpp"
+#include "ErrorCodeImpl.hpp"
+
+#include <cassert>
 
 namespace libdatadog {
 
@@ -18,7 +23,11 @@ Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags) :
 {
     for (auto&& [name, value] : tags)
     {
-        Add(name, value);
+        auto ec = Add(name, value);
+        if (!ec)
+        {
+            Log::Debug("Failed to add tag with name '", name, "' and value '", value, "' while creating the Tags object. Reason: ", ec.message());
+        }
     }
 }
 
@@ -35,7 +44,7 @@ Tags& Tags::operator=(Tags&& tags) noexcept
     return *this;
 }
 
-libdatadog::error_code Tags::Add(std::string const& name, std::string const& value)
+libdatadog::ErrorCode Tags::Add(std::string const& name, std::string const& value)
 {
     auto ffiName = FfiHelper::StringToCharSlice(name);
     auto ffiValue = FfiHelper::StringToCharSlice(value);

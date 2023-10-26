@@ -9,18 +9,18 @@
 namespace libdatadog {
 
 namespace detail {
-    struct ErrorImpl;
+    struct ErrorCodeImpl;
 }
 
-class error_code
+class ErrorCode
 {
 public:
-    error_code();
-    error_code(std::unique_ptr<detail::ErrorImpl> error);
-    ~error_code();
+    ErrorCode();
+    ErrorCode(std::unique_ptr<detail::ErrorCodeImpl> error);
+    ~ErrorCode();
 
-    error_code(error_code&& o) noexcept;
-    error_code& operator=(error_code&& o) noexcept;
+    ErrorCode(ErrorCode&& o) noexcept;
+    ErrorCode& operator=(ErrorCode&& o) noexcept;
 
     std::string message() const noexcept;
 
@@ -30,6 +30,6 @@ public:
     }
 
 private:
-    std::unique_ptr<detail::ErrorImpl> _details;
+    std::unique_ptr<detail::ErrorCodeImpl> _details;
 };
 } // namespace libdatadog

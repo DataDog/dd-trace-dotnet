@@ -137,6 +137,12 @@
     <ClCompile Include="TagsTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
+    <ClCompile Include="ExporterTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorCodeTest.cpp">
+      <Filter>Tests</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\ProfilerEngine\Datadog.Profiler.Native\HResultConverter.h">

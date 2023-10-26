@@ -51,6 +51,8 @@
     <ClCompile Include="ApplicationStoreTest.cpp" />
     <ClCompile Include="ConfigurationTest.cpp" />
     <ClCompile Include="EnvironmentHelper.cpp" />
+    <ClCompile Include="ErrorCodeTest.cpp" />
+    <ClCompile Include="ExporterTest.cpp" />
     <ClCompile Include="FrameStoreHelper.cpp" />
     <ClCompile Include="IMetricsSenderFactoryTest.cpp" />
     <ClCompile Include="LibddprofExporterTest.cpp" />

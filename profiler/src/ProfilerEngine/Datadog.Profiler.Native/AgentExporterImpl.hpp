@@ -3,11 +3,13 @@
 
 #pragma once
 
+#include "ErrorCode.h"
+#include "ErrorCodeImpl.hpp"
+#include "FfiHelper.h"
 #include "Tags.h"
-#include "Tags.hpp"
-#include "error_code.h"
-#include "error_code.hpp"
+#include "TagsImpl.hpp"
 
+#include <cassert>
 #include <memory>
 #include <string>
 #include <tuple>
@@ -30,7 +32,7 @@ public:
     }
     ~AgentExporter() = default;
 
-    error_code Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    ErrorCode Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
     {
         auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata));
         if (!ec)
@@ -96,7 +98,7 @@ private:
             return *this;
         }
 
-        operator ddog_prof_Exporter_Request** ()
+        operator ddog_prof_Exporter_Request**()
         {
             return &_inner;
         }
@@ -105,7 +107,7 @@ private:
         ddog_prof_Exporter_Request* _inner;
     };
 
-    std::pair<Request, error_code> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    std::pair<Request, ErrorCode> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
     {
         auto start = encodedProfile->start;
         auto end = encodedProfile->end;

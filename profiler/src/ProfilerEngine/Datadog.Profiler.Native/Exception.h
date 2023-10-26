@@ -10,17 +10,17 @@
 namespace libdatadog {
 
 namespace detail {
-    struct ErrorImpl;
+    struct ErrorCodeImpl;
 }
 
 class Exception : public std::exception
 {
 public:
-    Exception(std::unique_ptr<detail::ErrorImpl> error);
+    Exception(std::unique_ptr<detail::ErrorCodeImpl> error);
 
     char const* what() const noexcept override;
 
 private:
-    std::unique_ptr<detail::ErrorImpl> _impl;
+    std::unique_ptr<detail::ErrorCodeImpl> _impl;
 };
 } // namespace libdatadog
