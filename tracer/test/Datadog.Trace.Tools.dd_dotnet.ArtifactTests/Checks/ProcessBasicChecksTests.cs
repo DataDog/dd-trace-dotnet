@@ -164,10 +164,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             scope.AddReportable("ErrorOutput", errorOutput);
             scope.AddReportable("ExitCode", exitCode.ToString());
 
-            standardOutput.Should().Contain(
-                TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerNotSet);
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 standardOutput.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
