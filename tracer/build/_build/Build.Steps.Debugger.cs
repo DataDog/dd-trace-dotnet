@@ -118,7 +118,7 @@ partial class Build
                     .SetLogsDirectory(TestLogsDirectory)
                     .When(CodeCoverage, ConfigureCodeCoverage)
                     .EnableTrxLogOutput(GetResultsDirectory(DebuggerIntegrationTests))
-                    .WithDatadogLogger(useSettingsFile: Framework != TargetFramework.NET461 && Framework != TargetFramework.NET462)
+                    .WithDatadogLogger()
                     .SetProjectFile(DebuggerIntegrationTests));
 
                 string GetTestFilter()
