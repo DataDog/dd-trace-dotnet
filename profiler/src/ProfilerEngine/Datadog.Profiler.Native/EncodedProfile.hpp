@@ -1,4 +1,9 @@
+// Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
+// This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
+#pragma once
+
+#include <memory>
 
 extern "C"
 {
@@ -8,6 +13,11 @@ extern "C"
 
 struct EncodedProfile
 {
+    EncodedProfile(ddog_prof_EncodedProfile* p) :
+        _profile(p)
+    {
+    }
+
     struct EncodedProfileDeleter
     {
         void operator()(ddog_prof_EncodedProfile* o)
@@ -18,10 +28,6 @@ struct EncodedProfile
 
     using encoded_profile_ptr = std::unique_ptr<ddog_prof_EncodedProfile, EncodedProfileDeleter>;
 
-    EncodedProfile(ddog_prof_EncodedProfile* p) :
-        _profile(p)
-    {
-    }
 
     operator ddog_prof_EncodedProfile*()
     {

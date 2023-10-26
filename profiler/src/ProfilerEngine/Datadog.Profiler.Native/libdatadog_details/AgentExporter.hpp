@@ -84,12 +84,15 @@ private:
 
         Request(Request&& o) noexcept
         {
-            _inner = std::exchange(o._inner, nullptr);
+            *this = std::move(o);
         }
 
         Request& operator=(Request&& o) noexcept
         {
-            _inner = std::exchange(o._inner, nullptr);
+            if (this != &o)
+            {
+                _inner = std::exchange(o._inner, nullptr);
+            }
             return *this;
         }
 
@@ -122,7 +125,7 @@ private:
             files_to_send.push_back({FfiHelper::StringToCharSlice(filename), metricsFileSlice});
         }
 
-        ddog_prof_Exporter_Slice_File filez = {files_to_send.data(), files_to_send.size()};
+        ddog_prof_Exporter_Slice_File files_view = {files_to_send.data(), files_to_send.size()};
 
         ddog_CharSlice* pMetadata = nullptr;
         ddog_CharSlice ffi_metadata{};
@@ -134,7 +137,7 @@ private:
         }
 
         auto endpoints_stats = encodedProfile->endpoints_stats;
-        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, filez, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
+        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, files_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {

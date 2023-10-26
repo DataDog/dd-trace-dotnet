@@ -122,7 +122,7 @@ private:
 
     // for each application, keep track of a profile, a samples count since the last export and an export count
     std::unordered_map<std::string_view, ProfileInfo> _perAppInfo;
-    // ddog_Endpoint _endpoint;
+
     IApplicationStore* const _applicationStore;
 
     std::mutex _perAppInfoLock;
