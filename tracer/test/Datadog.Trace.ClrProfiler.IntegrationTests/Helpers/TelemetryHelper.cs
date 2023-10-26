@@ -30,6 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
             // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
+            // For legacy versions that don't use V2 by default
+            helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "1");
 
             return telemetry;
         }
