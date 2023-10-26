@@ -8,6 +8,7 @@
 #include <utility>
 
 #include "std_extensions.hpp"
+#include "../error_code.h"
 
 extern "C"
 {
@@ -20,7 +21,7 @@ namespace libdatadog::detail {
 struct ErrorImpl
 {
     ErrorImpl(ddog_Error error) :
-        ErrorImpl(error, std::string(), true)
+        ErrorImpl(error, std::to_string(&error), true)
     {
     }
     ErrorImpl(std::string error) :
@@ -55,13 +56,9 @@ struct ErrorImpl
         return *this;
     }
 
-    std::string message() const
+    std::string const& message() const
     {
-        if (!_message.empty())
-        {
-            return _message;
-        }
-        return std::to_string(&_error);
+        return _message;
     }
 
 private:

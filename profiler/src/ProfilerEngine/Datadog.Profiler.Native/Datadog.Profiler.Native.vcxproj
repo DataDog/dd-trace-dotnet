@@ -251,7 +251,6 @@
     <ClInclude Include="libdatadog_details\Profile.hpp" />
     <ClInclude Include="libdatadog_details\Tags.hpp" />
     <ClInclude Include="libdatadog_details\Exporter.hpp" />
-    <ClInclude Include="libdatadog_helper.hpp" />
     <ClInclude Include="MetadataProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />

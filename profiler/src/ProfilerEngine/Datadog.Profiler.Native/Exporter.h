@@ -34,7 +34,7 @@ private:
     std::unique_ptr<detail::FileExporter> _fileExporter;
 
 public:
-    libdatadog::error_code Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
+    error_code Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
 
 public:
 
@@ -64,10 +64,8 @@ public:
         struct AgentEndpoint;
         AgentEndpoint CreateEndpoint();
 
-        bool _agentless = false;
         std::string _site;
         std::string _apiKey;
-        bool _withAgent = false;
         std::string _url;
         //
         std::string _libraryName;

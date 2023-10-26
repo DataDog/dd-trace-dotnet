@@ -15,8 +15,6 @@
 #include "libdatadog_details/Profile.hpp"
 #include "libdatadog_details/Tags.hpp"
 #include "libdatadog_details/error_code.hpp"
-#include "libdatadog_helper.hpp"
-#include "std_extensions.hpp"
 
 #include <cassert>
 
@@ -32,16 +30,15 @@ Exporter::~Exporter() = default;
 
 Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithAgent(std::string url)
 {
-    assert(!_agentless);
-    _withAgent = true;
+    assert(_site.empty());
+    assert(_apiKey.empty());
     _url = std::move(url);
     return *this;
 }
 
 Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithoutAgent(std::string site, std::string apiKey)
 {
-    assert(!_withAgent);
-    _agentless = true;
+    assert(_url.empty());
 
     _site = std::move(site);
     _apiKey = std::move(apiKey);
@@ -72,8 +69,7 @@ std::unique_ptr<libdatadog::detail::AgentExporter> Exporter::ExporterBuilder::Cr
 
     if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_ERR)
     {
-        auto error = detail::make_error(result.err);
-        throw Exception(error.message());
+        throw Exception(std::make_unique<detail::ErrorImpl>(result.err));
     }
 
     // the AgentExporter instance is acquiring the ownership of the ok ptr
@@ -109,14 +105,13 @@ Exporter::ExporterBuilder& Exporter::ExporterBuilder::SetLanguageFamily(std::str
 
 Exporter::ExporterBuilder::AgentEndpoint Exporter::ExporterBuilder::CreateEndpoint()
 {
-    if (_agentless)
+    if (_url.empty())
     {
         assert(!_site.empty());
         assert(!_apiKey.empty());
         return {ddog_Endpoint_agentless(FfiHelper::StringToCharSlice(_site), FfiHelper::StringToCharSlice(_apiKey))};
     }
 
-    assert(!_url.empty());
     return {ddog_Endpoint_agent(FfiHelper::StringToCharSlice(_url))};
 }
 

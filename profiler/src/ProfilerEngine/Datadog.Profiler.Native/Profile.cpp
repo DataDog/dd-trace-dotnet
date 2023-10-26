@@ -7,7 +7,6 @@
 #include "Sample.h"
 #include "libdatadog_details/Profile.hpp"
 #include "libdatadog_details/error_code.hpp"
-#include "libdatadog_helper.hpp"
 
 namespace libdatadog {
 
@@ -116,6 +115,10 @@ libdatadog::error_code Profile::AddUpscalingRuleProportional(std::vector<std::ui
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
     if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
     {
+        // not great, we create 2 error_code
+        // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
+        // - the second one is to provide the caller with the actual error.
+        // TODO: have a make_error(<format>, vars, ...) approach ?
         auto error = detail::make_error(upscalingRuleAdd.err);
         std::stringstream ss;
         ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
