@@ -1,7 +1,7 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "LibddprofExporter.h"
+#include "ProfileExporter.h"
 
 #include "Exception.h"
 #include "Exporter.h"
@@ -34,7 +34,7 @@
 
 #define BUFFER_MAX_SIZE 512
 
-tags LibddprofExporter::CommonTags = {
+tags ProfileExporter::CommonTags = {
     {"language", "dotnet"},
     {"profiler_version", PROFILER_VERSION},
 #ifdef BIT64
@@ -45,28 +45,28 @@ tags LibddprofExporter::CommonTags = {
 };
 
 // need to be static so it leave longer for the shared library
-std::string const LibddprofExporter::ProcessId = std::to_string(OpSysTools::GetProcId());
+std::string const ProfileExporter::ProcessId = std::to_string(OpSysTools::GetProcId());
 
-int32_t const LibddprofExporter::RequestTimeOutMs = 10000;
+int32_t const ProfileExporter::RequestTimeOutMs = 10000;
 
-std::string const LibddprofExporter::LibraryName = "dd-profiling-dotnet";
+std::string const ProfileExporter::LibraryName = "dd-profiling-dotnet";
 
-std::string const LibddprofExporter::LibraryVersion = PROFILER_VERSION;
+std::string const ProfileExporter::LibraryVersion = PROFILER_VERSION;
 
-std::string const LibddprofExporter::LanguageFamily = "dotnet";
+std::string const ProfileExporter::LanguageFamily = "dotnet";
 
-std::string const LibddprofExporter::RequestFileName = "auto.pprof";
+std::string const ProfileExporter::RequestFileName = "auto.pprof";
 
-std::string const LibddprofExporter::ProfilePeriodType = "RealTime";
+std::string const ProfileExporter::ProfilePeriodType = "RealTime";
 
-std::string const LibddprofExporter::ProfilePeriodUnit = "Nanoseconds";
+std::string const ProfileExporter::ProfilePeriodUnit = "Nanoseconds";
 
-std::string const LibddprofExporter::MetricsFilename = "metrics.json";
+std::string const ProfileExporter::MetricsFilename = "metrics.json";
 
-std::string const LibddprofExporter::ProfileExtension = ".pprof";
-std::string const LibddprofExporter::AllocationsExtension = ".balloc";
+std::string const ProfileExporter::ProfileExtension = ".pprof";
+std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
-LibddprofExporter::LibddprofExporter(
+ProfileExporter::ProfileExporter(
     std::vector<SampleValueType> sampleTypeDefinitions,
     IConfiguration* configuration,
     IApplicationStore* applicationStore,
@@ -86,7 +86,7 @@ LibddprofExporter::LibddprofExporter(
     _metricsFileFolder = configuration->GetProfilesOutputDirectory();
 }
 
-LibddprofExporter::~LibddprofExporter()
+ProfileExporter::~ProfileExporter()
 {
     std::lock_guard lck(_perAppInfoLock);
 
@@ -106,7 +106,7 @@ LibddprofExporter::~LibddprofExporter()
     _perAppInfo.clear();
 }
 
-std::unique_ptr<libdatadog::Exporter> LibddprofExporter::CreateExporter(IConfiguration* configuration, libdatadog::Tags tags)
+std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfiguration* configuration, libdatadog::Tags tags)
 {
     try
     {
@@ -142,24 +142,24 @@ std::unique_ptr<libdatadog::Exporter> LibddprofExporter::CreateExporter(IConfigu
     }
 }
 
-std::unique_ptr<libdatadog::Profile> LibddprofExporter::CreateProfile(std::string serviceName)
+std::unique_ptr<libdatadog::Profile> ProfileExporter::CreateProfile(std::string serviceName)
 {
     return std::make_unique<libdatadog::Profile>(_sampleTypeDefinitions, ProfilePeriodType, ProfilePeriodUnit, std::move(serviceName));
 }
 
-void LibddprofExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
+void ProfileExporter::RegisterUpscaleProvider(IUpscaleProvider* provider)
 {
     assert(provider != nullptr);
     _upscaledProviders.push_back(provider);
 }
 
-void LibddprofExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
+void ProfileExporter::RegisterProcessSamplesProvider(ISamplesProvider* provider)
 {
     assert(provider != nullptr);
     _processSamplesProviders.push_back(provider);
 }
 
-libdatadog::Tags LibddprofExporter::CreateTags(
+libdatadog::Tags ProfileExporter::CreateTags(
     IConfiguration* configuration,
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers)
@@ -190,7 +190,7 @@ libdatadog::Tags LibddprofExporter::CreateTags(
     return tags;
 }
 
-std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
+std::string ProfileExporter::GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers)
 {
     const char* separator = "_"; // ',' are not allowed and +/SPACE would be transformed into '_' anyway
     std::stringstream buffer;
@@ -262,7 +262,7 @@ std::string LibddprofExporter::GetEnabledProfilersTag(IEnabledProfilers* enabled
     return buffer.str();
 }
 
-std::string LibddprofExporter::BuildAgentEndpoint(IConfiguration* configuration)
+std::string ProfileExporter::BuildAgentEndpoint(IConfiguration* configuration)
 {
     // handle "with agent" case
     auto url = configuration->GetAgentUrl(); // copy expected here
@@ -301,7 +301,7 @@ std::string LibddprofExporter::BuildAgentEndpoint(IConfiguration* configuration)
     return url;
 }
 
-LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::string_view runtimeId)
+ProfileExporter::ProfileInfoScope ProfileExporter::GetOrCreateInfo(std::string_view runtimeId)
 {
     std::lock_guard lock(_perAppInfoLock);
 
@@ -310,7 +310,7 @@ LibddprofExporter::ProfileInfoScope LibddprofExporter::GetOrCreateInfo(std::stri
     return profileInfo;
 }
 
-void LibddprofExporter::Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample)
+void ProfileExporter::Add(libdatadog::Profile* profile, std::shared_ptr<Sample> const& sample)
 {
     auto success = profile->Add(sample);
     if (!success)
@@ -325,7 +325,7 @@ void LibddprofExporter::Add(libdatadog::Profile* profile, std::shared_ptr<Sample
     }
 }
 
-void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
+void ProfileExporter::Add(std::shared_ptr<Sample> const& sample)
 {
     auto profileInfoScope = GetOrCreateInfo(sample->GetRuntimeId());
 
@@ -339,7 +339,7 @@ void LibddprofExporter::Add(std::shared_ptr<Sample> const& sample)
     profileInfoScope.profileInfo.samplesCount++;
 }
 
-std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::GetInfo(const std::string& runtimeId)
+std::optional<ProfileExporter::ProfileInfoScope> ProfileExporter::GetInfo(const std::string& runtimeId)
 {
     std::lock_guard lock(_perAppInfoLock);
 
@@ -355,7 +355,7 @@ std::optional<LibddprofExporter::ProfileInfoScope> LibddprofExporter::GetInfo(co
     return it->second;
 }
 
-void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
+void ProfileExporter::SetEndpoint(const std::string& runtimeId, uint64_t traceId, const std::string& endpoint)
 {
     auto scope = GetInfo(runtimeId);
 
@@ -380,7 +380,7 @@ void LibddprofExporter::SetEndpoint(const std::string& runtimeId, uint64_t trace
     profile->AddEndpointCount(endpoint, 1);
 }
 
-std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfos()
+std::vector<UpscalingInfo> ProfileExporter::GetUpscalingInfos()
 {
     std::vector<UpscalingInfo> samplingInfos;
     samplingInfos.reserve(_upscaledProviders.size());
@@ -393,7 +393,7 @@ std::vector<UpscalingInfo> LibddprofExporter::GetUpscalingInfos()
     return samplingInfos;
 }
 
-void LibddprofExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
+void ProfileExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos)
 {
     for (auto const& upscalingInfo : upscalingInfos)
     {
@@ -420,7 +420,7 @@ void LibddprofExporter::AddUpscalingRules(libdatadog::Profile* profile, std::vec
     }
 }
 
-std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
+std::list<std::shared_ptr<Sample>> ProfileExporter::GetProcessSamples()
 {
     std::list<std::shared_ptr<Sample>> samples;
     for (auto const& provider : _processSamplesProviders)
@@ -430,7 +430,7 @@ std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
     return samples;
 }
 
-void LibddprofExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
+void ProfileExporter::AddProcessSamples(libdatadog::Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
 {
     for (auto const& sample : samples)
     {
@@ -438,7 +438,7 @@ void LibddprofExporter::AddProcessSamples(libdatadog::Profile* profile, std::lis
     }
 }
 
-bool LibddprofExporter::Export()
+bool ProfileExporter::Export()
 {
     bool exported = false;
 
@@ -560,7 +560,7 @@ bool LibddprofExporter::Export()
     return exported;
 }
 
-void LibddprofExporter::SaveJsonToDisk(const std::string prefix, const std::string& content) const
+void ProfileExporter::SaveJsonToDisk(const std::string prefix, const std::string& content) const
 {
     std::stringstream filename;
     filename << prefix << "-" << std::to_string(OpSysTools::GetProcId()) << ".json";
@@ -571,7 +571,7 @@ void LibddprofExporter::SaveJsonToDisk(const std::string prefix, const std::stri
     file.close();
 }
 
-std::string LibddprofExporter::GenerateFilePath(const std::string& applicationName, int32_t idx, const std::string& extension) const
+std::string ProfileExporter::GenerateFilePath(const std::string& applicationName, int32_t idx, const std::string& extension) const
 {
     auto time = std::time(nullptr);
     struct tm buf = {};
@@ -592,7 +592,7 @@ std::string LibddprofExporter::GenerateFilePath(const std::string& applicationNa
     return pprofFilePath.string();
 }
 
-std::string LibddprofExporter::CreateMetricsFileContent() const
+std::string ProfileExporter::CreateMetricsFileContent() const
 {
     // prepare metrics to be sent if any
     std::stringstream builder;
@@ -621,7 +621,7 @@ std::string LibddprofExporter::CreateMetricsFileContent() const
     return builder.str();
 }
 
-std::string LibddprofExporter::GetMetadata() const
+std::string ProfileExporter::GetMetadata() const
 {
     // in tests, the metadata provider might be null
     if (_metadataProvider == nullptr)
@@ -682,7 +682,7 @@ std::string LibddprofExporter::GetMetadata() const
     return builder.str();
 }
 
-fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
+fs::path ProfileExporter::CreatePprofOutputPath(IConfiguration* configuration)
 {
     auto const& pprofOutputPath = configuration->GetProfilesOutputDirectory();
     if (pprofOutputPath.empty())
@@ -703,16 +703,16 @@ fs::path LibddprofExporter::CreatePprofOutputPath(IConfiguration* configuration)
     return {};
 }
 
-LibddprofExporter::ProfileInfo::ProfileInfo()
+ProfileExporter::ProfileInfo::ProfileInfo()
 {
     profile = nullptr;
     samplesCount = 0;
     exportsCount = 0;
 }
 
-LibddprofExporter::ProfileInfo::~ProfileInfo() = default;
+ProfileExporter::ProfileInfo::~ProfileInfo() = default;
 
-LibddprofExporter::ProfileInfoScope::ProfileInfoScope(LibddprofExporter::ProfileInfo& profileInfo) :
+ProfileExporter::ProfileInfoScope::ProfileInfoScope(ProfileExporter::ProfileInfo& profileInfo) :
     profileInfo(profileInfo),
     _lockGuard(profileInfo.lock)
 {

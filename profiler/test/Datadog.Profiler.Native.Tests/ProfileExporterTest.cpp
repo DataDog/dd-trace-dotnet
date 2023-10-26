@@ -5,7 +5,7 @@
 #include "gtest/gtest.h"
 
 #include "EnabledProfilers.h"
-#include "LibddprofExporter.h"
+#include "ProfileExporter.h"
 #include "OpSysTools.h"
 
 #include "MetricsRegistry.h"
@@ -27,7 +27,7 @@ std::string ComputeExpectedFilePrefix(const std::string& applicationName)
     return expectedFilePrefix.str();
 }
 
-TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
+TEST(ProfileExporterTest, CheckProfileIsWrittenToDisk)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -78,7 +78,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo,
                                       &enabledProfilers, metricsRegistry, metadataProvider, allocRecorder);
 
 
@@ -137,7 +137,7 @@ TEST(LibddprofExporterTest, CheckProfileIsWrittenToDisk)
 // - Initialize the exporter internal data structure by add samples for 2 different applications,
 //   exporting them to disk, delete the pprof files.
 // - Adding a sample to only one application and doing the checks
-TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
+TEST(ProfileExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 {
     // ----------------------------------------------------------------------------------------------
     // First step:
@@ -195,7 +195,7 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -252,7 +252,7 @@ TEST(LibddprofExporterTest, EnsureOnlyProfileWithSamplesIsWrittenToDisk)
 }
 
 
-TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
+TEST(ProfileExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplications)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -303,7 +303,7 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 
     auto callstack1 = std::vector<std::pair<std::string, std::string>>({{"module", "frame1"}, {"module", "frame2"}, {"module", "frame3"}});
@@ -362,7 +362,7 @@ TEST(LibddprofExporterTest, EnsureTwoPprofFilesAreWrittenToDiskForTwoApplication
     fs::remove_all(pprofTempDir);
 }
 
-TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
+TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
 {
     auto [configuration, mockConfiguration] = CreateMockForUniquePtr<IConfiguration, MockConfiguration>();
 
@@ -395,11 +395,11 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 }
 
-TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
+TEST(ProfileExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
 {
     auto [configuration, mockConfiguration] = CreateMockForUniquePtr<IConfiguration, MockConfiguration>();
 
@@ -440,11 +440,11 @@ TEST(LibddprofExporterTest, MustCreateAgentBasedExporterIfAgentUrlIsNotSet)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 }
 
-TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
+TEST(ProfileExporterTest, MustCreateAgentLessExporterIfAgentless)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -478,11 +478,11 @@ TEST(LibddprofExporterTest, MustCreateAgentLessExporterIfAgentless)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 }
 
-TEST(LibddprofExporterTest, MustCollectSamplesFromProcessProvider)
+TEST(ProfileExporterTest, MustCollectSamplesFromProcessProvider)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -518,7 +518,7 @@ TEST(LibddprofExporterTest, MustCollectSamplesFromProcessProvider)
     MockProcessSamplesProvider processSamplesProvider;
     IMetadataProvider* metadataProvider = nullptr;
     EXPECT_CALL(processSamplesProvider, GetSamples()).Times(1).WillOnce(Return(std::list<std::shared_ptr<Sample>>()));
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 
     exporter.RegisterProcessSamplesProvider(static_cast<ISamplesProvider*>(&processSamplesProvider));
@@ -526,7 +526,7 @@ TEST(LibddprofExporterTest, MustCollectSamplesFromProcessProvider)
     exporter.Export();
 }
 
-TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
+TEST(ProfileExporterTest, MakeSureNoCrashForReallyLongCallstack)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
 
@@ -561,7 +561,7 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
     MetricsRegistry metricsRegistry;
     IAllocationsRecorder* allocRecorder = nullptr;
     IMetadataProvider* metadataProvider = nullptr;
-    auto exporter = LibddprofExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
+    auto exporter = ProfileExporter(std::move(sampleTypeDefinitions), &mockConfiguration, &applicationStore, runtimeInfo, &enabledProfilers,
                                       metricsRegistry, metadataProvider, allocRecorder);
 
     std::string runtimeId = "MyRid";
@@ -572,7 +572,7 @@ TEST(LibddprofExporterTest, MakeSureNoCrashForReallyLongCallstack)
     EXPECT_NO_THROW(exporter.Add(sample1));
 }
 
-TEST(LibddprofExporterTest, CheckNoEnabledProfilers)
+TEST(ProfileExporterTest, CheckNoEnabledProfilers)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -584,12 +584,12 @@ TEST(LibddprofExporterTest, CheckNoEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsHeapProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
 
-TEST(LibddprofExporterTest, CheckAllEnabledProfilers)
+TEST(ProfileExporterTest, CheckAllEnabledProfilers)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(true));
@@ -600,7 +600,7 @@ TEST(LibddprofExporterTest, CheckAllEnabledProfilers)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("walltime") != std::string::npos);
     ASSERT_TRUE(tag.find("cpu") != std::string::npos);
@@ -611,7 +611,7 @@ TEST(LibddprofExporterTest, CheckAllEnabledProfilers)
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
 
-TEST(LibddprofExporterTest, CheckCpuIsEnabled)
+TEST(ProfileExporterTest, CheckCpuIsEnabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -620,12 +620,12 @@ TEST(LibddprofExporterTest, CheckCpuIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "cpu");
 }
 
-TEST(LibddprofExporterTest, CheckWalltimeIsEnabled)
+TEST(ProfileExporterTest, CheckWalltimeIsEnabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(true));
@@ -634,12 +634,12 @@ TEST(LibddprofExporterTest, CheckWalltimeIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "walltime");
 }
 
-TEST(LibddprofExporterTest, CheckExceptionIsEnabled)
+TEST(ProfileExporterTest, CheckExceptionIsEnabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -648,12 +648,12 @@ TEST(LibddprofExporterTest, CheckExceptionIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "exceptions");
 }
 
-TEST(LibddprofExporterTest, CheckAllocationIsEnabledWhenEvents)
+TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -662,12 +662,12 @@ TEST(LibddprofExporterTest, CheckAllocationIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "allocations");
 }
 
-TEST(LibddprofExporterTest, CheckAllocationIsDisabledWhenNoEvents)
+TEST(ProfileExporterTest, CheckAllocationIsDisabledWhenNoEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -676,12 +676,12 @@ TEST(LibddprofExporterTest, CheckAllocationIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
 
-TEST(LibddprofExporterTest, CheckLockContentionIsEnabledWhenEvents)
+TEST(ProfileExporterTest, CheckLockContentionIsEnabledWhenEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -690,12 +690,12 @@ TEST(LibddprofExporterTest, CheckLockContentionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "lock");
 }
 
-TEST(LibddprofExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
+TEST(ProfileExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -704,12 +704,12 @@ TEST(LibddprofExporterTest, CheckLockContentionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsContentionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
 
-TEST(LibddprofExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
+TEST(ProfileExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -718,12 +718,12 @@ TEST(LibddprofExporterTest, CheckGarbageCollectionIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(1).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag == "gc");
 }
 
-TEST(LibddprofExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
+TEST(ProfileExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -732,12 +732,12 @@ TEST(LibddprofExporterTest, CheckGarbageCollectionIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsGarbageCollectionProfilingEnabled()).Times(0).WillOnce(Return(true));
     EnabledProfilers enabledProfilers(configuration.get(), false, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
 
-TEST(LibddprofExporterTest, CheckHeapIsEnabledWhenEvents)
+TEST(ProfileExporterTest, CheckHeapIsEnabledWhenEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -745,12 +745,12 @@ TEST(LibddprofExporterTest, CheckHeapIsEnabledWhenEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") != std::string::npos);
 }
 
-TEST(LibddprofExporterTest, CheckHeapIsDisabledWhenNoEvents)
+TEST(ProfileExporterTest, CheckHeapIsDisabledWhenNoEvents)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -758,12 +758,12 @@ TEST(LibddprofExporterTest, CheckHeapIsDisabledWhenNoEvents)
     EXPECT_CALL(mockConfiguration, IsExceptionProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), false, true);  // this should never happen but test it anyway
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.empty());
 }
 
-TEST(LibddprofExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
+TEST(ProfileExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -771,12 +771,12 @@ TEST(LibddprofExporterTest, CheckHeapIsDisabledWhenHeapIsNotEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, false);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("heap") == std::string::npos);
 }
 
-TEST(LibddprofExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
+TEST(ProfileExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
 {
     auto [configuration, mockConfiguration] = CreateConfiguration();
     EXPECT_CALL(mockConfiguration, IsWallTimeProfilingEnabled()).Times(1).WillOnce(Return(false));
@@ -784,7 +784,7 @@ TEST(LibddprofExporterTest, CheckAllocationIsEnabledWhenHeapIsEnabled)
     EXPECT_CALL(mockConfiguration, IsAllocationProfilingEnabled()).Times(1).WillOnce(Return(false));
     EnabledProfilers enabledProfilers(configuration.get(), true, true);
 
-    std::string tag = LibddprofExporter::GetEnabledProfilersTag(&enabledProfilers);
+    std::string tag = ProfileExporter::GetEnabledProfilersTag(&enabledProfilers);
 
     ASSERT_TRUE(tag.find("allocations") != std::string::npos);
     ASSERT_TRUE(tag.find("heap") != std::string::npos);

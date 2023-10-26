@@ -39,7 +39,7 @@
     <ClCompile Include="ProfilerMockedInterface.cpp">
       <Filter>Helpers</Filter>
     </ClCompile>
-    <ClCompile Include="LibddprofExporterTest.cpp">
+    <ClCompile Include="ProfileExporterTest.cpp">
       <Filter>Tests</Filter>
     </ClCompile>
     <ClCompile Include="ConfigurationTest.cpp">

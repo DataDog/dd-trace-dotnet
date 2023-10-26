@@ -33,10 +33,10 @@ class Profile;
 class Tags;
 } // namespace libatadog
 
-class LibddprofExporter : public IExporter
+class ProfileExporter : public IExporter
 {
 public:
-    LibddprofExporter(
+    ProfileExporter(
         std::vector<SampleValueType> sampleTypeDefinitions,
         IConfiguration* configuration,
         IApplicationStore* applicationStore,
@@ -45,7 +45,7 @@ public:
         MetricsRegistry& metricsRegistry,
         IMetadataProvider* metadataProvider,
         IAllocationsRecorder* allocationsRecorder);
-    ~LibddprofExporter() override;
+    ~ProfileExporter() override;
 
     bool Export() override;
     void Add(std::shared_ptr<Sample> const& sample) override;

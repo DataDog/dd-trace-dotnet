@@ -320,7 +320,7 @@
     <ClInclude Include="OpSysTools.h" />
     <ClInclude Include="OsSpecificApi.h" />
     <ClInclude Include="PInvoke.h" />
-    <ClInclude Include="LibddprofExporter.h" />
+    <ClInclude Include="ProfileExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RawAllocationSample.h" />
     <ClInclude Include="RawContentionSample.h" />
@@ -397,7 +397,7 @@
     <ClCompile Include="ManagedThreadList.cpp" />
     <ClCompile Include="OpSysTools.cpp" />
     <ClCompile Include="PInvoke.cpp" />
-    <ClCompile Include="LibddprofExporter.cpp" />
+    <ClCompile Include="ProfileExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
     <ClCompile Include="RawSample.cpp" />
