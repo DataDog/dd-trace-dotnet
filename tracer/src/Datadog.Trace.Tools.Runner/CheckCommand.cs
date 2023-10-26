@@ -49,9 +49,21 @@ namespace Datadog.Trace.Tools.Runner
 
             var commandLine = string.Join(' ', Environment.GetCommandLineArgs().Skip(1));
 
-            var startInfo = new ProcessStartInfo(ddDotnet, commandLine) { UseShellExecute = false };
+            if (!File.Exists(ddDotnet))
+            {
+                Utils.WriteError($"dd-dotnet not found at {ddDotnet}");
+                context.ExitCode = 1;
+                return;
+            }
 
-            startInfo.EnvironmentVariables["DD_OVERRIDE_COMMAND"] = "dd-trace";
+            if (_applicationContext.Platform == Platform.Linux)
+            {
+                // Make sure the dd-dotnet binary is executable
+                Process.Start("chmod", $"+x {ddDotnet}")!.WaitForExit();
+            }
+
+            var startInfo = new ProcessStartInfo(ddDotnet, commandLine) { UseShellExecute = false };
+            startInfo.EnvironmentVariables["DD_INTERNAL_OVERRIDE_COMMAND"] = "dd-trace";
 
             var process = Process.Start(startInfo);
             process.WaitForExit();

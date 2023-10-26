@@ -36,11 +36,6 @@ namespace Datadog.Trace.Configuration
         private readonly TracerSettingsSnapshot _initialSettings;
 
         /// <summary>
-        /// Default obfuscation query string regex if none specified via env DD_OBFUSCATION_QUERY_STRING_REGEXP
-        /// </summary>
-        internal const string DefaultObfuscationQueryStringRegex = @"((?i)(?:p(?:ass)?w(?:or)?d|pass(?:_?phrase)?|secret|(?:api_?|private_?|public_?|access_?|secret_?)key(?:_?id)?|token|consumer_?(?:id|key|secret)|sign(?:ed|ature)?|auth(?:entication|orization)?)(?:(?:\s|%20)*(?:=|%3D)[^&]+|(?:""|%22)(?:\s|%20)*(?::|%3A)(?:\s|%20)*(?:""|%22)(?:%2[^2]|%[^2]|[^""%])+(?:""|%22))|bearer(?:\s|%20)+[a-z0-9\._\-]|token(?::|%3A)[a-z0-9]{13}|gh[opsu]_[0-9a-zA-Z]{36}|ey[I-L](?:[\w=-]|%3D)+\.ey[I-L](?:[\w=-]|%3D)+(?:\.(?:[\w.+\/=-]|%3D|%2F|%2B)+)?|[\-]{5}BEGIN(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY[\-]{5}[^\-]+[\-]{5}END(?:[a-z\s]|%20)+PRIVATE(?:\s|%20)KEY|ssh-rsa(?:\s|%20)*(?:[a-z0-9\/\.+]|%2F|%5C|%2B){100,})";
-
-        /// <summary>
         /// Initializes a new instance of the <see cref="TracerSettings"/> class with default values.
         /// </summary>
         [PublicApi]
@@ -237,7 +232,7 @@ namespace Datadog.Trace.Configuration
 
             ObfuscationQueryStringRegex = config
                                          .WithKeys(ConfigurationKeys.ObfuscationQueryStringRegex)
-                                         .AsString(defaultValue: DefaultObfuscationQueryStringRegex);
+                                         .AsString(defaultValue: TracerSettingsConstants.DefaultObfuscationQueryStringRegex);
 
             QueryStringReportingEnabled = config
                                          .WithKeys(ConfigurationKeys.QueryStringReportingEnabled)
@@ -683,6 +678,7 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Gets a value indicating the regex to apply to obfuscate http query strings.
+        /// Warning: This regex cause crashes under netcoreapp2.1 / linux / arm64, DON'T use default value on manual instrumentation
         /// </summary>
         internal string ObfuscationQueryStringRegex { get; }
 

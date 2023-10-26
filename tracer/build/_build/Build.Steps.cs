@@ -2111,10 +2111,12 @@ partial class Build
        .Executes(() =>
         {
 
-            var projectFile = TracerDirectory.GlobFiles("test/test-applications/integrations/*/Samples.AWS.Lambda.csproj").FirstOrDefault();
-            var target = projectFile / ".." / "bin" / "artifacts" / "monitoring-home";
-
-            CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            var serverlessProjects = new List<string> { "Samples.AWS.Lambda.csproj", "Samples.Amazon.Lambda.RuntimeSupport.csproj" };
+            foreach (var target in serverlessProjects.Select(projectName => TracerDirectory.GlobFiles($"test/test-applications/integrations/*/{projectName}").FirstOrDefault())
+                                                     .Select(projectFile => projectFile / ".." / "bin" / "artifacts" / "monitoring-home"))
+            {
+                CopyDirectoryRecursively(MonitoringHomeDirectory, target, DirectoryExistsPolicy.Merge, FileExistsPolicy.Overwrite);
+            }
         });
 
     Target CreateRootDescriptorsFile => _ => _
