@@ -5,6 +5,7 @@
 #nullable enable
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Reflection;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies;
@@ -89,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
         public static NLogVersion Version { get; }
 
-        public static bool AddDatadogTarget(object loggingConfiguration)
+        public static bool AddDatadogTargetToLoggingConfiguration(object loggingConfiguration)
         {
             if (_targetProxy is null)
             {
@@ -103,6 +104,51 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
                 NLogVersion.NLog43To45 => AddDatadogTargetNLog43To45(loggingConfiguration, _targetProxy),
                 _ => AddDatadogTargetNLogPre43(loggingConfiguration, _targetProxy)
             };
+        }
+
+        public static bool AddDatadogTargetToLoggingRulesList<TLoggingRuleList>(TLoggingRuleList loggingRules)
+        {
+            if (_targetProxy is null || loggingRules is not IList list)
+            {
+                return false;
+            }
+
+            // TODO: Move this to static helper?
+            // It shouldn't be called much, so probably unnecessary...
+            var loggingRuleType = typeof(TLoggingRuleList).GetGenericArguments()[0];
+            var logLevelType = loggingRuleType.Assembly.GetType("NLog.LogLevel", throwOnError: false);
+            if (logLevelType is null)
+            {
+                Log.Warning("Unable to enable direct log submission via NLog 5.0+ - could not find LogLevel type");
+                return false;
+            }
+
+            var proxyResult = DuckType.GetOrCreateProxyType(typeof(LogLevelStaticsProxy), logLevelType);
+            if (!proxyResult.Success)
+            {
+                Log.Warning("Unable to enable direct log submission via NLog 5.0+ - could not create LogLevel proxy");
+                return false;
+            }
+
+            var logLevelStaticsProxy = proxyResult.CreateInstance<LogLevelStaticsProxy>(null);
+
+            // we should already have checked that we haven't added our target
+            // and we know this is a List<LoggingRule>
+            var loggingRule = Activator.CreateInstance(loggingRuleType);
+            if (loggingRule is null || loggingRule.DuckCast<Proxies.ILoggingRuleProxy>() is not { } proxy)
+            {
+                Log.Warning("Unable to enable direct log submission via NLog 5.0+ - new LoggingRule() was null");
+                return false;
+            }
+
+            proxy.Targets.Add(_targetProxy);
+            proxy.LoggerNamePattern = "**";
+            proxy.EnableLoggingForLevels(logLevelStaticsProxy.MinLevel, logLevelStaticsProxy.MaxLevel);
+            proxy.Final = true;
+
+            list.Add(loggingRule);
+            Log.Information("Direct log submission via NLog 5.0+ enabled");
+            return true;
         }
 
         public static IDictionary<string, object?>? GetContextProperties()
@@ -275,7 +321,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmi
 
             // Have to create a logging rule the hard way
             var instance = _createLoggingRuleFunc();
-            var ruleProxy = instance.DuckCast<ILoggingRuleProxy>();
+            var ruleProxy = instance.DuckCast<Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43.ILoggingRuleProxy>();
 
             ruleProxy.LoggerNamePattern = "**";
             ruleProxy.Targets.Add(targetProxy);
