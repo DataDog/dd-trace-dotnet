@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Type = System.Type;
 
@@ -86,6 +87,14 @@ internal partial class ProbeExpressionParser<T>
             if (!IsTypeSupportIndex(source.Type, out var assignableFrom))
             {
                 throw new InvalidOperationException("Source must implement IList or IDictionary");
+            }
+
+            if (indexOrKey.Type == typeof(string) &&
+                indexOrKey is ConstantExpression expr &&
+                Redaction.ShouldRedact(expr.Value?.ToString(), expr.Type, out _))
+            {
+                AddError($"{source?.ToString() ?? "N/A"}[{indexOrKey?.ToString() ?? "N/A"}]", "The property or field is redacted.");
+                return RedactedValue();
             }
 
             return CallGetItem(source, assignableFrom, indexOrKey);
