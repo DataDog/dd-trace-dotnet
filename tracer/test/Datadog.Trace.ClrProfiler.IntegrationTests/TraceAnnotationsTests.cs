@@ -22,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsAutomaticOnlyTests : TraceAnnotationsTests
     {
         public TraceAnnotationsAutomaticOnlyTests(ITestOutputHelper output)
-            : base("TraceAnnotations", twoAssembliesLoaded: false, output)
+            : base("TraceAnnotations", twoAssembliesLoaded: false, enableTelemetry: true, output)
         {
         }
     }
@@ -30,7 +30,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchAfterFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchAfterFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, output)
+            : base("TraceAnnotations.VersionMismatch.AfterFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
         }
     }
@@ -38,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     public class TraceAnnotationsVersionMismatchBeforeFeatureTests : TraceAnnotationsTests
     {
         public TraceAnnotationsVersionMismatchBeforeFeatureTests(ITestOutputHelper output)
-            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, output)
+            : base("TraceAnnotations.VersionMismatch.BeforeFeature", twoAssembliesLoaded: true, enableTelemetry: false, output)
         {
         }
     }
@@ -47,9 +47,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
     {
         public TraceAnnotationsVersionMismatchNewerNuGetTests(ITestOutputHelper output)
 #if NETFRAMEWORK
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, output)
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: true, enableTelemetry: false, output)
 #else
-            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, output)
+            : base("TraceAnnotations.VersionMismatch.NewerNuGet", twoAssembliesLoaded: false, enableTelemetry: false, output)
 #endif
         {
         }
@@ -61,13 +61,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private static readonly string[] TestTypes = { "Samples.TraceAnnotations.TestType", "Samples.TraceAnnotations.TestTypeGeneric`1", "Samples.TraceAnnotations.TestTypeStruct", "Samples.TraceAnnotations.TestTypeStatic" };
 
         private readonly bool _twoAssembliesLoaded;
+        private readonly bool _enableTelemetry;
 
-        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, ITestOutputHelper output)
+        public TraceAnnotationsTests(string sampleAppName, bool twoAssembliesLoaded, bool enableTelemetry, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
             SetServiceVersion("1.0.0");
 
             _twoAssembliesLoaded = twoAssembliesLoaded;
+            _enableTelemetry = enableTelemetry;
         }
 
         [Trait("Category", "EndToEnd")]
@@ -86,8 +88,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             ddTraceMethodsString += ";Samples.TraceAnnotations.ExtensionMethods[ExtensionMethodForTestType,ExtensionMethodForTestTypeGeneric,ExtensionMethodForTestTypeTypeStruct];System.Net.Http.HttpRequestMessage[set_Method]";
 
             SetEnvironmentVariable("DD_TRACE_METHODS", ddTraceMethodsString);
-            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
+            // which we no longer support in our mock telemetry agent
+            // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
+            MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent))
             {
@@ -158,8 +162,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("RunOnWindows", "True")]
         public void IntegrationDisabled()
         {
-            // Don't bother with telemetry when two assemblies are loaded because we could get unreliable results
-            MockTelemetryAgent telemetry = _twoAssembliesLoaded ? null : this.ConfigureTelemetry();
+            // Don't bother with telemetry in version mismatch scenarios because older versions may only support V1 telemetry
+            // which we no longer support in our mock telemetry agent
+            // FIXME: Could be fixed with an upgrade to the NuGet package (after .NET 8?)
+            MockTelemetryAgent telemetry = _enableTelemetry ? this.ConfigureTelemetry() : null;
             SetEnvironmentVariable("DD_TRACE_METHODS", string.Empty);
             SetEnvironmentVariable("DD_TRACE_ANNOTATIONS_ENABLED", "false");
 

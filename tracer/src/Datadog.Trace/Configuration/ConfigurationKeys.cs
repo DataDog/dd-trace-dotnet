@@ -682,14 +682,8 @@ namespace Datadog.Trace.Configuration
             public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
 
             /// <summary>
-            /// Configuration key for whether to enable v2 of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
-            /// </summary>
-            public const string V2Enabled = "DD_INTERNAL_TELEMETRY_V2_ENABLED";
-
-            /// <summary>
             /// Configuration key for whether to enable debug mode of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
+            /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
         }

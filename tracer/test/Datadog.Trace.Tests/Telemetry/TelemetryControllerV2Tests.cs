@@ -233,12 +233,6 @@ public class TelemetryControllerV2Tests
             return _data.ToList();
         }
 
-        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
-        {
-            await Task.Yield();
-            throw new InvalidOperationException("Shouldn't be using v1 API");
-        }
-
         public Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
         {
             _data.Push(data);
@@ -259,12 +253,6 @@ public class TelemetryControllerV2Tests
         }
 
         public int Requests => Volatile.Read(ref _requests);
-
-        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
-        {
-            await Task.Yield();
-            throw new InvalidOperationException("Shouldn't be using v1 API");
-        }
 
         public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
         {

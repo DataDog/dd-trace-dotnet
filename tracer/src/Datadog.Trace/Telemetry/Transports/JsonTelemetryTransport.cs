@@ -40,13 +40,7 @@ namespace Datadog.Trace.Telemetry.Transports
 
         protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
 
-        public Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
-            => PushTelemetry<TelemetryData>(data);
-
-        public Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
-            => PushTelemetry<TelemetryDataV2>(data);
-
-        private async Task<TelemetryPushResult> PushTelemetry<T>(T data)
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
         {
             var endpointMetricTag = GetEndpointMetricTag();
 
@@ -58,16 +52,8 @@ namespace Datadog.Trace.Telemetry.Transports
 
                 var request = _requestFactory.Create(_endpoint);
 
-                if (data is TelemetryData v1Data)
-                {
-                    request.AddHeader(TelemetryConstants.ApiVersionHeader, v1Data.ApiVersion);
-                    request.AddHeader(TelemetryConstants.RequestTypeHeader, v1Data.RequestType);
-                }
-                else if (data is TelemetryDataV2 v2Data)
-                {
-                    request.AddHeader(TelemetryConstants.ApiVersionHeader, v2Data.ApiVersion);
-                    request.AddHeader(TelemetryConstants.RequestTypeHeader, v2Data.RequestType);
-                }
+                request.AddHeader(TelemetryConstants.ApiVersionHeader, data.ApiVersion);
+                request.AddHeader(TelemetryConstants.RequestTypeHeader, data.RequestType);
 
                 if (_enableDebug)
                 {

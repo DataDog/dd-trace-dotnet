@@ -130,29 +130,9 @@ namespace Datadog.Trace.TestHelpers
         {
             return apiVersion switch
             {
-                TelemetryConstants.ApiVersionV1 => DeserializeV1(inputStream, requestType),
                 TelemetryConstants.ApiVersionV2 => DeserializeV2(inputStream, requestType),
                 _ => throw new Exception($"Unknown telemetry api version: {apiVersion}"),
             };
-
-            static TelemetryWrapper DeserializeV1(Stream inputStream, string requestType)
-            {
-                if (!TelemetryConverter.V1Serializers.TryGetValue(requestType, out var serializer))
-                {
-                    throw new Exception($"Unknown V1 telemetry request type {requestType}");
-                }
-
-                TelemetryData telemetry;
-                using var sr = new StreamReader(inputStream);
-                var text = sr.ReadToEnd();
-                var tr = new StringReader(text);
-                using (var jsonTextReader = new JsonTextReader(tr))
-                {
-                    telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
-                }
-
-                return new TelemetryWrapper.V1(telemetry);
-            }
 
             static TelemetryWrapper DeserializeV2(Stream inputStream, string requestType)
             {
@@ -233,22 +213,10 @@ namespace Datadog.Trace.TestHelpers
 
         internal class TelemetryConverter
         {
-            public static readonly Dictionary<string, JsonSerializer> V1Serializers;
             public static readonly Dictionary<string, JsonSerializer> V2Serializers;
 
             static TelemetryConverter()
             {
-                V1Serializers = new()
-                {
-                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayload>() },
-                    { TelemetryRequestTypes.AppDependenciesLoaded, CreateSerializer<AppDependenciesLoadedPayload>() },
-                    { TelemetryRequestTypes.AppIntegrationsChanged, CreateSerializer<AppIntegrationsChangedPayload>() },
-                    { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
-                    { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
-                    { TelemetryRequestTypes.AppClosing, CreateNullPayloadSerializer() },
-                    { TelemetryRequestTypes.AppHeartbeat, CreateNullPayloadSerializer() },
-                };
-
                 V2Serializers = new()
                 {
                     { TelemetryRequestTypes.MessageBatch, CreateSerializer<MessageBatchPayload>() },
