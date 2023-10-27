@@ -32,7 +32,7 @@ public class CheckCommandTests : RunnerTests
         helper.Drain();
 
         helper.Process.ExitCode.Should().Be(1);
-        helper.StandardOutput.Should().Contain("Could not find IIS application \"hello world\".");
+        helper.StandardOutput.Should().Contain("Could not find IIS application \"hello world/\".");
         helper.ErrorOutput.Should().NotContain("Unrecognized command or argument");
     }
 }
