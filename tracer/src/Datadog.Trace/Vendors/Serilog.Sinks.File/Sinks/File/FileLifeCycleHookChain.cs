@@ -4,7 +4,7 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #nullable enable
-// Copyright 2013-2016 Serilog Contributors
+// Copyright 2019 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,19 +18,35 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-using Datadog.Trace.Vendors.Serilog.Core;
-using Datadog.Trace.Vendors.Serilog.Events;
+using System;
+using System.IO;
+using System.Text;
 
 namespace Datadog.Trace.Vendors.Serilog.Sinks.File
 {
-    /// <summary>
-    /// An instance of this sink may be substituted when an instance of the
-    /// <see cref="FileSink"/> is unable to be constructed.
-    /// </summary>
-    class NullSink : ILogEventSink
+    class FileLifeCycleHookChain : FileLifecycleHooks
     {
-        public void Emit(LogEvent logEvent)
+        private readonly FileLifecycleHooks _first;
+        private readonly FileLifecycleHooks _second;
+
+        public FileLifeCycleHookChain(FileLifecycleHooks first, FileLifecycleHooks second)
         {
+            _first = first ?? throw new ArgumentNullException(nameof(first));
+            _second = second ?? throw new ArgumentNullException(nameof(second));
+        }
+
+        public override Stream OnFileOpened(string path, Stream underlyingStream, Encoding encoding)
+        {
+            var firstStreamResult = _first.OnFileOpened(path, underlyingStream, encoding);
+            var secondStreamResult = _second.OnFileOpened(path, firstStreamResult, encoding);
+
+            return secondStreamResult;
+        }
+
+        public override void OnFileDeleting(string path)
+        {
+            _first.OnFileDeleting(path);
+            _second.OnFileDeleting(path);
         }
     }
 }

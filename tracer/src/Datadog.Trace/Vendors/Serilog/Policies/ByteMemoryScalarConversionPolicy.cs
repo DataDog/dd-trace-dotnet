@@ -37,7 +37,7 @@ using Datadog.Trace.Vendors.Serilog.Parsing;
 using Datadog.Trace.Vendors.Serilog.Policies;
 using Datadog.Trace.Vendors.Serilog.Rendering;
 using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
-// Copyright 2013-2017 Serilog Contributors
+// Copyright 2021 Serilog Contributors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -51,26 +51,69 @@ using Datadog.Trace.Vendors.Serilog.Settings.KeyValuePairs;
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+#if FEATURE_SPAN
+
 namespace Datadog.Trace.Vendors.Serilog.Policies;
 
-class SimpleScalarConversionPolicy : IScalarConversionPolicy
+// Byte arrays, when logged, need to be copied so that they are
+// safe from concurrent modification when written to asynchronous
+// sinks. Byte arrays larger than 1k are written as descriptive strings.
+sealed class ByteMemoryScalarConversionPolicy : IScalarConversionPolicy
 {
-    readonly HashSet<Type> _scalarTypes;
-
-    public SimpleScalarConversionPolicy(IEnumerable<Type> scalarTypes)
-    {
-        _scalarTypes = new(scalarTypes);
-    }
+    const int MaximumByteArrayLength = 1024;
+    const int MaxTake = 16;
 
     public bool TryConvertToScalar(object value, [NotNullWhen(true)] out ScalarValue? result)
     {
-        if (_scalarTypes.Contains(value.GetType()))
+        if (value is ReadOnlyMemory<byte> x)
         {
-            result = new(value);
+            result = new(ConvertToHexString(x));
+            return true;
+        }
+
+        if (value is Memory<byte> y)
+        {
+            result = new(ConvertToHexString(y));
             return true;
         }
 
         result = null;
         return false;
     }
+
+    static string ConvertToHexString(ReadOnlyMemory<byte> bytes)
+    {
+        if (bytes.Length > MaximumByteArrayLength)
+        {
+            return ConvertToHexString(bytes[..MaxTake], $"... ({bytes.Length} bytes)");
+        }
+
+        return ConvertToHexString(bytes, tail: "");
+    }
+
+    static string ConvertToHexString(ReadOnlyMemory<byte> src, string tail)
+    {
+        var stringLength = src.Length * 2 + tail.Length;
+
+        return string.Create(stringLength, (src, tail), (dest, state) =>
+        {
+            var (src, tail) = state;
+
+            var byteSpan = src.Span;
+            foreach (var b in byteSpan)
+            {
+                if (b.TryFormat(dest, out var written, "X2"))
+                {
+                    dest = dest[written..];
+                }
+            }
+
+            for (var i = 0; i < tail.Length; ++i)
+            {
+                dest[i] = tail[i];
+            }
+        });
+    }
 }
+
+#endif

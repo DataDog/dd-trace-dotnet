@@ -373,3 +373,5 @@ CMakeFiles/
 lib/
 libdatadog-*/
 *-prefix/
+.nuke/.temp
+.nuke/temp
