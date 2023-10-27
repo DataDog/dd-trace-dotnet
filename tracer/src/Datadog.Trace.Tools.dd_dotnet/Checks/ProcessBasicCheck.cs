@@ -44,7 +44,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
-            AnsiConsole.WriteLine(ModuleCheck("1"));
+            AnsiConsole.WriteLine(ModuleCheck());
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
 
@@ -112,7 +112,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
-            AnsiConsole.WriteLine(EnvVarCheck("2", "DD_DOTNET_TRACER_HOME"));
+            AnsiConsole.WriteLine(EnvVarCheck("DD_DOTNET_TRACER_HOME"));
 
             if (process.EnvironmentVariables.TryGetValue("DD_DOTNET_TRACER_HOME", out var tracerHome))
             {
@@ -136,7 +136,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
             string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
 
-            AnsiConsole.WriteLine(EnvVarCheck("3", corProfilerPathKey));
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerPathKey));
 
             ok &= CheckProfilerPath(process, corProfilerPathKey, requiredOnLinux: true);
             ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
@@ -144,7 +144,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
 
-            AnsiConsole.WriteLine(EnvVarCheck("4", corProfilerKey));
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerKey));
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
 
@@ -160,7 +160,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
 
-            AnsiConsole.WriteLine(EnvVarCheck("5", corEnableKey));
+            AnsiConsole.WriteLine(EnvVarCheck(corEnableKey));
 
             process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable);
 
@@ -183,13 +183,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             if (!ok && isTracingUsingBundle)
             {
-                AnsiConsole.WriteLine(TracerCheck("6"));
+                AnsiConsole.WriteLine(TracerCheck());
                 Utils.WriteWarning(TracingWithBundleProfilerPath);
             }
             else if (!ok)
             {
-                AnsiConsole.WriteLine(TracerCheck("6"));
-                Utils.WriteWarning(TracingWithInstaller);
+                AnsiConsole.WriteLine(TracerCheck());
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
@@ -210,9 +209,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
+                ResetChecks();
                 AnsiConsole.WriteLine();
                 AnsiConsole.WriteLine(ConfigurationChecks);
-                AnsiConsole.WriteLine(TraceEnabledCheck("1"));
+                AnsiConsole.WriteLine(TraceEnabledCheck());
 
                 if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
@@ -226,7 +226,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                     Utils.WriteInfo(TraceEnabledNotSet);
                 }
 
-                AnsiConsole.WriteLine(ContinuousProfilerCheck("2"));
+                AnsiConsole.WriteLine(ContinuousProfilerCheck());
                 bool isContinuousProfilerEnabled;
 
                 if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))

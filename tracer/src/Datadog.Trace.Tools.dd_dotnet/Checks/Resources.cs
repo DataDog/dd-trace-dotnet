@@ -30,7 +30,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
-        
+
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
         public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
@@ -49,6 +49,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string ContinuousProfilerWithoutLoader = "The continuous profiler needs the Datadog.Trace.ClrProfiler.Native module and the loader.conf file to work. Try reinstalling the tracer in version 2.14+.";
 
         public const string LdPreloadNotSet = "The environment variable LD_PRELOAD is not set. Check the Datadog .NET Profiler documentation to set it properly.";
+
+        private static int _checkNumber = 1;
+
+        public static void ResetChecks() => _checkNumber = 1;
 
         public static string GetProcessError(string error) => $"Could not fetch information about target process: {error}. Make sure to run the command from an elevated prompt, and check that the pid is correct.";
 
@@ -166,15 +170,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string ErrorCheckingLinuxDirectory(string error) => $"Error trying to check the Linux installer directory: {error}";
 
-        public static string EnvVarCheck(string checkNumber, string envVar) => $"{checkNumber}. Checking {envVar} and related configuration value:";
+        public static string EnvVarCheck(string envVar) => $"{_checkNumber++}. Checking {envVar} and related configuration value:";
 
-        public static string ModuleCheck(string checkNumber) => $"{checkNumber}. Checking Modules Needed so the Tracer Loads:";
+        public static string ModuleCheck() => $"{_checkNumber++}. Checking Modules Needed so the Tracer Loads:";
 
-        public static string TracerCheck(string checkNumber) => $"{checkNumber}. Checking if process tracing configuration matches Installer or Bundler:";
+        public static string TracerCheck() => $"{_checkNumber++}. Checking if process tracing configuration matches Installer or Bundler:";
 
-        public static string TraceEnabledCheck(string checkNumber) => $"{checkNumber}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
+        public static string TraceEnabledCheck() => $"{_checkNumber++}. Checking if tracing is disabled using DD_TRACE_ENABLED.";
 
-        public static string ContinuousProfilerCheck(string checkNumber) => $"{checkNumber}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
+        public static string ContinuousProfilerCheck() => $"{_checkNumber++}. Checking if profiling is enabled using DD_PROFILING_ENABLED.";
 
         public static string CorrectLinuxDirectoryFound(string path) => $"Found the expected path {path} based on the current OS Architecture.";
 
