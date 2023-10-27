@@ -36,7 +36,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
             if (result != 0)
             {
-                Utils.WriteError(Resources.IisManagerInitializationError(Marshal.GetPInvokeErrorMessage(result)));
+                if (result == -2147221164)
+                {
+                    Utils.WriteError(Resources.IisNotFound);
+                }
+                else
+                {
+                    Utils.WriteError(Resources.IisManagerInitializationError(Marshal.GetPInvokeErrorMessage(result)));
+                }
+
                 return null;
             }
 
