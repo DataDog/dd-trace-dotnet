@@ -22,4 +22,17 @@ public class CheckCommandTests : RunnerTests
         helper.StandardOutput.Should().Contain("dd-trace check [command] [options]");
         helper.ErrorOutput.Should().Contain("Required command was not provided.");
     }
+
+    [Fact]
+    public void MultipleArguments()
+    {
+        using var helper = StartProcess("check iis \"hello world\"");
+
+        helper.Process.WaitForExit();
+        helper.Drain();
+
+        helper.Process.ExitCode.Should().Be(1);
+        helper.StandardOutput.Should().Contain("Could not find IIS application \"hello world\".");
+        helper.ErrorOutput.Should().NotContain("Unrecognized command or argument");
+    }
 }
