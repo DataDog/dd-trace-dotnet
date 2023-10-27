@@ -10,40 +10,35 @@ using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger.Symbols;
 
 internal class SymbolPdbExtractor : SymbolExtractor
 {
-    private readonly DatadogPdbReader _pdbReader;
-
-    private bool _disposed;
-
-    internal SymbolPdbExtractor(DatadogPdbReader pdbReader)
-        : base(pdbReader.MetadataReader)
+    internal SymbolPdbExtractor(DatadogMetadataReader pdbReader, string assemblyName)
+        : base(pdbReader, assemblyName)
     {
-        _pdbReader = pdbReader;
     }
 
-    protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
+    protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo)
     {
-        var methodScope = base.CreateMethodScope(type, method);
-        if (_pdbReader.GetMethodSymbolInfoOrDefault(method.Handle.RowId) is not { } symbolMethod)
+        var methodScope = base.CreateMethodScope(type, method, debugInfo);
+        var sequencePoints = DatadogMetadataReader.GetMethodSequencePoints(method.Handle.RowId);
+        if (sequencePoints.Length == 0)
         {
             return methodScope;
         }
 
-        var firstSq = symbolMethod.SequencePoints.FirstOrDefault(sq => sq.IsHidden() == false && sq.Line > 0);
-        var startLine = firstSq.Line == 0 ? UnknownStartLine : firstSq.Line;
-        var typeSourceFile = firstSq.Document?.URL;
-        var lastSq = symbolMethod.SequencePoints.LastOrDefault(sq => sq.IsHidden() == false && sq.EndLine > 0);
-        var endLine = lastSq.EndLine == 0 ? UnknownEndLine : lastSq.EndLine;
-        var startColumn = firstSq.Column == 0 ? UnknownStartLine : firstSq.Column;
-        var endColumn = lastSq.EndColumn == 0 ? UnknownEndLine : lastSq.EndColumn;
+        var firstSq = sequencePoints.FirstOrDefault(sq => sq is { IsHidden: false, StartLine: > 0 });
+        var startLine = firstSq.StartLine == 0 ? UnknownMethodStartLine : firstSq.StartLine;
+        var typeSourceFile = firstSq.URL;
+        var lastSq = sequencePoints.LastOrDefault(sq => sq is { IsHidden: false, EndLine: > 0 });
+        var endLine = lastSq.EndLine == 0 ? UnknownMethodEndLine : lastSq.EndLine;
+        var startColumn = firstSq.StartColumn == 0 ? UnknownMethodStartLine : firstSq.StartColumn;
+        var endColumn = lastSq.EndColumn == 0 ? UnknownMethodEndLine : lastSq.EndColumn;
 
         // locals
-        var localsSymbol = GetLocalsSymbol(method, startLine, symbolMethod, out var localsCount);
+        var localsSymbol = GetLocalsSymbol(method, startLine, debugInfo, sequencePoints, out var localsCount);
 
         methodScope.Symbols = ConcatMethodSymbols(methodScope.Symbols?.ToArray() ?? null, localsSymbol, localsCount);
         methodScope.StartLine = startLine;
@@ -66,47 +61,44 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return methodScope;
     }
 
-    private int GetLocalVariablesCount(MethodDefinition method)
-    {
-        var signature = _pdbReader.GetLocalSignature(method);
-        BlobReader blobReader = MetadataReader.GetBlobReader(signature.Signature);
-
-        if (blobReader.ReadByte() == (byte)SignatureKind.LocalVariables)
-        {
-            int variableCount = blobReader.ReadCompressedInteger();
-            return variableCount;
-        }
-
-        return 0;
-    }
-
-    private Symbol[]? GetLocalsSymbol(MethodDefinition method, int startLine, SymbolMethod symbolMethod, out int localsCount)
+    private Symbol[]? GetLocalsSymbol(MethodDefinition method, int startLine, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo, DatadogMetadataReader.DatadogSequencePoint[] sequencePoints, out int localsCount)
     {
         localsCount = 0;
-        var methodLocalsCount = GetLocalVariablesCount(method);
+
+        if (DatadogMetadataReader.PdbReader == null)
+        {
+            return null;
+        }
+
+        var methodLocalsCount = DatadogMetadataReader.GetLocalVariablesCount(method);
         if (methodLocalsCount == 0)
         {
             return null;
         }
 
         var localsSymbol = ArrayPool<Symbol>.Shared.Rent(methodLocalsCount);
-        var signature = _pdbReader.GetLocalSignature(method);
-        var localTypes = signature.DecodeLocalSignature(new TypeProvider(), 0);
+        var signature = DatadogMetadataReader.GetLocalSignature(method);
+        if (signature == null)
+        {
+            return null;
+        }
+
+        var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(), 0);
 
         Symbol[]? allLocals = null;
-        foreach (var scopeHandle in MetadataReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
+        foreach (var scopeHandle in DatadogMetadataReader.PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
         {
-            var localScope = MetadataReader.GetLocalScope(scopeHandle);
+            var localScope = DatadogMetadataReader.PdbReader.GetLocalScope(scopeHandle);
             foreach (var localVarHandle in localScope.GetLocalVariables())
             {
-                var local = MetadataReader.GetLocalVariable(localVarHandle);
-                if (local.Index > methodLocalsCount || string.IsNullOrEmpty(MetadataReader.GetString(local.Name)))
+                var local = DatadogMetadataReader.PdbReader.GetLocalVariable(localVarHandle);
+                if (local.Index > methodLocalsCount || string.IsNullOrEmpty(DatadogMetadataReader.PdbReader.GetString(local.Name)))
                 {
                     continue;
                 }
 
                 var line = UnknownEndLineEntireScope;
-                foreach (var sequencePoint in MetadataReader.GetMethodDebugInformation(method.Handle.ToDebugInformationHandle()).GetSequencePoints())
+                foreach (var sequencePoint in sequencePoints)
                 {
                     if (sequencePoint.Offset >= localScope.StartOffset)
                     {
@@ -115,14 +107,14 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     }
                 }
 
-                // if (IsCompilerGeneratedAttributeDefined(local.Type.ToTypeDefOrRef().CustomAttributes))
-                // {
-                // continue;
-                // }
+                /*if (IsCompilerGeneratedAttributeDefined())
+                {
+                    continue;
+                }*/
 
                 localsSymbol[localsCount] = new Symbol
                 {
-                    Name = MetadataReader.GetString(local.Name),
+                    Name = DatadogMetadataReader.PdbReader.GetString(local.Name),
                     Type = localTypes[local.Index].Name,
                     SymbolType = SymbolType.Local,
                     Line = line
@@ -132,7 +124,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             }
         }
 
-        if (IsCompilerGeneratedAttributeDefined(MetadataReader.GetTypeDefinition(method.GetDeclaringType()).GetCustomAttributes()))
+        if (debugInfo.StateMachineHoistedLocal && IsCompilerGeneratedAttributeDefined(MetadataReader.GetTypeDefinition(method.GetDeclaringType()).GetCustomAttributes()))
         {
             var fields = MetadataReader.GetTypeDefinition(method.GetDeclaringType()).GetFields();
             int index = 0;
@@ -174,16 +166,5 @@ internal class SymbolPdbExtractor : SymbolExtractor
         }
 
         return allLocals ?? localsSymbol;
-    }
-
-    protected override void Dispose(bool disposing)
-    {
-        if (!_disposed)
-        {
-            _pdbReader?.Dispose();
-            _disposed = true;
-        }
-
-        base.Dispose(disposing);
     }
 }

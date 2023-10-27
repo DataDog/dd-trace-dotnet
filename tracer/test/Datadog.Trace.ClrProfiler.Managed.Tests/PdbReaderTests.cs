@@ -19,9 +19,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         public void ReadPDBs()
         {
-            using var pdbReader = DatadogPdbReader.CreatePdbReader(Assembly.GetExecutingAssembly());
+            using var pdbReader = DatadogMetadataReader.CreatePdbReader(Assembly.GetExecutingAssembly());
 
-            var symbolMethod = pdbReader.GetMethodSymbolInfoOrDefault(MethodBase.GetCurrentMethod().MetadataToken);
+            var symbolMethod = pdbReader.GetMethodSequencePoints(MethodBase.GetCurrentMethod().MetadataToken);
 
             symbolMethod.SequencePoints.First().Document.URL.Should().EndWith("PdbReaderTests.cs");
         }
@@ -29,7 +29,7 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         [Fact]
         public void ReadSourceLinkForGivenAssembly()
         {
-            var datadogTraceAssembly = typeof(DatadogPdbReader).Assembly;
+            var datadogTraceAssembly = typeof(DatadogMetadataReader).Assembly;
 
             bool result = SourceLinkInformationExtractor.TryGetSourceLinkInfo(datadogTraceAssembly, out string commitSha, out string repositoryUrl);
             result.Should().BeTrue();

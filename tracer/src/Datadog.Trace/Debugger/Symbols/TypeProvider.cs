@@ -45,25 +45,25 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             return typeCode switch
             {
-                PrimitiveTypeCode.Void => "void",
-                PrimitiveTypeCode.Boolean => "bool",
-                PrimitiveTypeCode.Char => "char",
-                PrimitiveTypeCode.SByte => "int8",
-                PrimitiveTypeCode.Byte => "unsigned int8",
-                PrimitiveTypeCode.Int16 => "int16",
-                PrimitiveTypeCode.UInt16 => "unsigned int16",
-                PrimitiveTypeCode.Int32 => "int32",
-                PrimitiveTypeCode.UInt32 => "unsigned int32",
-                PrimitiveTypeCode.Int64 => "int64",
-                PrimitiveTypeCode.UInt64 => "unsigned int64",
-                PrimitiveTypeCode.Single => "float32",
-                PrimitiveTypeCode.Double => "float64",
-                PrimitiveTypeCode.String => "string",
+                PrimitiveTypeCode.Void => "System.Void",
+                PrimitiveTypeCode.Boolean => "System.Bool",
+                PrimitiveTypeCode.Char => "System.Char",
+                PrimitiveTypeCode.SByte => "System.SByte",
+                PrimitiveTypeCode.Byte => "System.Byte",
+                PrimitiveTypeCode.Int16 => "System.Int16",
+                PrimitiveTypeCode.UInt16 => "System.UInt16",
+                PrimitiveTypeCode.Int32 => "System.Int32",
+                PrimitiveTypeCode.UInt32 => "System.UInt32",
+                PrimitiveTypeCode.Int64 => "System.Int64",
+                PrimitiveTypeCode.UInt64 => "System.UInt64",
+                PrimitiveTypeCode.Single => "System.Single",
+                PrimitiveTypeCode.Double => "System.Double",
+                PrimitiveTypeCode.String => "System.String",
                 // ReSharper disable once StringLiteralTypo
                 PrimitiveTypeCode.TypedReference => "typedref",
-                PrimitiveTypeCode.IntPtr => "native int",
-                PrimitiveTypeCode.UIntPtr => "unsigned native int",
-                PrimitiveTypeCode.Object => "object",
+                PrimitiveTypeCode.IntPtr => "System.IntPtr",
+                PrimitiveTypeCode.UIntPtr => "System.UIntPtr",
+                PrimitiveTypeCode.Object => "System.Object",
                 _ => "UNKNOWN"
             };
         }
@@ -130,18 +130,30 @@ namespace Datadog.Trace.Debugger.Symbols
             return new TypeMock(typeName);
         }
 
-        internal static TypeMock ParseTypeReference(MetadataReader reader, TypeReferenceHandle handle)
+        internal static TypeMock ParseTypeReference(MetadataReader reader, TypeReferenceHandle handle, bool includeResScope = false)
         {
             var typeRef = reader.GetTypeReference(handle);
             var name = reader.GetString(typeRef.Name);
             var nameSpace = typeRef.Namespace.IsNil ? null : reader.GetString(typeRef.Namespace);
-            TypeMock resScope;
 
+            var resScope = !includeResScope ? null : GetResolutionScope(reader, typeRef, nameSpace, name);
+
+            if (nameSpace == null)
+            {
+                return resScope == null ? new TypeMock($"{name}") : new TypeMock($"{resScope}{name}");
+            }
+
+            return resScope == null ? new TypeMock($"{nameSpace}.{name}") : new TypeMock($"{resScope}{nameSpace}.{name}");
+        }
+
+        private static TypeMock GetResolutionScope(MetadataReader reader, TypeReference typeRef, string nameSpace, string name)
+        {
+            TypeMock resScope;
             // See II.22.38 in ECMA-335
             if (typeRef.ResolutionScope.IsNil)
             {
-                throw new Exception(
-                    $"Null resolution scope on type Name: {nameSpace}.{name}. This indicates exported/forwarded types");
+               // exported/forwarded types
+               return null;
             }
 
             switch (typeRef.ResolutionScope.Kind)
@@ -166,23 +178,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 case HandleKind.ModuleReference:
                     {
                         // Same-assembly-different-module
-                        throw new Exception(
-                            $"Cross-module reference to type {nameSpace}.{name}. ");
+                        return null;
                     }
 
                 default:
                     // Edge cases not handled:
                     // https://github.com/dotnet/runtime/blob/b2e5a89085fcd87e2fa9300b4bb00cd499c5845b/src/libraries/System.Reflection.Metadata/tests/Metadata/Decoding/DisassemblingTypeProvider.cs#L130-L132
-                    throw new Exception(
-                        $"TypeRef to {typeRef.ResolutionScope.Kind} for type {nameSpace}.{name}");
+                    return null;
             }
 
-            if (nameSpace == null)
-            {
-                return new TypeMock($"{resScope}{name}");
-            }
-
-            return new TypeMock($"{resScope}{nameSpace}.{name}");
+            return resScope;
         }
     }
 }

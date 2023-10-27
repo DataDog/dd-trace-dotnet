@@ -61,7 +61,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
                     return null; // Could not read method body, so we can't verify locals
                 }
 
-                using var pdbReader = DatadogPdbReader.CreatePdbReader(method.Module.Assembly);
+                using var pdbReader = DatadogMetadataReader.CreatePdbReader(method.Module.Assembly);
 
                 return pdbReader?.GetLocalVariableNamesOrDefault(method.MetadataToken, methodBody.LocalVariables.Count);
             }

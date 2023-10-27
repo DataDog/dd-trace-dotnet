@@ -36,7 +36,7 @@ namespace Datadog.Trace.Debugger
             return new LineProbeResolver();
         }
 
-        private static IList<SymbolDocument> GetDocumentsFromPDB(Assembly loadedAssembly)
+        private static IList<string> GetDocumentsFromPDB(Assembly loadedAssembly)
         {
             try
             {
@@ -45,7 +45,7 @@ namespace Datadog.Trace.Debugger
                     return null;
                 }
 
-                using var reader = DatadogPdbReader.CreatePdbReader(loadedAssembly);
+                using var reader = DatadogMetadataReader.CreatePdbReader(loadedAssembly);
                 if (reader != null)
                 {
                     return reader.GetDocuments();
@@ -80,7 +80,7 @@ namespace Datadog.Trace.Debugger
             var lookup = new FilePathLookup();
             foreach (var symbolDocument in documents)
             {
-                lookup.InsertPath(symbolDocument.URL);
+                lookup.InsertPath(symbolDocument);
             }
 
             return lookup;
@@ -123,7 +123,7 @@ namespace Datadog.Trace.Debugger
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Unbound, "Source file location for probe was not found, possibly because the relevant assembly was not yet loaded.");
                 }
 
-                using var pdbReader = DatadogPdbReader.CreatePdbReader(assembly);
+                using var pdbReader = DatadogMetadataReader.CreatePdbReader(assembly);
                 if (pdbReader == null)
                 {
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to read from PDB");
@@ -134,13 +134,13 @@ namespace Datadog.Trace.Debugger
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Error, $"Failed to parse line number.");
                 }
 
-                var method = pdbReader.GetContainingMethodAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
-                if (bytecodeOffset.HasValue == false)
+                var method = pdbReader.GetContainingMethodTokenAndOffset(filePathFromPdb, lineNum, column: null, out var bytecodeOffset);
+                if (bytecodeOffset.HasValue == false || method.HasValue == false)
                 {
                     return new LineProbeResolveResult(LiveProbeResolveStatus.Error, "Probe location did not map out to a valid bytecode offset");
                 }
 
-                location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Token, bytecodeOffset.Value, lineNum);
+                location = new BoundLineProbeLocation(probe, assembly.ManifestModule.ModuleVersionId, method.Value, bytecodeOffset.Value, lineNum);
                 return new LineProbeResolveResult(LiveProbeResolveStatus.Bound);
             }
             catch (Exception e)

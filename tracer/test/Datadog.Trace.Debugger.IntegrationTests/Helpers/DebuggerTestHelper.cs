@@ -199,8 +199,8 @@ internal static class DebuggerTestHelper
 
     private static ProbeDefinition WithLineProbeWhere(this ProbeDefinition snapshot, Type type, LineProbeTestDataAttribute line)
     {
-        using var reader = DatadogPdbReader.CreatePdbReader(type.Assembly);
-        var symbolMethod = reader.GetMethodSymbolInfoOrDefault(type.GetMethods().First().MetadataToken);
+        using var reader = DatadogMetadataReader.CreatePdbReader(type.Assembly);
+        var symbolMethod = reader.GetMethodSequencePoints(type.GetMethods().First().MetadataToken);
         var filePath = symbolMethod.SequencePoints.First().Document.URL;
         var where = new Where { SourceFile = filePath, Lines = new[] { line.LineNumber.ToString() } };
         snapshot.Where = where;
