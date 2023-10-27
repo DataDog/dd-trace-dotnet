@@ -4,7 +4,6 @@
 #pragma once
 
 #include "ErrorCode.h"
-#include "ErrorCodeImpl.hpp"
 #include "FfiHelper.h"
 #include "Tags.h"
 #include "TagsImpl.hpp"
@@ -47,15 +46,15 @@ public:
 
         if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
         {
-            return detail::make_error(result.err);
+            return make_error(result.err);
         }
 
         if (IsValidHttpCode(result.http_response.code))
         {
-            return detail::make_error(std::to_string(result.http_response.code));
+            return make_error(std::to_string(result.http_response.code));
         }
 
-        return detail::make_success();
+        return make_success();
     }
 
     bool IsValidHttpCode(int16_t code)
@@ -143,9 +142,9 @@ private:
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {
-            return std::make_pair(Request{nullptr}, detail::make_error(requestResult.err));
+            return std::make_pair(Request{nullptr}, make_error(requestResult.err));
         }
-        return std::make_pair(Request{requestResult.ok}, detail::make_success());
+        return std::make_pair(Request{requestResult.ok}, make_success());
     }
 
 private:

@@ -5,11 +5,15 @@
 
 #include <stdint.h>
 #include <string.h>
+
+#include "ErrorCodeImpl.hpp"
+
 extern "C"
 {
 #include "datadog/common.h"
 }
 
+namespace libdatadog {
 ddog_ByteSlice FfiHelper::StringToByteSlice(std::string const& str)
 {
     return {(uint8_t*)str.c_str(), str.size()};
@@ -37,3 +41,25 @@ ddog_prof_ValueType FfiHelper::CreateValueType(std::string const& type, std::str
     valueType.unit = FfiHelper::StringToCharSlice(unit);
     return valueType;
 }
+
+std::string FfiHelper::ExtractMessage(ddog_Error& error)
+{
+    auto message = ddog_Error_message(&error);
+    return std::string(message.ptr, message.len);
+}
+
+ErrorCode make_error(ddog_Error& error)
+{
+    return ErrorCode(std::make_unique<detail::ErrorCodeImpl>(error));
+}
+
+ErrorCode make_error(std::string error)
+{
+    return ErrorCode(std::make_unique<detail::ErrorCodeImpl>(std::move(error)));
+}
+
+ErrorCode make_success()
+{
+    return ErrorCode();
+}
+} // namespace libdatadog

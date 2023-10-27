@@ -118,6 +118,7 @@
       <AdditionalDependencies>$(SHARED-LIB-BINARIES);%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions Condition=" '$(EnableASAN)'=='true' ">/INFERASANLIBS:NO /wholearchive:clang_rt.asan_dbg-i386.lib /wholearchive:clang_rt.asan_cxx_dbg-i386.lib %(AdditionalOptions)</AdditionalOptions>
       <LinkTimeCodeGeneration Condition=" '$(EnableASAN)'=='true' ">UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <ImageHasSafeExceptionHandlers />
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

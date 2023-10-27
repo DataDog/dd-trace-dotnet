@@ -3,12 +3,9 @@
 
 #include "Tags.h"
 
-#include "Log.h"
-
 #include "FfiHelper.h"
-
+#include "Log.h"
 #include "TagsImpl.hpp"
-#include "ErrorCodeImpl.hpp"
 
 #include <cassert>
 
@@ -52,8 +49,8 @@ libdatadog::ErrorCode Tags::Add(std::string const& name, std::string const& valu
     auto pushResult = ddog_Vec_Tag_push(&_impl->_tags, ffiName, ffiValue);
     if (pushResult.tag == DDOG_VEC_TAG_PUSH_RESULT_ERR)
     {
-        return detail::make_error(pushResult.err);
+        return make_error(pushResult.err);
     }
-    return detail::make_success();
+    return make_success();
 }
 } // namespace libdatadog

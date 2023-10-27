@@ -50,10 +50,10 @@ public:
 #else
             strerror_r(errorCode, message, BUFFER_MAX_SIZE);
 #endif
-            return detail::make_error(std::string("Unable to write profiles on disk: ") + pprofFilePath + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
+            return make_error(std::string("Unable to write profiles on disk: ") + pprofFilePath + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
         }
         //do we want to pass a string ?"Profile serialized in ", pprofFilePath
-        return detail::make_success();
+        return make_success();
     }
 
     std::string GenerateFilePath(const std::string& applicationName, const std::string& extension) const

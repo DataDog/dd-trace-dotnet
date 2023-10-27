@@ -4,21 +4,20 @@
 #include "gtest/gtest.h"
 
 #include "ErrorCode.h"
-
-#include "ErrorCodeImpl.hpp"
+#include "FfiHelper.h"
 
 namespace libdatadog {
 
 TEST(ErrorCodeTest, Success)
 {
-    auto ec = detail::make_success();
+    auto ec = make_success();
     ASSERT_TRUE(ec);
     ASSERT_EQ(ec.message(), "");
 }
 
 TEST(ErrorCodeTest, CreateErrorCodeWithString)
 {
-    auto ec = detail::make_error("Failed");
+    auto ec = make_error("Failed");
     ASSERT_FALSE(ec);
     ASSERT_EQ(ec.message(), "Failed");
 }

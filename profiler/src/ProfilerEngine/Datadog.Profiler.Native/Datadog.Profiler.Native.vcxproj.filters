@@ -24,9 +24,6 @@
     <Filter Include="Profiler-Driver">
       <UniqueIdentifier>{e228b858-2b52-4ead-871b-b56a96dc652a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libddprof">
-      <UniqueIdentifier>{db3783ac-ee3e-49d0-95c1-9e9db6df8422}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Walltime">
       <UniqueIdentifier>{f92ac331-c76b-482a-87a6-1ca45c27ed41}</UniqueIdentifier>
     </Filter>
@@ -50,12 +47,6 @@
     </Filter>
     <Filter Include="libdatadog">
       <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="libdatadog\error_handling">
-      <UniqueIdentifier>{43d49fd0-399f-4216-b7be-8769b8882c01}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="libdatadog\details">
-      <UniqueIdentifier>{3522eff2-3a0d-4312-97a5-e1c6c0fe984b}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -137,12 +128,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IService.h" />
-    <ClInclude Include="LibddprofExporter.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
-    <ClInclude Include="FfiHelper.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
     <ClInclude Include="Configuration.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -392,17 +377,8 @@
     <ClInclude Include="Profile.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="ErrorCode.h">
-      <Filter>libdatadog\error_handling</Filter>
-    </ClInclude>
     <ClInclude Include="Exporter.h">
       <Filter>libdatadog</Filter>
-    </ClInclude>
-    <ClInclude Include="Exporter.hpp">
-      <Filter>libdatadog\details</Filter>
-    </ClInclude>
-    <ClInclude Include="Tags.hpp">
-      <Filter>libdatadog\details</Filter>
     </ClInclude>
     <ClInclude Include="Tags.h">
       <Filter>libdatadog</Filter>
@@ -410,19 +386,22 @@
     <ClInclude Include="Exception.h">
       <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="Profile.hpp">
-      <Filter>libdatadog\details</Filter>
+    <ClInclude Include="EncodedProfile.hpp" />
+    <ClInclude Include="AgentExporterImpl.hpp" />
+    <ClInclude Include="FileExporterImpl.hpp" />
+    <ClInclude Include="ProfileImpl.hpp" />
+    <ClInclude Include="TagsImpl.hpp" />
+    <ClInclude Include="ExporterImpl.hpp" />
+    <ClInclude Include="ProfileExporter.h" />
+    <ClInclude Include="FfiHelper.h">
+      <Filter>libdatadog</Filter>
     </ClInclude>
     <ClInclude Include="ErrorCodeImpl.hpp">
-      <Filter>libdatadog\details</Filter>
+      <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="FileExporter.hpp">
-      <Filter>libdatadog\details</Filter>
+    <ClInclude Include="ErrorCode.h">
+      <Filter>libdatadog</Filter>
     </ClInclude>
-    <ClInclude Include="AgentExporter.hpp">
-      <Filter>libdatadog\details</Filter>
-    </ClInclude>
-    <ClInclude Include="EncodedProfile.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -472,12 +451,6 @@
     </ClCompile>
     <ClCompile Include="Configuration.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="LibddprofExporter.cpp">
-      <Filter>libddprof</Filter>
-    </ClCompile>
-    <ClCompile Include="FfiHelper.cpp">
-      <Filter>libddprof</Filter>
     </ClCompile>
     <ClCompile Include="TagsHelper.cpp">
       <Filter>Utils</Filter>
@@ -614,9 +587,6 @@
     <ClCompile Include="Profile.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
-    <ClCompile Include="ErrorCode.cpp">
-      <Filter>libdatadog\error_handling</Filter>
-    </ClCompile>
     <ClCompile Include="Exporter.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
@@ -626,7 +596,13 @@
     <ClCompile Include="Exception.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
-    <ClCompile Include="std_extensions.hpp">
+    <ClCompile Include="ProfileExporter.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="FfiHelper.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="ErrorCode.cpp">
       <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>

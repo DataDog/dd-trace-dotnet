@@ -15,6 +15,7 @@
 #include "ProfileImpl.hpp"
 #include "TagsImpl.hpp"
 #include "ErrorCodeImpl.hpp"
+#include "FfiHelper.h"
 
 #include <cassert>
 
@@ -134,7 +135,7 @@ libdatadog::ErrorCode Exporter::Send(Profile* profile, Tags tags, std::vector<st
 
     if (s.tag == DDOG_PROF_PROFILE_SERIALIZE_RESULT_ERR)
     {
-        return detail::make_error(s.err);
+        return make_error(s.err);
     }
 
     auto ep = EncodedProfile(&s.ok);

@@ -7,7 +7,7 @@
 #include <string>
 #include <utility>
 
-#include "ErrorCode.h"
+#include "FfiHelper.h"
 
 extern "C"
 {
@@ -66,8 +66,7 @@ private:
     {
         if (_useDdogError)
         {
-            auto err = ddog_Error_message(&_error);
-            _message = std::string(err.ptr, err.len);
+            _message = FfiHelper::ExtractMessage(_error);
         }
     }
 
@@ -75,15 +74,4 @@ private:
     std::string _message;
     bool _useDdogError;
 };
-
-template <class T>
-inline ErrorCode make_error(T s)
-{
-    return ErrorCode(std::make_unique<ErrorCodeImpl>(std::move(s)));
-}
-
-inline ErrorCode make_success()
-{
-    return ErrorCode{};
-}
 } // namespace libdatadog::detail

@@ -6,7 +6,6 @@
 #include "FfiHelper.h"
 #include "Sample.h"
 #include "ProfileImpl.hpp"
-#include "ErrorCodeImpl.hpp"
 
 namespace libdatadog {
 
@@ -86,9 +85,9 @@ libdatadog::ErrorCode Profile::Add(std::shared_ptr<Sample> const& sample)
     auto add_res = ddog_prof_Profile_add(profile.get(), ffiSample);
     if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR)
     {
-        return detail::make_error(add_res.err);
+        return make_error(add_res.err);
     }
-    return detail::make_success();
+    return make_success();
 }
 
 void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
@@ -119,14 +118,14 @@ libdatadog::ErrorCode Profile::AddUpscalingRuleProportional(std::vector<std::uin
         // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
         // - the second one is to provide the caller with the actual error.
         // TODO: have a make_error(<format>, vars, ...) approach ?
-        auto error = detail::make_error(upscalingRuleAdd.err);
+        auto error = make_error(upscalingRuleAdd.err);
         std::stringstream ss;
         ss << "(" << groupName << ", " << labelName << ") - [" << std::to_string(sampled) << "/" << std::to_string(real) << "]:"
            << error.message();
-        return detail::make_error(ss.str());
+        return make_error(ss.str());
     }
 
-    return detail::make_success();
+    return make_success();
 }
 
 libdatadog::detail::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
