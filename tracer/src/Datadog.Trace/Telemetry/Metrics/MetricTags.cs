@@ -213,6 +213,7 @@ internal static class MetricTags
         [Description("integration_name:azureservicebus")]AzureServiceBus,
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
+        [Description("integration_name:ibmmq")]IbmMq,
     }
 
     public enum InstrumentationError
