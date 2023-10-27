@@ -1,0 +1,30 @@
+<RunSettings>
+    <DataCollectionRunSettings>
+        <DataCollectors>
+            <!-- Collector to instrument assemblies and add code coverage instructions -->
+            <DataCollector friendlyName="datadog" uri="datacollector://Datadog/collector/1.0" enabled="True" />
+        </DataCollectors>
+    </DataCollectionRunSettings>
+
+    <InProcDataCollectionRunSettings>
+        <InProcDataCollectors>
+            <!-- InProc collector to export the coverage to a json file -->
+            <InProcDataCollector
+                    friendlyName="datadoginproc"
+                    uri="InProcDataCollector://Datadog/collector/1.0"
+                    assemblyQualifiedName="DatadogCollector.DatadogInProcCollector, Datadog.collector, Version=0.0.50.0, Culture=neutral, PublicKeyToken=null"
+                    codebase="Datadog.collector.dll"
+                    enabled="True">
+                <Configuration>
+                </Configuration>
+            </InProcDataCollector>
+        </InProcDataCollectors>
+    </InProcDataCollectionRunSettings>
+
+    <LoggerRunSettings>
+        <Loggers>
+            <!-- Logger to write and export CI Visibility events -->
+            <Logger friendlyName="datadog" uri="logger://Microsoft/TestPlatform/DatadogTestLogger/v1" enabled="True" />
+        </Loggers>
+    </LoggerRunSettings>
+</RunSettings>

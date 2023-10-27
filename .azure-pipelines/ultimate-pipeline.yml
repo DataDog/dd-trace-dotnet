@@ -153,6 +153,7 @@ variables:
   DD_LOGGER_API_KEY_CHECKER_ENABLED: false
   DD_LOGGER_DD_TAGS: test.configuration.job:$(System.JobDisplayName)
   DD_LOGGER_ENABLED: true
+  DD_COLLECTOR_CPU_USAGE: true
 
 # Declare the datadog agent as a resource to be used as a pipeline service
 resources:
