@@ -43,11 +43,12 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     {
         try
         {
+            // there's no way to check if the value exists,
+            // and reading non-existent value causes an exception
             return new[] { _message.GetStringProperty(NormalizeName(name)) };
         }
         catch
         {
-            Console.WriteLine("Failed to get the value for " + name);
             return EmptyValue;
         }
     }
@@ -74,7 +75,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         }
         catch
         {
-            Console.WriteLine("Failed to remove the value for " + normalizedName);
+            // ignored
         }
     }
 

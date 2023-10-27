@@ -98,7 +98,6 @@ internal static class IbmMqHelper
                 try
                 {
                     pathwayContext = dataStreams.ExtractPathwayContextAsBase64String(adapter);
-                    Console.WriteLine("Extracted parent context " + pathwayContext?.Hash.Value);
                 }
                 catch (Exception ex)
                 {
@@ -120,7 +119,6 @@ internal static class IbmMqHelper
             if (dataStreams.IsEnabled)
             {
                 span.Context.MergePathwayContext(pathwayContext);
-                Console.WriteLine("Merged pathway context, new value: " + span.Context?.PathwayContext?.Hash.Value);
             }
         }
         catch (Exception ex)
