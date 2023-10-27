@@ -30,9 +30,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
-
+        
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
-        public const string TracingWithInstaller = "Check failing with Installer/MSI, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerWindowsNetCore = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=windows#install-the-tracer";
+        public const string TracingWithInstallerLinux = "Installer related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core?tab=linux#install-the-tracer";
         public const string TraceProgramNotFound = "Unable to find Datadog .NET Tracer program, make sure the tracer has been properly installed with the MSI.";
 
         public const string TraceEnabledNotSet = "DD_TRACE_ENABLED is not set, the default value is true.";
@@ -106,7 +108,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
         public static string CouldNotFindIisApplication(string site, string application) => $"Could not find IIS application \"{site}{application}\". ";
 
-        public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error}. Try to run the tool in administrator mode.";
+        public static string IisManagerInitializationError(string error) => $"Could not initialize IIS manager: {error} Try to run the tool in administrator mode.";
+
+        public static string IisWorkerProcessError(string error) => $"Could not detect the worker process: {error} Note that you must run the tool from an elevated prompt.";
 
         public static string ListAllIisApplications(IEnumerable<string> availableApplications)
         {

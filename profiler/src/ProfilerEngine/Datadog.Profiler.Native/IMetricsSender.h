@@ -5,6 +5,7 @@
 #include <string>
 #include <utility>
 #include <vector>
+#include <cstdint>
 
 class IMetricsSender
 {

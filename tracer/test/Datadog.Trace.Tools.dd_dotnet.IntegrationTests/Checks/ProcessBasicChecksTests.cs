@@ -151,8 +151,20 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
             MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
             WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-            TracingWithInstaller);
+            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+#if NETFRAMEWORK
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetFramework);
+#else
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetCore);
+#endif
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            console.Output.Should().Contain(TracingWithInstallerLinux);
+        }
     }
 
     [SkippableFact]

@@ -21,7 +21,6 @@ namespace Datadog.Trace.Telemetry
             bool agentProxyEnabled,
             TimeSpan heartbeatInterval,
             bool dependencyCollectionEnabled,
-            bool v2Enabled,
             bool metricsEnabled,
             bool debugEnabled)
         {
@@ -31,7 +30,6 @@ namespace Datadog.Trace.Telemetry
             AgentProxyEnabled = agentProxyEnabled;
             HeartbeatInterval = heartbeatInterval;
             DependencyCollectionEnabled = dependencyCollectionEnabled;
-            V2Enabled = v2Enabled;
             MetricsEnabled = metricsEnabled;
             DebugEnabled = debugEnabled;
         }
@@ -51,8 +49,6 @@ namespace Datadog.Trace.Telemetry
         public bool AgentProxyEnabled { get; }
 
         public bool DependencyCollectionEnabled { get; }
-
-        public bool V2Enabled { get; }
 
         public bool DebugEnabled { get; }
 
@@ -142,8 +138,6 @@ namespace Datadog.Trace.Telemetry
 
             var dependencyCollectionEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DependencyCollectionEnabled).AsBool(true);
 
-            var v2Enabled = config.WithKeys(ConfigurationKeys.Telemetry.V2Enabled).AsBool(defaultValue: true);
-
             // For testing purposes only
             var debugEnabled = config.WithKeys(ConfigurationKeys.Telemetry.DebugEnabled).AsBool(false);
 
@@ -159,20 +153,7 @@ namespace Datadog.Trace.Telemetry
             {
                 metricsEnabled = config
                                 .WithKeys(ConfigurationKeys.Telemetry.MetricsEnabled)
-                                .AsBool(
-                                     defaultValue: v2Enabled,
-                                     validator: enabled =>
-                                     {
-                                         if (v2Enabled || !enabled)
-                                         {
-                                             return true;
-                                         }
-
-                                         configurationError = configurationError is null
-                                                                  ? "Telemetry configuration error: Cannot enable telemetry metrics unless telemetry V2 is enabled"
-                                                                  : configurationError + ", Cannot enable telemetry metrics unless telemetry V2 is enabled";
-                                         return false;
-                                     });
+                                .AsBool(defaultValue: true);
             }
 
             return new TelemetrySettings(
@@ -182,7 +163,6 @@ namespace Datadog.Trace.Telemetry
                 agentProxyEnabled,
                 TimeSpan.FromSeconds(heartbeatInterval),
                 dependencyCollectionEnabled,
-                v2Enabled,
                 metricsEnabled,
                 debugEnabled);
         }

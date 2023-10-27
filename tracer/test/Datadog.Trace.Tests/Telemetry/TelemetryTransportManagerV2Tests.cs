@@ -242,12 +242,6 @@ public class TelemetryTransportManagerV2Tests
             _results = results;
         }
 
-        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
-        {
-            await Task.Yield();
-            throw new InvalidOperationException("Shouldn't be using v1 API");
-        }
-
         public Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
         {
             _current++;

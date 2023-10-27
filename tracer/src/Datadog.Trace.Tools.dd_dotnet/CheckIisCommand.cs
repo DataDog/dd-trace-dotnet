@@ -8,9 +8,11 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
@@ -101,7 +103,15 @@ internal class CheckIisCommand : Command
             // The WorkerProcess part of ServerManager doesn't seem to be compatible with IISExpress
             if (string.IsNullOrEmpty(applicationHostConfigurationPath))
             {
-                pid = pool?.GetWorkerProcess() ?? 0;
+                try
+                {
+                    pid = pool?.GetWorkerProcess() ?? 0;
+                }
+                catch (Win32Exception ex)
+                {
+                    Utils.WriteError(IisWorkerProcessError(Marshal.GetPInvokeErrorMessage(ex.NativeErrorCode)));
+                    return 1;
+                }
             }
             else
             {

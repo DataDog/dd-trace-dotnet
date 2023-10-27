@@ -193,6 +193,8 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
+                    AnsiConsole.WriteLine(runtime == ProcessInfo.Runtime.NetCore ? TracingWithInstallerWindowsNetCore : TracingWithInstallerWindowsNetFramework);
+
                     if (!CheckRegistry(CheckWindowsInstallation(process.Id, registryService), registryService))
                     {
                         ok = false;
@@ -200,6 +202,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                 {
+                    AnsiConsole.WriteLine(TracingWithInstallerLinux);
                     CheckLinuxInstallation("/opt/datadog/");
                 }
             }

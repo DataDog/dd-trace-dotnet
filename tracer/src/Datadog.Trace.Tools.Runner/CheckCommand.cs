@@ -23,9 +23,19 @@ namespace Datadog.Trace.Tools.Runner
         {
             _applicationContext = applicationContext;
 
-            AddArgument(Command);
-
-            this.SetHandler(Execute);
+            if (applicationContext.Platform == Platform.MacOS)
+            {
+                this.SetHandler(context =>
+                {
+                    Utils.WriteError("The check command is not supported on MacOS.");
+                    context.ExitCode = 1;
+                });
+            }
+            else
+            {
+                AddArgument(Command);
+                this.SetHandler(Execute);
+            }
         }
 
         public Argument<string[]> Command { get; } = new("command", CommandLineHelpers.ParseArrayArgument, isDefault: true);
@@ -63,7 +73,6 @@ namespace Datadog.Trace.Tools.Runner
             }
 
             var startInfo = new ProcessStartInfo(ddDotnet, commandLine) { UseShellExecute = false };
-
             startInfo.EnvironmentVariables["DD_INTERNAL_OVERRIDE_COMMAND"] = "dd-trace";
 
             var process = Process.Start(startInfo);
