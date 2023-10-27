@@ -36,25 +36,9 @@ namespace Datadog.Trace.Telemetry
         void RecordTracerSettings(ImmutableTracerSettings settings, string defaultServiceName);
 
         /// <summary>
-        /// Called when app sec security is enabled to record the security settings
-        /// </summary>
-        public void RecordSecuritySettings(SecuritySettings settings);
-
-        /// <summary>
-        /// Called when IAST security is enabled to record the IAST settings
-        /// </summary>
-        public void RecordIastSettings(IastSettings settings);
-
-        /// <summary>
         /// Called to record profiler-related telemetry
         /// </summary>
         public void RecordProfilerSettings(Profiler profiler);
-
-        /// <summary>
-        /// Dispose resources for sending telemetry
-        /// </summary>
-        /// <param name="sendAppClosingTelemetry">True if the controller should send "app closing" telemetry before disposing</param>
-        public Task DisposeAsync(bool sendAppClosingTelemetry);
 
         /// <summary>
         /// Dispose resources for sending telemetry

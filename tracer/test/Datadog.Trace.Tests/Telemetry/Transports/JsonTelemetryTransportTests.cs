@@ -18,59 +18,6 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
     public class JsonTelemetryTransportTests
     {
         [Fact]
-        public void SerializedAppStartedShouldProduceJsonWithExpectedFormat()
-        {
-            var expectedJson = JToken.Parse(GetAppStartedDataV1());
-
-            var data = new TelemetryData(
-                requestType: "app-started",
-                runtimeId: "20338dfd-f700-4e5c-b3f6-0d470f054ae8",
-                seqId: 5672,
-                tracerTime: 1628099086,
-                application: new ApplicationTelemetryData(
-                    serviceName: "myapp",
-                    env: "prod",
-                    tracerVersion: "0.33.1",
-                    languageName: "node.js",
-                    languageVersion: "14.16.1")
-                {
-                    ServiceVersion = "1.2.3",
-                },
-                host: new HostTelemetryData
-                {
-                    Hostname = "i-09ecf74c319c49be8",
-                    ContainerId = "d39b145254d1f9c337fdd2be132f6650c6f5bc274bfa28aaa204a908a1134096",
-                    Os = "GNU/Linux",
-                    OsVersion = "ubuntu 18.04.5 LTS (Bionic Beaver)",
-                    KernelName = "Linux",
-                    KernelRelease = "5.4.0-1037-gcp",
-                    KernelVersion = "#40~18.04.1-Ubuntu SMP Fri Feb 5 15:41:35 UTC 2021"
-                },
-                payload: new AppStartedPayload(
-                    integrations: new List<IntegrationTelemetryData>
-                    {
-                        new(name: "express", enabled: true, autoEnabled: true, error: null),
-                        new(name: "pg", enabled: false, autoEnabled: false, error: "there was an error"),
-                    },
-                    dependencies: new List<DependencyTelemetryData>
-                    {
-                        new(name: "pg") { Version = "8.6.0" },
-                        new(name: "express") { Version = "4.17.1" },
-                        new(name: "body-parser") { Version = "1.19.0", Hash = "646DF3C3-959F-4011-8673-EE58BD9291E2" },
-                    },
-                    configuration: new List<TelemetryValue>())
-                    {
-                        AdditionalPayload = new List<TelemetryValue> { new(name: "to_be", value: "determined") }
-                    });
-
-            var serialized = JsonTelemetryTransport.SerializeTelemetry(data);
-            serialized.Should().NotBeNullOrEmpty();
-            var actualJson = JToken.Parse(serialized);
-
-            actualJson.Should().BeEquivalentTo(expectedJson);
-        }
-
-        [Fact]
         public void SerializedAppStartedShouldProduceJsonWithExpectedFormatV2()
         {
             var expectedJson = JToken.Parse(GetAppStartedDataV2());
@@ -325,9 +272,6 @@ namespace Datadog.Trace.Tests.Telemetry.Transports
 
             actualJson.Should().BeEquivalentTo(expectedJson);
         }
-
-        private static string GetAppStartedDataV1()
-            => GetSampleTelemetryData("telemetry_app-started-v1.json");
 
         private static string GetAppStartedDataV2()
             => GetSampleTelemetryData("telemetry_app-started-v2.json");

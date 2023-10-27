@@ -17,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     internal static class TelemetryHelper
     {
-        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper, bool? enableV2 = null)
+        public static MockTelemetryAgent ConfigureTelemetry(this TestHelper helper)
         {
             int telemetryPort = TcpPortProvider.GetOpenPort();
             var telemetry = new MockTelemetryAgent(telemetryPort);
@@ -30,16 +30,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             helper.SetEnvironmentVariable("DD_TRACE_TELEMETRY_URL", $"http://localhost:{telemetry.Port}");
             // API key is required when using the custom url
             helper.SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
-
-            switch (enableV2)
-            {
-                case true:
-                    helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "1");
-                    break;
-                case false:
-                    helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "0");
-                    break;
-            }
+            // For legacy versions that don't use V2 by default
+            helper.SetEnvironmentVariable("DD_INTERNAL_TELEMETRY_V2_ENABLED", "1");
 
             return telemetry;
         }
@@ -106,59 +98,31 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         internal static void AssertConfiguration(ICollection<TelemetryWrapper> allData, string key, object value = null)
         {
-            // assume we're not mixing v1 and v2 telemetry in the same app
             var payloads =
                 allData
                    .OrderByDescending(x => x.SeqId)
-                   .Select<TelemetryWrapper, (ICollection<TelemetryValue>, ICollection<ConfigurationKeyValue>)>(
+                   .Select(
                         data => data switch
                         {
-                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => (p.Configuration, null),
-                            _ when data.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted) is { } p => (null, p.Configuration),
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => (null, p.Configuration),
-                            _ => (null, null),
+                            _ when data.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ => null,
                         })
-                   .Where(x => x.Item1 is not null || x.Item2 is not null)
+                   .Where(x => x is not null)
                    .ToList();
 
-            var v1Payloads = payloads
-                            .Where(x => x.Item1 is not null)
-                            .Select(x => x.Item1)
-                            .ToList();
-
-            var v2Payloads = payloads
-                            .Where(x => x.Item2 is not null)
-                            .Select(x => x.Item2)
-                            .ToList();
-
-            if (v1Payloads.Any())
+            payloads.Should().NotBeEmpty();
+            var config = payloads
+                        .SelectMany(x => x)
+                        .GroupBy(x => x.Name)
+                        .Where(x => x.Key == key)
+                        .SelectMany(x => x)
+                        .OrderByDescending(x => x.SeqId)
+                        .FirstOrDefault();
+            config.Should().NotBeNull();
+            if (value is not null)
             {
-                v2Payloads.Should().BeEmpty("Should not have v2 and v1 payloads in the same run");
-
-                var configPayload = v1Payloads.First();
-
-                var config = configPayload.Should().ContainSingle(telemetryValue => telemetryValue.Name == key).Subject;
-                config.Should().NotBeNull();
-                if (value is not null)
-                {
-                    config.Value.Should().Be(value);
-                }
-            }
-            else
-            {
-                v2Payloads.Should().NotBeEmpty();
-                var config = v2Payloads
-                            .SelectMany(x => x)
-                            .GroupBy(x => x.Name)
-                            .Where(x => x.Key == key)
-                            .SelectMany(x => x)
-                            .OrderByDescending(x => x.SeqId)
-                            .FirstOrDefault();
-                config.Should().NotBeNull();
-                if (value is not null)
-                {
-                    config.Value.Should().Be(value);
-                }
+                config.Value.Should().Be(value);
             }
         }
 
@@ -174,7 +138,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .Select(
                         data => data switch
                         {
-                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Integrations,
                             _ when data.TryGetPayload<AppIntegrationsChangedPayload>(TelemetryRequestTypes.AppIntegrationsChanged) is { } p => p.Integrations,
                             _ => null,
                         })

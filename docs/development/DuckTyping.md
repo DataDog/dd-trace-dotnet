@@ -4,6 +4,9 @@ The duck typing library allows us to get and set data from fields and properties
 
 The goal of the library is to have an unify code to access unknown types as fastest and with the minimum allocations as possible.
 
+> [!NOTE]  
+> Please ensure you check the [Best Practices](#best-practices) section for details on how to choose the type of proxy.
+
 ### Example
 Given the following scenario, where we want to access the data from an anonymous class instance in another method, a code example to do that would be:
 
@@ -405,9 +408,13 @@ In this example the non public instance of `MyHandlerConfiguration` when calling
 
 ## Best practices
 
+This section includes some details on choosing between the different duck-type proxies, as well as how to handle nullability of both the target types and the proxies.
+
+### Choosing a proxy implementation
+
 Where possible, duck-type proxies should be implemented as an interface, e.g. `ISomeObject` _as long as they can be used in a constraint_. In these cases, the value passed to the method will be a struct which implements both `ISomeObject` and `IDuckType`. 
 
-> Note that the value passed to the integration will _never_ be `null` as it's a `struct`. If you need to check the original proxy value, you must add the `IDuckType` constraint also, and check `IDuckType.Instance` for `null`.
+> Note that the value passed to the integration will _never_ be `null` as it's a `struct`. If you need to check the original proxy value, you must add the `IDuckType` constraint also, and check `IDuckType.Instance` for `null`. You can read more about this in the [Handling nullability](#handling-nullability) section.
 
 In some cases it will not be possible to use the _constraint_ approach. In these cases, you should use a `[DuckCopy]` `struct` where possible. If you need to call _methods_ on the proxy, then you can't use a `struct` proxy, and instead should use an `interface` proxy.
 
@@ -490,6 +497,283 @@ AMD Ryzen 9 5950X, 1 CPU, 32 logical and 16 physical cores
 | GetPropertiesByIDuckTypeConstraints | Job-XOEXKA |    .NET 4.7.2 |        net472 |             GetProperties | Public |  7.559 ns | 0.0263 ns | 0.0246 ns |  1.00 |    0.00 |      - |     - |     - |         - |
 | GetPropertiesByIDuckTypeConstraints | Job-DWHYKL | .NET Core 3.1 | netcoreapp3.1 |             GetProperties | Public |  6.394 ns | 0.0159 ns | 0.0141 ns |  0.85 |    0.00 |      - |     - |     - |         - |
 </details>
+
+### Understanding invalid duck-type proxies
+
+Creating a duck-type proxy can be tricky. It often requires looking at both private and public members to find the data we need, and then checking that those members haven't changed across different target library versions. On top of that, you need to account for cases we can't duck-type (generic dictionaries), as well as choosing between proxy implementations, handling differences in nullability (see below) etc.
+
+All that means: errors happen. Ideally we only expect to see these during development, but that means it's important to understand _when_ errors manifest. There are essentially three distinct duck-typing scenarios to account for:
+
+1. Direct duck-proxy creation in integrations (via generics)
+2. Imperative duck-proxy creation using `DuckCast<T>`, `TryDuckCast<T>` etc
+3. Implicit duck-proxy creation using [duck-chaining](#duck-chaining)
+
+#### 1. Direct duck-proxy creation in integrations (via generics)
+If you use an interface duck type _directly_ in an integration (using the generics approach, as suggested in [Choosing a proxy implementation](#choosing-a-proxy-implementation)), then an error in the duck type properties will occur as soon as that method is used (at runtime). This will throw a `DuckTypeException`, which is caught by the tracing infrastructure. The integration will be disabled, and you'll see an error in the managed logs, describing the problem.
+
+#### 2. Imperative duck-proxy creation using `DuckCast<T>`
+Similarly, if you need to do a `DuckCast<T>` (or other helper method) directly in code and the proxy is not valid, you will get a `DuckTypeException`. If this bubbles up out of the integration code, it will similarly be caught by the infrastructure, and will disable the integration. _This is generally a good thing_ as it reduces the impact of our integrations on customer apps in the case of errors.
+
+> If you know that your proxy is correct and that it will _sometimes_ fail (due to the nature of the integration) you should use `TryDuckCast<T>` or `DuckAs<T>` to safely try the proxying and to handle failure. If you don't expect the proxying to fail (i.e. you're not accounting for explicitly known scenarios) then favour `DuckCast<T>`.
+
+#### 3. Implicit duck-proxy creation using duck-chaining
+As a reminder, [Duck-chaining](#duck-chaining) is where your duck-type proxy uses another duck-type proxy as one of its properties. For example:
+
+```csharp
+public interface IProxyMyHandler // The "root" proxy
+{
+    string Name { get; set; }
+    IProxyMyHandlerConfiguration Configuration { get; } // 👈 Uses duck-chaining
+}
+
+public interface IProxyMyHandlerConfiguration // The "duck chained" proxy 
+{
+    int MaxConnections { get; set; }
+}
+```
+
+In the previous duck-typing scenarios described above, you will get an exception at the point the proxy is _created_, whether that is done manually in code using `DuckCast<T>`, or as part of the integration creation. _Duck chaining works differently_: 
+
+> [!WARNING]  
+> Duck-chained proxies throw exceptions when the property they are used on is accessed, _not_ when the "root" proxy is created.
+
+To make this concrete, consider the duck-chain hierarchy shown above. Lets say you need to access the `MaxConnections` value, and you need to use an explicit `DuckCast<T>`. Your code might look like this:
+
+```csharp
+public int GetMaxConnections(object someObject)
+{
+    // If someObject has the same "shape" as IProxyMyHandler, this will succeed
+    // The shape of IProxyMyHandlerConfiguration is NOT checked here
+    var proxy = someObject.DuckType<IProxyMyHandler>();
+ 
+    // ⚠ If the IProxyMyHandlerConfiguration proxy is invalid, the exception
+    // is thrown here! 👇
+    var config = proxy.Configuration;
+    
+    return config.MaxConnections
+}
+```
+
+The above behaviour is often unexpected. It means you need to be particularly careful when accessing duck-chained properties for the first time. Be particularly careful when these are used in code paths that are not _always_ executed, as it's easy to miss these during manual testing and implementation.
+ 
+### Handling nullability
+
+We have already discussed several different _types_ of duck-typing proxies, each of which can be used for different scenarios to give the best performance. Generally speaking, the following are the most common scenarios:
+
+1. Using _interface_ proxies in generics in integrations (This is the preferred approach where possible).
+2. Using _interface_ proxies in `DuckCast<T>` or in duck chained properties.
+3. Using `[DuckCopy]` `struct` proxies in `DuckCast<T>` or in duck chained properties.
+
+In this section, we take each of these scenarios in turn, and describe how the proxy behaves when the type you're trying to proxy is `null`, e.g.:
+
+```csharp
+object myObject = null;
+var proxy = myObject.DuckCast<IMyProxy>() // 👈 what happens here?
+```
+
+> **tl;dr;** see [Recommend rules for duck type nullability](#recommend-rules-for-duck-type-nullability) to skip the explanations and jump to the advice.
+
+#### 1. Interface proxies as generic constraints in integrations
+
+Consider the following integration:
+
+```csharp
+internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instance, TMyProxy proxy)
+    where TMyProxy : IMyProxy
+{
+}
+```
+
+This is using the recommended approach to duck-typing integration arguments. But what happens if the object that `proxy` is duck typing is `null`?
+
+The duck-type created for `proxy` is created as a `struct`. Therefore _it can never be `null`_. To know whether the underlying instance is `null` or not (and so whether it is safe to access the properties), you need to use the `IDuckType` interface, and check the value of `Instance`. e.g.
+
+```csharp
+internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instance, TMyProxy proxy)
+    where TMyProxy : IMyProxy
+{
+                                   // 👇 access via the IDuckType
+    var isUnderlyingInstanceNull = ((IDuckType)proxy).Instance is null;
+}
+```
+
+`IDuckType` is automatically added to all interface proxies, but you can also be explicit and define it _either_ on the interface or in the generic constraints:
+
+```charp
+public interface IMyProxy : IDuckType // defined at the proxy level
+{
+}
+```
+or 
+```csharp
+internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instance, TMyProxy proxy)
+    where TMyProxy : IMyProxy, IDuckType // 👈 defined via a constraint
+{
+    var isUnderlyingInstanceNull = proxy.Instance is null;
+}
+```
+
+#### 2. Using interface proxies in `DuckCast<T>` or in duck chained properties
+
+In this scenario, you're creating a proxy by calling `DuckCast<T>` or by accessing a duck-chained property. Taking the following example:
+
+```csharp
+public interface IProxyMyHandler // The "root" proxy
+{
+    string Name { get; set; }
+    IProxyMyHandlerConfiguration Configuration { get; } // 👈 Uses duck-chaining
+}
+
+public interface IProxyMyHandlerConfiguration // The "duck chained" proxy 
+{
+    int MaxConnections { get; set; }
+}
+```
+
+And using it like this:
+
+```csharp
+object originalObject;
+var proxy = originalObject.DuckCast<IProxyMyHandler>();
+var chainedProxy = proxy.Configuration
+```
+
+In this situation, you have access to the original `object`, so you can check whether it's `null` directly. Also in the above example, if `originalObject` is null, `DuckCast<T>`() will also return `null`.
+
+By implication this _also_ means that `proxy.Instance` will _never_ be `null` in this case, because we only create a proxy if the instance is non-null.
+
+> Yup, that's right, this is _the exact opposite_ to the rules for generic constraint proxies 😅 
+
+The `chainedProxy` behaves similarly. If the underlying property `originalObject` is `null`, then `proxy.Configuration` will _also_ be `null`. And similarly, if `chainedProxy` is _not_ `null`, then `chainedProxy.Instance` will _also_ not be `null` by definition.
+
+
+#### 3. Using `[DuckCopy]` `struct` proxies in `DuckCast<T>` or in duck chained properties
+
+The final scenario is similar to the above, but it uses `[DuckCopy]` `struct` instead of interface. 
+
+> A `[DuckCopy]` `struct`, as the name implies, creates a `struct` and _copies_ the values from the source object into the struct. Their features are limited because of this (e.g. you can't call methods or access the original object) but they are generally faster and lower allocation.  
+
+As an example, lets create the interface proxies as `[DuckCopy]` `struct` instead:
+
+```csharp
+[DuckCopy] // Add the attributes
+public struct ProxyMyHandlerStruct
+{
+    public string Name; // Note these must be FIELDS not properties
+    public ProxyMyHandlerConfiguration Configuration; // duck chaining struct
+}
+
+[DuckCopy]
+public struct ProxyMyHandlerConfiguration 
+{
+    public int MaxConnections;
+}
+```
+
+and lets use it in the same way
+
+And using it like this:
+
+```csharp
+object originalObject;
+var proxy = originalObject.DuckCast<ProxyMyHandlerStruct>();
+var chainedProxy = proxy.Configuration
+```
+
+As before, if `originalObject` is `null` you can test that directly, and similarly `proxy` will be `null` (because `DuckCast<T>` returns `T?`, i.e. a nullable). Where things are different is with a duck-chained `[DuckCopy]` struct.
+
+In the above example, the `ProxyMyHandlerStruct.Configuration` field is of type `ProxyMyHandlerConfiguration`, which is a `struct`. Therefore _it can never be `null`_. If the underlying `originalObject.Configuration` property was null, `proxy.Configuration` will be the `default` value, so `proxy.Configuration.MaxConnections == 0`! 
+
+What's more, the `[DuckCopy]` `struct` does _not_ implement `IDuckType`. So with the above duck-types, there's no way to detect when `originalObject.Configuration` is `null`! This is a problem, as it could mean accidentally using the `default` value for `MaxConnections` (i.e. `0`) when in practice the `Configuration` property was `null`. 
+
+The solution to this problem is to always define duck-chained `[DuckCopy]` `struct`s as nullable:
+
+```csharp
+[DuckCopy]
+public struct ProxyMyHandlerStruct
+{
+    public string Name;
+    public ProxyMyHandlerConfiguration? Configuration;
+                                    //☝ Make this nullable
+}
+```
+
+When the duck-chained type is nullable, you get the exact behavior you would expect: if the source property is `null`, the proxy property is `null`; if the source property is non-`null`, the proxy property is non-`null`. 
+
+#### Recommend rules for duck type nullability
+
+If you're confused by reading the above, then don't feel bad, it _is_ confusing. Our current code base is evidence that we didn't understand all these, and there are (embarrassingly) cases where we could well be hitting null-reference exceptions because of it.
+
+> If you see something in the code base that doesn't make sense based on the above rules, _assume the code is wrong_. Please raise it with team members, and we'll work to understand and hopefully address it! 
+
+In this section we provide some rules to apply. If you apply these consistently (and listen to the nullability warnings provided by the IDE and compiler) then you should hopefully avoid null reference exceptions in your integrations.
+
+This section assumes you're following the advice in [Choosing a proxy implementation](#choosing-a-proxy-implementation) and so always using either interface proxies or `[DuckCopy]` proxies 
+
+1. If you're using an interface proxy, derive the interface from `IDuckType`. This avoids the need for casting to check nullability.
+2. When duck chaining interface proxies, _always_ add `#nullable enable` to the file, and mark the interface property as nullable (using nullable reference types). e.g.
+```csharp
+#nullable enable // 👈 Always add this (to all new files)
+public interface IProxyMyHandler // The "root" proxy
+{
+    string Name { get; set; }
+    IProxyMyHandlerConfiguration? Configuration { get; } // duck-chained proxy
+                             // ☝ Marked nullable
+}
+```
+3. When duck chaining `[DuckCopy]` `struct`, _always_ mark the struct property as nullable. e.g.
+```csharp
+public interface IProxyMyHandler // The "root" proxy, doesn' matter what type it is
+{
+    string Name { get; set; }
+    ProxyMyHandlerConfiguration? Configuration { get; } // duck-chained [DuckCopy] struct proxy
+                             // ☝ Marked nullable
+}
+```
+4. _Before_ using _any_ ducktype proxy (from an integration or a duck-chained property), check it for null using the following helper methods:
+
+```csharp
+public class DuckType
+{
+    internal static bool IsNull<T>(T proxy);
+    internal static bool HasValue<T>(T proxy);
+}
+```
+
+For example:
+
+
+```csharp
+internal static CallTargetState OnMethodBegin<TTarget, TMyProxy>(TTarget instance, TMyProxy proxy)
+    where TMyProxy : IMyProxy, IDuckType
+{
+    if(DuckType.HasValue(proxy))
+    {
+        // safe to use proxy - underlying type is not null
+        if(DuckType.HasValue(proxy.Configuration))
+        {
+            // safe to use duck-chained property - underlying type is not null
+        }
+    }
+}
+```
+
+Yes, this may be a bit annoying, but the consistency will make it easier to be confident about the nullability of the type, it helps the compiler with its nullability flow analysis, and it makes it easier to review. Note that it's important you also follow the other recommended steps, however. 
+
+> Note, the above method has not yet been added. Added to the documentation for now to get feedback, and will implement and test in a subsequent PR if people agree. I intend to implement it as the following: 
+
+```csharp
+public class DuckType
+{
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool IsNull<T>([NotNullWhen(false)] T proxy)
+        => proxy is null || proxy is IDuckType { Instance: null };
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool HasValue<T>(T proxy) => !IsNull(proxy);
+}
+```
+
 
 ## Benchmarks
 

@@ -77,8 +77,6 @@ steps:
         --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID \
         --env DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH \
         --env DD_LOGGER_DD_TAGS \
-        --env DD_INTERNAL_TELEMETRY_V2_ENABLED \
-        --env DD_TELEMETRY_METRICS_ENABLED \
         ${{ parameters.extraArgs }} \
         dd-trace-dotnet/${{ parameters.baseImage }}-${{ parameters.target }} \
         dotnet /build/bin/Debug/_build.dll ${{ parameters.command }}
