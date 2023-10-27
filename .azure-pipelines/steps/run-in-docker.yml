@@ -52,6 +52,7 @@ steps:
         --env IncludeMinorPackageVersions=$(IncludeMinorPackageVersions) \
         --env NUGET_ENABLE_EXPERIMENTAL_HTTP_RETRY=true \
         --env enable_crash_dumps=$(enable_crash_dumps) \
+        --env DD_COLLECTOR_CPU_USAGE="1" \
         --env DD_LOGGER_DD_API_KEY="$(DD_LOGGER_DD_API_KEY)" \
         --env DD_LOGGER_DD_SERVICE \
         --env DD_LOGGER_DD_ENV \
