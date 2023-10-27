@@ -1,13 +1,18 @@
-﻿ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
+﻿# To build this file locally, starting from the root directory:
+# cd tracer/build/_build/docker/gitlab
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:latest .
+# docker push datadog/dd-trace-dotnet-docker-build:latest
+
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
-ENV VSBUILDTOOLS_VERSION="17.8.34205.153" \
-    VSBUILDTOOLS_SHA256="D50AFBD0141B9F80ECED58F5F7BA6238E61F8C4028CEB60BD29BAC69102AB30B" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/e0a88b40-6301-4c95-9f7c-d60649666b5e/d50afbd0141b9f80eced58f5f7ba6238e61f8c4028ceb60bd29bac69102ab30b/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="17.7.34221.43" \
+    VSBUILDTOOLS_SHA256="59B6DA403AFE6892D4531ADB5C58DC52BFF5DB1E2173477AD7F9CF4B2C490277" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ebbb3a8f-0b8f-4c9d-ac08-5e244e84b4fe/59b6da403afe6892d4531adb5c58dc52bff5db1e2173477ad7f9cf4b2c490277/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS

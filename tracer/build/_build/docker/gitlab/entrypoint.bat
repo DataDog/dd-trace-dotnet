@@ -21,7 +21,7 @@ if not exist c:\mnt\ goto nomntdir
 @echo PARAMS %*
 
 call "%VSTUDIO_ROOT%\vc\auxiliary\build\vcvars64.bat"
-SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\Visual Studio\v16.0
+SET VSToolsPath=%VSTUDIO_ROOT%\MSBuild\Microsoft\VisualStudio\v17.0
 
 cd c:\mnt\
 
