@@ -465,7 +465,6 @@ partial class Build : NukeBuild
                 // .EnableNoDependencies()
                 .SetFramework(TargetFramework.NET7_0)
                 .SetConfiguration(BuildConfiguration)
-                .SetSelfContained(true)
                 .SetNoWarnDotNetCore3()
                 .SetDDEnvironmentVariables("dd-trace-dotnet-runner-tool")
                 .SetProperty("BuildStandalone", "true")
