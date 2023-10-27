@@ -47,12 +47,12 @@
   ],
   "sources": [
     {
-      "origin": "http.cookie.value",
+      "origin": "http.request.cookie.value",
       "name": "file",
       "value": "file.txt"
     },
     {
-      "origin": "http.cookie.value",
+      "origin": "http.request.cookie.value",
       "name": "argumentLine",
       "redacted": true,
       "pattern": "abcd"

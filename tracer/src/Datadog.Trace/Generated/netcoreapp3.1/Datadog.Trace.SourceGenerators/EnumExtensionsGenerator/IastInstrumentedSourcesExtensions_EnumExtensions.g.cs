@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSourcesExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 11;
+    public const int Length = 12;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources"/> value.
@@ -38,9 +38,10 @@ internal static partial class IastInstrumentedSourcesExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestHeaderValue => "source_type:http.request.header",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestHeaderName => "source_type:http.request.header.name",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestQuery => "source_type:http.request.query",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieName => "source_type:http.cookie.name",
-            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieValue => "source_type:http.cookie.value",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieName => "source_type:http.request.cookie.name",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieValue => "source_type:http.request.cookie.value",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter => "source_type:http.request.matrix.parameter",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri => "source_type:http.request.uri",
             _ => value.ToString(),
         };
 
@@ -65,6 +66,7 @@ internal static partial class IastInstrumentedSourcesExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieName,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieValue,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri,
         };
 
     /// <summary>
@@ -89,6 +91,7 @@ internal static partial class IastInstrumentedSourcesExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieName),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.CookieValue),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.MatrixParameter),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSources.RequestUri),
         };
 
     /// <summary>
@@ -110,8 +113,9 @@ internal static partial class IastInstrumentedSourcesExtensions
             "source_type:http.request.header",
             "source_type:http.request.header.name",
             "source_type:http.request.query",
-            "source_type:http.cookie.name",
-            "source_type:http.cookie.value",
+            "source_type:http.request.cookie.name",
+            "source_type:http.request.cookie.value",
             "source_type:http.request.matrix.parameter",
+            "source_type:http.request.uri",
         };
 }
