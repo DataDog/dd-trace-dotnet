@@ -198,12 +198,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            "DD_DOTNET_TRACER_HOME",
-            CorProfilerKey,
-            CorEnableKey,
-            CorProfilerPathKey,
-            CorProfilerPath32Key,
-            CorProfilerPath64Key);
+            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+
+        console.Output.Should().Contain(
+            CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
+            CorrectlySetupEnvironment(CorEnableKey, "1"),
+            CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
     }
 
     [SkippableFact]
@@ -242,7 +242,10 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         console.Output.Should().ContainAll(
             TracerVersion(TracerConstants.AssemblyVersion),
-            ContinuousProfilerEnabled);
+            ContinuousProfilerEnabled,
+            CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
+            CorrectlySetupEnvironment(CorEnableKey, "1"),
+            CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
 
         console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
@@ -250,12 +253,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             ContinuousProfilerNotSet,
             ContinuousProfilerNotLoaded,
             "LD_PRELOAD",
-            "DD_DOTNET_TRACER_HOME",
-            CorProfilerKey,
-            CorEnableKey,
-            CorProfilerPathKey,
-            CorProfilerPath32Key,
-            CorProfilerPath64Key);
+            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
     }
 
     [SkippableFact]
@@ -469,7 +467,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             using var console = ConsoleHelper.Redirect();
 
             ProcessBasicCheck.CheckLinuxInstallation(tempDirectory);
-            console.Output.Should().BeEmpty();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                console.Output.Should().Contain(CorrectLinuxDirectoryFound(dir));
+            }
         }
         finally
         {

@@ -27,6 +27,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             bool ok = true;
             var runtime = process.DotnetRuntime;
 
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine(SetupChecks);
+
             if (runtime == ProcessInfo.Runtime.NetFx)
             {
                 AnsiConsole.WriteLine(NetFrameworkRuntime);
@@ -41,12 +44,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 runtime = ProcessInfo.Runtime.NetFx;
             }
 
+            AnsiConsole.WriteLine(ModuleCheck());
             var loaderModule = FindLoader(process);
             var nativeTracerModule = FindNativeTracerModule(process, loaderModule != null);
 
             if (loaderModule == null)
             {
-                AnsiConsole.WriteLine(LoaderNotLoaded);
+                Utils.WriteWarning(LoaderNotLoaded);
             }
 
             if (nativeTracerModule == null)
@@ -65,7 +69,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                         nativeTracerVersion = null;
                     }
 
-                    AnsiConsole.WriteLine(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
+                    Utils.WriteSuccess(ProfilerVersion(nativeTracerVersion != null ? $"{nativeTracerVersion}" : "{empty}"));
                 }
             }
 
@@ -79,7 +83,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             else if (tracerModules.Length == 1)
             {
                 var version = FileVersionInfo.GetVersionInfo(tracerModules[0]);
-                AnsiConsole.WriteLine(TracerVersion(version.FileVersion ?? "{empty}"));
+                Utils.WriteSuccess(TracerVersion(version.FileVersion ?? "{empty}"));
             }
             else if (tracerModules.Length > 1)
             {
@@ -108,12 +112,18 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 }
             }
 
+            AnsiConsole.WriteLine(EnvVarCheck("DD_DOTNET_TRACER_HOME"));
+
             if (process.EnvironmentVariables.TryGetValue("DD_DOTNET_TRACER_HOME", out var tracerHome))
             {
                 if (!Directory.Exists(tracerHome))
                 {
                     Utils.WriteWarning(TracerHomeNotFoundFormat(tracerHome));
                     ok = false;
+                }
+                else
+                {
+                    Utils.WriteSuccess(TracerHomeFoundFormat(tracerHome));
                 }
             }
             else
@@ -126,11 +136,15 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             string corProfilerPathKey32 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_32" : "COR_PROFILER_PATH_32";
             string corProfilerPathKey64 = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER_PATH_64" : "COR_PROFILER_PATH_64";
 
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerPathKey));
+
             ok &= CheckProfilerPath(process, corProfilerPathKey, requiredOnLinux: true);
             ok &= CheckProfilerPath(process, corProfilerPathKey32, requiredOnLinux: false);
             ok &= CheckProfilerPath(process, corProfilerPathKey64, requiredOnLinux: false);
 
             string corProfilerKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_PROFILER" : "COR_PROFILER";
+
+            AnsiConsole.WriteLine(EnvVarCheck(corProfilerKey));
 
             process.EnvironmentVariables.TryGetValue(corProfilerKey, out var corProfiler);
 
@@ -139,8 +153,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 Utils.WriteWarning(WrongEnvironmentVariableFormat(corProfilerKey, Utils.Profilerid, corProfiler));
                 ok = false;
             }
+            else
+            {
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corProfilerKey, Utils.Profilerid));
+            }
 
             string corEnableKey = runtime == ProcessInfo.Runtime.NetCore ? "CORECLR_ENABLE_PROFILING" : "COR_ENABLE_PROFILING";
+
+            AnsiConsole.WriteLine(EnvVarCheck(corEnableKey));
 
             process.EnvironmentVariables.TryGetValue(corEnableKey, out var corEnable);
 
@@ -148,6 +168,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             {
                 Utils.WriteError(WrongEnvironmentVariableFormat(corEnableKey, "1", corEnable));
                 ok = false;
+            }
+            else
+            {
+                Utils.WriteSuccess(CorrectlySetupEnvironment(corEnableKey, "1"));
             }
 
             process.EnvironmentVariables.TryGetValue(corProfilerPathKey, out var corProfilerPathValue);
@@ -159,10 +183,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             if (!ok && isTracingUsingBundle)
             {
-                AnsiConsole.WriteLine(TracingWithBundleProfilerPath);
+                AnsiConsole.WriteLine(TracerCheck());
+                Utils.WriteWarning(TracingWithBundleProfilerPath);
             }
             else if (!ok)
             {
+                AnsiConsole.WriteLine(TracerCheck());
+
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
                 {
                     AnsiConsole.WriteLine(runtime == ProcessInfo.Runtime.NetCore ? TracingWithInstallerWindowsNetCore : TracingWithInstallerWindowsNetFramework);
@@ -182,6 +209,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             // Running non-blocker checks after confirming setup was done correctly
             if (ok)
             {
+                ResetChecks();
+                AnsiConsole.WriteLine();
+                AnsiConsole.WriteLine(ConfigurationChecks);
+                AnsiConsole.WriteLine(TraceEnabledCheck());
+
                 if (process.EnvironmentVariables.TryGetValue("DD_TRACE_ENABLED", out var traceEnabledValue))
                 {
                     if (!ParseBooleanConfigurationValue(traceEnabledValue))
@@ -189,25 +221,30 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                         Utils.WriteError(TracerNotEnabled(traceEnabledValue));
                     }
                 }
+                else
+                {
+                    Utils.WriteInfo(TraceEnabledNotSet);
+                }
 
+                AnsiConsole.WriteLine(ContinuousProfilerCheck());
                 bool isContinuousProfilerEnabled;
 
                 if (process.EnvironmentVariables.TryGetValue("DD_PROFILING_ENABLED", out var profilingEnabled))
                 {
                     if (ParseBooleanConfigurationValue(profilingEnabled))
                     {
-                        AnsiConsole.WriteLine(ContinuousProfilerEnabled);
+                        Utils.WriteSuccess(ContinuousProfilerEnabled);
                         isContinuousProfilerEnabled = true;
                     }
                     else
                     {
-                        AnsiConsole.WriteLine(ContinuousProfilerDisabled);
+                        Utils.WriteInfo(ContinuousProfilerDisabled);
                         isContinuousProfilerEnabled = false;
                     }
                 }
                 else
                 {
-                    AnsiConsole.WriteLine(ContinuousProfilerNotSet);
+                    Utils.WriteInfo(ContinuousProfilerNotSet);
                     isContinuousProfilerEnabled = false;
                 }
 
@@ -349,6 +386,10 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
                 {
                     Utils.WriteError(MissingProfilerEnvironment(key, profilerPath));
                     ok = false;
+                }
+                else
+                {
+                    Utils.WriteSuccess(CorrectlySetupEnvironment(key, profilerPath));
                 }
             }
             else if (requiredOnLinux)
@@ -541,13 +582,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             const string uninstallKey64Bit = @"SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\";
             const string uninstallKey32Bit = @"SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall";
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey64Bit, datadog64BitProgram, out var tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog64BitProgram));
                 return tracerVersion;
             }
 
-            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion))
+            if (GetLocalMachineSubKeyVersion(uninstallKey32Bit, datadog32BitProgram, out tracerVersion, registryService))
             {
                 Utils.WriteSuccess(TracerProgramFound(datadog32BitProgram));
                 var processBitness = ProcessEnvironmentWindows.GetProcessBitness(Process.GetProcessById(processId));
@@ -607,7 +648,13 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
             try
             {
-                if (!Directory.Exists(Path.Join(installDirectory, archFolder)))
+                var joinedPath = Path.Join(installDirectory, archFolder);
+
+                if (Directory.Exists(joinedPath))
+                {
+                    Utils.WriteSuccess(CorrectLinuxDirectoryFound(joinedPath));
+                }
+                else
                 {
                     string[] directories = Directory.GetDirectories(installDirectory);
 
