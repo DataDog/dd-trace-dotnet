@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -28,7 +28,8 @@
             "lines": [
               10
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -73,7 +74,8 @@
             "lines": [
               11
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -118,7 +120,8 @@
             "lines": [
               12
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

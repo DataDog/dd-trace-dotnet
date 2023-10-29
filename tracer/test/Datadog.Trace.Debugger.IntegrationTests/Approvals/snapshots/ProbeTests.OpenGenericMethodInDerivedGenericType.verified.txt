@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -98,7 +98,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.OpenGenericMethodInDerivedGenericType+Test2`1"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

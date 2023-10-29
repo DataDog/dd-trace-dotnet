@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -84,7 +84,8 @@
             "lines": [
               23
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -185,7 +186,8 @@
             "lines": [
               24
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -286,7 +288,8 @@
             "lines": [
               25
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -353,8 +356,8 @@
                 },
                 "children": {
                   "elements": [],
-                  "type": "List`1",
-                  "value": "count: 0"
+                  "size": 0,
+                  "type": "List`1"
                 },
                 "person": {
                   "isNull": "true",
@@ -388,7 +391,8 @@
             "lines": [
               26
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -514,8 +518,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "isNull": "true",
@@ -549,7 +553,8 @@
             "lines": [
               27
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -675,8 +680,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -772,8 +777,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -815,7 +820,8 @@
             "lines": [
               29
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -941,8 +947,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -1038,8 +1044,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1081,7 +1087,8 @@
             "lines": [
               30
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1207,8 +1214,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -1304,8 +1311,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1347,7 +1354,8 @@
             "lines": [
               31
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1473,8 +1481,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -1570,8 +1578,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1613,7 +1621,8 @@
             "lines": [
               32
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -1739,8 +1748,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -1836,8 +1845,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -1879,7 +1888,8 @@
             "lines": [
               34
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -2005,8 +2015,8 @@
                       "value": "Person"
                     }
                   ],
-                  "type": "List`1",
-                  "value": "count: 1"
+                  "size": 1,
+                  "type": "List`1"
                 },
                 "person": {
                   "fields": {
@@ -2102,8 +2112,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -2145,7 +2155,8 @@
             "lines": [
               35
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

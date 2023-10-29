@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -60,8 +60,8 @@
                         "value": "Error"
                       }
                     ],
-                    "type": "State[]",
-                    "value": "count: 10"
+                    "size": 10,
+                    "type": "State[]"
                   },
                   {
                     "elements": [
@@ -106,12 +106,12 @@
                         "value": "Error"
                       }
                     ],
-                    "type": "State[]",
-                    "value": "count: 10"
+                    "size": 10,
+                    "type": "State[]"
                   }
                 ],
-                "type": "State[][]",
-                "value": "count: 2"
+                "size": 2,
+                "type": "State[][]"
               }
             }
           },
@@ -168,8 +168,8 @@
                         "value": "Error"
                       }
                     ],
-                    "type": "State[]",
-                    "value": "count: 10"
+                    "size": 10,
+                    "type": "State[]"
                   },
                   {
                     "elements": [
@@ -214,12 +214,12 @@
                         "value": "Error"
                       }
                     ],
-                    "type": "State[]",
-                    "value": "count: 10"
+                    "size": 10,
+                    "type": "State[]"
                   }
                 ],
-                "type": "State[][]",
-                "value": "count: 2"
+                "size": 2,
+                "type": "State[][]"
               }
             }
           }
@@ -232,7 +232,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.MultidimensionalArrayTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
