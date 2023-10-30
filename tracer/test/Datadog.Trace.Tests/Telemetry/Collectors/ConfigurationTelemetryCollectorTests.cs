@@ -26,8 +26,7 @@ public class ConfigurationTelemetryCollectorTests
         => from propagationStyleExtract in new string[] { null, "tracecontext" }
            from propagationStyleInject in new string[] { null, "datadog" }
            from propagationStyle in new string[] { null, "B3" }
-           from activityListenerEnabled in new[] { "false", "true" }
-           select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle, activityListenerEnabled };
+           select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle };
 
     [Fact]
     public void HasChangesAfterEachTracerSettingsAdded()
@@ -180,7 +179,7 @@ public class ConfigurationTelemetryCollectorTests
 
     [Theory]
     [MemberData(nameof(GetPropagatorConfigurations))]
-    public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle, string activityListenerEnabled)
+    public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle)
     {
         var collector = new ConfigurationTelemetry();
         var config = new NameValueCollection
@@ -188,7 +187,6 @@ public class ConfigurationTelemetryCollectorTests
             { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
             { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
             { ConfigurationKeys.PropagationStyle, propagationStyle },
-            { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
         };
 
         _ = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(config), collector));
@@ -210,26 +208,8 @@ public class ConfigurationTelemetryCollectorTests
             (null, null) => (ConfigurationKeys.PropagationStyleInject, "tracecontext,Datadog"),
         };
 
-        // V2 telemetry will collect an additional ",tracecontext" in each propagator style when the following conditions are met
-        // It will then record it with the "specific" key,
-        // - DD_TRACE_OTEL_ENABLED=true
-        // - "tracecontext" is not already included in the propagation configuration
-        if (activityListenerEnabled == "true" && !ContainsTraceContext(extractValue))
-        {
-            extractKey = ConfigurationKeys.PropagationStyleExtract;
-            extractValue += ",tracecontext";
-        }
-
-        if (activityListenerEnabled == "true" && !ContainsTraceContext(injectValue))
-        {
-            injectKey = ConfigurationKeys.PropagationStyleInject;
-            injectValue += ",tracecontext";
-        }
-
         GetLatestValueFromConfig(data, extractKey).Should().Be(extractValue);
         GetLatestValueFromConfig(data, injectKey).Should().Be(injectValue);
-
-        static bool ContainsTraceContext(string value) => value.Split(',').Contains("tracecontext", StringComparer.OrdinalIgnoreCase);
     }
 
 #if NETFRAMEWORK
