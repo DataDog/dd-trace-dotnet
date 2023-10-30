@@ -1204,7 +1204,8 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
 
     // take this lock so we block until the
     // module metadata is not longer being used
-    auto modules = module_ids.Get();
+    auto scopedModules = module_ids.Get();
+    auto& modules = scopedModules.Ref();
 
     // double check if is_attached_ has changed to avoid possible race condition with shutdown function
     if (!is_attached_)
@@ -1221,6 +1222,9 @@ HRESULT STDMETHODCALLTYPE CorProfiler::ModuleUnloadStarted(ModuleID module_id)
     {
         _dataflow->ModuleUnloaded(module_id);
     }
+
+    auto new_end = std::remove(modules.begin(), modules.end(), module_id);
+    modules.erase(new_end, modules.end());
 
     const auto& moduleInfo = GetModuleInfo(this->info_, module_id);
     if (!moduleInfo.IsValid())
