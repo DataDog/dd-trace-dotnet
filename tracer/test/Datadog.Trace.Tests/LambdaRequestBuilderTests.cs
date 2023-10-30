@@ -68,6 +68,43 @@ namespace Datadog.Trace.Tests
             request.Headers.Get("x-datadog-trace-id").Should().BeNull();
             request.Headers.Get("x-datadog-span-id").Should().BeNull();
         }
+
+        [Fact]
+        public void TestGetEndInvocationRequestWithErrorTags()
+        {
+            var tracer = TracerHelper.Create();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
+            scope.Span.SetTag("error.msg", "Exception");
+            scope.Span.SetTag("error.type", "Exception");
+            scope.Span.SetTag("error.stack", "everything is " + System.Environment.NewLine + "fine");
+            ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+            var request = requestBuilder.GetEndInvocationRequest(scope, true);
+            request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
+            request.Headers.Get("x-datadog-invocation-error-msg").Should().Be("Exception");
+            request.Headers.Get("x-datadog-invocation-error-type").Should().Be("Exception");
+            request.Headers.Get("x-datadog-invocation-error-stack").Should().NotBeNull();
+            request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
+            request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
+            request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+        }
+
+        [Fact]
+        public void TestGetEndInvocationRequestWithoutErrorTags()
+        {
+            var tracer = TracerHelper.Create();
+            var scope = LambdaCommon.CreatePlaceholderScope(tracer, null, null);
+            ILambdaExtensionRequest requestBuilder = new LambdaRequestBuilder();
+            var request = requestBuilder.GetEndInvocationRequest(scope, true);
+            request.Headers.Get("x-datadog-invocation-error").Should().NotBeNull();
+            request.Headers.Get("x-datadog-invocation-error-msg").Should().BeNull();
+            request.Headers.Get("x-datadog-invocation-error-type").Should().BeNull();
+            request.Headers.Get("x-datadog-invocation-error-stack").Should().BeNull();
+            request.Headers.Get("x-datadog-tracing-enabled").Should().Be("false");
+            request.Headers.Get("x-datadog-sampling-priority").Should().Be("1");
+            request.Headers.Get("x-datadog-trace-id").Should().NotBeNull();
+            request.Headers.Get("x-datadog-span-id").Should().NotBeNull();
+        }
     }
 }
 #endif
