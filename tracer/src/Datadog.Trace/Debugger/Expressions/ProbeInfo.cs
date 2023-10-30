@@ -9,6 +9,7 @@ namespace Datadog.Trace.Debugger.Expressions
 {
     internal readonly record struct ProbeInfo(
         string ProbeId,
+        int ProbeVersion,
         ProbeType ProbeType,
         ProbeLocation ProbeLocation,
         EvaluateAt EvaluateAt,
@@ -19,6 +20,8 @@ namespace Datadog.Trace.Debugger.Expressions
         TargetSpan? TargetSpan)
     {
         internal string ProbeId { get; } = ProbeId;
+
+        internal int ProbeVersion { get; } = ProbeVersion;
 
         internal ProbeType ProbeType { get; } = ProbeType;
 

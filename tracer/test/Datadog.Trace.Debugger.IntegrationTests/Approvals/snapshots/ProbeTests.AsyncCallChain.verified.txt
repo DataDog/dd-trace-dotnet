@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -62,7 +62,8 @@
           "location": {
             "method": "Async1",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncCallChain"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"
@@ -117,7 +118,8 @@
           "location": {
             "method": "Async2",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncCallChain"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

@@ -26,6 +26,18 @@ namespace Datadog.Trace.Tools.Runner
     {
         public const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
 
+        public static string GetHomePath(string runnerFolder)
+        {
+            // In the current nuspec structure RunnerFolder has the following format:
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp3.1\any
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp2.1\any
+            // And the Home folder is:
+            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\home
+            // So we have to go up 3 folders.
+
+            return DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
+        }
+
         public static Dictionary<string, string> GetProfilerEnvironmentVariables(InvocationContext context, string runnerFolder, Platform platform, CommonTracerSettings options, bool reducePathLength)
         {
             var tracerHomeFolder = options.TracerHome.GetValue(context);
@@ -353,17 +365,22 @@ namespace Datadog.Trace.Tools.Runner
 
         internal static void WriteError(string message)
         {
-            AnsiConsole.MarkupLine($"[red]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[red] [[FAILURE]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static void WriteWarning(string message)
         {
-            AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[yellow] [[WARNING]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static void WriteSuccess(string message)
         {
-            AnsiConsole.MarkupLine($"[green]{message.EscapeMarkup()}[/]");
+            AnsiConsole.MarkupLine($"[lime] [[SUCCESS]]: {message.EscapeMarkup()}[/]");
+        }
+
+        internal static void WriteInfo(string message)
+        {
+            AnsiConsole.MarkupLine($"[aqua] [[INFO]]: {message.EscapeMarkup()}[/]");
         }
 
         internal static bool IsAlpine()
@@ -392,12 +409,6 @@ namespace Datadog.Trace.Tools.Runner
 
         private static Dictionary<string, string> GetBaseProfilerEnvironmentVariables(string runnerFolder, Platform platform, string tracerHomeFolder, bool reducePathLength)
         {
-            // In the current nuspec structure RunnerFolder has the following format:
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp3.1\any
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\tools\netcoreapp2.1\any
-            // And the Home folder is:
-            //  C:\Users\[user]\.dotnet\tools\.store\datadog.trace.tools.runner\[version]\datadog.trace.tools.runner\[version]\home
-            // So we have to go up 3 folders.
             string tracerHome = null;
             if (!string.IsNullOrEmpty(tracerHomeFolder))
             {
@@ -408,7 +419,7 @@ namespace Datadog.Trace.Tools.Runner
                 }
             }
 
-            tracerHome ??= DirectoryExists("Home", Path.Combine(runnerFolder, "..", "..", "..", "home"), Path.Combine(runnerFolder, "home"));
+            tracerHome ??= GetHomePath(runnerFolder);
 
             if (tracerHome == null)
             {

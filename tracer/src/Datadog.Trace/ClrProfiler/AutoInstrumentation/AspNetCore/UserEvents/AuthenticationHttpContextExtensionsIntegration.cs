@@ -26,14 +26,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore.UserEvents
         MethodName = "SignInAsync",
         ReturnTypeName = ClrNames.Task,
         MinimumVersion = Major2,
-        MaximumVersion = Major7,
+        MaximumVersion = "8",
         IntegrationName = nameof(IntegrationId.AspNetCore))]
     [Browsable(false)]
     [EditorBrowsable(EditorBrowsableState.Never)]
     public static class AuthenticationHttpContextExtensionsIntegration
     {
         private const string Major2 = "2";
-        private const string Major7 = "7";
         private const string AssemblyName = "Microsoft.AspNetCore.Authentication.Abstractions";
 
         private const string HttpContextExtensionsTypeName = "Microsoft.AspNetCore.Authentication.AuthenticationHttpContextExtensions";

@@ -12,7 +12,7 @@ using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetClientIn
     AssemblyName = "Microsoft.Data.Sqlite",
     TypeName = "Microsoft.Data.Sqlite.SqliteCommand",
     MinimumVersion = "2.0.0",
-    MaximumVersion = "7.*.*",
+    MaximumVersion = "8.*.*",
     IntegrationName = nameof(IntegrationId.Sqlite),
     DataReaderType = "Microsoft.Data.Sqlite.SqliteDataReader",
     DataReaderTaskType = "System.Threading.Tasks.Task`1[Microsoft.Data.Sqlite.SqliteDataReader]",

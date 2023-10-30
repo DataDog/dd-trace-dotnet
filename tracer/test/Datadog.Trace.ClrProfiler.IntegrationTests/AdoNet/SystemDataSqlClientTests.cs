@@ -82,7 +82,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // Testing that spans yield the expected output when using DBM
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
+            settings.AddRegexScrubber(new Regex("System-Data-SqlClient-Test-[a-zA-Z0-9]{32}"), "System-Data-SqlClient-Test-GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: (localdb)\\MSSQLLocalDB", "out.host: sqlserver");
             settings.AddSimpleScrubber("out.host: sqledge_arm64", "out.host: sqlserver");

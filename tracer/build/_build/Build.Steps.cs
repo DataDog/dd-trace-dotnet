@@ -178,8 +178,8 @@ partial class Build
 
     TargetFramework[] TestingFrameworks =>
     IncludeAllTestFrameworks || HaveIntegrationsChanged
-        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, }
-        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET7_0, };
+        ? new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_0, TargetFramework.NETCOREAPP3_1, TargetFramework.NET5_0, TargetFramework.NET6_0, TargetFramework.NET7_0, TargetFramework.NET8_0, }
+        : new[] { TargetFramework.NET462, TargetFramework.NETCOREAPP2_1, TargetFramework.NETCOREAPP3_1, TargetFramework.NET8_0, };
 
     bool HaveIntegrationsChanged =>
         GetGitChangedFiles(baseBranch: "origin/master")
@@ -236,7 +236,7 @@ partial class Build
 
     Target CompileNativeSrcWindows => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsWin)
         .Executes(() =>
         {
@@ -261,7 +261,7 @@ partial class Build
 
     Target CompileTracerNativeSrcLinux => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsLinux)
         .Executes(() =>
         {
@@ -275,7 +275,7 @@ partial class Build
 
     Target CompileNativeSrcMacOs => _ => _
         .Unlisted()
-        .After(CompileManagedSrc)
+        .After(CompileManagedLoader)
         .OnlyWhenStatic(() => IsOsx)
         .Executes(() =>
         {
@@ -355,11 +355,22 @@ partial class Build
         .Description("Runs CppCheck over the native tracer project")
         .DependsOn(CppCheckNativeSrcUnix);
 
+    Target CompileManagedLoader => _ => _
+        .Unlisted()
+        .Description("Compiles the managed loader (which is required by the native loader)")
+        .After(CreateRequiredDirectories)
+        .After(Restore)
+        .Executes(() =>
+        {
+            DotnetBuild(new[] { Solution.GetProject(Projects.ManagedLoader).Path }, noRestore: false, noDependencies: false);
+        });
+
     Target CompileManagedSrc => _ => _
         .Unlisted()
         .Description("Compiles the managed code in the src directory")
         .After(CreateRequiredDirectories)
         .After(Restore)
+        .After(CompileManagedLoader)
         .Executes(() =>
         {
             var include = TracerDirectory.GlobFiles(
@@ -370,7 +381,8 @@ partial class Build
                 "src/Datadog.Trace.Bundle/Datadog.Trace.Bundle.csproj",
                 "src/Datadog.Trace.Tools.Runner/*.csproj",
                 "src/**/Datadog.InstrumentedAssembly*.csproj",
-                "src/Datadog.AutoInstrumentation.Generator/*.csproj"
+                "src/Datadog.AutoInstrumentation.Generator/*.csproj",
+                $"src/{Projects.ManagedLoader}/*.csproj"
             );
 
             var toBuild = include.Except(exclude);
@@ -497,7 +509,13 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var testDir = project.Directory;
-                    var frameworks = project.GetTargetFrameworks();
+                    
+                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's 
+                    // failing to load MSBuild, so can't get the target frameworks here
+                    // so hardcoding to use the default test frameworks for now
+                    var frameworks = IsOsx
+                        ? TestingFrameworks.Select(x => (string) x).ToArray()
+                        : project.GetTargetFrameworks();
 
                     var testBinFolder = testDir / "bin" / BuildConfiguration;
 
@@ -1251,7 +1269,7 @@ partial class Build
                    .Select(x => Solution.GetProject(x))
                    .Where(x => x.Name switch
                     {
-                        "Samples.Trimming" => Framework == TargetFramework.NET6_0 || Framework == TargetFramework.NET7_0,
+                        "Samples.Trimming" => Framework.IsGreaterThanOrEqualTo(TargetFramework.NET6_0),
                         _ => false,
                     });
 

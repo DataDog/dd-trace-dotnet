@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
+using Datadog.Trace.Tools.Shared.Windows;
 
 namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 {

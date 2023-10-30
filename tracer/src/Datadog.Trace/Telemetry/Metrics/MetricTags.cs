@@ -245,9 +245,10 @@ internal static class MetricTags
         [Description("source_type:http.request.header")] RequestHeaderValue = 5,
         [Description("source_type:http.request.header.name")] RequestHeaderName = 6,
         [Description("source_type:http.request.query")] RequestQuery = 7,
-        [Description("source_type:http.cookie.name")] CookieName = 8,
-        [Description("source_type:http.cookie.value")] CookieValue = 9,
+        [Description("source_type:http.request.cookie.name")] CookieName = 8,
+        [Description("source_type:http.request.cookie.value")] CookieValue = 9,
         [Description("source_type:http.request.matrix.parameter")] MatrixParameter = 10,
+        [Description("source_type:http.request.uri")] RequestUri = 11,
     }
 
     [EnumExtensions]

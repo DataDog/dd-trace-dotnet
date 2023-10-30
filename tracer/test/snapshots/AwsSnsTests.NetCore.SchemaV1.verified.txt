@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -17,6 +17,8 @@
       peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
@@ -46,6 +48,8 @@
       peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
@@ -81,6 +85,8 @@
       runtime-id: Guid_1,
       span.kind: producer,
       topicname: MyTopic,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.peer.service.source: topicname
     },

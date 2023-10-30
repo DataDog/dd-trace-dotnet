@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -46,8 +46,8 @@
                     "value": "SimpleTypeNameTest"
                   }
                 ],
-                "type": "String[]",
-                "value": "count: 3"
+                "size": 3,
+                "type": "String[]"
               }
             },
             "throwable": {
@@ -70,7 +70,8 @@
           "location": {
             "method": "MethodToInstrument",
             "type": "Samples.Probes.TestRuns.SmokeTests.SimpleTypeNameInGlobalNamespaceTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

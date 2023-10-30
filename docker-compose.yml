@@ -369,16 +369,14 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
 
   ProfilerIntegrationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll BuildAndRunProfilerIntegrationTests
     volumes:
       - ./:/project
@@ -417,8 +415,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
       - LDAP_SERVER=openldap-server:389
     hostname: integrationtests
     depends_on:
@@ -427,10 +423,10 @@ services:
   IntegrationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter ${Filter:- } --SampleName ${SampleName:- } --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
@@ -496,8 +492,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
     depends_on:
       - aerospike
@@ -522,10 +516,10 @@ services:
   IntegrationTests.Debugger:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true} --targetplatform x64
     volumes:
       - ./:/project
@@ -566,17 +560,15 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   IntegrationTests.Serverless:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --framework ${framework:-netcoreapp3.1} --filter Category=Lambda --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
@@ -621,17 +613,15 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
     hostname: integrationtests
 
   ExplorationTests:
     build:
       context: ./tracer/build/_build/
-      dockerfile: docker/${baseImage:-centos7}.dockerfile
+      dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-centos7}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunExplorationTests --explorationTestUseCase ${explorationTestUseCase:-debugger} --explorationTestName ${explorationTestName:-eshoponweb} --framework ${framework:-netcoreapp3.1} --code-coverage ${runCodeCoverage:-true}
     volumes:
       - ./:/project
@@ -672,8 +662,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
 
   StartDependencies:
     image: andrewlock/wait-for-dependencies
@@ -705,8 +693,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunLinuxIntegrationTests --filter ${Filter:- } --SampleName ${SampleName:- }  --framework ${framework:-netcoreapp3.1}
     volumes:
       - ./:/project
@@ -764,8 +752,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
     depends_on:
       - servicestackredis_arm64
       - stackexchangeredis_arm64
@@ -802,8 +788,8 @@ services:
       context: ./tracer/build/_build/
       dockerfile: docker/${baseImage:-debian}.dockerfile
       args:
-        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-7.0.306}
-    image: dd-trace-dotnet/${baseImage:-debian}-tester
+        - DOTNETSDK_VERSION=${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
+    image: dd-trace-dotnet/${baseImage:-debian}-tester:${dotnetCoreSdkLatestVersion:-8.0.100-rc.2.23502.2}
     command: dotnet /build/bin/Debug/_build.dll RunDebuggerIntegrationTests --framework ${framework:-netcoreapp3.1} --targetplatform x64
     volumes:
       - ./:/project
@@ -842,8 +828,6 @@ services:
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCECOMMITID
       - DD_LOGGER_SYSTEM_PULLREQUEST_SOURCEBRANCH
       - DD_LOGGER_DD_TAGS
-      - DD_INTERNAL_TELEMETRY_V2_ENABLED
-      - DD_TELEMETRY_METRICS_ENABLED
 
   start-test-agent:
     image: andrewlock/wait-for-dependencies

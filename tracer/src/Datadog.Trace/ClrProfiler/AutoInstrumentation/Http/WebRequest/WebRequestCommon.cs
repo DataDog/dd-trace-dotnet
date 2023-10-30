@@ -26,7 +26,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
 
         internal const string Major2 = "2";
         internal const string Major4 = "4";
-        internal const string Major7 = "7";
+        internal const string Major8 = "8";
 
         internal const string IntegrationName = nameof(Configuration.IntegrationId.WebRequest);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.WebRequest;

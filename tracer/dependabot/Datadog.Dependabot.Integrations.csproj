@@ -23,33 +23,33 @@
 
     <!-- Integration: System.Web.Mvc -->
     <!-- Assembly: System.Web.Mvc -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.2.9 -->
-    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.2.9" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.AspNet.Mvc/5.3.0 -->
+    <PackageReference Include="Microsoft.AspNet.Mvc" Version="5.3.0" />
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!-- Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.6 -->
-    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.6" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.10 -->
+    <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.10" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!-- Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.58 -->
-    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.58" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.62 -->
+    <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.62" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.5 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.204.5" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.9 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.204.9" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.200.58 -->
-    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.200.58" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.201 -->
+    <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.201" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.59 -->
-    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.59" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.63 -->
+    <PackageReference Include="AWSSDK.SQS" Version="3.7.200.63" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
     <!-- Assembly: Azure.Messaging.ServiceBus -->
@@ -58,8 +58,8 @@
 
     <!-- Integration: Microsoft.Azure.Cosmos.Client -->
     <!-- Assembly: Microsoft.Azure.Cosmos.Client -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.35.4 -->
-    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.35.4" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Azure.Cosmos/3.36.0 -->
+    <PackageReference Include="Microsoft.Azure.Cosmos" Version="3.36.0" />
 
     <!-- Integration: Couchbase.NetClient -->
     <!-- Assembly: Couchbase.NetClient -->
@@ -88,8 +88,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.5.1 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.5.1" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.6.1 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.6.1" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -113,8 +113,8 @@
 
     <!-- Integration: Confluent.Kafka -->
     <!-- Assembly: Confluent.Kafka -->
-    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.2.0 -->
-    <PackageReference Include="Confluent.Kafka" Version="2.2.0" />
+    <!-- Latest package https://www.nuget.org/packages/Confluent.Kafka/2.3.0 -->
+    <PackageReference Include="Confluent.Kafka" Version="2.3.0" />
 
     <!-- Integration: log4net -->
     <!-- Assembly: log4net -->
@@ -143,8 +143,8 @@
 
     <!-- Integration: MySql.Data -->
     <!-- Assembly: MySql.Data -->
-    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.1.0 -->
-    <PackageReference Include="MySql.Data" Version="8.1.0" />
+    <!-- Latest package https://www.nuget.org/packages/MySql.Data/8.2.0 -->
+    <PackageReference Include="MySql.Data" Version="8.2.0" />
 
     <!-- Integration: MySqlConnector -->
     <!-- Assembly: MySqlConnector -->
@@ -198,8 +198,8 @@
 
     <!-- Integration: Microsoft.Data.SqlClient -->
     <!-- Assembly: Microsoft.Data.SqlClient -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/5.1.1 -->
-    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.1" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.SqlClient/5.1.2 -->
+    <PackageReference Include="Microsoft.Data.SqlClient" Version="5.1.2" />
 
     <!-- Integration: System.Data.SqlClient -->
     <!-- Assembly: System.Data.SqlClient -->
@@ -208,8 +208,8 @@
 
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.12 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.12" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/7.0.13 -->
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.13" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
@@ -273,13 +273,13 @@
 
     <!-- Integration: Microsoft.Extensions.Identity.Core -->
     <!-- Assembly: Microsoft.Extensions.Identity.Core -->
-    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.12 -->
-    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.12" />
+    <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Identity.Core/7.0.13 -->
+    <PackageReference Include="Microsoft.Extensions.Identity.Core" Version="7.0.13" />
 
     <!-- Integration: Amazon.Lambda.RuntimeSupport -->
     <!-- Assembly: Amazon.Lambda.RuntimeSupport -->
-    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.9.0 -->
-    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.9.0" />
+    <!-- Latest package https://www.nuget.org/packages/Amazon.Lambda.RuntimeSupport/1.10.0 -->
+    <PackageReference Include="Amazon.Lambda.RuntimeSupport" Version="1.10.0" />
 
     <!-- Integration: Microsoft.Azure.WebJobs.Host -->
     <!-- Assembly: Microsoft.Azure.WebJobs.Host -->

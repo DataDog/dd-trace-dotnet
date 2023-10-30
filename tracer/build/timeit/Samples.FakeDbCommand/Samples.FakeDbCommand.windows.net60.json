@@ -2,7 +2,7 @@
   "enableDatadog": true,
   "jsonExporterFilePath": "$(CWD)\\results_Samples.FakeDbCommand.windows.net60.json",
   "warmUpCount": 5,
-  "count": 25,
+  "count": 50,
   "scenarios": [
     {
       "name": "Baseline",

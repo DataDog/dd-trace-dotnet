@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
+using Datadog.Trace.Tools.Shared;
 using FluentAssertions;
 using FluentAssertions.Execution;
 using Moq;
@@ -150,8 +151,20 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             WrongProfilerEnvironment(CorProfilerPath32Key, "dummyPath"),
             MissingProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
             WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"),
-            TracingWithInstaller);
+            WrongProfilerEnvironment(CorProfilerPath64Key, "dummyPath"));
+
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+        {
+#if NETFRAMEWORK
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetFramework);
+#else
+            console.Output.Should().Contain(TracingWithInstallerWindowsNetCore);
+#endif
+        }
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+        {
+            console.Output.Should().Contain(TracingWithInstallerLinux);
+        }
     }
 
     [SkippableFact]
@@ -185,12 +198,12 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
         console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
             TracerNotLoaded,
-            "DD_DOTNET_TRACER_HOME",
-            CorProfilerKey,
-            CorEnableKey,
-            CorProfilerPathKey,
-            CorProfilerPath32Key,
-            CorProfilerPath64Key);
+            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+
+        console.Output.Should().Contain(
+            CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
+            CorrectlySetupEnvironment(CorEnableKey, "1"),
+            CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
     }
 
     [SkippableFact]
@@ -229,7 +242,10 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
 
         console.Output.Should().ContainAll(
             TracerVersion(TracerConstants.AssemblyVersion),
-            ContinuousProfilerEnabled);
+            ContinuousProfilerEnabled,
+            CorrectlySetupEnvironment(CorProfilerKey, Utils.Profilerid),
+            CorrectlySetupEnvironment(CorEnableKey, "1"),
+            CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
 
         console.Output.Should().NotContainAny(
             NativeTracerNotLoaded,
@@ -237,12 +253,7 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             ContinuousProfilerNotSet,
             ContinuousProfilerNotLoaded,
             "LD_PRELOAD",
-            "DD_DOTNET_TRACER_HOME",
-            CorProfilerKey,
-            CorEnableKey,
-            CorProfilerPathKey,
-            CorProfilerPath32Key,
-            CorProfilerPath64Key);
+            TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
     }
 
     [SkippableFact]
@@ -456,7 +467,11 @@ public class ProcessBasicChecksTests : ConsoleTestHelper
             using var console = ConsoleHelper.Redirect();
 
             ProcessBasicCheck.CheckLinuxInstallation(tempDirectory);
-            console.Output.Should().BeEmpty();
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                console.Output.Should().Contain(CorrectLinuxDirectoryFound(dir));
+            }
         }
         finally
         {

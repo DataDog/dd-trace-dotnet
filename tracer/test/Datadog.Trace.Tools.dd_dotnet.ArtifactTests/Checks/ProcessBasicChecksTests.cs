@@ -35,6 +35,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 #endif
 
         private const string Profilerid = "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}";
+        private static readonly string ProfilerPath = EnvironmentHelper.GetNativeLoaderPath();
 
         public ProcessBasicChecksTests(ITestOutputHelper output)
             : base(output)
@@ -143,7 +144,18 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             // Because TracingWithInstaller has a long URL, it gets split in the Spectre.Console output
             // Removing the spaces to make the assertion work, until we figure out a better way
-            standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstaller.Replace(" ", string.Empty));
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+#if NETFRAMEWORK
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindowsNetFramework.Replace(" ", string.Empty));
+#else
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerWindowsNetCore.Replace(" ", string.Empty));
+#endif
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                standardOutput.Replace(" ", string.Empty).Should().Contain(TracingWithInstallerLinux.Replace(" ", string.Empty));
+            }
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(1);
@@ -163,10 +175,6 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             scope.AddReportable("ErrorOutput", errorOutput);
             scope.AddReportable("ExitCode", exitCode.ToString());
 
-            standardOutput.Should().Contain(
-                TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerNotSet);
-
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 standardOutput.Should().Contain(ProfilerVersion(TracerConstants.AssemblyVersion));
@@ -175,12 +183,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
             standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
                 TracerNotLoaded,
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
+
+            standardOutput.Should().Contain(
+                CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
+                CorrectlySetupEnvironment(CorEnableKey, "1"),
+                CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(0);
@@ -222,7 +230,11 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
 
             standardOutput.Should().ContainAll(
                 TracerVersion(TracerConstants.AssemblyVersion),
-                ContinuousProfilerEnabled);
+                ContinuousProfilerEnabled,
+                CorrectlySetupEnvironment(CorProfilerKey, Profilerid),
+                CorrectlySetupEnvironment(CorEnableKey, "1"));
+
+            standardOutput.Replace(" ", string.Empty).Should().Contain(CorrectlySetupEnvironment(CorProfilerPathKey, ProfilerPath).Replace(" ", string.Empty));
 
             standardOutput.Should().NotContainAny(
                 NativeTracerNotLoaded,
@@ -230,12 +242,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.ArtifactTests.Checks
                 ContinuousProfilerNotSet,
                 ContinuousProfilerNotLoaded,
                 "LD_PRELOAD",
-                "DD_DOTNET_TRACER_HOME",
-                CorProfilerKey,
-                CorEnableKey,
-                CorProfilerPathKey,
-                CorProfilerPath32Key,
-                CorProfilerPath64Key);
+                TracerHomeNotFoundFormat("DD_DOTNET_TRACER_HOME"));
 
             errorOutput.Should().BeEmpty();
             exitCode.Should().Be(0);

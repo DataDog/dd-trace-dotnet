@@ -4,152 +4,130 @@
 // </copyright>
 
 #nullable enable
-
 using System;
-using System.Collections.Generic;
+using System.Diagnostics;
 using System.Threading.Tasks;
+using Datadog.Trace.Agent.DiscoveryService;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Telemetry.Transports;
 using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryTransportManager
+internal class TelemetryTransportManager : IDisposable
 {
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
 
     internal const int MaxFatalErrors = 2;
     internal const int MaxTransientErrors = 5;
-    private readonly ITelemetryTransport[] _transports;
+    private readonly TelemetryTransports _transports;
+    private readonly IDiscoveryService _discoveryService;
+    private ITelemetryTransport _currentTransport;
+    private bool? _canSendToAgent = null;
 
-    private bool _hasSentSuccessfully = false;
-    private int _initialFatalCount = 0;
-    private int _failureCount = 0;
-    private int _currentTransport = 0;
-
-    public TelemetryTransportManager(ITelemetryTransport[] transports)
+    public TelemetryTransportManager(TelemetryTransports transports, IDiscoveryService discoveryService)
     {
-        _transports = transports ?? throw new ArgumentNullException(nameof(transports));
-        if (transports.Length > 0 && Log.IsEnabled(LogEventLevel.Debug))
+        _transports = transports;
+        _discoveryService = discoveryService;
+        if (!_transports.HasTransports)
         {
-            var firstTransport = transports[0];
-            Log.Debug<int, string>(
-                "Telemetry configured with {TransportCount} transports. Initial transport {TransportInfo}",
-                transports.Length,
-                firstTransport.GetTransportInfo());
+            throw new ArgumentException("Must have at least one transport", nameof(transports));
+        }
+
+        discoveryService.SubscribeToChanges(HandleAgentDiscoveryUpdate);
+
+        _currentTransport = GetNextTransport(null);
+
+        if (Log.IsEnabled(LogEventLevel.Debug))
+        {
+            Log.Debug(
+                "Telemetry AgentProxy enabled: {AgentProxyEnabled}, Agentless enabled: {AgentlessEnabled}, Agent proxy available {AgentProxyAvailable}. Initial Transport {TransportInfo}",
+                _transports.AgentTransport is not null,
+                _transports.AgentlessTransport is not null,
+                _canSendToAgent switch { true => "Available", false => "Unavailable", _ => "Unknown" },
+                _currentTransport.GetTransportInfo());
         }
     }
 
-    private enum PushEvaluationResult
+    public void Dispose()
     {
-        Success,
-        TransientError,
-        FatalError
+        _discoveryService.RemoveSubscription(HandleAgentDiscoveryUpdate);
     }
 
-    public ICollection<TelemetryValue>? PreviousConfiguration { get; private set; }
-
-    public ICollection<DependencyTelemetryData>? PreviousDependencies { get; private set; }
-
-    public ICollection<IntegrationTelemetryData>? PreviousIntegrations { get; private set; }
-
-    public Task<bool> TryPushTelemetry(TelemetryData telemetryData)
-        => TryPushTelemetry(telemetryData, null, null, null);
-
-    public async Task<bool> TryPushTelemetry(
-        TelemetryData telemetryData,
-        ICollection<TelemetryValue>? config,
-        ICollection<DependencyTelemetryData>? dependencies,
-        ICollection<IntegrationTelemetryData>? integrations)
+    public async Task<bool> TryPushTelemetry(TelemetryData telemetryData)
     {
-        if (_currentTransport >= _transports.Length)
+        var pushResult = await _currentTransport.PushTelemetry(telemetryData).ConfigureAwait(false);
+
+        if (pushResult == TelemetryPushResult.Success)
         {
-            return false;
+            Log.Debug("Successfully sent telemetry");
+            return true;
         }
 
-        var transport = _transports[_currentTransport];
+        var previousTransport = _currentTransport;
+        _currentTransport = GetNextTransport(previousTransport);
 
-        var pushResult = await transport.PushTelemetry(telemetryData).ConfigureAwait(false);
-
-        var retryResult = EvaluateCircuitBreaker(pushResult);
-
-        switch (retryResult)
-        {
-            case PushEvaluationResult.Success:
-                // Only clean if we have sent data (for instance don't clean for a heartbeat)
-                PreviousConfiguration = config == null ? PreviousConfiguration : null;
-                PreviousDependencies = dependencies == null ? PreviousDependencies : null;
-                PreviousIntegrations = integrations == null ? PreviousIntegrations : null;
-                break;
-
-            case PushEvaluationResult.FatalError:
-                // Fatal, just don't hold any reference, we're giving up
-                PreviousConfiguration = null;
-                PreviousDependencies = null;
-                PreviousIntegrations = null;
-                break;
-
-            case PushEvaluationResult.TransientError:
-                // We should retry using this data next time (if we have sent something)
-                PreviousConfiguration = config ?? PreviousConfiguration;
-                PreviousDependencies = dependencies ?? PreviousDependencies;
-                PreviousIntegrations = integrations ?? PreviousIntegrations;
-                break;
-        }
-
-        return retryResult != PushEvaluationResult.FatalError;
+        Log.Debug(
+            "Telemetry transport {FailedTransportInfo} failed. Enabling next transport {NextTransportInfo}",
+            previousTransport.GetTransportInfo(),
+            _currentTransport.GetTransportInfo());
+        return false;
     }
 
-    private PushEvaluationResult EvaluateCircuitBreaker(TelemetryPushResult result)
+    /// <summary>
+    /// Internal for testing
+    /// </summary>
+    internal ITelemetryTransport GetNextTransport(ITelemetryTransport? currentTransport)
     {
-        if (result == TelemetryPushResult.Success)
+        // use agent if we know it's available, use agentless if we know it's not, and use agent as fallback
+        if (currentTransport is null)
         {
-            _hasSentSuccessfully = true;
-            _failureCount = 0;
-            return PushEvaluationResult.Success;
-        }
-        else if (result == TelemetryPushResult.FatalError && !_hasSentSuccessfully)
-        {
-            _initialFatalCount++;
-            if (_initialFatalCount >= MaxFatalErrors)
+            return _transports switch
             {
-                // we've had MaxFatalErrors 404s, 1 minute apart, prob never going to work, so try next transport
-                return ConfigureNextTransport();
-            }
+                { AgentTransport: { } t } when _canSendToAgent ?? true => t,
+                { AgentlessTransport: { } t } => t,
+                { AgentTransport: { } t } => t,
+                _ => throw new Exception("Must have at least one transport"),
+            };
+        }
+
+        var agentProxy = _transports.AgentTransport;
+        var agentless = _transports.AgentlessTransport;
+
+        // If only one transport is configured, continue to use it
+        // If we're using agentProxy, and agentless is configured, use that
+        // If we're using agentless, and agentProxy is configured, and we don't _know_ that we can't use it, use that
+        // If no transports are available,
+        if (currentTransport == agentProxy)
+        {
+            return agentless is null
+                       ? agentProxy // nothing else available, keep using it
+                       : agentless;  // switch from agent to agentless
+        }
+
+        Debug.Assert(agentless is not null, "If current transport is not agent, it must be agentless");
+
+        if (agentProxy is null)
+        {
+            // nothing else available, keep using it
+            return agentless!;
+        }
+
+        return _canSendToAgent != false
+                   ? agentProxy // might be able to send to agent, so try it
+                   : agentless!; // the agent is not available, so stick to agentless
+    }
+
+    private void HandleAgentDiscoveryUpdate(AgentConfiguration config)
+    {
+        _canSendToAgent = !string.IsNullOrWhiteSpace(config.TelemetryProxyEndpoint);
+        if (_canSendToAgent == true)
+        {
+            Log.Debug("Telemetry agent proxy is available.");
         }
         else
         {
-            _failureCount++;
-            if (_failureCount >= MaxTransientErrors)
-            {
-                // we've had MaxTransientErrors in a row, 1 minute apart, probably something bigger wrong
-                return ConfigureNextTransport();
-            }
+            Log.Debug("Detected agent does not support telemetry agent proxy");
         }
-
-        // We should retry next time
-        return PushEvaluationResult.TransientError;
-    }
-
-    private PushEvaluationResult ConfigureNextTransport()
-    {
-        // if we have more transports available, treat this as a transient error
-        // otherwise it's fatal
-        _currentTransport++;
-
-        if (_currentTransport < _transports.Length)
-        {
-            Log.Debug(
-                "Telemetry transport failed. Using next transport {TransportInfo}",
-                _transports[_currentTransport].GetTransportInfo());
-
-            // reset the circuit breaker counters
-            _failureCount = 0;
-            _initialFatalCount = 0;
-            _hasSentSuccessfully = false;
-            // try with the next transport next time
-            return PushEvaluationResult.TransientError;
-        }
-
-        return PushEvaluationResult.FatalError; // we're out of transports
     }
 }

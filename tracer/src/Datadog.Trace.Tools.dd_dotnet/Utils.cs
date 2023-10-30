@@ -46,17 +46,22 @@ internal class Utils
 
     internal static void WriteError(string message)
     {
-        AnsiConsole.MarkupLine($"[red]{message.EscapeMarkup()}[/]");
+        AnsiConsole.MarkupLine($"[red] [[FAILURE]]: {message.EscapeMarkup()}[/]");
     }
 
     internal static void WriteWarning(string message)
     {
-        AnsiConsole.MarkupLine($"[yellow]{message.EscapeMarkup()}[/]");
+        AnsiConsole.MarkupLine($"[yellow] [[WARNING]]: {message.EscapeMarkup()}[/]");
     }
 
     internal static void WriteSuccess(string message)
     {
-        AnsiConsole.MarkupLine($"[green]{message.EscapeMarkup()}[/]");
+        AnsiConsole.MarkupLine($"[lime] [[SUCCESS]]: {message.EscapeMarkup()}[/]");
+    }
+
+    internal static void WriteInfo(string message)
+    {
+        AnsiConsole.MarkupLine($"[aqua] [[INFO]]: {message.EscapeMarkup()}[/]");
     }
 
     internal static Dictionary<string, string>? GetBaseProfilerEnvironmentVariables(string? customTracerHome)

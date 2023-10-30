@@ -296,62 +296,29 @@ namespace Datadog.Trace.Tests.Telemetry
 
         [Theory]
         [InlineData("0", false)]
-        [InlineData(null, true)]
-        [InlineData("", true)]
-        [InlineData("1", true)]
-        public void V2Enabled_EnabledByDefault(string value, bool expected)
+        [InlineData(null, false)]
+        [InlineData("", false)]
+        [InlineData("1", false)]
+        public void V2Metrics_DisabledInServerless(string metricsEnabled, bool expected)
         {
-            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.V2Enabled, value));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
-
-            settings.V2Enabled.Should().Be(expected);
-        }
-
-        [Theory]
-        [InlineData("0", "1", false)]
-        [InlineData(null, "1", false)]
-        [InlineData("", "1", false)]
-        [InlineData("1", "0", false)]
-        [InlineData("1", null, false)]
-        [InlineData("1", "", false)]
-        [InlineData("1", "1", false)]
-        public void V2Metrics_DisabledInServerless(string v2Enabled, string metricsEnabled, bool expected)
-        {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.Telemetry.V2Enabled, v2Enabled),
-                (ConfigurationKeys.Telemetry.MetricsEnabled, metricsEnabled));
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, metricsEnabled));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: true);
 
             settings.MetricsEnabled.Should().Be(expected);
         }
 
         [Theory]
-        [InlineData("0", false, false)]
-        [InlineData(null, false, false)]
-        [InlineData("", false, false)]
-        [InlineData("0", true, false)]
-        [InlineData(null, true, true)] // enabled by default if v2 enabled
-        [InlineData("", true, true)]
-        [InlineData("1", true, true)]
-        public void MetricsEnabled_HasCorrectDefaultValue(string metricSettingValue, bool v2Enabled, bool expected)
+        [InlineData("0", false)]
+        [InlineData(null, true)] // enabled by default if v2 enabled
+        [InlineData("",  true)]
+        [InlineData("1", true)]
+        public void MetricsEnabled_HasCorrectDefaultValue(string metricSettingValue, bool expected)
         {
-            var source = CreateConfigurationSource(
-                (ConfigurationKeys.Telemetry.MetricsEnabled, metricSettingValue),
-                (ConfigurationKeys.Telemetry.V2Enabled, v2Enabled ? "1" : "0"));
+            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, metricSettingValue));
             var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
 
             settings.MetricsEnabled.Should().Be(expected);
             settings.ConfigurationError.Should().BeNullOrEmpty();
-        }
-
-        [Fact]
-        public void MetricsEnabled_TryingToEnableWhenV2DisabledIsConfigError()
-        {
-            var source = CreateConfigurationSource((ConfigurationKeys.Telemetry.MetricsEnabled, "1"), (ConfigurationKeys.Telemetry.V2Enabled, "0"));
-            var settings = TelemetrySettings.FromSource(source, NullConfigurationTelemetry.Instance, isAgentAvailable: true, isServerless: false);
-
-            settings.MetricsEnabled.Should().Be(false);
-            settings.ConfigurationError.Should().NotBeNullOrEmpty();
         }
     }
 }

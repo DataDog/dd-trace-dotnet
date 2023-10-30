@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -162,8 +162,8 @@
                     "value": "Person"
                   }
                 ],
-                "type": "List`1",
-                "value": "count: 2"
+                "size": 2,
+                "type": "List`1"
               },
               "genericVarToString": {
                 "type": "String",
@@ -316,8 +316,8 @@
                         "value": "Person"
                       }
                     ],
-                    "type": "List`1",
-                    "value": "count: 2"
+                    "size": 2,
+                    "type": "List`1"
                   },
                   "Id": {
                     "type": "Guid",
@@ -458,7 +458,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.HasLocalsAndArgumentsInGenericNestedType+Test`1"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

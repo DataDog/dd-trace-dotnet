@@ -99,7 +99,7 @@ public class HandlerWrapperSetHandlerIntegration
         }
 
         /// <inheritdoc/>
-        public Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
+        public async Task<TInnerReturn> OnDelegateEndAsync<TInnerReturn>(object sender, TInnerReturn returnValue, Exception exception, object state)
         {
             LambdaCommon.Log("DelegateWrapper Running OnDelegateEndAsync");
             try
@@ -108,22 +108,22 @@ public class HandlerWrapperSetHandlerIntegration
                 if (proxyInstance == null)
                 {
                     LambdaCommon.Log("DuckCast.IInvocationResponse got null proxyInstance", debug: false);
-                    LambdaCommon.EndInvocationAsync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                    await LambdaCommon.EndInvocationAsync(string.Empty, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
                 }
                 else
                 {
                     var jsonString = ConvertPayloadStream(proxyInstance.OutputStream);
-                    LambdaCommon.EndInvocationAsync(jsonString, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                    await LambdaCommon.EndInvocationAsync(jsonString, exception, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
             {
                 LambdaCommon.Log("OnDelegateEndAsync could not send payload to the extension", ex, false);
-                LambdaCommon.EndInvocationAsync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
+                await LambdaCommon.EndInvocationAsync(string.Empty, ex, ((CallTargetState)state!).Scope, RequestBuilder).ConfigureAwait(false);
             }
 
             LambdaCommon.Log("DelegateWrapper FINISHED Running OnDelegateEndAsync");
-            return Task.FromResult(returnValue);
+            return returnValue;
         }
     }
 }

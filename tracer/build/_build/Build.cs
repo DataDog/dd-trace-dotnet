@@ -149,19 +149,32 @@ partial class Build : NukeBuild
               TestsDirectory.GlobFiles("**/bin/*", "**/obj/*").ForEach(DeleteFile);
           });
 
-    Target BuildTracerHome => _ => _
+    Target BuildNativeTracerHome => _ => _
+        .Unlisted()   
+        .Description("Builds the native src ")
+        .After(Clean, CompileManagedLoader)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(PublishNativeTracer);
+                                         
+
+    Target BuildManagedTracerHome => _ => _
+        .Unlisted()   
         .Description("Builds the native and managed src, and publishes the tracer home directory")
-        .After(Clean)
+        .After(Clean, BuildNativeTracerHome)
         .DependsOn(CreateRequiredDirectories)
         .DependsOn(Restore)
         .DependsOn(CompileManagedSrc)
         .DependsOn(PublishManagedTracer)
-        .DependsOn(CompileNativeSrc)
-        .DependsOn(PublishNativeTracer)
         .DependsOn(DownloadLibDdwaf)
         .DependsOn(CopyLibDdwaf)
-        .DependsOn(BuildNativeLoader)
         .DependsOn(CreateRootDescriptorsFile);
+
+    Target BuildTracerHome => _ => _
+        .Description("Builds the native and managed src, and publishes the tracer home directory")
+        .After(Clean)
+        .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
@@ -352,9 +365,11 @@ partial class Build : NukeBuild
         .Unlisted()
         .Executes(() =>
         {
+            var framework = Framework ?? TargetFramework.NET8_0; 
             DotNetBuild(x => x
                 .SetProjectFile(Solution.GetProject(Projects.DdDotnet))
                 .SetConfiguration(BuildConfiguration)
+                .SetFramework(framework)
                 .SetNoWarnDotNetCore3());
 
             string rid;
@@ -380,7 +395,7 @@ partial class Build : NukeBuild
 
             DotNetPublish(x => x
                 .SetProject(Solution.GetProject(Projects.DdDotnet))
-                .SetFramework("net7.0")
+                .SetFramework(framework)
                 .SetRuntime(rid)
                 .SetConfiguration(BuildConfiguration)
                 .SetOutput(publishFolder));

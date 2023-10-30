@@ -22,6 +22,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -65,6 +67,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"test_custom_rule","name":"Test custom rule","tags":{"category":"attack_attempt","type":"custom_rule"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.query","highlight":["customrule"],"key_path":["arg","0"],"value":"customrule_trigger"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

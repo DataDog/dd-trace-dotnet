@@ -12,7 +12,6 @@ using System.Text.RegularExpressions;
 using Datadog.InstrumentedAssemblyGenerator;
 using Datadog.InstrumentedAssemblyVerification;
 using Datadog.Trace.Configuration.Telemetry;
-using Datadog.Trace.Tools.Runner.Checks;
 using Spectre.Console;
 
 namespace Datadog.Trace.Tools.Runner;
@@ -174,8 +173,7 @@ internal class AnalyzeInstrumentationErrorsCommand : CommandWithExamples
         string logDirectory = null;
         if (pid != null)
         {
-            var process = ProcessInfo.GetProcessInfo(pid.Value);
-            logDirectory = process?.GetProcessLogDirectory();
+            logDirectory = ProcessConfiguration.GetProcessLogDirectory(pid.Value);
         }
 
         return logDirectory ?? Logging.DatadogLoggingFactory.GetLogDirectory(NullConfigurationTelemetry.Instance);
