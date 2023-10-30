@@ -17,7 +17,7 @@ using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Security.Unit.Tests.Iast;
 using Xunit;
 
-namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
+namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
 
 internal static class Utils
 {
