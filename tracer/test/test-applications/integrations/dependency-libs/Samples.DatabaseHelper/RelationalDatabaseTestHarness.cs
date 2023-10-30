@@ -173,6 +173,9 @@ namespace Samples.DatabaseHelper
                     command = commandFactory.GetCreateTableCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
 
+                    command = commandFactory.CheckTableExistsCommand(connection);
+                    commandExecutor.ExecuteScalar(command);
+
                     command = commandFactory.GetInsertRowCommand(connection);
                     commandExecutor.ExecuteNonQuery(command);
 

@@ -27,6 +27,14 @@ namespace Samples.DatabaseHelper
             return command;
         }
 
+        public virtual IDbCommand CheckTableExistsCommand(IDbConnection connection)
+        {
+            var command = connection.CreateCommand();
+            command.AddParameterWithValue("0", _quotedTableName);
+            command.CommandText = $"SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable')";
+            return command;
+        }
+
         public virtual IDbCommand GetInsertRowCommand(IDbConnection connection)
         {
             var command = connection.CreateCommand();

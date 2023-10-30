@@ -62,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.AdoNet
             // NETSTANDARD + CALLTARGET: +7 spans
             // - IDbCommandGenericConstrant<SqlCommand>-netstandard: 7 spans (1 group * 7 spans)
 
-            const int expectedSpanCount = 168;
+            const int expectedSpanCount = 180;
             const string dbType = "sql-server";
             const string expectedOperationName = dbType + ".query";
 
