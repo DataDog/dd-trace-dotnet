@@ -43,6 +43,7 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
+            span.SetTag(Tags.SpanKind, SpanKinds.Producer);
 
             var adapter = new IbmMqHeadersAdapter(message);
             SpanContextPropagator.Instance.Inject(span.Context, adapter);
@@ -114,6 +115,7 @@ internal static class IbmMqHelper
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
+            span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
             span.SetTag(Tags.Measured, "1");
 
             if (dataStreams.IsEnabled)
