@@ -8,7 +8,7 @@ using Datadog.Trace.Iast;
 using Xunit;
 using Range = Datadog.Trace.Iast.Range;
 
-namespace Datadog.Trace.Security.Unit.Tests.Iast.Tainted;
+namespace Datadog.Trace.Security.Unit.Tests.IAST.Tainted;
 
 public class RedactionTests
 {
