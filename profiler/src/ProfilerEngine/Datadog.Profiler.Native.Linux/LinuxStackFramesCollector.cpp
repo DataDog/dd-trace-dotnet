@@ -175,7 +175,8 @@ std::int32_t LinuxStackFramesCollector::CollectCallStackCurrentThread(void* ctx)
         // Collect data for TraceContext tracking:
         bool traceContextDataCollected = TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
 
-        return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
+        return CollectUsingThreadInternals(ctx);
+        //return _useBacktrace2 ? CollectStackWithBacktrace2(ctx) : CollectStackManually(ctx);
     }
     catch (...)
     {
@@ -240,6 +241,43 @@ std::int32_t LinuxStackFramesCollector::CollectStackManually(void* ctx)
     } while (resultErrorCode > 0);
 
     return resultErrorCode;
+}
+
+typedef std::uintptr_t (*GetReturnAddress)(void);
+
+std::int32_t LinuxStackFramesCollector::CollectUsingThreadInternals(void* ctx)
+{
+    auto clrThread = _pCurrentCollectionThreadInfo->GetClrThreadId();
+    // Get frame member
+
+    // Thread::m_pFrame
+    auto* firstFrame = (std::uint64_t*)((std::uint8_t*)clrThread + 0x0c);
+
+    auto [data, size] = Data();
+
+    void** mydata = (void**)data;
+    int i = 0;
+    auto* currentFrame = firstFrame;
+    while (i < size && currentFrame != nullptr)
+    {
+        // Get Frame
+        // memory read
+        //
+        auto* getIpFn = (GetReturnAddress) * ((int64_t*)*((uint64_t*)currentFrame) + 9);
+        // can crash.... unrecoverable ?
+        // except if wrap in a function and caugh by a sigsegv handler
+        mydata[i++] = (void*)(getIpFn());
+        // memory read
+        currentFrame = currentFrame + 1;
+    }
+
+    if (i == 0)
+    {
+        return E_FAIL;
+    }
+
+    SetFrameCount(i);
+    return S_OK;
 }
 
 std::int32_t LinuxStackFramesCollector::CollectStackWithBacktrace2(void* ctx)
