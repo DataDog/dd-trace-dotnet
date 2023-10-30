@@ -29,6 +29,11 @@ internal static class SymbolsExtensions
             name = metadataReader.GetString(typeDef.Name);
         }
 
+        if (string.IsNullOrEmpty(@namespace))
+        {
+            return name;
+        }
+
         return $"{@namespace}.{name}";
     }
 
@@ -44,6 +49,11 @@ internal static class SymbolsExtensions
         if (!typeRef.Name.IsNil)
         {
             name = metadataReader.GetString(typeRef.Name);
+        }
+
+        if (string.IsNullOrEmpty(@namespace))
+        {
+            return name;
         }
 
         return $"{@namespace}.{name}";

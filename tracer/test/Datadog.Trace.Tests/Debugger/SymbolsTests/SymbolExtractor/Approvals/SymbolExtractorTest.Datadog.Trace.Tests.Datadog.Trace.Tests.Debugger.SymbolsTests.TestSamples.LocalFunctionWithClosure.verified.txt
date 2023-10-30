@@ -14,7 +14,7 @@
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalFunctionWithClosure",
           "start_line": 13,
-          "end_line": 24,
+          "end_line": 23,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -32,6 +32,14 @@
                 "start_column": 9,
                 "end_column": 10
               },
+              "symbols": [
+                {
+                  "name": "rand",
+                  "type": "System.Int32",
+                  "symbol_type": "local",
+                  "line": 13
+                }
+              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -63,8 +71,7 @@
                       "symbol_type": "local",
                       "line": 17
                     }
-                  ],
-                  "scopes": []
+                  ]
                 }
               ]
             },
@@ -74,11 +81,8 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
-                "return_type": "System.Void",
-                "start_column": 0,
-                "end_column": 0
-              },
-              "scopes": []
+                "return_type": "System.Void"
+              }
             }
           ]
         }

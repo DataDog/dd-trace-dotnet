@@ -72,8 +72,7 @@ namespace Datadog.Trace.Debugger.Symbols
         public static ISymbolsUploader Create(IBatchUploadApi api, IDiscoveryService discoveryService, DebuggerSettings settings, ImmutableTracerSettings tracerSettings, string serviceName)
         {
             if (api is not NoOpSymbolBatchUploadApi &&
-               (settings.SymbolDatabaseUploadEnabled ||
-                (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false)))
+               (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "false")?.ToBoolean() ?? false))
             {
                 return new SymbolsUploader(api, discoveryService, settings, tracerSettings, serviceName);
             }

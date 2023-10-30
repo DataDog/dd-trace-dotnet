@@ -15,7 +15,6 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
-using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
@@ -219,7 +218,16 @@ namespace Datadog.Trace.Pdb
                 for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
                 {
                     var sp = symbolMethod.SequencePoints[i];
-                    dnlibSp[i] = new DatadogSequencePoint(sp.Line, sp.EndLine, sp.Column, sp.EndColumn, sp.Offset, sp.IsHidden(), sp.Document.URL);
+                    dnlibSp[i] = new DatadogSequencePoint
+                    {
+                        StartLine = sp.Line,
+                        EndLine = sp.EndLine,
+                        StartColumn = sp.Column,
+                        EndColumn = sp.EndColumn,
+                        Offset = sp.Offset,
+                        IsHidden = sp.IsHidden(),
+                        URL = sp.Document.URL
+                    };
                 }
             }
 
@@ -234,11 +242,37 @@ namespace Datadog.Trace.Pdb
                         return Array.Empty<DatadogSequencePoint>();
                     }
 
-                    return methodDebugInformation.GetSequencePoints().Select(sp => new DatadogSequencePoint(sp.StartLine, sp.EndLine, sp.StartColumn, sp.EndColumn, sp.Offset, sp.IsHidden, PdbReader.GetString(PdbReader.GetDocument(sp.Document).Name))).ToArray();
+                    return methodDebugInformation.GetSequencePoints().
+                                                  Select(sp => new DatadogSequencePoint
+                                                  {
+                                                      StartLine = sp.StartLine,
+                                                      EndLine = sp.EndLine,
+                                                      StartColumn = sp.StartColumn,
+                                                      EndColumn = sp.EndColumn,
+                                                      Offset = sp.Offset,
+                                                      IsHidden = sp.IsHidden,
+                                                      URL = GetDocumentName(sp.Document)
+                                                  }).ToArray();
                 }
             }
 
             return Array.Empty<DatadogSequencePoint>();
+
+            string? GetDocumentName(DocumentHandle doc)
+            {
+                if (PdbReader == null || doc.IsNil)
+                {
+                    return null;
+                }
+
+                var document = PdbReader.GetDocument(doc);
+                if (document.Name.IsNil)
+                {
+                    return null;
+                }
+
+                return PdbReader.GetString(document.Name);
+            }
         }
 
         private SymbolMethod? GetDnlibSymbolMethodOfAsyncMethodOrDefault(MethodDef? mdMethod)
@@ -425,7 +459,6 @@ namespace Datadog.Trace.Pdb
                 return default;
             }
 
-            var debugInformationHandle = default(CustomDebugInformationHandle);
             CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
             foreach (var handle in PdbReader.GetCustomDebugInformation(methodHandle))
             {
@@ -444,7 +477,7 @@ namespace Datadog.Trace.Pdb
                 else if (cdiGuid == EncLambdaAndClosureMap)
                 {
                     // https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md#edit-and-continue-lambda-and-closure-map-c-and-vb-compilers
-                    debugInformationHandle = handle;
+                    cdiAsyncAndClosure.EncLambdaAndClosureMap = true;
                 }
                 else if (cdiGuid == StateMachineHoistedLocalScopes)
                 {
@@ -452,6 +485,40 @@ namespace Datadog.Trace.Pdb
                     cdiAsyncAndClosure.StateMachineHoistedLocal = true;
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodHandle.ToDebugInformationHandle());
                     cdiAsyncAndClosure.StateMachineKickoffMethod = methodDebugInformation.GetStateMachineKickoffMethod();
+                }
+            }
+
+            return cdiAsyncAndClosure;
+        }
+
+        internal CustomDebugInfoAsyncAndClosure GetClosureCustomDebugInfo(MethodDefinitionHandle methodHandle)
+        {
+            if (methodHandle.IsNil || PdbReader == null)
+            {
+                return default;
+            }
+
+            CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
+            foreach (var handle in PdbReader.GetCustomDebugInformation(methodHandle))
+            {
+                if (handle.IsNil)
+                {
+                    continue;
+                }
+
+                var customDebugInformation = PdbReader.GetCustomDebugInformation(handle);
+                var cdiGuid = PdbReader.GetGuid(customDebugInformation.Kind);
+                if (cdiGuid == EncLambdaAndClosureMap)
+                {
+                    // https://github.com/dotnet/runtime/blob/main/docs/design/specs/PortablePdb-Metadata.md#edit-and-continue-lambda-and-closure-map-c-and-vb-compilers
+                    cdiAsyncAndClosure.EncLambdaAndClosureMap = true;
+                    var blob = customDebugInformation.Value;
+                    var reader = PdbReader.GetBlobReader(blob);
+                    int methodOrdinal = reader.ReadCompressedInteger();
+                    int syntaxOffsetBaseline = reader.ReadCompressedInteger();
+                    int closureCount = reader.ReadCompressedInteger();
+                    int syntaxOffset = reader.ReadCompressedInteger();
+                    int closureOrdinal = reader.ReadCompressedInteger();
                 }
             }
 
@@ -498,7 +565,7 @@ namespace Datadog.Trace.Pdb
             GC.SuppressFinalize(this);
         }
 
-        internal struct DatadogSequencePoint
+        internal record struct DatadogSequencePoint
         {
             internal int StartLine;
             internal int EndLine;
@@ -506,18 +573,17 @@ namespace Datadog.Trace.Pdb
             internal int EndColumn;
             internal int Offset;
             internal bool IsHidden;
-            public string URL;
+            internal string? URL;
+        }
 
-            public DatadogSequencePoint(int startLine, int endLine, int startColumn, int endColumn, int offset, bool isHidden, string url)
-            {
-                StartLine = startLine;
-                EndLine = endLine;
-                StartColumn = startColumn;
-                EndColumn = endColumn;
-                Offset = offset;
-                IsHidden = isHidden;
-                URL = url;
-            }
+        internal record struct CustomDebugInfoAsyncAndClosure
+        {
+            internal bool LocalSlot;
+            internal bool EncLambdaAndClosureMap;
+            internal bool StateMachineHoistedLocal;
+            internal MethodDefinitionHandle StateMachineKickoffMethod;
+
+            internal bool IsNil => LocalSlot == false && EncLambdaAndClosureMap == false && StateMachineHoistedLocal == false;
         }
 
         internal struct DatadogLocal
@@ -530,17 +596,6 @@ namespace Datadog.Trace.Pdb
                 Name = localName;
                 Type = type;
             }
-        }
-
-        internal record struct CustomDebugInfoAsyncAndClosure
-        {
-            public bool LocalSlot { get; set; }
-
-            public bool StateMachineHoistedLocal { get; set; }
-
-            public MethodDefinitionHandle StateMachineKickoffMethod { get; set; }
-
-            public bool IsNil => LocalSlot == false && StateMachineHoistedLocal == false;
         }
     }
 }

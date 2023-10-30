@@ -14,7 +14,7 @@
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod",
           "start_line": 14,
-          "end_line": 26,
+          "end_line": 25,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -54,8 +54,7 @@
                       "symbol_type": "local",
                       "line": 19
                     }
-                  ],
-                  "scopes": []
+                  ]
                 },
                 {
                   "scope_type": "closure",
@@ -81,8 +80,7 @@
                       "symbol_type": "local",
                       "line": 14
                     }
-                  ],
-                  "scopes": []
+                  ]
                 }
               ]
             },
@@ -92,11 +90,8 @@
               "start_line": 0,
               "end_line": 0,
               "language_specifics": {
-                "return_type": "System.Void",
-                "start_column": 0,
-                "end_column": 0
-              },
-              "scopes": []
+                "return_type": "System.Void"
+              }
             }
           ]
         }

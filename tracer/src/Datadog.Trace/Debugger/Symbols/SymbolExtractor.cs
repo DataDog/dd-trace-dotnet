@@ -15,6 +15,7 @@ using Datadog.Trace.Pdb;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using static Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.AdoNetConstants;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
@@ -152,9 +153,6 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 var methods = type.GetMethods();
                 var nestedTypes = type.GetNestedTypes();
-                int classStartLine = int.MaxValue;
-                int classEndLine = -1;
-                string? classSourceFile = null;
                 int scopesBufferLength = methods.Count + nestedTypes.Length;
                 scopes = ArrayPool<Model.Scope>.Shared.Rent(scopesBufferLength);
                 int methodsScopeIndex = 0;
@@ -162,44 +160,6 @@ namespace Datadog.Trace.Debugger.Symbols
                 if (methods.Count > 0)
                 {
                     PopulateMethodScopes(type, methods, scopes, ref methodsScopeIndex);
-
-                    for (int i = 0; i < scopes.Length; i++)
-                    {
-                        var scope = scopes[i];
-                        if (scope.Scopes == null)
-                        {
-                            continue;
-                        }
-
-                        for (int j = 0; j < scope.Scopes.Count; j++)
-                        {
-                            var innerScope = scope.Scopes[j];
-                            if (classStartLine > innerScope.StartLine)
-                            {
-                                classStartLine = innerScope.StartLine;
-                            }
-
-                            if (classEndLine < innerScope.EndLine)
-                            {
-                                classEndLine = innerScope.EndLine;
-                            }
-
-                            if (classSourceFile == Unknown)
-                            {
-                                classSourceFile = innerScope.SourceFile;
-                            }
-                        }
-                    }
-
-                    if (classStartLine == int.MaxValue)
-                    {
-                        classStartLine = UnknownMethodStartLine;
-                    }
-
-                    if (classEndLine == -1)
-                    {
-                        classEndLine = UnknownMethodEndLine;
-                    }
                 }
 
                 if (nestedTypes.Length > 0)
@@ -222,16 +182,16 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
-
+                var linesAndSource = GetClassLinesAndSourcePath(allScopes);
                 classScope = new Model.Scope
                 {
                     Name = type.FullName(MetadataReader),
                     ScopeType = SymbolType.Class,
-                    StartLine = classStartLine,
-                    EndLine = classEndLine,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
-                    SourceFile = classSourceFile ?? Unknown,
+                    StartLine = linesAndSource.StartLine,
+                    EndLine = linesAndSource.EndLine,
+                    SourceFile = linesAndSource.Path,
                     LanguageSpecifics = classLanguageSpecifics
                 };
             }
@@ -259,6 +219,73 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             return true;
+        }
+
+        private SourceLinesAndPath GetClassLinesAndSourcePath(Model.Scope[]? allScopes)
+        {
+            int classStartLine = int.MaxValue;
+            int classEndLine = 0;
+            string? classSourceFile = null;
+            if (allScopes == null)
+            {
+                return new SourceLinesAndPath { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
+            }
+
+            for (int i = 0; i < allScopes.Length; i++)
+            {
+                var scope = allScopes[i];
+                if (classStartLine > scope.StartLine && scope.StartLine > 0)
+                {
+                    classStartLine = scope.StartLine;
+                }
+
+                if (classEndLine < scope.EndLine)
+                {
+                    classEndLine = scope.EndLine;
+                }
+
+                classSourceFile ??= scope.SourceFile;
+            }
+
+            if (classStartLine == int.MaxValue)
+            {
+                for (int i = 0; i < allScopes.Length; i++)
+                {
+                    var scope = allScopes[i];
+                    if (scope.Scopes == null)
+                    {
+                        continue;
+                    }
+
+                    for (int j = 0; j < scope.Scopes.Count; j++)
+                    {
+                        var innerScope = scope.Scopes[j];
+                        if (classStartLine > innerScope.StartLine)
+                        {
+                            classStartLine = innerScope.StartLine;
+                        }
+
+                        if (classEndLine < innerScope.EndLine)
+                        {
+                            classEndLine = innerScope.EndLine;
+                        }
+
+                        classSourceFile ??= innerScope.SourceFile;
+                    }
+                }
+            }
+
+            if (classStartLine == int.MaxValue)
+            {
+                classStartLine = UnknownMethodStartLine;
+            }
+
+            if (classEndLine == 0)
+            {
+                classEndLine = UnknownMethodEndLine;
+            }
+
+            return new SourceLinesAndPath { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
         }
 
         private void PopulateNestedNotCompileGeneratedClassScope(ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
@@ -403,48 +430,52 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var methodScope = CreateMethodScope(type, methodDef, default);
-
                 if (methodScope.Scopes != null &&
-                    methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: Unknown })
+                    methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
                 {
-                    var startLine = int.MaxValue;
-                    var endLine = -1;
-                    for (int i = 0; i < methodScope.Scopes.Count; i++)
-                    {
-                        var scope = methodScope.Scopes[i];
-                        if (startLine > scope.StartLine)
-                        {
-                            startLine = scope.StartLine;
-                        }
-
-                        if (endLine < scope.EndLine)
-                        {
-                            endLine = scope.EndLine;
-                        }
-
-                        if (methodScope.SourceFile == Unknown)
-                        {
-                            methodScope.SourceFile = scope.SourceFile;
-                        }
-                    }
-
-                    if (startLine == int.MaxValue)
-                    {
-                        startLine = UnknownMethodStartLine;
-                    }
-
-                    if (endLine == -1)
-                    {
-                        endLine = UnknownMethodEndLine;
-                    }
-
-                    methodScope.StartLine = startLine;
-                    methodScope.EndLine = endLine;
+                    var linesAndSource = GetMethodLinesAndSourcePath(methodScope);
+                    methodScope.StartLine = linesAndSource.StartLine;
+                    methodScope.EndLine = linesAndSource.EndLine;
+                    methodScope.SourceFile = linesAndSource.Path;
                 }
 
                 classMethods[index] = methodScope;
                 index++;
             }
+        }
+
+        private SourceLinesAndPath GetMethodLinesAndSourcePath(Model.Scope methodScope)
+        {
+            var startLine = int.MaxValue;
+            var endLine = 0;
+            string? sourceFile = null;
+            for (int i = 0; i < methodScope.Scopes.Count; i++)
+            {
+                var scope = methodScope.Scopes[i];
+                if (startLine > scope.StartLine && scope.StartLine > 0)
+                {
+                    startLine = scope.StartLine;
+                }
+
+                if (endLine < scope.EndLine)
+                {
+                    endLine = scope.EndLine;
+                }
+
+                sourceFile ??= scope.SourceFile;
+            }
+
+            if (startLine == int.MaxValue)
+            {
+                startLine = UnknownMethodStartLine;
+            }
+
+            if (endLine == 0)
+            {
+                endLine = UnknownMethodEndLine;
+            }
+
+            return new SourceLinesAndPath { StartLine = startLine, EndLine = endLine, Path = sourceFile };
         }
 
         protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo)
@@ -469,7 +500,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
                 Scopes = closureScopes,
-                SourceFile = Unknown,
+                SourceFile = null,
                 StartLine = UnknownMethodStartLine,
                 EndLine = UnknownMethodEndLine
             };
@@ -576,6 +607,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 return null;
             }
 
+            string? methodName = null;
             if (!cdi.StateMachineHoistedLocal)
             {
                 var generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
@@ -585,7 +617,8 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var notGeneratedMethodName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
-                if (!MetadataReader.GetString(method.Name).Equals(notGeneratedMethodName.ToString()))
+                methodName = MetadataReader.GetString(method.Name);
+                if (!methodName.Equals(notGeneratedMethodName.ToString()))
                 {
                     return null;
                 }
@@ -596,7 +629,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var closureMethodScope = CreateMethodScope(nestedType, generatedMethod, cdi);
-            closureMethodScope.Name = MetadataReader.GetString(method.Name);
+            closureMethodScope.Name = methodName;
             closureMethodScope.ScopeType = SymbolType.Closure;
             return closureMethodScope;
         }
@@ -639,8 +672,9 @@ namespace Datadog.Trace.Debugger.Symbols
             return argsSymbol;
         }
 
-        protected Symbol[]? ConcatMethodSymbols(Symbol[]? argSymbols, Symbol[]? localSymbols, int localSymbolsCount)
+        protected Symbol[]? ConcatMethodSymbols(Symbol[]? argSymbols, Symbol[]? localSymbols)
         {
+            var localSymbolsCount = localSymbols?.Length ?? 0;
             var argsCount = argSymbols?.Length ?? 0;
             var symbolsCount = argsCount + localSymbolsCount;
             if (symbolsCount <= 0)
@@ -777,6 +811,13 @@ namespace Datadog.Trace.Debugger.Symbols
             DatadogMetadataReader.Dispose();
             _disposed = true;
             GC.SuppressFinalize(this);
+        }
+
+        internal record struct SourceLinesAndPath
+        {
+            internal int StartLine;
+            internal int EndLine;
+            internal string? Path;
         }
     }
 }
