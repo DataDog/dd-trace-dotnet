@@ -26,6 +26,7 @@
 #include "GarbageCollectionProvider.h"
 #include "StopTheWorldGCProvider.h"
 #include "LiveObjectsProvider.h"
+#include "GcDumpProvider.h"
 #include "IRuntimeInfo.h"
 #include "IEnabledProfilers.h"
 #include "MetricsRegistry.h"
@@ -242,6 +243,7 @@ private :
     std::unique_ptr<IEnabledProfilers> _pEnabledProfilers = nullptr;
     std::unique_ptr<IAllocationsRecorder> _pAllocationsRecorder = nullptr;
     std::unique_ptr<IDebugInfoStore> _pDebugInfoStore = nullptr;
+    std::unique_ptr<IGcDumpProvider> _pGcDumpProvider = nullptr;
 
     MetricsRegistry _metricsRegistry;
     std::shared_ptr<ProxyMetric> _managedThreadsMetric;

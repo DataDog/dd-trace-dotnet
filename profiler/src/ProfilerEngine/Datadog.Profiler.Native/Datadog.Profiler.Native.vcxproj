@@ -251,15 +251,20 @@
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
+    <ClInclude Include="GcDumpProvider.h" />
+    <ClInclude Include="GcDumpSession.h" />
+    <ClInclude Include="GcDumpState.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
     <ClInclude Include="IDebugInfoStore.h" />
     <ClInclude Include="IExceptionsRecorder.h" />
     <ClInclude Include="IGarbageCollectionsListener.h" />
+    <ClInclude Include="IGcDumpProvider.h" />
     <ClInclude Include="ISampledAllocationsListener.h" />
     <ClInclude Include="IThreadInfo.h" />
     <ClInclude Include="IUpscaleProvider.h" />
+    <ClInclude Include="LiveObject.h" />
     <ClInclude Include="LiveObjectInfo.h" />
     <ClInclude Include="LiveObjectsProvider.h" />
     <ClInclude Include="MeanMaxMetric.h" />
@@ -342,6 +347,7 @@
     <ClInclude Include="ThreadsCpuManager.h" />
     <ClInclude Include="CollectorBase.h" />
     <ClInclude Include="Timer.h" />
+    <ClInclude Include="TypeInfo.h" />
     <ClInclude Include="WallTimeProvider.h" />
     <ClInclude Include="RawWallTimeSample.h" />
     <ClInclude Include="dd_profiler_version.h" />
@@ -380,7 +386,11 @@
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
+    <ClCompile Include="GcDumpProvider.cpp" />
+    <ClCompile Include="GcDumpSession.cpp" />
+    <ClCompile Include="GcDumpState.cpp" />
     <ClCompile Include="GCThreadsCpuProvider.cpp" />
+    <ClCompile Include="LiveObject.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
     <ClCompile Include="MeanMaxMetric.cpp" />
@@ -415,6 +425,7 @@
     <ClCompile Include="ThreadsCpuManager.cpp" />
     <ClCompile Include="Timer.Linux.cpp" />
     <ClCompile Include="Timer.Windows.cpp" />
+    <ClCompile Include="TypeInfo.cpp" />
     <ClCompile Include="WallTimeProvider.cpp" />
   </ItemGroup>
   <ItemGroup>

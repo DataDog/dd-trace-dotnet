@@ -45,6 +45,12 @@
     <Filter Include="GarbageCollections">
       <UniqueIdentifier>{c07c8635-c021-4796-bfac-48f7ee78bf65}</UniqueIdentifier>
     </Filter>
+    <Filter Include="GCDump">
+      <UniqueIdentifier>{95e0f390-0f46-48fd-9551-bb1c58017b0b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="EventPipes">
+      <UniqueIdentifier>{fc39873c-a163-4caf-98d2-c6c8205cd3bf}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -333,16 +339,52 @@
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
     <ClInclude Include="EventPipe\BlockParser.h" />
-    <ClInclude Include="EventPipe\DiagnosticsClient.h" />
-    <ClInclude Include="EventPipe\DiagnosticsProtocol.h" />
-    <ClInclude Include="EventPipe\EventPipeSession.h" />
-    <ClInclude Include="EventPipe\FileRecorder.h" />
-    <ClInclude Include="EventPipe\IIpcEndpoint.h" />
-    <ClInclude Include="EventPipe\IIpcRecorder.h" />
-    <ClInclude Include="EventPipe\IpcEndpoint.h" />
-    <ClInclude Include="EventPipe\NettraceFormat.h" />
-    <ClInclude Include="EventPipe\PidEndpoint.h" />
     <ClInclude Include="EventPipe\RecordedEndpoint.h" />
+    <ClInclude Include="GcDumpState.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\DiagnosticsClient.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\DiagnosticsProtocol.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\EventPipeSession.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\FileRecorder.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\IIpcEndpoint.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\IIpcRecorder.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\IpcEndpoint.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\NettraceFormat.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipe\PidEndpoint.h">
+      <Filter>EventPipes</Filter>
+    </ClInclude>
+    <ClInclude Include="LiveObject.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
+    <ClInclude Include="TypeInfo.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
+    <ClInclude Include="GcDumpSession.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
+    <ClInclude Include="IGcDumpProvider.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
+    <ClInclude Include="GcDumpProvider.h">
+      <Filter>GCDump</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -510,41 +552,56 @@
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
-    <ClCompile Include="EventPipe\BlockParser.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="EventPipe\DiagnosticsClient.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="EventPipe\DiagnosticsProtocol.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
     <ClCompile Include="EventPipe\EventParser.cpp">
       <Filter>Utils</Filter>
     </ClCompile>
+    <ClCompile Include="GcDumpState.cpp">
+      <Filter>GCDump</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\BlockParser.cpp">
+      <Filter>EventPipes</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\DiagnosticsClient.cpp">
+      <Filter>EventPipes</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\DiagnosticsProtocol.cpp">
+      <Filter>EventPipes</Filter>
+    </ClCompile>
     <ClCompile Include="EventPipe\EventPipeSession.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
     </ClCompile>
     <ClCompile Include="EventPipe\FileRecorder.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="EventPipe\IpcEndpoint.cpp">
-      <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="EventPipe\MetadataParser.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
     </ClCompile>
     <ClCompile Include="EventPipe\PidEndpoint.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\IpcEndpoint.cpp">
+      <Filter>EventPipes</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipe\MetadataParser.cpp">
+      <Filter>EventPipes</Filter>
     </ClCompile>
     <ClCompile Include="EventPipe\RecordedEndpoint.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
     </ClCompile>
     <ClCompile Include="EventPipe\SequencePointParser.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
     </ClCompile>
     <ClCompile Include="EventPipe\StackParser.cpp">
-      <Filter>Utils</Filter>
+      <Filter>EventPipes</Filter>
+    </ClCompile>
+    <ClCompile Include="LiveObject.cpp">
+      <Filter>GCDump</Filter>
+    </ClCompile>
+    <ClCompile Include="TypeInfo.cpp">
+      <Filter>GCDump</Filter>
+    </ClCompile>
+    <ClCompile Include="GcDumpSession.cpp">
+      <Filter>GCDump</Filter>
+    </ClCompile>
+    <ClCompile Include="GcDumpProvider.cpp">
+      <Filter>GCDump</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

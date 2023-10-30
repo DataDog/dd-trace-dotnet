@@ -11,6 +11,7 @@
 #include "IRuntimeInfo.h"
 #include "ISamplesProvider.h"
 #include "IUpscaleProvider.h"
+#include "IGcDumpProvider.h"
 #include "Log.h"
 #include "OpSysTools.h"
 #include "OsSpecificApi.h"
@@ -69,12 +70,14 @@ LibddprofExporter::LibddprofExporter(
     IRuntimeInfo* runtimeInfo,
     IEnabledProfilers* enabledProfilers,
     MetricsRegistry& metricsRegistry,
-    IAllocationsRecorder* allocationsRecorder) :
+    IAllocationsRecorder* allocationsRecorder,
+    IGcDumpProvider* gcDumpProvider) :
     _sampleTypeDefinitions{std::move(sampleTypeDefinitions)},
     _locationsAndLinesSize{512},
     _applicationStore{applicationStore},
     _metricsRegistry{metricsRegistry},
-    _allocationsRecorder{allocationsRecorder}
+    _allocationsRecorder{allocationsRecorder},
+    _gcDumpProvider{gcDumpProvider}
 {
     _exporterBaseTags = CreateTags(configuration, runtimeInfo, enabledProfilers);
     _endpoint = CreateEndpoint(configuration);
@@ -531,6 +534,16 @@ std::list<std::shared_ptr<Sample>> LibddprofExporter::GetProcessSamples()
     return samples;
 }
 
+IGcDumpProvider::gcdump_t LibddprofExporter::GetGcDump()
+{
+    if (_gcDumpProvider == nullptr)
+    {
+        return {};  // empty gc dump
+    }
+
+    return _gcDumpProvider->Get();
+}
+
 void LibddprofExporter::AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples)
 {
     for (auto const& sample : samples)
@@ -584,6 +597,7 @@ bool LibddprofExporter::Export()
 
     // Process-level samples
     auto processSamples = GetProcessSamples();
+    auto gcDump = GetGcDump();
 
     for (auto& runtimeId : keys)
     {
@@ -661,7 +675,7 @@ bool LibddprofExporter::Export()
             additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
         }
 
-        auto* request = CreateRequest(serializedProfile, exporter, additionalTags);
+        auto* request = CreateRequest(serializedProfile, exporter, additionalTags, gcDump);
         // use on_leave here, in case Send throws an exception.
         // So we will be able to free the memory
         on_leave
@@ -688,6 +702,17 @@ void LibddprofExporter::SaveMetricsToDisk(const std::string& content) const
 {
     std::stringstream filename;
     filename << "metrics-" << std::to_string(OpSysTools::GetProcId()) << ".json";
+    auto filepath = fs::path(_metricsFileFolder) / filename.str();
+    std::ofstream file{filepath.string(), std::ios::out | std::ios::binary};
+
+    file.write(content.c_str(), content.size());
+    file.close();
+}
+
+void LibddprofExporter::SaveJsonToDisk(const std::string prefix, const std::string& content) const
+{
+    std::stringstream filename;
+    filename << prefix << "-" << std::to_string(OpSysTools::GetProcId()) << ".json";
     auto filepath = fs::path(_metricsFileFolder) / filename.str();
     std::ofstream file{filepath.string(), std::ios::out | std::ios::binary};
 
@@ -773,7 +798,57 @@ std::string LibddprofExporter::CreateMetricsFileContent() const
     return builder.str();
 }
 
-ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const
+std::string LibddprofExporter::CreateMetadata(const IGcDumpProvider::gcdump_t& gcDump) const
+{
+    // TODO: simulate both metadata and GC dump
+    if (gcDump.empty())
+    {
+        return "";
+    }
+    auto typesCount = gcDump.size();
+    auto currentType = 0;
+
+    std::stringstream builder;
+
+    // simulate metadata section
+    builder << "{";
+    builder << "\"systemInfo\": {\"Runtime Settings\":{\"Start Time\":\"2023-10-11T09:17:52Z\", \"Cpu Limit\":\"0.000000\", \"Number of Cores\":\"16\", \"Clr Version\":\"core-7.0\"}}";
+    builder << ",";
+
+    // the GC dump is a list of {type, count, size} elements
+    builder << "\"gcdump\": ";
+    builder << "[";
+    for (auto const& [type, count, size] : gcDump)
+    {
+        currentType++;
+
+        builder << "{";
+
+        builder << "\"type\":";
+        builder << "\"";
+        builder << type;
+        builder << "\",";
+
+        builder << "\"count\":";
+        builder << count;
+        builder << ",";
+
+        builder << "\"size\":";
+        builder << size;
+
+        builder << "}";
+
+        if (currentType < typesCount)
+        {
+            builder << ", ";
+        }
+    }
+    builder << "]}";
+
+    return builder.str();
+}
+
+ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags, const IGcDumpProvider::gcdump_t& gcDump) const
 {
     // endpoints
     auto* endpointsStats = encodedProfile.GetEndpointsStats();
@@ -800,7 +875,7 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
     {
         // Add metric files
 #ifdef _DEBUG
-        SaveMetricsToDisk(metricsFileContent);
+        SaveJsonToDisk("metrics", metricsFileContent);
 #endif
         ddog_Slice_U8 metricsFileSlice{reinterpret_cast<const uint8_t*>(metricsFileContent.c_str()), metricsFileContent.size()};
 
@@ -808,7 +883,21 @@ ddog_prof_Exporter_Request* LibddprofExporter::CreateRequest(SerializedProfile c
         files.len = 2;
     }
 
-    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, nullptr, RequestTimeOutMs);
+    // compute gc dump (TODO should include metadata)
+    // compute metadata
+    ddog_CharSlice* pMetadata = nullptr;
+    ddog_CharSlice metadata;
+    std::string json = CreateMetadata(gcDump);
+    if (!json.empty())
+    {
+#ifdef _DEBUG
+        SaveJsonToDisk("metadata", json);
+#endif
+        metadata = FfiHelper::StringToCharSlice(json);
+        pMetadata = &metadata;
+    }
+
+    auto result = ddog_prof_Exporter_Request_build(exporter, start, end, files, additionalTags.GetFfiTags(), endpointsStats, pMetadata, RequestTimeOutMs);
     if (result.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
     {
         auto errorMessage = ddog_Error_message(&result.err);

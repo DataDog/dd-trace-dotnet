@@ -5,6 +5,7 @@
 
 #include "IConfiguration.h"
 #include "IExporter.h"
+#include "IGcDumpProvider.h"
 #include "IUpscaleProvider.h"
 #include "MetricsRegistry.h"
 #include "Sample.h"
@@ -42,7 +43,8 @@ public:
         IRuntimeInfo* runtimeInfo,
         IEnabledProfilers* enabledProfilers,
         MetricsRegistry& metricsRegistry,
-        IAllocationsRecorder* allocationsRecorder
+        IAllocationsRecorder* allocationsRecorder,
+        IGcDumpProvider* gcDumpProvider
         );
     ~LibddprofExporter() override;
     bool Export() override;
@@ -132,12 +134,13 @@ private:
     void AddProcessSamples(ddog_prof_Profile* profile, std::list<std::shared_ptr<Sample>> const& samples);
     void Add(ddog_prof_Profile* profile, std::shared_ptr<Sample> const& sample);
 
-    ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags) const;
+    ddog_prof_Exporter_Request* CreateRequest(SerializedProfile const& encodedProfile, ddog_prof_Exporter* exporter, const Tags& additionalTags, const IGcDumpProvider::gcdump_t& gcDump) const;
     ddog_Endpoint CreateEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
     void ExportToDisk(const std::string& applicationName, SerializedProfile const& encodedProfile, int idx);
     void SaveMetricsToDisk(const std::string& content) const;
+    void SaveJsonToDisk(const std::string prefix, const std::string& content) const;
 
     // we *must* pass the reference to the pointer
     // the Send function in rust takes the ownership, free the memory and set the pointer to null (avoid double free)
@@ -147,8 +150,10 @@ private:
 
     std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
+    std::string CreateMetadata(const IGcDumpProvider::gcdump_t& gcDump) const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
+    IGcDumpProvider::gcdump_t GetGcDump();
     std::optional<ProfileInfoScope> GetInfo(const std::string& runtimeId);
 
     static tags CommonTags;
@@ -187,6 +192,7 @@ private:
     IAllocationsRecorder* _allocationsRecorder;
     std::vector<IUpscaleProvider*> _upscaledProviders;
     std::vector<ISamplesProvider*> _processSamplesProviders;
+    IGcDumpProvider* _gcDumpProvider;
 
 public:  // for tests
     static std::string GetEnabledProfilersTag(IEnabledProfilers* enabledProfilers);

@@ -331,6 +331,8 @@ bool CorProfilerCallback::InitializeServices()
 
     _pApplicationStore = RegisterService<ApplicationStore>(_pConfiguration.get());
 
+    _pGcDumpProvider = std::make_unique<GcDumpProvider>();
+
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
     _pExporter = std::make_unique<LibddprofExporter>(
@@ -340,7 +342,8 @@ bool CorProfilerCallback::InitializeServices()
         _pRuntimeInfo.get(),
         _pEnabledProfilers.get(),
         _metricsRegistry,
-        _pAllocationsRecorder.get()
+        _pAllocationsRecorder.get(),
+        _pGcDumpProvider.get()
         );
 
     if (_pConfiguration->IsGcThreadsCpuTimeEnabled() &&
