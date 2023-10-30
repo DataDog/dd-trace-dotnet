@@ -26,6 +26,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -68,6 +70,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -110,6 +114,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -152,6 +158,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -194,6 +202,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-011","name":"No fun","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"fun","parameters":[{"address":"server.request.uri.raw","highlight":["fun"],"key_path":[],"value":"/health?q=fun"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

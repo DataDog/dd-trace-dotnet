@@ -482,7 +482,6 @@ public class ProbesTests : TestHelper
         }
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
         settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
         settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -524,7 +523,6 @@ public class ProbesTests : TestHelper
             const string spanProbeOperationName = "dd.dynamic.span";
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -700,6 +698,11 @@ public class ProbesTests : TestHelper
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
+        foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
+        {
+            settings.AddRegexScrubber(regexPattern, replacement);
+        }
+
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(

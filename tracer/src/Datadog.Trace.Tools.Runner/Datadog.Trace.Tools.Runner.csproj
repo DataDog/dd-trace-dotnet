@@ -6,7 +6,8 @@
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <!-- When building standalone (see below) we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
+    <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
@@ -26,6 +27,8 @@
   <Choose>
     <When Condition="'$(BuildStandalone)' == 'true'">
       <PropertyGroup>
+        <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
+        <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
@@ -33,6 +36,7 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
       <ItemGroup>

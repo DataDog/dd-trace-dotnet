@@ -23,6 +23,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -52,7 +54,9 @@
       http.url: http://localhost:00000/api/trigger,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -121,6 +125,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -141,7 +147,9 @@
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -163,7 +171,9 @@
       http.url: http://localhost:00000/api/simple,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -188,7 +198,9 @@
       http.url: http://localhost:00000/api/exception,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -213,7 +225,9 @@
       http.url: http://localhost:00000/api/error,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -240,7 +254,9 @@
       http.url: http://localhost:00000/api/badrequest,
       out.host: localhost,
       runtime-id: Guid_1,
-      span.kind: client
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -433,6 +449,8 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -473,6 +491,8 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -507,6 +527,8 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -541,6 +563,8 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -561,7 +585,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -575,7 +601,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -589,7 +617,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -603,7 +633,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       aas.site.name: AzureFunctionsAllTriggers,
       aas.site.type: function,
       env: integration_tests,
-      language: dotnet
+      language: dotnet,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   }
 ]

@@ -17,7 +17,7 @@ runs:
       shell: bash
       run: |
         docker build \
-          --build-arg DOTNETSDK_VERSION=7.0.306 \
+          --build-arg DOTNETSDK_VERSION=8.0.100-rc.2.23502.2 \
           --tag dd-trace-dotnet/${{ inputs.baseImage }}-builder \
           --target builder \
           --file "${GITHUB_WORKSPACE}/tracer/build/_build/docker/${{ inputs.baseImage }}.dockerfile" \

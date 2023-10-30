@@ -60,7 +60,8 @@ RUN apk update \
     && gem install --version 2.7.6 dotenv \
     && gem install --version 1.14.2 --minimal-deps --no-document fpm
 
-ENV IsAlpine=true
+ENV IsAlpine=true \
+    DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
@@ -73,9 +74,11 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
 FROM base as builder
 
 # Copy the build project in and build it
-WORKDIR /project
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
+WORKDIR /project
 
 FROM base as tester
 
@@ -87,9 +90,12 @@ RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh \
     && ./dotnet-install.sh --runtime aspnetcore --channel 3.1 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 5.0 --install-dir /usr/share/dotnet --no-path \
     && ./dotnet-install.sh --runtime aspnetcore --channel 6.0 --install-dir /usr/share/dotnet --no-path \
+    && ./dotnet-install.sh --runtime aspnetcore --channel 7.0 --install-dir /usr/share/dotnet --no-path \
     && rm dotnet-install.sh
 
 # Copy the build project in and build it
-WORKDIR /project
+COPY *.csproj *.props *.targets /build/
+RUN dotnet restore /build
 COPY . /build
-RUN dotnet build /build
+RUN dotnet build /build --no-restore
+WORKDIR /project

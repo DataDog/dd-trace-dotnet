@@ -20,6 +20,8 @@ $env:DOTNET_CLI_TELEMETRY_OPTOUT = 1
 $env:DOTNET_MULTILEVEL_LOOKUP = 0
 $env:NUKE_TELEMETRY_OPTOUT = 1
 
+# Allow running Nuke with the .NET 8 runtime
+$env:DOTNET_ROLL_FORWARD_TO_PRERELEASE=1
 ###########################################################################
 # EXECUTION
 ###########################################################################

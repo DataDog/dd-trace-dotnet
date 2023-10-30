@@ -94,7 +94,11 @@ schedules:
 # Global variables
 variables:
   buildConfiguration: Release
-  dotnetCoreSdkLatestVersion: 7.0.306
+  dotnetCoreSdkLatestVersion: 8.0.100-rc.2.23502.2
+  # This is required until we're out of rc.
+  # After GA we can do a find and replace and get rid of this
+  dotnetCoreSdkLatestVersionShort: 8.0.100-rc.2
+  nativeBuildDotnetSdkVersion: 7.0.306
   relativeArtifacts: /tracer/src/bin/artifacts
   monitoringHome: $(System.DefaultWorkingDirectory)/shared/bin/monitoring-home
   artifacts: $(System.DefaultWorkingDirectory)/tracer/src/bin/artifacts
@@ -220,7 +224,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -247,7 +251,7 @@ stages:
   - job: build
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -279,7 +283,7 @@ stages:
 
   - job: build
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     steps:
     - template: steps/clone-repo.yml
       parameters:
@@ -319,25 +323,46 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          nativeBaseImage: centos7
+          managedBaseImage: debian
+          useNativeSdkVersion: true
           artifactSuffix: linux-x64
         alpine:
-          baseImage: alpine
+          nativeBaseImage: alpine
+          managedBaseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
-        baseImage: $(baseImage)
-        command: "Clean BuildTracerHome BuildNativeLoader ExtractDebugInfoLinux"
+        baseImage: $(managedBaseImage)
+        command: "Clean CompileManagedLoader"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: $(nativeBaseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
+        command: "BuildNativeTracerHome"
+        retryCountForRunCommand: 1
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: $(managedBaseImage)
+        command: "BuildManagedTracerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
     - publish: $(monitoringHome)
@@ -370,22 +395,26 @@ stages:
         x64:
           baseImage: centos7
           artifactSuffix: linux-x64
+          useNativeSdkVersion: true
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
+          useNativeSdkVersion: ""
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
       parameters:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "Clean BuildProfilerHome ExtractDebugInfoLinux"
         retryCountForRunCommand: 1
 
@@ -417,13 +446,13 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -655,7 +684,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-3
+    name: azure-windows-scale-set
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -709,6 +738,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
+    targetFramework: net8.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -718,7 +748,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -727,7 +757,7 @@ stages:
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
   
-    - script: tracer\build.cmd BuildDdDotnet
+    - script: tracer\build.cmd BuildDdDotnet -framework=$(targetFramework)
       displayName: Build dd-dotnet
 
     - publish: $(artifacts)/dd-dotnet/win-x64/dd-dotnet.exe
@@ -754,14 +784,14 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -769,13 +799,13 @@ stages:
         targetShaId: $(targetShaId)
         targetBranch: $(targetBranch)
     - template: steps/install-latest-dotnet-sdk.yml
-  
+
     - template: steps/run-in-docker.yml
       parameters:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet"
+        command: "Clean BuildDdDotnet --framework net8.0"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
@@ -794,6 +824,7 @@ stages:
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
     baseImage: debian
     artifactSuffix: linux-arm64
+    targetFramework: net8.0
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -817,7 +848,7 @@ stages:
         build: true
         target: builder
         baseImage: $(baseImage)
-        command: "Clean BuildDdDotnet"
+        command: "Clean BuildDdDotnet --framework $(targetFramework)"
         retryCountForRunCommand: 1
 
     - publish: $(artifacts)/dd-dotnet/$(artifactSuffix)/dd-dotnet
@@ -844,30 +875,53 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          nativeBaseImage: centos7
+          managedBaseImage: debian
+          useNativeSdkVersion: true
+          artifactSuffix: linux-x64
         alpine:
-          baseImage: alpine
+          nativeBaseImage: alpine
+          managedBaseImage: alpine
+          useNativeSdkVersion: ""
+          artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
       - template: steps/clone-repo.yml
         parameters:
           targetShaId: $(targetShaId)
           targetBranch: $(targetBranch)
+
       - template: steps/run-in-docker.yml
         parameters:
           build: true
           target: builder
-          baseImage: $(baseImage)
-          command: "Clean Restore CreateRequiredDirectories CompileManagedSrc BuildRunnerTool -buildConfiguration Debug"
+          baseImage: $(managedBaseImage)
+          command: "Clean CompileManagedLoader -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+      - template: steps/run-in-docker.yml
+        parameters:
+          build: true
+          target: builder
+          baseImage: $(nativeBaseImage)
+          useNativeSdkVersion: $(useNativeSdkVersion)
+          command: "BuildNativeTracerHome -buildConfiguration Debug"
+          retryCountForRunCommand: 1
+
+      - template: steps/run-in-docker.yml
+        parameters:
+          target: builder
+          baseImage: $(managedBaseImage)
+          command: "BuildManagedTracerHome ExtractDebugInfoLinux -buildConfiguration Debug"
           retryCountForRunCommand: 1
 
   - job: windows
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     steps:
       - template: steps/clone-repo.yml
         parameters:
@@ -922,7 +976,7 @@ stages:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
   pool:
-    name: azure-windows-scale-set-3
+    name: azure-windows-scale-set
 
   jobs:
     - template: steps/update-github-status-jobs.yml
@@ -1038,13 +1092,13 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1081,12 +1135,14 @@ stages:
       matrix:
         x64:
           baseImage: centos7
+          useNativeSdkVersion: true
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1108,6 +1164,7 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunNativeUnitTests"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
@@ -1175,7 +1232,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_matrix'] ]
@@ -1254,7 +1311,7 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_debugger_matrix'] ]
@@ -1316,7 +1373,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1376,7 +1433,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_iis_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1435,7 +1492,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_azure_functions_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -1499,7 +1556,7 @@ stages:
   variables:
     targetShaId: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.sha']]
     targetBranch: $[ stageDependencies.merge_commit_id.fetch.outputs['set_sha.branch']]
-    baseImage: "centos7"
+    baseImage: "debian"
   jobs:
   - template: steps/update-github-status-jobs.yml
     parameters:
@@ -1509,7 +1566,7 @@ stages:
     timeoutInMinutes: 60 #default value
     dependsOn: []
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1561,11 +1618,13 @@ stages:
 
   - job: Win
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     timeoutInMinutes: 60 #default value
 
     steps:
     - powershell: |
+        # Required to reload environment apparently
+        Import-Module $env:ChocolateyInstall\helpers\chocolateyProfile.psm1
         choco install cppcheck -y --version 2.9
         $errorCode = $LASTEXITCODE
         if ($errorCode -ne 0)
@@ -1600,7 +1659,7 @@ stages:
   - job: Linux
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1644,7 +1703,7 @@ stages:
     strategy:
       matrix: $[stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.integration_tests_windows_msi_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
     variables:
       relativeMsiOutputDirectory: $(relativeArtifacts)/$(targetPlatform)/en-us
 
@@ -1669,8 +1728,8 @@ stages:
       displayName: BuildWindowsIntegrationTests
 
     - script: |
-        docker-compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
-        docker-compose up -d IntegrationTests.IIS
+        docker compose build --build-arg dotnet_tracer_msi=.$(relativeMsiOutputDirectory)/*.msi --build-arg ENABLE_32_BIT=$(enable32bit) IntegrationTests.IIS
+        docker compose up -d IntegrationTests.IIS
       displayName: docker-compose start IntegrationTests.IIS
       retryCountOnTaskFailure: 5
       env:
@@ -1688,12 +1747,8 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - task: DockerCompose@0
+    - script: docker compose down
       displayName: docker-compose stop services
-      inputs:
-        containerregistrytype: Container Registry
-        dockerComposeCommand: down
-        projectName: ddtrace_$(Build.BuildNumber)
       env:
         DD_LOGGER_DD_API_KEY: $(ddApiKey)
       condition: succeededOrFailed()
@@ -1735,7 +1790,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1817,7 +1872,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -1918,7 +1973,7 @@ stages:
     variables:
       TestAllPackageVersions: false
       IncludeMinorPackageVersions:  false
-      baseImage: "centos7"
+      baseImage: "debian"
       artifactSuffix: "linux-x64"
 
     strategy:
@@ -1930,7 +1985,7 @@ stages:
           publishTargetFramework: "net7.0"
           lambdaBaseImage: "public.ecr.aws/lambda/dotnet:7"
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2125,7 +2180,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2183,7 +2238,7 @@ stages:
         testResultsFiles: tracer/build_data/results/**/*.trx
       condition: succeededOrFailed()
 
-    - publish: tracer/test/snapshots
+    - publish: tracer/test/Datadog.Trace.Debugger.IntegrationTests/Approvals
       displayName: Uploading snapshots
       artifact: _$(System.StageName)_$(Agent.JobName)_snapshots_$(System.JobAttempt)
       condition: succeededOrFailed()
@@ -2227,7 +2282,7 @@ stages:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2293,17 +2348,19 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
+          useNativeSdkVersion: ""
           artifactSuffix: linux-x64
         alpine:
           baseImage: alpine
+          useNativeSdkVersion: ""
           artifactSuffix: linux-musl-x64
 
     variables:
       IncludeMinorPackageVersions:  $[eq(variables.perform_comprehensive_testing, 'true')]
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2327,12 +2384,14 @@ stages:
       parameters:
         build: true
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildProfilerSamples"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 2 --env CONTAINER_CPUS=1"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2340,6 +2399,7 @@ stages:
     - template: steps/run-in-docker.yml
       parameters:
         baseImage: $(baseImage)
+        useNativeSdkVersion: $(useNativeSdkVersion)
         command: "BuildAndRunProfilerCpuLimitTests"
         extraArgs: "--cpus 0.5 --env CONTAINER_CPUS=0.5"
         apiKey: $(DD_LOGGER_DD_API_KEY)
@@ -2389,7 +2449,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
     - template: steps/clone-repo.yml
@@ -2403,7 +2463,25 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "RunProfilerAsanTest -Framework net7.0"
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildProfilerAsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+        
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithProfilerAsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -2415,7 +2493,7 @@ stages:
   - job: Windows
     timeoutInMinutes: 60 #default value
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -2427,7 +2505,7 @@ stages:
       parameters:
         includeX86: true
 
-    - script: tracer\build.cmd RunProfilerAsanTest -Framework net7.0
+    - script: tracer\build.cmd RunProfilerAsanTest -Framework net8.0
       displayName: Run Profiler ASAN test
 
     - publish: profiler/build_data
@@ -2457,7 +2535,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     steps:
 
@@ -2472,7 +2550,25 @@ stages:
       parameters:
         build: true
         target: builder
-        command: "RunProfilerUbsanTest -Framework net7.0"
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "BuildProfilerUbsanTest -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        build: true
+        target: builder
+        baseImage: debian
+        command: "BuildProfilerSampleForSanitiserTests -Framework net7.0"
+        apiKey: $(DD_LOGGER_DD_API_KEY)
+
+    - template: steps/run-in-docker.yml
+      parameters:
+        target: builder
+        baseImage: centos7
+        useNativeSdkVersion: true
+        command: "RunSampleWithProfilerUbsan -Framework net7.0"
         apiKey: $(DD_LOGGER_DD_API_KEY)
 
     - publish: profiler/build_data
@@ -2789,7 +2885,7 @@ stages:
     strategy:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_windows_matrix'] ]
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     # Enable the Datadog Agent service for this job
     services:
@@ -2848,7 +2944,7 @@ stages:
       matrix: $[ stageDependencies.generate_variables.generate_variables_job.outputs['generate_variables_step.exploration_tests_linux_matrix'] ]
 
     pool:
-      name: azure-linux-scale-set
+      name: azure-linux-scale-set-2
 
     # Enable the Datadog Agent service for this job
     services:
@@ -3071,7 +3167,7 @@ stages:
     timeoutInMinutes: 60 #default value
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -3242,7 +3338,7 @@ stages:
           targetPlatform: "x64"
 
     pool:
-      name: azure-windows-scale-set-3
+      name: azure-windows-scale-set
 
     steps:
     - template: steps/clone-repo.yml
@@ -3323,13 +3419,13 @@ stages:
     strategy:
       matrix:
         x64:
-          baseImage: centos7
+          baseImage: debian
           artifactSuffix: linux-x64
-          poolName: azure-linux-scale-set
+          poolName: azure-linux-scale-set-2
         alpine:
           baseImage: alpine
           artifactSuffix: linux-musl-x64
-          poolName: azure-linux-scale-set
+          poolName: azure-linux-scale-set-2
         arm64:
           baseImage: debian
           artifactSuffix: linux-arm64
@@ -4619,7 +4715,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
@@ -4692,7 +4788,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
@@ -4776,7 +4872,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-nuget-smoke-tests
@@ -4844,7 +4940,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-smoke-tests
@@ -4909,7 +5005,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -4987,7 +5083,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5047,7 +5143,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5118,7 +5214,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg RELATIVE_PROFILER_PATH="$(relativeProfilerPath)" \
@@ -5199,7 +5295,7 @@ stages:
 
     - script: |
         docker-compose -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           dotnet-tool-smoke-tests
@@ -5259,7 +5355,7 @@ stages:
 
         - script: |
             docker-compose -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg INSTALL_CMD="$(installCmd)" \
@@ -5330,7 +5426,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5417,7 +5513,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5484,7 +5580,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5555,7 +5651,7 @@ stages:
 
         - bash: |
             docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+              --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
               --build-arg RUNTIME_IMAGE=$(runtimeImage) \
               --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
               --build-arg CHANNEL_32_BIT="" \
@@ -5620,7 +5716,7 @@ stages:
 
     - bash: |
         docker-compose -f docker-compose.windows.yml -p ddtrace_$(Build.BuildNumber) build \
-          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersion) \
+          --build-arg DOTNETSDK_VERSION=$(dotnetCoreSdkLatestVersionShort) \
           --build-arg RUNTIME_IMAGE=$(runtimeImage) \
           --build-arg PUBLISH_FRAMEWORK=$(publishFramework) \
           --build-arg CHANNEL_32_BIT="$(channel32Bit)" \
@@ -5682,7 +5778,7 @@ stages:
             echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
-            result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
+            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result
@@ -5736,7 +5832,7 @@ stages:
             echo "Expected installer: $(expectedInstaller)"
 
             cd tracer/build/artifacts
-            result=$(docker run --rm -v ${PWD}:/app $(runtimeImage) /app/dd-dotnet.sh)
+            result=$(docker run --rm -v ${PWD}:/app --entrypoint /app/dd-dotnet.sh $(runtimeImage))
             if [[ "$result" != *$(expectedPath)* ]]; then
               echo "Incorrect message. Expected '$(expectedPath)', but found:"
               echo $result

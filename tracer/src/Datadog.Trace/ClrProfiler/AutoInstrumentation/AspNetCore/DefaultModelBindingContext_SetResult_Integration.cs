@@ -27,7 +27,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]
     [InstrumentMethod(
@@ -37,7 +37,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
     ReturnTypeName = ClrNames.Void,
     ParameterTypeNames = new[] { "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult" },
     MinimumVersion = "2.0.0.0",
-    MaximumVersion = "7.*.*.*.*",
+    MaximumVersion = "8.*.*.*.*",
     IntegrationName = IntegrationName,
     CallTargetIntegrationKind = CallTargetKind.Derived,
     InstrumentationCategory = InstrumentationCategory.AppSec | InstrumentationCategory.Iast)]

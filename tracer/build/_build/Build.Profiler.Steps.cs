@@ -445,13 +445,19 @@ partial class Build
             CppCheck.Value($"-j {Environment.ProcessorCount} --inline-suppr --enable=all --project={NativeBuildDirectory}/compile_commands.json -D__linux__ -D__x86_64__ --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt --xml --output-file={outputFile}");
         });
 
-    Target RunProfilerAsanTest => _ => _
+    Target BuildProfilerAsanTest => _ => _
         .Unlisted()
-        .Description("Compile and run the profiler with Clang Address sanitizer")
+        .Description("Compile the profiler with Clang Address sanitizer")
         .DependsOn(BuildNativeLoader)
         .DependsOn(CompileProfilerWithAsanLinux)
         .DependsOn(CompileProfilerWithAsanWindows)
-        .DependsOn(PublishProfiler)
+        .DependsOn(PublishProfiler);
+
+    Target RunProfilerAsanTest => _ => _
+        .Unlisted()
+        .Description("Compile and run the profiler with Clang Address sanitizer")
+        .DependsOn(BuildProfilerAsanTest)
+        .DependsOn(BuildProfilerSampleForSanitiserTests)
         .DependsOn(RunSampleWithProfilerAsan);
 
     Target CompileProfilerWithAsanLinux => _ => _
@@ -527,10 +533,7 @@ partial class Build
         .Unlisted()
         .Requires(() => Framework)
         .OnlyWhenStatic(() => IsWin || IsLinux)
-        .After(BuildNativeLoader)
-        .After(PublishProfiler)
-        .After(CompileProfilerWithAsanLinux)
-        .After(CompileProfilerWithAsanWindows)
+        .After(BuildProfilerSampleForSanitiserTests)
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
@@ -538,8 +541,6 @@ partial class Build
                 IsWin
                 ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
                 : new[] { MSBuildTargetPlatform.x64 };
-
-            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
 
             foreach (var platform in platforms)
             {
@@ -587,13 +588,20 @@ partial class Build
             }
         });
 
+    Target BuildProfilerUbsanTest => _ => _
+        .Unlisted()
+        .Description("Compile the profiler with Clang Undefined-behavior sanitizer")
+        .OnlyWhenStatic(() => IsLinux)
+        .DependsOn(BuildNativeLoader)
+        .DependsOn(CompileProfilerWithUbsanLinux)
+        .DependsOn(PublishProfiler);
+
     Target RunProfilerUbsanTest => _ => _
         .Unlisted()
         .Description("Compile and run the profiler with Clang Undefined-behavior sanitizer")
         .OnlyWhenStatic(() => IsLinux)
-        .DependsOn(BuildNativeLoader)
-        .DependsOn(CompileProfilerWithUbsanLinux)
-        .DependsOn(PublishProfiler)
+        .DependsOn(BuildProfilerUbsanTest)
+        .DependsOn(BuildProfilerSampleForSanitiserTests)
         .DependsOn(RunSampleWithProfilerUbsan);
 
 
@@ -621,6 +629,37 @@ partial class Build
             RunProfilerUnitTests("Datadog.Profiler.Native.Tests", Configuration.Release, MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
+
+    Target BuildProfilerSampleForSanitiserTests => _ => _
+        .Unlisted()
+        .Requires(() => Framework)
+        .OnlyWhenStatic(() => IsWin || IsLinux)
+        .After(BuildNativeLoader)
+        .After(PublishProfiler)
+        .After(CompileProfilerWithAsanLinux)
+        .After(CompileProfilerWithAsanWindows)
+        .After(CompileProfilerWithUbsanLinux)
+        .Executes(() =>
+        {
+            var platforms =
+                IsWin
+                ? new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 }
+                : new[] { MSBuildTargetPlatform.x64 };
+
+            var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+
+            foreach (var platform in platforms)
+            {
+                
+                DotNetBuild(s => s
+                                .SetFramework(Framework)
+                                .SetProjectFile(sampleApp)
+                                .SetConfiguration(Configuration.Release)
+                                .SetNoWarnDotNetCore3()
+                                .SetTargetPlatform(platform));
+            }
+        });
+
     Target RunSampleWithProfilerUbsan => _ => _
         .Unlisted()
         .Requires(() => Framework)
@@ -631,6 +670,7 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
+            
             RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 
@@ -643,6 +683,8 @@ partial class Build
 
     void RunSampleWithSanitizer(MSBuildTargetPlatform platform, SanitizerKind sanitizer)
     {
+        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
+
         var envVars = new Dictionary<string, string>()
             {
                 { "DD_TRACE_ENABLED", "0" }, // Disable tracer for this test
@@ -676,19 +718,10 @@ partial class Build
 
         AddContinuousProfilerEnvironmentVariables(envVars);
 
-        var sampleApp = ProfilerSamplesSolution.GetProject("Samples.Computer01");
-
         var baseOutputDir = ProfilerBuildDataDirectory / platform.ToString();
 
         envVars["DD_INTERNAL_PROFILING_OUTPUT_DIR"] = baseOutputDir / "pprofs";
         envVars["DD_TRACE_LOG_DIRECTORY"] = baseOutputDir / "logs";
-
-        DotNetBuild(s => s
-            .SetFramework(Framework)
-            .SetProjectFile(sampleApp)
-            .SetConfiguration(Configuration.Release)
-            .SetNoWarnDotNetCore3()
-            .SetTargetPlatform(platform));
 
         var sampleBaseOutputDir = ProfilerOutputDirectory / "bin" / $"{Configuration.Release}-{platform}" / "profiler" / "src" / "Demos";
         var sampleAppDll = sampleBaseOutputDir / sampleApp.Name / Framework / $"{sampleApp.Name}.dll";

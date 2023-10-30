@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -11,7 +11,9 @@
       http.url: http://localhost:00000/createextraservice/?serviceName=extraVegetables,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.base_service: Samples.Security.AspNetCore5
+      _dd.base_service: Samples.Security.AspNetCore5,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -40,6 +42,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },
@@ -64,7 +68,9 @@
       http.url: http://localhost:00000/createextraservice/?serviceName=ExTrAvEgEtAbLeS,
       language: dotnet,
       runtime-id: Guid_1,
-      _dd.base_service: Samples.Security.AspNetCore5
+      _dd.base_service: Samples.Security.AspNetCore5,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       _dd.top_level: 1.0
@@ -93,6 +99,8 @@
       network.client.ip: 127.0.0.1,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
     },

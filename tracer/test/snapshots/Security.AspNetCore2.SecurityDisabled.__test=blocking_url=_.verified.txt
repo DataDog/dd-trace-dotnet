@@ -19,6 +19,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -49,6 +51,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -79,6 +83,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -109,6 +115,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -139,6 +147,8 @@
       language: dotnet,
       runtime-id: Guid_1,
       span.kind: server,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

@@ -7,6 +7,8 @@
   <PropertyGroup>
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet complaining about us targetting obsolete TFMs etc-->
+    <NuGetAudit>false</NuGetAudit>
   </PropertyGroup>
 
   <ItemGroup>

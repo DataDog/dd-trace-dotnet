@@ -25,6 +25,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"nfd-000-001","name":"Detect common directory discovery scans","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^404$","parameters":[{"address":"server.response.status","highlight":["404"],"key_path":[],"value":"404"}]},{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.uri.raw","highlight":["/login.php"],"key_path":[],"value":"/health/login.php"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -66,6 +68,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"nfd-000-001","name":"Detect common directory discovery scans","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^404$","parameters":[{"address":"server.response.status","highlight":["404"],"key_path":[],"value":"404"}]},{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.uri.raw","highlight":["/login.php"],"key_path":[],"value":"/health/login.php"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -107,6 +111,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"nfd-000-001","name":"Detect common directory discovery scans","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^404$","parameters":[{"address":"server.response.status","highlight":["404"],"key_path":[],"value":"404"}]},{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.uri.raw","highlight":["/login.php"],"key_path":[],"value":"/health/login.php"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -148,6 +154,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"nfd-000-001","name":"Detect common directory discovery scans","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^404$","parameters":[{"address":"server.response.status","highlight":["404"],"key_path":[],"value":"404"}]},{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.uri.raw","highlight":["/login.php"],"key_path":[],"value":"/health/login.php"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -189,6 +197,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"nfd-000-001","name":"Detect common directory discovery scans","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"^404$","parameters":[{"address":"server.response.status","highlight":["404"],"key_path":[],"value":"404"}]},{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.uri.raw","highlight":["/login.php"],"key_path":[],"value":"/health/login.php"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

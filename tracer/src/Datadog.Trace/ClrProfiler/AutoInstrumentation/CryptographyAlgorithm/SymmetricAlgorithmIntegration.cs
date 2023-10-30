@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.CryptographyAlgorithm;
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "7.0.0",
-    MaximumVersion = "7.*.*",
+    MaximumVersion = "8.*.*",
     InstrumentationCategory = InstrumentationCategory.Iast,
     IntegrationName = nameof(Configuration.IntegrationId.SymmetricAlgorithm))]
 [Browsable(false)]
