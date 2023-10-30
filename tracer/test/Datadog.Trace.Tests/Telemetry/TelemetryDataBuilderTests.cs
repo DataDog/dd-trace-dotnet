@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryDataBuilderV2Tests.cs" company="Datadog">
+﻿// <copyright file="TelemetryDataBuilderTests.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -15,15 +15,15 @@ using Xunit;
 
 namespace Datadog.Trace.Tests.Telemetry;
 
-public class TelemetryDataBuilderV2Tests
+public class TelemetryDataBuilderTests
 {
-    private readonly ApplicationTelemetryDataV2 _application;
-    private readonly HostTelemetryDataV2 _host;
+    private readonly ApplicationTelemetryData _application;
+    private readonly HostTelemetryData _host;
     private readonly string _namingSchemaVersion = "1";
 
-    public TelemetryDataBuilderV2Tests()
+    public TelemetryDataBuilderTests()
     {
-        _application = new ApplicationTelemetryDataV2(
+        _application = new ApplicationTelemetryData(
             serviceName: "Test Service",
             env: "integration-ci",
             serviceVersion: "1.0.0",
@@ -32,13 +32,13 @@ public class TelemetryDataBuilderV2Tests
             languageVersion: FrameworkDescription.Instance.ProductVersion,
             runtimeName: FrameworkDescription.Instance.Name,
             runtimeVersion: FrameworkDescription.Instance.ProductVersion);
-        _host = new HostTelemetryDataV2("MY_MACHINE", "Windows", "arm64");
+        _host = new HostTelemetryData("MY_MACHINE", "Windows", "arm64");
     }
 
     [Fact]
     public void WhenHasApplicationAndHostData_GeneratesAppClosingTelemetry()
     {
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: false);
         var result = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: true);
@@ -52,7 +52,7 @@ public class TelemetryDataBuilderV2Tests
     [Fact]
     public void WhenHasApplicationAndHostData_GeneratesHeartbeatTelemetry()
     {
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildHeartbeatData(_application, _host, _namingSchemaVersion);
 
@@ -65,7 +65,7 @@ public class TelemetryDataBuilderV2Tests
     [Fact]
     public void WhenHasApplicationAndHostData_GeneratesExtendedHeartbeatTelemetry()
     {
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildExtendedHeartbeatData(_application, _host, null, null, null, _namingSchemaVersion);
 
@@ -78,7 +78,7 @@ public class TelemetryDataBuilderV2Tests
     [Fact]
     public void ShouldGenerateIncrementingIds()
     {
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var input = new TelemetryInput(null, null, null, null, null, sendAppStarted: true);
         var data = builder.BuildTelemetryData(_application, _host, input, _namingSchemaVersion, sendAppClosing: false);
@@ -112,7 +112,7 @@ public class TelemetryDataBuilderV2Tests
         var distributions = hasDistributions ? new List<DistributionMetricData>() : null;
         var products = hasProducts ? new ProductsData() : null;
         var input = new TelemetryInput(config, dependencies, integrations, new MetricResults(metrics, distributions), products, sendAppStarted: !hasSentAppStarted);
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: hasSendAppClosing);
 
@@ -146,17 +146,17 @@ public class TelemetryDataBuilderV2Tests
                     requestType.Should().Be(TelemetryRequestTypes.AppIntegrationsChanged);
                     integrationsPayload.Integrations.Should().BeSameAs(integrations);
                 }
-                else if (payload is AppProductChangePayloadV2 productsPayload)
+                else if (payload is AppProductChangePayload productsPayload)
                 {
                     requestType.Should().Be(TelemetryRequestTypes.AppProductChanged);
                     productsPayload.Products.Should().BeSameAs(products);
                 }
-                else if (payload is AppClientConfigurationChangedPayloadV2 configPayload)
+                else if (payload is AppClientConfigurationChangedPayload configPayload)
                 {
                     requestType.Should().Be(TelemetryRequestTypes.AppClientConfigurationChanged);
                     configPayload.Configuration.Should().BeSameAs(config);
                 }
-                else if (payload is AppStartedPayloadV2 appStarted)
+                else if (payload is AppStartedPayload appStarted)
                 {
                     requestType.Should().Be(TelemetryRequestTypes.AppStarted);
                     appStarted.Configuration.Should().BeSameAs(config);
@@ -206,7 +206,7 @@ public class TelemetryDataBuilderV2Tests
             numOfDependencies)
                                      .ToList();
         var input = new TelemetryInput(null, dependencies, null, null, null, sendAppStarted: false);
-        var builder = new TelemetryDataBuilderV2();
+        var builder = new TelemetryDataBuilder();
 
         var result = builder.BuildTelemetryData(_application, _host, in input, _namingSchemaVersion, sendAppClosing: false);
 

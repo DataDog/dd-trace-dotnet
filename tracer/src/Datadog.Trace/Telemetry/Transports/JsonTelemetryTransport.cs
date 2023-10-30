@@ -40,7 +40,7 @@ namespace Datadog.Trace.Telemetry.Transports
 
         protected string GetEndpointInfo() => _requestFactory.Info(_endpoint);
 
-        public async Task<TelemetryPushResult> PushTelemetry(TelemetryDataV2 data)
+        public async Task<TelemetryPushResult> PushTelemetry(TelemetryData data)
         {
             var endpointMetricTag = GetEndpointMetricTag();
 
@@ -60,7 +60,6 @@ namespace Datadog.Trace.Telemetry.Transports
                     request.AddHeader(TelemetryConstants.DebugHeader, "true");
                 }
 
-                // Optional in V1, required in V2
                 if (_containerId is not null)
                 {
                     request.AddHeader(TelemetryConstants.ContainerIdHeader, _containerId);

@@ -48,9 +48,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public static void AssertIntegrationEnabled(this MockTracerAgent mockAgent, IntegrationId integrationId)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryWrapper>().ToArray();
+            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
             AssertIntegration(allData, integrationId, true, true);
         }
 
@@ -58,15 +58,15 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = telemetry.Telemetry.ToArray();
+            var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             AssertIntegration(allData, integrationId, enabled, autoEnabled);
         }
 
         public static void AssertConfiguration(this MockTracerAgent mockAgent, string key, object value = null)
         {
-            mockAgent.WaitForLatestTelemetry(x => ((TelemetryWrapper)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+            mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = mockAgent.Telemetry.Cast<TelemetryWrapper>().ToArray();
+            var allData = mockAgent.Telemetry.Cast<TelemetryData>().ToArray();
             AssertConfiguration(allData, key, value);
         }
 
@@ -74,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = telemetry.Telemetry.ToArray();
+            var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             AssertConfiguration(allData, key, value);
         }
 
@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = telemetry.Telemetry.ToArray();
+            var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             return GetMetricData(allData, metric, tag1, tag2, tag3);
         }
 
@@ -92,11 +92,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
-            var allData = telemetry.Telemetry.ToArray();
+            var allData = telemetry.Telemetry.Cast<TelemetryData>().ToArray();
             return GetDistributions(allData, distribution, tag1, tag2, tag3);
         }
 
-        internal static void AssertConfiguration(ICollection<TelemetryWrapper> allData, string key, object value = null)
+        internal static void AssertConfiguration(ICollection<TelemetryData> allData, string key, object value = null)
         {
             var payloads =
                 allData
@@ -104,8 +104,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                    .Select(
                         data => data switch
                         {
-                            _ when data.TryGetPayload<AppStartedPayloadV2>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
-                            _ when data.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppStartedPayload>(TelemetryRequestTypes.AppStarted) is { } p => p.Configuration,
+                            _ when data.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged) is { } p => p.Configuration,
                             _ => null,
                         })
                    .Where(x => x is not null)
@@ -126,7 +126,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        internal static void AssertIntegration(ICollection<TelemetryWrapper> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
+        internal static void AssertIntegration(ICollection<TelemetryData> allData, IntegrationId integrationId, bool enabled, bool? autoEnabled)
         {
             allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -165,7 +165,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             integration.Error.Should().BeNullOrEmpty();
         }
 
-        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricData(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<(string[] Tags, int Value, long Timestamp)> GetMetricData(ICollection<TelemetryData> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 
@@ -193,7 +193,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        internal static IEnumerable<DistributionMetricData> GetDistributions(ICollection<TelemetryWrapper> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
+        internal static IEnumerable<DistributionMetricData> GetDistributions(ICollection<TelemetryData> allData, string metricName, string tag1 = null, string tag2 = null, string tag3 = null)
         {
             allData.Should().ContainSingle(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
 

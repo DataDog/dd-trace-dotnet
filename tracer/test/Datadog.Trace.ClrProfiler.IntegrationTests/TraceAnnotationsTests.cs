@@ -146,7 +146,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 (rootSpan.Start + rootSpan.Duration).Should().BeGreaterThan(lastEndTime.Value);
 
                 telemetry?.AssertIntegrationEnabled(IntegrationId.TraceAnnotations);
-                telemetry?.AssertConfiguration(ConfigTelemetryData.TraceMethods);
+                telemetry?.AssertConfiguration("DD_TRACE_METHODS"); // normalised to trace_methods in the backend
 
                 // Run snapshot verification
                 var settings = VerifyHelper.GetSpanVerifierSettings();

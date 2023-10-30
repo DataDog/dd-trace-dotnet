@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryControllerV2.cs" company="Datadog">
+﻿// <copyright file="TelemetryController.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -19,13 +19,13 @@ using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryControllerV2 : ITelemetryController
+internal class TelemetryController : ITelemetryController
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryControllerV2>();
-    private readonly TelemetryDataBuilderV2 _dataBuilder = new();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryController>();
+    private readonly TelemetryDataBuilder _dataBuilder = new();
     private readonly ConcurrentQueue<WorkItem> _queue = new();
     private readonly TelemetryDataAggregator _aggregator = new(previous: null);
-    private readonly ApplicationTelemetryCollectorV2 _application = new();
+    private readonly ApplicationTelemetryCollector _application = new();
     private readonly IConfigurationTelemetry _configuration;
     private readonly IDependencyTelemetryCollector _dependencies;
     private readonly IntegrationTelemetryCollector _integrations = new();
@@ -34,16 +34,16 @@ internal class TelemetryControllerV2 : ITelemetryController
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
-    private TelemetryTransportManagerV2 _transportManager;
+    private TelemetryTransportManager _transportManager;
     private bool _sendTelemetry;
     private bool _isStarted;
     private string? _namingVersion;
 
-    internal TelemetryControllerV2(
+    internal TelemetryController(
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
         IMetricsTelemetryCollector metrics,
-        TelemetryTransportManagerV2 transportManager,
+        TelemetryTransportManager transportManager,
         TimeSpan flushInterval)
     {
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
@@ -122,7 +122,7 @@ internal class TelemetryControllerV2 : ITelemetryController
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.DisableSending, null));
     }
 
-    public void SetTransportManager(TelemetryTransportManagerV2 manager)
+    public void SetTransportManager(TelemetryTransportManager manager)
     {
         _queue.Enqueue(new WorkItem(WorkItem.ItemType.SetTransportManager, manager));
     }
@@ -168,7 +168,7 @@ internal class TelemetryControllerV2 : ITelemetryController
                 {
                     case WorkItem.ItemType.SetTransportManager:
                         _transportManager.Dispose(); // dispose the old one
-                        _transportManager = (TelemetryTransportManagerV2)item.State!;
+                        _transportManager = (TelemetryTransportManager)item.State!;
                         break;
                     case WorkItem.ItemType.SetTracerStarted:
                         _isStarted = true;

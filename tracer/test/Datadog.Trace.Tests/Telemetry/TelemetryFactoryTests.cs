@@ -83,7 +83,7 @@ public class TelemetryFactoryTests
 
         var controller = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
 
-        controller.Should().BeOfType<TelemetryControllerV2>();
+        controller.Should().BeOfType<TelemetryController>();
         TelemetryFactory.Config.Should().BeOfType<ConfigurationTelemetry>();
     }
 
@@ -190,26 +190,26 @@ public class TelemetryFactoryTests
         var metrics1 = TelemetryFactory.Metrics;
         var config1 = TelemetryFactory.Config;
 
-        var dependencies = GetField<TelemetryControllerV2>("_dependencies");
+        var dependencies = GetField<TelemetryController>("_dependencies");
         var dependencies1 = dependencies.GetValue(controller1);
 
-        var integrations = GetField<TelemetryControllerV2>("_integrations");
+        var integrations = GetField<TelemetryController>("_integrations");
         var integrations1 = integrations.GetValue(controller1);
 
-        var products = GetField<TelemetryControllerV2>("_products");
+        var products = GetField<TelemetryController>("_products");
         var products1 = products.GetValue(controller1);
 
-        var application = GetField<TelemetryControllerV2>("_application");
+        var application = GetField<TelemetryController>("_application");
         var application1 = application.GetValue(controller1);
 
-        var v1Controller1 = controller1.Should().BeOfType<TelemetryControllerV2>().Subject;
+        var v1Controller1 = controller1.Should().BeOfType<TelemetryController>().Subject;
 
         // Second controller
         var controller2 = factory.CreateTelemetryController(tracerSettings, settings, NullDiscoveryService.Instance, useCiVisibilityTelemetry: false);
         var metrics2 = TelemetryFactory.Metrics;
         var config2 = TelemetryFactory.Config;
 
-        var v1Controller2 = controller2.Should().BeOfType<TelemetryControllerV2>().Subject;
+        var v1Controller2 = controller2.Should().BeOfType<TelemetryController>().Subject;
         v1Controller1.Should().Be(v1Controller2);
 
         metrics1.Should().Be(metrics2);

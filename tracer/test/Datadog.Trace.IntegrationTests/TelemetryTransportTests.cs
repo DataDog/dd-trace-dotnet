@@ -33,7 +33,7 @@ namespace Datadog.Trace.IntegrationTests
             // Uses framework specific transport
             var transport = GetAgentOnlyTransport(telemetryUri);
             var data =  GetSampleData();
-            var result = await SendData(transport, data);
+            var result = await transport.PushTelemetry(data);
 
             result.Should().Be(TelemetryPushResult.Success);
             var received = agent.WaitForLatestTelemetry(x => x.SeqId == data.SeqId);
@@ -42,16 +42,9 @@ namespace Datadog.Trace.IntegrationTests
 
             // check some basic values
             received.SeqId.Should().Be(data.SeqId);
-            if (data is TelemetryWrapper.V2 expectedV2)
-            {
-                var v2 = received.Should().BeOfType<TelemetryWrapper.V2>().Subject;
-                v2.Data.Application.Env.Should().Be(expectedV2.Data.Application.Env);
-                v2.Data.Application.ServiceName.Should().Be(expectedV2.Data.Application.ServiceName);
-            }
-            else
-            {
-                throw new InvalidOperationException("Input data was unknown type" + data);
-            }
+            var v2 = received.Should().BeOfType<TelemetryData>().Subject;
+            v2.Application.Env.Should().Be(data.Application.Env);
+            v2.Application.ServiceName.Should().Be(data.Application.ServiceName);
         }
 
         [SkippableTheory]
@@ -74,7 +67,7 @@ namespace Datadog.Trace.IntegrationTests
                                 : GetAgentOnlyTransport(telemetryUri);
 
             var data = GetSampleData();
-            var result = await SendData(transport, data);
+            var result = await transport.PushTelemetry(data);
 
             result.Should().Be(TelemetryPushResult.Success);
             var received = agent.WaitForLatestTelemetry(x => x.SeqId == data.SeqId);
@@ -131,7 +124,7 @@ namespace Datadog.Trace.IntegrationTests
             // Uses framework specific transport
             var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
-            var result = await SendData(transport, data);
+            var result = await transport.PushTelemetry(data);
 
             result.Should().Be(TelemetryPushResult.FatalError);
         }
@@ -146,43 +139,28 @@ namespace Datadog.Trace.IntegrationTests
             var telemetryUri = new Uri($"http://localhost:{agent.Port}");
             var transport = GetAgentOnlyTransport(telemetryUri);
             var data = GetSampleData();
-            var result = await SendData(transport, data);
+            var result = await transport.PushTelemetry(data);
 
             result.Should().Be((TelemetryPushResult)expectedPushResult);
         }
 
-        private static async Task<TelemetryPushResult> SendData(ITelemetryTransport transport, TelemetryWrapper data)
-        {
-            if (data is TelemetryWrapper.V2 v2Data)
-            {
-                return await transport.PushTelemetry(v2Data.Data);
-            }
-            else
-            {
-                throw new InvalidOperationException("Unknown wrapper type: " + data.GetType());
-            }
-        }
-
-        private static TelemetryWrapper GetSampleData()
-        {
-            return new TelemetryWrapper.V2(
-                           new(
-                               requestType: TelemetryRequestTypes.AppHeartbeat,
-                               tracerTime: 1234,
-                               runtimeId: "some-value",
-                               seqId: 23,
-                               application: new ApplicationTelemetryDataV2(
-                                   serviceName: "TelemetryTransportTests",
-                                   env: "TracerTelemetryTest",
-                                   serviceVersion: "123",
-                                   tracerVersion: TracerConstants.AssemblyVersion,
-                                   languageName: "dotnet",
-                                   languageVersion: "1.2.3",
-                                   runtimeName: "dotnet",
-                                   runtimeVersion: "7.0.3"),
-                               host: new HostTelemetryDataV2("SOME_HOST", "Windows", "x64"),
-                               payload: null));
-        }
+        private static TelemetryData GetSampleData() =>
+            new(
+                requestType: TelemetryRequestTypes.AppHeartbeat,
+                tracerTime: 1234,
+                runtimeId: "some-value",
+                seqId: 23,
+                application: new ApplicationTelemetryData(
+                    serviceName: "TelemetryTransportTests",
+                    env: "TracerTelemetryTest",
+                    serviceVersion: "123",
+                    tracerVersion: TracerConstants.AssemblyVersion,
+                    languageName: "dotnet",
+                    languageVersion: "1.2.3",
+                    runtimeName: "dotnet",
+                    runtimeVersion: "7.0.3"),
+                host: new HostTelemetryData("SOME_HOST", "Windows", "x64"),
+                payload: null);
 
         private static ITelemetryTransport GetAgentOnlyTransport(Uri telemetryUri)
         {

@@ -1,4 +1,4 @@
-﻿// <copyright file="AppProductChangePayloadV2.cs" company="Datadog">
+﻿// <copyright file="AppProductChangePayload.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -7,9 +7,9 @@
 
 namespace Datadog.Trace.Telemetry;
 
-internal class AppProductChangePayloadV2 : IPayload
+internal class AppProductChangePayload : IPayload
 {
-    public AppProductChangePayloadV2(ProductsData products)
+    public AppProductChangePayload(ProductsData products)
     {
         Products = products;
     }

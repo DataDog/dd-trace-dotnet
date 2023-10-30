@@ -1,4 +1,4 @@
-﻿// <copyright file="TelemetryTransportManagerV2.cs" company="Datadog">
+﻿// <copyright file="TelemetryTransportManager.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -14,9 +14,9 @@ using Datadog.Trace.Vendors.Serilog.Events;
 
 namespace Datadog.Trace.Telemetry;
 
-internal class TelemetryTransportManagerV2 : IDisposable
+internal class TelemetryTransportManager : IDisposable
 {
-    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManagerV2>();
+    private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<TelemetryTransportManager>();
 
     internal const int MaxFatalErrors = 2;
     internal const int MaxTransientErrors = 5;
@@ -25,7 +25,7 @@ internal class TelemetryTransportManagerV2 : IDisposable
     private ITelemetryTransport _currentTransport;
     private bool? _canSendToAgent = null;
 
-    public TelemetryTransportManagerV2(TelemetryTransports transports, IDiscoveryService discoveryService)
+    public TelemetryTransportManager(TelemetryTransports transports, IDiscoveryService discoveryService)
     {
         _transports = transports;
         _discoveryService = discoveryService;
@@ -54,7 +54,7 @@ internal class TelemetryTransportManagerV2 : IDisposable
         _discoveryService.RemoveSubscription(HandleAgentDiscoveryUpdate);
     }
 
-    public async Task<bool> TryPushTelemetry(TelemetryDataV2 telemetryData)
+    public async Task<bool> TryPushTelemetry(TelemetryData telemetryData)
     {
         var pushResult = await _currentTransport.PushTelemetry(telemetryData).ConfigureAwait(false);
 

@@ -84,7 +84,7 @@ namespace Datadog.Trace.TestHelpers
         /// </summary>
         public int Port { get; }
 
-        public ConcurrentStack<TelemetryWrapper> Telemetry { get; } = new();
+        public ConcurrentStack<TelemetryData> Telemetry { get; } = new();
 
         public IImmutableList<NameValueCollection> RequestHeaders { get; private set; } = ImmutableList<NameValueCollection>.Empty;
 
@@ -97,8 +97,8 @@ namespace Datadog.Trace.TestHelpers
         /// <param name="timeoutInMilliseconds">The timeout</param>
         /// <param name="sleepTime">The time between checks</param>
         /// <returns>The telemetry that satisfied <paramref name="hasExpectedValues"/></returns>
-        public TelemetryWrapper WaitForLatestTelemetry(
-            Func<TelemetryWrapper, bool> hasExpectedValues,
+        public TelemetryData WaitForLatestTelemetry(
+            Func<TelemetryData, bool> hasExpectedValues,
             int timeoutInMilliseconds = 10_000,
             int sleepTime = 500)
         {
@@ -126,7 +126,7 @@ namespace Datadog.Trace.TestHelpers
             _listener?.Close();
         }
 
-        internal static TelemetryWrapper DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
+        internal static TelemetryData DeserializeResponse(Stream inputStream, string apiVersion, string requestType)
         {
             return apiVersion switch
             {
@@ -134,23 +134,20 @@ namespace Datadog.Trace.TestHelpers
                 _ => throw new Exception($"Unknown telemetry api version: {apiVersion}"),
             };
 
-            static TelemetryWrapper DeserializeV2(Stream inputStream, string requestType)
+            static TelemetryData DeserializeV2(Stream inputStream, string requestType)
             {
                 if (!TelemetryConverter.V2Serializers.TryGetValue(requestType, out var serializer))
                 {
                     throw new Exception($"Unknown V2 telemetry request type {requestType}");
                 }
 
-                TelemetryDataV2 telemetry;
                 using var sr = new StreamReader(inputStream);
                 var text = sr.ReadToEnd();
                 var tr = new StringReader(text);
-                using (var jsonTextReader = new JsonTextReader(tr))
-                {
-                    telemetry = serializer.Deserialize<TelemetryDataV2>(jsonTextReader);
-                }
+                using var jsonTextReader = new JsonTextReader(tr);
+                var telemetry = serializer.Deserialize<TelemetryData>(jsonTextReader);
 
-                return new TelemetryWrapper.V2(telemetry);
+                return telemetry;
             }
         }
 
@@ -220,11 +217,11 @@ namespace Datadog.Trace.TestHelpers
                 V2Serializers = new()
                 {
                     { TelemetryRequestTypes.MessageBatch, CreateSerializer<MessageBatchPayload>() },
-                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayloadV2>() },
+                    { TelemetryRequestTypes.AppStarted, CreateSerializer<AppStartedPayload>() },
                     { TelemetryRequestTypes.AppDependenciesLoaded, CreateSerializer<AppDependenciesLoadedPayload>() },
                     { TelemetryRequestTypes.AppIntegrationsChanged, CreateSerializer<AppIntegrationsChangedPayload>() },
-                    { TelemetryRequestTypes.AppClientConfigurationChanged, CreateSerializer<AppClientConfigurationChangedPayloadV2>() },
-                    { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayloadV2>() },
+                    { TelemetryRequestTypes.AppClientConfigurationChanged, CreateSerializer<AppClientConfigurationChangedPayload>() },
+                    { TelemetryRequestTypes.AppProductChanged, CreateSerializer<AppProductChangePayload>() },
                     { TelemetryRequestTypes.GenerateMetrics, CreateSerializer<GenerateMetricsPayload>() },
                     { TelemetryRequestTypes.Distributions, CreateSerializer<DistributionsPayload>() },
                     { TelemetryRequestTypes.AppExtendedHeartbeat, CreateSerializer<AppExtendedHeartbeatPayload>() },
