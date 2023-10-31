@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
-using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
 namespace Datadog.Trace.Debugger.Symbols;
@@ -62,6 +61,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return methodScope;
     }
 
+    // TODO: this should be wrapped in DatadogMetadataReader
     private Symbol[]? GetLocalsSymbol(MethodDefinition method, int startLine, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo, DatadogMetadataReader.DatadogSequencePoint[] sequencePoints)
     {
         if (DatadogMetadataReader.PdbReader == null)
@@ -81,6 +81,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
             return null;
         }
 
+        var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan("<>");
         var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(), 0);
         var localsSymbol = new List<Symbol>();
         Dictionary<string, int>? hoistedLocals = null;
@@ -108,8 +109,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     continue;
                 }
 
-                // todo
-                if (localTypes[local.Index].Name.Contains("<>"))
+                var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(localTypes[local.Index].Name);
+                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.Contains(span, generatedClassPrefix, StringComparison.Ordinal))
                 {
                     var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(method.Handle);
                     if (cdi.EncLambdaAndClosureMap || cdi.LocalSlot)
@@ -163,7 +164,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
 
                     var nestedType = MetadataReader.GetTypeDefinition(nestedHandle);
                     var name = nestedType.FullName(MetadataReader);
-                    // todo
+                    // TODO: related task - normalize type names
                     if (!hoistedLocal.Key.Contains(name))
                     {
                         continue;
@@ -190,8 +191,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
                         }
 
                         var fieldName = MetadataReader.GetString(field.Name);
-                        // todo
-                        if (fieldName.StartsWith("<>"))
+                        var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                        if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(span, generatedClassPrefix, StringComparison.Ordinal))
                         {
                             continue;
                         }
@@ -215,8 +216,9 @@ internal class SymbolPdbExtractor : SymbolExtractor
             foreach (var fieldHandle in fields)
             {
                 var field = MetadataReader.GetFieldDefinition(fieldHandle);
-                // todo
-                if (MetadataReader.GetString(field.Name).StartsWith("<>"))
+                var fieldName = MetadataReader.GetString(field.Name);
+                var span = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.StartsWith(span, generatedClassPrefix, StringComparison.Ordinal))
                 {
                     continue;
                 }
