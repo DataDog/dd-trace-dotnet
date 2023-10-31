@@ -26,7 +26,8 @@ public class ConfigurationTelemetryCollectorTests
         => from propagationStyleExtract in new string[] { null, "tracecontext" }
            from propagationStyleInject in new string[] { null, "datadog" }
            from propagationStyle in new string[] { null, "B3" }
-           select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle };
+           from activityListenerEnabled in new[] { "false", "true" }
+           select new[] { propagationStyleExtract, propagationStyleInject, propagationStyle, activityListenerEnabled };
 
     [Fact]
     public void HasChangesAfterEachTracerSettingsAdded()
@@ -179,7 +180,7 @@ public class ConfigurationTelemetryCollectorTests
 
     [Theory]
     [MemberData(nameof(GetPropagatorConfigurations))]
-    public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle)
+    public void ConfigurationDataShouldIncludeExpectedPropagationValues(string propagationStyleExtract, string propagationStyleInject, string propagationStyle, string activityListenerEnabled)
     {
         var collector = new ConfigurationTelemetry();
         var config = new NameValueCollection
@@ -187,6 +188,7 @@ public class ConfigurationTelemetryCollectorTests
             { ConfigurationKeys.PropagationStyleExtract, propagationStyleExtract },
             { ConfigurationKeys.PropagationStyleInject, propagationStyleInject },
             { ConfigurationKeys.PropagationStyle, propagationStyle },
+            { ConfigurationKeys.FeatureFlags.OpenTelemetryEnabled, activityListenerEnabled },
         };
 
         _ = new ImmutableTracerSettings(new TracerSettings(new NameValueConfigurationSource(config), collector));
