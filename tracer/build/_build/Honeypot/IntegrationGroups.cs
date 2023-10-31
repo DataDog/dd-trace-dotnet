@@ -93,7 +93,6 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
-            NugetPackages.Add("IBMMQDotnetClient", new [] { "amqmdnetstd" });
         }
 
         private IntegrationMap()
