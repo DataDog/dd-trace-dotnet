@@ -42,6 +42,7 @@ namespace Samples.Computer01
         private LineNumber _lineNumber;
         private NullThreadNameBugCheck _nullThreadNameBugCheck;
         private MethodsSignature _methodsSignature;
+        private SigSegvHandlerExecution _sigsegvHandler;
 
 #if NET5_0_OR_GREATER
         private OpenLdapCrash _openldapCrash;
@@ -160,9 +161,18 @@ namespace Samples.Computer01
                     StartSocketTimeout();
                     break;
 #endif
+                case Scenario.ForceSigSegvHandler:
+                    StartForceSigSegvHandler();
+                    break;
                 default:
                     throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
             }
+        }
+
+        private void StartForceSigSegvHandler()
+        {
+            _sigsegvHandler = new SigSegvHandlerExecution();
+            _sigsegvHandler.Start();
         }
 
         public void StopService()
@@ -274,7 +284,15 @@ namespace Samples.Computer01
                     _socketTest.Stop();
                     break;
 #endif
+                case Scenario.ForceSigSegvHandler:
+                    StopForceSigSegvHandler();
+                    break;
             }
+        }
+
+        private void StopForceSigSegvHandler()
+        {
+            _sigsegvHandler.Stop();
         }
 
         public void Run(Scenario scenario, int iterations, int nbThreads, int parameter)
@@ -393,6 +411,9 @@ namespace Samples.Computer01
                         RunSocketTimeout();
                         break;
 #endif
+                    case Scenario.ForceSigSegvHandler:
+                        RunForceSigSegvHandler();
+                        break;
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -401,6 +422,12 @@ namespace Samples.Computer01
             }
 
             Console.WriteLine($"End of {iterations} iterations of {scenario.ToString()} in {sw.Elapsed}");
+        }
+
+        private void RunForceSigSegvHandler()
+        {
+            var test = new SigSegvHandlerExecution();
+            test.Run();
         }
 
         public void RunAsService(TimeSpan timeout, Scenario scenario, int parameter)
