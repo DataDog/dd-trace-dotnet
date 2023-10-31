@@ -15,76 +15,41 @@ namespace Datadog.Trace.Tests
     [Collection(nameof(OpenTelemetryOperationNameMapperTests))]
     public class OpenTelemetryOperationNameMapperTests
     {
-        [Fact]
-        public void OperationName_ShouldBe_HttpServerRequest()
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "http.request.method", "GET" }
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            Assert.Equal("http.server.request", span.OperationName);
-        }
-
-        [Fact]
-        public void OperationName_ShouldBe_HttpClientRequest()
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "http.request.method", "GET" }
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            Assert.Equal("http.client.request", span.OperationName);
-        }
-
         [Theory]
-        [InlineData("mongodb", "delete")]
-        public void OperationName_ShouldBe_DbSystem_Dot_DbOperation(string dbSystem, string dbOperation)
+        [InlineData((int)ActivityKind.Server, "http.server.request")]
+        [InlineData((int)ActivityKind.Client, "http.client.request")]
+        public void OperationName_ShouldBe_Http_SpanKind_Request(int kind, string expected)
         {
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
+            activityMock.Setup(x => x.Kind).Returns((ActivityKind)kind);
             var tagObjects = new Dictionary<string, object>
             {
-                { "db.system", dbSystem },
-                { "db.operation", dbOperation },
+                { "http.request.method", "GET" }
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"{dbSystem}.{dbOperation}";
             Assert.Equal(expected, span.OperationName);
         }
 
-        [Theory]
-        [InlineData("mongodb")]
-        public void OperationName_ShouldBe_DbSystem_Dot_Query(string dbSystem)
+        [Fact]
+        public void OperationName_ShouldBe_DbSystem_Query()
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
             var tagObjects = new Dictionary<string, object>
             {
-                { "db.system", dbSystem }
+                { "db.system", "mongodb" },
+                // db.operation is not required
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"{dbSystem}.query";
+            var expected = "mongodb.query";
             Assert.Equal(expected, span.OperationName);
         }
 
@@ -92,7 +57,8 @@ namespace Datadog.Trace.Tests
         [InlineData("kafka", "receive", (int)ActivityKind.Client)]
         [InlineData("kafka", "receive", (int)ActivityKind.Consumer)]
         [InlineData("kafka", "publish", (int)ActivityKind.Producer)]
-        public void OperationName_ShouldBe_MessagingSystem_Dot_MessagingOperation(string messagingSystem, string messagingOperation, int kind)
+        [InlineData("kafka", "receive", (int)ActivityKind.Server)]
+        public void OperationName_ShouldBe_MessagingSystem_MessagingOperation(string messagingSystem, string messagingOperation, int kind)
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns((ActivityKind)kind);
@@ -110,28 +76,10 @@ namespace Datadog.Trace.Tests
             Assert.Equal(expected, span.OperationName);
         }
 
-        [Fact]
-        public void OperationName_ShouldBe_Aws()
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "rpc.system", "aws-api" } // NOTE: no rpc.service here as it is optional
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            var expected = $"aws";
-            Assert.Equal(expected, span.OperationName);
-        }
-
         [Theory]
         [InlineData("S3")]
         [InlineData("SNS")]
-        public void OperationName_ShouldBe_Aws_Dot_RpcService(string rpcService)
+        public void OperationName_ShouldBe_Aws_RpcService_Request(string rpcService)
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
@@ -145,7 +93,25 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"aws.{rpcService.ToLower()}";
+            var expected = $"aws.{rpcService.ToLower()}.request";
+            Assert.Equal(expected, span.OperationName);
+        }
+
+        [Fact]
+        public void OperationName_ShouldBe_Aws_Request()
+        {
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
+            var tagObjects = new Dictionary<string, object>
+            {
+                { "rpc.system", "aws-api" } // NOTE: no rpc.service here as it is optional
+            };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+
+            var expected = "aws.request";
             Assert.Equal(expected, span.OperationName);
         }
 
@@ -154,7 +120,7 @@ namespace Datadog.Trace.Tests
         [InlineData("grpc", (int)ActivityKind.Server)]
         [InlineData("dotnet_wcf", (int)ActivityKind.Client)]
         [InlineData("dotnet_wcf", (int)ActivityKind.Server)]
-        public void OperationName_ShouldBe_RpcSystem_Dot_SpanKind_Dot_Request(string rpcSystem,  int kind)
+        public void OperationName_ShouldBe_RpcSystem_SpanKind_Request(string rpcSystem, int kind)
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns((ActivityKind)kind);
@@ -172,9 +138,58 @@ namespace Datadog.Trace.Tests
         }
 
         [Theory]
+        [InlineData("alibaba_cloud", "my-function1")]
+        [InlineData("aws", "my-function2")]
+        [InlineData("azure", "my-function3")]
+        [InlineData("gcp", "my-function4")]
+        [InlineData("tencent_cloud", "my-function5")]
+        public void OperationName_ShouldBe_FaasInvokedProvider_FaasName_Invoke(string provider, string name)
+        {
+            // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/faas/
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
+            var tagObjects = new Dictionary<string, object>
+            {
+                { "faas.invoked_provider", provider },
+                { "faas.name", provider }
+            };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+
+            var expected = $"{provider}.${name}.invoke";
+            Assert.Equal(expected, span.OperationName);
+        }
+
+        [Theory]
+        [InlineData("datasource")]
+        [InlineData("http")]
+        [InlineData("pubsub")]
+        [InlineData("timer")]
+        [InlineData("other")]
+        public void OperationName_ShouldBe_FaasTrigger_Invoke(string trigger)
+        {
+            // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/faas/
+            var activityMock = new Mock<IActivity5>();
+            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            var tagObjects = new Dictionary<string, object>
+            {
+                { "faas.trigger", trigger }
+            };
+            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
+
+            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
+            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
+
+            var expected = $"{trigger}.invoke";
+            Assert.Equal(expected, span.OperationName);
+        }
+
+        [Theory]
         [InlineData("query")]
         [InlineData("mutation")]
-        public void OperationName_ShouldBe_GraphQl_Dot_OperationType(string operationType)
+        public void OperationName_ShouldBe_GraphQl_Server_Request(string operationType)
         {
             // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/instrumentation/graphql/
             var activityMock = new Mock<IActivity5>();
@@ -188,14 +203,14 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"graphql.{operationType}";
+            var expected = "graphql.server.request";
             Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
         [InlineData("amqp")]
         [InlineData("mqtt")]
-        public void OperationName_ShouldBe_NetworkProtocolName_Dot_Server_Dot_Request(string protocol)
+        public void OperationName_ShouldBe_NetworkProtocolName_Server_Request(string protocol)
         {
             // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/span-general/#network-attributes
             var activityMock = new Mock<IActivity5>();
@@ -214,7 +229,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void OperationName_ShouldBe_Unknown_Dot_Server_Dot_Request()
+        public void OperationName_ShouldBe_Server_Request()
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
@@ -226,14 +241,14 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"unknown.server.request";
+            var expected = "server.request";
             Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
         [InlineData("amqp")]
         [InlineData("mqtt")]
-        public void OperationName_ShouldBe_NetworkProtocolName_Dot_Client_Dot_Request(string protocol)
+        public void OperationName_ShouldBe_NetworkProtocolName_Client_Request(string protocol)
         {
             // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/span-general/#network-attributes
             var activityMock = new Mock<IActivity5>();
@@ -252,7 +267,7 @@ namespace Datadog.Trace.Tests
         }
 
         [Fact]
-        public void OperationName_ShouldBe_Unknown_Dot_Client_Dot_Request()
+        public void OperationName_ShouldBe_Client_Request()
         {
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
@@ -264,118 +279,35 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"unknown.client.request";
-            Assert.Equal(expected, span.OperationName);
-        }
-
-        [Fact]
-        public void OperationName_ShouldBe_Unknown_Dot_Producer_Dot_Request()
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Producer);
-            var tagObjects = new Dictionary<string, object>
-            {
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            var expected = $"unknown.producer.request";
-            Assert.Equal(expected, span.OperationName);
-        }
-
-        [Fact]
-        public void OperationName_ShouldBe_Unknown_Dot_Consumer_Dot_Request()
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Consumer);
-            var tagObjects = new Dictionary<string, object>
-            {
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            var expected = $"unknown.consumer.request";
+            var expected = "client.request";
             Assert.Equal(expected, span.OperationName);
         }
 
         [Theory]
-        [InlineData("datasource")]
-        [InlineData("http")]
-        [InlineData("pubsub")]
-        [InlineData("timer")]
-        [InlineData("other")]
-        public void OperationName_ShouldBe_FaasTrigger_Dot_Trigger(string trigger)
+        [InlineData((int)ActivityKind.Internal)]
+        [InlineData((int)ActivityKind.Consumer)]
+        [InlineData((int)ActivityKind.Producer)]
+        public void OperationName_ShouldBe_SpanKind(int kind)
         {
-            // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/faas/
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
+            activityMock.Setup(x => x.Kind).Returns((ActivityKind)kind);
             var tagObjects = new Dictionary<string, object>
             {
-                { "faas.trigger", trigger }
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"{trigger}.trigger";
-            Assert.Equal(expected, span.OperationName);
-        }
-
-        [Theory]
-        [InlineData("alibaba_cloud")]
-        [InlineData("aws")]
-        [InlineData("azure")]
-        [InlineData("gcp")]
-        [InlineData("tencent_cloud")]
-        public void OperationName_ShouldBe_FaasInvokedProvider_Dot_Invoke(string provider)
-        {
-            // https://opentelemetry.io/docs/specs/otel/trace/semantic_conventions/faas/
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Client);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "faas.invoked_provider", provider }
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            var expected = $"{provider}.invoke";
-            Assert.Equal(expected, span.OperationName);
-        }
-
-        [Theory]
-        [InlineData("Datadog", "Foo()")]
-        [InlineData("Datadog.Tracer", "Bar()")]
-        public void OperationName_ShouldBe_CodeNamespace_Dot_CodeFunction(string codeNamespace, string functionName)
-        {
-            var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Internal);
-            var tagObjects = new Dictionary<string, object>
-            {
-                { "code.namespace", codeNamespace },
-                { "code.function", functionName }
-            };
-            activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
-
-            var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
-            OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
-
-            var expected = $"{codeNamespace}.{functionName}";
+            var expected = $"{((ActivityKind)kind).ToString().ToLower()}";
             Assert.Equal(expected, span.OperationName);
         }
 
         [Fact]
-        public void OperationName_ShouldBe_SpanKind()
+        public void OperationName_ShouldBe_Otel_Unknown()
         {
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns(ActivityKind.Internal);
+            activityMock.Setup(x => x.Kind).Returns((ActivityKind)5555); // just some random value
             var tagObjects = new Dictionary<string, object>
             {
             };
@@ -384,7 +316,7 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"internal"; // span.kind.lower() TODO can this be other span.kinds?
+            var expected = "otel_unknown";
             Assert.Equal(expected, span.OperationName);
         }
     }
