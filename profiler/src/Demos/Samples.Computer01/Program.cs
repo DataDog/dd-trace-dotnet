@@ -35,7 +35,8 @@ namespace Samples.Computer01
         NullThreadNameBug,
         MethodSignature,
         OpenLdapCrash,
-        SocketTimeout
+        SocketTimeout,
+        ForceSigSegvHandler,
     }
 
     public class Program
