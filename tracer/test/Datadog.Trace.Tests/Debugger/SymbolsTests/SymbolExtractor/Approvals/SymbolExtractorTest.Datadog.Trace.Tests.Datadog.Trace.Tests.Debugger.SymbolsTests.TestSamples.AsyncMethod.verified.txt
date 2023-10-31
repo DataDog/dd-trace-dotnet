@@ -30,7 +30,7 @@
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task`1<System.Int32>",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 18
               },
               "scopes": [
                 {

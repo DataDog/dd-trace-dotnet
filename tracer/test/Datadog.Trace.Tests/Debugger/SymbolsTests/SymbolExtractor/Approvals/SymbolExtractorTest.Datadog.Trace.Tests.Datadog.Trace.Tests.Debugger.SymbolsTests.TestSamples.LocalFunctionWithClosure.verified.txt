@@ -60,12 +60,6 @@
                   },
                   "symbols": [
                     {
-                      "name": "",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LocalFunctionWithClosure/<>c__DisplayClass0_0&",
-                      "symbol_type": "arg",
-                      "line": 0
-                    },
-                    {
                       "name": "s",
                       "type": "System.Int32",
                       "symbol_type": "local",

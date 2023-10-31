@@ -38,6 +38,12 @@
                   "type": "System.Action",
                   "symbol_type": "local",
                   "line": 16707566
+                },
+                {
+                  "name": "rand",
+                  "type": "System.Int32",
+                  "symbol_type": "local",
+                  "line": 13
                 }
               ],
               "scopes": [
@@ -58,12 +64,6 @@
                   "symbols": [
                     {
                       "name": "s",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 17
-                    },
-                    {
-                      "name": "rand",
                       "type": "System.Int32",
                       "symbol_type": "local",
                       "line": 17

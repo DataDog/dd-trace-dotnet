@@ -128,7 +128,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     continue;
                 }
 
-                var line = UnknownEndLineEntireScope;
+                var line = UnknownLocalLine;
                 foreach (var sequencePoint in sequencePoints)
                 {
                     if (sequencePoint.Offset >= localScope.StartOffset)

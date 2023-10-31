@@ -14,7 +14,7 @@
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
           "start_line": 14,
-          "end_line": 26,
+          "end_line": 25,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -23,13 +23,13 @@
           "symbols": [
             {
               "name": "_s",
-              "type": "String",
+              "type": "System.String",
               "symbol_type": "field",
               "line": 0
             },
             {
               "name": "_s2",
-              "type": "String",
+              "type": "System.String",
               "symbol_type": "field",
               "line": 0
             }
@@ -45,8 +45,7 @@
                 "return_type": "System.Void",
                 "start_column": 9,
                 "end_column": 10
-              },
-              "scopes": []
+              }
             },
             {
               "scope_type": "method",
@@ -61,12 +60,6 @@
               },
               "symbols": [
                 {
-                  "name": "",
-                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
-                  "symbol_type": "arg",
-                  "line": 0
-                },
-                {
                   "name": "i",
                   "type": "System.Int32",
                   "symbol_type": "arg",
@@ -84,8 +77,7 @@
                   "symbol_type": "local",
                   "line": 21
                 }
-              ],
-              "scopes": []
+              ]
             },
             {
               "scope_type": "method",
@@ -100,12 +92,6 @@
               },
               "symbols": [
                 {
-                  "name": "",
-                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.PartialClass",
-                  "symbol_type": "arg",
-                  "line": 0
-                },
-                {
                   "name": "i",
                   "type": "System.Int32",
                   "symbol_type": "arg",
@@ -123,8 +109,7 @@
                   "symbol_type": "local",
                   "line": 15
                 }
-              ],
-              "scopes": []
+              ]
             }
           ]
         }

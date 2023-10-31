@@ -27,7 +27,6 @@ namespace Datadog.Trace.Debugger.Symbols
         protected const int UnknownMethodEndLine = 0;
         protected const int UnknownFieldAndArgLine = 0;
         protected const int UnknownLocalLine = int.MaxValue;
-        protected const int UnknownEndLineEntireScope = int.MaxValue;
         private const MethodAttributes StaticFinalVirtual = MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.Virtual;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
         private readonly Dictionary<int, string> _methodAccess = new()
@@ -162,27 +161,27 @@ namespace Datadog.Trace.Debugger.Symbols
                     PopulateMethodScopes(type, methods, scopes, ref methodsScopeIndex);
                 }
 
+                nestedClassesScopeIndex = methodsScopeIndex;
                 if (nestedTypes.Length > 0)
                 {
-                    nestedClassesScopeIndex = methodsScopeIndex;
                     PopulateNestedNotCompileGeneratedClassScope(nestedTypes, scopes, ref nestedClassesScopeIndex);
                 }
 
                 var allScopes = nestedClassesScopeIndex == 0 ? null : new Model.Scope[nestedClassesScopeIndex];
 
-                if (methods.Count > 0)
+                if (methodsScopeIndex > 0)
                 {
                     Array.Copy(scopes!, 0, allScopes!, 0, methodsScopeIndex);
                 }
 
-                if (nestedTypes.Length > 0)
+                if ((nestedClassesScopeIndex - methodsScopeIndex) > 0)
                 {
                     int destIndex = methodsScopeIndex == 0 ? 0 : methodsScopeIndex;
                     Array.Copy(scopes!, 0, allScopes!, destIndex, nestedClassesScopeIndex - methodsScopeIndex);
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
-                var linesAndSource = GetClassLinesAndSourcePath(allScopes);
+                var linesAndSource = GetClassSourcePdbInfo(allScopes);
                 classScope = new Model.Scope
                 {
                     Name = type.FullName(MetadataReader),
@@ -221,14 +220,14 @@ namespace Datadog.Trace.Debugger.Symbols
             return true;
         }
 
-        private SourceLinesAndPath GetClassLinesAndSourcePath(Model.Scope[]? allScopes)
+        private SourcePdbInfo GetClassSourcePdbInfo(Model.Scope[]? allScopes)
         {
             int classStartLine = int.MaxValue;
             int classEndLine = 0;
             string? classSourceFile = null;
             if (allScopes == null)
             {
-                return new SourceLinesAndPath { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
+                return new SourcePdbInfo { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
             }
 
             for (int i = 0; i < allScopes.Length; i++)
@@ -285,7 +284,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 classEndLine = UnknownMethodEndLine;
             }
 
-            return new SourceLinesAndPath { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
+            return new SourcePdbInfo { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
         }
 
         private void PopulateNestedNotCompileGeneratedClassScope(ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
@@ -399,12 +398,12 @@ namespace Datadog.Trace.Debugger.Symbols
             foreach (var fieldDefHandle in fieldsCollection)
             {
                 var fieldDef = MetadataReader.GetFieldDefinition(fieldDefHandle);
+                var fieldType = fieldDef.DecodeSignature(new TypeProvider(), 0);
                 var fieldName = fieldDef.Name.IsNil ? null : MetadataReader.GetString(fieldDef.Name);
-                var typeName = parentType.Name.IsNil ? null : MetadataReader.GetString(parentType.Name);
                 fieldSymbols[index] = new Symbol
                 {
                     Name = fieldName,
-                    Type = typeName,
+                    Type = fieldType.Name,
                     SymbolType = ((fieldDef.Attributes & FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine
                 };
@@ -433,10 +432,23 @@ namespace Datadog.Trace.Debugger.Symbols
                 if (methodScope.Scopes != null &&
                     methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
                 {
-                    var linesAndSource = GetMethodLinesAndSourcePath(methodScope);
-                    methodScope.StartLine = linesAndSource.StartLine;
-                    methodScope.EndLine = linesAndSource.EndLine;
-                    methodScope.SourceFile = linesAndSource.Path;
+                    var sourcePdbInfo = GetMethodSourcePdbInfo(methodScope);
+                    methodScope.StartLine = sourcePdbInfo.StartLine;
+                    methodScope.EndLine = sourcePdbInfo.EndLine;
+                    methodScope.SourceFile = sourcePdbInfo.Path;
+                    if (sourcePdbInfo.EndColumn > 0)
+                    {
+                        var ls = new LanguageSpecifics
+                        {
+                            Annotations = methodScope.LanguageSpecifics?.Annotations,
+                            AccessModifiers = methodScope.LanguageSpecifics?.AccessModifiers,
+                            ReturnType = methodScope.LanguageSpecifics?.ReturnType,
+                            StartColumn = sourcePdbInfo.StartColumn,
+                            EndColumn = sourcePdbInfo.EndColumn,
+                        };
+
+                        methodScope.LanguageSpecifics = ls;
+                    }
                 }
 
                 classMethods[index] = methodScope;
@@ -444,10 +456,12 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private SourceLinesAndPath GetMethodLinesAndSourcePath(Model.Scope methodScope)
+        private SourcePdbInfo GetMethodSourcePdbInfo(Model.Scope methodScope)
         {
             var startLine = int.MaxValue;
             var endLine = 0;
+            int? startColumn = null;
+            int? endColumn = null;
             string? sourceFile = null;
             for (int i = 0; i < methodScope.Scopes.Count; i++)
             {
@@ -463,6 +477,21 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 sourceFile ??= scope.SourceFile;
+
+                if (!scope.LanguageSpecifics.HasValue)
+                {
+                    continue;
+                }
+
+                if (startColumn == null || startColumn > scope.LanguageSpecifics.Value.StartColumn)
+                {
+                    startColumn = scope.LanguageSpecifics.Value.StartColumn;
+                }
+
+                if (endColumn == null || endColumn < scope.LanguageSpecifics.Value.EndColumn)
+                {
+                    endColumn = scope.LanguageSpecifics.Value.EndColumn;
+                }
             }
 
             if (startLine == int.MaxValue)
@@ -475,7 +504,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 endLine = UnknownMethodEndLine;
             }
 
-            return new SourceLinesAndPath { StartLine = startLine, EndLine = endLine, Path = sourceFile };
+            return new SourcePdbInfo { StartLine = startLine, EndLine = endLine, Path = sourceFile, StartColumn = startColumn, EndColumn = endColumn };
         }
 
         protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo)
@@ -623,7 +652,12 @@ namespace Datadog.Trace.Debugger.Symbols
                     return null;
                 }
             }
-            else if (method.Handle.RowId != cdi.StateMachineKickoffMethod.RowId)
+            else if (method.Handle.RowId == cdi.StateMachineKickoffMethod.RowId)
+            {
+                var kickoffDef = MetadataReader.GetMethodDefinition(cdi.StateMachineKickoffMethod);
+                methodName = MetadataReader.GetString(kickoffDef.Name);
+            }
+            else
             {
                 return null;
             }
@@ -813,11 +847,13 @@ namespace Datadog.Trace.Debugger.Symbols
             GC.SuppressFinalize(this);
         }
 
-        internal record struct SourceLinesAndPath
+        internal record struct SourcePdbInfo
         {
             internal int StartLine;
             internal int EndLine;
             internal string? Path;
+            internal int? StartColumn;
+            internal int? EndColumn;
         }
     }
 }

@@ -17,6 +17,7 @@ using Datadog.Trace.Debugger.Sink;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Tests.Agent;
+using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Xunit;
 
@@ -32,8 +33,9 @@ public class SymbolUploaderTest
         var discoveryService = new DiscoveryServiceMock();
         _api = new MockBatchUploadApi();
         var settings = new DebuggerSettings(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabled, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, "10000" } }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
+        EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true");
         _upload = SymbolsUploader.Create(_api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
     }
 

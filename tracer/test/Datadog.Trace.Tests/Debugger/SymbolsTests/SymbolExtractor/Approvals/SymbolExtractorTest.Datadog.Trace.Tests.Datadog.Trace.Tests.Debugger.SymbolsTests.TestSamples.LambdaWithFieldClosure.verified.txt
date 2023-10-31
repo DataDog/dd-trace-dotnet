@@ -14,7 +14,7 @@
           "scope_type": "class",
           "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithFieldClosure",
           "start_line": 14,
-          "end_line": 29,
+          "end_line": 28,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -23,7 +23,7 @@
           "symbols": [
             {
               "name": "i",
-              "type": "Int32",
+              "type": "System.Int32",
               "symbol_type": "field",
               "line": 0
             }
@@ -39,8 +39,7 @@
                 "return_type": "System.Void",
                 "start_column": 9,
                 "end_column": 10
-              },
-              "scopes": []
+              }
             },
             {
               "scope_type": "method",
@@ -83,8 +82,7 @@
                       "symbol_type": "local",
                       "line": 22
                     }
-                  ],
-                  "scopes": []
+                  ]
                 }
               ]
             }
