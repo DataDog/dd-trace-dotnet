@@ -17,8 +17,7 @@ internal static class GenerateSupportMatrix
 {
     public static async Task GenerateInstrumentationSupportMatrix(
         string outputPath,
-        List<IntegrationMap> instrumentedAssemblies,
-        List<PackageVersionGenerator.TestedPackage> testedVersions)
+        List<IntegrationMap> instrumentedAssemblies)
     {
         List<Integration> integrations = new(instrumentedAssemblies.Count);
         
@@ -28,13 +27,12 @@ internal static class GenerateSupportMatrix
             {
                 IntegrationName = instrumentedAssembly.IntegrationId,
                 AssemblyName = instrumentedAssembly.AssemblyName,
-                MinAssemblyVersionInclusive = instrumentedAssembly.MinimumAssemblyVersion.ToString(),
-                MaxAssemblyVersionInclusive = instrumentedAssembly.MaximumAssemblyVersion.ToString(),
+                MinAssemblyVersionInclusive = instrumentedAssembly.MinimumSupportedAssemblyVersion.ToString(),
+                MaxAssemblyVersionInclusive = instrumentedAssembly.MaximumSupportedAssemblyVersion.ToString(),
             };
 
             foreach (var package in instrumentedAssembly.Packages.OrderBy(x=>x.NugetName))
             {
-                var testedVersion = testedVersions.FirstOrDefault(x => x.NugetPackageSearchName == package.NugetName);
                 integration.Packages.Add(new()
                 {
                     Name = package.NugetName,
@@ -42,8 +40,8 @@ internal static class GenerateSupportMatrix
                     MaxVersionAvailableInclusive = package.LatestVersion.ToString(),
                     MinVersionSupportedInclusive = package.FirstSupportedVersion.ToString(),
                     MaxVersionSupportedInclusive = package.LatestSupportedVersion.ToString(),
-                    MinVersionTestedInclusive = testedVersion?.MinVersion.ToString(),
-                    MaxVersionTestedInclusive = testedVersion?.MaxVersion.ToString(),
+                    MinVersionTestedInclusive = package.FirstTestedVersion?.ToString(),
+                    MaxVersionTestedInclusive = package.LatestTestedVersion?.ToString(),
                 });
             }
             

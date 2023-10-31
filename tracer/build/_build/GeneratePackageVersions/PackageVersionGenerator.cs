@@ -16,6 +16,7 @@ namespace GeneratePackageVersions
 {
     public class PackageVersionGenerator
     {
+        private readonly Dictionary<string, Version> FixedMaxDependencies;
         private readonly AbsolutePath _definitionsFilePath;
         private readonly PackageGroup _latestMinors;
         private readonly PackageGroup _latestMajors;
@@ -24,8 +25,10 @@ namespace GeneratePackageVersions
 
         public PackageVersionGenerator(
             AbsolutePath tracerDirectory,
-            AbsolutePath testProjectDirectory)
+            AbsolutePath testProjectDirectory,
+            Dictionary<string, Version> fixedMaxDependencies)
         {
+            FixedMaxDependencies = fixedMaxDependencies;
             var propsDirectory = tracerDirectory / "build";
             _definitionsFilePath = tracerDirectory / "build" / "PackageVersionsGeneratorDefinitions.json";
             _latestMinors = new PackageGroup(propsDirectory, testProjectDirectory, "LatestMinors");
@@ -68,12 +71,16 @@ namespace GeneratePackageVersions
                 var orderedPackageVersions =
                     packageVersions
                        .Distinct()
-                       .Select(versionText => new Version(versionText))
-                       .OrderBy(v => v)
-                       .ToList();
+                       .Select(versionText => new Version(versionText));
+
+                if (FixedMaxDependencies.TryGetValue(entry.NugetPackageSearchName, out var fixedVersion))
+                {
+                    orderedPackageVersions = orderedPackageVersions
+                       .Where(x => x <= fixedVersion);
+                }
 
                 var orderedWithFramework = (
-                    from version in orderedPackageVersions
+                    from version in orderedPackageVersions.OrderBy(x => x)
                     from framework in supportedTargetFrameworks
                     where IsSupported(entry, version.ToString(), framework)
                     select (version, framework))

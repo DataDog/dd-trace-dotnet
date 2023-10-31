@@ -8,6 +8,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Xml.Linq;
+using GeneratePackageVersions;
 using Nuke.Common.IO;
 using PrepareRelease;
 using UpdateVendors;
@@ -43,7 +45,7 @@ namespace Honeypot
                     fakeRefs += $@"{Environment.NewLine}    <!-- Integration: {integration.Name} -->";
                     fakeRefs += $@"{Environment.NewLine}    <!-- Assembly: {integration.AssemblyName} -->";
                     fakeRefs += $@"{Environment.NewLine}    <!-- Latest package https://www.nuget.org/packages/{package.NugetName}/{package.LatestVersion} -->";
-                    fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestSupportedVersion}"" />{Environment.NewLine}";
+                    fakeRefs += $@"{Environment.NewLine}    <PackageReference Include=""{package.NugetName}"" Version=""{package.LatestTestedVersion ?? package.LatestSupportedVersion}"" />{Environment.NewLine}";
                 }
             }
 
@@ -53,7 +55,14 @@ namespace Honeypot
             return File.WriteAllTextAsync(honeypotProject, honeypotProjTemplate);
         }
 
-        public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(List<InstrumentedAssembly> targets)
+        public static List<(string NugetName, Version LatestTestedVersion)> GetCurrentlyTestedVersions(AbsolutePath honeypotProject)
+            => XElement.Load(honeypotProject)
+                       .Descendants("PackageReference")
+                       .Select(x => ((string)x.Attribute("Include"), new Version(((string)x.Attribute("Version"))!)))
+                       .Distinct()
+                       .ToList();
+
+        public static async Task<List<IntegrationMap>> BuildDistinctIntegrationMaps(List<InstrumentedAssembly> targets, List<PackageVersionGenerator.TestedPackage> testedVersions)
         {
             var distinctIntegrations = new List<IntegrationMap>();
 
@@ -71,12 +80,12 @@ namespace Honeypot
                         .ThenBy(a => a.TargetMinimumMinor)
                         .ThenBy(a => a.TargetMinimumPatch)
                         .First();
-                var minVersion =
+                var minSupportedVersion =
                     new Version(
                         minVersionTarget.TargetMinimumMajor,
                         minVersionTarget.TargetMinimumMinor,
                         minVersionTarget.TargetMinimumPatch);
-                var maxVersion =
+                var maxSupportedVersion =
                     new Version(
                         maxVersionTarget.TargetMaximumMajor,
                         maxVersionTarget.TargetMaximumMinor,
@@ -87,8 +96,9 @@ namespace Honeypot
                         name: tg.Key,
                         integrationId: maxVersionTarget.IntegrationName,
                         assemblyName: maxVersionTarget.TargetAssembly,
-                        minVersion,
-                        maxVersion));
+                        minSupportedVersion,
+                        maxSupportedVersion,
+                        testedVersions));
             }
 
             return distinctIntegrations;
