@@ -2980,7 +2980,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 new object[] { "4.7.15" },
                 new object[] { "5.0.5" },
                 new object[] { "5.1.5" },
-                new object[] { "5.2.4" },
+                new object[] { "5.2.5" },
 #endif
 #endif
             };
