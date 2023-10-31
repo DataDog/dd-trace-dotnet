@@ -27,6 +27,7 @@ namespace Datadog.Trace
         private readonly TraceClock _clock;
 
         private IastRequestContext _iastRequestContext;
+        private bool _isApiSecurity;
 
         private ArrayBuilder<Span> _spans;
         private int _openSpans;
@@ -149,7 +150,10 @@ namespace Datadog.Trace
                     }
                 }
 
-                Security.Instance.ApiSecurity.ReleaseRequest();
+                if (_isApiSecurity)
+                {
+                    Security.Instance.ApiSecurity.ReleaseRequest();
+                }
             }
 
             if (!string.Equals(span.ServiceName, Tracer.DefaultServiceName, StringComparison.OrdinalIgnoreCase))
@@ -257,6 +261,11 @@ namespace Datadog.Trace
                     CurrentTraceSettings.SpanSampler.MakeSamplingDecision(spans.Array[i + spans.Offset]);
                 }
             }
+        }
+
+        public void MarkApiSecurity()
+        {
+            _isApiSecurity = true;
         }
     }
 }

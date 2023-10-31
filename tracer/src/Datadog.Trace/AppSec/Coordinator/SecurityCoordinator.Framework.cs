@@ -214,9 +214,9 @@ internal readonly partial struct SecurityCoordinator
     /// <summary>
     /// Framework can do it all at once, but framework only unfortunately
     /// </summary>
-    internal void CheckAndBlock(Dictionary<string, object> args, bool timeToTryReportSchema = false)
+    internal void CheckAndBlock(Dictionary<string, object> args, bool tryToReportSchema = false)
     {
-        if (timeToTryReportSchema)
+        if (tryToReportSchema)
         {
             _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
         }

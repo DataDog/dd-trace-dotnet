@@ -102,7 +102,8 @@ namespace Datadog.Trace.AppSec
             }
             finally
             {
-                ApiSecurity = new(_settings!);
+                _settings ??= new(source: null, TelemetryFactory.Config);
+                ApiSecurity = new(_settings);
             }
         }
 

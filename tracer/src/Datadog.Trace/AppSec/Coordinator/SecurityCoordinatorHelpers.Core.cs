@@ -127,7 +127,7 @@ internal static class SecurityCoordinatorHelpers
         }
     }
 
-    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body, bool response = false)
+    internal static object? CheckBody(this Security security, HttpContext context, Span span, object body, bool response)
     {
         var transport = new SecurityCoordinator.HttpTransport(context);
         if (!transport.IsBlocked)

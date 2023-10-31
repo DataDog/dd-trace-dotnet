@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
@@ -20,18 +21,14 @@ namespace Datadog.Trace.AppSec.Waf
             Derivatives = returnStruct.Derivatives.DecodeMap();
             ShouldReportSchema = Derivatives is { Count: > 0 };
             var events = returnStruct.Events.DecodeObjectArray();
-            if (events is null || events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
+            if (events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
             else
             {
                 // Serialize all the events
                 Data = JsonConvert.SerializeObject(events);
             }
 
-            if (Actions != null)
-            {
-                ShouldBlock = Actions.Contains("block");
-            }
-
+            ShouldBlock = Actions.Contains("block");
             AggregatedTotalRuntime = aggregatedTotalRuntime;
             AggregatedTotalRuntimeWithBindings = aggregatedTotalRuntimeWithBindings;
             Timeout = returnStruct.Timeout;
@@ -45,9 +42,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public List<string> Actions { get; }
 
-        public List<object> Events { get; }
-
-        public Dictionary<string, object> Derivatives { get; }
+        public Dictionary<string, object?> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds

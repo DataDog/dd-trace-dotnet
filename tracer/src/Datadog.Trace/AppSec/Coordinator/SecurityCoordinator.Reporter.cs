@@ -147,12 +147,12 @@ internal readonly partial struct SecurityCoordinator
 
                     if (memoryStream.TryGetBuffer(out var bytesResult))
                     {
-                        var gzipBase64 = Convert.ToBase64String(bytesResult.Array!);
+                        var gzipBase64 = Convert.ToBase64String(bytesResult.Array!, bytesResult.Offset, bytesResult.Count);
                         _localRootSpan.SetTag(derivative.Key, gzipBase64);
                     }
                     else
                     {
-                        Log.Warning("Could not TryGetBuffer from the appsec schema extraction memoryStream");
+                        Log.Debug("Could not TryGetBuffer from the appsec schema extraction memoryStream");
                     }
                 }
             }

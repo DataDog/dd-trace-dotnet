@@ -28,12 +28,15 @@ internal class ApiSecurity
         _enabled = securitySettings.ApiSecurityEnabled;
     }
 
-    public void TryTellWafToAnalyzeSchema(IDictionary<string, object> args)
+    public bool TryTellWafToAnalyzeSchema(IDictionary<string, object> args)
     {
         if (_enabled && _overheadController.AcquireRequest())
         {
             args.Add(AddressesConstants.WafContextProcessor, new Dictionary<string, bool> { { "extract-schema", true } });
+            return true;
         }
+
+        return false;
     }
 
     public void ReleaseRequest()

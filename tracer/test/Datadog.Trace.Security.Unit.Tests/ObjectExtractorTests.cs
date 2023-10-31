@@ -16,11 +16,19 @@ namespace Datadog.Trace.Security.Unit.Tests
     {
         private readonly string[] _fieldsAsStrings =
         {
-            nameof(TestVarietyPoco.SByteValue), nameof(TestVarietyPoco.IntPtrValue),
-            nameof(TestVarietyPoco.UIntPtrValue), nameof(TestVarietyPoco.CharValue),
-            nameof(TestVarietyPoco.GuidValue), nameof(TestVarietyPoco.EnumValue),
-            nameof(TestVarietyPoco.DateTimeValue), nameof(TestVarietyPoco.DateTimeOffsetValue),
-            nameof(TestVarietyPoco.TimeSpanValue)
+            nameof(TestVarietyPoco.SByteValue),
+            nameof(TestVarietyPoco.IntPtrValue),
+            nameof(TestVarietyPoco.UIntPtrValue),
+            nameof(TestVarietyPoco.CharValue),
+            nameof(TestVarietyPoco.GuidValue),
+            nameof(TestVarietyPoco.EnumValue),
+            nameof(TestVarietyPoco.DateTimeValue),
+            nameof(TestVarietyPoco.DateTimeOffsetValue),
+            nameof(TestVarietyPoco.TimeSpanValue),
+            #if NET6_0_OR_GREATER
+            nameof(TestVarietyPoco.TimeOnlyValue),
+            nameof(TestVarietyPoco.DateOnlyValue)
+            #endif
         };
 
         [Fact]
@@ -398,6 +406,12 @@ namespace Datadog.Trace.Security.Unit.Tests
 
         public DateTime DateTimeValue { get; set; }
 
+#if NET6_0_OR_GREATER
+        public DateOnly DateOnlyValue { get; set; }
+
+        public TimeOnly TimeOnlyValue { get; set; }
+
+#endif
         public DateTimeOffset DateTimeOffsetValue { get; set; }
 
         public TimeSpan TimeSpanValue { get; set; }

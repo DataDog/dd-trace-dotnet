@@ -109,13 +109,7 @@ internal readonly partial struct SecurityCoordinator
             }
         }
 
-        var addressesDictionary = new Dictionary<string, object>
-        {
-            { AddressesConstants.RequestMethod, request.Method },
-            { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() },
-            { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() },
-            { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) }
-        };
+        var addressesDictionary = new Dictionary<string, object> { { AddressesConstants.RequestMethod, request.Method }, { AddressesConstants.ResponseStatus, request.HttpContext.Response.StatusCode.ToString() }, { AddressesConstants.RequestUriRaw, request.GetUrlForWaf() }, { AddressesConstants.RequestClientIp, _localRootSpan.GetTag(Tags.HttpClientIp) } };
 
         var userId = _localRootSpan.Context?.TraceContext?.Tags.GetTag(Tags.User.Id);
         if (!string.IsNullOrEmpty(userId))
@@ -123,13 +117,13 @@ internal readonly partial struct SecurityCoordinator
             addressesDictionary.Add(AddressesConstants.UserId, userId!);
         }
 
-        AddIfElms(AddressesConstants.RequestQuery, queryStringDic);
-        AddIfElms(AddressesConstants.RequestHeaderNoCookies, headersDic);
-        AddIfElms(AddressesConstants.RequestCookies, cookiesDic);
+        AddAddressIfDictionaryHasElements(AddressesConstants.RequestQuery, queryStringDic);
+        AddAddressIfDictionaryHasElements(AddressesConstants.RequestHeaderNoCookies, headersDic);
+        AddAddressIfDictionaryHasElements(AddressesConstants.RequestCookies, cookiesDic);
 
         return addressesDictionary;
 
-        void AddIfElms(string address, IDictionary dic)
+        void AddAddressIfDictionaryHasElements(string address, IDictionary dic)
         {
             if (dic.Count > 0)
             {

@@ -178,7 +178,11 @@ namespace Datadog.Trace.AppSec
                 return value;
             }
 
-            if (itemType.IsEnum || itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive)
+            var unhandledType = itemType.IsEnum || itemType == typeof(Guid) || itemType == typeof(DateTime) || itemType == typeof(DateTimeOffset) || itemType == typeof(TimeSpan) || itemType.IsPrimitive;
+#if NET6_0_OR_GREATER
+            unhandledType = unhandledType || itemType == typeof(DateOnly) || itemType == typeof(TimeOnly);
+#endif
+            if (unhandledType)
             {
                 return value?.ToString();
             }

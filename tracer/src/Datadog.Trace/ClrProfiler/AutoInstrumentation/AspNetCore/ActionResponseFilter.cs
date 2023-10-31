@@ -8,7 +8,6 @@
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 using Datadog.Trace.DuckTyping;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc.Filters;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;

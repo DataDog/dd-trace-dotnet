@@ -19,16 +19,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     TypeName = TypeName,
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
-    MinimumVersion = Major2,
-    MaximumVersion = Major7,
+    MinimumVersion = "2",
+    MaximumVersion = "7",
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
 [EditorBrowsable(EditorBrowsableState.Never)]
 public class MvcOptionsIntegration
 {
-    private const string Major2 = "2";
-    private const string Major7 = "7";
     private const string TypeName = "Microsoft.AspNetCore.Mvc.MvcOptions";
 
     internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, System.Exception exception, in CallTargetState state)

@@ -60,7 +60,11 @@ internal readonly partial struct SecurityCoordinator
         var args = GetBasicRequestArgsForWaf();
         if (firstTime)
         {
-            _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
+            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
+            if (isApiSecurityProcessed)
+            {
+                _localRootSpan.Context.TraceContext.MarkApiSecurity();
+            }
         }
 
         return RunWaf(args);
