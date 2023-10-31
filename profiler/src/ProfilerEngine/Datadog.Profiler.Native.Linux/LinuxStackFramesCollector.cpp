@@ -101,10 +101,7 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
         s_pInstanceCurrentlyStackWalking = this;
 
-        on_leave
-        {
-            s_pInstanceCurrentlyStackWalking = nullptr;
-        };
+        on_leave { s_pInstanceCurrentlyStackWalking = nullptr; };
 
         _stackWalkFinished = false;
 
@@ -285,11 +282,16 @@ bool IsInSigSegvHandler(void* context)
 {
     auto* ctx = reinterpret_cast<ucontext_t*>(context);
 
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
     return sigismember(&(ctx->uc_sigmask), SIGSEGV) == 1;
 }
 
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
+    // This is a workaround to prevent libunwind from unwind 2 signal frames and potentially crashing.
+    // Current crash occurs in libcoreclr.so, while reading the Elf header.
     if (IsInSigSegvHandler(context))
     {
         return false;
