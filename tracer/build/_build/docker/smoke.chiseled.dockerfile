@@ -11,8 +11,8 @@ COPY ./test/test-applications/regression/AspNetCoreSmokeTest/ .
 ARG PUBLISH_FRAMEWORK
 RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_FRAMEWORK -o /src/publish
 
-# Creating a placeolder file we can copy in the publish stage to create the logs folder
-RUN touch /src/artifacts/.placeholder.txt
+# Creating a placeholder file we can copy in the publish stage to create the logs folder
+RUN mkdir -p /install && touch /install/.placeholder
 
 FROM $RUNTIME_IMAGE AS publish
 
@@ -20,10 +20,10 @@ WORKDIR /app
 
 # Add and extract the installer files to the expected location
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-ADD --from=builder /src/artifacts/datadog-dotnet-apm*.tar.gz /opt/datadog
+ADD /src/artifacts/datadog-dotnet-apm*.tar.gz /opt/datadog
 
 # Copy the placeholder file to create the logs directory
-COPY --from=builder /src/artifacts/.placeholder.txt /var/log/datadog/dotnet/.placeholder.txt
+COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
 
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary
