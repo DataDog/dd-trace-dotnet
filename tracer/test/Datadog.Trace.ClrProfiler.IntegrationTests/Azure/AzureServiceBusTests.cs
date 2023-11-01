@@ -85,7 +85,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests.Azure
         private static IOrderedEnumerable<MockSpan> OrderSpans(IReadOnlyCollection<MockSpan> spans)
             => spans
                 .OrderBy(x => x.Start)
-                .ThenBy(x => VerifyHelper.GetRootSpanName(x, spans))
+                .ThenBy(x => VerifyHelper.GetRootSpanResourceName(x, spans))
                 .ThenBy(x => VerifyHelper.GetSpanDepth(x, spans))
                 .ThenBy(x => x.Duration);
     }

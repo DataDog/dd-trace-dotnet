@@ -94,7 +94,7 @@ namespace Datadog.Trace.TestHelpers
             // Ensure a static ordering for the spans
             var orderedSpans = orderSpans?.Invoke(spans) ??
                                spans
-                                  .OrderBy(x => GetRootSpanName(x, spans))
+                                  .OrderBy(x => GetRootSpanResourceName(x, spans))
                                   .ThenBy(x => GetSpanDepth(x, spans))
                                   .ThenBy(x => x.Start)
                                   .ThenBy(x => x.Duration);
@@ -102,7 +102,7 @@ namespace Datadog.Trace.TestHelpers
             return Verifier.Verify(orderedSpans, settings);
         }
 
-        public static string GetRootSpanName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
+        public static string GetRootSpanResourceName(MockSpan span, IReadOnlyCollection<MockSpan> allSpans)
         {
             while (span.ParentId is not null)
             {
