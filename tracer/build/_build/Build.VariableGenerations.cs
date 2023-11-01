@@ -375,6 +375,7 @@ partial class Build : NukeBuild
                 // installer smoke tests
                 GenerateLinuxInstallerSmokeTestsMatrix();
                 GenerateLinuxSmokeTestsArm64Matrix();
+                GenerateLinuxChiseledInstallerSmokeTestsMatrix();
 
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
@@ -545,6 +546,30 @@ partial class Build : NukeBuild
                     Logger.Information($"Installer smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("installer_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxChiseledInstallerSmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers
+                        },
+                        installer: null,
+                        installCmd: null,
+                        linuxArtifacts: "linux-packages-linux-x64",
+                        runtimeId: "linux-x64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Information($"Installer chiseled smoke tests matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("installer_chiseled_smoke_tests_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void GenerateLinuxSmokeTestsArm64Matrix()
