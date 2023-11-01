@@ -5,10 +5,9 @@
 
 #nullable enable
 
-using System;
 using System.Collections.Generic;
-using System.Text;
 using Datadog.Trace.Headers;
+using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
 

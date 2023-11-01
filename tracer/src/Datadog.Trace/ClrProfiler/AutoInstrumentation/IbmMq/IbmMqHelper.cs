@@ -6,6 +6,7 @@
 #nullable enable
 
 using System;
+using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
@@ -58,6 +59,7 @@ internal static class IbmMqHelper
 
     internal static Scope? CreateConsumerScope(
         Tracer tracer,
+        CallTargetState state,
         IMqQueue queue,
         IMqMessage message)
     {
@@ -107,7 +109,12 @@ internal static class IbmMqHelper
             }
 
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
-            scope = tracer.StartActiveInternal(operationName, parent: propagatedContext, serviceName: serviceName, finishOnClose: true);
+            scope = tracer.StartActiveInternal(
+                operationName,
+                parent: propagatedContext,
+                serviceName: serviceName,
+                finishOnClose: true,
+                startTime: state.StartTime);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
 
             var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
