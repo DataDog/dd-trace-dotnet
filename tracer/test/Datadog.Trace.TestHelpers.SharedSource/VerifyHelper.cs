@@ -17,6 +17,8 @@ namespace Datadog.Trace.TestHelpers
 {
     public static class VerifyHelper
     {
+        internal static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;
+
         internal static readonly IEnumerable<(Regex RegexPattern, string Replacement)> SpanScrubbers = new List<(Regex RegexPattern, string Replacement)>
         {
             (new(@"localhost\:\d+", RegOptions), "localhost:00000"),
@@ -30,8 +32,6 @@ namespace Datadog.Trace.TestHelpers
             (new(@"git.commit.sha: [0-9a-f]{40}", RegOptions), "git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbb"),
             (new(@"_dd\.p\.tid: [0-9a-f]{16}", RegOptions), "_dd.p.tid: 1234567890abcdef"),
         };
-
-        private static readonly RegexOptions RegOptions = RegexOptions.IgnoreCase | RegexOptions.Compiled;
 
         /// <summary>
         /// With <see cref="Verify"/>, parameters are used as part of the filename.
