@@ -16,11 +16,11 @@ RUN mkdir -p /install && touch /install/.placeholder
 
 FROM $RUNTIME_IMAGE AS publish
 
-WORKDIR /app
+WORKDIR /src
 
 # Add and extract the installer files to the expected location
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-ADD /src/artifacts/datadog-dotnet-apm*.tar.gz /opt/datadog
+ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-2.41.0.tar.gz /opt/datadog
 
 # Copy the placeholder file to create the logs directory
 COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
@@ -32,6 +32,8 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
+
+WORKDIR /app
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.
@@ -56,5 +58,6 @@ ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 # Because there _is_ no shell in the chiseled containers
 FROM publish as dd-dotnet-final
 ARG RUNTIME_ID
+ENV RUNTIME_ID=$RUNTIME_ID
 
 ENTRYPOINT ["/opt/datadog/$RUNTIME_ID/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
