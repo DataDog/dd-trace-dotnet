@@ -4742,7 +4742,7 @@ stages:
           dd-dotnet-smoke-tests
       env:
         dockerTag: $(dockerTag)
-      displayName: docker-compose build smoke-tests
+      displayName: docker-compose build dd-dotnet-smoke-tests
       retryCountOnTaskFailure: 3
 
     - template: steps/run-snapshot-test.yml
@@ -5121,7 +5121,7 @@ stages:
               dd-dotnet-smoke-tests
           env:
             dockerTag: $(dockerTag)
-          displayName: docker-compose build smoke-tests
+          displayName: docker-compose build dd-dotnet-smoke-tests
           retryCountOnTaskFailure: 3
 
         - template: steps/run-snapshot-test.yml
