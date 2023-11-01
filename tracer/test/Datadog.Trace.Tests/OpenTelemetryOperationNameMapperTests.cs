@@ -151,14 +151,14 @@ namespace Datadog.Trace.Tests
             var tagObjects = new Dictionary<string, object>
             {
                 { "faas.invoked_provider", provider },
-                { "faas.name", provider }
+                { "faas.name", name }
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = $"{provider}.${name}.invoke";
+            var expected = $"{provider}.{name}.invoke";
             Assert.Equal(expected, span.OperationName);
         }
 
@@ -307,7 +307,7 @@ namespace Datadog.Trace.Tests
         public void OperationName_ShouldBe_Otel_Unknown()
         {
             var activityMock = new Mock<IActivity5>();
-            activityMock.Setup(x => x.Kind).Returns((ActivityKind)5555); // just some random value
+            activityMock.Setup(x => x.Kind).Returns(null); // just some random value
             var tagObjects = new Dictionary<string, object>
             {
             };
