@@ -251,7 +251,7 @@ partial class Build
 
            await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
 
-           var outputPath = TracerDirectory / "build" / "supported_versions.yml";
+           var outputPath = TracerDirectory / "build" / "supported_versions.json";
            await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
     
