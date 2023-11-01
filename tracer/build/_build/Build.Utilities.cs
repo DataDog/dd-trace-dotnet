@@ -51,7 +51,7 @@ partial class Build
     [Parameter("Force ARM64 build in Windows")]
     readonly bool ForceARM64BuildInWindows;
 
-    [Parameter("Dont update package versions for packages with the following names")]
+    [Parameter("Don't update package versions for packages with the following names")]
     readonly string[] ExcludePackages;
 
     [Parameter("Only update package versions for packages with the following names")]
