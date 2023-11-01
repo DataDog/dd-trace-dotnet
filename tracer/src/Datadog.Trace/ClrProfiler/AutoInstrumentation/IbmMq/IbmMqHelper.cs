@@ -116,7 +116,6 @@ internal static class IbmMqHelper
             span.Type = SpanTypes.Queue;
             span.ResourceName = resourceName;
             span.SetTag(Tags.SpanKind, SpanKinds.Consumer);
-            span.SetTag(Tags.Measured, "1");
 
             if (dataStreams.IsEnabled)
             {
