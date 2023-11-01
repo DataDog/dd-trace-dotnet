@@ -96,20 +96,19 @@ namespace Datadog.Trace.Tests
         [InlineData("false", 0.0)]
         public void AnalyticsEvent_Tag_Should_Override_AnalyticsSamplingRateMetric(string value, double expected)
         {
-            var expected = "overridden.name";
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
             var tagObjects = new Dictionary<string, object>
             {
                 { "http.request.method", "GET" },
-                { "span.type", expected }
+                { "analytics.event", value }
             };
             activityMock.Setup(x => x.TagObjects).Returns(tagObjects);
 
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            Assert.Equal(expected, span.Type);
+            Assert.Equal(expected, span.GetMetric(Tags.Analytics));
         }
     }
 }

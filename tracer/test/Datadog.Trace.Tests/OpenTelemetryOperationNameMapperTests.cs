@@ -111,7 +111,7 @@ namespace Datadog.Trace.Tests
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
             OtlpHelpers.UpdateSpanFromActivity(activityMock.Object, span);
 
-            var expected = "aws.request";
+            var expected = "aws.client.request";
             Assert.Equal(expected, span.OperationName);
         }
 
