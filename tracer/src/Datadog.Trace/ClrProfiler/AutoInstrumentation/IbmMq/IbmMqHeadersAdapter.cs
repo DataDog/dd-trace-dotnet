@@ -29,14 +29,13 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
     /// <returns>Normalized name</returns>
     private static string NormalizeName(string name)
     {
-        var sb = new StringBuilder();
+        var sb = StringBuilderCache.Acquire(name.Length);
         foreach (var c in name)
         {
             sb.Append(c is >= 'a' and <= 'z' or >= '0' and <= '9' ? c : '_');
         }
 
-        var result = sb.ToString();
-        return result;
+        return StringBuilderCache.GetStringAndRelease(sb);
     }
 
     public IEnumerable<string> GetValues(string name)
