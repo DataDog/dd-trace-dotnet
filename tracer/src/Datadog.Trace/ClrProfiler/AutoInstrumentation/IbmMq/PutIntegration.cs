@@ -30,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
     public class PutIntegration
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TOptions>(TTarget instance, TMessage msg, TOptions options)
-        where TMessage : IMqMessage
-        where TTarget : IMqQueue
+        where TMessage : IMqMessage, IDuckType
+        where TTarget : IMqQueue, IDuckType
         {
-            if (((IDuckType)instance).Instance == null || ((IDuckType)msg).Instance == null)
+            if (instance.Instance == null || msg.Instance == null)
             {
                 return CallTargetState.GetDefault();
             }
