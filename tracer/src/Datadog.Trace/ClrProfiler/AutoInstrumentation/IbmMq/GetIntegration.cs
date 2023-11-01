@@ -31,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
     {
         internal static CallTargetState OnMethodBegin<TTarget, TMessage, TOptions>(TTarget instance, TMessage msg, TOptions options, int maxSize)
         {
-            return new CallTargetState(null, msg);
+            return new CallTargetState(null, msg, DateTimeOffset.UtcNow);
         }
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
