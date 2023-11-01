@@ -4786,9 +4786,15 @@ stages:
           parameters:
             targetShaId: $(targetShaId)
             targetBranch: $(targetBranch)
+
         - task: DownloadPipelineArtifact@2
           displayName: Download artifacts to smoke test directory
           inputs:
+            buildType: 'specific'
+            project: 'dd-trace-dotnet'
+            definition: 54
+            buildVersionToDownload: 'latestFromBranch'
+            branchName: 'refs/heads/master'
             artifact: $(linuxArtifacts)
             path: $(smokeTestAppDir)/artifacts
 
