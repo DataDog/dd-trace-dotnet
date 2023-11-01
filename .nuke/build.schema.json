@@ -62,6 +62,13 @@
           "type": "boolean",
           "description": "Indicates if the Fault-Tolerant Instrumentation should be turned on"
         },
+        "ExcludePackages": {
+          "type": "array",
+          "description": "Dont update package versions for packages with the following names",
+          "items": {
+            "type": "string"
+          }
+        },
         "ExpectChangelogUpdate": {
           "type": "boolean",
           "description": "Is the ChangeLog expected to change?"
@@ -165,6 +172,13 @@
         "IncludeMinorPackageVersions": {
           "type": "boolean",
           "description": "Should minor versions of integration NuGet packages be included"
+        },
+        "IncludePackages": {
+          "type": "array",
+          "description": "Only update package versions for packages with the following names",
+          "items": {
+            "type": "string"
+          }
         },
         "IncludeTestsRequiringDocker": {
           "type": "boolean",

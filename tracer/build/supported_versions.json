@@ -1,0 +1,1071 @@
+[
+  {
+    "integrationName": "AdoNet",
+    "assemblyName": "netstandard",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AdoNet",
+    "assemblyName": "System.Data",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "System.Data.SqlClient",
+        "minVersionAvailableInclusive": "4.1.0",
+        "minVersionSupportedInclusive": "4.1.0",
+        "minVersionTestedInclusive": "4.1.0",
+        "maxVersionSupportedInclusive": "4.8.5",
+        "maxVersionAvailableInclusive": "4.8.5",
+        "maxVersionTestedInclusive": "4.8.5"
+      }
+    ]
+  },
+  {
+    "integrationName": "AdoNet",
+    "assemblyName": "System.Data.Common",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "System.Data.Common",
+        "minVersionAvailableInclusive": "4.0.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.3.0",
+        "maxVersionAvailableInclusive": "4.3.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Aerospike",
+    "assemblyName": "AerospikeClient",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "packages": [
+      {
+        "name": "Aerospike.Client",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": "4.0.3",
+        "maxVersionSupportedInclusive": "6.1.0",
+        "maxVersionAvailableInclusive": "6.1.0",
+        "maxVersionTestedInclusive": "6.1.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNet",
+    "assemblyName": "System.Web",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Authentication.Abstractions",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Authentication.Abstractions",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.0",
+        "maxVersionAvailableInclusive": "2.2.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Http",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Identity",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Identity",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.0",
+        "maxVersionAvailableInclusive": "2.2.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Mvc.Core",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Mvc.Core",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.5",
+        "maxVersionAvailableInclusive": "2.2.5",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Server.IIS",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Server.IIS",
+        "minVersionAvailableInclusive": "2.2.0",
+        "minVersionSupportedInclusive": "2.2.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.6",
+        "maxVersionAvailableInclusive": "2.2.6",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.AspNetCore.Server.Kestrel.Core",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNetCore.Server.Kestrel.Core",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.2.0",
+        "maxVersionAvailableInclusive": "2.2.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetCore",
+    "assemblyName": "Microsoft.Extensions.Identity.Core",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Extensions.Identity.Core",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "7.0.13",
+        "maxVersionAvailableInclusive": "7.0.13",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetMvc",
+    "assemblyName": "System.Web.Mvc",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.AspNet.Mvc",
+        "minVersionAvailableInclusive": "3.0.20105.1",
+        "minVersionSupportedInclusive": "4.0.20505",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "5.3.0",
+        "maxVersionAvailableInclusive": "5.3.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AspNetWebApi2",
+    "assemblyName": "System.Web.Http",
+    "minAssemblyVersionInclusive": "5.1.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AwsDynamoDb",
+    "assemblyName": "AWSSDK.DynamoDBv2",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.DynamoDBv2",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.1.0",
+        "minVersionTestedInclusive": "3.1.5.3",
+        "maxVersionSupportedInclusive": "3.7.203.11",
+        "maxVersionAvailableInclusive": "3.7.203.11",
+        "maxVersionTestedInclusive": "3.7.203.11"
+      }
+    ]
+  },
+  {
+    "integrationName": "AwsKinesis",
+    "assemblyName": "AWSSDK.Kinesis",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.Kinesis",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.1.0",
+        "minVersionTestedInclusive": "3.1.3.5",
+        "maxVersionSupportedInclusive": "3.7.200.63",
+        "maxVersionAvailableInclusive": "3.7.200.63",
+        "maxVersionTestedInclusive": "3.7.200.63"
+      }
+    ]
+  },
+  {
+    "integrationName": "AwsLambda",
+    "assemblyName": "Amazon.Lambda.RuntimeSupport",
+    "minAssemblyVersionInclusive": "1.4.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": [
+      {
+        "name": "Amazon.Lambda.RuntimeSupport",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.4.0",
+        "minVersionTestedInclusive": "1.8.8",
+        "maxVersionSupportedInclusive": "1.10.0",
+        "maxVersionAvailableInclusive": "1.10.0",
+        "maxVersionTestedInclusive": "1.8.8"
+      }
+    ]
+  },
+  {
+    "integrationName": "AwsSdk",
+    "assemblyName": "AWSSDK.Core",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.Core",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.1.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "3.7.204.10",
+        "maxVersionAvailableInclusive": "3.7.204.10",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AwsSns",
+    "assemblyName": "AWSSDK.SimpleNotificationService",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.SimpleNotificationService",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.1.0",
+        "minVersionTestedInclusive": "3.1.2.1",
+        "maxVersionSupportedInclusive": "3.7.201.1",
+        "maxVersionAvailableInclusive": "3.7.201.1",
+        "maxVersionTestedInclusive": "3.7.201.1"
+      }
+    ]
+  },
+  {
+    "integrationName": "AwsSqs",
+    "assemblyName": "AWSSDK.SQS",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "AWSSDK.SQS",
+        "minVersionAvailableInclusive": "3.1.0",
+        "minVersionSupportedInclusive": "3.1.0",
+        "minVersionTestedInclusive": "3.1.0.13",
+        "maxVersionSupportedInclusive": "3.7.200.64",
+        "maxVersionAvailableInclusive": "3.7.200.64",
+        "maxVersionTestedInclusive": "3.7.200.64"
+      }
+    ]
+  },
+  {
+    "integrationName": "AzureFunctions",
+    "assemblyName": "Microsoft.Azure.Functions.Worker.Core",
+    "minAssemblyVersionInclusive": "1.4.0",
+    "maxAssemblyVersionInclusive": "1.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AzureFunctions",
+    "assemblyName": "Microsoft.Azure.WebJobs.Host",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Azure.WebJobs",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "3.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "3.0.39",
+        "maxVersionAvailableInclusive": "3.0.39",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "AzureFunctions",
+    "assemblyName": "Microsoft.Azure.WebJobs.Script.Grpc",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AzureFunctions",
+    "assemblyName": "Microsoft.Azure.WebJobs.Script.WebHost",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "AzureServiceBus",
+    "assemblyName": "Azure.Messaging.ServiceBus",
+    "minAssemblyVersionInclusive": "7.14.0",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "packages": [
+      {
+        "name": "Azure.Messaging.ServiceBus",
+        "minVersionAvailableInclusive": "7.0.0",
+        "minVersionSupportedInclusive": "7.14.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "7.16.2",
+        "maxVersionAvailableInclusive": "7.16.2",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "CosmosDb",
+    "assemblyName": "Microsoft.Azure.Cosmos.Client",
+    "minAssemblyVersionInclusive": "3.6.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Azure.Cosmos",
+        "minVersionAvailableInclusive": "3.0.0",
+        "minVersionSupportedInclusive": "3.6.0",
+        "minVersionTestedInclusive": "3.6.0",
+        "maxVersionSupportedInclusive": "3.36.0",
+        "maxVersionAvailableInclusive": "3.36.0",
+        "maxVersionTestedInclusive": "3.36.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "Couchbase",
+    "assemblyName": "Couchbase.NetClient",
+    "minAssemblyVersionInclusive": "2.2.8",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "CouchbaseNetClient",
+        "minVersionAvailableInclusive": "0.9.0",
+        "minVersionSupportedInclusive": "2.2.8",
+        "minVersionTestedInclusive": "2.4.8",
+        "maxVersionSupportedInclusive": "3.4.12",
+        "maxVersionAvailableInclusive": "3.4.12",
+        "maxVersionTestedInclusive": "3.4.12"
+      }
+    ]
+  },
+  {
+    "integrationName": "ElasticsearchNet",
+    "assemblyName": "Elasticsearch.Net",
+    "minAssemblyVersionInclusive": "5.0.0",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "packages": [
+      {
+        "name": "Elasticsearch.Net",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "5.0.0",
+        "minVersionTestedInclusive": "5.3.1",
+        "maxVersionSupportedInclusive": "7.17.5",
+        "maxVersionAvailableInclusive": "7.17.5",
+        "maxVersionTestedInclusive": "7.17.5"
+      }
+    ]
+  },
+  {
+    "integrationName": "GraphQL",
+    "assemblyName": "GraphQL",
+    "minAssemblyVersionInclusive": "2.3.0",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "packages": [
+      {
+        "name": "GraphQL",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "2.3.0",
+        "minVersionTestedInclusive": "4.1.0",
+        "maxVersionSupportedInclusive": "7.6.1",
+        "maxVersionAvailableInclusive": "7.6.1",
+        "maxVersionTestedInclusive": "7.6.1"
+      }
+    ]
+  },
+  {
+    "integrationName": "GraphQL",
+    "assemblyName": "GraphQL.SystemReactive",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "GraphQL.SystemReactive",
+        "minVersionAvailableInclusive": "4.0.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.8.0",
+        "maxVersionAvailableInclusive": "4.8.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Grpc",
+    "assemblyName": "Grpc.AspNetCore.Server",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Grpc.AspNetCore",
+        "minVersionAvailableInclusive": "2.23.0",
+        "minVersionSupportedInclusive": "2.23.0",
+        "minVersionTestedInclusive": "2.29.0",
+        "maxVersionSupportedInclusive": "2.58.0",
+        "maxVersionAvailableInclusive": "2.58.0",
+        "maxVersionTestedInclusive": "2.58.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "Grpc",
+    "assemblyName": "Grpc.Core",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Grpc",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "2.23.0",
+        "minVersionTestedInclusive": "2.29.0",
+        "maxVersionSupportedInclusive": "2.46.6",
+        "maxVersionAvailableInclusive": "2.46.6",
+        "maxVersionTestedInclusive": "2.46.6"
+      }
+    ]
+  },
+  {
+    "integrationName": "Grpc",
+    "assemblyName": "Grpc.Net.Client",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Grpc.AspNetCore",
+        "minVersionAvailableInclusive": "2.23.0",
+        "minVersionSupportedInclusive": "2.23.0",
+        "minVersionTestedInclusive": "2.29.0",
+        "maxVersionSupportedInclusive": "2.58.0",
+        "maxVersionAvailableInclusive": "2.58.0",
+        "maxVersionTestedInclusive": "2.58.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "HashAlgorithm",
+    "assemblyName": "System.Security.Cryptography",
+    "minAssemblyVersionInclusive": "7.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "HashAlgorithm",
+    "assemblyName": "System.Security.Cryptography.Primitives",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "HotChocolate",
+    "assemblyName": "HotChocolate.Execution",
+    "minAssemblyVersionInclusive": "11.0.0",
+    "maxAssemblyVersionInclusive": "13.65535.65535",
+    "packages": [
+      {
+        "name": "HotChocolate.AspNetCore",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "11.0.0",
+        "minVersionTestedInclusive": "11.3.8",
+        "maxVersionSupportedInclusive": "13.6.1",
+        "maxVersionAvailableInclusive": "13.6.1",
+        "maxVersionTestedInclusive": "13.6.1"
+      }
+    ]
+  },
+  {
+    "integrationName": "HttpMessageHandler",
+    "assemblyName": "System.Net.Http",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "System.Net.Http",
+        "minVersionAvailableInclusive": "2.0.20126.16343",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.3.4",
+        "maxVersionAvailableInclusive": "4.3.4",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "HttpMessageHandler",
+    "assemblyName": "System.Net.Http.WinHttpHandler",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "System.Net.Http.WinHttpHandler",
+        "minVersionAvailableInclusive": "4.0.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "7.0.0",
+        "maxVersionAvailableInclusive": "7.0.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "ILogger",
+    "assemblyName": "Microsoft.Extensions.Logging",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Extensions.Logging",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "7.0.0",
+        "maxVersionAvailableInclusive": "7.0.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "ILogger",
+    "assemblyName": "Microsoft.Extensions.Logging.Abstractions",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Extensions.Logging.Abstractions",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "7.0.1",
+        "maxVersionAvailableInclusive": "7.0.1",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Kafka",
+    "assemblyName": "Confluent.Kafka",
+    "minAssemblyVersionInclusive": "1.4.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Confluent.Kafka",
+        "minVersionAvailableInclusive": "0.0.1",
+        "minVersionSupportedInclusive": "1.4.0",
+        "minVersionTestedInclusive": "1.4.4",
+        "maxVersionSupportedInclusive": "2.3.0",
+        "maxVersionAvailableInclusive": "2.3.0",
+        "maxVersionTestedInclusive": "2.3.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "Log4Net",
+    "assemblyName": "log4net",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "log4net",
+        "minVersionAvailableInclusive": "1.2.10",
+        "minVersionSupportedInclusive": "1.2.10",
+        "minVersionTestedInclusive": "1.2.11",
+        "maxVersionSupportedInclusive": "2.0.15",
+        "maxVersionAvailableInclusive": "2.0.15",
+        "maxVersionTestedInclusive": "2.0.15"
+      }
+    ]
+  },
+  {
+    "integrationName": "MongoDb",
+    "assemblyName": "MongoDB.Driver.Core",
+    "minAssemblyVersionInclusive": "2.1.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "MongoDB.Driver",
+        "minVersionAvailableInclusive": "1.0.3744.30075",
+        "minVersionSupportedInclusive": "2.1.0",
+        "minVersionTestedInclusive": "2.0.2",
+        "maxVersionSupportedInclusive": "2.22.0",
+        "maxVersionAvailableInclusive": "2.22.0",
+        "maxVersionTestedInclusive": "2.22.0"
+      },
+      {
+        "name": "MongoDB.Driver.Core",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "2.1.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.22.0",
+        "maxVersionAvailableInclusive": "2.22.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Msmq",
+    "assemblyName": "System.Messaging",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "MsTestV2",
+    "assemblyName": "Microsoft.VisualStudio.TestPlatform.MSTest.TestAdapter",
+    "minAssemblyVersionInclusive": "14.0.0",
+    "maxAssemblyVersionInclusive": "14.65535.65535",
+    "packages": [
+      {
+        "name": "MSTest.TestAdapter",
+        "minVersionAvailableInclusive": "1.1.11",
+        "minVersionSupportedInclusive": "1.1.11",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "3.1.1",
+        "maxVersionAvailableInclusive": "3.1.1",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "MsTestV2",
+    "assemblyName": "Microsoft.VisualStudio.TestPlatform.TestFramework",
+    "minAssemblyVersionInclusive": "14.0.0",
+    "maxAssemblyVersionInclusive": "14.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.VisualStudio.TestPlatform",
+        "minVersionAvailableInclusive": "14.0.0",
+        "minVersionSupportedInclusive": "14.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "14.0.0.1",
+        "maxVersionAvailableInclusive": "14.0.0.1",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "MySql",
+    "assemblyName": "MySql.Data",
+    "minAssemblyVersionInclusive": "6.7.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "MySql.Data",
+        "minVersionAvailableInclusive": "5.1.7",
+        "minVersionSupportedInclusive": "6.7.4",
+        "minVersionTestedInclusive": "6.7.9",
+        "maxVersionSupportedInclusive": "8.2.0",
+        "maxVersionAvailableInclusive": "8.2.0",
+        "maxVersionTestedInclusive": "8.2.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "MySql",
+    "assemblyName": "MySqlConnector",
+    "minAssemblyVersionInclusive": "0.61.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "MySqlConnector",
+        "minVersionAvailableInclusive": "0.1.0",
+        "minVersionSupportedInclusive": "0.61.0",
+        "minVersionTestedInclusive": "0.61.0",
+        "maxVersionSupportedInclusive": "2.2.7",
+        "maxVersionAvailableInclusive": "2.2.7",
+        "maxVersionTestedInclusive": "2.2.7"
+      }
+    ]
+  },
+  {
+    "integrationName": "NLog",
+    "assemblyName": "NLog",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "NLog",
+        "minVersionAvailableInclusive": "1.0.0.505",
+        "minVersionSupportedInclusive": "1.0.0.505",
+        "minVersionTestedInclusive": "1.0.0.505",
+        "maxVersionSupportedInclusive": "5.2.5",
+        "maxVersionAvailableInclusive": "5.2.5",
+        "maxVersionTestedInclusive": "5.2.5"
+      }
+    ]
+  },
+  {
+    "integrationName": "Npgsql",
+    "assemblyName": "Npgsql",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "7.65535.65535",
+    "packages": [
+      {
+        "name": "Npgsql",
+        "minVersionAvailableInclusive": "2.0.11",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": "4.1.12",
+        "maxVersionSupportedInclusive": "7.0.6",
+        "maxVersionAvailableInclusive": "7.0.6",
+        "maxVersionTestedInclusive": "7.0.6"
+      }
+    ]
+  },
+  {
+    "integrationName": "NUnit",
+    "assemblyName": "nunit.framework",
+    "minAssemblyVersionInclusive": "3.0.0",
+    "maxAssemblyVersionInclusive": "3.65535.65535",
+    "packages": [
+      {
+        "name": "NUnit",
+        "minVersionAvailableInclusive": "2.5.7.10213",
+        "minVersionSupportedInclusive": "3.0.0",
+        "minVersionTestedInclusive": "3.6.1",
+        "maxVersionSupportedInclusive": "3.13.3",
+        "maxVersionAvailableInclusive": "3.13.3",
+        "maxVersionTestedInclusive": "3.13.3"
+      }
+    ]
+  },
+  {
+    "integrationName": "OpenTelemetry",
+    "assemblyName": "OpenTelemetry",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "1.0.0",
+    "packages": [
+      {
+        "name": "OpenTelemetry",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "1.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "1.6.0",
+        "maxVersionAvailableInclusive": "1.6.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "OpenTelemetry",
+    "assemblyName": "OpenTelemetry.Api",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "1.0.0",
+    "packages": [
+      {
+        "name": "OpenTelemetry.Api",
+        "minVersionAvailableInclusive": "1.0.1",
+        "minVersionSupportedInclusive": "1.0.1",
+        "minVersionTestedInclusive": "1.0.1",
+        "maxVersionSupportedInclusive": "1.6.0",
+        "maxVersionAvailableInclusive": "1.6.0",
+        "maxVersionTestedInclusive": "1.6.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "Oracle",
+    "assemblyName": "Oracle.DataAccess",
+    "minAssemblyVersionInclusive": "4.122.0",
+    "maxAssemblyVersionInclusive": "4.122.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "Oracle",
+    "assemblyName": "Oracle.ManagedDataAccess",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "4.122.65535",
+    "packages": [
+      {
+        "name": "Oracle.ManagedDataAccess",
+        "minVersionAvailableInclusive": "12.1.21",
+        "minVersionSupportedInclusive": "12.1.21",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "21.12.0",
+        "maxVersionAvailableInclusive": "21.12.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Process",
+    "assemblyName": "System",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "Process",
+    "assemblyName": "System.Diagnostics.Process",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": []
+  },
+  {
+    "integrationName": "RabbitMQ",
+    "assemblyName": "RabbitMQ.Client",
+    "minAssemblyVersionInclusive": "3.6.9",
+    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "packages": [
+      {
+        "name": "RabbitMQ.Client",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "3.6.9",
+        "minVersionTestedInclusive": "3.6.9",
+        "maxVersionSupportedInclusive": "6.6.0",
+        "maxVersionAvailableInclusive": "6.6.0",
+        "maxVersionTestedInclusive": "6.6.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "Serilog",
+    "assemblyName": "Serilog",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "Serilog",
+        "minVersionAvailableInclusive": "0.1.6",
+        "minVersionSupportedInclusive": "1.0.1",
+        "minVersionTestedInclusive": "1.4.214",
+        "maxVersionSupportedInclusive": "2.12.0",
+        "maxVersionAvailableInclusive": "3.0.1",
+        "maxVersionTestedInclusive": "3.0.1"
+      }
+    ]
+  },
+  {
+    "integrationName": "ServiceStackRedis",
+    "assemblyName": "ServiceStack.Redis",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "6.65535.65535",
+    "packages": [
+      {
+        "name": "ServiceStack.Redis",
+        "minVersionAvailableInclusive": "2.9.0",
+        "minVersionSupportedInclusive": "4.0.2",
+        "minVersionTestedInclusive": "4.5.14",
+        "maxVersionSupportedInclusive": "6.11.0",
+        "maxVersionAvailableInclusive": "6.11.0",
+        "maxVersionTestedInclusive": "6.11.0"
+      }
+    ]
+  },
+  {
+    "integrationName": "SqlClient",
+    "assemblyName": "Microsoft.Data.SqlClient",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "5.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Data.SqlClient",
+        "minVersionAvailableInclusive": "1.0.19239.1",
+        "minVersionSupportedInclusive": "1.0.19239.1",
+        "minVersionTestedInclusive": "1.1.4",
+        "maxVersionSupportedInclusive": "5.1.2",
+        "maxVersionAvailableInclusive": "5.1.2",
+        "maxVersionTestedInclusive": "5.1.2"
+      }
+    ]
+  },
+  {
+    "integrationName": "SqlClient",
+    "assemblyName": "System.Data.SqlClient",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "System.Data.SqlClient",
+        "minVersionAvailableInclusive": "4.1.0",
+        "minVersionSupportedInclusive": "4.1.0",
+        "minVersionTestedInclusive": "4.1.0",
+        "maxVersionSupportedInclusive": "4.8.5",
+        "maxVersionAvailableInclusive": "4.8.5",
+        "maxVersionTestedInclusive": "4.8.5"
+      }
+    ]
+  },
+  {
+    "integrationName": "Sqlite",
+    "assemblyName": "Microsoft.Data.Sqlite",
+    "minAssemblyVersionInclusive": "2.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "Microsoft.Data.Sqlite",
+        "minVersionAvailableInclusive": "1.0.0",
+        "minVersionSupportedInclusive": "2.0.0",
+        "minVersionTestedInclusive": "2.2.6",
+        "maxVersionSupportedInclusive": "7.0.13",
+        "maxVersionAvailableInclusive": "7.0.13",
+        "maxVersionTestedInclusive": "7.0.13"
+      }
+    ]
+  },
+  {
+    "integrationName": "Sqlite",
+    "assemblyName": "System.Data.SQLite",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "System.Data.SQLite",
+        "minVersionAvailableInclusive": "1.0.66.1",
+        "minVersionSupportedInclusive": "1.0.66.1",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "1.0.118",
+        "maxVersionAvailableInclusive": "1.0.118",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "StackExchangeRedis",
+    "assemblyName": "StackExchange.Redis",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "StackExchange.Redis",
+        "minVersionAvailableInclusive": "1.0.187",
+        "minVersionSupportedInclusive": "1.0.187",
+        "minVersionTestedInclusive": "1.0.488",
+        "maxVersionSupportedInclusive": "2.6.122",
+        "maxVersionAvailableInclusive": "2.6.122",
+        "maxVersionTestedInclusive": "2.6.122"
+      }
+    ]
+  },
+  {
+    "integrationName": "StackExchangeRedis",
+    "assemblyName": "StackExchange.Redis.StrongName",
+    "minAssemblyVersionInclusive": "1.0.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "StackExchange.Redis.StrongName",
+        "minVersionAvailableInclusive": "1.0.312",
+        "minVersionSupportedInclusive": "1.0.312",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "1.2.6",
+        "maxVersionAvailableInclusive": "1.2.6",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "Wcf",
+    "assemblyName": "System.ServiceModel",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": [
+      {
+        "name": "System.ServiceModel.Http",
+        "minVersionAvailableInclusive": "3.9.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.10.3",
+        "maxVersionAvailableInclusive": "6.1.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "WebRequest",
+    "assemblyName": "System.Net.Requests",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "8.65535.65535",
+    "packages": [
+      {
+        "name": "System.Net.Requests",
+        "minVersionAvailableInclusive": "3.9.0",
+        "minVersionSupportedInclusive": "4.0.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "4.3.0",
+        "maxVersionAvailableInclusive": "4.3.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "XUnit",
+    "assemblyName": "xunit.execution.desktop",
+    "minAssemblyVersionInclusive": "2.2.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "xunit",
+        "minVersionAvailableInclusive": "1.7.0.1540",
+        "minVersionSupportedInclusive": "2.2.0",
+        "minVersionTestedInclusive": "2.2.0",
+        "maxVersionSupportedInclusive": "2.5.3",
+        "maxVersionAvailableInclusive": "2.5.3",
+        "maxVersionTestedInclusive": "2.5.3"
+      }
+    ]
+  },
+  {
+    "integrationName": "XUnit",
+    "assemblyName": "xunit.execution.dotnet",
+    "minAssemblyVersionInclusive": "2.2.0",
+    "maxAssemblyVersionInclusive": "2.65535.65535",
+    "packages": [
+      {
+        "name": "xunit.extensibility.execution",
+        "minVersionAvailableInclusive": "2.0.0",
+        "minVersionSupportedInclusive": "2.2.0",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "2.5.3",
+        "maxVersionAvailableInclusive": "2.5.3",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  }
+]
