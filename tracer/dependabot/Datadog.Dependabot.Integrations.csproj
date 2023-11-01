@@ -89,7 +89,7 @@
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
     <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.6.1 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.6.1" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.7.0" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
