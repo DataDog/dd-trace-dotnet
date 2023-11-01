@@ -249,7 +249,37 @@ public class StringJoinTests : InstrumentationTestsBase
         AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(",", new ClassForStringTest(taintedValue)), () => String.Join(",", new ClassForStringTest(taintedValue)));
     }
 
+
 #if !NET462
+    [Fact]
+    public void GivenATaintedStringInNestedMethodObject_WhenCallingJoinWithChar_ResultIsTainted6()
+    {
+        void NestedMethod<T>(List<T> parameters)
+        {
+            AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:", String.Join(',', parameters), () => String.Join(',', parameters));
+        }
+
+        NestedMethod(new List<string> { taintedValue });
+    }
+
+    [Fact]
+    public void GivenATaintedStringInNestedMethodObject_WhenCallingJoinWithChar_ResultIsTainted7()
+    {
+        void NestedMethod<T>(List<T> parameters)
+        {
+            AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:,NonTainted", String.Join(',', parameters), () => String.Join(',', parameters));
+        }
+
+        NestedMethod(new List<string> { taintedValue, "NonTainted" });
+    }
+
+    [Fact]
+    public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted8()
+    {
+        var parameters = new List<string> { taintedValue, "NonTainted" };
+        AssertTaintedFormatWithOriginalCallCheck(":+-tainted-+:,NonTainted", String.Join(',', parameters), () => String.Join(',', parameters));
+    }
+
     [Fact]
     public void GivenATaintedString_WhenCallingJoin_ResultIsTainted7()
     {
