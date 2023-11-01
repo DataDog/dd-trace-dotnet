@@ -531,7 +531,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Sandbox.LegacySecurityPolic
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DeepNestedHierarchy", "tracer\test\test-applications\regression\DeepNestedHierarchy\DeepNestedHierarchy.csproj", "{1B3E6BEE-F7AB-433E-A1D9-E8BE3782419B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.Kinesis", "tracer\test\test-applications\integrations\Samples.AWS.Kinesis\Samples.AWS.Kinesis.csproj", "{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.Kinesis", "tracer\test\test-applications\integrations\Samples.AWS.Kinesis\Samples.AWS.Kinesis.csproj", "{C7DE0626-9EB6-475E-AA0C-CB9DE21D4FAE}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AzureServiceBus", "tracer\test\test-applications\integrations\Samples.AzureServiceBus\Samples.AzureServiceBus.csproj", "{BC44A41F-1BED-4438-9F66-0EA5607906D5}"
 EndProject
@@ -543,15 +543,15 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotn
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.IntegrationTests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.IntegrationTests\Datadog.Trace.Tools.dd_dotnet.IntegrationTests.csproj", "{A9632530-0FB8-4156-BD3C-DD432527768E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Datadog.Trace.Tools.dd_dotnet.SourceGenerators", "tracer\src\Datadog.Trace.Tools.dd_dotnet.SourceGenerators\Datadog.Trace.Tools.dd_dotnet.SourceGenerators.csproj", "{F594BFBE-1F71-4B3A-BBDA-C4372A6501E9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.SourceGenerators", "tracer\src\Datadog.Trace.Tools.dd_dotnet.SourceGenerators\Datadog.Trace.Tools.dd_dotnet.SourceGenerators.csproj", "{F594BFBE-1F71-4B3A-BBDA-C4372A6501E9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.AWS.DynamoDBv2", "tracer\test\test-applications\integrations\Samples.AWS.DynamoDBv2\Samples.AWS.DynamoDBv2.csproj", "{D59C5649-BE0E-4A33-B868-B652D8614534}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.AWS.DynamoDBv2", "tracer\test\test-applications\integrations\Samples.AWS.DynamoDBv2\Samples.AWS.DynamoDBv2.csproj", "{D59C5649-BE0E-4A33-B868-B652D8614534}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.Shared", "tracer\src\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj", "{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Datadog.Trace.Tools.dd_dotnet.Tests", "tracer\test\Datadog.Trace.Tools.dd_dotnet.Tests\Datadog.Trace.Tools.dd_dotnet.Tests.csproj", "{4E9535E2-C918-4C39-9F1B-F182C185DE64}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Samples.Amazon.Lambda.RuntimeSupport", "tracer\test\test-applications\integrations\Samples.Amazon.Lambda.RuntimeSupport\Samples.Amazon.Lambda.RuntimeSupport.csproj", "{18A6904A-5AFD-4816-AC3F-9F5E433720B5}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Samples.Amazon.Lambda.RuntimeSupport", "tracer\test\test-applications\integrations\Samples.Amazon.Lambda.RuntimeSupport\Samples.Amazon.Lambda.RuntimeSupport.csproj", "{18A6904A-5AFD-4816-AC3F-9F5E433720B5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1535,6 +1535,7 @@ Global
 		{D59C5649-BE0E-4A33-B868-B652D8614534} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 		{7A1B9BFE-052D-435E-B27F-72AF3DDCC0A0} = {9E5F0022-0A50-40BF-AC6A-C3078585ECAB}
 		{4E9535E2-C918-4C39-9F1B-F182C185DE64} = {8CEC2042-F11C-49F5-A674-2355793B600A}
+		{18A6904A-5AFD-4816-AC3F-9F5E433720B5} = {BAF8F246-3645-42AD-B1D0-0F7EAFBAB34A}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {160A1D00-1F5B-40F8-A155-621B4459D78F}
