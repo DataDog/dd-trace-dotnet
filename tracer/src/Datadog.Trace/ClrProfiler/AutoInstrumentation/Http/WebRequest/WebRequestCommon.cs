@@ -5,6 +5,7 @@
 
 using System;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
@@ -42,7 +43,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
             if (instance is HttpWebRequest request && IsTracingEnabled(request))
             {
                 // Check if any headers were injected by a previous call to GetRequestStream
-                var spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                // Since it is possible for users to manually propagate headers (which we should
+                // overwrite), check our cache which will be populated with header objects
+                // that we have injected context into
+                SpanContext spanContext = null;
+                if (HeadersInjectedCache.TryGetInjectedHeaders(request.Headers))
+                {
+                    spanContext = SpanContextPropagator.Instance.Extract(request.Headers.Wrap());
+                }
 
                 // If this operation creates the trace, then we need to re-apply the sampling priority
                 var tracer = Tracer.Instance;

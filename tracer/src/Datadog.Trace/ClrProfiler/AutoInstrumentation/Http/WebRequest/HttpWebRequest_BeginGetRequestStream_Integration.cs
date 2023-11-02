@@ -72,7 +72,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Http.WebRequest
                         // The expected sequence of calls is GetRequestStream -> GetResponse. Headers can't be modified after calling GetRequestStream.
                         // At the same time, we don't want to set an active scope now, because it's possible that GetResponse will never be called.
                         // Instead, we generate a spancontext and inject it in the headers. GetResponse will fetch them and create an active scope with the right id.
+                        // Additionally, add the request headers to a cache to indicate that distributed tracing headers were
+                        // added by us, not the application
                         SpanContextPropagator.Instance.Inject(span.Context, request.Headers.Wrap());
+                        HeadersInjectedCache.SetInjectedHeaders(request.Headers);
                     }
                 }
             }

@@ -25,7 +25,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [Trait("SupportsInstrumentationVerification", "True")]
         public void RenamesService()
         {
-            var expectedSpanCount = 82;
+            var expectedSpanCount = 87;
 
             SetInstrumentationVerification();
             const string expectedOperationName = "http.request";
