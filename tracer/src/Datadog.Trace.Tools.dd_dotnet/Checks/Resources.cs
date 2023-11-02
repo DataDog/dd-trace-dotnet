@@ -30,6 +30,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         public const string AspNetCoreProcessNotFound = "Could not find the ASP.NET Core applicative process.";
         public const string VersionConflict = "Tracer version 1.x can't be loaded simultaneously with other versions and will produce orphaned traces. Make sure to synchronize the Datadog.Trace NuGet version with the installed automatic instrumentation package version.";
         public const string IisExpressWorkerProcess = "Cannot detect the worker process when using IIS Express. Use the --workerProcess option to manually provide it.";
+        public const string IisNotFound = "Could not find IIS. Make sure IIS is properly installed and enable, and run the tool from an elevated prompt.";
 
         public const string TracingWithBundleProfilerPath = "Check failing with Datadog.Trace.Bundle Nuget, related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-core/?tab=nuget#install-the-tracer";
         public const string TracingWithInstallerWindowsNetFramework = "Installer/MSI related documentation: https://docs.datadoghq.com/tracing/trace_collection/dd_libraries/dotnet-framework?tab=windows#install-the-tracer";
