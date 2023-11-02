@@ -516,4 +516,13 @@ public class StringJoinTests : InstrumentationTestsBase
             string.Join<ClassForStringTest>("|", list),
             () => string.Join<ClassForStringTest>("|", list));
     }
+
+    [Fact]
+    public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()
+    {
+        var objectList = new List<object> { TaintedObject, UntaintedObject, OtherTaintedObject };
+        AssertUntaintedWithOriginalCallCheck(
+            () => string.Join(' ', objectList),
+            () => string.Join(' ', objectList));
+    }
 }
