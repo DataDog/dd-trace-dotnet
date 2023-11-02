@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.TestHelpers;
 using FluentAssertions;
 using Xunit;
 
@@ -26,6 +27,9 @@ public class CheckCommandTests : RunnerTests
     [Fact]
     public void MultipleArguments()
     {
+        // Currently we can only test this one Windows.
+        // The only command that accepts a space is "check iis" and it's not available on Linux.
+        SkipOn.Platform(SkipOn.PlatformValue.Linux);
         using var helper = StartProcess("check iis \"hello world\"");
 
         helper.Process.WaitForExit();
