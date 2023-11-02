@@ -6,11 +6,9 @@
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using System.Threading;
-#pragma warning disable CS8619
-#pragma warning disable CS8625
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Threading;
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 {
@@ -563,39 +561,37 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         private static bool TryGetInt32EnvironmentVariable(string variable, out int result)
         {
             //todo fix
-            result = 0;
-            return false;
             // Avoid globalization stack, as it might in turn be using ArrayPool.
 
-            //    if (Environment.GetEnvironmentVariableCore_NoArrayPool(variable) is string envVar &&
-            //        envVar.Length is > 0 and <= 32) // arbitrary limit that allows for some spaces around the maximum length of a non-negative Int32 (10 digits)
-            //    {
-            //        ReadOnlySpan<char> value = envVar.AsSpan().Trim(' ');
-            //        if (!value.IsEmpty && value.Length <= 10)
-            //        {
-            //            long tempResult = 0;
-            //            foreach (char c in value)
-            //            {
-            //                uint digit = (uint)(c - '0');
-            //                if (digit > 9)
-            //                {
-            //                    goto Fail;
-            //                }
+            if (Environment.GetEnvironmentVariable(variable) is string envVar &&
+                envVar.Length is > 0 and <= 32) // arbitrary limit that allows for some spaces around the maximum length of a non-negative Int32 (10 digits)
+            {
+                ReadOnlySpan<char> value = envVar.AsSpan().Trim(' ');
+                if (!value.IsEmpty && value.Length <= 10)
+                {
+                    long tempResult = 0;
+                    foreach (char c in value)
+                    {
+                        uint digit = (uint)(c - '0');
+                        if (digit > 9)
+                        {
+                            goto Fail;
+                        }
 
-            //                tempResult = tempResult * 10 + digit;
-            //            }
+                        tempResult = tempResult * 10 + digit;
+                    }
 
-            //            if (tempResult is >= 0 and <= int.MaxValue)
-            //            {
-            //                result = (int)tempResult;
-            //                return true;
-            //            }
-            //        }
-            //    }
+                    if (tempResult is >= 0 and <= int.MaxValue)
+                    {
+                        result = (int)tempResult;
+                        return true;
+                    }
+                }
+            }
 
-            //Fail:
-            //    result = 0;
-            //    return false;
+        Fail:
+            result = 0;
+            return false;
         }
     }
 }

@@ -4,24 +4,20 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
-// Decompiled with JetBrains decompiler
+
 // Type: System.Collections.Immutable.ImmutableArray`1
 // Assembly: System.Collections.Immutable, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
 // MVID: 5F9FF90F-0D16-4469-A104-76829D3705E2
-// Assembly location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.dll
-// XML documentation location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.xml
 
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Versioning;
-using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning;
-#pragma warning disable CS1711
+
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
@@ -625,7 +621,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
 
         /// <summary>Filters the elements of this array to those assignable to the specified type.</summary>
         /// <typeparam name="TResult">The type to filter the elements of the sequence on.</typeparam>
-        /// <returns>An <see cref="T:System.Collections.IEnumerable" /> that contains elements from the input sequence of type of TResult />.</returns>
+        /// <returns>An <see cref="T:System.Collections.IEnumerable" /> that contains elements from the input sequence of type of <paramref name="TResult" />.</returns>
         public IEnumerable<TResult> OfType<TResult>()
         {
             ImmutableArray<T> immutableArray = this;
@@ -866,7 +862,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <summary>Replaces the item at the specified index with the specified item.</summary>
         /// <param name="index">The index of the item to replace.</param>
         /// <param name="value">The value to add to the list.</param>
-        /// <returns>The new array that contains <paramref name="value" /> at the specified index.</returns>
+        /// <returns>The new array that contains <paramref name="item" /> at the specified index.</returns>
         IImmutableList<T> IImmutableList<T>.SetItem(int index, T value)
         {
             ImmutableArray<T> immutableArray = this;
@@ -1209,7 +1205,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
 
         /// <summary>Copies the contents of this array to the specified array starting at the specified destination index.</summary>
         /// <param name="destination">The array to copy to.</param>
-        /// <param name="destinationIndex">The index in <paramref name="destination" /> where copying begins.</param>
+        /// <param name="destinationIndex">The index in <paramref name="array" /> where copying begins.</param>
         public void CopyTo(T[] destination, int destinationIndex)
         {
             ImmutableArray<T> immutableArray = this;
@@ -1220,7 +1216,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         /// <summary>Copies the specified items in this array to the specified array at the specified starting index.</summary>
         /// <param name="sourceIndex">The index of this array where copying begins.</param>
         /// <param name="destination">The array to copy to.</param>
-        /// <param name="destinationIndex">The index in <paramref name="destination" /> where copying begins.</param>
+        /// <param name="destinationIndex">The index in <paramref name="array" /> where copying begins.</param>
         /// <param name="length">The number of elements to copy from this array.</param>
         public void CopyTo(int sourceIndex, T[] destination, int destinationIndex, int length)
         {

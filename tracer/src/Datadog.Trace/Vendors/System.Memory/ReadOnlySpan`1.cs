@@ -5,20 +5,18 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
-// Decompiled with JetBrains decompiler
+
 // Type: System.ReadOnlySpan`1
 // Assembly: System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
-// Assembly location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll
-// XML documentation location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.xml
 
 using System;
-using System.ComponentModel;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+using Datadog.Trace.VendoredMicrosoftCode.System.ComponentModel;
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     /// <typeparam name="T"></typeparam>
     [DebuggerTypeProxy(typeof (SpanDebugView<>))]
@@ -46,18 +44,14 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     /// <returns></returns>
     [Obsolete("Equals() on ReadOnlySpan will always throw an exception. Use == instead.")]
     [EditorBrowsable(EditorBrowsableState.Never)]
-#pragma warning disable CS0809 // Obsolete member overrides non-obsolete member
-        public override bool Equals(object obj) => throw new NotSupportedException(System.Memory.SR.NotSupported_CannotCallEqualsOnSpan);
-#pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
+    public override bool Equals(object obj) => throw new NotSupportedException(SR.NotSupported_CannotCallEqualsOnSpan);
 
-        /// <returns></returns>
-        [Obsolete("GetHashCode() on ReadOnlySpan will always throw an exception.")]
+    /// <returns></returns>
+    [Obsolete("GetHashCode() on ReadOnlySpan will always throw an exception.")]
     [EditorBrowsable(EditorBrowsableState.Never)]
-#pragma warning disable CS0809 // Obsolete member overrides non-obsolete member
-        public override int GetHashCode() => throw new NotSupportedException(System.Memory.SR.NotSupported_CannotCallGetHashCodeOnSpan);
-#pragma warning restore CS0809 // Obsolete member overrides non-obsolete member
+    public override int GetHashCode() => throw new NotSupportedException(SR.NotSupported_CannotCallGetHashCodeOnSpan);
 
-        public static implicit operator ReadOnlySpan<T>(T[] array) => new ReadOnlySpan<T>(array);
+    public static implicit operator ReadOnlySpan<T>(T[] array) => new ReadOnlySpan<T>(array);
 
     public static implicit operator ReadOnlySpan<T>(ArraySegment<T> segment) => new ReadOnlySpan<T>(segment.Array, segment.Offset, segment.Count);
 
@@ -77,7 +71,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
       else
       {
         this._length = array.Length;
-        this._pinnable = Unsafe.As<System.Pinnable<T>>((object) array);
+        this._pinnable = Unsafe.As<System.Pinnable<T>>(array);
         this._byteOffset = SpanHelpers.PerTypeValues<T>.ArrayAdjustment;
       }
     }
@@ -99,7 +93,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         if ((uint) start > (uint) array.Length || (uint) length > (uint) (array.Length - start))
           ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
         this._length = length;
-        this._pinnable = Unsafe.As<System.Pinnable<T>>((object) array);
+        this._pinnable = Unsafe.As<System.Pinnable<T>>(array);
         this._byteOffset = SpanHelpers.PerTypeValues<T>.ArrayAdjustment.Add<T>(start);
       }
     }
@@ -115,9 +109,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
       if (length < 0)
         ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
       this._length = length;
-#pragma warning disable CS8625
       this._pinnable = (System.Pinnable<T>) null;
-#pragma warning restore CS8625
       this._byteOffset = new IntPtr(pointer);
     }
 
@@ -180,8 +172,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     public override unsafe string ToString()
     {
       if (!(typeof (T) == typeof (char)))
-        return string.Format("System.ReadOnlySpan<{0}>[{1}]", (object) typeof (T).Name, (object) this._length);
-      if (this._byteOffset == MemoryExtensions.StringAdjustment && Unsafe.As<object>((object) this._pinnable) is string str && this._length == str.Length)
+        return string.Format("System.ReadOnlySpan<{0}>[{1}]", typeof (T).Name, this._length);
+      if (this._byteOffset == MemoryExtensions.StringAdjustment && Unsafe.As<object>(this._pinnable) is string str && this._length == str.Length)
         return str;
       fixed (char* chPtr = &Unsafe.As<T, char>(ref this.DangerousGetPinnableReference()))
         return new string(chPtr, 0, this._length);

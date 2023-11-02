@@ -5,18 +5,16 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
-// Decompiled with JetBrains decompiler
+
 // Type: System.ThrowHelper
 // Assembly: System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
-// Assembly location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll
-// XML documentation location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.xml
 
 using System;
-using System.Runtime.CompilerServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     internal static class ThrowHelper
   {
@@ -33,12 +31,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     internal static void ThrowArgumentException_InvalidTypeWithPointersNotSupported(Type type) => throw ThrowHelper.CreateArgumentException_InvalidTypeWithPointersNotSupported(type);
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateArgumentException_InvalidTypeWithPointersNotSupported(Type type) => (Exception) new ArgumentException(SR.Format(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_InvalidTypeWithPointersNotSupported, (object) type));
+    private static Exception CreateArgumentException_InvalidTypeWithPointersNotSupported(Type type) => (Exception) new ArgumentException(SR.Format(SR.Argument_InvalidTypeWithPointersNotSupported, (object) type));
 
     internal static void ThrowArgumentException_DestinationTooShort() => throw ThrowHelper.CreateArgumentException_DestinationTooShort();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateArgumentException_DestinationTooShort() => (Exception) new ArgumentException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_DestinationTooShort);
+    private static Exception CreateArgumentException_DestinationTooShort() => (Exception) new ArgumentException(SR.Argument_DestinationTooShort);
 
     internal static void ThrowIndexOutOfRangeException() => throw ThrowHelper.CreateIndexOutOfRangeException();
 
@@ -58,12 +56,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     internal static void ThrowArgumentOutOfRangeException_PrecisionTooLarge() => throw ThrowHelper.CreateArgumentOutOfRangeException_PrecisionTooLarge();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateArgumentOutOfRangeException_PrecisionTooLarge() => (Exception) new ArgumentOutOfRangeException("precision", SR.Format(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_PrecisionTooLarge, (object) (byte) 99));
+    private static Exception CreateArgumentOutOfRangeException_PrecisionTooLarge() => (Exception) new ArgumentOutOfRangeException("precision", SR.Format(SR.Argument_PrecisionTooLarge, (object) (byte) 99));
 
     internal static void ThrowArgumentOutOfRangeException_SymbolDoesNotFit() => throw ThrowHelper.CreateArgumentOutOfRangeException_SymbolDoesNotFit();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateArgumentOutOfRangeException_SymbolDoesNotFit() => (Exception) new ArgumentOutOfRangeException("symbol", Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_BadFormatSpecifier);
+    private static Exception CreateArgumentOutOfRangeException_SymbolDoesNotFit() => (Exception) new ArgumentOutOfRangeException("symbol", SR.Argument_BadFormatSpecifier);
 
     internal static void ThrowInvalidOperationException() => throw ThrowHelper.CreateInvalidOperationException();
 
@@ -73,17 +71,17 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     internal static void ThrowInvalidOperationException_OutstandingReferences() => throw ThrowHelper.CreateInvalidOperationException_OutstandingReferences();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateInvalidOperationException_OutstandingReferences() => (Exception) new InvalidOperationException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.OutstandingReferences);
+    private static Exception CreateInvalidOperationException_OutstandingReferences() => (Exception) new InvalidOperationException(SR.OutstandingReferences);
 
     internal static void ThrowInvalidOperationException_UnexpectedSegmentType() => throw ThrowHelper.CreateInvalidOperationException_UnexpectedSegmentType();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateInvalidOperationException_UnexpectedSegmentType() => (Exception) new InvalidOperationException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.UnexpectedSegmentType);
+    private static Exception CreateInvalidOperationException_UnexpectedSegmentType() => (Exception) new InvalidOperationException(SR.UnexpectedSegmentType);
 
     internal static void ThrowInvalidOperationException_EndPositionNotReached() => throw ThrowHelper.CreateInvalidOperationException_EndPositionNotReached();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateInvalidOperationException_EndPositionNotReached() => (Exception) new InvalidOperationException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.EndPositionNotReached);
+    private static Exception CreateInvalidOperationException_EndPositionNotReached() => (Exception) new InvalidOperationException(SR.EndPositionNotReached);
 
     internal static void ThrowArgumentOutOfRangeException_PositionOutOfRange() => throw ThrowHelper.CreateArgumentOutOfRangeException_PositionOutOfRange();
 
@@ -103,12 +101,12 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     internal static void ThrowFormatException_BadFormatSpecifier() => throw ThrowHelper.CreateFormatException_BadFormatSpecifier();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateFormatException_BadFormatSpecifier() => (Exception) new FormatException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_BadFormatSpecifier);
+    private static Exception CreateFormatException_BadFormatSpecifier() => (Exception) new FormatException(SR.Argument_BadFormatSpecifier);
 
     internal static void ThrowArgumentException_OverlapAlignmentMismatch() => throw ThrowHelper.CreateArgumentException_OverlapAlignmentMismatch();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private static Exception CreateArgumentException_OverlapAlignmentMismatch() => (Exception) new ArgumentException(Datadog.Trace.VendoredMicrosoftCode.System.Memory.SR.Argument_OverlapAlignmentMismatch);
+    private static Exception CreateArgumentException_OverlapAlignmentMismatch() => (Exception) new ArgumentException(SR.Argument_OverlapAlignmentMismatch);
 
     internal static void ThrowNotSupportedException() => throw ThrowHelper.CreateThrowNotSupportedException();
 

@@ -5,20 +5,16 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
-// Decompiled with JetBrains decompiler
+
 // Type: System.Buffers.ReadOnlySequence`1
 // Assembly: System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
-// Assembly location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll
-// XML documentation location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.xml
 
 using System;
-using System.Diagnostics;
-using System.Runtime.CompilerServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
-#pragma warning disable CS8625
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 {
@@ -75,24 +71,24 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             }
             ThrowHelper.ThrowArgumentValidationException<T>(startSegment, startIndex, endSegment);
         label_4:
-            this._sequenceStart = new SequencePosition((object)startSegment, ReadOnlySequence.SegmentToSequenceStart(startIndex));
-            this._sequenceEnd = new SequencePosition((object)endSegment, ReadOnlySequence.SegmentToSequenceEnd(endIndex));
+            this._sequenceStart = new SequencePosition(startSegment, ReadOnlySequence.SegmentToSequenceStart(startIndex));
+            this._sequenceEnd = new SequencePosition(endSegment, ReadOnlySequence.SegmentToSequenceEnd(endIndex));
         }
 
         public ReadOnlySequence(T[] array)
         {
             if (array == null)
                 ThrowHelper.ThrowArgumentNullException(ExceptionArgument.array);
-            this._sequenceStart = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceStart(0));
-            this._sequenceEnd = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceEnd(array.Length));
+            this._sequenceStart = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceStart(0));
+            this._sequenceEnd = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceEnd(array.Length));
         }
 
         public ReadOnlySequence(T[] array, int start, int length)
         {
             if (array == null || (uint)start > (uint)array.Length || (uint)length > (uint)(array.Length - start))
                 ThrowHelper.ThrowArgumentValidationException((Array)array, start);
-            this._sequenceStart = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceStart(start));
-            this._sequenceEnd = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceEnd(start + length));
+            this._sequenceStart = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceStart(start));
+            this._sequenceEnd = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceEnd(start + length));
         }
 
         public ReadOnlySequence(ReadOnlyMemory<T> memory)
@@ -102,8 +98,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             int length;
             if (MemoryMarshal.TryGetMemoryManager<T, MemoryManager<T>>(memory, out manager, out start1, out length))
             {
-                this._sequenceStart = new SequencePosition((object)manager, ReadOnlySequence.MemoryManagerToSequenceStart(start1));
-                this._sequenceEnd = new SequencePosition((object)manager, ReadOnlySequence.MemoryManagerToSequenceEnd(start1 + length));
+                this._sequenceStart = new SequencePosition(manager, ReadOnlySequence.MemoryManagerToSequenceStart(start1));
+                this._sequenceEnd = new SequencePosition(manager, ReadOnlySequence.MemoryManagerToSequenceEnd(start1 + length));
             }
             else
             {
@@ -112,8 +108,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                 {
                     T[] array = segment.Array;
                     int offset = segment.Offset;
-                    this._sequenceStart = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceStart(offset));
-                    this._sequenceEnd = new SequencePosition((object)array, ReadOnlySequence.ArrayToSequenceEnd(offset + segment.Count));
+                    this._sequenceStart = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceStart(offset));
+                    this._sequenceEnd = new SequencePosition(array, ReadOnlySequence.ArrayToSequenceEnd(offset + segment.Count));
                 }
                 else if (typeof(T) == typeof(char))
                 {
@@ -121,8 +117,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     int start2;
                     if (!MemoryMarshal.TryGetString((ReadOnlyMemory<char>)(ValueType)memory, out text, out start2, out length))
                         ThrowHelper.ThrowInvalidOperationException();
-                    this._sequenceStart = new SequencePosition((object)text, ReadOnlySequence.StringToSequenceStart(start2));
-                    this._sequenceEnd = new SequencePosition((object)text, ReadOnlySequence.StringToSequenceEnd(start2 + length));
+                    this._sequenceStart = new SequencePosition(text, ReadOnlySequence.StringToSequenceStart(start2));
+                    this._sequenceEnd = new SequencePosition(text, ReadOnlySequence.StringToSequenceEnd(start2 + length));
                 }
                 else
                 {
@@ -352,7 +348,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
                     ReadOnlySequenceSegment<T> next1 = onlySequenceSegment.Next;
                     if (next1 == null)
                         ThrowHelper.ThrowInvalidOperationException_EndPositionNotReached();
-                    next = new SequencePosition((object)next1, 0);
+                    next = new SequencePosition(next1, 0);
                     memory = onlySequenceSegment.Memory.Slice(index1);
                 }
                 else
@@ -441,7 +437,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             if (currentSegment == null || (long)endIndex < offset)
                 ThrowHelper.ThrowArgumentOutOfRangeException(argument);
             label_6:
-            return new SequencePosition((object)currentSegment, (int)offset);
+            return new SequencePosition(currentSegment, (int)offset);
         }
 
         private void BoundsCheck(in SequencePosition position)

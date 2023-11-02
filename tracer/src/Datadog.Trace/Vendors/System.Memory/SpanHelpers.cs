@@ -5,24 +5,20 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
-// Decompiled with JetBrains decompiler
+
 // Type: System.SpanHelpers
 // Assembly: System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
-// Assembly location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll
-// XML documentation location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.xml
 
 using System;
-using System.Collections.Generic;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
-using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
-using MemoryMarshal = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices.MemoryMarshal;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
-namespace Datadog.Trace.VendoredMicrosoftCode.System
+namespace System
 {
     internal static class SpanHelpers
     {
@@ -2011,8 +2007,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             while (zero.LessThanEqual(byteLength - sizeof(SpanHelpers.Reg64)))
             {
                 Unsafe.As<byte, SpanHelpers.Reg64>(ref Unsafe.Add<byte>(ref b, zero)) = new SpanHelpers.Reg64();
-                //todo: fix
-                // *(SpanHelpers.Reg64*)Unsafe.As<byte, SpanHelpers.Reg64>(ref Unsafe.Add<byte>(ref b, zero)) = new SpanHelpers.Reg64();
+                //todo: fix *(SpanHelpers.Reg64*)
+                Unsafe.As<byte, SpanHelpers.Reg64>(ref Unsafe.Add<byte>(ref b, zero)) = new SpanHelpers.Reg64();
                 zero += sizeof(SpanHelpers.Reg64);
             }
             if (zero.LessThanEqual(byteLength - sizeof(SpanHelpers.Reg32)))
@@ -2120,7 +2116,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             private static IntPtr MeasureArrayAdjustment()
             {
                 T[] o = new T[1];
-                return Unsafe.ByteOffset<T>(ref Unsafe.As<Pinnable<T>>((object)o).Data, ref o[0]);
+                return Unsafe.ByteOffset<T>(ref Unsafe.As<Pinnable<T>>(o).Data, ref o[0]);
             }
         }
     }
