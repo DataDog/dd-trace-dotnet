@@ -1013,7 +1013,7 @@ services:
     build:
       context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
       dockerfile: build/_build/docker/smoke.chiseled.dockerfile
-      target: dd-dotnet-final
+      target: dd-dotnet-final-${RUNTIME_ID:-linux-x64}
         # args:
         # Note that the following build arguments must be provided
         # - DOTNETSDK_VERSION=

@@ -4831,6 +4831,7 @@ stages:
               dd-dotnet-chiseled-smoke-tests
           env:
             dockerTag: $(dockerTag)
+            dockerTarget: $(runtimeId)
           displayName: docker-compose build dd-dotnet-chiseled-smoke-tests
           retryCountOnTaskFailure: 3
 

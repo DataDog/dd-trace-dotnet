@@ -38,6 +38,9 @@ WORKDIR /app
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
+# Use the non-root user
+USER $APP_UID
+
 # The final image, with "manual" configuration
 FROM publish as final
 
@@ -56,8 +59,9 @@ ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 # The final image, with "dd-dotnet" configuration
 # Note that we _can't_ use dd-dotnet-sh in this case
 # Because there _is_ no shell in the chiseled containers
-FROM publish as dd-dotnet-final
-ARG RUNTIME_ID
-ENV RUNTIME_ID=$RUNTIME_ID
+# Also, we can't use env vars/args in the entrypoint, hence the need for separate targets
+FROM publish as dd-dotnet-final-linux-x64
+ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
 
-ENTRYPOINT ["/opt/datadog/$RUNTIME_ID/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
+FROM publish as dd-dotnet-final-linux-arm64
+ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
