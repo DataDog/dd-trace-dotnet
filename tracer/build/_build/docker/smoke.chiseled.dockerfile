@@ -28,7 +28,7 @@ ENV ASPNETCORE_URLS=http://localhost:5000
 
 # Add and extract the installer files to the expected location
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-2.41.0.tar.gz /opt/datadog
+ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-*.tar.gz /opt/datadog
 
 USER root
 
