@@ -64,7 +64,7 @@
         },
         "ExcludePackages": {
           "type": "array",
-          "description": "Dont update package versions for packages with the following names",
+          "description": "Don't update package versions for packages with the following names",
           "items": {
             "type": "string"
           }
