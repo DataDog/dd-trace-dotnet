@@ -426,6 +426,11 @@ namespace Samples.Computer01
                     case Scenario.ForceSigSegvHandler:
                         RunForceSigSegvHandler();
                         break;
+
+                    case Scenario.Obfuscation:
+                        RunObfuscation();
+                        break;
+
                     default:
                         throw new ArgumentOutOfRangeException(nameof(scenario), $"Unsupported scenario #{_scenario}");
                 }
@@ -439,6 +444,12 @@ namespace Samples.Computer01
         private void RunForceSigSegvHandler()
         {
             var test = new SigSegvHandlerExecution();
+            test.Run();
+        }
+
+        private void RunObfuscation()
+        {
+            var test = new Obfuscation();
             test.Run();
         }
 

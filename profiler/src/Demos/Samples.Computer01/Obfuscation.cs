@@ -20,7 +20,7 @@ namespace Samples.Computer01
                 page.Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Line5"));
                 page.Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Line6"));
 
-                var filename = Path.GetTempFileName() + ".pdf";
+                var filename = Path.GetTempFileName();
                 Console.WriteLine(filename);
                 pdf_doc.Save(filename);
                 File.Delete(filename);
