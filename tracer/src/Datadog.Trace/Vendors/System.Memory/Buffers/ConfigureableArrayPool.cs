@@ -6,8 +6,7 @@
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
 using System;
-using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
-using Datadog.Trace.VendoredMicrosoftCode.System.Threading;
+using System.Threading;
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 {
@@ -193,7 +192,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
             /// </summary>
             internal Bucket(int bufferLength, int numberOfBuffers, int poolId)
             {
-                _lock = new SpinLock(Debugger.IsAttached); // only enable thread tracking if debugger is attached; it adds non-trivial overheads to Enter/Exit
+                _lock = new SpinLock(global::System.Diagnostics.Debugger.IsAttached); // only enable thread tracking if debugger is attached; it adds non-trivial overheads to Enter/Exit
                 _buffers = new T[numberOfBuffers][];
                 _bufferLength = bufferLength;
                 _poolId = poolId;

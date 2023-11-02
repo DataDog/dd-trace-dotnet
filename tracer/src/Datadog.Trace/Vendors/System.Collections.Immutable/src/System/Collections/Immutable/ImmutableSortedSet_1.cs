@@ -4,22 +4,22 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
-
+// Decompiled with JetBrains decompiler
 // Type: System.Collections.Immutable.ImmutableSortedSet`1
 // Assembly: System.Collections.Immutable, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
 // MVID: 5F9FF90F-0D16-4469-A104-76829D3705E2
+// Assembly location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.dll
+// XML documentation location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.xml
 
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Threading;
-using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq;
 
 
 #nullable enable
@@ -622,10 +622,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
 
 
     #nullable enable
-    /// <summary>Represents a sorted set that enables changes with little or no memory allocations, and efficiently manipulates or builds immutable sorted sets.
-    /// 
-    /// NuGet package: System.Collections.Immutable (about immutable collections and how to install)</summary>
+#pragma warning disable CS1711
     /// <typeparam name="T" />
+#pragma warning restore CS1711
     [DebuggerDisplay("Count = {Count}")]
     [DebuggerTypeProxy(typeof (ImmutableSortedSetBuilderDebuggerProxy<>))]
     internal sealed class Builder : 
@@ -911,7 +910,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
         get
         {
           if (this._syncRoot == null)
-            Interlocked.CompareExchange<object>(ref this._syncRoot, new object(), (object) null);
+#pragma warning disable CS8625
+              Interlocked.CompareExchange<object>(ref this._syncRoot, new object(), (object) null);
+#pragma warning restore CS8625
           return this._syncRoot;
         }
       }
@@ -936,10 +937,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
 
 
     #nullable enable
-    /// <summary>Enumerates the contents of a binary tree.
-    /// 
-    /// NuGet package: System.Collections.Immutable (about immutable collections and how to install)</summary>
+#pragma warning disable CS1711
     /// <typeparam name="T" />
+#pragma warning restore CS1711
     [EditorBrowsable(EditorBrowsableState.Advanced)]
     internal struct Enumerator : 
       IEnumerator<T>,

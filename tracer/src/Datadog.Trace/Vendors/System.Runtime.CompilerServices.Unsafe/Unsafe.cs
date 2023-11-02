@@ -6,6 +6,7 @@
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 using System;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.Versioning;
 using InlineIL;

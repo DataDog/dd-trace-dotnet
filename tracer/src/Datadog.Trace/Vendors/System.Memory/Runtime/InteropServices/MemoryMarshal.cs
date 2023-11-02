@@ -5,16 +5,22 @@
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
-
+// Decompiled with JetBrains decompiler
 // Type: System.Runtime.InteropServices.MemoryMarshal
 // Assembly: System.Memory, Version=4.0.1.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51
 // MVID: 805945F3-27B0-47AD-B8F6-389D9D8F82C3
+// Assembly location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.dll
+// XML documentation location: C:\Users\dudi.keleti\source\repos\ConsoleApp4\packages\System.Memory.4.5.5\lib\net461\System.Memory.xml
 
 using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
+#pragma warning disable CS8625
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
 {
@@ -160,7 +166,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
         ThrowHelper.ThrowArrayTypeMismatchException();
       if ((uint) start > (uint) array.Length || (uint) length > (uint) (array.Length - start))
         ThrowHelper.ThrowArgumentOutOfRangeException();
-      return new Memory<T>(array, start, length | int.MinValue);
+      return new Memory<T>((object) array, start, length | int.MinValue);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -169,7 +175,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
       if (SpanHelpers.IsReferenceOrContainsReferences<T>())
         ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof (T));
       int length = checked (span.Length * Unsafe.SizeOf<T>());
-      return new Span<byte>(Unsafe.As<Pinnable<byte>>(span.Pinnable), span.ByteOffset, length);
+      return new Span<byte>(Unsafe.As<Pinnable<byte>>((object) span.Pinnable), span.ByteOffset, length);
     }
 
     [MethodImpl((MethodImplOptions) 256)]
@@ -178,7 +184,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
       if (SpanHelpers.IsReferenceOrContainsReferences<T>())
         ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof (T));
       int length = checked (span.Length * Unsafe.SizeOf<T>());
-      return new ReadOnlySpan<byte>(Unsafe.As<Pinnable<byte>>(span.Pinnable), span.ByteOffset, length);
+      return new ReadOnlySpan<byte>(Unsafe.As<Pinnable<byte>>((object) span.Pinnable), span.ByteOffset, length);
     }
 
     public static Memory<T> AsMemory<T>(ReadOnlyMemory<T> memory) => Unsafe.As<ReadOnlyMemory<T>, Memory<T>>(ref memory);
@@ -196,7 +202,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
       if (SpanHelpers.IsReferenceOrContainsReferences<TTo>())
         ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof (TTo));
       int length = checked ((int) unchecked (checked ((long) span.Length * (long) Unsafe.SizeOf<TFrom>()) / (long) Unsafe.SizeOf<TTo>()));
-      return new Span<TTo>(Unsafe.As<Pinnable<TTo>>(span.Pinnable), span.ByteOffset, length);
+      return new Span<TTo>(Unsafe.As<Pinnable<TTo>>((object) span.Pinnable), span.ByteOffset, length);
     }
 
     public static ReadOnlySpan<TTo> Cast<TFrom, TTo>(ReadOnlySpan<TFrom> span)
@@ -208,7 +214,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices
       if (SpanHelpers.IsReferenceOrContainsReferences<TTo>())
         ThrowHelper.ThrowArgumentException_InvalidTypeWithPointersNotSupported(typeof (TTo));
       int length = checked ((int) unchecked (checked ((long) span.Length * (long) Unsafe.SizeOf<TFrom>()) / (long) Unsafe.SizeOf<TTo>()));
-      return new ReadOnlySpan<TTo>(Unsafe.As<Pinnable<TTo>>(span.Pinnable), span.ByteOffset, length);
+      return new ReadOnlySpan<TTo>(Unsafe.As<Pinnable<TTo>>((object) span.Pinnable), span.ByteOffset, length);
     }
   }
 }

@@ -4,17 +4,19 @@
 //------------------------------------------------------------------------------
 #pragma warning disable CS0618, CS0649, CS1574, CS1580, CS1581, CS1584, CS1591, CS1573, CS8018, SYSLIB0011, SYSLIB0032
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
-
+// Decompiled with JetBrains decompiler
 // Type: System.Collections.Immutable.ImmutableInterlocked
 // Assembly: System.Collections.Immutable, Version=7.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a
 // MVID: 5F9FF90F-0D16-4469-A104-76829D3705E2
+// Assembly location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.dll
+// XML documentation location: C:\Users\dudi.keleti\.nuget\packages\system.collections.immutable\7.0.0\lib\net462\System.Collections.Immutable.xml
 
 using System;
+using System.Collections.Generic;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Generic;
 using System.Threading;
 using System.Diagnostics.CodeAnalysis;
-using System.Runtime.CompilerServices.Unsafe;
-
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 
 #nullable enable
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
@@ -229,7 +231,7 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable
     /// <param name="value">The value to add to the dictionary the key is not found.</param>
     /// <typeparam name="TKey">The type of the keys contained in the collection.</typeparam>
     /// <typeparam name="TValue">The type of the values contained in the collection.</typeparam>
-    /// <returns>The value at the specified key or <paramref name="valueFactory" /> if the key was not present.</returns>
+    /// <returns>The value at the specified key or valueFactory if the key was not present.</returns>
     public static TValue GetOrAdd<TKey, TValue>(
       ref ImmutableDictionary<TKey, TValue> location,
       TKey key,

@@ -20,11 +20,11 @@
 using System;
 using System.Resources;
 
-namespace Datadog.Trace.Vendors.FxResources.System.Reflection.Metadata
+namespace FxResources.System.Reflection.Metadata
 {
     internal static class SR { }
 }
-namespace System
+namespace Datadog.Trace.VendoredMicrosoftCode.System
 {
     internal static partial class SR
     {
@@ -405,5 +405,7 @@ namespace System
 
         public static string Arg_KeyNotFoundWithKey => GetResourceString("KeyNotFoundWithKey",
             "The key has not found in the dictionary. Key: {0}");
+
+        public static string Argument_GWithPrecisionNotSupported { get; }
     }
 }

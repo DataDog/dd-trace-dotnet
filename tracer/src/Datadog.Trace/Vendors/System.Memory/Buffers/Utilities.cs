@@ -6,10 +6,13 @@
 #pragma warning disable CS8600, CS8601, CS8602, CS8603, CS8604, CS8618, CS8620, CS8714, CS8762, CS8765, CS8766, CS8767, CS8768, CS8769, CS8612, CS8629, CS8774
 #nullable enable
 using System;
+using System.Diagnostics;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Diagnostics;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
 using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
+using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 
 namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 {
@@ -79,10 +82,14 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
 
         internal static MemoryPressure GetMemoryPressure()
         {
+#pragma warning disable CS0219 // Variable is assigned but its value is never used
             const double HighPressureThreshold = .90;       // Percent of GC memory pressure threshold we consider "high"
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
+#pragma warning disable CS0219 // Variable is assigned but its value is never used
             const double MediumPressureThreshold = .70;     // Percent of GC memory pressure threshold we consider "medium"
-            //todo: fix
-            //GCMemoryInfo memoryInfo = GC.GetGCMemoryInfo();
+#pragma warning restore CS0219 // Variable is assigned but its value is never used
+                              //todo: fix
+                              //GCMemoryInfo memoryInfo = GC.GetGCMemoryInfo();
             var memoryInfo = GC.GetTotalMemory(false);
 
             //if (memoryInfo >= memoryInfo.HighMemoryLoadThresholdBytes * HighPressureThreshold)
