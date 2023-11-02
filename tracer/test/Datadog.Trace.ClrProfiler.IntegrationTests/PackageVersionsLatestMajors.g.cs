@@ -371,11 +371,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #else
 #if NETCOREAPP3_1
                 new object[] { "11.3.8" },
-                new object[] { "12.22.0" },
+                new object[] { "12.21.0" },
 #endif
 #if NET5_0
                 new object[] { "11.3.8" },
-                new object[] { "12.22.0" },
+                new object[] { "12.21.0" },
 #endif
 #if NET6_0
                 new object[] { "11.3.8" },
