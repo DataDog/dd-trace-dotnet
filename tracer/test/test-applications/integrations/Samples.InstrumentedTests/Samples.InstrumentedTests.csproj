@@ -40,6 +40,7 @@
     <PackageReference Include="System.Data.OleDb" Version="4.7.1" />
     <PackageReference Include="MySql.Data" Version="8.0.28" />
     <PackageReference Include="Oracle.ManagedDataAccess.Core" Version="2.19.110" />
+    <PackageReference Include="FluentValidation" Version="9.5.3" />
   </ItemGroup>
 
   <ItemGroup>
