@@ -26,14 +26,13 @@ namespace Datadog.Trace.Activity
                 return;
             }
 
-            // TODO legacy operation name?
-
+            // means that operation.name tag was present
             if (!string.IsNullOrEmpty(span.OperationName))
             {
-                return; // means that operation.name tag was present
+                return;
             }
 
-            string operationName = string.Empty;
+            var operationName = string.Empty;
 
             if (!span.TryGetTag(Tags.SpanKind, out var spanKind))
             {
@@ -68,17 +67,6 @@ namespace Datadog.Trace.Activity
                 operationName = spanKind;
             }
 
-            // TODO I've copy pasted this from OTLPHelper just to not forget to do something with it if it makes sense
-            // if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled)
-            // {
-            //     span.OperationName = activity5.Source.Name switch
-            //     {
-            //         string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{spanKind}",
-            //         _ => $"opentelemetry.{spanKind}",
-            //     };
-            // }
-
-            // TODO what if there is a tag from the activity "operation.name" do we honour that?
             span.OperationName = operationName.ToLower();
         }
 
@@ -146,7 +134,7 @@ namespace Datadog.Trace.Activity
                 }
             }
             else if (span.TryGetTag("faas.invoked_provider", out var provider) &&
-                     span.TryGetTag("faas.name", out var faasName))
+                     span.TryGetTag("faas.invoked_name", out var faasName))
             {
                 return $"{provider}.{faasName}.invoke";
             }

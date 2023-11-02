@@ -93,9 +93,7 @@ namespace Datadog.Trace.Activity
                 span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
             }
 
-            ActivityOperationNameMapper.MapToOperationName(span);
-
-            // TODO should we remove this legacy flag?
+            // TODO should we rename this flag to something that doesn't have Legacy in it?
             // Later: Support config 'span_name_as_resource_name'
             // Later: Support config 'span_name_remappings'
             if (Tracer.Instance.Settings.OpenTelemetryLegacyOperationNameEnabled && activity5 is not null)
@@ -105,6 +103,10 @@ namespace Datadog.Trace.Activity
                     string libName when !string.IsNullOrEmpty(libName) => $"{libName}.{GetSpanKind(activity5.Kind)}",
                     _ => $"opentelemetry.{GetSpanKind(activity5.Kind)}",
                 };
+            }
+            else
+            {
+                ActivityOperationNameMapper.MapToOperationName(span);
             }
 
             // TODO: Add container tags from attributes if the tag isn't already in the span
