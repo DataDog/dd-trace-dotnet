@@ -3,7 +3,6 @@
 
 #include "IpcClient.h"  // TODO: return codes should be defined in another shared header file
 #include "IpcServer.h"
-#include "DebugHelpers.h"
 #include <iostream>
 #include <memory>
 

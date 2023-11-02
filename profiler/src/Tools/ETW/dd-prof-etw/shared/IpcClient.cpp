@@ -2,7 +2,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "IpcClient.h"
-#include "DebugHelpers.h"
 #include <iostream>
 
 
