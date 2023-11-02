@@ -11,7 +11,7 @@ namespace Datadog.Trace.Tools.Runner.ArtifactTests;
 
 public class CheckCommandTests : RunnerTests
 {
-    [Fact]
+    [SkippableFact]
     public void Help()
     {
         using var helper = StartProcess("check");
@@ -24,7 +24,7 @@ public class CheckCommandTests : RunnerTests
         helper.ErrorOutput.Should().Contain("Required command was not provided.");
     }
 
-    [Fact]
+    [SkippableFact]
     public void MultipleArguments()
     {
         // Currently we can only test this one Windows.
