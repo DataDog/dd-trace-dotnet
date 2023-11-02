@@ -993,7 +993,7 @@ services:
     build:
       context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
       dockerfile: build/_build/docker/smoke.chiseled.dockerfile
-      target: final
+      target: installer-final
         # args:
         # Note that the following build arguments must be provided
         # - DOTNETSDK_VERSION=

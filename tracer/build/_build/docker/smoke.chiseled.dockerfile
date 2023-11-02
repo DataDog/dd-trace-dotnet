@@ -14,6 +14,7 @@ RUN dotnet publish "AspNetCoreSmokeTest.csproj" -c Release --framework $PUBLISH_
 # Creating a placeholder file we can copy in the publish stage to create the logs folder
 RUN mkdir -p /install && touch /install/.placeholder
 
+###########################################################
 FROM $RUNTIME_IMAGE AS publish
 
 WORKDIR /src
@@ -25,10 +26,6 @@ ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
-
-# Add and extract the installer files to the expected location
-# from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-*.tar.gz /opt/datadog
 
 USER root
 
@@ -45,8 +42,16 @@ WORKDIR /app
 # Copy the app across
 COPY --from=builder /src/publish /app/.
 
+###########################################################
+FROM publish as installer-base
+
+# Add and extract the installer files to the expected location
+# from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
+ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-*.tar.gz /opt/datadog
+
+###########################################################
 # The final image, with "manual" configuration
-FROM publish as final
+FROM installer-base as installer-final
 
 # Set the required env vars
 ENV CORECLR_ENABLE_PROFILING=1
@@ -60,12 +65,14 @@ ENV DD_TRACE_DEBUG=1
 
 ENTRYPOINT ["dotnet", "AspNetCoreSmokeTest.dll"]
 
+###########################################################
 # The final image, with "dd-dotnet" configuration
 # Note that we _can't_ use dd-dotnet-sh in this case
 # Because there _is_ no shell in the chiseled containers
 # Also, we can't use env vars/args in the entrypoint, hence the need for separate targets
-FROM publish as dd-dotnet-final-linux-x64
+FROM installer-base as dd-dotnet-final-linux-x64
 ENTRYPOINT ["/opt/datadog/linux-x64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
 
-FROM publish as dd-dotnet-final-linux-arm64
+###########################################################
+FROM installer-base as dd-dotnet-final-linux-arm64
 ENTRYPOINT ["/opt/datadog/linux-arm64/dd-dotnet", "run", "--set-env", "DD_PROFILING_ENABLED=1","--set-env", "DD_APPSEC_ENABLED=1","--set-env", "DD_TRACE_DEBUG=1", "--", "dotnet", "/app/AspNetCoreSmokeTest.dll"]
