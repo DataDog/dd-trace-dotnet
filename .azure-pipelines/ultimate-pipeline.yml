@@ -5295,7 +5295,7 @@ stages:
 
         - template: steps/run-snapshot-test.yml
           parameters:
-            target: 'dd-dotnet-smoke-tests'
+            target: 'dd-dotnet-chiseled-smoke-tests'
             snapshotPrefix: "smoke_test"
 
         - publish: tracer/build_data
