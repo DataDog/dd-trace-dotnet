@@ -732,8 +732,8 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-chiseled"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
-                            // (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"), // we can't run scripts in chiseled containers, so need to update the dockerfiles
+                            (publishFramework: TargetFramework.NET8_0, "8.0-alpine3.18-composite"),
+                            (publishFramework: TargetFramework.NET7_0, "7.0-alpine3.16"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-alpine3.14"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-alpine3.14"),
                             (publishFramework: TargetFramework.NETCOREAPP3_1, "3.1-alpine3.14"),
