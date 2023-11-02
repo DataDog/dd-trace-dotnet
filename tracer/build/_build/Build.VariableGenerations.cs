@@ -376,6 +376,7 @@ partial class Build : NukeBuild
                 GenerateLinuxInstallerSmokeTestsMatrix();
                 GenerateLinuxSmokeTestsArm64Matrix();
                 GenerateLinuxChiseledInstallerSmokeTestsMatrix();
+                GenerateLinuxChiseledInstallerArm64SmokeTestsMatrix();
 
                 // nuget smoke tests
                 GenerateLinuxNuGetSmokeTestsMatrix();
@@ -406,8 +407,6 @@ partial class Build : NukeBuild
                         {
                             (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
                             (publishFramework: TargetFramework.NET8_0, "8.0-jammy"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -557,8 +556,8 @@ partial class Build : NukeBuild
                         "debian",
                         new (string publishFramework, string runtimeTag)[]
                         {
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers
-                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
                         },
                         installer: null,
                         installCmd: null,
@@ -582,8 +581,6 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-bullseye-slim"),
@@ -620,8 +617,6 @@ partial class Build : NukeBuild
                         new (string publishFramework, string runtimeTag)[]
                         {
                             (publishFramework: TargetFramework.NET8_0, "8.0-bookworm-slim"),
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"), // we can't run scripts in chiseled containers
-                            // (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"), // we can't run scripts in chiseled containers
                             (publishFramework: TargetFramework.NET7_0, "7.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET6_0, "6.0-bullseye-slim"),
                             (publishFramework: TargetFramework.NET5_0, "5.0-buster-slim"),
@@ -636,6 +631,30 @@ partial class Build : NukeBuild
                     Logger.Information($"Installer smoke tests matrix");
                     Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
                     AzurePipelines.Instance.SetOutputVariable("installer_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
+                }
+
+                void GenerateLinuxChiseledInstallerArm64SmokeTestsMatrix()
+                {
+                    var matrix = new Dictionary<string, object>();
+
+                    AddToLinuxSmokeTestsMatrix(
+                        matrix,
+                        "debian",
+                        new (string publishFramework, string runtimeTag)[]
+                        {
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled"),
+                            (publishFramework: TargetFramework.NET8_0, "8.0-jammy-chiseled-composite"),
+                        },
+                        installer: null,
+                        installCmd: null,
+                        linuxArtifacts: "linux-packages-linux-arm64",
+                        runtimeId: "linux-arm64",
+                        dockerName: "mcr.microsoft.com/dotnet/aspnet"
+                    );
+
+                    Logger.Information($"Installer chiseled smoke tests arm64 matrix");
+                    Logger.Information(JsonConvert.SerializeObject(matrix, Formatting.Indented));
+                    AzurePipelines.Instance.SetOutputVariable("installer_chiseled_smoke_tests_arm64_matrix", JsonConvert.SerializeObject(matrix, Formatting.None));
                 }
 
                 void AddToLinuxSmokeTestsMatrix(
