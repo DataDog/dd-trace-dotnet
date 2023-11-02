@@ -452,4 +452,18 @@ internal static class IastModule
             "TripleDESCryptoServiceProvider" => true,
             _ => string.Equals(FrameworkDescription.Instance.OSPlatform, OSPlatformName.Linux, StringComparison.Ordinal) && name.EndsWith("provider", StringComparison.OrdinalIgnoreCase)
         };
+
+    // Evidence: If the customer application is setting the header with an invalid value, the evidence value should be the value that is set. If the header is missing, the evidence should not be sent.
+    // hash('XCONTENTTYPE_HEADER_MISSING:<service-name>')
+    internal static Scope? OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
+    {
+        var evidence = string.Empty;
+
+        if (!string.IsNullOrEmpty(headerValue))
+        {
+            evidence = headerValue;
+        }
+
+        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing.ToString() + ":" + serviceName).GetStaticHashCode());
+    }
 }

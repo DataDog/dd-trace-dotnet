@@ -65,12 +65,12 @@ public static class FireOnStartCommon
         if (security.Enabled || iastEnabled)
         {
             var responseHeaders = instance.DuckCast<HttpProtocolStruct>().ResponseHeaders;
+            var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
+
             if (responseHeaders is not null)
             {
                 if (security.Enabled)
                 {
-                    var span = Tracer.Instance.InternalActiveScope?.Root?.Span;
-
                     if (span is not null)
                     {
                         SecurityCoordinatorHelpers.CheckReturnedHeaders(security, span, responseHeaders);
@@ -79,6 +79,11 @@ public static class FireOnStartCommon
 
                 if (iastEnabled && IastModule.AddRequestVulnerabilitiesAllowed())
                 {
+                    if (span is not null)
+                    {
+                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName);
+                    }
+
                     CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
                 }
             }
