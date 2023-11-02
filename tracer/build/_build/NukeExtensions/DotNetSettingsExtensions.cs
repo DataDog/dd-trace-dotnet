@@ -136,14 +136,22 @@ internal static partial class DotNetSettingsExtensions
         }
         catch
         {
-
-            var editions = new[] { "Enterprise", "Professional", "Community", "BuildTools", "Preview" };
-            toolPath = editions
-                      .Select(edition => Path.Combine(
-                                  EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles)!,
-                                  $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe"))
-                      .First(File.Exists);
+            Serilog.Log.Information("MSBuild auto-detection failed, checking fallback paths");
+            // favour the Preview version and x64 versions first 
+            var editions = new[] { "Preview", "Enterprise", "Professional", "Community", "BuildTools", };
+            var programFiles = new[] { EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFiles), EnvironmentInfo.SpecialFolder(SpecialFolders.ProgramFilesX86)! };
+            var allPaths = (from edition in editions
+                            from root in programFiles
+                            select Path.Combine(root, $@"Microsoft Visual Studio\2022\{edition}\MSBuild\Current\Bin\msbuild.exe")).ToList();
+            toolPath = allPaths.FirstOrDefault(File.Exists);
+            if (toolPath is null)
+            {
+                Serilog.Log.Error("Error locating MSBuild. Checked the following paths:{Paths}", string.Join(Environment.NewLine, allPaths));
+                throw new ArgumentException("Error locating MSBuild");
+            }
         }
+
+        Serilog.Log.Information("Using MSBuild path '{MSBuild}'", toolPath);
 
         return settings.SetProcessToolPath(toolPath);
     }

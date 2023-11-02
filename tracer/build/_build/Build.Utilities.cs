@@ -51,6 +51,12 @@ partial class Build
     [Parameter("Force ARM64 build in Windows")]
     readonly bool ForceARM64BuildInWindows;
 
+    [Parameter("Don't update package versions for packages with the following names")]
+    readonly string[] ExcludePackages;
+
+    [Parameter("Only update package versions for packages with the following names")]
+    readonly string[] IncludePackages;
+
     [LazyLocalExecutable(@"C:\Program Files (x86)\Microsoft SDKs\Windows\v10.0A\bin\NETFX 4.8 Tools\gacutil.exe")]
     readonly Lazy<Tool> GacUtil;
     [LazyLocalExecutable(@"C:\Program Files\IIS Express\iisexpress.exe")]
@@ -203,10 +209,37 @@ partial class Build
        .DependsOn(Clean, Restore, CreateRequiredDirectories, CompileManagedSrc, PublishManagedTracer)
        .Executes(async () =>
        {
-           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           if (IncludePackages is not null)
+           {
+               Logger.Information("Including only NuGet packages matching {PackageNames}", string.Join(", ", IncludePackages));
+           }
+           if (ExcludePackages is not null)
+           {
+               Logger.Information("Excluding NuGet packages matching {PackageNames}", string.Join(", ", ExcludePackages));
+           }
 
-           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir);
-           await versionGenerator.GenerateVersions(Solution);
+           if (IncludePackages is not null && ExcludePackages is not null)
+           {
+               throw new ArgumentException("You cannot specify IncludePackages AND ExcludePackages");
+           }
+
+           var testDir = Solution.GetProject(Projects.ClrProfilerIntegrationTests).Directory;
+           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
+           var currentDependencies = DependabotFileManager.GetCurrentlyTestedVersions(dependabotProj);
+           var excludedFromUpdates = ((IncludePackages, ExcludePackages) switch
+                                         {
+                                             (_, { } exclude) => currentDependencies.Where(x => ExcludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
+                                             ({ } include, _) => currentDependencies.Where(x => !IncludePackages.Contains(x.NugetName, StringComparer.OrdinalIgnoreCase)),
+                                             _ => Enumerable.Empty<(string NugetName, Version LatestTestedVersion)>()
+                                         }).ToDictionary(x => x.NugetName, x => x.LatestTestedVersion, StringComparer.OrdinalIgnoreCase);
+
+           foreach (var dep in excludedFromUpdates)
+           {
+               Logger.Information("Excluding package {NugetName} from update. Fixing at {Version}", dep.Key, dep.Value);
+           }
+
+           var versionGenerator = new PackageVersionGenerator(TracerDirectory, testDir, excludedFromUpdates);
+           var testedVersions = await versionGenerator.GenerateVersions(Solution);
 
            var assemblies = MonitoringHomeDirectory
                            .GlobFiles("**/Datadog.Trace.dll")
@@ -214,9 +247,12 @@ partial class Build
                            .ToList();
 
            var integrations = GenerateIntegrationDefinitions.GetAllIntegrations(assemblies);
+           var distinctIntegrations = await DependabotFileManager.BuildDistinctIntegrationMaps(integrations, testedVersions);
 
-           var dependabotProj = TracerDirectory / "dependabot" / "Datadog.Dependabot.Integrations.csproj";
-           await DependabotFileManager.UpdateIntegrations(dependabotProj, integrations);
+           await DependabotFileManager.UpdateIntegrations(dependabotProj, distinctIntegrations);
+
+           var outputPath = TracerDirectory / "build" / "supported_versions.json";
+           await GenerateSupportMatrix.GenerateInstrumentationSupportMatrix(outputPath, distinctIntegrations);
        });
     
     Target GenerateSpanDocumentation => _ => _

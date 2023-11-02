@@ -2,7 +2,7 @@
 ARG RUNTIME_IMAGE
 
 # Build the ASP.NET Core app using the latest SDK
-FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION-bullseye-slim as builder
+FROM mcr.microsoft.com/dotnet/sdk:$DOTNETSDK_VERSION as builder
 
 # Build the smoke test app
 WORKDIR /src

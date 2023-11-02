@@ -6,20 +6,26 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class Elasticsearch6Tests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Elasticsearch";
+
         public Elasticsearch6Tests(ITestOutputHelper output)
             : base("Elasticsearch", output)
         {
+            SetServiceName(ServiceName);
             SetServiceVersion("1.0.0");
         }
 
@@ -34,17 +40,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-elasticsearch" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-elasticsearch" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
                 var expected = new List<string>();
+                var version = string.IsNullOrEmpty(packageVersion) ? null : new Version(packageVersion);
 
                 // commands with sync and async
                 for (var i = 0; i < 2; i++)
@@ -137,7 +144,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         "DeleteUser",
                     });
 
-                    if (string.IsNullOrEmpty(packageVersion) || string.Compare(packageVersion, "6.1.0", StringComparison.Ordinal) < 0)
+                    // Remove spans that are only generated on 6.1+
+                    // The default version is 6.1.0, so we do not remove spans when the version number is null
+                    if (version is not null && version < new Version(6, 1, 0))
                     {
                         expected.Remove("SplitIndex");
                         expected.Remove("GetOverallBuckets");
@@ -149,6 +158,32 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .Where(s => s.Type == "elasticsearch")
                                  .OrderBy(s => s.Start)
                                  .ToList();
+
+                var snapshotSuffix = version switch
+                {
+                    null => "6_1", // default is version 6.1.0
+                    { Major: 6, Minor: >= 1 } => "6_1",
+                    _ => "6_0"
+                };
+
+                var host = Environment.GetEnvironmentVariable("ELASTICSEARCH6_HOST");
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                // normalise between running directly against localhost and against elasticsearch containers
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("out.host: elasticsearch6", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("out.host: elasticsearch7_arm64", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: elasticsearch6", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: elasticsearch7_arm64", "peer.service: elasticsearch");
+                if (!string.IsNullOrWhiteSpace(host))
+                {
+                    settings.AddSimpleScrubber(host, "localhost:00000");
+                }
+
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"packageVersion={snapshotSuffix}.Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);

@@ -3,22 +3,29 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.TestHelpers;
+using VerifyXunit;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     [Trait("RequiresDockerDependency", "true")]
+    [UsesVerify]
     public class Elasticsearch5Tests : TracingIntegrationTest
     {
+        private const string ServiceName = "Samples.Elasticsearch";
+
         public Elasticsearch5Tests(ITestOutputHelper output)
             : base("Elasticsearch.V5", output)
         {
+            SetServiceName(ServiceName);
             SetServiceVersion("1.0.0");
         }
 
@@ -33,11 +40,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         [MemberData(nameof(GetEnabledConfig))]
         [Trait("Category", "EndToEnd")]
         [Trait("Category", "ArmUnsupported")]
-        public void SubmitsTraces(string packageVersion, string metadataSchemaVersion)
+        public async Task SubmitsTraces(string packageVersion, string metadataSchemaVersion)
         {
             SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
             var isExternalSpan = metadataSchemaVersion == "v0";
-            var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-elasticsearch" : EnvironmentHelper.FullSampleName;
+            var clientSpanServiceName = isExternalSpan ? $"{ServiceName}-elasticsearch" : ServiceName;
 
             using var telemetry = this.ConfigureTelemetry();
             using (var agent = EnvironmentHelper.GetMockAgent())
@@ -141,6 +148,25 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                                  .Where(s => s.Type == "elasticsearch")
                                  .OrderBy(s => s.Start)
                                  .ToList();
+
+                var host = Environment.GetEnvironmentVariable("ELASTICSEARCH5_HOST");
+
+                var settings = VerifyHelper.GetSpanVerifierSettings();
+                // normalise between running directly against localhost and against elasticsearch containers
+                settings.AddSimpleScrubber("out.host: localhost", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("out.host: elasticsearch5", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("out.host: elasticsearch7_arm64", "out.host: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: localhost", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: elasticsearch5", "peer.service: elasticsearch");
+                settings.AddSimpleScrubber("peer.service: elasticsearch7_arm64", "peer.service: elasticsearch");
+                if (!string.IsNullOrWhiteSpace(host))
+                {
+                    settings.AddSimpleScrubber(host, "localhost:00000");
+                }
+
+                await VerifyHelper.VerifySpans(spans, settings)
+                                  .UseTextForParameters($"Schema{metadataSchemaVersion.ToUpper()}")
+                                  .DisableRequireUniquePrefix();
 
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
                 ValidateSpans(spans, (span) => span.Resource, expected);

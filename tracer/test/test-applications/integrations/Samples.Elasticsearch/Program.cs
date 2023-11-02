@@ -167,7 +167,7 @@ namespace Samples.Elasticsearch
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAlias(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndex("test_index_4"),
-#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+#if ELASTICSEARCH_6_1
                 () => elastic.SplitIndex("test_index_1", "test_index_4"),
 #endif
                 () => elastic.DeleteIndex("test_index_4"),
@@ -219,7 +219,7 @@ namespace Samples.Elasticsearch
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_3")),
                 () => elastic.DeleteAliasAsync(new DeleteAliasRequest("test_index_1", "test_index_2")),
                 () => elastic.CreateIndexAsync("test_index_4"),
-#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+#if ELASTICSEARCH_6_1
                 () => elastic.SplitIndexAsync("test_index_1", "test_index_4"),
 #endif
                 () => elastic.DeleteIndexAsync("test_index_4"),
@@ -306,7 +306,7 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobStats(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshots(new GetModelSnapshotsRequest("test_job")),
                 () => elastic.FlushJob(new FlushJobRequest("test_job")),
-#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+#if ELASTICSEARCH_6_1
                 () => elastic.GetOverallBuckets(new GetOverallBucketsRequest("test_job")),
                 () => elastic.ForecastJob(new ForecastJobRequest("test_job")),
 #endif
@@ -330,7 +330,7 @@ namespace Samples.Elasticsearch
                 () => elastic.GetJobStatsAsync(new GetJobStatsRequest()),
                 () => elastic.GetModelSnapshotsAsync(new GetModelSnapshotsRequest("test_job")),
                 () => elastic.FlushJobAsync(new FlushJobRequest("test_job")),
-#if (ELASTICSEARCH_6_1 && !DEFAULT_SAMPLES)
+#if ELASTICSEARCH_6_1
                 () => elastic.GetOverallBucketsAsync(new GetOverallBucketsRequest("test_job")),
                 () => elastic.ForecastJobAsync(new ForecastJobRequest("test_job")),
 #endif

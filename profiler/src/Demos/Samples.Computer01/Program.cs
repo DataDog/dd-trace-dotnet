@@ -36,6 +36,7 @@ namespace Samples.Computer01
         MethodSignature,
         OpenLdapCrash,
         SocketTimeout,
+        ForceSigSegvHandler,
         Obfuscation
     }
 
@@ -69,7 +70,8 @@ namespace Samples.Computer01
             // 20: trigger exceptions with different method signatures in the callstack
             // 21: validate fix for OpenLDAP
             // 22: check socket timeout (linux)
-            // 23: use an obfuscated library
+            // 23: sigsegv handling validation
+            // 24: use an obfuscated library
             //
             Console.WriteLine($"{Environment.NewLine}Usage:{Environment.NewLine} > {Process.GetCurrentProcess().ProcessName} " +
             $"[--service] [--iterations <number of iterations to execute>] " +

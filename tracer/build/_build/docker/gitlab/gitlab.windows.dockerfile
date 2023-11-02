@@ -48,13 +48,11 @@ ENV PYTHON_VERSION "3.8.2"
 COPY install_python3.ps1 .
 RUN powershell -Command .\install_python3.ps1 -Version $ENV:PYTHON_VERSION
 
-COPY requirements.txt .
-COPY install_python_packages.ps1 .
+COPY requirements.txt constraints.txt install_python_packages.ps1 ./
 RUN powershell -Command .\install_python_packages.ps1
 
 # Install JAVA
-COPY helpers.ps1 .
-COPY install_java.ps1 .
+COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
 # Install 
