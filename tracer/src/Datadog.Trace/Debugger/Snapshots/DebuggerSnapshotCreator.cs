@@ -634,7 +634,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         }
 
         // Finalize snapshot
-        internal string FinalizeLineSnapshot<T>(string probeId, ref CaptureInfo<T> info)
+        internal string FinalizeLineSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -649,6 +649,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
+                        probeVersion,
                         info.LineCaptureInfo.LineNumber,
                         info.LineCaptureInfo.ProbeFilePath)
                    .FinalizeSnapshot(
@@ -661,7 +662,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             }
         }
 
-        internal string FinalizeMethodSnapshot<T>(string probeId, ref CaptureInfo<T> info)
+        internal string FinalizeMethodSnapshot<T>(string probeId, int probeVersion, ref CaptureInfo<T> info)
         {
             using (this)
             {
@@ -675,6 +676,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 AddEvaluationErrors()
                    .AddProbeInfo(
                         probeId,
+                        probeVersion,
                         methodName,
                         typeFullName)
                    .FinalizeSnapshot(
@@ -727,13 +729,16 @@ namespace Datadog.Trace.Debugger.Snapshots
             return this;
         }
 
-        internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, T methodNameOrLineNumber, string typeFullNameOrFilePath)
+        internal DebuggerSnapshotCreator AddProbeInfo<T>(string probeId, int probeVersion, T methodNameOrLineNumber, string typeFullNameOrFilePath)
         {
             _jsonWriter.WritePropertyName("probe");
             _jsonWriter.WriteStartObject();
 
             _jsonWriter.WritePropertyName("id");
             _jsonWriter.WriteValue(probeId);
+
+            _jsonWriter.WritePropertyName("version");
+            _jsonWriter.WriteValue(probeVersion);
 
             _jsonWriter.WritePropertyName("location");
             _jsonWriter.WriteStartObject();

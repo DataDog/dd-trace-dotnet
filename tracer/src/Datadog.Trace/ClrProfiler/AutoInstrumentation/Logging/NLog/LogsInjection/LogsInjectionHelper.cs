@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission;
@@ -10,6 +12,7 @@ using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmissio
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.Pre43;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
+using ILoggingRuleProxy = Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.DirectSubmission.Proxies.ILoggingRuleProxy;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjection
 {
@@ -19,16 +22,29 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
     internal static class LogsInjectionHelper<TTarget>
     {
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(LogsInjectionHelper<TTarget>));
-        private static Type _jsonAttributeType;
-        private static Type _simpleLayoutType;
+        private static readonly Type? _jsonAttributeType;
+        private static readonly Type? _simpleLayoutType;
+
+        static LogsInjectionHelper()
+        {
+            // this is not available in older versions of NLog (e.g., v2.1 doesn't have JSON support)
+            _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
+            if (_jsonAttributeType is null)
+            {
+                return;
+            }
+
+            // this simple layout should exist for all versions
+            _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
+        }
 
         /// <summary>
         ///     Adds necessary configuration elements to inject trace information in logs.
         /// </summary>
         /// <param name="loggingConfiguration">The NLog LoggingConfiguration to configure.</param>
-        public static void ConfigureLogsInjection(object loggingConfiguration)
+        public static void ConfigureLogsInjectionForLoggerConfiguration(object? loggingConfiguration)
         {
-            if (loggingConfiguration == null)
+            if (loggingConfiguration is null || _jsonAttributeType is null || _simpleLayoutType is null)
             {
                 return;
             }
@@ -39,25 +55,31 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                 return;
             }
 
-            // this is not available in older versions of NLog (e.g., v2.1 doesn't have JSON support)
-            _jsonAttributeType = Type.GetType("NLog.Layouts.JsonAttribute, NLog", throwOnError: false);
-            if (_jsonAttributeType is null)
-            {
-                return;
-            }
-
-            // this simple layout should exist for all versions
-            _simpleLayoutType = Type.GetType("NLog.Layouts.SimpleLayout, NLog", throwOnError: false);
-            if (_simpleLayoutType is null)
-            {
-                return;
-            }
-
-            ConfigureTargets(loggingConfigurationProxy.ConfiguredNamedTargets);
+            ConfigureTargets(loggingConfigurationProxy.ConfiguredNamedTargets, out _);
         }
 
-        private static void ConfigureTargets(IEnumerable configuredNamedTargets)
+        public static void ConfigureLogsInjectionForLoggingRules<TLoggingRules>(TLoggingRules? loggingRules, out bool foundDirectSubmissionTarget)
         {
+            foundDirectSubmissionTarget = false;
+            if (loggingRules is not IList { Count: > 0 } loggingRulesList || _jsonAttributeType is null || _simpleLayoutType is null)
+            {
+                return;
+            }
+
+            foreach (var loggingRule in loggingRulesList)
+            {
+                var loggingRuleProxy = loggingRule.DuckCast<ILoggingRuleProxy>();
+                if (loggingRuleProxy?.Targets is { } targets)
+                {
+                    ConfigureTargets(targets, out var foundOurTarget);
+                    foundDirectSubmissionTarget |= foundOurTarget;
+                }
+            }
+        }
+
+        private static void ConfigureTargets(IEnumerable configuredNamedTargets, out bool foundDirectSubmissionTarget)
+        {
+            foundDirectSubmissionTarget = false;
             foreach (var target in configuredNamedTargets)
             {
                 if (target is IDuckType { Instance: DirectSubmissionNLogV5Target } ||
@@ -65,6 +87,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
                     target is IDuckType { Instance: DirectSubmissionNLogLegacyTarget })
                 {
                     // don't want to configure our own target
+                    foundDirectSubmissionTarget = true;
                     continue;
                 }
 
@@ -91,7 +114,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static void ConfigureJson4Layout(IJsonLayout4Proxy layoutWithAttributes)
         {
-            if (_jsonAttributeType is null)
+            if (_jsonAttributeType is null || _simpleLayoutType is null)
             {
                 Log.Warning("Can't configure NLog JsonLayout as the JsonAttribute wasn't found in NLog.");
                 return;
@@ -156,8 +179,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Logging.NLog.LogsInjecti
 
         private static void AddAttributeToJson4Layout(IJsonLayout4Proxy layout, string attribute)
         {
-            var newSimpleLayout = Activator.CreateInstance(_simpleLayoutType, new object[] { @"${mdc:item=" + $"{attribute}" + "}" });
-            var newAttribute = Activator.CreateInstance(_jsonAttributeType, new object[] { attribute, newSimpleLayout });
+            // _simpleLayoutType and _jsonAttributeType should be checked for null in callee
+            var newSimpleLayout = Activator.CreateInstance(_simpleLayoutType!, new object[] { @"${mdc:item=" + $"{attribute}" + "}" })!;
+            var newAttribute = Activator.CreateInstance(_jsonAttributeType!, new object[] { attribute, newSimpleLayout });
 
             layout.Attributes.Add(newAttribute);
         }

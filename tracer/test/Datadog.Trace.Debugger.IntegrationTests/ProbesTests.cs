@@ -293,6 +293,55 @@ public class ProbesTests : TestHelper
         }
     }
 
+#if NET462
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task ModuleUnloadInNetFramework462Test()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(ModuleUnloadTest));
+        var guidGenerator = new DeterministicGuidGenerator();
+
+        var probes = new[]
+        {
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 11), guidGenerator),
+            DebuggerTestHelper.CreateLogLineProbe(typeof(Samples.Probes.Unreferenced.External.ExternalTest), new LogLineProbeTestDataAttribute(lineNumber: 12), guidGenerator),
+        };
+
+        var expectedNumberOfSnapshots = probes.Length;
+
+        using var agent = EnvironmentHelper.GetMockAgent();
+        SetDebuggerEnvironment(agent);
+        using var logEntryWatcher = CreateLogEntryWatcher();
+        using var sample = DebuggerTestHelper.StartSample(this, agent, testDescription.TestType.FullName);
+        try
+        {
+            await sample.RunCodeSample();
+
+            Assert.True(await agent.WaitForNoSnapshots(), $"Expected 0 snapshots. Actual: {agent.Snapshots.Count}.");
+
+            SetProbeConfiguration(agent, probes);
+
+            await logEntryWatcher.WaitForLogEntry(AddedProbesInstrumentedLogEntry);
+
+            await sample.RunCodeSample();
+
+            var statuses = await agent.WaitForProbesStatuses(probes.Length);
+            Assert.Equal(probes.Length, statuses?.Length);
+
+            await ApproveStatuses(statuses, testDescription, isMultiPhase: false, phaseNumber: 1);
+
+            var snapshots = await agent.WaitForSnapshots(expectedNumberOfSnapshots);
+            Assert.Equal(expectedNumberOfSnapshots, snapshots?.Length);
+            await ApproveSnapshots(snapshots, testDescription, isMultiPhase: false, phaseNumber: 1);
+        }
+        finally
+        {
+            await sample.StopSample();
+        }
+    }
+#endif
+
     [SkippableTheory]
     [Trait("Category", "EndToEnd")]
     [Trait("RunOnWindows", "True")]
@@ -353,10 +402,10 @@ public class ProbesTests : TestHelper
 
 #endif
 
-    private static LogEntryWatcher CreateLogEntryWatcher()
+    private LogEntryWatcher CreateLogEntryWatcher()
     {
         string processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Probes";
-        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*");
+        return new LogEntryWatcher($"dotnet-tracer-managed-{processName}*", LogDirectory);
     }
 
     private async Task RunMethodProbeTests(ProbeTestDescription testDescription, bool useStatsD)
@@ -482,7 +531,6 @@ public class ProbesTests : TestHelper
         }
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{40}"), "GUID");
         settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
         settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
         var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -524,7 +572,6 @@ public class ProbesTests : TestHelper
             const string spanProbeOperationName = "dd.dynamic.span";
 
             var settings = VerifyHelper.GetSpanVerifierSettings();
-            settings.AddRegexScrubber(new Regex("[a-zA-Z0-9]{32}"), "GUID");
             settings.AddSimpleScrubber("out.host: localhost", "out.host: debugger");
             settings.AddSimpleScrubber("out.host: mysql_arm64", "out.host: debugger");
             var testName = isMultiPhase ? $"{testDescription.TestType.Name}_#{phaseNumber}." : testDescription.TestType.Name;
@@ -700,6 +747,11 @@ public class ProbesTests : TestHelper
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
+        foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
+        {
+            settings.AddRegexScrubber(regexPattern, replacement);
+        }
+
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(

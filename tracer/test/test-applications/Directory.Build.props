@@ -1,8 +1,8 @@
 <Project>
   <PropertyGroup>
     <!-- only run .NET Framework tests on Windows -->
-    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net462;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
-    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' == 'Windows_NT'">net462;netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
+    <TargetFrameworks Condition="'$(OS)' != 'Windows_NT'">netcoreapp2.1;netcoreapp3.0;netcoreapp3.1;net5.0;net6.0;net7.0;net8.0</TargetFrameworks>
 
     <OutputType>Exe</OutputType>
     <LangVersion>latest</LangVersion>
@@ -18,6 +18,8 @@
     <DefineConstants Condition="'$(TestAllPackageVersions)'=='true' AND '$(IncludeMinorPackageVersions)'=='true'">$(DefineConstants);TEST_ALL_MINOR_PACKAGE_VERSIONS</DefineConstants>
     <!-- Hide warnings for EOL .NET Core targets (e.g. netcoreapp3.0) -->
     <CheckEolTargetFramework>false</CheckEolTargetFramework>
+    <!-- Stop NuGet from complaining about vulnerable packages -->
+    <NuGetAudit>false</NuGetAudit>
 
     <!-- WebClient is obsolete -->
     <NoWarn>SYSLIB0014</NoWarn>

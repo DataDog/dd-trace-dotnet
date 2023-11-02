@@ -42,26 +42,26 @@ async Task RunStandardPipelineScenario()
 
     Console.WriteLine($"Creating consumers...");
     var consumer1 = Consumer.Create(topic1, "consumer-1", HandleAndProduceToTopic2);
-    var consumer2 = Consumer.Create(topic2, "consumer-2", HandleAndProduceToTopic3);
-    var consumer3 = Consumer.Create(topic3, "consumer-3", HandleTopic3);
+    var consumer2 = Consumer.Create(topic2, "consumer-2", HandleAndProduceToTopic3, false);
+    var consumer3 = Consumer.Create(topic3, "consumer-3", HandleTopic3, false);
 
     Console.WriteLine("Starting consumers...");
     var cts = new CancellationTokenSource();
     var consumeTasks = new Task[3];
     consumeTasks[0] = Task.Run(() => consumer1.Consume(cts.Token));
-    consumeTasks[1] = Task.Run(() => consumer2.Consume(cts.Token));
-    consumeTasks[2] = Task.Run(() => consumer3.Consume(cts.Token));
+    consumeTasks[1] = Task.Run(() => consumer2.ConsumeWithExplicitCommit(1, cts.Token));
+    consumeTasks[2] = Task.Run(() => consumer3.ConsumeWithExplicitCommit(1, cts.Token, true));
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
-    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false);
-    Producer.Produce(topic2, numMessages: 3, config, handleDelivery: true, isTombstone: false);
+    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: false, isTombstone: false, explicitPartitions: true);
+    await Producer.ProduceAsync(topic2, numMessages: 3, config, isTombstone: false, explicitPartitions: true);
     LogWithTime("Finished producing messages");
 
     // Wait for all messages to be consumed
     // This assumes that the topics all start empty, and ultimately 6 messages end up consumed from topic 3
     Console.WriteLine($"Waiting for final consumption...");
-    var deadline = DateTime.UtcNow.AddSeconds(30);
+    var deadline = DateTime.UtcNow.AddSeconds(180);
     while (true)
     {
         var consumed = Volatile.Read(ref topic3ConsumeCount);
@@ -115,7 +115,7 @@ async Task RunStandardPipelineScenario()
         Handle(consumeResult);
 
         Console.WriteLine($"Producing to {produceToTopic}");
-        Producer.Produce(produceToTopic, numMessages: 1, config, handleDelivery: true, isTombstone: false);
+        Producer.Produce(produceToTopic, numMessages: 1, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
     }
 }
 
@@ -153,7 +153,7 @@ async Task RunFanInAndOutScenario()
     LogWithTime("Finished starting consumers");
 
     Console.WriteLine($"Producing messages");
-    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false);
+    Producer.Produce(topic1, numMessages: 3, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
     LogWithTime("Finished producing messages");
 
     // Wait for all messages to be consumed
@@ -178,6 +178,8 @@ async Task RunFanInAndOutScenario()
         await Task.Delay(1000);
     }
 
+    // give some time to autocommit offsets
+    await Task.Delay(100);
     LogWithTime("Finished waiting for messages");
 
     Console.WriteLine($"Waiting for graceful exit...");
@@ -220,7 +222,7 @@ async Task RunFanInAndOutScenario()
             }
             
             Console.WriteLine($"Producing to {topic2} x2");
-            Producer.Produce(topic2, numMessages: 2, config, handleDelivery: true, isTombstone: false);
+            Producer.Produce(topic2, numMessages: 2, config, handleDelivery: true, isTombstone: false, explicitPartitions: true);
             foreach (var scope in scopes)
             {
                 scope.Dispose();

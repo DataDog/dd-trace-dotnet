@@ -137,14 +137,11 @@ namespace Datadog.Trace
             telemetry ??= CreateTelemetryController(settings, discoveryService);
             telemetry.RecordTracerSettings(settings, defaultServiceName);
 
-            var security = Security.Instance;
-            telemetry.RecordSecuritySettings(security.Settings);
-            TelemetryFactory.Metrics.SetWafVersion(security.DdlibWafVersion);
-            telemetry.RecordIastSettings(Datadog.Trace.Iast.Iast.Instance.Settings);
-            ErrorData? initError = !string.IsNullOrEmpty(security.InitializationError)
-                                       ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, security.InitializationError)
+            TelemetryFactory.Metrics.SetWafVersion(Security.Instance.DdlibWafVersion);
+            ErrorData? initError = !string.IsNullOrEmpty(Security.Instance.InitializationError)
+                                       ? new ErrorData(TelemetryErrorCode.AppsecConfigurationError, Security.Instance.InitializationError)
                                        : null;
-            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: security.Enabled, initError);
+            telemetry.ProductChanged(TelemetryProductType.AppSec, enabled: Security.Instance.Enabled, initError);
 
             var profiler = Profiler.Instance;
             telemetry.RecordProfilerSettings(profiler);

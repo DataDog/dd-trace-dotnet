@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading;
+using Datadog.Trace.Tools.Shared.Windows;
 
 namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 {
@@ -126,6 +127,26 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS
 
                     result.Add($"{siteName}{application.GetStringProperty("path")}");
                 }
+            }
+
+            return result;
+        }
+
+        public IReadOnlyDictionary<string, string> GetDefaultEnvironmentVariables()
+        {
+            var result = new Dictionary<string, string>();
+
+            using var applicationPoolsSection = _appHostAdminManager.GetAdminSection("system.applicationHost/applicationPools", "MACHINE/WEBROOT/APPHOST");
+            using var applicationPoolDefaults = applicationPoolsSection.GetElementByName("applicationPoolDefaults");
+            using var environmentVariables = applicationPoolDefaults.GetElementByName("environmentVariables");
+
+            using var collection = environmentVariables.Collection();
+            var count = collection.Count();
+
+            for (int i = 0; i < count; i++)
+            {
+                using var item = collection.GetItem(i);
+                result.Add(item.GetStringProperty("name"), item.GetStringProperty("value"));
             }
 
             return result;

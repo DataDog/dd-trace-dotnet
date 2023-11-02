@@ -3,13 +3,16 @@
     "Samples.Kafka": {
       "commandName": "Project",
       "environmentVariables": {
-        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
+        "DD_TRACE_ENABLED": "1",
+        "DD_PROFILING_ENABLED": "1",
+        "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared/bin/monitoring-home",
         "COR_ENABLE_PROFILING": "1",
         "CORECLR_ENABLE_PROFILING": "1",
-        "COR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
+        "COR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
         "CORECLR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
-        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared\\bin\\monitoring-home\\win-$(Platform)\\Datadog.Trace.ClrProfiler.Native.dll",
-        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}"
+        "CORECLR_PROFILER_PATH": "$(SolutionDir)shared/bin/monitoring-home/osx/Datadog.Trace.ClrProfiler.Native.dylib",
+        "COR_PROFILER": "{846F5F1C-F9AE-4B07-969E-05C26BC060D8}",
+        "DD_TRACE_DEBUG": "1"
       },
       "nativeDebugging": true
     }

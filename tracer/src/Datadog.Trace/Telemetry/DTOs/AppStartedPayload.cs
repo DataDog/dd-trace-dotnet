@@ -4,29 +4,17 @@
 // </copyright>
 
 #nullable enable
-
 using System.Collections.Generic;
 
-namespace Datadog.Trace.Telemetry
+namespace Datadog.Trace.Telemetry;
+
+internal class AppStartedPayload : IPayload
 {
-    internal class AppStartedPayload : IPayload
-    {
-        public AppStartedPayload(
-            ICollection<IntegrationTelemetryData>? integrations,
-            ICollection<DependencyTelemetryData>? dependencies,
-            ICollection<TelemetryValue> configuration)
-        {
-            Integrations = integrations;
-            Dependencies = dependencies;
-            Configuration = configuration;
-        }
+    public ProductsData? Products { get; set; }
 
-        public ICollection<IntegrationTelemetryData>? Integrations { get; set; }
+    public ICollection<ConfigurationKeyValue>? Configuration { get; set; }
 
-        public ICollection<DependencyTelemetryData>? Dependencies { get; set; }
+    public ErrorData? Error { get; set; }
 
-        public ICollection<TelemetryValue>? Configuration { get; set; }
-
-        public ICollection<TelemetryValue>? AdditionalPayload { get; set; }
-    }
+    public ICollection<TelemetryValue>? AdditionalPayload { get; set; }
 }

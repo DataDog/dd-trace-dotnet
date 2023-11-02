@@ -4,6 +4,7 @@
 // </copyright>
 
 using System;
+using System.Runtime.CompilerServices;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.ExtensionMethods
@@ -128,6 +129,11 @@ namespace Datadog.Trace.ExtensionMethods
 
             normalizedTagName = StringBuilderCache.GetStringAndRelease(sb);
             return true;
+        }
+
+        public static string SanitizeNulls(this string txt)
+        {
+            return txt?.Replace("\0", string.Empty);
         }
     }
 }

@@ -66,10 +66,10 @@ std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(
 {
 #ifdef BIT64
     static_assert(8 * sizeof(void*) == 64);
-    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows64BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
 #else
     assert(8 * sizeof(void*) == 32);
-    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo);
+    return std::make_unique<Windows32BitStackFramesCollector>(pCorProfilerInfo, pConfiguration);
 #endif
 }
 

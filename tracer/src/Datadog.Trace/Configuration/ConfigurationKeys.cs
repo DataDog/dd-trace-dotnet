@@ -366,7 +366,8 @@ namespace Datadog.Trace.Configuration
 
         /// <summary>
         /// Configuration key for specifying a custom regex to obfuscate query strings.
-        /// Default value is in TracerSettings
+        /// Default value is in TracerSettingsConstants
+        ///  WARNING: This regex cause crashes under netcoreapp2.1 / linux / arm64, dont use on manual instrumentation in this environment
         /// </summary>
         /// <seealso cref="TracerSettings.ObfuscationQueryStringRegex"/>
         public const string ObfuscationQueryStringRegex = "DD_TRACE_OBFUSCATION_QUERY_STRING_REGEXP";
@@ -681,14 +682,8 @@ namespace Datadog.Trace.Configuration
             public const string MetricsEnabled = "DD_TELEMETRY_METRICS_ENABLED";
 
             /// <summary>
-            /// Configuration key for whether to enable v2 of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
-            /// </summary>
-            public const string V2Enabled = "DD_INTERNAL_TELEMETRY_V2_ENABLED";
-
-            /// <summary>
             /// Configuration key for whether to enable debug mode of telemetry.
-            /// <see cref="TelemetrySettings.V2Enabled"/>
+            /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
         }

@@ -1,13 +1,18 @@
-﻿ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
+﻿# To build this file locally, starting from the root directory:
+# cd tracer/build/_build/docker/gitlab
+# docker build -f gitlab.windows.dockerfile --tag datadog/dd-trace-dotnet-docker-build:latest .
+# docker push datadog/dd-trace-dotnet-docker-build:latest
+
+ARG BASE_IMAGE=mcr.microsoft.com/dotnet/framework/runtime:4.8-windowsservercore-ltsc2019
 FROM ${BASE_IMAGE}
 SHELL ["powershell", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 
 USER ContainerAdministrator
 
 # VS Build tool link found from https://learn.microsoft.com/en-gb/visualstudio/releases/2022/release-history#release-dates-and-build-numbers
-ENV VSBUILDTOOLS_VERSION="17.4.33110.190" \
-    VSBUILDTOOLS_SHA256="FABDA7E422ADA90C229262A4447C08933EC5BF66A9F38129CD19490EEA2DD180" \
-    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/2160190b-bb01-4670-9492-34da461fa0c9/fabda7e422ada90c229262a4447c08933ec5bf66a9f38129cd19490eea2dd180/vs_BuildTools.exe" \
+ENV VSBUILDTOOLS_VERSION="17.7.34221.43" \
+    VSBUILDTOOLS_SHA256="59B6DA403AFE6892D4531ADB5C58DC52BFF5DB1E2173477AD7F9CF4B2C490277" \
+    VSBUILDTOOLS_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/ebbb3a8f-0b8f-4c9d-ac08-5e244e84b4fe/59b6da403afe6892d4531adb5c58dc52bff5db1e2173477ad7f9cf4b2c490277/vs_BuildTools.exe" \
     VSBUILDTOOLS_INSTALL_ROOT="c:\devtools\vstudio"
 
 # Install VS
@@ -23,11 +28,11 @@ RUN Powershell -Command .\install_net35.ps1
 COPY install_wix.ps1 .
 RUN powershell -Command .\install_wix.ps1 -Version $ENV:WIX_VERSION -Sha256 $ENV:WIX_SHA256
 
-# Install .NET 7
+# Install .NET 8
 # To find these links, visit https://dotnet.microsoft.com/en-us/download, click the Windows, x64 installer, and grab the download url + SHA512 hash
-ENV DOTNET_VERSION="7.0.306" \
-    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/4c0aaf08-3fa1-4fa0-8435-73b85eee4b32/e8264b3530b03b74b04ecfcf1666fe93/dotnet-sdk-7.0.306-win-x64.exe" \
-    DOTNET_SHA512="29f99b73727fd4ddf3d2d7ddde4f4175c291a4626e474c28d804383e7cdca7ff3ccc91ebf421eb9ee3b167744347a1ddf2bf163a4e34d29d923c5885fc1e10a1"
+ENV DOTNET_VERSION="8.0.100-rc.2.23502.2" \
+    DOTNET_DOWNLOAD_URL="https://download.visualstudio.microsoft.com/download/pr/92e8b771-8624-48a6-9ffc-9fda1f301fb4/85b45cdf39b2a773fbf8d5d71c3d4774/dotnet-sdk-8.0.100-rc.2.23502.2-win-x64.exe" \
+    DOTNET_SHA512="f4c4ebdaa684b2f7cee1b0034749dcde2a6c8b9a5e45fe4b6f1ff4c918367b6e59d23ec1f70a2db3a7ec9867f85507615aa0467a35406b08ed925ec5abf4b49a"
 
 COPY install_dotnet.ps1 .
 RUN powershell -Command .\install_dotnet.ps1  -Version $ENV:DOTNET_VERSION -Sha512 $ENV:DOTNET_SHA512 $ENV:DOTNET_DOWNLOAD_URL
@@ -43,13 +48,11 @@ ENV PYTHON_VERSION "3.8.2"
 COPY install_python3.ps1 .
 RUN powershell -Command .\install_python3.ps1 -Version $ENV:PYTHON_VERSION
 
-COPY requirements.txt .
-COPY install_python_packages.ps1 .
+COPY requirements.txt constraints.txt install_python_packages.ps1 ./
 RUN powershell -Command .\install_python_packages.ps1
 
 # Install JAVA
-COPY helpers.ps1 .
-COPY install_java.ps1 .
+COPY helpers.ps1 install_java.ps1 ./
 RUN powershell -Command .\install_java.ps1
 
 # Install 

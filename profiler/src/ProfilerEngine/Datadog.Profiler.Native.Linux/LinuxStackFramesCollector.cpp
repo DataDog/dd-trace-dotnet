@@ -9,8 +9,8 @@
 #include <iomanip>
 #include <libunwind.h>
 #include <mutex>
+#include <ucontext.h>
 #include <unordered_map>
-#include <errno.h>
 
 #include "IConfiguration.h"
 #include "Log.h"
@@ -26,6 +26,7 @@ std::mutex LinuxStackFramesCollector::s_stackWalkInProgressMutex;
 LinuxStackFramesCollector* LinuxStackFramesCollector::s_pInstanceCurrentlyStackWalking = nullptr;
 
 LinuxStackFramesCollector::LinuxStackFramesCollector(ProfilerSignalManager* signalManager, IConfiguration const* const configuration) :
+    StackFramesCollectorBase(configuration),
     _lastStackWalkErrorCode{0},
     _stackWalkFinished{false},
     _errorStatistics{},
@@ -123,7 +124,8 @@ StackSnapshotResultBuffer* LinuxStackFramesCollector::CollectStackSampleImplemen
 
             if (status == std::cv_status::timeout)
             {
-                _lastStackWalkErrorCode = E_ABORT;;
+                _lastStackWalkErrorCode = E_ABORT;
+                ;
                 if (!_signalManager->CheckSignalHandler())
                 {
                     _lastStackWalkErrorCode = E_FAIL;
@@ -276,8 +278,25 @@ void LinuxStackFramesCollector::MarkAsInterrupted()
     }
 }
 
+bool IsInSigSegvHandler(void* context)
+{
+    auto* ctx = reinterpret_cast<ucontext_t*>(context);
+
+    // If SIGSEGV is part of the sigmask set, it means that the thread was executing
+    // the SIGSEGV signal handler (or someone blocks SIGSEGV signal for this thread,
+    // but that less likely)
+    return sigismember(&(ctx->uc_sigmask), SIGSEGV) == 1;
+}
+
 bool LinuxStackFramesCollector::CollectStackSampleSignalHandler(int signal, siginfo_t* info, void* context)
 {
+    // This is a workaround to prevent libunwind from unwind 2 signal frames and potentially crashing.
+    // Current crash occurs in libcoreclr.so, while reading the Elf header.
+    if (IsInSigSegvHandler(context))
+    {
+        return false;
+    }
+
     // Libunwind can overwrite the value of errno - save it beforehand and restore it at the end
     auto oldErrno = errno;
 

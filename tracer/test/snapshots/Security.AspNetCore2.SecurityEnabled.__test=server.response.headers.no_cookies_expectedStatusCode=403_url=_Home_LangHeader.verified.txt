@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -29,6 +29,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -74,6 +76,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -119,6 +123,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -164,6 +170,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -209,6 +217,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"tst-037-009","name":"Test block on response header","tags":{"category":"attack_attempt","type":"lfi"}},"rule_matches":[{"operator":"match_regex","operator_value":"en-us|krypton","parameters":[{"address":"server.response.headers.no_cookies","highlight":["krypton"],"key_path":["content-language","0"],"value":"krypton"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet

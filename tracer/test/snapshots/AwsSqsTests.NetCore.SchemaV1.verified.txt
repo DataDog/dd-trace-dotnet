@@ -9,6 +9,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -43,6 +45,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -70,6 +74,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -91,6 +97,8 @@
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -112,6 +120,8 @@
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -133,6 +143,8 @@
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -154,6 +166,8 @@
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -175,6 +189,8 @@
       out.host: aws_sqs,
       peer.service: aws_sqs,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -202,6 +218,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -228,7 +246,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -255,6 +275,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -282,6 +304,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -308,7 +332,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -335,6 +361,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -362,6 +390,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -388,7 +418,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -415,6 +447,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -442,6 +476,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -468,7 +504,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -495,6 +533,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -522,6 +562,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -549,6 +591,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -575,7 +619,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -602,6 +648,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -628,7 +676,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue,
       language: dotnet,
       queuename: MyAsyncSQSQueue,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -655,6 +705,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -682,6 +734,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -709,6 +763,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: producer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -735,7 +791,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -762,6 +820,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -788,7 +848,9 @@
       http.url: http://localhost:00000/000000000000/MyAsyncSQSQueue2,
       language: dotnet,
       queuename: MyAsyncSQSQueue2,
-      span.kind: consumer
+      span.kind: consumer,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     }
   },
   {
@@ -815,6 +877,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -842,6 +906,8 @@
       peer.service: MyAsyncSQSQueue,
       queuename: MyAsyncSQSQueue,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   },
@@ -869,6 +935,8 @@
       peer.service: MyAsyncSQSQueue2,
       queuename: MyAsyncSQSQueue2,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: queuename
     }
   }

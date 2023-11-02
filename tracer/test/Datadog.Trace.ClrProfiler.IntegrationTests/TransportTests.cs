@@ -36,18 +36,18 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #if !NETCOREAPP3_1_OR_GREATER
                 .Where(x => x != TracesTransportType.UnixDomainSocket)
 #endif
-                .SelectMany(x => new[] { new object[] { x, true }, new object[] { x, false } });
+                .Select(x => new object[] { x });
 
         [SkippableTheory]
         [MemberData(nameof(Data))]
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        public async Task TransportsWorkCorrectly(Enum transport, bool useV2Telemetry)
+        public async Task TransportsWorkCorrectly(Enum transport)
         {
             var transportType = (TracesTransportType)transport;
             if (transportType != TracesTransportType.WindowsNamedPipe)
             {
-                await RunTest(transportType, useV2Telemetry);
+                await RunTest(transportType);
                 return;
             }
 
@@ -58,7 +58,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 try
                 {
                     attemptsRemaining--;
-                    await RunTest(transportType, useV2Telemetry);
+                    await RunTest(transportType);
                     return;
                 }
                 catch (Exception ex) when (attemptsRemaining > 0 && ex is not SkipException)
@@ -68,7 +68,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private async Task RunTest(TracesTransportType transportType, bool useV2Telemetry)
+        private async Task RunTest(TracesTransportType transportType)
         {
             const int expectedSpanCount = 1;
 
@@ -79,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             EnvironmentHelper.EnableTransport(GetTransport(transportType));
 
-            using var telemetry = this.ConfigureTelemetry(useV2Telemetry);
+            using var telemetry = this.ConfigureTelemetry();
             using var agent = GetAgent(transportType);
             agent.Output = Output;
 

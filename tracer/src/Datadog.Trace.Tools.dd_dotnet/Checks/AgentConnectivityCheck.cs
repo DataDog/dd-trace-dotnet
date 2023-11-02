@@ -20,9 +20,12 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 {
     internal class AgentConnectivityCheck
     {
-        public static Task<bool> RunAsync(ProcessInfo process)
+        public static Task<bool> RunAsync(IConfigurationSource? configurationSource)
         {
-            var settings = new ExporterSettings(process.Configuration);
+            AnsiConsole.WriteLine();
+            AnsiConsole.WriteLine(DdAgentChecks);
+
+            var settings = new ExporterSettings(configurationSource);
 
             var url = settings.AgentUri.ToString();
 

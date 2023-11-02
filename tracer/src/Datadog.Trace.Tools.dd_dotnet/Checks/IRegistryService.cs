@@ -3,8 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-#nullable enable
-
 namespace Datadog.Trace.Tools.dd_dotnet.Checks
 {
     internal interface IRegistryService
@@ -12,5 +10,9 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
         string[] GetLocalMachineValueNames(string key);
 
         string? GetLocalMachineValue(string key);
+
+        string[] GetLocalMachineKeyNames(string key);
+
+        string? GetLocalMachineKeyNameValue(string key, string subKeyName, string name);
     }
 }

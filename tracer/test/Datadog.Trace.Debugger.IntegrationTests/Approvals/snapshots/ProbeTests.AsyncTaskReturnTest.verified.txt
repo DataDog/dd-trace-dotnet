@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -46,8 +46,8 @@
                     "value": "Room"
                   }
                 ],
-                "type": "List`1",
-                "value": "count: 2"
+                "size": 2,
+                "type": "List`1"
               }
             }
           },
@@ -110,8 +110,8 @@
                     "value": "Room"
                   }
                 ],
-                "type": "List`1",
-                "value": "count: 2"
+                "size": 2,
+                "type": "List`1"
               }
             }
           }
@@ -124,7 +124,8 @@
           "location": {
             "method": "Method",
             "type": "Samples.Probes.TestRuns.SmokeTests.AsyncTaskReturnTest"
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

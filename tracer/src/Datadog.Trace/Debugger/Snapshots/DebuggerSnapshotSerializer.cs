@@ -211,13 +211,14 @@ namespace Datadog.Trace.Debugger.Snapshots
         private static void WriteFieldsInternal(object source, JsonWriter jsonWriter, CancellationTokenSource cts, int currentDepth, IEnumerable<MemberInfo> fields, string fieldsObjectName)
         {
             int index = 0;
+            var isFieldCountReached = false;
             foreach (var field in fields)
             {
                 var fieldOrPropertyName = GetAutoPropertyOrFieldName(field.Name);
 
                 if (index >= _maximumNumberOfFieldsToCopy)
                 {
-                    WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount);
+                    isFieldCountReached = true;
                     break;
                 }
 
@@ -252,6 +253,11 @@ namespace Datadog.Trace.Debugger.Snapshots
             {
                 jsonWriter.WriteEndObject();
             }
+
+            if (isFieldCountReached)
+            {
+                WriteNotCapturedReason(jsonWriter, NotCapturedReason.fieldCount);
+            }
         }
 
         private static void SerializeEnumerable(
@@ -269,8 +275,8 @@ namespace Datadog.Trace.Debugger.Snapshots
                 {
                     jsonWriter.WritePropertyName("type");
                     jsonWriter.WriteValue(type.Name);
-                    jsonWriter.WritePropertyName("value");
-                    jsonWriter.WriteValue($"count: {collection.Count}");
+                    jsonWriter.WritePropertyName("size");
+                    jsonWriter.WriteValue(collection.Count);
                     jsonWriter.WritePropertyName(isDictionary ? "entries" : "elements");
                     jsonWriter.WriteStartArray();
 

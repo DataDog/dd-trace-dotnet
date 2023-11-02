@@ -34,7 +34,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         public DynamicConfigurationTests(ITestOutputHelper output)
             : base("Console", output)
         {
-            SetEnvironmentVariable(ConfigurationKeys.Telemetry.V2Enabled, "1");
             SetEnvironmentVariable(ConfigurationKeys.Telemetry.HeartbeatIntervalSeconds, "1");
             SetEnvironmentVariable(ConfigurationKeys.Rcm.PollInterval, "5");
             SetEnvironmentVariable(ConfigurationKeys.DebugEnabled, "1");
@@ -46,7 +45,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
             using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
 
             try
@@ -110,7 +109,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         {
             using var agent = EnvironmentHelper.GetMockAgent(useTelemetry: true);
             var processName = EnvironmentHelper.IsCoreClr() ? "dotnet" : "Samples.Console";
-            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*");
+            using var logEntryWatcher = new LogEntryWatcher($"{LogFileNamePrefix}{processName}*", LogDirectory);
 
             SetEnvironmentVariable("DD_TRACE_SAMPLE_RATE", "0.9");
             using var sample = StartSample(agent, "wait", string.Empty, aspNetCorePort: 5000);
@@ -145,11 +144,11 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             }
         }
 
-        private static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryWrapper wrapper)
+        private static IEnumerable<ConfigurationKeyValue> ExtractConfiguration(TelemetryData wrapper)
         {
             if (wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
             {
-                var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayloadV2>(TelemetryRequestTypes.AppClientConfigurationChanged);
+                var configurationChanged = wrapper.TryGetPayload<AppClientConfigurationChangedPayload>(TelemetryRequestTypes.AppClientConfigurationChanged);
                 return configurationChanged.Configuration;
             }
 
@@ -219,7 +218,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 foreach (var item in agent.Telemetry)
                 {
-                    if (ExtractConfiguration((TelemetryWrapper)item).Any(c => c.Origin == "remote_config"))
+                    if (ExtractConfiguration((TelemetryData)item).Any(c => c.Origin == "remote_config"))
                     {
                         return true;
                     }
@@ -256,7 +255,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             {
                 while (events.TryPop(out var obj))
                 {
-                    var wrapper = ((TelemetryWrapper)obj);
+                    var wrapper = ((TelemetryData)obj);
 
                     if (!wrapper.IsRequestType(TelemetryRequestTypes.AppClientConfigurationChanged))
                     {

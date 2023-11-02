@@ -1,7 +1,6 @@
 ﻿{
   local0: {
     fields: {
-      notCapturedReason: fieldCount,
       _numField1: {
         type: Int32,
         value: 1
@@ -83,6 +82,7 @@
         value: 9
       }
     },
+    notCapturedReason: fieldCount,
     type: ClassWithLotsOFields,
     value: ClassWithLotsOFields
   }

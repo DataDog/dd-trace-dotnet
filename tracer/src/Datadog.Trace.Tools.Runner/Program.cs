@@ -102,16 +102,7 @@ namespace Datadog.Trace.Tools.Runner
             ciCommand.AddCommand(new RunCiCommand(applicationContext));
             ciCommand.AddCommand(new CrankCommand());
 
-            var checkCommand = new Command("check");
-            builder.Command.AddCommand(checkCommand);
-
-            checkCommand.AddCommand(new CheckProcessCommand());
-            checkCommand.AddCommand(new CheckAgentCommand());
-
-            if (RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows))
-            {
-                checkCommand.AddCommand(new CheckIisCommand());
-            }
+            builder.Command.AddCommand(new CheckCommand(applicationContext));
 
             builder.Command.AddCommand(new RunCommand(applicationContext));
             builder.Command.AddCommand(new AotCommand { IsHidden = true });

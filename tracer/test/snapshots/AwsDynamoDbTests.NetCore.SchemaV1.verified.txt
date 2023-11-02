@@ -9,6 +9,8 @@
       env: integration_tests,
       language: dotnet,
       runtime-id: Guid_1,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -37,6 +39,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -62,6 +66,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -87,6 +93,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -112,6 +120,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -137,6 +147,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -162,6 +174,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -187,6 +201,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -212,6 +228,8 @@
       peer.service: MyTableName,
       span.kind: client,
       tablename: MyTableName,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: tablename
     }
   },
@@ -233,6 +251,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -254,6 +274,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -275,6 +297,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -296,6 +320,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -317,6 +343,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -338,6 +366,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -359,6 +389,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   },
@@ -380,6 +412,8 @@
       out.host: aws_dynamodb,
       peer.service: aws_dynamodb,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.peer.service.source: out.host
     }
   }

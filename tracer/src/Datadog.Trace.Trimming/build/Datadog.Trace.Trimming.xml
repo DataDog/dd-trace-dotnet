@@ -1,5 +1,6 @@
 <linker>
    <assembly fullname="AerospikeClient" />
+   <assembly fullname="Amazon.Lambda.RuntimeSupport" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.Kinesis" />
@@ -8,6 +9,7 @@
    <assembly fullname="Azure.Messaging.ServiceBus" />
    <assembly fullname="Confluent.Kafka" />
    <assembly fullname="Couchbase.NetClient" />
+   <assembly fullname="Datadog.Trace" />
    <assembly fullname="Elasticsearch.Net" />
    <assembly fullname="GraphQL" />
    <assembly fullname="GraphQL.SystemReactive" />

@@ -9,6 +9,7 @@ using System.Net;
 using System.Threading.Tasks;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
+using Datadog.Trace.Tools.Shared;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
@@ -46,7 +47,7 @@ public class AgentConnectivityCheckTests : ConsoleTestHelper
 
         processInfo.Should().NotBeNull();
 
-        _ = await AgentConnectivityCheck.RunAsync(processInfo!);
+        _ = await AgentConnectivityCheck.RunAsync(processInfo.ExtractConfigurationSource(null, null));
 
         console.Output.Should().Contain(DetectedAgentUrlFormat("http://fakeurl:7777/"));
     }
@@ -68,7 +69,7 @@ public class AgentConnectivityCheckTests : ConsoleTestHelper
 
         processInfo.Should().NotBeNull();
 
-        _ = await AgentConnectivityCheck.RunAsync(processInfo!);
+        _ = await AgentConnectivityCheck.RunAsync(processInfo.ExtractConfigurationSource(null, null));
 
         console.Output.Should().Contain(ConnectToEndpointFormat(url, "HTTP"));
     }
@@ -91,7 +92,7 @@ public class AgentConnectivityCheckTests : ConsoleTestHelper
 
         processInfo.Should().NotBeNull();
 
-        _ = await AgentConnectivityCheck.RunAsync(processInfo!);
+        _ = await AgentConnectivityCheck.RunAsync(processInfo.ExtractConfigurationSource(null, null));
 
         console.Output.Should().Contain(ConnectToEndpointFormat(uri.PathAndQuery, "domain sockets"));
     }

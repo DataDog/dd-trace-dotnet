@@ -11,10 +11,12 @@
 #include "ManagedThreadInfo.h"
 #include "StackSnapshotResultBuffer.h"
 
+class IConfiguration;
+
 class StackFramesCollectorBase
 {
 protected:
-    StackFramesCollectorBase();
+    StackFramesCollectorBase(IConfiguration const * _configuration);
 
     bool TryApplyTraceContextDataFromCurrentCollectionThreadToSnapshot();
     bool AddFrame(std::uintptr_t ip);
@@ -57,4 +59,8 @@ private:
     std::condition_variable _collectionAbortPerformedSignal;
     std::mutex _collectionAbortNotificationLock;
     bool _isRequestedCollectionAbortSuccessful;
+
+    // CI Visibility support
+    bool _isCIVisibilityEnabled;
+    uint64_t _ciVisibilitySpanId;
 };

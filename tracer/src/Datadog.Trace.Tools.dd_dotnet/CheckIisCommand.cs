@@ -8,13 +8,16 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.CommandLine.Parsing;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Runtime.Versioning;
 using System.Threading.Tasks;
 using Datadog.Trace.Tools.dd_dotnet.Checks;
 using Datadog.Trace.Tools.dd_dotnet.Checks.Windows.IIS;
+using Datadog.Trace.Tools.Shared;
 using Spectre.Console;
 
 using static Datadog.Trace.Tools.dd_dotnet.Checks.Resources;
@@ -93,12 +96,22 @@ internal class CheckIisCommand : Command
             return 1;
         }
 
+        using var pool = application.GetApplicationPool();
+
         if (pid == default)
         {
             // The WorkerProcess part of ServerManager doesn't seem to be compatible with IISExpress
             if (string.IsNullOrEmpty(applicationHostConfigurationPath))
             {
-                pid = application.GetWorkerProcess();
+                try
+                {
+                    pid = pool?.GetWorkerProcess() ?? 0;
+                }
+                catch (Win32Exception ex)
+                {
+                    Utils.WriteError(IisWorkerProcessError(Marshal.GetPInvokeErrorMessage(ex.NativeErrorCode)));
+                    return 1;
+                }
             }
             else
             {
@@ -127,15 +140,19 @@ internal class CheckIisCommand : Command
                 Utils.WriteWarning(ErrorExtractingConfiguration(ex.Message));
             }
 
-            var process = ProcessInfo.GetProcessInfo(pid, rootDirectory, appSettings);
+            ProcessInfo process;
 
-            if (process == null)
+            try
             {
-                Utils.WriteError(GetProcessError);
+                process = ProcessInfo.GetProcessInfo(pid);
+            }
+            catch (Exception ex)
+            {
+                Utils.WriteError(GetProcessError(ex.Message));
                 return 1;
             }
 
-            if (process.DotnetRuntime.HasFlag(ProcessInfo.Runtime.NetCore) && !string.IsNullOrEmpty(application.GetManagedRuntimeVersion()))
+            if (process.DotnetRuntime.HasFlag(ProcessInfo.Runtime.NetCore) && !string.IsNullOrEmpty(pool?.GetManagedRuntimeVersion()))
             {
                 Utils.WriteWarning(IisMixedRuntimes);
             }
@@ -178,21 +195,26 @@ internal class CheckIisCommand : Command
 
                 AnsiConsole.WriteLine(AspNetCoreProcessFound(aspnetCorePid.Value));
 
-                process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
-
-                if (process == null)
+                try
                 {
-                    Utils.WriteError(GetProcessError);
+                    process = ProcessInfo.GetProcessInfo(aspnetCorePid.Value);
+                }
+                catch (Exception ex)
+                {
+                    Utils.WriteError(GetProcessError(ex.Message));
                     return 1;
                 }
             }
 
             if (!ProcessBasicCheck.Run(process, registryService))
             {
+                CheckAppPoolsEnvVars(pool, serverManager);
                 return 1;
             }
 
-            if (!await AgentConnectivityCheck.RunAsync(process).ConfigureAwait(false))
+            var configurationSource = process.ExtractConfigurationSource(rootDirectory, appSettings);
+
+            if (!await AgentConnectivityCheck.RunAsync(configurationSource).ConfigureAwait(false))
             {
                 return 1;
             }
@@ -206,6 +228,74 @@ internal class CheckIisCommand : Command
         Utils.WriteSuccess(IisNoIssue);
 
         return 0;
+    }
+
+    internal static void CheckAppPoolsEnvVars(ApplicationPool? pool, IisManager? serverManager)
+    {
+        var relevantProfilerConfiguration = new Dictionary<string, string>
+        {
+            { "COR_ENABLE_PROFILING", "1" },
+            { "CORECLR_ENABLE_PROFILING", "1" },
+            { "COR_PROFILER", Utils.Profilerid },
+            { "CORECLR_PROFILER", Utils.Profilerid }
+        };
+
+        var relevantProfilerPathConfiguration = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "COR_PROFILER_PATH",
+            "COR_PROFILER_PATH_32",
+            "COR_PROFILER_PATH_64",
+            "CORECLR_PROFILER_PATH",
+            "CORECLR_PROFILER_PATH_32",
+            "CORECLR_PROFILER_PATH_64"
+        };
+
+        if (pool != null)
+        {
+            CheckEnvironmentVariables(pool.GetEnvironmentVariables(), relevantProfilerConfiguration, relevantProfilerPathConfiguration, pool.GetName());
+        }
+
+        if (serverManager != null)
+        {
+            var defaultEnvironmentVariables = serverManager.GetDefaultEnvironmentVariables();
+            if (defaultEnvironmentVariables != null)
+            {
+                CheckEnvironmentVariables(defaultEnvironmentVariables, relevantProfilerConfiguration, relevantProfilerPathConfiguration, "applicationPoolDefaults");
+            }
+        }
+    }
+
+    private static void CheckEnvironmentVariables(IReadOnlyDictionary<string, string> environmentVariablesCollection, Dictionary<string, string> relevantProfilerConfiguration, HashSet<string> relevantProfilerPathConfiguration, string poolName)
+    {
+        var foundVariables = new Dictionary<string, string>();
+        var foundPathVariables = new Dictionary<string, string>();
+
+        foreach (var (name, value) in environmentVariablesCollection)
+        {
+            if (relevantProfilerConfiguration.ContainsKey(name) && value != relevantProfilerConfiguration[name])
+            {
+                foundVariables[name] = value;
+            }
+            else if (relevantProfilerPathConfiguration.Contains(name) && !ProcessBasicCheck.IsExpectedProfilerFile(value))
+            {
+                foundPathVariables[name] = value;
+            }
+        }
+
+        if (foundVariables.Count != 0 || foundPathVariables.Count != 0)
+        {
+            AnsiConsole.WriteLine(AppPoolCheckFindings(poolName));
+
+            foreach (var variable in foundVariables)
+            {
+                Utils.WriteError(WrongEnvironmentVariableFormat(variable.Key, relevantProfilerConfiguration[variable.Key], variable.Value.ToString()));
+            }
+
+            foreach (var profilerPath in foundPathVariables)
+            {
+                Utils.WriteError(WrongProfilerEnvironment(profilerPath.Key, profilerPath.Value));
+            }
+        }
     }
 
     private void Validate(CommandResult commandResult)

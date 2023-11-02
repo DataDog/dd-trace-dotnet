@@ -2,7 +2,7 @@
 # Project definition
 # ******************************************************
 
-project("Datadog.Linux.ApiWrapper" VERSION 2.39.0)
+project("Datadog.Linux.ApiWrapper" VERSION 2.41.0)
 
 # ******************************************************
 # Compiler options
@@ -41,6 +41,7 @@ add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
 target_link_libraries(${API_WRAPPER_SHARED_LIB_NAME}
     -pthread
     -ldl
+    -Wl,--build-id
 )
 
 set_target_properties(${API_WRAPPER_SHARED_LIB_NAME} PROPERTIES PREFIX "")

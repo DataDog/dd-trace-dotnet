@@ -1,4 +1,4 @@
-﻿[
+[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -108,8 +108,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -217,8 +217,8 @@
                           "value": "Person"
                         }
                       ],
-                      "type": "List`1",
-                      "value": "count: 1"
+                      "size": 1,
+                      "type": "List`1"
                     },
                     "Id": {
                       "type": "Guid",
@@ -256,7 +256,8 @@
             "lines": [
               32
             ]
-          }
+          },
+          "version": 0
         },
         "stack": "ScrubbedValue",
         "timestamp": "ScrubbedValue"

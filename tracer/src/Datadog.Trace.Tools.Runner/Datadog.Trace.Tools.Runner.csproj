@@ -1,12 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.39.0</Version>
+    <Version>2.41.0</Version>
     <Title>Datadog APM Auto-instrumentation Runner</Title>
     <Copyright>Copyright 2020 Datadog, Inc.</Copyright>
     <Description>Auto-instrumentation dotnet global tool for Datadog APM</Description>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
+    <!-- When building standalone (see below) we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
+    <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;netcoreapp3.0;netcoreapp2.2;netcoreapp2.1;</TargetFrameworks>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <NoWarn>NU5100</NoWarn>
     <RootNamespace>Datadog.Trace.Tools.Runner</RootNamespace>
@@ -14,6 +15,7 @@
     <DebugSymbols>false</DebugSymbols>
     <DebugType>None</DebugType>
     <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
 
     <!-- Required for StrongNamer: https://github.com/dsplaisted/strongnamer/issues/61 -->
     <ErrorOnDuplicatePublishOutputFiles>False</ErrorOnDuplicatePublishOutputFiles>
@@ -25,6 +27,8 @@
   <Choose>
     <When Condition="'$(BuildStandalone)' == 'true'">
       <PropertyGroup>
+        <!-- When building standalone we have to exclude <netcoreapp3.1 from the targets otherwise the SDK has a fit -->
+        <TargetFrameworks>net8.0;net7.0;net6.0;net5.0;netcoreapp3.1;</TargetFrameworks>
         <OutputPath>bin\$(Configuration)\Console</OutputPath>
         <PublishDir Condition="'$(PublishDir)' == '' ">bin\$(Configuration)\Console\publish\$(RuntimeIdentifier)</PublishDir>
         <AssemblyName>dd-trace</AssemblyName>
@@ -32,6 +36,7 @@
         <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
         <PublishTrimmed>true</PublishTrimmed>
         <PublishSingleFile>true</PublishSingleFile>
+        <SelfContained>true</SelfContained>
         <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
       </PropertyGroup>
       <ItemGroup>
@@ -132,6 +137,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyGenerator\Datadog.InstrumentedAssemblyGenerator.csproj" />
     <ProjectReference Include="..\Datadog.InstrumentedAssemblyVerification\Datadog.InstrumentedAssemblyVerification.csproj" />
+    <ProjectReference Include="..\Datadog.Trace.Tools.Shared\Datadog.Trace.Tools.Shared.csproj" />
     <ProjectReference Include="..\Datadog.Trace\Datadog.Trace.csproj" />
     <ProjectReference Include="..\Datadog.Trace.Coverage.collector\Datadog.Trace.Coverage.collector.csproj" />
   </ItemGroup>

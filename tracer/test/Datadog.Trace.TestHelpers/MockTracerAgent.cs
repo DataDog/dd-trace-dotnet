@@ -86,7 +86,7 @@ namespace Datadog.Trace.TestHelpers
         public ConcurrentQueue<string> StatsdRequests { get; } = new();
 
         /// <summary>
-        /// Gets the <see cref="Datadog.Trace.Telemetry.TelemetryData"/> or <see cref="Datadog.Trace.Telemetry.TelemetryDataV2"/> requests received by the telemetry endpoint
+        /// Gets the wrapped <see cref="TelemetryData"/> requests received by the telemetry endpoint
         /// </summary>
         public ConcurrentStack<object> Telemetry { get; } = new();
 

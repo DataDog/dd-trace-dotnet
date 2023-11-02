@@ -1,4 +1,4 @@
-[
+﻿[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -30,6 +30,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent","0"],"value":"mistake not... acunetix-product"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -76,6 +78,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent","0"],"value":"mistake not... acunetix-product"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
@@ -122,6 +126,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-110","name":"Acunetix","tags":{"category":"attack_attempt","type":"commercial_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.headers.no_cookies","highlight":["acunetix-product"],"key_path":["user-agent","0"],"value":"mistake not... acunetix-product"}]}]}]},
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
       _dd.p.dm: -0,
       _dd.runtime_family: dotnet
