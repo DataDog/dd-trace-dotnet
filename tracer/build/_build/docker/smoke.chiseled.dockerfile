@@ -30,11 +30,14 @@ ENV ASPNETCORE_URLS=http://localhost:5000
 # from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
 ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-2.41.0.tar.gz /opt/datadog
 
-# Use the non-root user
-USER $APP_UID
+USER root
 
 # Copy the placeholder file to create the logs directory
-COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
+# THIS DOESN'T WORK, but SOMETHING like it hopefully will... so leaving as inspiration 
+COPY --chown=64198 --chmod=777 --from=builder /install /var/log/datadog/dotnet
+
+# Use the non-root user
+USER $APP_UID
 
 WORKDIR /app
 
