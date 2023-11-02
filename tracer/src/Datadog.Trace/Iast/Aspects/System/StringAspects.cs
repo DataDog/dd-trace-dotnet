@@ -415,7 +415,7 @@ public class StringAspects
     [AspectMethodReplace("System.String::Join(System.Char,System.Object[])")]
     public static string Join(char separator, object[] values)
     {
-        return OnStringJoin(string.Join(separator.ToString(), values), values);
+        return Join(separator.ToString(), values);
     }
 
     /// <summary>
@@ -476,7 +476,7 @@ public class StringAspects
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
     [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<System.String>)")]
-    public static string Join(string separator, IEnumerable values)
+    public static string JoinString(string separator, IEnumerable values)
     {
         if (values is null)
         {
@@ -503,7 +503,7 @@ public class StringAspects
     /// <param name="values"> values to join </param>
     /// <returns> Join result </returns>
     [AspectMethodReplace("System.String::Join(System.String,System.Collections.Generic.IEnumerable`1<!!0>)")]
-    public static string Join2(string separator, IEnumerable values)
+    public static string Join(string separator, IEnumerable values)
     {
         if (values is null)
         {
@@ -517,7 +517,6 @@ public class StringAspects
         }
 
         // We have a IEnumerable of structs or basic types. This is a corner case.
-
         try
         {
             valuesConverted = values.Cast<object>();
