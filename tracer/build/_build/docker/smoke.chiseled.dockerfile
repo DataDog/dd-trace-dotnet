@@ -18,13 +18,6 @@ FROM $RUNTIME_IMAGE AS publish
 
 WORKDIR /src
 
-# Add and extract the installer files to the expected location
-# from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
-ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-2.41.0.tar.gz /opt/datadog
-
-# Copy the placeholder file to create the logs directory
-COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
-
 # Set a random env var we should ignore
 ENV SUPER_SECRET_CANARY=MySuperSecretCanary
 
@@ -33,13 +26,20 @@ ENV DD_INTERNAL_WORKAROUND_77973_ENABLED=1
 
 ENV ASPNETCORE_URLS=http://localhost:5000
 
+# Add and extract the installer files to the expected location
+# from tracer/test/test-applications/regression/AspNetCoreSmokeTest/artifacts
+ADD ./test/test-applications/regression/AspNetCoreSmokeTest/artifacts/datadog-dotnet-apm-2.41.0.tar.gz /opt/datadog
+
+# Use the non-root user
+USER $APP_UID
+
+# Copy the placeholder file to create the logs directory
+COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
+
 WORKDIR /app
 
 # Copy the app across
 COPY --from=builder /src/publish /app/.
-
-# Use the non-root user
-USER $APP_UID
 
 # The final image, with "manual" configuration
 FROM publish as final
