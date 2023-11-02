@@ -34,7 +34,8 @@ USER root
 
 # Copy the placeholder file to create the logs directory
 # THIS DOESN'T WORK, but SOMETHING like it hopefully will... so leaving as inspiration 
-COPY --chown=64198 --chmod=777 --from=builder /install /var/log/datadog/dotnet
+#COPY --chown=64198 --chmod=777 --from=builder /install /var/log/datadog/dotnet
+COPY --from=builder /install/.placeholder /var/log/datadog/dotnet/.placeholder
 
 # Use the non-root user
 USER $APP_UID
