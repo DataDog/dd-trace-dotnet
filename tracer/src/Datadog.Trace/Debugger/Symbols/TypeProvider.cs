@@ -3,45 +3,33 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+using System.Text;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 
 namespace Datadog.Trace.Debugger.Symbols
 {
-    internal sealed class TypeProvider : ISignatureTypeProvider<TypeMock, int>
+    // very simple implementation of type provider
+    internal sealed class TypeProvider : ISignatureTypeProvider<string, int>
     {
-        public TypeMock GetSZArrayType(TypeMock elementType)
+        private readonly bool _includeResScope;
+
+        internal TypeProvider(bool includeResScope)
         {
-            return elementType;
+            _includeResScope = includeResScope;
         }
 
-        public TypeMock GetArrayType(TypeMock elementType, ArrayShape shape)
+        public string GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
         {
-            return new TypeMock($"{elementType}:{shape.Rank}");
+            return ParseTypeDefinition(reader, handle);
         }
 
-        public TypeMock GetByReferenceType(TypeMock elementType)
+        public string GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
         {
-            return elementType;
+            return ParseTypeReference(reader, handle, _includeResScope);
         }
 
-        public TypeMock GetGenericInstantiation(TypeMock genericType, ImmutableArray<TypeMock> typeArguments)
-        {
-            return new TypeMock($"{genericType}<{string.Join(", ", typeArguments)}>");
-        }
-
-        public TypeMock GetPointerType(TypeMock elementType)
-        {
-            return elementType;
-        }
-
-        public TypeMock GetPrimitiveType(PrimitiveTypeCode typeCode)
-        {
-            return new TypeMock(GetPrimitiveTypeName(typeCode));
-        }
-
-        private string GetPrimitiveTypeName(PrimitiveTypeCode typeCode)
+        public string GetPrimitiveType(PrimitiveTypeCode typeCode)
         {
             return typeCode switch
             {
@@ -68,126 +56,170 @@ namespace Datadog.Trace.Debugger.Symbols
             };
         }
 
-        public TypeMock GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle, byte rawTypeKind)
+        public string GetGenericInstantiation(string genericType, ImmutableArray<string> typeArguments)
         {
-            return GetTypeFromDefinition(reader, handle);
+            return $"{genericType}<{string.Join(", ", typeArguments)}>";
         }
 
-        public TypeMock GetTypeFromReference(MetadataReader reader, TypeReferenceHandle handle, byte rawTypeKind)
+        public string GetGenericMethodParameter(int genericContext, int index)
         {
-            return ParseTypeReference(reader, handle);
+            return $"!!{index}";
         }
 
-        public TypeMock GetFunctionPointerType(MethodSignature<TypeMock> signature)
+        public string GetGenericTypeParameter(int genericContext, int index)
         {
-            throw new NotImplementedException();
+            return $"!{index}";
         }
 
-        public TypeMock GetGenericMethodParameter(int genericContext, int index)
+        public string GetTypeFromSpecification(MetadataReader reader, int genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
         {
-            return new TypeMock($"!!{index}");
+            return reader.GetTypeSpecification(handle).DecodeSignature(this, genericContext);
         }
 
-        public TypeMock GetGenericTypeParameter(int genericContext, int index)
+        public string GetSZArrayType(string elementType)
         {
-            return new TypeMock($"!{index}");
+            return elementType + "[]";
         }
 
-        public TypeMock GetModifiedType(TypeMock modifier, TypeMock unmodifiedType, bool isRequired)
+        public string GetArrayType(string elementType, ArrayShape shape)
         {
-            var modName = isRequired ? "modreq" : "modopt";
-            return new TypeMock($"{unmodifiedType} {modName}({modifier})");
-        }
+            var builder = new StringBuilder();
 
-        public TypeMock GetPinnedType(TypeMock elementType)
-        {
-            throw new NotImplementedException();
-        }
+            builder.Append(elementType);
+            builder.Append('[');
 
-        public TypeMock GetTypeFromSpecification(MetadataReader reader, int genericContext, TypeSpecificationHandle handle, byte rawTypeKind)
-        {
-            return reader.GetTypeSpecification(handle).DecodeSignature(this, 0);
-        }
-
-        private static TypeMock GetTypeFromDefinition(MetadataReader reader, TypeDefinitionHandle handle)
-        {
-            var typeDef = reader.GetTypeDefinition(handle);
-            var name = reader.GetString(typeDef.Name);
-            var ns = typeDef.Namespace.IsNil ? null : reader.GetString(typeDef.Namespace);
-            TypeMock enclosing = null;
-            if (typeDef.IsNested)
+            for (int i = 0; i < shape.Rank; i++)
             {
-                enclosing = GetTypeFromDefinition(reader, typeDef.GetDeclaringType());
+                int lowerBound = 0;
+
+                if (i < shape.LowerBounds.Length)
+                {
+                    lowerBound = shape.LowerBounds[i];
+                    builder.Append(lowerBound);
+                }
+
+                builder.Append("...");
+
+                if (i < shape.Sizes.Length)
+                {
+                    builder.Append(lowerBound + shape.Sizes[i] - 1);
+                }
+
+                if (i < shape.Rank - 1)
+                {
+                    builder.Append(',');
+                }
             }
 
-            var typeName = ns != null ? $"{ns}.{name}" : name;
-
-            if (enclosing != null)
-            {
-                typeName = $"{enclosing}/{name}";
-            }
-
-            return new TypeMock(typeName);
+            builder.Append(']');
+            return builder.ToString();
         }
 
-        internal static TypeMock ParseTypeReference(MetadataReader reader, TypeReferenceHandle handle, bool includeResScope = false)
+        public string GetByReferenceType(string elementType)
         {
-            var typeRef = reader.GetTypeReference(handle);
-            var name = reader.GetString(typeRef.Name);
-            var nameSpace = typeRef.Namespace.IsNil ? null : reader.GetString(typeRef.Namespace);
-
-            var resScope = !includeResScope ? null : GetResolutionScope(reader, typeRef, nameSpace, name);
-
-            if (nameSpace == null)
-            {
-                return resScope == null ? new TypeMock($"{name}") : new TypeMock($"{resScope}{name}");
-            }
-
-            return resScope == null ? new TypeMock($"{nameSpace}.{name}") : new TypeMock($"{resScope}{nameSpace}.{name}");
+            return elementType + "&";
         }
 
-        private static TypeMock GetResolutionScope(MetadataReader reader, TypeReference typeRef, string nameSpace, string name)
+        public string GetPointerType(string elementType)
         {
-            TypeMock resScope;
-            // See II.22.38 in ECMA-335
-            if (typeRef.ResolutionScope.IsNil)
+            return elementType + "*";
+        }
+
+        public string GetFunctionPointerType(MethodSignature<string> signature)
+        {
+            var parameterTypes = signature.ParameterTypes;
+
+            var requiredParameterCount = signature.RequiredParameterCount;
+
+            var builder = new StringBuilder();
+            builder.Append("method ");
+            builder.Append(signature.ReturnType);
+            builder.Append(" *(");
+
+            int i;
+            for (i = 0; i < requiredParameterCount; i++)
             {
-               // exported/forwarded types
-               return null;
+                builder.Append(parameterTypes[i]);
+                if (i < parameterTypes.Length - 1)
+                {
+                    builder.Append(", ");
+                }
             }
 
-            switch (typeRef.ResolutionScope.Kind)
+            if (i < parameterTypes.Length)
             {
-                case HandleKind.AssemblyReference:
+                builder.Append("..., ");
+                for (; i < parameterTypes.Length; i++)
+                {
+                    builder.Append(parameterTypes[i]);
+                    if (i < parameterTypes.Length - 1)
                     {
-                        // Different assembly.
-                        var assemblyRef = reader.GetAssemblyReference((AssemblyReferenceHandle)typeRef.ResolutionScope);
-                        var assemblyName = reader.GetString(assemblyRef.Name);
-                        resScope = new TypeMock(assemblyName);
-                        break;
+                        builder.Append(", ");
                     }
+                }
+            }
+
+            builder.Append(')');
+            return builder.ToString();
+        }
+
+        public string GetModifiedType(string modifierType, string unmodifiedType, bool isRequired)
+        {
+            var mod = isRequired ? "modreq" : "modopt";
+            return $"{unmodifiedType} {mod}({modifierType})";
+        }
+
+        public string GetPinnedType(string elementType)
+        {
+            return elementType + " pinned";
+        }
+
+        internal static string ParseTypeReference(MetadataReader reader, TypeReferenceHandle handle, bool includeResScope)
+        {
+            var reference = reader.GetTypeReference(handle);
+            Handle scope = reference.ResolutionScope;
+
+            var name = reference.Namespace.IsNil
+                           ? reader.GetString(reference.Name)
+                           : reader.GetString(reference.Namespace) + "." + reader.GetString(reference.Name);
+
+            if (!includeResScope || reference.ResolutionScope.IsNil)
+            {
+                return name;
+            }
+
+            switch (scope.Kind)
+            {
+                case HandleKind.ModuleReference:
+                    return "[.module  " + reader.GetString(reader.GetModuleReference((ModuleReferenceHandle)scope).Name) + "]" + name;
+
+                case HandleKind.AssemblyReference:
+                    var assemblyReferenceHandle = (AssemblyReferenceHandle)scope;
+                    var assemblyReference = reader.GetAssemblyReference(assemblyReferenceHandle);
+                    return "[" + reader.GetString(assemblyReference.Name) + "]" + name;
 
                 case HandleKind.TypeReference:
-                    {
-                        // Nested type.
-                        var enclosingType = ParseTypeReference(reader, (TypeReferenceHandle)typeRef.ResolutionScope);
-                        resScope = new TypeMock(enclosingType.Name);
-                        break;
-                    }
-
-                case HandleKind.ModuleReference:
-                    {
-                        // Same-assembly-different-module
-                        return null;
-                    }
+                    return ParseTypeReference(reader, (TypeReferenceHandle)scope, true) + "/" + name;
 
                 default:
-                    // Edge cases not handled:
-                    // https://github.com/dotnet/runtime/blob/b2e5a89085fcd87e2fa9300b4bb00cd499c5845b/src/libraries/System.Reflection.Metadata/tests/Metadata/Decoding/DisassemblingTypeProvider.cs#L130-L132
-                    return null;
+                    return name;
+            }
+        }
+
+        internal static string ParseTypeDefinition(MetadataReader reader, TypeDefinitionHandle handle)
+        {
+            var typeDef = reader.GetTypeDefinition(handle);
+            var name = typeDef.Namespace.IsNil
+                           ? reader.GetString(typeDef.Name)
+                           : reader.GetString(typeDef.Namespace) + "." + reader.GetString(typeDef.Name);
+
+            if (!typeDef.IsNested)
+            {
+                return name;
             }
 
-            return resScope;
+            var enclosing = ParseTypeDefinition(reader, typeDef.GetDeclaringType());
+            return $"{enclosing}/{name}";
         }
     }
 }

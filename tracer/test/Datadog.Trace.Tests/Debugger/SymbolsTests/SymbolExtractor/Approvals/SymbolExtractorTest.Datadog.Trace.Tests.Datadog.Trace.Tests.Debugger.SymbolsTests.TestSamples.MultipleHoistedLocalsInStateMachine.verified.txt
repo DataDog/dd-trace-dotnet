@@ -12,9 +12,9 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.AsyncMethod",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleHoistedLocalsInStateMachine",
           "start_line": 14,
-          "end_line": 25,
+          "end_line": 36,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -23,45 +23,22 @@
           "scopes": [
             {
               "scope_type": "method",
-              "name": "GetTime",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+              "name": "DoAsyncWork",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocalsInStateMachine.cs",
               "start_line": 14,
-              "end_line": 25,
+              "end_line": 36,
               "language_specifics": {
-                "return_type": "System.Threading.Tasks.Task`1<System.Int32>",
+                "return_type": "System.Threading.Tasks.Task",
                 "start_column": 9,
-                "end_column": 18
+                "end_column": 10
               },
               "scopes": [
                 {
                   "scope_type": "closure",
-                  "name": "GetTime",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
-                  "start_line": 19,
-                  "end_line": 22,
-                  "language_specifics": {
-                    "access_modifiers": [
-                      "Assembly"
-                    ],
-                    "return_type": "System.Int32",
-                    "start_column": 17,
-                    "end_column": 18
-                  },
-                  "symbols": [
-                    {
-                      "name": "rand",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 19
-                    }
-                  ]
-                },
-                {
-                  "scope_type": "closure",
-                  "name": "GetTime",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                  "name": "DoAsyncWork",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocalsInStateMachine.cs",
                   "start_line": 14,
-                  "end_line": 25,
+                  "end_line": 36,
                   "language_specifics": {
                     "access_modifiers": [
                       "Private"
@@ -75,8 +52,26 @@
                   },
                   "symbols": [
                     {
-                      "name": "result",
+                      "name": "a",
                       "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    },
+                    {
+                      "name": "b",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    },
+                    {
+                      "name": "s",
+                      "type": "System.String",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    },
+                    {
+                      "name": "e",
+                      "type": "System.Exception",
                       "symbol_type": "local",
                       "line": 2147483647
                     }

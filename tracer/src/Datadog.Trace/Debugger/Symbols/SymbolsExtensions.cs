@@ -10,58 +10,55 @@ namespace Datadog.Trace.Debugger.Symbols;
 
 internal static class SymbolsExtensions
 {
-    public static bool IsHidden(this SymbolSequencePoint sq)
+    internal static bool IsHidden(this SymbolSequencePoint sq)
     {
         return sq is { Line: 0xFEEFEE, EndLine: 0xFEEFEE };
     }
 
-    public static string FullName(this TypeDefinition typeDef, MetadataReader metadataReader)
+    internal static string FullName(this TypeDefinitionHandle typeDefHandle, MetadataReader metadataReader)
     {
-        string @namespace = string.Empty;
-        string name = string.Empty;
-        if (!typeDef.Namespace.IsNil)
-        {
-            @namespace = metadataReader.GetString(typeDef.Namespace);
-        }
-
-        if (!typeDef.Name.IsNil)
-        {
-            name = metadataReader.GetString(typeDef.Name);
-        }
-
-        if (string.IsNullOrEmpty(@namespace))
-        {
-            return name;
-        }
-
-        return $"{@namespace}.{name}";
+        return TypeProvider.ParseTypeDefinition(metadataReader, typeDefHandle);
     }
 
-    public static string FullName(this TypeReference typeRef, MetadataReader metadataReader)
+    internal static string FullName(this TypeReferenceHandle typeRef, MetadataReader metadataReader, bool includeResolutionScope)
     {
-        string @namespace = string.Empty;
-        string name = string.Empty;
-        if (!typeRef.Namespace.IsNil)
-        {
-            @namespace = metadataReader.GetString(typeRef.Namespace);
-        }
-
-        if (!typeRef.Name.IsNil)
-        {
-            name = metadataReader.GetString(typeRef.Name);
-        }
-
-        if (string.IsNullOrEmpty(@namespace))
-        {
-            return name;
-        }
-
-        return $"{@namespace}.{name}";
+        return TypeProvider.ParseTypeReference(metadataReader, typeRef, includeResolutionScope);
     }
 
-    public static string FullName(this TypeSpecification typeSpec)
+    internal static string FullName(this TypeSpecificationHandle typeSpecHandle, MetadataReader metadataReader)
     {
-        var specSig = typeSpec.DecodeSignature(new TypeProvider(), 0);
-        return specSig.Name;
+        var typeSpec = metadataReader.GetTypeSpecification(typeSpecHandle);
+        return typeSpec.DecodeSignature(new TypeProvider(false), 0);
+    }
+
+    internal static string FullName(this EntityHandle handle, MetadataReader metadataReader)
+    {
+        if (handle.IsNil)
+        {
+            return "Unknown";
+        }
+
+        switch (handle)
+        {
+            case { Kind: HandleKind.TypeDefinition }:
+            {
+                return ((TypeDefinitionHandle)handle).FullName(metadataReader);
+            }
+
+            case { Kind: HandleKind.TypeReference }:
+            {
+                return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
+            }
+
+            case { Kind: HandleKind.TypeSpecification }:
+            {
+                return ((TypeSpecificationHandle)handle).FullName(metadataReader);
+            }
+
+            default:
+            {
+                return "Unknown";
+            }
+        }
     }
 }

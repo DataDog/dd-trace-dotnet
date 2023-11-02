@@ -34,14 +34,14 @@
               },
               "symbols": [
                 {
-                  "name": "numbers",
-                  "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
-                  "symbol_type": "local",
-                  "line": 16707566
-                },
-                {
                   "name": "rand",
                   "type": "System.Int32",
+                  "symbol_type": "local",
+                  "line": 14
+                },
+                {
+                  "name": "numbers",
+                  "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
                   "symbol_type": "local",
                   "line": 14
                 }

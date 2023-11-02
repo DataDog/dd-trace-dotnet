@@ -21,9 +21,9 @@ namespace Datadog.Trace.ClrProfiler.Managed.Tests
         {
             using var pdbReader = DatadogMetadataReader.CreatePdbReader(Assembly.GetExecutingAssembly());
 
-            var symbolMethod = pdbReader.GetMethodSequencePoints(MethodBase.GetCurrentMethod().MetadataToken);
+            var sequencePoints = pdbReader.GetMethodSequencePoints(MethodBase.GetCurrentMethod().MetadataToken);
 
-            symbolMethod.SequencePoints.First().Document.URL.Should().EndWith("PdbReaderTests.cs");
+            sequencePoints.First().URL.Should().EndWith("PdbReaderTests.cs");
         }
 
         [Fact]

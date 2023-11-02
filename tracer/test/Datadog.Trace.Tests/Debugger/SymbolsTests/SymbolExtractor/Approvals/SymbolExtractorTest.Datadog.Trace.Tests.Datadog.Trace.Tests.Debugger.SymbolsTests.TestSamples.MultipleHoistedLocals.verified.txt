@@ -12,9 +12,9 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.LambdaWithClosure",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleHoistedLocals",
           "start_line": 13,
-          "end_line": 23,
+          "end_line": 26,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -23,10 +23,10 @@
           "scopes": [
             {
               "scope_type": "method",
-              "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
+              "name": "HoistedLocals",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
               "start_line": 13,
-              "end_line": 23,
+              "end_line": 26,
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
@@ -34,8 +34,20 @@
               },
               "symbols": [
                 {
-                  "name": "rand",
+                  "name": "a",
                   "type": "System.Int32",
+                  "symbol_type": "local",
+                  "line": 13
+                },
+                {
+                  "name": "b",
+                  "type": "System.Int32",
+                  "symbol_type": "local",
+                  "line": 13
+                },
+                {
+                  "name": "s",
+                  "type": "System.String",
                   "symbol_type": "local",
                   "line": 13
                 },
@@ -49,10 +61,10 @@
               "scopes": [
                 {
                   "scope_type": "closure",
-                  "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithClosure.cs",
-                  "start_line": 17,
-                  "end_line": 20,
+                  "name": "HoistedLocals",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                  "start_line": 19,
+                  "end_line": 23,
                   "language_specifics": {
                     "access_modifiers": [
                       "Assembly"
@@ -63,10 +75,10 @@
                   },
                   "symbols": [
                     {
-                      "name": "s",
+                      "name": "c",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 17
+                      "line": 19
                     }
                   ]
                 }

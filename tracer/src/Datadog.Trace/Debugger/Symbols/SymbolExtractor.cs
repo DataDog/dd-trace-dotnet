@@ -21,11 +21,9 @@ namespace Datadog.Trace.Debugger.Symbols
     internal class SymbolExtractor : IDisposable
     {
         private readonly string _assemblyPath;
-        protected const string Unknown = "UNKNOWN";
         protected const int UnknownMethodStartLine = 0;
         protected const int UnknownMethodEndLine = 0;
         protected const int UnknownFieldAndArgLine = 0;
-        protected const int UnknownLocalLine = int.MaxValue;
         private const MethodAttributes StaticFinalVirtual = MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.Virtual;
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
         private readonly Dictionary<int, string> _methodAccess = new()
@@ -82,12 +80,12 @@ namespace Datadog.Trace.Debugger.Symbols
         internal Model.Scope GetAssemblySymbol()
         {
             var assemblyNameHandle = MetadataReader.GetAssemblyDefinition().Name;
-            var assemblyName = assemblyNameHandle.IsNil ? Unknown : MetadataReader.GetString(assemblyNameHandle);
+            var assemblyName = assemblyNameHandle.IsNil ? null : MetadataReader.GetString(assemblyNameHandle);
             var assemblyScope = new Model.Scope
             {
                 Name = assemblyName,
                 ScopeType = SymbolType.Assembly,
-                SourceFile = string.IsNullOrEmpty(_assemblyPath) ? Unknown : _assemblyPath,
+                SourceFile = string.IsNullOrEmpty(_assemblyPath) ? null : _assemblyPath,
             };
 
             return assemblyScope;
@@ -102,8 +100,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var typeDefinition = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
-                if (!TryGetClassSymbols(typeDefinition, out var classScope))
+                if (!TryGetClassSymbols(typeDefinitionHandle, out var classScope))
                 {
                     continue;
                 }
@@ -124,23 +121,24 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
-                if (!typeToExtract.Equals(type.FullName(MetadataReader)))
+                if (!typeToExtract.Equals(typeDefinitionHandle.FullName(MetadataReader)))
                 {
                     continue;
                 }
 
-                return TryGetClassSymbols(type, out var classScope) ? classScope : null;
+                return TryGetClassSymbols(typeDefinitionHandle, out var classScope) ? classScope : null;
             }
 
             return null;
         }
 
-        private bool TryGetClassSymbols(TypeDefinition type, [NotNullWhen(true)] out Model.Scope? classScope)
+        private bool TryGetClassSymbols(TypeDefinitionHandle typeDefinitionHandle, [NotNullWhen(true)] out Model.Scope? classScope)
         {
             classScope = null;
             Model.Symbol[]? fieldSymbols = null;
             Model.Scope[]? scopes = null;
+            var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
+
             try
             {
                 var fields = type.GetFields();
@@ -183,7 +181,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 var linesAndSource = GetClassSourcePdbInfo(allScopes);
                 classScope = new Model.Scope
                 {
-                    Name = type.FullName(MetadataReader),
+                    Name = typeDefinitionHandle.FullName(MetadataReader),
                     ScopeType = SymbolType.Class,
                     Symbols = fieldSymbols,
                     Scopes = allScopes,
@@ -198,14 +196,14 @@ namespace Datadog.Trace.Debugger.Symbols
                 string? typeName = null;
                 try
                 {
-                    typeName = type.FullName(MetadataReader);
+                    typeName = typeDefinitionHandle.FullName(MetadataReader);
                 }
                 catch
                 {
                     // ignored
                 }
 
-                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", typeName ?? Unknown);
+                Log.Warning(e, "Error while trying to extract symbol info for type {Type}", typeName ?? "NA");
                 return false;
             }
             finally
@@ -296,81 +294,18 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var nestedType = MetadataReader.GetTypeDefinition(typeHandle);
-
-                if (IsCompilerGeneratedAttributeDefined(nestedType.GetCustomAttributes()))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
                 {
                     continue;
                 }
 
-                if (!TryGetClassSymbols(nestedType, out var nestedClassScope))
+                if (!TryGetClassSymbols(typeHandle, out var nestedClassScope))
                 {
                     continue;
                 }
 
                 nestedClassScopes[index] = nestedClassScope.Value;
                 index++;
-            }
-        }
-
-        protected bool IsCompilerGeneratedAttributeDefined(CustomAttributeHandleCollection attributes)
-        {
-            const string compilerGeneratedAttributeName = "System.Runtime.CompilerServices.CompilerGeneratedAttribute";
-            foreach (var attributeHandle in attributes)
-            {
-                if (attributeHandle.IsNil)
-                {
-                    continue;
-                }
-
-                var attribute = MetadataReader.GetCustomAttribute(attributeHandle);
-                var attributeName = GetAttributeName(attribute);
-                if (attributeName?.Equals(compilerGeneratedAttributeName) == true)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        private string? GetAttributeName(CustomAttribute customAttribute)
-        {
-            var constructorHandle = customAttribute.Constructor;
-            if (constructorHandle.IsNil)
-            {
-                return null;
-            }
-
-            switch (constructorHandle.Kind)
-            {
-                case HandleKind.MemberReference:
-                    {
-                        var memberRef = MetadataReader.GetMemberReference((MemberReferenceHandle)constructorHandle);
-                        var attributeTypeHandle = memberRef.Parent;
-                        if (attributeTypeHandle.IsNil)
-                        {
-                            return null;
-                        }
-
-                        return GetTypeFullName(attributeTypeHandle);
-                    }
-
-                case HandleKind.MethodDefinition:
-                    {
-                        var constructorDefinition = MetadataReader.GetMethodDefinition((MethodDefinitionHandle)constructorHandle);
-                        var attributeTypeHandle = constructorDefinition.GetDeclaringType();
-                        if (attributeTypeHandle.IsNil)
-                        {
-                            return null;
-                        }
-
-                        var attributeType = MetadataReader.GetTypeDefinition(attributeTypeHandle);
-                        return attributeType.FullName(MetadataReader);
-                    }
-
-                default:
-                    return null;
             }
         }
 
@@ -397,12 +332,12 @@ namespace Datadog.Trace.Debugger.Symbols
             foreach (var fieldDefHandle in fieldsCollection)
             {
                 var fieldDef = MetadataReader.GetFieldDefinition(fieldDefHandle);
-                var fieldType = fieldDef.DecodeSignature(new TypeProvider(), 0);
+                var fieldTypeName = fieldDef.DecodeSignature(new TypeProvider(false), 0);
                 var fieldName = fieldDef.Name.IsNil ? null : MetadataReader.GetString(fieldDef.Name);
                 fieldSymbols[index] = new Symbol
                 {
                     Name = fieldName,
-                    Type = fieldType.Name,
+                    Type = fieldTypeName,
                     SymbolType = ((fieldDef.Attributes & FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine
                 };
@@ -421,13 +356,13 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
-                if (IsCompilerGeneratedAttributeDefined(methodDef.GetCustomAttributes()))
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodDefHandle.RowId))
                 {
                     continue;
                 }
 
-                var methodScope = CreateMethodScope(type, methodDef, default);
+                var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
+                var methodScope = CreateMethodScope(type, methodDef);
                 if (methodScope.Scopes != null &&
                     methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
                 {
@@ -506,7 +441,7 @@ namespace Datadog.Trace.Debugger.Symbols
             return new SourcePdbInfo { StartLine = startLine, EndLine = endLine, Path = sourceFile, StartColumn = startColumn, EndColumn = endColumn };
         }
 
-        protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method, DatadogMetadataReader.CustomDebugInfoAsyncAndClosure debugInfo)
+        protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
         {
             // arguments
             var argsSymbol = GetArgsSymbol(method);
@@ -516,7 +451,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var methodAttributes = method.Attributes & StaticFinalVirtual;
             var methodLanguageSpecifics = new LanguageSpecifics
             {
-                ReturnType = method.DecodeSignature(new TypeProvider(), 0).ReturnType.Name,
+                ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
                 AccessModifiers = (method.Attributes & MethodAttributes.MemberAccessMask) > 0 ? new[] { _methodAccess[Convert.ToUInt16(method.Attributes & MethodAttributes.MemberAccessMask)] } : null,
                 Annotations = methodAttributes > 0 ? new[] { _methodAttributes[Convert.ToUInt16(methodAttributes)] } : null
             };
@@ -548,12 +483,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
                 for (int i = 0; i < nestedTypes.Length; i++)
                 {
-                    var nestedType = MetadataReader.GetTypeDefinition(nestedTypes[i]);
-                    if (!IsCompilerGeneratedAttributeDefined(nestedType.GetCustomAttributes()))
+                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(nestedTypes[i].RowId))
                     {
                         continue;
                     }
 
+                    var nestedType = MetadataReader.GetTypeDefinition(nestedTypes[i]);
                     var generatedMethods = nestedType.GetMethods();
                     foreach (var generatedMethodHandle in generatedMethods)
                     {
@@ -574,12 +509,12 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    var currentMethod = MetadataReader.GetMethodDefinition(methodHandle);
-                    if (!IsCompilerGeneratedAttributeDefined(currentMethod.GetCustomAttributes()))
+                    if (!DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodHandle.RowId))
                     {
                         continue;
                     }
 
+                    var currentMethod = MetadataReader.GetMethodDefinition(methodHandle);
                     PopulateClosureMethod(currentMethod, typeDef);
                 }
 
@@ -622,49 +557,9 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private Model.Scope? CreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType)
+        protected virtual Model.Scope? CreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType)
         {
-            if (method.Name.IsNil || generatedMethod.Name.IsNil)
-            {
-                return null;
-            }
-
-            var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(generatedMethod.Handle);
-            if (cdi.IsNil)
-            {
-                return null;
-            }
-
-            string? methodName = null;
-            if (!cdi.StateMachineHoistedLocal)
-            {
-                var generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
-                if (generatedMethodName[0] != '<')
-                {
-                    return null;
-                }
-
-                var notGeneratedMethodName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(generatedMethodName, 1, generatedMethodName.IndexOf('>') - 1);
-                methodName = MetadataReader.GetString(method.Name);
-                if (!methodName.Equals(notGeneratedMethodName.ToString()))
-                {
-                    return null;
-                }
-            }
-            else if (method.Handle.RowId == cdi.StateMachineKickoffMethod.RowId)
-            {
-                var kickoffDef = MetadataReader.GetMethodDefinition(cdi.StateMachineKickoffMethod);
-                methodName = MetadataReader.GetString(kickoffDef.Name);
-            }
-            else
-            {
-                return null;
-            }
-
-            var closureMethodScope = CreateMethodScope(nestedType, generatedMethod, cdi);
-            closureMethodScope.Name = methodName;
-            closureMethodScope.ScopeType = SymbolType.Closure;
-            return closureMethodScope;
+            return null;
         }
 
         private Symbol[]? GetArgsSymbol(MethodDefinition method)
@@ -691,7 +586,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 index++;
             }
 
-            var methodSig = method.DecodeSignature(new TypeProvider(), 0);
+            var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
             for (int i = 0; i < argsSymbol.Length; i++)
             {
                 if (argsSymbol[i].Name == null)
@@ -699,7 +594,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     break;
                 }
 
-                argsSymbol[i].Type = methodSig.ParameterTypes[i].Name;
+                argsSymbol[i].Type = methodSig.ParameterTypes[i];
             }
 
             return argsSymbol;
@@ -738,7 +633,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 return null;
             }
 
-            var baseTypeName = GetTypeFullName(type.BaseType);
+            var baseTypeName = type.BaseType.FullName(MetadataReader);
             var objectTypeFullName = typeof(object).FullName;
             if (baseTypeName.Equals(objectTypeFullName))
             {
@@ -751,45 +646,10 @@ namespace Datadog.Trace.Debugger.Symbols
             while ((baseType = GetBaseTypeHandle(baseType.Value)).HasValue && !baseTypeName.Equals(objectTypeFullName))
             {
                 classNames.Add(baseTypeName);
-                baseTypeName = GetTypeFullName(baseType.Value);
+                baseTypeName = baseType.Value.FullName(MetadataReader);
             }
 
             return classNames.ToArray();
-        }
-
-        private string GetTypeFullName(EntityHandle typeHandle)
-        {
-            if (typeHandle.IsNil)
-            {
-                return Unknown;
-            }
-
-            switch (typeHandle)
-            {
-                case { Kind: HandleKind.TypeDefinition }:
-                    {
-                        var typeDef = MetadataReader.GetTypeDefinition((TypeDefinitionHandle)typeHandle);
-                        return typeDef.FullName(MetadataReader);
-                    }
-
-                case { Kind: HandleKind.TypeReference }:
-                    {
-                        var typeRef = MetadataReader.GetTypeReference((TypeReferenceHandle)typeHandle);
-                        return typeRef.FullName(MetadataReader);
-                    }
-
-                case { Kind: HandleKind.TypeSpecification }:
-                    {
-                        var typeSpec = MetadataReader.GetTypeSpecification((TypeSpecificationHandle)typeHandle);
-                        return typeSpec.FullName();
-                    }
-
-                default:
-                    {
-                        Log.Warning("Unknown type handle {Kind}", typeHandle.Kind);
-                        return Unknown;
-                    }
-            }
         }
 
         private EntityHandle? GetBaseTypeHandle(EntityHandle typeHandle)
@@ -827,7 +687,7 @@ namespace Datadog.Trace.Debugger.Symbols
             int index = 0;
             foreach (var interfaceHandle in interfaces)
             {
-                interfaceNames[index] = GetTypeFullName(MetadataReader.GetInterfaceImplementation(interfaceHandle).Interface);
+                interfaceNames[index] = MetadataReader.GetInterfaceImplementation(interfaceHandle).Interface.FullName(MetadataReader);
                 index++;
             }
 
