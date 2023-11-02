@@ -72,7 +72,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
         private void RunTest(string metadataSchemaVersion)
         {
             SetInstrumentationVerification();
-            var expectedSpanCount = 82;
+            var expectedAllSpansCount = 130;
+            var expectedSpanCount = 87;
 
             int httpPort = TcpPortProvider.GetOpenPort();
             Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
@@ -85,8 +86,10 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
             {
-                agent.SpanFilters.Add(s => s.Type == SpanTypes.Http);
-                var spans = agent.WaitForSpans(expectedSpanCount).OrderBy(s => s.Start);
+                var allSpans = agent.WaitForSpans(expectedAllSpansCount).OrderBy(s => s.Start);
+                allSpans.Should().OnlyHaveUniqueItems(s => new { s.SpanId, s.TraceId });
+
+                var spans = allSpans.Where(s => s.Type == SpanTypes.Http);
                 spans.Should().HaveCount(expectedSpanCount);
                 ValidateIntegrationSpans(spans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan);
 

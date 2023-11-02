@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Net;
 using System.Text;
@@ -332,6 +333,24 @@ namespace Samples.WebRequest
                     Console.WriteLine("Received response for request.GetResponse()");
                 }
 
+                using (_sampleHelpers.CreateScope("GetResponseWithDistributedTracingHeaders"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponse", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    // Test the behavior when distributed tracing headers are manually propagated
+                    // to the outgoing HTTP span.
+                    // They should be overridden by the tracer
+                    request.Headers.Add(GenerateCurrentDistributedTracingHeaders());
+
+                    request.GetResponse().Close();
+                    Console.WriteLine("Received response for request.GetResponse()");
+                }
+
                 using (_sampleHelpers.CreateScope("GetResponseNotFound"))
                 {
                     // Create separate request objects since .NET Core asserts only one response per request
@@ -376,6 +395,24 @@ namespace Samples.WebRequest
                     {
                         Console.WriteLine("Received response for request.GetResponse()");
                     }
+                }
+
+                using (_sampleHelpers.CreateScope("GetResponseAsyncWithDistributedTracingHeaders"))
+                {
+                    // Create separate request objects since .NET Core asserts only one response per request
+                    HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetResponseAsync", url));
+                    if (tracingDisabled)
+                    {
+                        request.Headers.Add(TracingEnabled, "false");
+                    }
+
+                    // Test the behavior when distributed tracing headers are manually propagated
+                    // to the outgoing HTTP span.
+                    // They should be overridden by the tracer
+                    request.Headers.Add(GenerateCurrentDistributedTracingHeaders());
+
+                    (await request.GetResponseAsync()).Close();
+                    Console.WriteLine("Received response for request.GetResponseAsync()");
                 }
 
                 using (_sampleHelpers.CreateScope("GetResponseAsync"))
@@ -442,14 +479,38 @@ namespace Samples.WebRequest
                     GetRequestStream(tracingDisabled, url);
                 }
 
+                using (_sampleHelpers.CreateScope("GetRequestStreamWithDistributedTracingHeaders"))
+                {
+                    // Test the behavior when distributed tracing headers are manually propagated
+                    // to the outgoing HTTP span.
+                    // They should be overridden by the tracer
+                    GetRequestStream(tracingDisabled, url, GenerateCurrentDistributedTracingHeaders());
+                }
+
                 using (_sampleHelpers.CreateScope("BeginGetRequestStream"))
                 {
                     BeginGetRequestStream(tracingDisabled, url);
                 }
 
+                using (_sampleHelpers.CreateScope("BeginGetRequestStreamWithDistributedTracingHeaders"))
+                {
+                    // Test the behavior when distributed tracing headers are manually propagated
+                    // to the outgoing HTTP span.
+                    // They should be overridden by the tracer
+                    BeginGetRequestStream(tracingDisabled, url, GenerateCurrentDistributedTracingHeaders());
+                }
+
                 using (_sampleHelpers.CreateScope("BeginGetResponse"))
                 {
                     BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url);
+                }
+
+                using (_sampleHelpers.CreateScope("BeginGetResponseWithDistributedTracingHeaders"))
+                {
+                    // Test the behavior when distributed tracing headers are manually propagated
+                    // to the outgoing HTTP span.
+                    // They should be overridden by the tracer
+                    BeginGetResponse(tracingDisabled, "BeginGetResponseAsync", url, GenerateCurrentDistributedTracingHeaders());
                 }
 
                 using (_sampleHelpers.CreateScope("BeginGetResponseNotFound"))
@@ -484,7 +545,7 @@ namespace Samples.WebRequest
 
         }
 
-        private static void BeginGetResponse(bool tracingDisabled, string testName, string url)
+        private static void BeginGetResponse(bool tracingDisabled, string testName, string url, NameValueCollection additionalHeaders = null)
         {
             // Create separate request objects since .NET Core asserts only one response per request
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest(testName, url));
@@ -495,6 +556,11 @@ namespace Samples.WebRequest
             if (tracingDisabled)
             {
                 request.Headers.Add(TracingEnabled, "false");
+            }
+
+            if (additionalHeaders is not null)
+            {
+                request.Headers.Add(additionalHeaders);
             }
 
             var stream = request.GetRequestStream();
@@ -522,7 +588,7 @@ namespace Samples.WebRequest
             _allDone.WaitOne();
         }
 
-        private static void BeginGetRequestStream(bool tracingDisabled, string url)
+        private static void BeginGetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null)
         {
             // Create separate request objects since .NET Core asserts only one response per request
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("BeginGetRequestStream", url));
@@ -533,6 +599,11 @@ namespace Samples.WebRequest
             if (tracingDisabled)
             {
                 request.Headers.Add(TracingEnabled, "false");
+            }
+
+            if (additionalHeaders is not null)
+            {
+                request.Headers.Add(additionalHeaders);
             }
 
             request.BeginGetRequestStream(
@@ -553,7 +624,7 @@ namespace Samples.WebRequest
             _allDone.WaitOne();
         }
 
-        private static void GetRequestStream(bool tracingDisabled, string url)
+        private static void GetRequestStream(bool tracingDisabled, string url, NameValueCollection additionalHeaders = null)
         {
             // Create separate request objects since .NET Core asserts only one response per request
             HttpWebRequest request = (HttpWebRequest)System.Net.WebRequest.Create(GetUrlForTest("GetRequestStream", url));
@@ -566,6 +637,11 @@ namespace Samples.WebRequest
                 request.Headers.Add(TracingEnabled, "false");
             }
 
+            if (additionalHeaders is not null)
+            {
+                request.Headers.Add(additionalHeaders);
+            }
+
             var stream = request.GetRequestStream();
             stream.Write(new byte[1], 0, 1);
 
@@ -576,6 +652,19 @@ namespace Samples.WebRequest
         private static string GetUrlForTest(string testName, string baseUrl)
         {
             return baseUrl + "?" + testName;
+        }
+
+        private static NameValueCollection GenerateCurrentDistributedTracingHeaders()
+        {
+            var current = Activity.Current;
+            var decimalTraceId = Convert.ToUInt64(current.TraceId.ToHexString().Substring(16, 16), 16);
+            var decimalSpanId = Convert.ToUInt64(current.SpanId.ToHexString(), 16);
+
+            return new NameValueCollection()
+            {
+                { "traceparent", current.Id },
+                { "tracestate", current.TraceStateString },
+            };
         }
     }
 }
