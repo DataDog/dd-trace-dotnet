@@ -64,7 +64,7 @@ public abstract class AspNetCoreApiSecurity : AspNetBase, IClassFixture<AspNetCo
     private async Task TryStartApp()
     {
         // we don't test with security off, but test with api security off, otherwise the matrix of tests would be too large
-        await _fixture.TryStartApp(this, true, waitForHealthcheckSpan: true);
+        await _fixture.TryStartApp(this, true);
         SetHttpPort(_fixture.HttpPort);
     }
 }
