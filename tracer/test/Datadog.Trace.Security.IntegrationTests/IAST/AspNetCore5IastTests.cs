@@ -150,6 +150,26 @@ public class AspNetCore5IastTestsFullSamplingIastDisabled : AspNetCore5IastTests
         : base(fixture, outputHelper, enableIast: false, testName: "AspNetCore5IastTestsDisabled")
     {
     }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var commandLine = "?contentType=" + contentType + "&returnCode=" + returnCode + "&xContentTypeHeaderValue=" + xContentTypeHeaderValue;
+        var filename = "Iast.XContentTypeHeaderMissing.AspNetCore5." + contentType.Replace("/", string.Empty) + 
+            "." + returnCode.ToString() + "." + xContentTypeHeaderValue;
+        var url = "/Iast/XContentTypeHeaderMissing?";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, new string[] { url });
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spans, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 public class AspNetCore5IastTestsFullSamplingRedactionEnabled : AspNetCore5IastTestsFullSampling

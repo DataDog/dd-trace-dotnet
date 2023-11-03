@@ -257,7 +257,7 @@ internal static class IastModule
     }
 
     // This method adds web vulnerabilities, with no location, only on web environments
-    private static Scope? AddWebVulnerability(string evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
+    private static Scope? AddWebVulnerability(string? evidenceValue, IntegrationId integrationId, string vulnerabilityType, int hashId)
     {
         var tracer = Tracer.Instance;
         if (!iastSettings.Enabled || !tracer.Settings.IsIntegrationEnabled(integrationId))
@@ -279,7 +279,7 @@ internal static class IastModule
         var vulnerability = new Vulnerability(
             vulnerabilityType,
             hashId,
-            new Evidence(evidenceValue, null),
+            string.IsNullOrEmpty(evidenceValue) ? null : new Evidence(evidenceValue!, null),
             integrationId);
 
         if (!iastSettings.DeduplicationEnabled || HashBasedDeduplication.Instance.Add(vulnerability))
@@ -457,13 +457,7 @@ internal static class IastModule
     // hash('XCONTENTTYPE_HEADER_MISSING:<service-name>')
     internal static Scope? OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
     {
-        var evidence = string.Empty;
-
-        if (!string.IsNullOrEmpty(headerValue))
-        {
-            evidence = headerValue;
-        }
-
+        string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
         return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing.ToString() + ":" + serviceName).GetStaticHashCode());
     }
 }

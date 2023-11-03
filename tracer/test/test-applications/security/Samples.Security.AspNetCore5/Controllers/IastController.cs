@@ -469,5 +469,29 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return Content("Random number: " + (new Random()).Next().ToString(), "text/html");
         }
+
+        [HttpGet("XContentTypeHeaderMissing")]
+        [Route("XContentTypeHeaderMissing")]
+        public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
+        {
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            {
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+            }
+
+            if (returnCode != (int) HttpStatusCode.OK)
+            {
+                return StatusCode(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("XContentTypeHeaderMissing", contentType);
+            }
+            else
+            {
+                return Content("XContentTypeHeaderMissing");
+            }
+        }
     }
 }

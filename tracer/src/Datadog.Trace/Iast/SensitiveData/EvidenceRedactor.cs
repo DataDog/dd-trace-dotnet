@@ -97,10 +97,17 @@ internal class EvidenceRedactor
 
     internal Vulnerability RedactVulnerability(Vulnerability vulnerability)
     {
+        if (vulnerability.Evidence?.Value is null)
+        {
+            return vulnerability;
+        }
+
         List<Range>? sensitive = null;
+        string evidenceValue = vulnerability.Evidence?.Value!;
+
         if (_tokenizers.TryGetValue(vulnerability.Type, out var tokenizer))
         {
-            sensitive = tokenizer.GetTokens(vulnerability.Evidence.Value!, vulnerability.GetIntegrationId());
+            sensitive = tokenizer.GetTokens(evidenceValue, vulnerability.GetIntegrationId());
         }
 
         // We can skip new vulnerabilities creeation for vulnerability types without redaction
@@ -109,6 +116,6 @@ internal class EvidenceRedactor
             return vulnerability;
         }
 
-        return new Vulnerability(vulnerability.Type, vulnerability.Location, new Evidence(vulnerability.Evidence.Value!, vulnerability.Evidence.Ranges, sensitive?.ToArray()), vulnerability.GetIntegrationId());
+        return new Vulnerability(vulnerability.Type, vulnerability.Location, new Evidence(evidenceValue, vulnerability.Evidence?.Ranges, sensitive?.ToArray()), vulnerability.GetIntegrationId());
     }
 }
