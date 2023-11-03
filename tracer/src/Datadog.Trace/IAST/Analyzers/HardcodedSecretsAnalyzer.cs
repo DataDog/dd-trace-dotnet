@@ -34,7 +34,8 @@ internal class HardcodedSecretsAnalyzer
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
         LifetimeManager.Instance.AddShutdownTask(RunShutdown);
         _started = true;
-        Task.Run(() => PoolingThread());
+        Task.Run(() => PoolingThread())
+                    .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
     private static void PoolingThread()
@@ -42,44 +43,47 @@ internal class HardcodedSecretsAnalyzer
         try
         {
             Log.Debug("HardcodedSecretsAnalyzer polling thread -> Started");
+            var userStrings = new UserStringInterop[UserStringsArraySize];
             while (_started)
             {
-                var userStrings = new UserStringInterop[UserStringsArraySize];
-                int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
-                Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
-                if (userStringLen > 0 && Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
+                if (Tracer.Instance.Settings.IsIntegrationEnabled(IntegrationId.HardcodedSecret))
                 {
-                    for (int x = 0; x < userStringLen; x++)
+                    int userStringLen = NativeMethods.GetUserStrings(userStrings.Length, userStrings);
+                    Log.Debug("HardcodedSecretsAnalyzer polling thread -> Retrieved {UserStringLen} strings", userStringLen.ToString());
+                    if (userStringLen > 0)
                     {
-                        try
+                        for (int x = 0; x < userStringLen; x++)
                         {
-                            var value = Marshal.PtrToStringUni(userStrings[x].Value);
-                            if (string.IsNullOrEmpty(value))
+                            try
                             {
-                                continue;
-                            }
+                                var value = Marshal.PtrToStringUni(userStrings[x].Value);
+                                if (string.IsNullOrEmpty(value))
+                                {
+                                    continue;
+                                }
 
-                            var match = CheckSecret(value);
-                            if (!string.IsNullOrEmpty(match))
+                                var match = CheckSecret(value);
+                                if (!string.IsNullOrEmpty(match))
+                                {
+                                    var location = Marshal.PtrToStringUni(userStrings[x].Location);
+                                    IastModule.OnHardcodedSecret(new Vulnerability(
+                                        VulnerabilityTypeName.HardcodedSecret,
+                                        (VulnerabilityTypeName.HardcodedSecret + ":" + location!).GetStaticHashCode(),
+                                        new Location(location!),
+                                        new Evidence(match!),
+                                        IntegrationId.HardcodedSecret));
+                                }
+                            }
+                            catch (Exception err)
                             {
-                                var location = Marshal.PtrToStringUni(userStrings[x].Location);
-                                IastModule.OnHardcodedSecret(new Vulnerability(
-                                    VulnerabilityTypeName.HardcodedSecret,
-                                    (VulnerabilityTypeName.HardcodedSecret + ":" + location!).GetStaticHashCode(),
-                                    new Location(location!),
-                                    new Evidence(match!),
-                                    IntegrationId.HardcodedSecret));
+                                Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
                             }
                         }
-                        catch (Exception err)
-                        {
-                            Log.Warning(err, "Exception in HardcodedSecretsAnalyzer polling thread loop.");
-                        }
-                    }
 
-                    if (userStringLen == userStrings.Length)
-                    {
-                        continue; // Skip wait time if array came full
+                        if (userStringLen == userStrings.Length)
+                        {
+                            continue; // Skip wait time if array came full
+                        }
                     }
                 }
 
