@@ -48,6 +48,9 @@
     <Filter Include="Threads">
       <UniqueIdentifier>{9343cd1c-a26e-4f7d-a006-85e4612d0813}</UniqueIdentifier>
     </Filter>
+    <Filter Include="ETW">
+      <UniqueIdentifier>{6543675b-3ddb-42a5-8285-c63e2a93ff6a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="CorProfilerCallback.h">
@@ -379,6 +382,13 @@
     <ClInclude Include="TimelineSampleType.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="MetadataProvider.h" />
+    <ClInclude Include="IEtwEventsManager.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
+    <ClInclude Include="EventPipeEventsManager.h">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -565,6 +575,9 @@
       <Filter>Threads</Filter>
     </ClCompile>
     <ClCompile Include="TimelineSampleType.cpp">
+      <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="EventPipeEventsManager.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClCompile>
   </ItemGroup>

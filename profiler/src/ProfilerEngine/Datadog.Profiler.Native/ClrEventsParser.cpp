@@ -29,12 +29,10 @@ const bool LogGcEvents = false;
 
 
 ClrEventsParser::ClrEventsParser(
-    ICorProfilerInfo12* pCorProfilerInfo,
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
     IGCSuspensionsListener* pGCSuspensionsListener)
     :
-    _pCorProfilerInfo{pCorProfilerInfo},
     _pAllocationListener{pAllocationListener},
     _pContentionListener{pContentionListener},
     _pGCSuspensionsListener{pGCSuspensionsListener}
@@ -52,34 +50,15 @@ void ClrEventsParser::Register(IGarbageCollectionsListener* pGarbageCollectionsL
     _pGarbageCollectionsListeners.push_back(pGarbageCollectionsListener);
 }
 
+
 void ClrEventsParser::ParseEvent(
-    EVENTPIPE_PROVIDER provider,
-    DWORD eventId,
-    DWORD eventVersion,
-    ULONG cbMetadataBlob,
-    LPCBYTE metadataBlob,
+    DWORD version,
+    INT64 keywords,
+    DWORD id,
     ULONG cbEventData,
-    LPCBYTE eventData,
-    LPCGUID pActivityId,
-    LPCGUID pRelatedActivityId,
-    ThreadID eventThread,
-    ULONG numStackFrames,
-    UINT_PTR stackFrames[])
+    LPCBYTE eventData
+    )
 {
-    // Currently, only "Microsoft-Windows-DotNETRuntime" provider is used so no need to check.
-    // However, during the test, a last (keyword=0 id=1 V1) event is sent from "Microsoft-DotNETCore-EventPipe".
-
-    // These should be the same as eventId and eventVersion.
-    // However it was not the case for the last event received from "Microsoft-DotNETCore-EventPipe".
-    DWORD id;
-    DWORD version;
-    INT64 keywords; // used to filter out unneeded events.
-    WCHAR* name;
-    if (!TryGetEventInfo(metadataBlob, cbMetadataBlob, name, id, keywords, version))
-    {
-        return;
-    }
-
     if (KEYWORD_GC == (keywords & KEYWORD_GC))
     {
         ParseGcEvent(id, version, cbEventData, eventData);
@@ -279,35 +258,6 @@ void ClrEventsParser::ParseContentionEvent(DWORD id, DWORD version, ULONG cbEven
 
         _pContentionListener->OnContention(payload.DurationNs);
     }
-}
-
-bool ClrEventsParser::TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version)
-{
-    if (pMetadata == nullptr || cbMetadata == 0)
-    {
-        return false;
-    }
-
-    ULONG offset = 0;
-    if (!Read(id, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    // skip the name to read keyword and version
-    name = ReadWideString(pMetadata, cbMetadata, &offset);
-
-    if (!Read(keywords, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    if (!Read(version, pMetadata, cbMetadata, offset))
-    {
-        return false;
-    }
-
-    return true;
 }
 
 void ClrEventsParser::NotifySuspension(uint32_t number, uint32_t generation, uint64_t duration, uint64_t timestamp)

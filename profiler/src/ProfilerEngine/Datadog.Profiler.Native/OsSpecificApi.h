@@ -13,16 +13,25 @@ struct LoaderResourceMonikerIDs;
 }
 class IConfiguration;
 class IThreadInfo;
+class IEtwEventsManager;
+class IAllocationsListener;
+class IContentionListener;
+class IGCSuspensionsListener;
 
 // Those functions must be defined in the main projects (Linux and Windows)
 // Here are forward declarations to avoid hard coupling
 namespace OsSpecificApi
 {
-   std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* pConfiguration);
-   uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
-   bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
-   int32_t GetProcessorCount();
-   std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
-   std::pair<DWORD, std::string> GetLastErrorMessage();
-   std::string GetProcessStartTime();
+    std::unique_ptr<StackFramesCollectorBase> CreateNewStackFramesCollectorInstance(ICorProfilerInfo4* pCorProfilerInfo, IConfiguration const* pConfiguration);
+    uint64_t GetThreadCpuTime(IThreadInfo* pThreadInfo);
+    bool IsRunning(IThreadInfo* pThreadInfo, uint64_t& cpuTime, bool& failed);
+    int32_t GetProcessorCount();
+    std::vector<std::shared_ptr<IThreadInfo>> GetProcessThreads();
+    std::pair<DWORD, std::string> GetLastErrorMessage();
+    std::string GetProcessStartTime();
+    std::unique_ptr<IEtwEventsManager> CreateEtwEventsManager(
+        IAllocationsListener* pAllocationListener,
+        IContentionListener* pContentionListener,
+        IGCSuspensionsListener* pGCSuspensionsListener
+        );
  } // namespace OsSpecificApi

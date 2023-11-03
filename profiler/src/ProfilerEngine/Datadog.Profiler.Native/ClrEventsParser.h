@@ -116,29 +116,23 @@ public:
     static const int KEYWORD_CONTENTION = 0x4000;
 
 public:
-    ClrEventsParser(ICorProfilerInfo12* pCorProfilerInfo,
-                    IAllocationsListener* pAllocationListener,
-                    IContentionListener* pContentionListener,
-                    IGCSuspensionsListener* pGCSuspensionsListener
-                    );
+    ClrEventsParser(
+        IAllocationsListener* pAllocationListener,
+        IContentionListener* pContentionListener,
+        IGCSuspensionsListener* pGCSuspensionsListener
+        );
 
-    void ParseEvent(EVENTPIPE_PROVIDER provider,
-                    DWORD eventId,
-                    DWORD eventVersion,
-                    ULONG cbMetadataBlob,
-                    LPCBYTE metadataBlob,
-                    ULONG cbEventData,
-                    LPCBYTE eventData,
-                    LPCGUID pActivityId,
-                    LPCGUID pRelatedActivityId,
-                    ThreadID eventThread,
-                    ULONG numStackFrames,
-                    UINT_PTR stackFrames[]
-                    );
+    void ParseEvent(
+        DWORD version,
+        INT64 keywords,
+        DWORD id,
+        ULONG cbEventData,
+        LPCBYTE eventData
+        );
+
     void Register(IGarbageCollectionsListener* pGarbageCollectionsListener);
 
 private:
-    bool TryGetEventInfo(LPCBYTE pMetadata, ULONG cbMetadata, WCHAR*& name, DWORD& id, INT64& keywords, DWORD& version);
     void ParseGcEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
     void ParseContentionEvent(DWORD id, DWORD version, ULONG cbEventData, LPCBYTE pEventData);
 
@@ -170,7 +164,7 @@ private:
     static uint64_t GetCurrentTimestamp();
 
 
-private:
+public:
     // Points to the UTF16, null terminated string from the given event data buffer
     // and update the offset accordingly
     static WCHAR* ReadWideString(LPCBYTE eventData, ULONG cbEventData, ULONG* offset)
@@ -186,7 +180,7 @@ private:
     }
 
     template <typename T>
-    bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
+    static bool Read(T& value, LPCBYTE eventData, ULONG cbEventData, ULONG& offset)
     {
         if ((offset + sizeof(T)) > cbEventData)
         {
@@ -199,7 +193,6 @@ private:
     }
 
 private:
-    ICorProfilerInfo12* _pCorProfilerInfo = nullptr;
     IAllocationsListener* _pAllocationListener = nullptr;
     IContentionListener* _pContentionListener = nullptr;
     IGCSuspensionsListener* _pGCSuspensionsListener = nullptr;

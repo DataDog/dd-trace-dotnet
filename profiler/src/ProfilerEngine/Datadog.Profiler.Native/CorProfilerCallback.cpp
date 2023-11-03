@@ -22,7 +22,7 @@
 #include "AllocationsProvider.h"
 #include "AppDomainStore.h"
 #include "ApplicationStore.h"
-#include "ClrEventsParser.h"
+#include "EventPipeEventsManager.h"
 #include "ClrLifetime.h"
 #include "Configuration.h"
 #include "ContentionProvider.h"
@@ -276,20 +276,34 @@ bool CorProfilerCallback::InitializeServices()
         }
 
         // TODO: add new CLR events-based providers to the event parser
-        _pClrEventsParser = std::make_unique<ClrEventsParser>(
-            _pCorProfilerInfoEvents,
+        _pEventPipeEventsManager = std::make_unique<EventPipeEventsManager>(
             _pAllocationsProvider,
             _pContentionProvider,
             _pStopTheWorldProvider
             );
+        if (_pRuntimeInfo->IsDotnetFramework())
+        {
+            // TODO: figure out why this is not compiling
+            //_pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
+            //    _pAllocationsProvider,
+            //    _pContentionProvider,
+            //    _pStopTheWorldProvider
+            //    );
+        }
 
         if (_pGarbageCollectionProvider != nullptr)
         {
-            _pClrEventsParser->Register(_pGarbageCollectionProvider);
+            _pEventPipeEventsManager->Register(_pGarbageCollectionProvider);
+            if (_pRuntimeInfo->IsDotnetFramework())
+            {
+                // TODO: figure out why this is not compiling
+                //_pEtwEventsManager->Register(_pGarbageCollectionProvider);
+            }
         }
         if (_pLiveObjectsProvider != nullptr)
         {
-            _pClrEventsParser->Register(_pLiveObjectsProvider);
+            _pEventPipeEventsManager->Register(_pLiveObjectsProvider);
+            // live heap is not supported by .NET Framework
         }
         // TODO: register any provider that needs to get notified when GCs start and end
     }
@@ -520,6 +534,15 @@ void CorProfilerCallback::DisposeInternal()
             pInfo->Release();
             _pCorProfilerInfoEvents = nullptr;
         }
+
+        // Do the same for .NET Framework if any
+        // TODO: figure out why this is not compiling
+        //if (_pEtwEventsManager != nullptr)
+        //{
+        //    _pEtwEventsManager->Stop();
+
+        //    // TODO: maybe this is where we will need to call  delete _pEtwEventsManager.get() or Stop() will delete itself like Release() in COM
+        //}
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -910,6 +933,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         _pConfiguration->IsContentionProfilingEnabled() ||
         _pConfiguration->IsGarbageCollectionProfilingEnabled()
         ;
+
     if ((major >= 5) && AreEventBasedProfilersEnabled)
     {
         // Live heap profiling requires .NET 7+ and ICorProfilerInfo13
@@ -942,11 +966,25 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         //       the events are received asynchronously, a GC might have happened and moved the
         //       object somewhere else (i.e. the address will point to unknown content in memory;
         //       even unmapped memory if the segment has been reclaimed).
+
+        if (runtimeType == COR_PRF_DESKTOP_CLR)
+        {
+            // live heap profiling is not supported by .NET Framework (missing .NET 7 ICorProfilerInfo13 functions to create weak handles)
+            if (_pConfiguration->IsHeapProfilingEnabled())
+            {
+                Log::Warn("Live Heap profiling is not supported by .NET Framework (.NET 7+ is required)");
+            }
+            if (_pConfiguration->IsAllocationProfilingEnabled())
+            {
+                Log::Warn("Allocation profiling is not supported by .NET Framework (.NET 5+ is required)");
+            }
+        }
+        else
         if (major < 5)
         {
             if (AreEventBasedProfilersEnabled)
             {
-                Log::Warn("Event-based profilers (Allocation, LockContention) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
+                Log::Warn("Event-based profilers (Allocation, LockContention, Live Heap and GC) are not supported for .NET", major, ".", minor, " (.NET 5+ is required)");
             }
         }
     }
@@ -975,6 +1013,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
         eventMask |= COR_PRF_MONITOR_OBJECT_ALLOCATED | COR_PRF_ENABLE_OBJECT_ALLOCATED;
     }
 
+    // deal with event-based profilers in .NET Framework
+    //if (_pRuntimeInfo->IsDotnetFramework() && (_pEtwEventsManager != nullptr))
+    if (_pRuntimeInfo->IsDotnetFramework())
+    {
+        // TODO: check why this is not compiling
+        //auto success = _pEtwEventsManager->Start();
+        auto success = false;
+        if (!success)
+        {
+            // TODO: how to change _pEnabledProfilers to tell that GC/lock contention/allocations are disabled?
+
+            Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
+
+            // we should not return a failure because CPU/Wall time and exception profiling will still work as expected
+        }
+    }
+    else
     if (_pCorProfilerInfoEvents != nullptr)
     {
         // listen to CLR events via ICorProfilerCallback
@@ -1737,9 +1792,9 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::EventPipeEventDelivered(EVENTPIPE
                                                                        ULONG numStackFrames,
                                                                        UINT_PTR stackFrames[])
 {
-    if (_pClrEventsParser != nullptr)
+    if (_pEventPipeEventsManager != nullptr)
     {
-        _pClrEventsParser->ParseEvent(
+        _pEventPipeEventsManager->ParseEvent(
             provider,
             eventId,
             eventVersion,
