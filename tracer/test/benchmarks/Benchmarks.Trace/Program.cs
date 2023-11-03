@@ -8,7 +8,6 @@ using BenchmarkDotNet.Exporters.Json;
 using BenchmarkDotNet.Filters;
 using Benchmarks.Trace.DatadogProfiler;
 using Benchmarks.Trace.Jetbrains;
-using Benchmarks.Trace.Iast;
 using System.Reflection.Metadata;
 using BenchmarkDotNet.Attributes;
 using System.Reflection;
