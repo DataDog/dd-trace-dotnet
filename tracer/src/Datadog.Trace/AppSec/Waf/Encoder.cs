@@ -279,8 +279,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, object>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, object>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey1, &GetValue1);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, object>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
                     static string GetKey1(KeyValuePair<string, object> item) => item.Key;
                     static object GetValue1(KeyValuePair<string, object> item) => item.Value;
                     break;
@@ -288,8 +289,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, bool>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, bool>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey1, &GetValue1);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, bool>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey1, &GetValue1);
                     static string GetKey1(KeyValuePair<string, bool> item) => item.Key;
                     static object GetValue1(KeyValuePair<string, bool> item) => item.Value;
                     break;
@@ -297,8 +299,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, string>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, string>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey2, &GetValue2);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, string>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey2, &GetValue2);
                     static string GetKey2(KeyValuePair<string, string> item) => item.Key;
                     static object GetValue2(KeyValuePair<string, string> item) => item.Value;
                     break;
@@ -306,8 +309,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, JToken>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, JToken>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey3, &GetValue3);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, JToken>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey3, &GetValue3);
                     static string GetKey3(KeyValuePair<string, JToken> item) => item.Key;
                     static object GetValue3(KeyValuePair<string, JToken> item) => item.Value;
                     break;
@@ -315,8 +319,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, string[]>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, string[]>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey4, &GetValue4);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, string[]>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey4, &GetValue4);
                     static string GetKey4(KeyValuePair<string, string[]> item) => item.Key;
                     static object GetValue4(KeyValuePair<string, string[]> item) => item.Value;
                     break;
@@ -324,8 +329,9 @@ namespace Datadog.Trace.AppSec.Waf
 
                 case IEnumerable<KeyValuePair<string, List<string>>> objDict:
                 {
-                    var count = objDict is ICollection<KeyValuePair<string, List<string>>> dct ? dct.Count : objDict.Count();
-                    ddwafObjectStruct = ProcessKeyValuePairs(objDict, count, &GetKey5, &GetValue5);
+                    var collectionDict = objDict as ICollection<KeyValuePair<string, List<string>>> ?? objDict.ToList();
+                    var count = collectionDict.Count;
+                    ddwafObjectStruct = ProcessKeyValuePairs(collectionDict, count, &GetKey5, &GetValue5);
                     static string GetKey5(KeyValuePair<string, List<string>> item) => item.Key;
                     static object GetValue5(KeyValuePair<string, List<string>> item) => item.Value;
                     break;
