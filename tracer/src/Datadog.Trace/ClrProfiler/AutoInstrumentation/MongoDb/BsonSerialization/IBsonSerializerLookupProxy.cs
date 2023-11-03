@@ -15,5 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.MongoDb.BsonSerializatio
 internal interface IBsonSerializerLookupProxy
 {
     // static lookup function
+    // LookupSerializer _always_ returns non-null (it throws otherwise), so the duck type will be non null
     IBsonSerializerProxy LookupSerializer(Type type);
 }
