@@ -1,4 +1,4 @@
-version: '3'
+version: '3.4'
 services:
   # ARM64 dependencies
   localstack_arm64:
@@ -980,6 +980,68 @@ services:
         # - PUBLISH_FRAMEWORK=
         # - INSTALL_CMD=
     image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-tester
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
+  chiseled-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
+      target: installer-final
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-chiseled-tester
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
+  dd-dotnet-chiseled-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
+      target: dd-dotnet-final-linux-x64
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - RUNTIME_ID=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-chiseled-tester
+    volumes:
+      - ./:/project
+      - ./tracer/build_data/logs:/var/log/datadog/dotnet
+    environment:
+      - dockerTag=${dockerTag:-unset}
+      - DD_TRACE_AGENT_URL=http://test-agent:8126
+    depends_on:
+      - test-agent
+
+  dd-dotnet-chiseled-arm64-smoke-tests:
+    build:
+      context: ./tracer/ # have to use this as the context, as Dockercompose requires dockerfile to be inside context dir
+      dockerfile: build/_build/docker/smoke.chiseled.dockerfile
+      target: dd-dotnet-final-linux-arm64
+        # args:
+        # Note that the following build arguments must be provided
+        # - DOTNETSDK_VERSION=
+        # - RUNTIME_IMAGE=
+        # - PUBLISH_FRAMEWORK=
+        # - RUNTIME_ID=
+    image: dd-trace-dotnet/${dockerTag:-not-set}-dd-dotnet-arm64-chiseled-tester
     volumes:
       - ./:/project
       - ./tracer/build_data/logs:/var/log/datadog/dotnet
