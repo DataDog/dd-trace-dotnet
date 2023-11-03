@@ -355,7 +355,7 @@ public class StringFormatTests : InstrumentationTestsBase
     // System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])
 
     [Fact]
-    public void GivenATaintedString_WhenCallingStringBuilderAppendFormatObjectArrayFormatProvider_ResultIsTainted2()
+    public void GivenATaintedString_WhenCallingStringFormatObjectArrayFormatProvider_ResultIsTainted2()
     {
         var composite = CompositeFormat.Parse("myformat{0}{1}");
         AssertUntaintedWithOriginalCallCheck(
