@@ -8,23 +8,12 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
 using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
-using Datadog.Trace.Vendors.dnlib.DotNet;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Managed;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Portable;
-using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
-using Datadog.Trace.Vendors.dnlib.IO;
-using SymbolReaderFactory = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory;
 
 namespace Datadog.Trace.Pdb
 {
@@ -32,7 +21,7 @@ namespace Datadog.Trace.Pdb
     /// Reads metadata as well as both Windows and Portable PDBs.
     /// Note: reading Windows PDBs is only supported on Windows.
     /// </summary>
-    internal class DatadogMetadataReader : IDisposable
+    internal partial class DatadogMetadataReader : IDisposable
     {
         private const int RidMask = 0x00FFFFFF;
         private const string Unknown = "UNKNOWN";
@@ -44,11 +33,10 @@ namespace Datadog.Trace.Pdb
         private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
         private readonly PEReader? _peReader;
-        private readonly ModuleDefMD? _dnlibModule;
         private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
-        private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, SymbolReader? dnlibPdbReader, ModuleDefMD? dnlibModule)
+        private DatadogMetadataReader(PEReader peReader, MetadataReader metadataReader, MetadataReader? pdbReader, string? pdbFullPath, Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols.SymbolReader? dnlibPdbReader, Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD? dnlibModule)
         {
             MetadataReader = metadataReader;
             PdbReader = pdbReader;
@@ -66,13 +54,11 @@ namespace Datadog.Trace.Pdb
 
         internal MetadataReader? PdbReader { get; }
 
-        internal SymbolReader? DnlibPdbReader { get; }
-
         internal bool IsPdbExist { get; set; }
 
         internal static DatadogMetadataReader CreatePdbReader(Assembly assembly)
         {
-            // For metadata we are always using Reflection.Metadata
+            // For metadata we are always using System.Reflection.Metadata
             // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for windows PDB
             var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
             MetadataReader metadataReader = peReader.GetMetadataReader(MetadataReaderOptions.Default);
@@ -88,9 +74,9 @@ namespace Datadog.Trace.Pdb
                 return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
             }
 
-            var module = ModuleDefMD.Load(assembly.ManifestModule, new ModuleCreationOptions { TryToLoadPdbFromDisk = false });
-            var pdbStream = DataReaderFactoryFactory.Create(pdbFullPath, false);
-            var dnlibReader = SymbolReaderFactory.Create(ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
+            var module = Datadog.Trace.Vendors.dnlib.DotNet.ModuleDefMD.Load(assembly.ManifestModule, new Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions { TryToLoadPdbFromDisk = false });
+            var pdbStream = Datadog.Trace.Vendors.dnlib.IO.DataReaderFactoryFactory.Create(pdbFullPath, false);
+            var dnlibReader = Datadog.Trace.Vendors.dnlib.DotNet.Pdb.SymbolReaderFactory.Create(Datadog.Trace.Vendors.dnlib.DotNet.ModuleCreationOptions.DefaultPdbReaderOptions, module.Metadata, pdbStream);
             if (dnlibReader == null)
             {
                 return new DatadogMetadataReader(peReader, metadataReader, null, null, null, null);
@@ -181,8 +167,7 @@ namespace Datadog.Trace.Pdb
         {
             if (_isDnlibPdbReader)
             {
-                var sourceLink = _dnlibModule?.CustomDebugInfos.OfType<PdbSourceLinkCustomDebugInfo>().FirstOrDefault();
-                return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
+                return GetSourceLinkJsonDocumentDnlib();
             }
 
             if (PdbReader != null)
@@ -205,53 +190,26 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal List<DatadogSequencePoint>? GetMethodSequencePoints(int methodMetadataToken)
+        internal List<DatadogSequencePoint>? GetMethodSequencePoints(int rowId)
         {
-            List<DatadogSequencePoint>? sps = null;
             if (_isDnlibPdbReader)
             {
-                var rid = MDToken.ToRID(methodMetadataToken);
-                var mdMethod = _dnlibModule?.ResolveMethod(rid);
-                var symbolMethod = GetDnlibSymbolMethodOfAsyncMethodOrDefault(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1);
-                if (symbolMethod == null)
-                {
-                    return null;
-                }
-
-                sps = new List<DatadogSequencePoint>(symbolMethod.SequencePoints.Count);
-                for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
-                {
-                    var sp = symbolMethod.SequencePoints[i];
-                    if (sp.IsHidden())
-                    {
-                        continue;
-                    }
-
-                    sps.Add(new DatadogSequencePoint
-                    {
-                        StartLine = sp.Line,
-                        EndLine = sp.EndLine,
-                        StartColumn = sp.Column,
-                        EndColumn = sp.EndColumn,
-                        Offset = sp.Offset,
-                        IsHidden = sp.IsHidden(),
-                        URL = sp.Document.URL
-                    });
-                }
+                return GetMethodSequencePointsDnlib(rowId);
             }
 
+            List<DatadogSequencePoint>? sequencePoints = null;
             if (PdbReader != null)
             {
-                var def = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodMetadataToken & RidMask));
-                if (!def.Handle.IsNil)
+                var methodDef = GetMethodDef(rowId);
+                if (!methodDef.Handle.IsNil)
                 {
-                    MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(def.Handle.ToDebugInformationHandle());
+                    MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDef.Handle.ToDebugInformationHandle());
                     if (methodDebugInformation.SequencePointsBlob.IsNil)
                     {
                         return null;
                     }
 
-                    sps = new List<DatadogSequencePoint>();
+                    sequencePoints = new List<DatadogSequencePoint>();
                     foreach (var sp in methodDebugInformation.GetSequencePoints())
                     {
                         if (sp.IsHidden)
@@ -259,7 +217,7 @@ namespace Datadog.Trace.Pdb
                             continue;
                         }
 
-                        sps.Add(new DatadogSequencePoint()
+                        sequencePoints.Add(new DatadogSequencePoint()
                         {
                             StartLine = sp.StartLine,
                             EndLine = sp.EndLine,
@@ -273,7 +231,7 @@ namespace Datadog.Trace.Pdb
                 }
             }
 
-            return sps;
+            return sequencePoints;
         }
 
         private string? GetDocumentName(DocumentHandle doc)
@@ -292,39 +250,13 @@ namespace Datadog.Trace.Pdb
             return PdbReader.GetString(document.Name);
         }
 
-        private SymbolMethod? GetDnlibSymbolMethodOfAsyncMethodOrDefault(MethodDef? mdMethod)
-        {
-            // Determine if the given mdMethod is a kickoff of a state machine(aka an async method)
-            // The first step is to check if the method is decorated with the attribute `AsyncStateMachine`
-            var stateMachineAttributeFullName = typeof(AsyncStateMachineAttribute).FullName;
-            var stateMachineAttributeOfMdMethod = mdMethod?.CustomAttributes?.FirstOrDefault(ca => ca.TypeFullName == stateMachineAttributeFullName);
-            // Grab the generated inner type state machine from the argument given by the compiler to the AsyncStateMachineAttribute
-            var stateMachineInnerTypeTypeDefOrRefSig = (stateMachineAttributeOfMdMethod?.ConstructorArguments.FirstOrDefault().Value as TypeDefOrRefSig);
-            // Grab the MoveNext from inside the stateMachine and from there the corresponding debugInfo
-            var moveNextDebugInfo = stateMachineInnerTypeTypeDefOrRefSig?.TypeDefOrRef?.ResolveTypeDef()?.FindMethod("MoveNext")?.CustomDebugInfos.OfType<PdbAsyncMethodCustomDebugInfo>().FirstOrDefault();
-            var breakpointMethod = moveNextDebugInfo?.StepInfos.FirstOrDefault();
-
-            if (breakpointMethod?.BreakpointMethod == null)
-            {
-                return null;
-            }
-
-            return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
-        }
-
         internal int? GetContainingMethodTokenAndOffset(string filePath, int line, int? column, out int? byteCodeOffset)
         {
             byteCodeOffset = null;
 
             if (_isDnlibPdbReader)
             {
-                return DnlibPdbReader switch
-                {
-                    PortablePdbReader portablePdbReader => portablePdbReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
-                    PdbReader managedPdbReader => managedPdbReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
-                    SymbolReaderImpl symUnmanagedReader => symUnmanagedReader.GetContainingMethod(filePath, line, column, out byteCodeOffset)?.Token,
-                    _ => throw new ArgumentOutOfRangeException(nameof(filePath), $"Reader type {DnlibPdbReader!.GetType().FullName} is not supported")
-                };
+                return GetContainingMethodTokenAndOffsetDnlib(filePath, line, column, out byteCodeOffset);
             }
 
             if (PdbReader != null)
@@ -385,11 +317,11 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal string[]? GetLocalVariableNamesOrDefault(int methodToken, int localVariablesCount)
+        internal string[]? GetLocalVariableNames(int methodToken, int localVariablesCount)
         {
             if (_isDnlibPdbReader)
             {
-                return GetDnlibLocalVariableNamesOrDefault(methodToken & RidMask, localVariablesCount);
+                return GetLocalVariableNamesDnlib(methodToken & RidMask, localVariablesCount);
             }
 
             if (PdbReader != null)
@@ -400,73 +332,9 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        private SymbolMethod? GetDnlibSymbolMethod(uint rowId)
+        private string[]? GetLocalVariableNames(int rowId)
         {
-            var mdMethod = _dnlibModule?.ResolveMethod(rowId);
-            return GetDnlibSymbolMethodOfAsyncMethodOrDefault(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1);
-        }
-
-        internal List<SymbolScope>? GetAllScopes(uint rowId)
-        {
-            var method = GetDnlibSymbolMethod(rowId);
-            if (method == null)
-            {
-                return null;
-            }
-
-            var result = new List<SymbolScope>();
-            RetrieveAllNestedScopes(method.RootScope, result);
-            return result;
-
-            void RetrieveAllNestedScopes(SymbolScope? scope, List<SymbolScope> result)
-            {
-                // Recursively extract all nested scopes in method
-                if (scope == null)
-                {
-                    return;
-                }
-
-                result.Add(scope);
-                foreach (var innerScope in scope.Children)
-                {
-                    RetrieveAllNestedScopes(innerScope, result);
-                }
-            }
-        }
-
-        private string[]? GetDnlibLocalVariableNamesOrDefault(int methodRid, int localVariablesCount)
-        {
-            if (GetDnlibSymbolMethod((uint)methodRid) is not { } symbolMethod)
-            {
-                return null;
-            }
-
-            var localVariables = symbolMethod.GetLocalVariables();
-            var localNames = new string[localVariablesCount];
-            foreach (var local in localVariables)
-            {
-                if (local.Attributes.HasFlag(PdbLocalAttributes.DebuggerHidden))
-                {
-                    continue;
-                }
-
-                if (local.Index > localVariablesCount)
-                {
-                    // PDB information is inconsistent with the locals that are actually in the metadata.
-                    // This might be caused by code obfuscation tools that try to remove/modify locals, and neglect to update the PDB.
-                    // We'll simply ignore these additional locals in the hope that things will work out for the best.
-                    continue;
-                }
-
-                localNames[local.Index] = local.Name;
-            }
-
-            return localNames;
-        }
-
-        private string[]? GetLocalVariableNames(int methodRid)
-        {
-            var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
+            var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId));
             int localsCount = 0;
             var methodLocalsCount = GetLocalVariablesCount(method);
             if (methodLocalsCount == 0)
@@ -502,30 +370,13 @@ namespace Datadog.Trace.Pdb
 
         internal CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfo(int methodRid)
         {
-            CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
-
             if (_isDnlibPdbReader)
             {
-                Datadog.Trace.Vendors.dnlib.DotNet.MethodDef? method = GetDnlibMethodDef((uint)methodRid);
-                if (method is not { HasCustomDebugInfos: true })
-                {
-                    return cdiAsyncAndClosure;
-                }
-
-                foreach (var methodCustomDebugInfo in method.CustomDebugInfos)
-                {
-                    if (methodCustomDebugInfo.Kind is PdbCustomDebugInfoKind.EditAndContinueLocalSlotMap)
-                    {
-                        cdiAsyncAndClosure.EncLambdaAndClosureMap = true;
-                    }
-                    else if (methodCustomDebugInfo.Kind is PdbCustomDebugInfoKind.StateMachineHoistedLocalScopes)
-                    {
-                        cdiAsyncAndClosure.StateMachineHoistedLocal = true;
-                        cdiAsyncAndClosure.StateMachineKickoffMethodRid = (int)((PdbAsyncMethodCustomDebugInfo)methodCustomDebugInfo).KickoffMethod.MDToken.Rid;
-                    }
-                }
+                return GetAsyncAndClosureCustomDebugInfoDnlib(methodRid);
             }
-            else if (PdbReader != null)
+
+            CustomDebugInfoAsyncAndClosure cdiAsyncAndClosure = default;
+            if (PdbReader != null)
             {
                 var methodHandle = MethodDefinitionHandle.FromRowId(methodRid);
                 if (methodHandle.IsNil || PdbReader == null)
@@ -660,95 +511,22 @@ namespace Datadog.Trace.Pdb
             }
         }
 
-        internal MethodDefinition GetMethodDefinition(int methodRid)
+        internal MethodDefinition GetMethodDef(int methodRid)
         {
             return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
         }
 
-        internal MethodDef? GetDnlibMethodDef(uint methodRid)
+        internal List<DatadogLocal>? GetLocalSymbols(int rowId, List<DatadogSequencePoint> sequencePoints)
         {
-            return _dnlibModule?.ResolveMethod(methodRid);
-        }
-
-        internal TypeDef? GetDnlibTypeDef(uint typeRid)
-        {
-            return _dnlibModule?.ResolveTypeDef(typeRid);
-        }
-
-        internal List<DatadogLocal>? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints)
-        {
-            List<DatadogLocal>? localSymbols = null;
             if (_isDnlibPdbReader)
             {
-                Datadog.Trace.Vendors.dnlib.DotNet.MethodDef? method = GetDnlibMethodDef((uint)rowId);
-                if (method!.Body is not { Variables.Count: > 0 })
-                {
-                    return null;
-                }
-
-                var methodLocals = method.Body.Variables;
-                var allMethodScopes = GetAllScopes(method.MDToken.Rid);
-                if (allMethodScopes == null)
-                {
-                    return null;
-                }
-
-                localSymbols = new List<DatadogLocal>();
-                for (var k = 0; k < allMethodScopes.Count; k++)
-                {
-                    var currentScope = allMethodScopes[k];
-                    for (var l = 0; l < currentScope.Locals.Count; l++)
-                    {
-                        var localSymbol = currentScope.Locals[l];
-                        if (localSymbol.Index > methodLocals.Count || string.IsNullOrEmpty(localSymbol.Name))
-                        {
-                            continue;
-                        }
-
-                        var line = UnknownLocalLine;
-                        for (var m = 0; m < sequencePoints.Count; m++)
-                        {
-                            if (sequencePoints[m].Offset >= currentScope.StartOffset)
-                            {
-                                line = sequencePoints[m].StartLine;
-                                break;
-                            }
-                        }
-
-                        Datadog.Trace.Vendors.dnlib.DotNet.Emit.Local? local = null;
-                        for (var i = 0; i < methodLocals.Count; i++)
-                        {
-                            if (methodLocals[i].Index != localSymbol.Index)
-                            {
-                                continue;
-                            }
-
-                            local = methodLocals[i];
-                            break;
-                        }
-
-                        if (local == null)
-                        {
-                            continue;
-                        }
-
-                        if (IsCompilerGeneratedAttributeDefinedOnType(local.Type.MDToken.ToInt32()))
-                        {
-                            continue;
-                        }
-
-                        localSymbols.Add(new DatadogLocal
-                        {
-                            Name = localSymbol.Name,
-                            Type = local.Type?.FullName ?? Unknown,
-                            Line = line
-                        });
-                    }
-                }
+                return GetLocalSymbolsDnlib(rowId, sequencePoints);
             }
-            else if (PdbReader != null)
+
+            List<DatadogLocal>? localSymbols = null;
+            if (PdbReader != null)
             {
-                MethodDefinition method = GetMethodDefinition(rowId);
+                MethodDefinition method = GetMethodDef(rowId);
                 var methodLocalsCount = GetLocalVariablesCount(method);
                 if (methodLocalsCount == 0)
                 {

@@ -562,40 +562,38 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System.Buffers
         /// <remarks>This avoids using anything that might in turn recursively use the ArrayPool.</remarks>
         private static bool TryGetInt32EnvironmentVariable(string variable, out int result)
         {
-            //todo fix
+            // Avoid globalization stack, as it might in turn be using ArrayPool.
+            // todo: fix
+            // if (Environment.GetEnvironmentVariableCore_NoArrayPool(variable) is string envVar &&
+            if (Environment.GetEnvironmentVariable(variable) is string envVar &&
+                envVar.Length is > 0 and <= 32) // arbitrary limit that allows for some spaces around the maximum length of a non-negative Int32 (10 digits)
+            {
+                ReadOnlySpan<char> value = envVar.AsSpan().Trim(' ');
+                if (!value.IsEmpty && value.Length <= 10)
+                {
+                    long tempResult = 0;
+                    foreach (char c in value)
+                    {
+                        uint digit = (uint)(c - '0');
+                        if (digit > 9)
+                        {
+                            goto Fail;
+                        }
+
+                        tempResult = tempResult * 10 + digit;
+                    }
+
+                    if (tempResult is >= 0 and <= int.MaxValue)
+                    {
+                        result = (int)tempResult;
+                        return true;
+                    }
+                }
+            }
+
+        Fail:
             result = 0;
             return false;
-            // Avoid globalization stack, as it might in turn be using ArrayPool.
-
-            //    if (Environment.GetEnvironmentVariableCore_NoArrayPool(variable) is string envVar &&
-            //        envVar.Length is > 0 and <= 32) // arbitrary limit that allows for some spaces around the maximum length of a non-negative Int32 (10 digits)
-            //    {
-            //        ReadOnlySpan<char> value = envVar.AsSpan().Trim(' ');
-            //        if (!value.IsEmpty && value.Length <= 10)
-            //        {
-            //            long tempResult = 0;
-            //            foreach (char c in value)
-            //            {
-            //                uint digit = (uint)(c - '0');
-            //                if (digit > 9)
-            //                {
-            //                    goto Fail;
-            //                }
-
-            //                tempResult = tempResult * 10 + digit;
-            //            }
-
-            //            if (tempResult is >= 0 and <= int.MaxValue)
-            //            {
-            //                result = (int)tempResult;
-            //                return true;
-            //            }
-            //        }
-            //    }
-
-            //Fail:
-            //    result = 0;
-            //    return false;
         }
     }
 }

@@ -42,6 +42,21 @@ public class SymbolExtractorTest
         await Verifier.Verify(toVerify, settings);
     }
 
+    [Theory(Skip = "Implemented this")]
+    [MemberData(nameof(TestSamples))]
+    private async Task TestDnlib(Type type)
+    {
+        var assembly = Assembly.GetAssembly(type);
+        Assert.NotNull(assembly);
+        var root = GetSymbols(assembly, type.FullName);
+        Assert.True(root.Scopes.Count == 1);
+        Assert.True(root.Scopes.First().Scopes.Count == 1);
+        Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
+        var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
+        var toVerify = GetStringToVerify(root);
+        await Verifier.Verify(toVerify, settings);
+    }
+
     [Fact]
     private void CompilerGeneratedClassTest()
     {
