@@ -43,12 +43,6 @@ public class StringAspectsBenchmark
         yield return InitTaintedContext(100, enabled);
     }
 
-    /// <summary>
-    /// Generates dummy arguments for the waf
-    /// </summary>
-    /// <param name="nestingDepth">Encoder.cs respects WafConstants.cs limits to process arguments with a max depth of 20 so above depth 20, there shouldn't be much difference of performances.</param>
-    /// <param name="withAttack">an attack present in arguments can slow down waf's run</param>
-    /// <returns></returns>
     private static List<string> InitTaintedContext(int size, bool initTainted = true)
     {
         TaintedObjects taintedObjects = null;
