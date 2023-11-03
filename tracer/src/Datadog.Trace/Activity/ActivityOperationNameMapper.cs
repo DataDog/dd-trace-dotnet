@@ -4,7 +4,6 @@
 // </copyright>
 
 #nullable enable
-// TODO maybe rename to OpenTelemetryOperationNameMapper? or something better?
 namespace Datadog.Trace.Activity
 {
     /// <summary>
