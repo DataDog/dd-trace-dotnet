@@ -65,7 +65,7 @@ public class IastInstrumentationUnitTests : TestHelper
     [InlineData(typeof(string), "Trim")]
     [InlineData(typeof(string), "Substring")]
     [InlineData(typeof(string), "TrimEnd")]
-    [InlineData(typeof(string), "Format")]
+    [InlineData(typeof(string), "Format", new string[] { "System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])" })]
     [InlineData(typeof(string), "Split")]
     [InlineData(typeof(string), "Replace", new string[] { "System.String::Replace(System.String,System.String,System.StringComparison)", "System.String::Replace(System.String,System.String,System.Boolean,System.Globalization.CultureInfo)" })]
     [InlineData(typeof(string), "Concat", new string[] { "System.String Concat(System.Object)" })]

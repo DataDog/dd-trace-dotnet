@@ -350,4 +350,18 @@ public class StringFormatTests : InstrumentationTestsBase
             String.Format(_taintedFormat3Args, new object[] { "ww", "ww", "ww" }),
             () => String.Format(_taintedFormat3Args, new object[] { "ww", "ww", "ww" }));
     }
+
+#if NET8_0
+    // System.String Format(System.IFormatProvider, System.Text.CompositeFormat, System.Object[])
+
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderAppendFormatObjectArrayFormatProvider_ResultIsTainted2()
+    {
+        var composite = CompositeFormat.Parse("myformat{0}{1}");
+        AssertUntaintedWithOriginalCallCheck(
+            "myformattaintedcustomformatUntaintedStringcustomformat",
+            String.Format(new FormatProviderForTest(), composite, new object[] { _taintedValue, _untaintedString }).ToString(),
+            () => String.Format(new FormatProviderForTest(), composite, new object[] { _taintedValue, _untaintedString }).ToString());
+    }
+#endif
 }
