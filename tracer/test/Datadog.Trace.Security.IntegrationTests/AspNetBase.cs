@@ -64,7 +64,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Keep-alive is causing some weird failures on aspnetcore 2.1
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
-
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
@@ -75,6 +74,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             base.Dispose();
             _httpClient?.Dispose();
+        }
+
+        public void AddHeaders(Dictionary<string, string> headersValues)
+        {
+            foreach (var header in headersValues)
+            {
+                _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
         }
 
         public void AddCookies(Dictionary<string, string> cookiesValues)
