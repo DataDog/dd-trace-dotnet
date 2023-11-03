@@ -20,7 +20,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore;
     MethodName = ".ctor",
     ReturnTypeName = ClrNames.Void,
     MinimumVersion = "2",
-    MaximumVersion = "7",
+    MaximumVersion = "8",
     IntegrationName = nameof(IntegrationId.AspNetCore),
     InstrumentationCategory = InstrumentationCategory.AppSec)]
 [Browsable(false)]
