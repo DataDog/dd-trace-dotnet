@@ -443,7 +443,7 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 default:
-                    Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    Log.Debug("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
                     ddwafObjectStruct = GetStringObject(string.Empty);
                     break;
             }
