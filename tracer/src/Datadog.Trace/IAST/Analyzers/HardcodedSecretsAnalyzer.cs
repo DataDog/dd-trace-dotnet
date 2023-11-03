@@ -66,6 +66,11 @@ internal class HardcodedSecretsAnalyzer
                                 if (!string.IsNullOrEmpty(match))
                                 {
                                     var location = Marshal.PtrToStringUni(userStrings[x].Location);
+                                    if (string.IsNullOrEmpty(location))
+                                    {
+                                        continue;
+                                    }
+
                                     IastModule.OnHardcodedSecret(new Vulnerability(
                                         VulnerabilityTypeName.HardcodedSecret,
                                         (VulnerabilityTypeName.HardcodedSecret + ":" + location!).GetStaticHashCode(),
