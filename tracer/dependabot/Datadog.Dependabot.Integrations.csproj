@@ -38,8 +38,8 @@
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.10 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.204.10" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.11 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.204.11" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
@@ -88,8 +88,8 @@
 
     <!-- Integration: HotChocolate.Execution -->
     <!-- Assembly: HotChocolate.Execution -->
-    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.6.1 -->
-    <PackageReference Include="HotChocolate.AspNetCore" Version="13.6.1" />
+    <!-- Latest package https://www.nuget.org/packages/HotChocolate.AspNetCore/13.7.0 -->
+    <PackageReference Include="HotChocolate.AspNetCore" Version="13.7.0" />
 
     <!-- Integration: System.Net.Http -->
     <!-- Assembly: System.Net.Http -->
@@ -218,8 +218,8 @@
 
     <!-- Integration: StackExchange.Redis -->
     <!-- Assembly: StackExchange.Redis -->
-    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.6.122 -->
-    <PackageReference Include="StackExchange.Redis" Version="2.6.122" />
+    <!-- Latest package https://www.nuget.org/packages/StackExchange.Redis/2.7.4 -->
+    <PackageReference Include="StackExchange.Redis" Version="2.7.4" />
 
     <!-- Integration: StackExchange.Redis.StrongName -->
     <!-- Assembly: StackExchange.Redis.StrongName -->
@@ -238,12 +238,12 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.5.3 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.6.0 -->
     <PackageReference Include="xunit" Version="2.5.3" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.5.3 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.6.0 -->
     <PackageReference Include="xunit.extensibility.execution" Version="2.5.3" />
 
     <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
