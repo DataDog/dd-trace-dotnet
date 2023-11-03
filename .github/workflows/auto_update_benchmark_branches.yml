@@ -6,9 +6,9 @@ on:
 
 jobs:
   update_benchmark_branches:
-    # only run on "normal" 2.0 branches
+    # only run on "normal" 3.0 branches
     if: |
-      startsWith(github.event.release.tag_name, 'v2.')
+      startsWith(github.event.release.tag_name, 'v3.')
       && !endsWith(github.event.release.tag_name, '-prerelease')
     runs-on: ubuntu-latest
     steps:
