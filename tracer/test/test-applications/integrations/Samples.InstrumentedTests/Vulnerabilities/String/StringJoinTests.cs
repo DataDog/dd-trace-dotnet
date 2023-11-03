@@ -255,8 +255,9 @@ public class StringJoinTests : InstrumentationTestsBase
     public void GivenATaintedStringInList_WhenCallingJoinWithChar_ResultIsTainted10()
     {
         var objectList = new List<object> { TaintedObject, UntaintedObject, OtherTaintedObject };
-        AssertUntaintedWithOriginalCallCheck(
-            () => string.Join(' ', objectList),
+        AssertTaintedFormatWithOriginalCallCheck(
+            ":+-TaintedObject-+: UntaintedObject :+-OtherTaintedObject-+:",
+            string.Join(' ', objectList),
             () => string.Join(' ', objectList));
     }
 

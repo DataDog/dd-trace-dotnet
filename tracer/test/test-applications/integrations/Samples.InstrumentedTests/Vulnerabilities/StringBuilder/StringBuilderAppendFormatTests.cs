@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using System.Text;
 using Xunit;
 
@@ -181,4 +182,19 @@ public class StringBuilderAppendFormatTests : InstrumentationTestsBase
             new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString(), 
             () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), "myformat{0}{1}", new object[] { _taintedValue, _notTaintedValue }).ToString());
     }
+
+    
+#if NET8_0
+    // System.StringBuilder::AppendFormat(System.IFormatProvider,System.Text.CompositeFormat,System.Object[])
+     
+    [Fact]
+    public void GivenATaintedString_WhenCallingStringBuilderAppendFormatObjectArrayFormatProvider_ResultIsTainted2()
+    {
+        var composite = CompositeFormat.Parse("myformat{0}{1}");
+        AssertUntaintedWithOriginalCallCheck(
+            "myformattaintedcustomformatnotTaintedcustomformat",
+            new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString(),
+            () => new StringBuilder(string.Empty).AppendFormat(new FormatProviderForTest(), composite, new object[] { _taintedValue, _notTaintedValue }).ToString());
+    }
+#endif
 }
