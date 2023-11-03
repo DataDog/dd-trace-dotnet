@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
@@ -15,16 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <summary>
         /// Gets the service endpoint
         /// </summary>
-        Uri Endpoint { get; }
+        Uri? Endpoint { get; }
 
         /// <summary>
         /// Gets the HTTP method
         /// </summary>
-        string HttpMethod { get; }
+        string? HttpMethod { get; }
 
         /// <summary>
         /// Gets the resource path
         /// </summary>
-        string ResourcePath { get; }
+        string? ResourcePath { get; }
     }
 }
