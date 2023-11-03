@@ -447,6 +447,7 @@ namespace Datadog.Trace.AppSec.Waf
                     {
                         Log.Debug("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
                     }
+
                     ddwafObjectStruct = GetStringObject(string.Empty);
                     break;
             }
