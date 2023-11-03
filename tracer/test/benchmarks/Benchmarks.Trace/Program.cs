@@ -112,9 +112,6 @@ namespace Benchmarks.Trace
                 }
             }
 
-            // Retrieve the Benchmark methods
-            var benchmarkMethods = typeof(T).GetMethods().Where(m => Attribute.GetCustomAttribute(m, typeof(BenchmarkDotNet.Attributes.BenchmarkAttribute)) != null).ToList();
-
             return 0;
 
         }
