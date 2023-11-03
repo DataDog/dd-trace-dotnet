@@ -78,7 +78,7 @@ namespace Benchmarks.Trace
             Console.WriteLine("Running tests...");
             BenchmarkSwitcher.FromAssembly(typeof(Program).Assembly).Run(args, config);
 
-            return 0;
+            return Environment.ExitCode;
         }
 
         private static int Debug<T>(string methodName, params object[] arguments)
