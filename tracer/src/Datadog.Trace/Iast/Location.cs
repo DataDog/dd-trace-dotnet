@@ -13,7 +13,7 @@ internal readonly struct Location
     {
         if (!string.IsNullOrEmpty(stackFile))
         {
-            this.Path = System.IO.Path.GetFileName(stackFile);
+            this.Path = System.IO.Path.GetFileName(stackFile!.Replace('/', System.IO.Path.DirectorySeparatorChar).Replace('\\', System.IO.Path.DirectorySeparatorChar));
             this.Line = line;
         }
         else
