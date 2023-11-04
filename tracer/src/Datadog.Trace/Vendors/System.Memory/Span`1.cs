@@ -14,6 +14,7 @@ using System;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 using Unsafe = Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe.Unsafe;
 #pragma warning disable CS8625
 
@@ -71,6 +72,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
         {
             if (array == null)
             {
+                ref var refThis = ref this;
+                refThis = new Span<T>();
                 // todo: fix *(Span<T>*) ref this = new Span<T>();
             }
             else
@@ -111,6 +114,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
             {
                 if (start != 0 || length != 0)
                     ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+                
+                ref var refThis = ref this;
+                refThis = new Span<T>();
                 // todo: fix *(Span<T>*) ref this = new Span<T>();
             }
             else

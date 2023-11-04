@@ -70,6 +70,8 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
     {
       if (array == null)
       {
+          ref var refThis = ref this;
+          refThis = new ReadOnlySpan<T>();
         // todo: fix *(ReadOnlySpan<T>*) ref this = new ReadOnlySpan<T>();
       }
       else
@@ -90,6 +92,9 @@ namespace Datadog.Trace.VendoredMicrosoftCode.System
       {
         if (start != 0 || length != 0)
           ThrowHelper.ThrowArgumentOutOfRangeException(ExceptionArgument.start);
+        
+        ref var refThis = ref this;
+        refThis = new ReadOnlySpan<T>();
         // todo: fix *(ReadOnlySpan<T>*) ref this = new ReadOnlySpan<T>();
       }
       else
