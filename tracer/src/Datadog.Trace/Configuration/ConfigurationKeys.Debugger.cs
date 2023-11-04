@@ -47,14 +47,14 @@ namespace Datadog.Trace.Configuration
             public const string SymbolBatchSizeInBytes = "DD_DEBUGGER_SYMBOL_BATCH_SIZE_BYTES";
 
             /// <summary>
-            /// Configuration key for allowing uploading symbol database.
+            /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
             public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASED_UPLOAD_ENABLED";
 
             /// <summary>
-            /// Configuration key for allowing uploading symbol database for internal use.
+            /// Configuration key for forcing the client library to upload symbol data, regardless of whether it is requested by our backend. For internal use and testing.
             /// Default value is false (disabled).
             /// </summary>
             public const string SymbolDatabaseUploadEnabledInternal = "DD_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";

@@ -32,7 +32,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _discoveryService.SubscribeToChanges(ConfigurationChanged);
         }
 
-        private static ArraySegment<byte> GetEventAsArraySegment(string? serviceName)
+        private static ArraySegment<byte> GetEventMetadataAsArraySegment(string? serviceName)
         {
             var sb = new StringBuilder();
             sb.Append(@"{");
@@ -52,7 +52,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             try
             {
-                var eventMetadata = GetEventAsArraySegment(serviceName);
+                var eventMetadata = GetEventMetadataAsArraySegment(serviceName);
                 return new SymbolBatchUploadApi(apiRequestFactory, discoveryService, eventMetadata);
             }
             catch (Exception e)
