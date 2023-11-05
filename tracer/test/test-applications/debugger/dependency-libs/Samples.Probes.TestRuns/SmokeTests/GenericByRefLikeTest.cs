@@ -21,17 +21,17 @@ namespace Samples.Probes.TestRuns.SmokeTests
         public void Run()
         {
             var place = new Place { Type = PlaceType.City, Name = "New York" };
-            var address = new Address { City = place, HomeType = BuildingType.Duplex, Number = 15, Street = "Harlem" };
+            var adr = new Address { City = place, HomeType = BuildingType.Duplex, Number = 15, Street = "Harlem" };
             var children = new List<Person>();
-            children.Add(new Person("Ralph Jr.", 31, address, Guid.Empty, null));
-            var person = new Person("Ralph", 99, address, Guid.Empty, children);
+            children.Add(new Person("Ralph Jr.", 31, adr, Guid.Empty, null));
+            var person = new Person("Ralph", 99, adr, Guid.Empty, children);
 
             var genericByRefLike = new GenericByRefLike<Person>(person);
             genericByRefLike.CallMe("Hello from the outside 1!", genericByRefLike, ref genericByRefLike);
             genericByRefLike.CallMe2("Hello from the outside 2!", genericByRefLike, ref genericByRefLike);
             genericByRefLike.CallMe3("Hello from the outside 3!", genericByRefLike, ref genericByRefLike);
 
-            var genericByRefLike2 = new GenericByRefLike<Address>(address);
+            var genericByRefLike2 = new GenericByRefLike<Address>(adr);
             genericByRefLike.CallMe4<Address>("Hello from the outside 3!", genericByRefLike2, ref genericByRefLike2);
         }
         

@@ -193,6 +193,7 @@ namespace Datadog.Trace.Debugger.Expressions
                                         if (info.IsAsyncCapture())
                                         {
                                             AddAsyncMethodArguments(snapshotCreator, ref info);
+                                            AddAsyncMethodLocals(snapshotCreator, ref info);
                                         }
 
                                         snapshotCreator.AddScopeMember(info.Name, info.Type, info.Value, info.MemberKind);
