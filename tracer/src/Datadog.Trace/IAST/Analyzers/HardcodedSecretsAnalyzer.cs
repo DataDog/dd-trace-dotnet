@@ -68,12 +68,14 @@ internal class HardcodedSecretsAnalyzer
                                     var location = Marshal.PtrToStringUni(userStrings[x].Location);
                                     if (string.IsNullOrEmpty(location))
                                     {
-                                        continue;
+                                        Log.Warning("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret with empty (unknown) location", match);
+                                        location = "Unknown";
                                     }
 
+                                    Log.Debug("HardcodedSecretsAnalyzer polling thread -> Found {Match} secret", match);
                                     IastModule.OnHardcodedSecret(new Vulnerability(
                                         VulnerabilityTypeName.HardcodedSecret,
-                                        (VulnerabilityTypeName.HardcodedSecret + ":" + location!).GetStaticHashCode(),
+                                        (VulnerabilityTypeName.HardcodedSecret + ":" + location! + ":" + match!).GetStaticHashCode(),
                                         new Location(location!),
                                         new Evidence(match!),
                                         IntegrationId.HardcodedSecret));
@@ -92,7 +94,7 @@ internal class HardcodedSecretsAnalyzer
                     }
                 }
 
-                _waitEvent.Wait(5_000);
+                _waitEvent.Wait(2_000);
             }
         }
         catch (Exception err)
