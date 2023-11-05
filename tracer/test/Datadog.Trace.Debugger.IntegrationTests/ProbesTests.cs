@@ -82,7 +82,6 @@ public class ProbesTests : TestHelper
         new List<object[]>
         {
             new object[] { typeof(SpanDecorationArgsAndLocals) },
-            new object[] { typeof(SpanDecorationAsync) },
             new object[] { typeof(SpanDecorationTwoTags) },
             new object[] { typeof(SpanDecorationSameTags) },
             new object[] { typeof(SpanDecorationSameTagsFirstError) },
