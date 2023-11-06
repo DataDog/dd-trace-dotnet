@@ -3,9 +3,59 @@
 
 #include "IpcClient.h"  // TODO: return codes should be defined in another shared header file
 #include "IpcServer.h"
-#include "DebugHelpers.h"
 #include <iostream>
 #include <memory>
+#include <vector>
+#include <optional>
+#include <aclapi.h>
+
+namespace
+{
+    template <class P> struct heap_deleter
+    {
+        typedef P* pointer;
+
+        void operator()(pointer ptr) const
+        {
+            HeapFree(GetProcessHeap(), 0, ptr);
+        }
+    };
+    typedef std::unique_ptr<SID, heap_deleter<SID>> sid_ptr;
+
+    sid_ptr make_sid(size_t sidLength)
+    {
+        return sid_ptr(static_cast<sid_ptr::pointer>(HeapAlloc(GetProcessHeap(), HEAP_ZERO_MEMORY, sidLength)));
+    }
+
+    std::optional<sid_ptr> World()
+    {
+        PSID psid = nullptr;
+        SID_IDENTIFIER_AUTHORITY sidIdAuthority = SECURITY_WORLD_SID_AUTHORITY;
+        if (!AllocateAndInitializeSid(&sidIdAuthority, 1,
+            SECURITY_WORLD_RID,
+            0, 0, 0, 0, 0, 0, 0,
+            &psid))
+        {
+            return std::nullopt;
+        }
+        return sid_ptr(static_cast<sid_ptr::pointer>(psid));
+    }
+
+    std::optional<sid_ptr> BuiltinAdministrator()
+    {
+        PSID psid = nullptr;
+        SID_IDENTIFIER_AUTHORITY sidIdAuthority = SECURITY_NT_AUTHORITY;
+        if (!AllocateAndInitializeSid(&sidIdAuthority, 1,
+            SECURITY_BUILTIN_DOMAIN_RID,
+            DOMAIN_ALIAS_RID_ADMINS,
+            0, 0, 0, 0, 0, 0,
+            &psid))
+        {
+            return std::nullopt;
+        }
+        return sid_ptr(static_cast<sid_ptr::pointer>(psid));
+    }
+}
 
 IpcServer::IpcServer()
 {
@@ -68,6 +118,20 @@ void IpcServer::Stop()
     _stopRequested.store(true);
 }
 
+LONG GetStringRegKey(HKEY hKey, const std::wstring& strValueName, std::wstring& strValue, const std::wstring& strDefaultValue)
+{
+    strValue = strDefaultValue;
+    WCHAR szBuffer[512];
+    DWORD dwBufferSize = sizeof(szBuffer);
+    ULONG nError;
+    nError = RegQueryValueExW(hKey, strValueName.c_str(), 0, NULL, (LPBYTE)szBuffer, &dwBufferSize);
+    if (ERROR_SUCCESS == nError)
+    {
+        strValue = szBuffer;
+    }
+    return nError;
+}
+
 void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID context)
 {
     IpcServer* pThis = reinterpret_cast<IpcServer*>(context);
@@ -76,6 +140,134 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     // so we would need to use the overlapped version to support _stopRequested :^(
     while (!pThis->_stopRequested.load())
     {
+        HKEY hKey;
+        LONG lRes = RegOpenKeyExW(HKEY_LOCAL_MACHINE, L"SOFTWARE\\Datadog\\Datadog Agent", 0, KEY_READ, &hKey);
+        if (lRes != ERROR_SUCCESS)
+        {
+            pThis->ShowLastError("Failed to retrieve ddagentuser...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        std::wstring ddagentUser, ddagentDomain;
+        GetStringRegKey(hKey, L"installedUser", ddagentUser, L"");
+        GetStringRegKey(hKey, L"installedDomain", ddagentDomain, L"");
+
+        DWORD cbSid = 0;
+        DWORD cchRefDomain = 0;
+        SID_NAME_USE use;
+
+        LookupAccountName(ddagentDomain.c_str(), ddagentUser.c_str(), nullptr, &cbSid, nullptr, &cchRefDomain, &use);
+        sid_ptr sidDdagentUser = make_sid(cbSid);
+        std::vector<wchar_t> refDomain;
+        // +1 in case cchRefDomain == 0
+        refDomain.resize(cchRefDomain + 1);
+        if (!LookupAccountName(ddagentDomain.c_str(), ddagentUser.c_str(), sidDdagentUser.get(), &cbSid, &refDomain[0], &cchRefDomain, &use) || !IsValidSid(sidDdagentUser.get()))
+        {
+            pThis->ShowLastError("Failed to lookup ddagentuser SID...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        auto sidEveryone = World();
+        if (!sidEveryone.has_value())
+        {
+            pThis->ShowLastError("Failed to create Everyone SID...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+        auto sidAdmin = BuiltinAdministrator();
+        if (!sidAdmin.has_value())
+        {
+            pThis->ShowLastError("Failed to create Builting\\Administrator SID...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        std::vector explicitAccess =
+        {
+            EXPLICIT_ACCESS
+            {
+                .grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | SYNCHRONIZE,
+                .grfAccessMode = SET_ACCESS,
+                .grfInheritance = NO_INHERITANCE,
+                .Trustee = TRUSTEE {
+                    .pMultipleTrustee = nullptr,
+                    .MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE,
+                    .TrusteeForm = TRUSTEE_IS_SID,
+                    .TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP,
+                    .ptstrName = reinterpret_cast<LPTSTR>(sidEveryone->get()),
+                }
+            },
+            EXPLICIT_ACCESS
+            {
+                .grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | SYNCHRONIZE,
+                .grfAccessMode = SET_ACCESS,
+                .grfInheritance = NO_INHERITANCE,
+                .Trustee = TRUSTEE {
+                    .pMultipleTrustee = nullptr,
+                    .MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE,
+                    .TrusteeForm = TRUSTEE_IS_SID,
+                    .TrusteeType = TRUSTEE_IS_WELL_KNOWN_GROUP,
+                    .ptstrName = reinterpret_cast<LPTSTR>(sidAdmin->get()),
+                }
+            },
+            EXPLICIT_ACCESS
+            {
+                .grfAccessPermissions = FILE_GENERIC_READ | FILE_GENERIC_WRITE | SYNCHRONIZE,
+                .grfAccessMode = SET_ACCESS,
+                .grfInheritance = NO_INHERITANCE,
+                .Trustee = TRUSTEE {
+                    .pMultipleTrustee = nullptr,
+                    .MultipleTrusteeOperation = NO_MULTIPLE_TRUSTEE,
+                    .TrusteeForm = TRUSTEE_IS_SID,
+                    .TrusteeType = TRUSTEE_IS_USER,
+                    .ptstrName = reinterpret_cast<LPTSTR>(sidDdagentUser.get()),
+                }
+            },
+        };
+
+        PACL pACL = nullptr;
+        if (SetEntriesInAcl(explicitAccess.size(), &explicitAccess[0], nullptr, &pACL) != ERROR_SUCCESS)
+        {
+            pThis->ShowLastError("Failed to SetEntriesInAcl...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        SECURITY_DESCRIPTOR securityDescriptor;
+        if (!InitializeSecurityDescriptor(&securityDescriptor, SECURITY_DESCRIPTOR_REVISION))
+        {
+            pThis->ShowLastError("Failed to InitializeSecurityDescriptor...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        if (!SetSecurityDescriptorDacl(&securityDescriptor,
+            TRUE,     // bDaclPresent flag   
+            pACL,
+            FALSE))   // not a default DACL 
+        {
+            pThis->ShowLastError("Failed to SetSecurityDescriptorDacl...");
+            pThis->_pHandler->OnStartError();
+            return;
+        }
+
+        SECURITY_ATTRIBUTES sa = {
+            .nLength = sizeof(SECURITY_ATTRIBUTES),
+            .lpSecurityDescriptor = &securityDescriptor,
+            .bInheritHandle = FALSE,
+        };
+
+        // This works too but is akin to having no-security at all.
+        //SECURITY_ATTRIBUTES g_sa = { 0 };
+        //g_sa.nLength = sizeof(g_sa);
+        //auto g_hsa = GlobalAlloc(GHND, SECURITY_DESCRIPTOR_MIN_LENGTH);
+        //g_sa.lpSecurityDescriptor = GlobalLock(g_hsa);
+        //g_sa.bInheritHandle = TRUE;
+        //InitializeSecurityDescriptor(g_sa.lpSecurityDescriptor, 1);
+        //SetSecurityDescriptorDacl(g_sa.lpSecurityDescriptor, TRUE, NULL, FALSE);
+
         HANDLE hNamedPipe =
             ::CreateNamedPipeA(
                 pThis->_portName.c_str(),
@@ -85,7 +277,7 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
                 pThis->_outBufferSize,
                 pThis->_inBufferSize,
                 0,
-                nullptr
+                &sa
                 );
 
         pThis->_serverCount++;
