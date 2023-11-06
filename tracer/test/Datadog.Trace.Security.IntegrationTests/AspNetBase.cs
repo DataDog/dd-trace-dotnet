@@ -80,7 +80,7 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             foreach (var header in headersValues)
             {
-                _httpClient.DefaultRequestHeaders[header.Key] = header.Value;
+                _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
             }
         }
 

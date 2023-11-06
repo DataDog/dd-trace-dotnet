@@ -341,7 +341,7 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/ExecuteCommandFromHeader";
         IncludeAllHttpSpans = true;
-        AddHeaders(new () { { "file", "file.txt" }, { "argumentLine", "arg1" } });
+        AddHeaders(new() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, new string[] { url });
