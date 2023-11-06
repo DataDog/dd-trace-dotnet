@@ -114,13 +114,23 @@ namespace Samples.Security.AspNetCore5
                         });
                 });
 
-            app.Use(
-                async (context, next) =>
+            app.Use(async (context, next) =>
+            {
+                context.Response.OnStarting(state =>
                 {
-                    // make sure if we go into this middleware after blocking has happened that it s not a second request issued by the developerhandlingpage middleware! if it s that no worries it s another request, not the attack one., its  a redirect.
-                    // await context.Response.WriteAsync("do smth before all");
-                    await next.Invoke();
-                });
+                    var httpContext = (HttpContext)state;
+                    if (!httpContext.Request.Path.Value.ToLowerInvariant().Contains("xcontenttypeheadermissing"))
+                    {
+                        if (!httpContext.Response.Headers.ContainsKey("X-Content-Type-Options"))
+                        {
+                            httpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                        }
+                    }
+                    return Task.CompletedTask;
+                }, context);
+
+                await next.Invoke(); // Pass control to the next middleware.
+            });
 
 
             app.UseEndpoints(
