@@ -10,6 +10,8 @@ namespace Datadog.Trace.Tagging
 {
     internal partial class IbmMqTags : InstrumentationTags
     {
+        public IbmMqTags() => SpanKind = SpanKinds.Consumer;
+
         public IbmMqTags(string spanKind) => SpanKind = spanKind;
 
         /// <inheritdoc/>
