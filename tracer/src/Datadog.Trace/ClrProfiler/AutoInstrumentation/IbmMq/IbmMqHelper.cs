@@ -10,6 +10,7 @@ using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.DataStreamsMonitoring;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.Vendors.Serilog;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq;
@@ -32,6 +33,8 @@ internal static class IbmMqHelper
 
             var operationName = tracer.CurrentTraceSettings.Schema.Messaging.GetOutboundOperationName(MessagingType);
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Consumer);
+            tags.TopicName = queue.Name;
 
             scope = tracer.StartActiveInternal(
                 operationName,
@@ -39,7 +42,7 @@ internal static class IbmMqHelper
                 finishOnClose: true);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
 
-            var resourceName = $"Produce Topic {queue.Name}";
+            var resourceName = $"Produce Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
 
             var span = scope.Span;
             span.Type = SpanTypes.Queue;
@@ -59,7 +62,7 @@ internal static class IbmMqHelper
 
     internal static Scope? CreateConsumerScope(
         Tracer tracer,
-        CallTargetState state,
+        DateTimeOffset? spanStartTime,
         IMqQueue queue,
         IMqMessage message)
     {
@@ -109,14 +112,16 @@ internal static class IbmMqHelper
             }
 
             var serviceName = tracer.CurrentTraceSettings.Schema.Messaging.GetServiceName(MessagingType);
+            var tags = tracer.CurrentTraceSettings.Schema.Messaging.CreateIbmMqTags(SpanKinds.Producer);
+            tags.TopicName = queue.Name;
             scope = tracer.StartActiveInternal(
                 operationName,
+                tags: tags,
                 parent: propagatedContext,
                 serviceName: serviceName,
                 finishOnClose: true,
-                startTime: state.StartTime);
+                startTime: spanStartTime);
             tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId.IbmMq);
-
             var resourceName = $"Consume Topic {(string.IsNullOrEmpty(queue.Name) ? "ibmmq" : queue.Name)}";
 
             var span = scope.Span;
