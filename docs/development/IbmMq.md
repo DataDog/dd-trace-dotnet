@@ -1,6 +1,6 @@
 # IBM MQ integration
 
-This integration doesn't include any unit tests or a test application and provided as is. 
+This integration doesn't include any unit tests or a test application and provided as is for licensing reasons. 
 This documentation includes some tips on how to create / run a simple test application.
 
 Note: you can also refer to the original IBM
