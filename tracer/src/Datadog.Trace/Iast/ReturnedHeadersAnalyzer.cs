@@ -4,7 +4,9 @@
 // </copyright>
 
 using System;
+using System.Collections.Specialized;
 using System.Net;
+using System.Net.Mime;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 #if !NETFRAMEWORK
@@ -17,9 +19,46 @@ namespace Datadog.Trace.Iast;
 
 internal static class ReturnedHeadersAnalyzer
 {
+    private const string ContentTypeLow = "content-type";
+    private const string XContentTypeOptionsLow = "x-content-type-options";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
 #if NETFRAMEWORK
+    internal static void Analyze(NameValueCollection headers, IntegrationId integrationId, string serviceName)
+    {
+        try
+        {
+            if (string.IsNullOrEmpty(serviceName))
+            {
+                return;
+            }
+
+            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+
+            string contentTypeValue = string.Empty;
+            string contentOptionValue = string.Empty;
+
+            // We iterate instead of trying to get the key directly because keys are case insensitive
+            foreach (var headerKey in headers.AllKeys)
+            {
+                if (headerKey.ToLowerInvariant() == ContentTypeLow)
+                {
+                    contentTypeValue = headers[headerKey];
+                }
+
+                if (headerKey.ToLowerInvariant() == XContentTypeOptionsLow)
+                {
+                    contentOptionValue = headers[headerKey];
+                }
+            }
+
+            LaunchVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+        }
+        catch (Exception error)
+        {
+            Log.Error(error, $"{nameof(ReturnedHeadersAnalyzer)}.{nameof(Analyze)} exception");
+        }
+    }
 #else
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
@@ -38,24 +77,21 @@ internal static class ReturnedHeadersAnalyzer
             string contentTypeValue = string.Empty;
             string contentOptionValue = string.Empty;
 
-            // headers can be case insensitive
+            // We iterate instead of trying to get the key directly because keys are case insensitive
             foreach (var header in responseHeaders)
             {
-                if (header.Key.ToLowerInvariant() == "content-type")
+                if (header.Key.ToLowerInvariant() == ContentTypeLow)
                 {
                     contentTypeValue = header.Value;
                 }
 
-                if (header.Key.ToLowerInvariant() == "x-content-type-options")
+                if (header.Key.ToLowerInvariant() == XContentTypeOptionsLow)
                 {
                     contentOptionValue = header.Value;
                 }
             }
 
-            if (IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
-            {
-                IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
-            }
+            LaunchVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
         }
         catch (Exception error)
         {
@@ -63,6 +99,14 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 #endif
+
+    private static void LaunchVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
+    {
+        if (IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
+        {
+            IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
+        }
+    }
 
     private static bool IsHtmlResponse(string contentTypeValue)
     {

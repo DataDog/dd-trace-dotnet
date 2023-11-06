@@ -279,6 +279,11 @@ namespace Datadog.Trace.AspNet
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
+                            if (rootSpan is not null)
+                            {
+                                ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId.AspNetCore, rootSpan.ServiceName);
+                            }
+
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
                         }
 

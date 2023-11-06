@@ -161,11 +161,11 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
     [InlineData("text/html", 500, "")]
     public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
     {
-        var commandLine = "?contentType=" + contentType + "&returnCode=" + returnCode +
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
             (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
         var filename = "Iast.XContentTypeHeaderMissing.AspNetCore5." + contentType.Replace("/", string.Empty) +
             "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(xContentTypeHeaderValue) ? "empty" : xContentTypeHeaderValue);
-        var url = "/Iast/XContentTypeHeaderMissing" + commandLine;
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
         IncludeAllHttpSpans = true;
         await TryStartApp();
         var agent = Fixture.Agent;
