@@ -34,6 +34,7 @@
 #include "IMetadataProvider.h"
 #include "ThreadLifetimeProvider.h"
 #include "shared/src/native-src/string.h"
+#include "IEtwEventsManager.h"
 
 #include <atomic>
 #include <memory>
@@ -46,6 +47,8 @@ class IManagedThreadList;
 class IStackSamplerLoopManager;
 class IConfiguration;
 class IExporter;
+
+
 #ifdef LINUX
 class SystemCallsShield;
 #endif
@@ -258,9 +261,7 @@ private :
 
     std::unique_ptr<ISamplesProvider> _gcThreadsCpuProvider;
     std::unique_ptr<IMetadataProvider> _pMetadataProvider;
-
-    // TODO: figure out why this is not compiling
-    //std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
+    std::unique_ptr<IEtwEventsManager> _pEtwEventsManager;
 
 private:
     static void ConfigureDebugLog();

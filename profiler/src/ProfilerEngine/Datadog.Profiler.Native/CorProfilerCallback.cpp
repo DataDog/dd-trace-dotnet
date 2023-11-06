@@ -283,12 +283,11 @@ bool CorProfilerCallback::InitializeServices()
             );
         if (_pRuntimeInfo->IsDotnetFramework())
         {
-            // TODO: figure out why this is not compiling
-            //_pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
-            //    _pAllocationsProvider,
-            //    _pContentionProvider,
-            //    _pStopTheWorldProvider
-            //    );
+            _pEtwEventsManager = OsSpecificApi::CreateEtwEventsManager(
+                _pAllocationsProvider,
+                _pContentionProvider,
+                _pStopTheWorldProvider
+                );
         }
 
         if (_pGarbageCollectionProvider != nullptr)
@@ -296,8 +295,7 @@ bool CorProfilerCallback::InitializeServices()
             _pEventPipeEventsManager->Register(_pGarbageCollectionProvider);
             if (_pRuntimeInfo->IsDotnetFramework())
             {
-                // TODO: figure out why this is not compiling
-                //_pEtwEventsManager->Register(_pGarbageCollectionProvider);
+                _pEtwEventsManager->Register(_pGarbageCollectionProvider);
             }
         }
         if (_pLiveObjectsProvider != nullptr)
@@ -536,13 +534,10 @@ void CorProfilerCallback::DisposeInternal()
         }
 
         // Do the same for .NET Framework if any
-        // TODO: figure out why this is not compiling
-        //if (_pEtwEventsManager != nullptr)
-        //{
-        //    _pEtwEventsManager->Stop();
-
-        //    // TODO: maybe this is where we will need to call  delete _pEtwEventsManager.get() or Stop() will delete itself like Release() in COM
-        //}
+        if (_pEtwEventsManager != nullptr)
+        {
+            _pEtwEventsManager->Stop();
+        }
 
         ICorProfilerInfo5* pCorProfilerInfo = _pCorProfilerInfo;
         if (pCorProfilerInfo != nullptr)
@@ -1017,9 +1012,7 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     //if (_pRuntimeInfo->IsDotnetFramework() && (_pEtwEventsManager != nullptr))
     if (_pRuntimeInfo->IsDotnetFramework())
     {
-        // TODO: check why this is not compiling
-        //auto success = _pEtwEventsManager->Start();
-        auto success = false;
+        auto success = _pEtwEventsManager->Start();
         if (!success)
         {
             // TODO: how to change _pEnabledProfilers to tell that GC/lock contention/allocations are disabled?
