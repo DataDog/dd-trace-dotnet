@@ -27,6 +27,7 @@ namespace Datadog.Trace
             var osPlatform = "unknown";
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
+            var osDescription = "unknown";
 
             try
             {
@@ -56,6 +57,7 @@ namespace Datadog.Trace
                     osPlatform = Trace.OSPlatformName.MacOS;
                 }
 
+                osDescription = RuntimeInformation.OSDescription;
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
                 processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
                 frameworkVersion = GetNetCoreOrNetFrameworkVersion();
@@ -70,7 +72,8 @@ namespace Datadog.Trace
                 productVersion: frameworkVersion,
                 osPlatform: osPlatform,
                 osArchitecture: osArchitecture,
-                processArchitecture: processArchitecture);
+                processArchitecture: processArchitecture,
+                osDescription: osDescription);
         }
 
         public bool IsCoreClr()
