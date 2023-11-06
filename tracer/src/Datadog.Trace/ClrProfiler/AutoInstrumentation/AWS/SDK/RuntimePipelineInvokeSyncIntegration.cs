@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -48,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
             var scope = Tracer.Instance.InternalActiveScope;
             if (scope?.Span.Tags is AwsSdkTags tags)
             {
-                tags.Region = executionContext.RequestContext.ClientConfig.RegionEndpoint?.SystemName;
+                tags.Region = executionContext.RequestContext?.ClientConfig?.RegionEndpoint?.SystemName;
             }
 
             return new CallTargetState(scope, state: executionContext);
@@ -65,15 +67,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
         internal static CallTargetReturn<TResponseContext> OnMethodEnd<TTarget, TResponseContext>(TTarget instance, TResponseContext responseContext, Exception exception, in CallTargetState state)
-            where TResponseContext : IResponseContext
+            where TResponseContext : IResponseContext, IDuckType
         {
             if (state.Scope?.Span.Tags is AwsSdkTags tags)
             {
-                if (state.State is IExecutionContext executionContext)
+                if (state.State is IExecutionContext { RequestContext.Request: { } request })
                 {
-                    var uri = executionContext.RequestContext.Request.Endpoint;
-                    var absolutePath = uri.AbsolutePath;
-                    var path = executionContext.RequestContext.Request.ResourcePath switch
+                    var uri = request.Endpoint;
+                    var absolutePath = uri?.AbsolutePath;
+                    var path = request.ResourcePath switch
                     {
                         null => absolutePath,
                         string resourcePath when absolutePath == "/" => resourcePath,
@@ -82,12 +84,15 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 
                     // The request object is populated later by the Marshaller,
                     // so we wait until the method end callback to read it
-                    tags.HttpMethod = executionContext.RequestContext.Request.HttpMethod.ToUpperInvariant();
-                    tags.HttpUrl = $"{uri.Scheme}{Uri.SchemeDelimiter}{uri.Authority}{path}";
+                    tags.HttpMethod = request.HttpMethod?.ToUpperInvariant();
+                    tags.HttpUrl = $"{uri?.Scheme}{Uri.SchemeDelimiter}{uri?.Authority}{path}";
                 }
 
-                tags.RequestId = responseContext.Response.ResponseMetadata.RequestId;
-                state.Scope.Span.SetHttpStatusCode((int)responseContext.Response.HttpStatusCode, false, Tracer.Instance.Settings);
+                if (responseContext.Instance is not null && responseContext.Response is { } response)
+                {
+                    tags.RequestId = response.ResponseMetadata?.RequestId;
+                    state.Scope.Span.SetHttpStatusCode((int)response.HttpStatusCode, false, Tracer.Instance.Settings);
+                }
             }
 
             // Do not dispose the scope (if present) when exiting.
