@@ -1009,18 +1009,23 @@ HRESULT STDMETHODCALLTYPE CorProfilerCallback::Initialize(IUnknown* corProfilerI
     }
 
     // deal with event-based profilers in .NET Framework
-    //if (_pRuntimeInfo->IsDotnetFramework() && (_pEtwEventsManager != nullptr))
-    if (_pRuntimeInfo->IsDotnetFramework())
+    if (_pRuntimeInfo->IsDotnetFramework() && (_pEtwEventsManager != nullptr))
     {
         auto success = _pEtwEventsManager->Start();
         if (!success)
         {
-            // TODO: how to change _pEnabledProfilers to tell that GC/lock contention/allocations are disabled?
-
+            // disable event-based profilers
+            _pEnabledProfilers->Disable(RuntimeProfiler::LockContention);
+            _pEnabledProfilers->Disable(RuntimeProfiler::GC);
             Log::Error("Failed to the contact Datadog Agent named pipe dedicated to profiling. Try to install the latest version for lock contention and GC profiling.");
 
             // we should not return a failure because CPU/Wall time and exception profiling will still work as expected
         }
+
+        // these profilers are not supported in .NET Framework anyway
+        _pEnabledProfilers->Disable(RuntimeProfiler::Heap);
+        // TODO: check if we could still have an allocation profiler but without the size...
+        _pEnabledProfilers->Disable(RuntimeProfiler::Allocations);
     }
     else
     if (_pCorProfilerInfoEvents != nullptr)
