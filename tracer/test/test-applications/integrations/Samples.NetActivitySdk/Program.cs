@@ -36,6 +36,7 @@ public static class Program
         RunActivityConstructors(); // 4 spans (total 35)
         RunActivityUpdate(); //  9 spans (total 44)
         RunNonW3CId(); // 2 spans (total 46)
+        RunActivityReservedAttributes(); // 1 span (47 total)
         await Task.Delay(1000);
     }
 
@@ -254,6 +255,18 @@ public static class Program
         {
             using var activity = _source.StartActivity(name: $"operation name should be-> {data[0]}", kind: (ActivityKind)data[1], tags: (Dictionary<string, object>)data[2]);
         }
+    }
+
+    private static void RunActivityReservedAttributes()
+    {
+        var tags = new Dictionary<string, object>();
+        tags.Add("http.request.method", "GET"); // operation name would be "http.server.request" (without the override)
+        tags.Add("resource.name", "ResourceNameOverride");
+        tags.Add("operation.name", "OperationNameOverride");
+        tags.Add("service.name", "ServiceNameOverride");
+        tags.Add("span.type", "SpanTypeOverride");
+        tags.Add("analytics.event", "true"); // metric->  _dd1.sr.eausr: 1.0
+        using var activity = _source.StartActivity(name: "This name should not be in the snapshot", kind: ActivityKind.Server, tags: tags);
     }
 
     private static IEnumerable<KeyValuePair<string, object>> GenerateKeyValuePairs()
