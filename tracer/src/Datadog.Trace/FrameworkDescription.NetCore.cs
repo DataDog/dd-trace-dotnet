@@ -60,7 +60,11 @@ namespace Datadog.Trace
                 osArchitecture = RuntimeInformation.OSArchitecture.ToString().ToLowerInvariant();
                 processArchitecture = RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
                 frameworkVersion = GetNetCoreOrNetFrameworkVersion();
+#if NET8_0_OR_GREATER
+                osDescription = RuntimeInformation.OSDescription;
+#else
                 osDescription = GetOsDescription();
+#endif
             }
             catch (Exception ex)
             {
