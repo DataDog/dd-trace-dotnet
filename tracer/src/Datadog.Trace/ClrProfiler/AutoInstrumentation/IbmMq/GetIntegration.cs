@@ -35,9 +35,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.IbmMq
         }
 
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception? exception, in CallTargetState state)
-            where TTarget : IMqQueue
+            where TTarget : IMqQueue, IDuckType
         {
-            if (((IDuckType)instance).Instance != null)
+            if (instance.Instance != null)
             {
                 if (state.State != null && state.State.TryDuckCast<IMqMessage>(out var msg))
                 {
