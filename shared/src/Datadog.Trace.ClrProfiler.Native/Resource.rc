@@ -57,8 +57,8 @@ VS_VERSION_INFO VERSIONINFO
 #else
  FILEFLAGS 0x0L
 #endif
- FILEVERSION             2,41,0,0
- PRODUCTVERSION          2,41,0,0
+ FILEVERSION             2,42,0,0
+ PRODUCTVERSION          2,42,0,0
  FILEOS                  VOS_NT
  FILETYPE                VFT_DLL
 BEGIN
@@ -68,12 +68,12 @@ BEGIN
         BEGIN
             VALUE "CompanyName", "Datadog"
             VALUE "FileDescription", "Native loader for Datadog .NET APM"
-            VALUE "FileVersion", "2.41.0.0"
+            VALUE "FileVersion", "2.42.0.0"
             VALUE "InternalName", "Native loader"
             VALUE "LegalCopyright", "(c) Datadog 2020-2022"
             VALUE "OriginalFilename", "Datadog.Trace.ClrProfiler.Native.dll"
             VALUE "ProductName", "Native loader for Datadog .NET APM"
-            VALUE "ProductVersion", "2.41.0.0"
+            VALUE "ProductVersion", "2.42.0.0"
         END
     END
     BLOCK "VarFileInfo"
