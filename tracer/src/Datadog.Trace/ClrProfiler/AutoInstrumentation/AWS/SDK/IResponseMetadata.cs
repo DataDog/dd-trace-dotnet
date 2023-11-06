@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
@@ -15,7 +17,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <summary>
         /// Gets the ID of the request
         /// </summary>
-        string RequestId { get; }
+        string? RequestId { get; }
 
         /// <summary>
         /// Gets the metadata associated with the request

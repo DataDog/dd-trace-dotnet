@@ -37,8 +37,13 @@ internal static class BsonSerializationHelper
     /// Serializes a bson document object, stripping out binary data, and truncating
     /// at the maximum number of characters accepted in tags
     /// </summary>
-    public static string? ToShortString(object obj)
+    public static string? ToShortString(object? obj)
     {
+        if (obj is null)
+        {
+            return null;
+        }
+
         if (Helper is not { } helper)
         {
             // Fallback if there was an issue creating the proxies in the constructor
