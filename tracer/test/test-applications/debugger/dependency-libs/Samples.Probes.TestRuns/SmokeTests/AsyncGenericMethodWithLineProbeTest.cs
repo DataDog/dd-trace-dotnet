@@ -14,10 +14,10 @@ namespace Samples.Probes.TestRuns.SmokeTests
         {
             var place = new Place { Type = PlaceType.City, Name = "New York" };
 
-            var address = new Address { City = place, HomeType = BuildingType.Duplex, Number = 15, Street = "Harlem" };
+            var adrs = new Address { City = place, HomeType = BuildingType.Duplex, Number = 15, Street = "Harlem" };
             var children = new List<Person>();
-            children.Add(new Person("Ralph Jr.", 31, address, Guid.Empty, null));
-            var person = new Person("Ralph", 99, address, Guid.Empty, children);
+            children.Add(new Person("Ralph Jr.", 31, adrs, Guid.Empty, null));
+            var person = new Person("Ralph", 99, adrs, Guid.Empty, children);
             await new NestedAsyncGenericStruct<Generic>(person).Method(new Generic { Message = "NestedAsyncGenericStruct" }, $".{nameof(RunAsync)}");
         }
 

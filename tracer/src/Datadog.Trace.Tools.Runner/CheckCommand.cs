@@ -57,8 +57,6 @@ namespace Datadog.Trace.Tools.Runner
                     $"Unsupported platform/architecture combination: ({other.platform}{(other.musl ? " musl" : string.Empty)}/{other.arch})")
             };
 
-            var commandLine = string.Join(' ', Environment.GetCommandLineArgs().Skip(1));
-
             if (!File.Exists(ddDotnet))
             {
                 Utils.WriteError($"dd-dotnet not found at {ddDotnet}");
@@ -72,7 +70,13 @@ namespace Datadog.Trace.Tools.Runner
                 Process.Start("chmod", $"+x {ddDotnet}")!.WaitForExit();
             }
 
-            var startInfo = new ProcessStartInfo(ddDotnet, commandLine) { UseShellExecute = false };
+            var startInfo = new ProcessStartInfo(ddDotnet) { UseShellExecute = false };
+
+            foreach (var arg in Environment.GetCommandLineArgs().Skip(1))
+            {
+                startInfo.ArgumentList.Add(arg);
+            }
+
             startInfo.EnvironmentVariables["DD_INTERNAL_OVERRIDE_COMMAND"] = "dd-trace";
 
             var process = Process.Start(startInfo);

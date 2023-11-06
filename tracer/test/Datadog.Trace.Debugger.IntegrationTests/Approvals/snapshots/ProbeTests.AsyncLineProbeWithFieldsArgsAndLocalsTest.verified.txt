@@ -1,4 +1,4 @@
-[
+﻿[
   {
     "dd.span_id": "ScrubbedValue",
     "dd.trace_id": "ScrubbedValue",
@@ -15,7 +15,7 @@
                     "type": "Int32",
                     "value": "99"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -59,7 +59,7 @@
                             "type": "Int32",
                             "value": "31"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -136,7 +136,7 @@
                         "type": "Int32",
                         "value": "99"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
@@ -171,7 +171,7 @@
                                 "type": "Int32",
                                 "value": "31"
                               },
-                              "Address": {
+                              "Adrs": {
                                 "notCapturedReason": "depth",
                                 "type": "Address",
                                 "value": "Address"
@@ -226,7 +226,7 @@
                     "type": "Int32",
                     "value": "99"
                   },
-                  "Address": {
+                  "Adrs": {
                     "fields": {
                       "City": {
                         "fields": {
@@ -270,7 +270,7 @@
                             "type": "Int32",
                             "value": "31"
                           },
-                          "Address": {
+                          "Adrs": {
                             "fields": {
                               "City": {
                                 "notCapturedReason": "depth",
@@ -347,7 +347,7 @@
                         "type": "Int32",
                         "value": "99"
                       },
-                      "Address": {
+                      "Adrs": {
                         "fields": {
                           "City": {
                             "notCapturedReason": "depth",
@@ -382,7 +382,7 @@
                                 "type": "Int32",
                                 "value": "31"
                               },
-                              "Address": {
+                              "Adrs": {
                                 "notCapturedReason": "depth",
                                 "type": "Address",
                                 "value": "Address"
@@ -476,7 +476,7 @@
           "lines": {
             "23": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -572,7 +572,7 @@
           "lines": {
             "25": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -668,7 +668,7 @@
           "lines": {
             "26": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -764,7 +764,7 @@
           "lines": {
             "27": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -861,7 +861,7 @@
           "lines": {
             "28": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -901,7 +901,7 @@
                           "type": "Int32",
                           "value": "31"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "fields": {
@@ -1017,7 +1017,7 @@
           "lines": {
             "29": {
               "locals": {
-                "address": {
+                "adr": {
                   "fields": {
                     "City": {
                       "fields": {
@@ -1057,7 +1057,7 @@
                           "type": "Int32",
                           "value": "31"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "fields": {
@@ -1119,7 +1119,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1163,7 +1163,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1284,7 +1284,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1328,7 +1328,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1405,7 +1405,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1440,7 +1440,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"
@@ -1539,7 +1539,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1583,7 +1583,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1660,7 +1660,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1695,7 +1695,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"
@@ -1794,7 +1794,7 @@
                       "type": "Int32",
                       "value": "99"
                     },
-                    "Address": {
+                    "Adrs": {
                       "fields": {
                         "City": {
                           "fields": {
@@ -1838,7 +1838,7 @@
                               "type": "Int32",
                               "value": "31"
                             },
-                            "Address": {
+                            "Adrs": {
                               "fields": {
                                 "City": {
                                   "notCapturedReason": "depth",
@@ -1915,7 +1915,7 @@
                           "type": "Int32",
                           "value": "99"
                         },
-                        "Address": {
+                        "Adrs": {
                           "fields": {
                             "City": {
                               "notCapturedReason": "depth",
@@ -1950,7 +1950,7 @@
                                   "type": "Int32",
                                   "value": "31"
                                 },
-                                "Address": {
+                                "Adrs": {
                                   "notCapturedReason": "depth",
                                   "type": "Address",
                                   "value": "Address"

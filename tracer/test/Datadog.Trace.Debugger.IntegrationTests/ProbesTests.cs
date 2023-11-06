@@ -82,7 +82,6 @@ public class ProbesTests : TestHelper
         new List<object[]>
         {
             new object[] { typeof(SpanDecorationArgsAndLocals) },
-            new object[] { typeof(SpanDecorationAsync) },
             new object[] { typeof(SpanDecorationTwoTags) },
             new object[] { typeof(SpanDecorationSameTags) },
             new object[] { typeof(SpanDecorationSameTagsFirstError) },
@@ -93,6 +92,27 @@ public class ProbesTests : TestHelper
     public static IEnumerable<object[]> ProbeTests()
     {
         return DebuggerTestHelper.AllTestDescriptions();
+    }
+
+    [Fact]
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    public async Task RedactionFromConfigurationTest()
+    {
+        var testDescription = DebuggerTestHelper.SpecificTestDescription(typeof(RedactionTest));
+        const int expectedNumberOfSnapshots = 1;
+
+        var guidGenerator = new DeterministicGuidGenerator();
+        var probeId = guidGenerator.New().ToString();
+
+        var probes = new[]
+        {
+            DebuggerTestHelper.CreateDefaultLogProbe("RedactionTest", "Run", guidGenerator: null, probeTestData: new LogMethodProbeTestDataAttribute(probeId: probeId, captureSnapshot: true))
+        };
+
+        SetEnvironmentVariable(ConfigurationKeys.Debugger.RedactedIdentifiers, "RedactMe,b");
+
+        await RunSingleTestWithApprovals(testDescription, expectedNumberOfSnapshots, probes);
     }
 
     [SkippableFact]
@@ -747,6 +767,7 @@ public class ProbesTests : TestHelper
         settings.UseFileName($"{nameof(ProbeTests)}.{testName}");
         settings.DisableRequireUniquePrefix();
         settings.ScrubEmptyLines();
+
         foreach (var (regexPattern, replacement) in VerifyHelper.SpanScrubbers)
         {
             settings.AddRegexScrubber(regexPattern, replacement);

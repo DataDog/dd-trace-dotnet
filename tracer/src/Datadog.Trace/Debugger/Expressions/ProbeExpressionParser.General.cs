@@ -8,7 +8,9 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Reflection;
 using Datadog.Trace.Debugger.Helpers;
+using Datadog.Trace.Debugger.Snapshots;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
 namespace Datadog.Trace.Debugger.Expressions;
@@ -85,7 +87,7 @@ internal partial class ProbeExpressionParser<T>
         var referralMember = ParseTree(reader, parameters, itParameter);
         var refMember = (ConstantExpression)ParseTree(reader, parameters, itParameter);
 
-        return MemberPathExpression(referralMember, refMember.Value.ToString());
+        return MemberPathExpression(referralMember, refMember);
     }
 
     private Expression GetReference(JsonTextReader reader, List<ParameterExpression> parameters, ParameterExpression itParameter)
@@ -99,14 +101,22 @@ internal partial class ProbeExpressionParser<T>
                 return refMember;
             }
 
-            var argOrLocal = parameters.FirstOrDefault(p => p.Name == constant.Value.ToString());
+            var constantValue = constant.Value.ToString();
+
+            if (Redaction.ShouldRedact(constantValue, constant.Type, out _))
+            {
+                AddError(reader.Value?.ToString() ?? "N/A", "The property or field is redacted.");
+                return RedactedValue();
+            }
+
+            var argOrLocal = parameters.FirstOrDefault(p => p.Name == constantValue);
             if (argOrLocal != null)
             {
                 return argOrLocal;
             }
 
             // will return an instance field\property or an UndefinedValue
-            return MemberPathExpression(GetParameterExpression(parameters, ScopeMemberKind.This), constant.Value.ToString());
+            return MemberPathExpression(GetParameterExpression(parameters, ScopeMemberKind.This), constant);
         }
         catch (Exception e)
         {
@@ -115,15 +125,49 @@ internal partial class ProbeExpressionParser<T>
         }
     }
 
-    private Expression MemberPathExpression(Expression expression, string field)
+    private Expression MemberPathExpression(Expression expression, ConstantExpression propertyOrField)
     {
+        var propertyOrFieldValue = propertyOrField.Value.ToString();
+
         try
         {
-            return Expression.PropertyOrField(expression, field);
+            if (Redaction.ShouldRedact(propertyOrFieldValue, propertyOrField.Type, out _))
+            {
+                AddError($"{expression}.{propertyOrFieldValue}", "The property or field is redacted.");
+                return RedactedValue();
+            }
+
+            var memberInfo = expression.Type.GetMember(
+                propertyOrFieldValue,
+                BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static | BindingFlags.Instance)
+                .FirstOrDefault();
+
+            if (memberInfo == null)
+            {
+                AddError($"{expression}.{propertyOrFieldValue}", "The property or field does not exist.");
+                return UndefinedValue();
+            }
+
+            bool isStatic = (memberInfo is PropertyInfo && ((PropertyInfo)memberInfo).GetGetMethod(true)?.IsStatic == true) ||
+                            (memberInfo is FieldInfo && ((FieldInfo)memberInfo).IsStatic);
+
+            if (isStatic)
+            {
+                return memberInfo.MemberType switch
+                {
+                    MemberTypes.Field => Expression.Field(null, (FieldInfo)memberInfo),
+                    MemberTypes.Property => Expression.Property(null, (PropertyInfo)memberInfo),
+                    _ => throw new InvalidOperationException("Unsupported member type for static member access.")
+                };
+            }
+            else
+            {
+                return Expression.PropertyOrField(expression, propertyOrFieldValue);
+            }
         }
         catch (Exception e)
         {
-            AddError($"{expression}.{field}", e.Message);
+            AddError($"{expression}.{propertyOrFieldValue}", e.Message);
             return UndefinedValue();
         }
     }
@@ -131,6 +175,11 @@ internal partial class ProbeExpressionParser<T>
     private Expression UndefinedValue()
     {
         return Expression.Constant(Expressions.UndefinedValue.Instance);
+    }
+
+    private Expression RedactedValue()
+    {
+        return Expression.Constant("{REDACTED}");
     }
 
     private GotoExpression ReturnDefaultValueExpression()
