@@ -62,8 +62,26 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                if (source is IEnumerable enumerable && (SupportedTypesService.IsSupportedCollection(source) ||
-                                                         SupportedTypesService.IsSupportedDictionary(source)))
+                if (Redaction.ShouldRedact(variableName, type, out var redactionReason))
+                {
+                    if (variableName != null)
+                    {
+                        jsonWriter.WritePropertyName(variableName);
+                    }
+
+                    var notCapturedReason = redactionReason == RedactionReason.Identifier ? NotCapturedReason.redactedByIndentifier : NotCapturedReason.redactedByType;
+
+                    jsonWriter.WriteStartObject();
+                    jsonWriter.WritePropertyName("type");
+                    jsonWriter.WriteValue(type.Name);
+                    WriteNotCapturedReason(jsonWriter, notCapturedReason);
+                    jsonWriter.WriteEndObject();
+
+                    return true;
+                }
+
+                if (source is IEnumerable enumerable && (Redaction.IsSupportedCollection(source) ||
+                                                         Redaction.IsSupportedDictionary(source)))
                 {
                     if (variableName != null)
                     {
@@ -74,18 +92,6 @@ namespace Datadog.Trace.Debugger.Snapshots
                     SerializeEnumerable(source, type, jsonWriter, enumerable, currentDepth, cts);
                     jsonWriter.WriteEndObject();
 
-                    return true;
-                }
-
-                if (SupportedTypesService.IsDenied(type))
-                {
-                    jsonWriter.WritePropertyName(variableName);
-                    jsonWriter.WriteStartObject();
-                    jsonWriter.WritePropertyName("type");
-                    jsonWriter.WriteValue(type.Name);
-                    jsonWriter.WritePropertyName("value");
-                    jsonWriter.WriteValue("********");
-                    jsonWriter.WriteEndObject();
                     return true;
                 }
 
@@ -162,7 +168,7 @@ namespace Datadog.Trace.Debugger.Snapshots
                 jsonWriter.WritePropertyName("isNull");
                 jsonWriter.WriteValue("true");
             }
-            else if (SupportedTypesService.IsSafeToCallToString(type))
+            else if (Redaction.IsSafeToCallToString(type))
             {
                 jsonWriter.WritePropertyName("value");
                 var stringValue = source.ToString();
@@ -183,7 +189,7 @@ namespace Datadog.Trace.Debugger.Snapshots
             CancellationTokenSource cts,
             int currentDepth)
         {
-            if (SupportedTypesService.IsSafeToCallToString(type) || source == null)
+            if (Redaction.IsSafeToCallToString(type) || source == null)
             {
                 return;
             }
@@ -270,7 +276,7 @@ namespace Datadog.Trace.Debugger.Snapshots
         {
             try
             {
-                var isDictionary = SupportedTypesService.IsSupportedDictionary(source);
+                var isDictionary = Redaction.IsSupportedDictionary(source);
                 if (source is ICollection collection)
                 {
                     jsonWriter.WritePropertyName("type");

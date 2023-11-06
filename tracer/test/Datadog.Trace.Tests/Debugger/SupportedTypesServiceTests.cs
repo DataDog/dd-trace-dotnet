@@ -23,7 +23,7 @@ namespace Datadog.Trace.Tests.Debugger
             foreach (var obj in Objects)
             {
                 var type = obj.GetType();
-                SupportedTypesService.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
+                Redaction.IsSafeToCallToString(type).Should().BeTrue($"Type {type} should be safe to call ToString on");
             }
         }
     }

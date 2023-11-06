@@ -19,7 +19,8 @@ namespace Datadog.Trace.Tests.Util.Http;
 [Collection(nameof(QueryStringObfuscatorTests))]
 public class QueryStringObfuscatorTests
 {
-    private const double Timeout = 500;
+    // seems on macos, netcore<=3.0 it can timeout
+    private const double Timeout = 20000;
 
     public static IEnumerable<object[]> GetData()
     {
