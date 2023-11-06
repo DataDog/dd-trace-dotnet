@@ -74,7 +74,7 @@ namespace Datadog.Trace.TestHelpers
             {
                 _.IgnoreMember<MockSpan>(s => s.Duration);
                 _.IgnoreMember<MockSpan>(s => s.Start);
-                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubStackTraceForErrors);
+                _.MemberConverter<MockSpan, Dictionary<string, string>>(x => x.Tags, ScrubTags);
             });
 
             foreach (var (regexPattern, replacement) in scrubbers ?? SpanScrubbers)
@@ -148,13 +148,13 @@ namespace Datadog.Trace.TestHelpers
             settings.AddScrubber(builder => ReplaceSimple(builder, oldValue, newValue));
         }
 
-        public static Dictionary<string, string> ScrubStackTraceForErrors(
-            MockSpan span, Dictionary<string, string> tags)
+        public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
                   .Select(
                        kvp => kvp.Key switch
                        {
+                           // scrub stack trace for errors
                            Tags.ErrorStack => new KeyValuePair<string, string>(kvp.Key, ScrubStackTrace(kvp.Value)),
                            _ => kvp
                        })
