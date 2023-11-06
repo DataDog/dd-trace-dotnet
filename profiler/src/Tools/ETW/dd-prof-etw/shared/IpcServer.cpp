@@ -152,6 +152,7 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
         std::wstring ddagentUser, ddagentDomain;
         if (GetStringRegKey(hKey, L"installedUser", ddagentUser, L"") != ERROR_SUCCESS)
         {
+            RegCloseKey(hKey);
             pThis->ShowLastError("Failed to retrieve installedUser...");
             pThis->_pHandler->OnStartError();
             return;
@@ -159,10 +160,12 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 
         if (GetStringRegKey(hKey, L"installedDomain", ddagentDomain, L"") != ERROR_SUCCESS)
         {
+            RegCloseKey(hKey);
             pThis->ShowLastError("Failed to retrieve installedDomain...");
             pThis->_pHandler->OnStartError();
             return;
         }
+        RegCloseKey(hKey);
 
         DWORD cbSid = 0;
         DWORD cchRefDomain = 0;
