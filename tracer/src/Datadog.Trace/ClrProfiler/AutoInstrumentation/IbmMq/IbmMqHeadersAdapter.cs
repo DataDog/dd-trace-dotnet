@@ -31,7 +31,7 @@ internal readonly struct IbmMqHeadersAdapter : IHeadersCollection
         var sb = StringBuilderCache.Acquire(name.Length);
         foreach (var c in name)
         {
-            sb.Append(c is >= 'a' and <= 'z' or >= '0' and <= '9' ? c : '_');
+            sb.Append(c is (>= 'a' and <= 'z') or (>= 'A' and <= 'Z') or (>= '0' and <= '9') ? c : '_');
         }
 
         return StringBuilderCache.GetStringAndRelease(sb);
