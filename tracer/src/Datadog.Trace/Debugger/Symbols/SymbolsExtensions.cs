@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System.Reflection;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Symbols;
 
 namespace Datadog.Trace.Debugger.Symbols;
@@ -41,24 +43,30 @@ internal static class SymbolsExtensions
         switch (handle)
         {
             case { Kind: HandleKind.TypeDefinition }:
-            {
-                return ((TypeDefinitionHandle)handle).FullName(metadataReader);
-            }
+                {
+                    return ((TypeDefinitionHandle)handle).FullName(metadataReader);
+                }
 
             case { Kind: HandleKind.TypeReference }:
-            {
-                return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
-            }
+                {
+                    return ((TypeReferenceHandle)handle).FullName(metadataReader, false);
+                }
 
             case { Kind: HandleKind.TypeSpecification }:
-            {
-                return ((TypeSpecificationHandle)handle).FullName(metadataReader);
-            }
+                {
+                    return ((TypeSpecificationHandle)handle).FullName(metadataReader);
+                }
 
             default:
-            {
-                return "Unknown";
-            }
+                {
+                    return "Unknown";
+                }
         }
+    }
+
+    internal static bool IsInterfaceType(this TypeDefinition typeDefinition)
+    {
+        var typeAttributes = typeDefinition.Attributes;
+        return (typeAttributes & TypeAttributes.Interface) == TypeAttributes.Interface;
     }
 }

@@ -6,7 +6,6 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
@@ -132,15 +131,26 @@ namespace Datadog.Trace.Debugger.Symbols
             return null;
         }
 
-        private bool TryGetClassSymbols(TypeDefinitionHandle typeDefinitionHandle, [NotNullWhen(true)] out Model.Scope? classScope)
+        private bool TryGetClassSymbols(TypeDefinitionHandle typeDefinitionHandle, out Model.Scope? classScope)
         {
             classScope = null;
             Model.Symbol[]? fieldSymbols = null;
             Model.Scope[]? scopes = null;
-            var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
 
             try
             {
+                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeDefinitionHandle.RowId))
+                {
+                    return true;
+                }
+
+                var type = MetadataReader.GetTypeDefinition(typeDefinitionHandle);
+
+                if (type.IsInterfaceType())
+                {
+                    return true;
+                }
+
                 var fields = type.GetFields();
                 if (fields.Count > 0)
                 {
@@ -165,6 +175,10 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var allScopes = nestedClassesScopeIndex == 0 ? null : new Model.Scope[nestedClassesScopeIndex];
+                if (allScopes == null)
+                {
+                    return true;
+                }
 
                 if (methodsScopeIndex > 0)
                 {
@@ -299,7 +313,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     continue;
                 }
 
-                if (!TryGetClassSymbols(typeHandle, out var nestedClassScope))
+                if (!TryGetClassSymbols(typeHandle, out var nestedClassScope) || nestedClassScope == null)
                 {
                     continue;
                 }
@@ -357,6 +371,11 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodDefHandle.RowId))
+                {
+                    continue;
+                }
+
+                if (!DatadogMetadataReader.HasMethodBody(methodDefHandle.RowId))
                 {
                     continue;
                 }

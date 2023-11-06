@@ -32,7 +32,7 @@ namespace Datadog.Trace.Pdb
         private static readonly Guid EncLocalSlotMap = new("755F52A8-91C5-45BE-B4B8-209571E552BD");
         private static readonly Guid StateMachineHoistedLocalScopes = new("6DA9A61E-F8C7-4874-BE62-68BC5630DF71");
         private static readonly IDatadogLogger Logger = DatadogLogging.GetLoggerFor<DatadogMetadataReader>();
-        private readonly PEReader? _peReader;
+        private readonly PEReader _peReader;
         private readonly bool _isDnlibPdbReader;
         private bool _disposed;
 
@@ -588,6 +588,19 @@ namespace Datadog.Trace.Pdb
             }
 
             return localSymbols;
+        }
+
+        internal bool HasMethodBody(int methodRid)
+        {
+            var method = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
+            if (method.RelativeVirtualAddress == 0)
+            {
+                // Method has no RVA (typically abstract or extern method)
+                return false;
+            }
+
+            MethodBodyBlock methodBody = _peReader.GetMethodBody(method.RelativeVirtualAddress);
+            return methodBody.Size > 1;
         }
 
         public void Dispose()
