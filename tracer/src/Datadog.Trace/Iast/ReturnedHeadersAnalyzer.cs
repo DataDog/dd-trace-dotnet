@@ -57,6 +57,14 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
+    private static void LaunchVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
+    {
+        if (IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
+        {
+            IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
+        }
+    }
+
     private static bool IsHtmlResponse(string contentTypeValue)
     {
         if (string.IsNullOrEmpty(contentTypeValue))
