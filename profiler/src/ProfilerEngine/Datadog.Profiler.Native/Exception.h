@@ -4,23 +4,22 @@
 #pragma once
 
 #include <exception>
-#include <string>
 #include <memory>
+#include <string>
 
 namespace libdatadog {
 
-namespace detail {
-    struct ErrorCodeImpl;
-}
+struct SuccessImpl;
 
 class Exception : public std::exception
 {
 public:
-    Exception(std::unique_ptr<detail::ErrorCodeImpl> error);
+    Exception(std::unique_ptr<SuccessImpl> error);
+    ~Exception();
 
     char const* what() const noexcept override;
 
 private:
-    std::unique_ptr<detail::ErrorCodeImpl> _impl;
+    std::unique_ptr<SuccessImpl> _impl;
 };
 } // namespace libdatadog

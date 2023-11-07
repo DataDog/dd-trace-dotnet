@@ -6,7 +6,9 @@
 #include <fstream>
 #include <string>
 
+#include "FfiHelper.h"
 #include "OpSysTools.h"
+#include "Success.h"
 
 #include "shared/src/native-src/dd_filesystem.hpp"
 
@@ -18,19 +20,20 @@ extern "C"
 
 #define BUFFER_MAX_SIZE 512
 
-namespace libdatadog::detail {
-    // this is a Pprof file exporter
-    // maybe name it accordingly ?
-class FileExporter
+namespace libdatadog {
+
+class FileSaver
 {
 public:
-    FileExporter(fs::path outputDirectory) :
+    FileSaver(fs::path outputDirectory) :
         _outputDirectory{outputDirectory},
         _pid{std::to_string(OpSysTools::GetProcId())}
     {
     }
 
-    ErrorCode WriteToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName)
+    ~FileSaver() = default;
+
+    Success WriteToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName)
     {
         // TODO move to extension to static field ?
         auto pprofFilePath = GenerateFilePath(serviceName, ".pprof");
@@ -52,7 +55,7 @@ public:
 #endif
             return make_error(std::string("Unable to write profiles on disk: ") + pprofFilePath + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
         }
-        //do we want to pass a string ?"Profile serialized in ", pprofFilePath
+        // do we want to pass a string ?"Profile serialized in ", pprofFilePath
         return make_success();
     }
 
@@ -82,4 +85,4 @@ private:
     fs::path _outputDirectory;
     std::string _pid;
 };
-} // namespace libdatadog::detail
+} // namespace libdatadog

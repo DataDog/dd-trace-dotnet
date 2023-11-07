@@ -9,10 +9,10 @@
 
 namespace libdatadog {
 
-libdatadog::detail::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
 Profile::Profile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
-    _impl{std::make_unique<detail::ProfileImpl>()},
+    _impl{std::make_unique<ProfileImpl>()},
     _applicationName{std::move(applicationName)}
 {
     _impl->_lines.resize(_impl->_locationsAndLinesSize);
@@ -22,7 +22,7 @@ Profile::Profile(std::vector<SampleValueType> const& valueTypes, std::string con
 
 Profile::~Profile() = default;
 
-libdatadog::ErrorCode Profile::Add(std::shared_ptr<Sample> const& sample)
+libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
 {
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
@@ -104,7 +104,7 @@ void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
     ddog_prof_Profile_add_endpoint_count(_impl->_inner.get(), endpointName, 1);
 }
 
-libdatadog::ErrorCode Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
+libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
                                                              uint64_t sampled, uint64_t real)
 {
     ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
@@ -114,7 +114,7 @@ libdatadog::ErrorCode Profile::AddUpscalingRuleProportional(std::vector<std::uin
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
     if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
     {
-        // not great, we create 2 ErrorCode
+        // not great, we create 2 Success
         // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
         // - the second one is to provide the caller with the actual error.
         // TODO: have a make_error(<format>, vars, ...) approach ?
@@ -128,7 +128,7 @@ libdatadog::ErrorCode Profile::AddUpscalingRuleProportional(std::vector<std::uin
     return make_success();
 }
 
-libdatadog::detail::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
+libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit)
 {
     std::vector<ddog_prof_ValueType> samplesTypes;
     samplesTypes.reserve(valueTypes.size());
@@ -146,7 +146,7 @@ libdatadog::detail::profile_unique_ptr CreateProfile(std::vector<SampleValueType
     period.type_ = period_value_type;
     period.value = 1;
 
-    return detail::profile_unique_ptr(ddog_prof_Profile_new(sample_types, &period, nullptr));
+    return profile_unique_ptr(ddog_prof_Profile_new(sample_types, &period, nullptr));
 }
 
 std::string const& Profile::GetApplicationName() const

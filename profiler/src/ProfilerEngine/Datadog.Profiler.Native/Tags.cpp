@@ -12,7 +12,7 @@
 namespace libdatadog {
 
 Tags::Tags() :
-    _impl{std::make_unique<detail::TagsImpl>()}
+    _impl{std::make_unique<TagsImpl>()}
 {
 }
 Tags::Tags(std::initializer_list<std::pair<std::string, std::string>> tags) :
@@ -41,7 +41,7 @@ Tags& Tags::operator=(Tags&& tags) noexcept
     return *this;
 }
 
-libdatadog::ErrorCode Tags::Add(std::string const& name, std::string const& value)
+libdatadog::Success Tags::Add(std::string const& name, std::string const& value)
 {
     auto ffiName = FfiHelper::StringToCharSlice(name);
     auto ffiValue = FfiHelper::StringToCharSlice(value);

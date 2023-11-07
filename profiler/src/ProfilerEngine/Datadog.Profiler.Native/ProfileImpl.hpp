@@ -12,7 +12,7 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-namespace libdatadog::detail {
+namespace libdatadog {
 
 using profile_type = ddog_prof_Profile;
 
@@ -41,4 +41,4 @@ struct ProfileImpl
 
     profile_unique_ptr _inner;
 };
-} // namespace libdatadog::detail
+} // namespace libdatadog

@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include "ErrorCode.h"
 #include "FfiHelper.h"
+#include "Success.h"
 #include "Tags.h"
 #include "TagsImpl.hpp"
 
@@ -20,28 +20,28 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-namespace libdatadog::detail {
+namespace libdatadog {
 
-class AgentExporter
+class AgentProxy
 {
 public:
-    AgentExporter(ddog_prof_Exporter* exporter) :
+    AgentProxy(ddog_prof_Exporter* exporter) :
         _exporter{exporter}
     {
     }
-    ~AgentExporter() = default;
 
-    ErrorCode Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    ~AgentProxy() = default;
+
+    Success Send(ddog_prof_EncodedProfile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
     {
         auto [request, ec] = CreateRequest(profile, std::move(tags), std::move(files), std::move(metadata));
         if (!ec)
         {
-            return std::move(ec); // ?? really ?? otherwise it calls the copy constructore :sad:
+            return std::move(ec); // ?? really ?? otherwise it calls the copy constructor :sad:
         }
 
         assert(request != nullptr);
 
-        // TODO: should we use a cancellation token (third parameter) when shutting down takes to much time ?
         auto result = ddog_prof_Exporter_send(_exporter.get(), request, nullptr);
 
         if (result.tag == DDOG_PROF_EXPORTER_SEND_RESULT_ERR)
@@ -106,7 +106,7 @@ private:
         ddog_prof_Exporter_Request* _inner;
     };
 
-    std::pair<Request, ErrorCode> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+    std::pair<Request, Success> CreateRequest(ddog_prof_EncodedProfile* encodedProfile, Tags&& tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
     {
         auto start = encodedProfile->start;
         auto end = encodedProfile->end;
@@ -122,8 +122,8 @@ private:
 
         for (auto& [filename, content] : files)
         {
-            ddog_Slice_U8 metricsFileSlice{reinterpret_cast<const uint8_t*>(content.c_str()), content.size()};
-            files_to_send.push_back({FfiHelper::StringToCharSlice(filename), metricsFileSlice});
+            ddog_Slice_U8 fileSlice{reinterpret_cast<const uint8_t*>(content.c_str()), content.size()};
+            files_to_send.push_back({FfiHelper::StringToCharSlice(filename), fileSlice});
         }
 
         ddog_prof_Exporter_Slice_File files_view = {files_to_send.data(), files_to_send.size()};
@@ -158,4 +158,4 @@ private:
 
     std::unique_ptr<ddog_prof_Exporter, ExporterDeleter> _exporter;
 };
-} // namespace libdatadog::detail
+} // namespace libdatadog

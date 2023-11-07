@@ -2,7 +2,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #pragma once
+
 #include <memory>
+#include <string>
+#include <utility>
+
+#include "FfiHelper.h"
 
 extern "C"
 {
@@ -12,27 +17,25 @@ extern "C"
 
 namespace libdatadog {
 
-struct TagsImpl
+struct SuccessImpl
 {
-public:
-    TagsImpl()
+    SuccessImpl(ddog_Error error) :
+        SuccessImpl(FfiHelper::GetErrorMessage(error))
     {
-        _tags = ddog_Vec_Tag_new();
+        ddog_Error_drop(&error);
     }
 
-    ~TagsImpl()
+    SuccessImpl(std::string message) :
+        _message{std::move(message)}
     {
-        ddog_Vec_Tag_drop(_tags);
     }
 
-    explicit operator ddog_Vec_Tag*()
+    std::string const& message() const
     {
-        return &_tags;
+        return _message;
     }
 
-    TagsImpl(TagsImpl const&) = delete;
-    TagsImpl& operator=(TagsImpl const&) = delete;
-
-    ddog_Vec_Tag _tags;
+private:
+    std::string _message;
 };
 } // namespace libdatadog

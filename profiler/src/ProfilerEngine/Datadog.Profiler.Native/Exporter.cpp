@@ -3,133 +3,29 @@
 
 #include "Exporter.h"
 
+#include "AgentProxy.hpp"
 #include "EncodedProfile.hpp"
 #include "Exception.h"
 #include "FfiHelper.h"
+#include "FileSaver.hpp"
 #include "Log.h"
 #include "Profile.h"
-#include "Tags.h"
-#include "AgentExporterImpl.hpp"
-#include "ExporterImpl.hpp"
-#include "FileExporterImpl.hpp"
 #include "ProfileImpl.hpp"
-#include "TagsImpl.hpp"
-#include "ErrorCodeImpl.hpp"
-#include "FfiHelper.h"
+#include "Tags.h"
 
 #include <cassert>
 
 namespace libdatadog {
 
-Exporter::Exporter(std::unique_ptr<detail::AgentExporter> ddExporter, std::unique_ptr<detail::FileExporter> fileExporter) :
-    _exporterImpl{std::move(ddExporter)},
-    _fileExporter{std::move(fileExporter)}
+Exporter::Exporter(std::unique_ptr<AgentProxy> agentProxy, std::unique_ptr<FileSaver> fileSaver) :
+    _agentProxy{std::move(agentProxy)},
+    _fileSaver{std::move(fileSaver)}
 {
 }
 
 Exporter::~Exporter() = default;
 
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithAgent(std::string url)
-{
-    assert(_site.empty());
-    assert(_apiKey.empty());
-    _url = std::move(url);
-    return *this;
-}
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithoutAgent(std::string site, std::string apiKey)
-{
-    assert(_url.empty());
-
-    _site = std::move(site);
-    _apiKey = std::move(apiKey);
-    return *this;
-}
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithTags(Tags tags)
-{
-    _tags = std::move(tags);
-    return *this;
-}
-
-struct Exporter::ExporterBuilder::AgentEndpoint
-{
-    ddog_Endpoint inner;
-};
-
-std::unique_ptr<libdatadog::detail::AgentExporter> Exporter::ExporterBuilder::CreateDatadogAgentExporter()
-{
-    auto endpoint = CreateEndpoint();
-
-    auto result = ddog_prof_Exporter_new(
-        FfiHelper::StringToCharSlice(_libraryName),
-        FfiHelper::StringToCharSlice(_libraryVersion),
-        FfiHelper::StringToCharSlice(_languageFamily),
-        static_cast<ddog_Vec_Tag*>(*_tags._impl),
-        endpoint.inner);
-
-    if (result.tag == DDOG_PROF_EXPORTER_NEW_RESULT_ERR)
-    {
-        throw Exception(std::make_unique<detail::ErrorCodeImpl>(result.err));
-    }
-
-    // the AgentExporter instance is acquiring the ownership of the ok ptr
-    return std::make_unique<detail::AgentExporter>(result.ok);
-}
-
-Exporter::ExporterBuilder::ExporterBuilder() = default;
-Exporter::ExporterBuilder::~ExporterBuilder() = default;
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::WithFileExporter(fs::path outputDirectory)
-{
-    _outputDirectory = std::move(outputDirectory);
-    return *this;
-}
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::SetLibraryName(std::string libraryName)
-{
-    _libraryName = std::move(libraryName);
-    return *this;
-}
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::SetLibraryVersion(std::string libraryVersion)
-{
-    _libraryVersion = std::move(libraryVersion);
-    return *this;
-}
-
-Exporter::ExporterBuilder& Exporter::ExporterBuilder::SetLanguageFamily(std::string family)
-{
-    _languageFamily = std::move(family);
-    return *this;
-}
-
-Exporter::ExporterBuilder::AgentEndpoint Exporter::ExporterBuilder::CreateEndpoint()
-{
-    if (_url.empty())
-    {
-        assert(!_site.empty());
-        assert(!_apiKey.empty());
-        return {ddog_Endpoint_agentless(FfiHelper::StringToCharSlice(_site), FfiHelper::StringToCharSlice(_apiKey))};
-    }
-
-    return {ddog_Endpoint_agent(FfiHelper::StringToCharSlice(_url))};
-}
-
-std::unique_ptr<Exporter> Exporter::ExporterBuilder::Build()
-{
-    auto datadogAgentExporter = CreateDatadogAgentExporter();
-
-    std::unique_ptr<detail::FileExporter> fileExporter = nullptr;
-    if (!_outputDirectory.empty())
-    {
-        fileExporter = std::make_unique<detail::FileExporter>(_outputDirectory);
-    }
-
-    return std::unique_ptr<Exporter>(new Exporter(std::move(datadogAgentExporter), std::move(fileExporter)));
-}
-
-libdatadog::ErrorCode Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
+libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata)
 {
     auto s = ddog_prof_Profile_serialize(*(profile->_impl), nullptr, nullptr);
 
@@ -140,17 +36,17 @@ libdatadog::ErrorCode Exporter::Send(Profile* profile, Tags tags, std::vector<st
 
     auto ep = EncodedProfile(&s.ok);
 
-    if (_fileExporter != nullptr)
+    if (_fileSaver != nullptr)
     {
-        auto error_code = _fileExporter->WriteToDisk(ep, profile->GetApplicationName());
-        if (!error_code)
+        auto success = _fileSaver->WriteToDisk(ep, profile->GetApplicationName());
+        if (!success)
         {
-            Log::Error(error_code.message());
+            Log::Error(success.message());
         }
     }
 
-    assert(_exporterImpl != nullptr);
-    return _exporterImpl->Send(ep, std::move(tags), std::move(files), std::move(metadata));
+    assert(_agentProxy != nullptr);
+    return _agentProxy->Send(ep, std::move(tags), std::move(files), std::move(metadata));
 }
 
 } // namespace libdatadog

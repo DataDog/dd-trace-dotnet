@@ -6,7 +6,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "ErrorCodeImpl.hpp"
+#include "SuccessImpl.hpp"
 
 extern "C"
 {
@@ -42,24 +42,24 @@ ddog_prof_ValueType FfiHelper::CreateValueType(std::string const& type, std::str
     return valueType;
 }
 
-std::string FfiHelper::ExtractMessage(ddog_Error& error)
+std::string FfiHelper::GetErrorMessage(ddog_Error& error)
 {
     auto message = ddog_Error_message(&error);
     return std::string(message.ptr, message.len);
 }
 
-ErrorCode make_error(ddog_Error& error)
+Success make_error(ddog_Error error)
 {
-    return ErrorCode(std::make_unique<detail::ErrorCodeImpl>(error));
+    return Success(std::make_unique<SuccessImpl>(error));
 }
 
-ErrorCode make_error(std::string error)
+Success make_error(std::string error)
 {
-    return ErrorCode(std::make_unique<detail::ErrorCodeImpl>(std::move(error)));
+    return Success(std::make_unique<SuccessImpl>(std::move(error)));
 }
 
-ErrorCode make_success()
+Success make_success()
 {
-    return ErrorCode();
+    return Success();
 }
 } // namespace libdatadog

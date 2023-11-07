@@ -5,6 +5,7 @@
 
 #include "Exception.h"
 #include "Exporter.h"
+#include "ExporterBuilder.h"
 #include "FfiHelper.h"
 #include "IAllocationsRecorder.h"
 #include "IApplicationStore.h"
@@ -110,19 +111,19 @@ std::unique_ptr<libdatadog::Exporter> ProfileExporter::CreateExporter(IConfigura
 {
     try
     {
-        auto exporterBuilder = libdatadog::Exporter::ExporterBuilder();
+        auto exporterBuilder = libdatadog::ExporterBuilder();
 
         auto& outputDirectory = configuration->GetProfilesOutputDirectory();
         if (!outputDirectory.empty())
         {
-            exporterBuilder.WithFileExporter(outputDirectory);
+            exporterBuilder.SetOutputDirectory(outputDirectory);
         }
 
         exporterBuilder
             .SetLibraryName(LibraryName)
             .SetLibraryVersion(LibraryVersion)
             .SetLanguageFamily(LanguageFamily)
-            .WithTags(std::move(tags));
+            .SetTags(std::move(tags));
 
         if (configuration->IsAgentless())
         {

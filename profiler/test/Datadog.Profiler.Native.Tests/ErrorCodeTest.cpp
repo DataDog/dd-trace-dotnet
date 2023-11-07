@@ -3,7 +3,7 @@
 
 #include "gtest/gtest.h"
 
-#include "ErrorCode.h"
+#include "Success.h"
 #include "FfiHelper.h"
 
 namespace libdatadog {

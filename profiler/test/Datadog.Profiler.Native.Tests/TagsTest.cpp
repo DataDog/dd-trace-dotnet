@@ -16,7 +16,7 @@ TEST(TagsTest, AddTag)
 }
 
 // Test is mainly meant for memory leak detection (unit tests are run with ASAN)
-TEST(TagsTest, FailedAddingTest)
+TEST(TagsTest, FailedWhenAddingEmptyTags)
 {
     Tags t;
     auto succeeded = t.Add("", "");

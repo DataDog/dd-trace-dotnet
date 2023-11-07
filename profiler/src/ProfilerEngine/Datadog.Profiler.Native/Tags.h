@@ -3,13 +3,11 @@
 #include <memory>
 #include <string>
 
-#include "ErrorCode.h"
+#include "Success.h"
 
 namespace libdatadog {
-namespace detail {
-    struct TagsImpl;
-    class AgentExporter;
-}
+struct TagsImpl;
+class AgentProxy;
 
 class Tags
 {
@@ -23,11 +21,11 @@ public:
     Tags(Tags&& tags) noexcept;
     Tags& operator=(Tags&& tags) noexcept;
 
-    ErrorCode Add(std::string const& name, std::string const& value);
+    Success Add(std::string const& name, std::string const& value);
 
 private:
-    friend class Exporter; // due to the libdatadog design, we need to access the implementation of the tags
-    friend class detail::AgentExporter;
-    std::unique_ptr<detail::TagsImpl> _impl;
+    friend class ExporterBuilder; // due to the libdatadog design, we need to access the implementation of the tags
+    friend class AgentProxy;
+    std::unique_ptr<TagsImpl> _impl;
 };
 } // namespace libdatadog

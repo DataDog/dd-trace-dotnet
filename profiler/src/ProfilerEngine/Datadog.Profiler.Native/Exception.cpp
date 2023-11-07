@@ -2,10 +2,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
 #include "Exception.h"
-#include "ErrorCodeImpl.hpp"
+#include "SuccessImpl.hpp"
 
 namespace libdatadog {
-Exception::Exception(std::unique_ptr<detail::ErrorCodeImpl> error) :
+
+Exception::~Exception() = default;
+
+Exception::Exception(std::unique_ptr<SuccessImpl> error) :
     _impl(std::move(error))
 {
 }

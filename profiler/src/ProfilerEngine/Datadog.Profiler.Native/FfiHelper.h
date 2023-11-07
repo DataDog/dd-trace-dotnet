@@ -3,7 +3,7 @@
 
 #pragma once
 
-#include "ErrorCode.h"
+#include "Success.h"
 #include <string>
 #include <string_view>
 
@@ -23,10 +23,10 @@ public:
     static ddog_CharSlice StringToCharSlice(std::string const& str);
     static ddog_CharSlice StringToCharSlice(std::string_view str);
     static ddog_prof_ValueType CreateValueType(std::string const& type, std::string const& unit);
-    static std::string ExtractMessage(ddog_Error& error);
+    static std::string GetErrorMessage(ddog_Error& error);
 };
 
-ErrorCode make_error(ddog_Error& error);
-ErrorCode make_error(std::string error);
-ErrorCode make_success();
+Success make_error(ddog_Error error);
+Success make_error(std::string error);
+Success make_success();
 } // namespace libdatadog

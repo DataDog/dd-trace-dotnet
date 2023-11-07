@@ -4,6 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "Exporter.h"
+#include "ExporterBuilder.h"
 #include "Profile.h"
 #include "Tags.h"
 
@@ -18,13 +19,9 @@ Profile CreateEmptyProfile()
 
 TEST(ExporterTest, EnsureCrashOnDebug)
 {
-    auto builder = Exporter::ExporterBuilder();
+    auto builder = ExporterBuilder();
     std::unique_ptr<Exporter> exporter;
-    EXPECT_DEBUG_DEATH({
-        exporter = builder.Build();
-    },
-                       "")
-        << "Asserts must fail in debug";
+    EXPECT_DEBUG_DEATH({ exporter = builder.Build(); }, "") << "Asserts must fail in debug";
 #ifdef NDEBUG // RELEASE
     ASSERT_NE(exporter, nullptr);
 #else
@@ -36,7 +33,7 @@ TEST(ExporterTest, EnsureCrashOnDebug)
 TEST(ExporterTest, EnsureWithAgentDoesNotCrash)
 {
     std::unique_ptr<Exporter> exporter;
-    ASSERT_NO_FATAL_FAILURE(exporter = Exporter::ExporterBuilder()
+    ASSERT_NO_FATAL_FAILURE(exporter = ExporterBuilder()
                                            .SetLanguageFamily("familly")
                                            .SetLibraryName("dotnet")
                                            .SetLibraryVersion("42")
@@ -51,7 +48,7 @@ TEST(ExporterTest, EnsureWithoutAgentDoesNotCrash)
 {
     std::unique_ptr<Exporter> exporter;
     ASSERT_NO_FATAL_FAILURE(
-        exporter = Exporter::ExporterBuilder()
+        exporter = ExporterBuilder()
                        .SetLanguageFamily("familly")
                        .SetLibraryName("dotnet")
                        .SetLibraryVersion("42")
@@ -69,12 +66,12 @@ TEST(ExporterTest, EnsureAddingTagsDoesNotCrash)
 
     std::unique_ptr<Exporter> exporter;
     ASSERT_NO_FATAL_FAILURE(
-        exporter = Exporter::ExporterBuilder()
+        exporter = ExporterBuilder()
                        .SetLanguageFamily("familly")
                        .SetLibraryName("dotnet")
                        .SetLibraryVersion("42")
                        .WithoutAgent("site", "apiKey")
-                       .WithTags(std::move(tags))
+                       .SetTags(std::move(tags))
                        .Build();)
         << "Failed to create exporter";
 
@@ -91,12 +88,12 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
     }
     fs::create_directories(outputFolder);
 
-    auto exporter = Exporter::ExporterBuilder()
+    auto exporter = ExporterBuilder()
                         .SetLanguageFamily("family")
                         .SetLibraryName("dotnet")
                         .SetLibraryVersion("42")
                         .WithoutAgent("site", "apiKey")
-                        .WithFileExporter(outputFolder)
+                        .SetOutputDirectory(outputFolder)
                         .Build();
 
     ASSERT_NE(exporter, nullptr);

@@ -1,23 +1,23 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "ErrorCode.h"
+#include "Success.h"
 
-#include "ErrorCodeImpl.hpp"
+#include "SuccessImpl.hpp"
 
 namespace libdatadog {
 
-ErrorCode::ErrorCode() :
-    ErrorCode(nullptr)
+Success::Success() :
+    Success(nullptr)
 {
 }
 
-ErrorCode::ErrorCode(ErrorCode&& o) noexcept
+Success::Success(Success&& o) noexcept
 {
     *this = std::move(o);
 }
 
-ErrorCode& ErrorCode::operator=(ErrorCode&& o) noexcept
+Success& Success::operator=(Success&& o) noexcept
 {
     if (this != &o)
     {
@@ -26,14 +26,14 @@ ErrorCode& ErrorCode::operator=(ErrorCode&& o) noexcept
     return *this;
 }
 
-ErrorCode::ErrorCode(std::unique_ptr<detail::ErrorCodeImpl> details) :
+Success::Success(std::unique_ptr<SuccessImpl> details) :
     _details(std::move(details))
 {
 }
 
-ErrorCode::~ErrorCode() = default;
+Success::~Success() = default;
 
-std::string ErrorCode::message() const noexcept
+std::string Success::message() const noexcept
 {
     if (_details == nullptr)
         return std::string();

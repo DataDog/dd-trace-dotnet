@@ -7,72 +7,32 @@
 #include <memory>
 #include <vector>
 
-#include "ErrorCode.h"
+#include "Success.h"
 #include "Tags.h"
 
-#include "shared/src/native-src/dd_filesystem.hpp"
 
 namespace libdatadog {
 
-namespace detail {
-    struct ExporterImpl;
-    class AgentExporter;
-    class FileExporter;
-} // namespace detail
+class AgentProxy;
+class FileSaver;
 
 class Profile;
 
 class Exporter
 {
 private:
-    Exporter(std::unique_ptr<detail::AgentExporter> ddExporter, std::unique_ptr<detail::FileExporter> fileExporter);
+    friend class ExporterBuilder;
+    Exporter(std::unique_ptr<AgentProxy> agentProxy, std::unique_ptr<FileSaver> fileSaver);
 
 public:
     ~Exporter();
 
 private:
-    std::unique_ptr<detail::AgentExporter> _exporterImpl;
-    std::unique_ptr<detail::FileExporter> _fileExporter;
+    std::unique_ptr<AgentProxy> _agentProxy;
+    std::unique_ptr<FileSaver> _fileSaver;
 
 public:
-    ErrorCode Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
+    Success Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
 
-public:
-    class FileExporterBuilder
-    {
-    public:
-        FileExporterBuilder() = default;
-    };
-
-    class ExporterBuilder
-    {
-    public:
-        ExporterBuilder();
-        ~ExporterBuilder();
-        ExporterBuilder& WithAgent(std::string url);
-        ExporterBuilder& WithoutAgent(std::string site, std::string apiKey);
-        ExporterBuilder& WithTags(Tags tags);
-        ExporterBuilder& SetLibraryName(std::string s);
-        ExporterBuilder& SetLibraryVersion(std::string s);
-        ExporterBuilder& SetLanguageFamily(std::string s);
-        ExporterBuilder& WithFileExporter(fs::path outputDirectory);
-        std::unique_ptr<Exporter> Build();
-
-    private:
-        std::unique_ptr<detail::AgentExporter> CreateDatadogAgentExporter();
-
-        struct AgentEndpoint;
-        AgentEndpoint CreateEndpoint();
-
-        std::string _site;
-        std::string _apiKey;
-        std::string _url;
-        //
-        std::string _libraryName;
-        std::string _libraryVersion;
-        std::string _languageFamily;
-        Tags _tags;
-        fs::path _outputDirectory;
-    };
 };
 } // namespace libdatadog
