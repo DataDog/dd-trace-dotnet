@@ -28,7 +28,17 @@ namespace Samples.Security.AspNetCore5.Controllers
         public QueryData InnerQuery { get; set; }
     }
 
+    public class XContentTypeOptionsAttribute : ActionFilterAttribute
+    {
+        public override void OnResultExecuting(ResultExecutingContext filterContext)
+        {
+            filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+            base.OnResultExecuting(filterContext);
+        }
+    }
+
     [Route("[controller]")]
+    [XContentTypeOptionsAttribute]
     public class IastController : Controller
     {
         static SQLiteConnection dbConnection = null;
@@ -317,6 +327,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             cookie.Secure = false;
             Response.Cookies.Add(cookie);
             return Content("Sending AllVulnerabilitiesCookie");
+        }
+
+        [Route("XContentTypeHeaderMissing")]
+        public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
+        {
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            {
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+            }
+
+            if (returnCode != (int)HttpStatusCode.OK)
+            {
+                return new HttpStatusCodeResult(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("XContentTypeHeaderMissing", contentType);
+            }
+            else
+            {
+                return Content("XContentTypeHeaderMissing");
+            }
         }
 
         private HttpCookie GetDefaultCookie(string key, string value)
