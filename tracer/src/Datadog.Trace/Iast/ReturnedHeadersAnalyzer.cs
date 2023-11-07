@@ -116,7 +116,7 @@ internal static class ReturnedHeadersAnalyzer
         }
 
         var contentType = contentTypeValue.ToLowerInvariant();
-        return contentType == ("text/html") || contentType == ("application/xhtml+xml");
+        return contentType.Contains("text/html") || contentType.Contains("application/xhtml+xml");
     }
 
     private static bool IsNoSniffContentOptions(string contentOptionValue)
