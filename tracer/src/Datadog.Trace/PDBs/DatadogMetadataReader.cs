@@ -56,8 +56,13 @@ namespace Datadog.Trace.Pdb
 
         internal bool IsPdbExist { get; set; }
 
-        internal static DatadogMetadataReader CreatePdbReader(Assembly assembly)
+        internal static DatadogMetadataReader? CreatePdbReader(Assembly? assembly)
         {
+            if (assembly == null)
+            {
+                return null;
+            }
+
             // For metadata we are always using System.Reflection.Metadata
             // For PDB, Reflection.Metadata for portable and embedded PDB and dnlib for windows PDB
             var peReader = new PEReader(File.OpenRead(assembly.Location), PEStreamOptions.PrefetchMetadata | PEStreamOptions.PrefetchEntireImage);
@@ -269,14 +274,14 @@ namespace Datadog.Trace.Pdb
                     // Get the sequence points for the method
                     foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
-                        if (GetDocumentName(sequencePoint.Document) != filePath)
+                        if (sequencePoint.IsHidden || GetDocumentName(sequencePoint.Document) != filePath)
                         {
                             continue;
                         }
 
                         // Check if the line and column match
-                        if (sequencePoint.StartLine <= line && line <= sequencePoint.EndLine
-                                                            && sequencePoint.StartColumn <= column && column <= sequencePoint.EndColumn)
+                        if (sequencePoint.StartLine <= line && sequencePoint.EndLine >= line &&
+                            column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column))
                         {
                             byteCodeOffset = sequencePoint.Offset;
                             return methodDefinitionHandle.RowId;
@@ -288,33 +293,51 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal string[]? GetDocuments()
+        internal IList<string>? GetDocuments()
         {
+            List<string>? docs = null;
             if (_isDnlibPdbReader)
             {
-                var dnlibDocs = ArrayPool<string>.Shared.Rent(DnlibPdbReader!.Documents.Count);
+                docs = new List<string>(DnlibPdbReader!.Documents.Count);
                 for (int i = 0; i < DnlibPdbReader.Documents.Count; i++)
                 {
-                    dnlibDocs[i] = DnlibPdbReader.Documents[i].URL;
-                }
+                    var url = DnlibPdbReader.Documents[i].URL;
+                    if (string.IsNullOrEmpty(url))
+                    {
+                        continue;
+                    }
 
-                return dnlibDocs;
+                    docs.Add(url);
+                }
             }
 
             if (PdbReader != null)
             {
-                int index = 0;
-                var docs = ArrayPool<string>.Shared.Rent(PdbReader.Documents.Count);
+                docs = new List<string>(PdbReader.Documents.Count);
                 foreach (var document in PdbReader.Documents)
                 {
-                    docs[index] = PdbReader.GetString(PdbReader.GetDocument(document).Name);
-                    index++;
-                }
+                    if (document.IsNil)
+                    {
+                        continue;
+                    }
 
-                return docs;
+                    var docName = PdbReader.GetDocument(document).Name;
+                    if (docName.IsNil)
+                    {
+                        continue;
+                    }
+
+                    var url = PdbReader.GetString(docName);
+                    if (string.IsNullOrEmpty(url))
+                    {
+                        continue;
+                    }
+
+                    docs.Add(url);
+                }
             }
 
-            return null;
+            return docs;
         }
 
         internal string[]? GetLocalVariableNames(int methodToken, int localVariablesCount)

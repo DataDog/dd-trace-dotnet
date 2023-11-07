@@ -36,7 +36,7 @@ internal static class SourceLinkInformationExtractor
         repositoryUrl = null;
 
         var pdbReader = DatadogMetadataReader.CreatePdbReader(assembly);
-        if (pdbReader == null)
+        if (pdbReader is not { IsPdbExist: true })
         {
             Log.Information("PDB file for assembly {AssemblyFullPath} could not be found", assembly.Location);
             return false;
