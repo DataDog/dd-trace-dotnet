@@ -206,7 +206,7 @@ namespace Datadog.Trace.Debugger.Instrumentation
 
                 state.HasLocalsOrReturnValue = false;
                 var asyncCaptureInfo = new AsyncCaptureInfo(state.MoveNextInvocationTarget, state.KickoffInvocationTarget, state.MethodMetadataInfo.KickoffInvocationTargetType, kickoffMethod: state.MethodMetadataInfo.KickoffMethod, hoistedArgs: state.MethodMetadataInfo.AsyncMethodHoistedArguments, hoistedLocals: state.MethodMetadataInfo.AsyncMethodHoistedLocals);
-                var captureInfo = new CaptureInfo<object>(memberKind: ScopeMemberKind.This, methodState: MethodState.EndLineAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
+                var captureInfo = new CaptureInfo<object>(value: state.KickoffInvocationTarget, type: state.MethodMetadataInfo.KickoffInvocationTargetType, name: "this", memberKind: ScopeMemberKind.This, methodState: MethodState.EndLineAsync, hasLocalOrArgument: hasArgumentsOrLocals, asyncCaptureInfo: asyncCaptureInfo, lineCaptureInfo: new LineCaptureInfo(state.LineNumber, state.ProbeFilePath));
                 state.ProbeData.Processor.Process(ref captureInfo, state.SnapshotCreator);
             }
             catch (Exception e)

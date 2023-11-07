@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
 {
     /// <summary>
@@ -13,6 +15,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK
         /// <summary>
         /// Gets the region endpoint of the config
         /// </summary>
-        IRegionEndpoint RegionEndpoint { get; }
+        IRegionEndpoint? RegionEndpoint { get; }
     }
 }

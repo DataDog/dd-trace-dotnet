@@ -11,8 +11,8 @@ namespace Samples.Probes.TestRuns.SmokeTests
         {
             var person = new Person("Harry", 28, new Address(), Guid.Empty, null);
             await new GenericClass<Person>().Run(person);
-            var address = new Address { City = new Place { Name = "Some Place", Type = PlaceType.City }, HomeType = BuildingType.Cottage, Number = 99, Street = "Wall" };
-            await new GenericClass<Address>().Run(address);
+            var adr = new Address { City = new Place { Name = "Some Place", Type = PlaceType.City }, HomeType = BuildingType.Cottage, Number = 99, Street = "Wall" };
+            await new GenericClass<Address>().Run(adr);
         }
     }
 

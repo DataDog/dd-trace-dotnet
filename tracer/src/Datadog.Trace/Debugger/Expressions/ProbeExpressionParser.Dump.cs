@@ -21,7 +21,7 @@ internal partial class ProbeExpressionParser<T>
     private Expression DumpExpression(Expression expression, List<ParameterExpression> scopeMembers)
     {
         if (Datadog.Trace.Debugger.Helpers.TypeExtensions.IsSimple(expression.Type) ||
-            SupportedTypesService.AllowedTypesSafeToCallToString.Contains(expression.Type))
+            Redaction.AllowedTypesSafeToCallToString.Contains(expression.Type))
         {
             return Expression.Call(expression, GetMethodByReflection(typeof(object), nameof(object.ToString), Type.EmptyTypes));
         }
@@ -211,7 +211,7 @@ internal partial class ProbeExpressionParser<T>
                        : $"{name}{ex.GetType().FullName}, {ex.Message}, {ex.StackTrace}";
         }
 
-        return SupportedTypesService.IsSafeToCallToString(type) ?
+        return Redaction.IsSafeToCallToString(type) ?
                    $"{name}{value?.ToString() ?? type?.FullName}" :
                    $"{name}{type?.FullName}";
     }

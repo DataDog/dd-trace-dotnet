@@ -6,19 +6,19 @@ namespace Samples.Probes.TestRuns.Shared;
 internal class Person
 {
     private int _shouldCloned;
-    internal Person(string name, double age, Address address, Guid id, List<Person> children)
+    internal Person(string name, double age, Address adrs, Guid id, List<Person> children)
     {
         _shouldCloned = (int)age;
         Name = name;
         Age = age;
-        Address = address;
+        Adrs = adrs;
         Id = id;
         Children = children;
     }
 
     public string Name { get; }
     public double Age { get; }
-    public Address Address { get; }
+    public Address Adrs { get; }
     public Guid Id { get; }
     public List<Person> Children { get; }
 

@@ -405,6 +405,7 @@
   "DD_DEBUGGER_UPLOAD_BATCH_SIZE": "dynamic_instrumentation_upload_batch_size",
   "DD_DEBUGGER_DIAGNOSTICS_INTERVAL": "dynamic_instrumentation_diagnostics_interval",
   "DD_DEBUGGER_UPLOAD_FLUSH_INTERVAL": "dynamic_instrumentation_upload_interval",
+  "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS": "dynamic_instrumentation_redacted_identifiers",
   "DD_LOGS_DIRECT_SUBMISSION_INTEGRATIONS": "logs_direct_submission_integrations",
   "DD_LOGS_DIRECT_SUBMISSION_HOST": "logs_direct_submission_host",
   "DD_LOGS_DIRECT_SUBMISSION_SOURCE": "logs_direct_submission_source",
