@@ -272,6 +272,10 @@ namespace Datadog.Trace.Configuration
                                           validator: styles => styles is { Length: > 0 }, // invalid individual values are rejected later
                                           converter: style => TrimSplitString(style, commaSeparator));
 
+            PropagationExtractFirst = config
+                                     .WithKeys(ConfigurationKeys.PropagationExtractFirst)
+                                     .AsBool(false);
+
             // If Activity support is enabled, we shouldn't enable the W3C Trace Context propagators.
             if (!IsActivityListenerEnabled)
             {
@@ -715,6 +719,11 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should only try extract the first header.
+        /// </summary>
+        internal bool PropagationExtractFirst { get; }
 
         /// <summary>
         /// Gets a value indicating whether runtime metrics

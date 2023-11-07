@@ -30,6 +30,10 @@ namespace Datadog.Trace.Tests.Propagators
 
         private static readonly SpanContextPropagator Propagator;
 
+        private static readonly SpanContextPropagator W3cDatadogPropagator;
+
+        private static readonly SpanContextPropagator DatadogW3cPropagator;
+
         static MultiSpanContextPropagatorTests()
         {
             var names = new[]
@@ -41,6 +45,30 @@ namespace Datadog.Trace.Tests.Propagators
                         };
 
             Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names);
+
+            W3cDatadogPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+    new[]
+            {
+                ContextPropagationHeaderStyle.W3CTraceContext,
+                ContextPropagationHeaderStyle.Datadog,
+            },
+    new[]
+            {
+                ContextPropagationHeaderStyle.W3CTraceContext,
+                ContextPropagationHeaderStyle.Datadog,
+            });
+
+            DatadogW3cPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                });
         }
 
         [Fact]
@@ -370,6 +398,60 @@ namespace Datadog.Trace.Tests.Propagators
             Propagator.Inject(result, headersForInjection.Object);
 
             headersForInjection.Verify(h => h.Set("b3", expectedTraceParent), Times.Once());
+        }
+
+        [Fact]
+        public void Test_headers_precedence_propagationstyle_tracestate_first_correctly_propagates_tracestate()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;t.tid:1111111111111111,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "1" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = W3cDatadogPropagator.Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 1),
+                           TraceId = 1,
+                           SpanId = 987654321,
+                           RawTraceId = "11111111111111110000000000000001",
+                           RawSpanId = "000000003ade68b1",
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           PropagatedTags = propagatedTags,
+                           AdditionalW3CTraceState = "foo=1",
+                           Parent = null,
+                           ParentId = null,
+                       });
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-trace-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-parent-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-sampling-priority"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-tags"), Times.Once());
+            headers.VerifyNoOtherCalls();
         }
     }
 }

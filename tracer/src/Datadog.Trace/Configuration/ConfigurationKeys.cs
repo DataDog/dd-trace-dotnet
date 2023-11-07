@@ -359,6 +359,13 @@ namespace Datadog.Trace.Configuration
         public const string PropagationStyle = "DD_TRACE_PROPAGATION_STYLE";
 
         /// <summary>
+        /// Configuration key to configure if propagation should only extract the first header once a configure
+        /// propagator extracts a valid trace context.
+        /// </summary>
+        /// <seealso cref="TracerSettings.PropagationExtractFirst"/>
+        public const string PropagationExtractFirst = "DD_TRACE_PROPAGATION_EXTRACT_FIRST";
+
+        /// <summary>
         /// Configuration key for enabling automatic instrumentation on specified methods.
         /// Default value is "" (disabled).
         /// </summary>
