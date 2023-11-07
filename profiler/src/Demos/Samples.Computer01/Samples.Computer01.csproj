@@ -23,6 +23,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspose.PDF" Version="23.10.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Shared\RuntimeMetrics\RuntimeMetrics.csproj" />
     <ProjectReference Include="..\Shared\Util\Datadog.Demos.Util.csproj" />
   </ItemGroup>
