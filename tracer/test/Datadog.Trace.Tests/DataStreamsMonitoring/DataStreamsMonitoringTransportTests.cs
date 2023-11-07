@@ -85,7 +85,14 @@ public class DataStreamsMonitoringTransportTests
              .OnlyContain(
                   headers => headers.AllKeys.Contains("Content-Encoding")
                           && headers["Content-Encoding"] == "gzip");
-        result.Should().OnlyContain(payload => payload.Stats.Count(s => s.Backlogs != null) == 1);
+
+        // should only have a single backlog across all payloads, but we don't know which payload it will be in
+        result
+           .SelectMany(x => x.Stats)
+           .Where(x => x.Backlogs is not null)
+           .Should()
+           .ContainSingle()
+           .And.ContainSingle();
     }
 
     private StatsPoint CreateStatsPoint(long timestamp = 0)
