@@ -352,7 +352,7 @@ namespace Datadog.Trace.Tests.Logging
                                     .Subject;
 
             errorLog.Level.Should().Be(TelemetryLogLevel.ERROR);
-            errorLog.Message.Should().StartWith(errorMessage);
+            errorLog.Message.Should().Be(errorMessage);
             errorLog.StackTrace.Should().NotBeNull();
 
             // No more logs, so should still be null

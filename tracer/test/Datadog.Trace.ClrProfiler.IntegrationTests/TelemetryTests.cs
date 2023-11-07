@@ -334,7 +334,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             allLogs.Should()
                    .ContainSingle()
                    .Which.Message.Should()
-                   .StartWith("Unable to parse custom sampling rules");
+                   .Be("Unable to parse custom sampling rules");
         }
 
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
