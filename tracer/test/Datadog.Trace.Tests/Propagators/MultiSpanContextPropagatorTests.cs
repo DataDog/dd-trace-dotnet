@@ -408,13 +408,73 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("traceparent"))
                    .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
             headers.Setup(h => h.GetValues("tracestate"))
-                   .Returns(new[] { "dd=s:2;t.tid:1111111111111111,foo=1" });
+                   .Returns(new[] { "dd=s:2;o:rum;t.tid:1111111111111111,foo=1" });
             headers.Setup(h => h.GetValues("x-datadog-trace-id"))
                    .Returns(new[] { "1" });
             headers.Setup(h => h.GetValues("x-datadog-parent-id"))
                    .Returns(new[] { "987654321" });
             headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
                    .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
+            headers.Setup(h => h.GetValues("x-datadog-tags"))
+                   .Returns(new[] { "_dd.p.tid=1111111111111111" });
+
+            var result = W3cDatadogPropagator.Extract(headers.Object);
+
+            TraceTagCollection propagatedTags = new(
+                new List<KeyValuePair<string, string>>
+                {
+                    new("_dd.p.tid", "1111111111111111"),
+                },
+                null);
+
+            result.Should()
+                  .NotBeNull()
+                  .And
+                  .BeEquivalentTo(
+                       new SpanContextMock
+                       {
+                           TraceId128 = new TraceId(0x1111111111111111, 1),
+                           TraceId = 1,
+                           SpanId = 987654321,
+                           RawTraceId = "11111111111111110000000000000001",
+                           RawSpanId = "000000003ade68b1",
+                           Origin = "rum",
+                           SamplingPriority = SamplingPriorityValues.UserKeep,
+                           PropagatedTags = propagatedTags,
+                           AdditionalW3CTraceState = "foo=1",
+                           Parent = null,
+                           ParentId = null,
+                       });
+
+            headers.Verify(h => h.GetValues("traceparent"), Times.Once());
+            headers.Verify(h => h.GetValues("tracestate"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-trace-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-parent-id"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-sampling-priority"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-origin"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-tags"), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
+        public void Test_headers_precedence_propagationstyle_tracestate_second_correctly_propagates_tracestate()
+        {
+            var headers = new Mock<IHeadersCollection>();
+
+            headers.Setup(h => h.GetValues("traceparent"))
+                   .Returns(new[] { "00-11111111111111110000000000000001-000000003ade68b1-01" });
+            headers.Setup(h => h.GetValues("tracestate"))
+                   .Returns(new[] { "dd=s:2;o:rum;t.tid:1111111111111111,foo=1" });
+            headers.Setup(h => h.GetValues("x-datadog-trace-id"))
+                   .Returns(new[] { "1" });
+            headers.Setup(h => h.GetValues("x-datadog-parent-id"))
+                   .Returns(new[] { "987654321" });
+            headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
+                   .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
@@ -438,6 +498,7 @@ namespace Datadog.Trace.Tests.Propagators
                            SpanId = 987654321,
                            RawTraceId = "11111111111111110000000000000001",
                            RawSpanId = "000000003ade68b1",
+                           Origin = "rum",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            PropagatedTags = propagatedTags,
                            AdditionalW3CTraceState = "foo=1",
@@ -450,6 +511,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Verify(h => h.GetValues("x-datadog-trace-id"), Times.Once());
             headers.Verify(h => h.GetValues("x-datadog-parent-id"), Times.Once());
             headers.Verify(h => h.GetValues("x-datadog-sampling-priority"), Times.Once());
+            headers.Verify(h => h.GetValues("x-datadog-origin"), Times.Once());
             headers.Verify(h => h.GetValues("x-datadog-tags"), Times.Once());
             headers.VerifyNoOtherCalls();
         }

@@ -149,6 +149,8 @@ namespace Datadog.Trace.Propagators
         {
             if (carrier is null) { ThrowHelper.ThrowArgumentNullException(nameof(carrier)); }
 
+            SpanContext? localSpanContext = null;
+
             for (var i = 0; i < _extractors.Length; i++)
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
@@ -157,10 +159,23 @@ namespace Datadog.Trace.Propagators
                     {
                         return spanContext;
                     }
+
+                    if (localSpanContext is not null && spanContext is not null)
+                    {
+                        if (localSpanContext.RawTraceId == spanContext.RawTraceId)
+                        {
+                            localSpanContext.AdditionalW3CTraceState += spanContext.AdditionalW3CTraceState;
+                        }
+                    }
+
+                    if (localSpanContext is null)
+                    {
+                        localSpanContext = spanContext;
+                    }
                 }
             }
 
-            return null;
+            return localSpanContext;
         }
 
         /// <summary>
