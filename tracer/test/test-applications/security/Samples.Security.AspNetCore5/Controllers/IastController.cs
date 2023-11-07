@@ -237,6 +237,13 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content($"No query was provided");
         }
 
+        [HttpGet("ExecuteCommandFromHeader")]
+        [Route("ExecuteCommandFromHeader")]
+        public IActionResult ExecuteCommandFromHeader()
+        {
+            return ExecuteCommandInternal(Request.Headers["file"], Request.Headers["argumentLine"]);
+        }
+
         [HttpGet("ExecuteCommandFromCookie")]
         [Route("ExecuteCommandFromCookie")]
         public IActionResult ExecuteCommandFromCookie()
