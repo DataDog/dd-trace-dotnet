@@ -40,12 +40,16 @@ internal class ApplicationTelemetryCollector
         }
 
         var host = HostMetadata.Instance;
+        var osDescription = frameworkDescription.OSArchitecture == "x86"
+                                ? $"{frameworkDescription.OSDescription} (32bit)"
+                                : frameworkDescription.OSDescription;
+
         _hostData = new HostTelemetryData(
             hostname: host.Hostname ?? string.Empty, // this is required, but we don't have it
             os: frameworkDescription.OSPlatform,
             architecture: frameworkDescription.ProcessArchitecture)
         {
-            OsVersion = Environment.OSVersion.ToString(),
+            OsVersion = osDescription,
             KernelName = host.KernelName,
             KernelRelease = host.KernelRelease,
             KernelVersion = host.KernelVersion

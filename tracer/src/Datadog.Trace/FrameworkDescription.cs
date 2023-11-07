@@ -40,12 +40,14 @@ namespace Datadog.Trace
             string productVersion,
             string osPlatform,
             string osArchitecture,
-            string processArchitecture)
+            string processArchitecture,
+            string osDescription)
         {
             Name = name;
             ProductVersion = productVersion;
             OSPlatform = osPlatform;
             OSArchitecture = osArchitecture;
+            OSDescription = osDescription;
             ProcessArchitecture = processArchitecture;
         }
 
@@ -58,6 +60,8 @@ namespace Datadog.Trace
         public string OSArchitecture { get; }
 
         public string ProcessArchitecture { get; }
+
+        public string OSDescription { get; }
 
         public static bool IsNet5()
         {
