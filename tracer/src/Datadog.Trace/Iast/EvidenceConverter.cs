@@ -18,7 +18,7 @@ namespace Datadog.Trace.Iast;
 /// <summary>
 /// Custom JSON serializer for <see cref="Datadog.Trace.Iast.Evidence"/> struct
 /// </summary>
-internal class EvidenceConverter : JsonConverter<Evidence>
+internal class EvidenceConverter : JsonConverter<Evidence?>
 {
     // When not redacted output is:
     // "valueParts": [
@@ -59,29 +59,34 @@ internal class EvidenceConverter : JsonConverter<Evidence>
         return value.Substring(range.Start, range.Length);
     }
 
-    public override Evidence ReadJson(JsonReader reader, Type objectType, Evidence existingValue, bool hasExistingValue, JsonSerializer serializer)
+    public override Evidence? ReadJson(JsonReader reader, Type objectType, Evidence? existingValue, bool hasExistingValue, JsonSerializer serializer)
     {
         throw new NotImplementedException();
     }
 
-    public override void WriteJson(JsonWriter writer, Evidence evidence, JsonSerializer serializer)
+    public override void WriteJson(JsonWriter writer, Evidence? evidence, JsonSerializer serializer)
     {
+        if (evidence is null)
+        {
+            return;
+        }
+
         writer.WriteStartObject();
-        if (evidence.Ranges == null || evidence.Ranges.Length == 0)
+        if (evidence?.Ranges == null || evidence?.Ranges.Length == 0)
         {
             writer.WritePropertyName("value");
-            writer.WriteValue(evidence.Value);
+            writer.WriteValue(evidence?.Value);
         }
         else
         {
             writer.WritePropertyName("valueParts");
             if (_redactionEnabled)
             {
-                ToRedactedJson(writer, evidence.Value!, evidence.Ranges, evidence.Sensitive);
+                ToRedactedJson(writer, evidence?.Value!, evidence?.Ranges, evidence?.Sensitive);
             }
             else
             {
-                ToJsonTaintedValue(writer, evidence.Value!, evidence.Ranges);
+                ToJsonTaintedValue(writer, evidence?.Value!, evidence?.Ranges!);
             }
         }
 
