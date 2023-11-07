@@ -418,7 +418,7 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = W3cDatadogPropagator.Extract(headers.Object);
+            var result = DatadogW3cPropagator.Extract(headers.Object);
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>

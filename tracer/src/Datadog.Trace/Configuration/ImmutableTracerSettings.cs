@@ -126,6 +126,7 @@ namespace Datadog.Trace.Configuration
             WcfObfuscationEnabled = settings.WcfObfuscationEnabled;
             PropagationStyleInject = settings.PropagationStyleInject;
             PropagationStyleExtract = settings.PropagationStyleExtract;
+            PropagationExtractFirst = settings.PropagationExtractFirst;
             TraceMethods = settings.TraceMethods;
             IsActivityListenerEnabled = settings.IsActivityListenerEnabled;
             OpenTelemetryLegacyOperationNameEnabled = settings.OpenTelemetryLegacyOperationNameEnabled;
@@ -462,6 +463,12 @@ namespace Datadog.Trace.Configuration
         /// Gets a value indicating the extraction propagation style.
         /// </summary>
         internal string[] PropagationStyleExtract { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether the propagation should only try
+        /// extract the first header.
+        /// </summary>
+        internal bool PropagationExtractFirst { get; }
 
         /// <summary>
         /// Gets a value indicating the trace methods configuration.

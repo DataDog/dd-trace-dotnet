@@ -153,7 +153,10 @@ namespace Datadog.Trace.Propagators
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
-                    return spanContext;
+                    if (Tracer.Instance.Settings.PropagationExtractFirst)
+                    {
+                        return spanContext;
+                    }
                 }
             }
 

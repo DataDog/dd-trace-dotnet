@@ -721,7 +721,8 @@ namespace Datadog.Trace.Configuration
         internal string[] PropagationStyleExtract { get; }
 
         /// <summary>
-        /// Gets a value indicating whether the propagation should only try extract the first header.
+        /// Gets a value indicating whether the propagation should only try
+        /// extract the first header.
         /// </summary>
         internal bool PropagationExtractFirst { get; }
 
