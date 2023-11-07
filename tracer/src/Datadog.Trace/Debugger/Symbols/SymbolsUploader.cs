@@ -96,6 +96,7 @@ namespace Datadog.Trace.Debugger.Symbols
 
             if (_cancellationToken.IsCancellationRequested)
             {
+                _assemblySemaphore.Release();
                 return;
             }
 
@@ -227,7 +228,15 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             var symbolAsString = JsonConvert.SerializeObject(classScope, _jsonSerializerSettings);
-            sb.Append(symbolAsString);
+
+            try
+            {
+                sb.Append(symbolAsString);
+            }
+            catch (ArgumentOutOfRangeException)
+            {
+                return 0;
+            }
 
             return Encoding.UTF8.GetByteCount(symbolAsString);
         }

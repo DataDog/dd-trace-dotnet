@@ -184,54 +184,63 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             var nestedType = MetadataReader.GetTypeDefinition(nestedHandle);
                             var fields = nestedType.GetFields();
                             int index = 0;
-                            var added = ArrayPool<string>.Shared.Rent(fields.Count);
-                            foreach (var fieldHandle in fields)
+                            string[]? added = null;
+                            try
                             {
-                                if (fieldHandle.IsNil)
+                                added = ArrayPool<string>.Shared.Rent(fields.Count);
+                                foreach (var fieldHandle in fields)
                                 {
-                                    continue;
-                                }
-
-                                var field = MetadataReader.GetFieldDefinition(fieldHandle);
-                                if (field.Name.IsNil)
-                                {
-                                    continue;
-                                }
-
-                                var fieldName = MetadataReader.GetString(field.Name);
-                                var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
-                                {
-                                    continue;
-                                }
-
-                                bool contains = false;
-                                for (int j = 0; j < added.Length; j++)
-                                {
-                                    if (added[j] == fieldName)
+                                    if (fieldHandle.IsNil)
                                     {
-                                        contains = true;
-                                        break;
+                                        continue;
                                     }
-                                }
 
-                                if (contains)
-                                {
-                                    continue;
-                                }
+                                    var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                                    if (field.Name.IsNil)
+                                    {
+                                        continue;
+                                    }
 
-                                added[index] = fieldName;
-                                localsSymbol.Add(new Symbol
-                                {
-                                    Name = fieldName,
-                                    Type = field.DecodeSignature(new TypeProvider(false), 0),
-                                    SymbolType = SymbolType.Local,
-                                    Line = local.Line
-                                });
-                                index++;
+                                    var fieldName = MetadataReader.GetString(field.Name);
+                                    var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                                    if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                                    {
+                                        continue;
+                                    }
+
+                                    bool contains = false;
+                                    for (int j = 0; j < added.Length; j++)
+                                    {
+                                        if (added[j] == fieldName)
+                                        {
+                                            contains = true;
+                                            break;
+                                        }
+                                    }
+
+                                    if (contains)
+                                    {
+                                        continue;
+                                    }
+
+                                    added[index] = fieldName;
+                                    localsSymbol.Add(new Symbol
+                                    {
+                                        Name = fieldName,
+                                        Type = field.DecodeSignature(new TypeProvider(false), 0),
+                                        SymbolType = SymbolType.Local,
+                                        Line = local.Line
+                                    });
+                                    index++;
+                                }
                             }
-
-                            ArrayPool<string>.Shared.Return(added, true);
+                            finally
+                            {
+                                if (added != null)
+                                {
+                                    ArrayPool<string>.Shared.Return(added, true);
+                                }
+                            }
                         }
                     }
                 }

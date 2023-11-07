@@ -245,7 +245,7 @@ namespace Datadog.Trace.Debugger.Symbols
             string? classSourceFile = null;
             if (allScopes == null)
             {
-                return new SourcePdbInfo { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
+                return new SourcePdbInfo { StartLine = UnknownMethodStartLine, EndLine = UnknownMethodEndLine, Path = classSourceFile };
             }
 
             for (int i = 0; i < allScopes.Length; i++)
@@ -515,12 +515,12 @@ namespace Datadog.Trace.Debugger.Symbols
         private Model.Scope[]? GetClosureScopes(TypeDefinition typeDef, MethodDefinition methodDef)
         {
             Model.Scope[]? closureMethods = null;
+            int index = 0;
             try
             {
                 var nestedTypes = typeDef.GetNestedTypes();
                 var methods = typeDef.GetMethods();
                 closureMethods = ArrayPool<Model.Scope>.Shared.Rent(methods.Count + (nestedTypes.Length * 2));
-                int index = 0;
 
                 for (int i = 0; i < nestedTypes.Length; i++)
                 {
@@ -571,29 +571,29 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 return closureScopes;
-
-                void PopulateClosureMethod(MethodDefinition generatedMethod, TypeDefinition ownerType)
-                {
-                    var closureMethodScope = CreateMethodScopeForGeneratedMethod(methodDef, generatedMethod, ownerType);
-                    if (closureMethodScope.HasValue)
-                    {
-                        if (index < closureMethods.Length)
-                        {
-                            closureMethods[index] = closureMethodScope.Value;
-                            index++;
-                        }
-                        else
-                        {
-                            Log.Warning("Not enough space for all closure methods");
-                        }
-                    }
-                }
             }
             finally
             {
                 if (closureMethods != null)
                 {
                     ArrayPool<Model.Scope>.Shared.Return(closureMethods);
+                }
+            }
+
+            void PopulateClosureMethod(MethodDefinition generatedMethod, TypeDefinition ownerType)
+            {
+                var closureMethodScope = CreateMethodScopeForGeneratedMethod(methodDef, generatedMethod, ownerType);
+                if (closureMethodScope.HasValue)
+                {
+                    if (index < closureMethods.Length)
+                    {
+                        closureMethods[index] = closureMethodScope.Value;
+                        index++;
+                    }
+                    else
+                    {
+                        Log.Warning("Not enough space for all closure methods");
+                    }
                 }
             }
         }
