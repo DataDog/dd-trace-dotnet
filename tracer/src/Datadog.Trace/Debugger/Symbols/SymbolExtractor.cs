@@ -62,6 +62,12 @@ namespace Datadog.Trace.Debugger.Symbols
             try
             {
                 var datadogMetadataReader = DatadogMetadataReader.CreatePdbReader(assembly);
+                if (datadogMetadataReader == null)
+                {
+                    Log.Debug("DatadogMetadataReader is null for assembly {Assembly}", assembly.FullName);
+                    return null;
+                }
+
                 if (datadogMetadataReader.MetadataReader.TypeDefinitions.Count == 0)
                 {
                     Log.Debug("Could not found any type in assembly {Assembly}", assembly.FullName);
@@ -600,18 +606,30 @@ namespace Datadog.Trace.Debugger.Symbols
         private Symbol[]? GetArgsSymbol(MethodDefinition method)
         {
             var parameters = method.GetParameters();
-            if (parameters.Count <= 0 ||
-                (parameters.Count == 1 && MetadataReader.GetParameter(parameters.First()).SequenceNumber == -2 /* hidden this */))
+            if (parameters.Count == 0)
             {
                 return null;
             }
 
-            var argsSymbol = new Symbol[parameters.Count];
+            /* hidden this */
+            var hasThis = MetadataReader.GetParameter(parameters.First()).SequenceNumber == -2;
+            var count = hasThis ? parameters.Count - 1 : parameters.Count;
+            if (count == 0)
+            {
+                return null;
+            }
+
+            var argsSymbol = new Symbol[count];
             int index = 0;
 
             foreach (var parameterHandle in parameters)
             {
                 var parameterDef = MetadataReader.GetParameter(parameterHandle);
+                if (parameterDef.SequenceNumber == -2)
+                {
+                    continue;
+                }
+
                 argsSymbol[index] = new Symbol
                 {
                     Name = MetadataReader.GetString(parameterDef.Name),
@@ -624,11 +642,6 @@ namespace Datadog.Trace.Debugger.Symbols
             var methodSig = method.DecodeSignature(new TypeProvider(false), 0);
             for (int i = 0; i < argsSymbol.Length; i++)
             {
-                if (argsSymbol[i].Name == null)
-                {
-                    break;
-                }
-
                 argsSymbol[i].Type = methodSig.ParameterTypes[i];
             }
 
