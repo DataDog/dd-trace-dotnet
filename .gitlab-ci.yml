@@ -10,12 +10,6 @@ include:
 
 variables:
   GIT_PROFILER_REF: master
-  DEPLOY_TO_REL_ENV:
-    value: "false"
-    description: "Set to true to override rules in the reliability-env pipeline (e.g. override 'only deploy master')"
-  DOWNSTREAM_BRANCH:
-    value: "master"
-    description: "Run a specific datadog-reliability-env branch downstream"
   DEPLOY_TO_DEBUGGER_BACKEND:
     value: "false"
     description: "Set to true to deploy to debugger backend demo application"
@@ -88,18 +82,6 @@ publish:
               Start-Sleep -Milliseconds 100
           }
       } while ($i -lt 3)
-
-deploy_to_reliability_env:
-  stage: deploy
-  rules:
-    - if: '$DEPLOY_TO_REL_ENV == "true"'
-  trigger:
-    project: DataDog/apm-reliability/datadog-reliability-env
-    branch: $DOWNSTREAM_BRANCH
-  variables:
-    UPSTREAM_PACKAGE_JOB: build
-    UPSTREAM_PROJECT_NAME: $CI_PROJECT_NAME
-    FORCE_TRIGGER: $DEPLOY_TO_REL_ENV
 
 # The 4 jobs below, do not depend on the packaging stage. So they are ran always, even if package stage can fail.
 deploy_to_docker_registries:
