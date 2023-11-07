@@ -1,0 +1,320 @@
+﻿{
+  "service": "test",
+  "env": "test",
+  "version": "0",
+  "language": "dotnet",
+  "scopes": [
+    {
+      "scope_type": "assembly",
+      "name": "Datadog.Trace.Tests",
+      "start_line": 0,
+      "end_line": 0,
+      "scopes": [
+        {
+          "scope_type": "class",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine",
+          "start_line": 17,
+          "end_line": 59,
+          "language_specifics": {
+            "super_classes": [
+              "System.Object"
+            ]
+          },
+          "symbols": [
+            {
+              "name": "intField",
+              "type": "System.Int32",
+              "symbol_type": "field",
+              "line": 0
+            },
+            {
+              "name": "personField",
+              "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+              "symbol_type": "field",
+              "line": 0
+            }
+          ],
+          "scopes": [
+            {
+              "scope_type": "method",
+              "name": "Init",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+              "start_line": 17,
+              "end_line": 22,
+              "language_specifics": {
+                "return_type": "System.Threading.Tasks.Task",
+                "start_column": 9,
+                "end_column": 10
+              },
+              "scopes": [
+                {
+                  "scope_type": "closure",
+                  "name": "Init",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 17,
+                  "end_line": 22,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ],
+                    "annotations": [
+                      "Final Virtual"
+                    ],
+                    "return_type": "System.Void",
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "person",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "scope_type": "method",
+              "name": "DoAsyncWork",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+              "start_line": 25,
+              "end_line": 43,
+              "language_specifics": {
+                "return_type": "System.Threading.Tasks.Task",
+                "start_column": 9,
+                "end_column": 10
+              },
+              "symbols": [
+                {
+                  "name": "id",
+                  "type": "System.Int32",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
+                  "name": "person",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                  "symbol_type": "arg",
+                  "line": 0
+                }
+              ],
+              "scopes": [
+                {
+                  "scope_type": "closure",
+                  "name": "DoAsyncWork",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 25,
+                  "end_line": 43,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ],
+                    "annotations": [
+                      "Final Virtual"
+                    ],
+                    "return_type": "System.Void",
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "localPerson",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    },
+                    {
+                      "name": "e",
+                      "type": "System.Exception",
+                      "symbol_type": "local",
+                      "line": 2147483647
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "scope_type": "method",
+              "name": ".ctor",
+              "start_line": 0,
+              "end_line": 0,
+              "language_specifics": {
+                "return_type": "System.Void"
+              }
+            },
+            {
+              "scope_type": "class",
+              "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+              "start_line": 45,
+              "end_line": 51,
+              "language_specifics": {
+                "super_classes": [
+                  "System.Object"
+                ],
+                "interfaces": [
+                  "System.IEquatable`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>"
+                ]
+              },
+              "symbols": [
+                {
+                  "name": "Name",
+                  "type": "System.String",
+                  "symbol_type": "field",
+                  "line": 0
+                },
+                {
+                  "name": "Age",
+                  "type": "System.Int32",
+                  "symbol_type": "field",
+                  "line": 0
+                },
+                {
+                  "name": "Address",
+                  "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+                  "symbol_type": "field",
+                  "line": 0
+                }
+              ],
+              "scopes": [
+                {
+                  "scope_type": "method",
+                  "name": ".ctor",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 45,
+                  "end_line": 51,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Public"
+                    ],
+                    "return_type": "System.Void",
+                    "start_column": 32,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "Name",
+                      "type": "System.String",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
+                      "name": "Age",
+                      "type": "System.Int32",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
+                      "name": "Address",
+                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "method",
+                  "name": "ToString",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 48,
+                  "end_line": 50,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Public"
+                    ],
+                    "annotations": [
+                      "Virtual"
+                    ],
+                    "return_type": "System.String",
+                    "start_column": 13,
+                    "end_column": 14
+                  }
+                }
+              ]
+            },
+            {
+              "scope_type": "class",
+              "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+              "start_line": 53,
+              "end_line": 59,
+              "language_specifics": {
+                "super_classes": [
+                  "System.Object"
+                ],
+                "interfaces": [
+                  "System.IEquatable`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address>"
+                ]
+              },
+              "symbols": [
+                {
+                  "name": "Name",
+                  "type": "System.String",
+                  "symbol_type": "field",
+                  "line": 0
+                },
+                {
+                  "name": "Number",
+                  "type": "System.Int32",
+                  "symbol_type": "field",
+                  "line": 0
+                }
+              ],
+              "scopes": [
+                {
+                  "scope_type": "method",
+                  "name": ".ctor",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 53,
+                  "end_line": 59,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Public"
+                    ],
+                    "return_type": "System.Void",
+                    "start_column": 33,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "Name",
+                      "type": "System.String",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
+                      "name": "Number",
+                      "type": "System.Int32",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "method",
+                  "name": "ToString",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                  "start_line": 56,
+                  "end_line": 58,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Public"
+                    ],
+                    "annotations": [
+                      "Virtual"
+                    ],
+                    "return_type": "System.String",
+                    "start_column": 13,
+                    "end_column": 14
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

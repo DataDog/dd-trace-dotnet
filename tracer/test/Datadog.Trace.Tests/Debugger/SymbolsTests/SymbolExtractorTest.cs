@@ -25,7 +25,7 @@ public class SymbolExtractorTest
     private const string TestSamplesNamespace = "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples";
 
     public static IEnumerable<object[]> TestSamples =>
-        typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<")).Select(type => new object[] { type });
+        typeof(SymbolExtractorTest).Assembly.GetTypes().Where(t => t.Namespace == TestSamplesNamespace && !t.Name.StartsWith("<") && !t.IsNested).Select(type => new object[] { type });
 
     [Theory]
     [MemberData(nameof(TestSamples))]

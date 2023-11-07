@@ -131,13 +131,16 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 }
 
                 var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
-                if (localName[0] == '<')
+                if (localName[0] != '<')
                 {
-                    var endNameIndex = localName.IndexOf('>');
-                    if (endNameIndex > 1)
-                    {
-                        localName = localName.Slice(1, endNameIndex - 1);
-                    }
+                    // probably a field for hoisted argument which already has been added to the closure's parent
+                    continue;
+                }
+
+                var endNameIndex = localName.IndexOf('>');
+                if (endNameIndex > 1)
+                {
+                    localName = localName.Slice(1, endNameIndex - 1);
                 }
 
                 localsSymbol.Add(new Symbol

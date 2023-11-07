@@ -11,6 +11,7 @@ using System.Reflection;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Pdb;
+using Datadog.Trace.VendoredMicrosoftCode.System;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Collections.Immutable;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
@@ -188,7 +189,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 if ((nestedClassesScopeIndex - methodsScopeIndex) > 0)
                 {
                     int destIndex = methodsScopeIndex == 0 ? 0 : methodsScopeIndex;
-                    Array.Copy(scopes!, 0, allScopes!, destIndex, nestedClassesScopeIndex - methodsScopeIndex);
+                    Array.Copy(scopes!, destIndex, allScopes!, destIndex, nestedClassesScopeIndex - methodsScopeIndex);
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
@@ -347,10 +348,25 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 var fieldDef = MetadataReader.GetFieldDefinition(fieldDefHandle);
                 var fieldTypeName = fieldDef.DecodeSignature(new TypeProvider(false), 0);
-                var fieldName = fieldDef.Name.IsNil ? null : MetadataReader.GetString(fieldDef.Name);
+                if (fieldDef.Name.IsNil)
+                {
+                    continue;
+                }
+
+                var fieldName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(fieldDef.Name));
+                if (fieldName[0] == '<')
+                {
+                    // properties
+                    var endNameIndex = fieldName.IndexOf('>');
+                    if (endNameIndex > 1)
+                    {
+                        fieldName = fieldName.Slice(1, endNameIndex - 1);
+                    }
+                }
+
                 fieldSymbols[index] = new Symbol
                 {
-                    Name = fieldName,
+                    Name = fieldName.ToString(),
                     Type = fieldTypeName,
                     SymbolType = ((fieldDef.Attributes & FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
                     Line = UnknownFieldAndArgLine
