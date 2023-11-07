@@ -92,7 +92,8 @@ public class DataStreamsMonitoringTransportTests
            .Where(x => x.Backlogs is not null)
            .Should()
            .ContainSingle()
-           .And.ContainSingle();
+           .Which.Backlogs.Should()
+           .ContainSingle();
     }
 
     private StatsPoint CreateStatsPoint(long timestamp = 0)
