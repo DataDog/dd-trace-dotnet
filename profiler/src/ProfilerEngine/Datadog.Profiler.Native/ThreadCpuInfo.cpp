@@ -23,5 +23,10 @@ void ThreadCpuInfo::SetName(const WCHAR* pName)
 
 const shared::WSTRING* ThreadCpuInfo::GetName()
 {
+    if (_pName == nullptr)
+    {
+        return nullptr;
+    }
+
     return _pName.get();
 }
