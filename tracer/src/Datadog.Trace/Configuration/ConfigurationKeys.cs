@@ -686,6 +686,11 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable redacted error log collection.
+            /// </summary>
+            public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation

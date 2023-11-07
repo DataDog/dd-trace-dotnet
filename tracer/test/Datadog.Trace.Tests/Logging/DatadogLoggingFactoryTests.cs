@@ -8,6 +8,7 @@ using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Logging.Internal.Configuration;
 using FluentAssertions;
 using Xunit;
 
@@ -97,6 +98,40 @@ public class DatadogLoggingFactoryTests
             config.File.HasValue.Should().BeTrue();
             config.File?.LogDirectory.Should().Be(logDirectory);
             Directory.Exists(logDirectory).Should().BeTrue();
+        }
+    }
+
+    public class RedactedLogConfiguration
+    {
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("true")]
+        [InlineData("/var/root")]
+        [InlineData("24.54")]
+        public void WhenNoOrInvalidConfiguration_TelemetryLogsEnabled(string value)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.TelemetryLogsEnabled, value },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.ErrorLogging.Should().NotBeNull();
+        }
+
+        [Theory]
+        [InlineData("0")]
+        [InlineData("false")]
+        public void WhenDisabled_TelemetryLogsDisabled(string value)
+        {
+            var source = new NameValueConfigurationSource(new()
+            {
+                { ConfigurationKeys.Telemetry.TelemetryLogsEnabled, value },
+            });
+
+            var config = DatadogLoggingFactory.GetConfiguration(source, NullConfigurationTelemetry.Instance);
+            config.ErrorLogging.Should().BeNull();
         }
     }
 
