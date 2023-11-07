@@ -40,7 +40,7 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
                 }
                 if (methodName.size() == 0)
                 {
-                    methodName = method->GetFullName(false);
+                    methodName = method->GetFullName();
                 }
                 UserString str = {methodName, userString};
                 userStrings.push_back(str);
@@ -56,8 +56,6 @@ bool HardcodedSecretsMethodAnalyzer::ProcessMethod(MethodInfo* method)
         for (auto userString : userStrings)
         {
             _userStrings.push_back(userString);
-            trace::Logger::Debug("HardcodedSecretsMethodAnalyzer::ProcessMethod -> Retrieved string on ",
-                                 _userStrings.back().location);
         }
     }
 
@@ -76,7 +74,6 @@ int HardcodedSecretsMethodAnalyzer::GetUserStrings(int arrSize, UserStringIntero
         UserString* str = &(_deliveredUserStrings[x]);
         arr[x].location = str->location.c_str();
         arr[x].value = str->value.c_str();
-        trace::Logger::Debug("HardcodedSecretsMethodAnalyzer::GetUserStrings -> Delivered string on ", str->location);
         x++;
     }
 

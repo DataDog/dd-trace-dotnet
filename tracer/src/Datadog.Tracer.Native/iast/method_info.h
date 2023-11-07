@@ -39,7 +39,6 @@ namespace iast
         ModuleInfo* _module = nullptr;
         WSTRING _name = EmptyWStr;
         WSTRING _fullName = EmptyWStr;
-        WSTRING _fullNameWithReturnType = EmptyWStr;
         WSTRING _memberName = EmptyWStr;
 
         mdTypeDef _typeDef = 0;
@@ -59,7 +58,8 @@ namespace iast
         ModuleInfo* GetModuleInfo();
         WSTRING GetName();
         WSTRING GetMemberName();
-        WSTRING GetFullName(bool includeReturnType = false);
+        WSTRING GetFullName();
+        WSTRING GetFullNameWithReturnType();
         WSTRING GetTypeName();
         virtual SignatureInfo* GetSignature();
         ULONG GetParameterCount();
