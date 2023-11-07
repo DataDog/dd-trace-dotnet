@@ -79,6 +79,12 @@ public static class Program
         {
             Thread.Sleep(100);
         }
+
+        using (var operationNameRoot = _tracer.StartActiveSpan("OperationNameRootSpan"))
+        {
+            RunSpanOperationName();
+            RunSpanReservedAttributes();
+        }
     }
 
     private static async Task RunStartSpanOverloadsAsync(TelemetrySpan span)
@@ -180,6 +186,58 @@ public static class Program
                 innerSpan.UpdateName("InnerSpanUpdated");
             }
         }
+    }
+
+    private static IEnumerable<object[]> OperationNameData =>
+        new List<object[]>
+        {
+                // expected operation name, SpanKind, OperationName-related attributes
+                // Copied from Unit Tests - OpenTelemetryOperationNameMapperTests.cs
+                new object[] { "http.server.request", SpanKind.Server, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
+                new object[] { "http.client.request", SpanKind.Client, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
+                new object[] { "redis.query", SpanKind.Client, new Dictionary<string, object>() { { "db.system", "Redis" } } },
+                new object[] { "kafka.receive", SpanKind.Client, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", SpanKind.Server, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", SpanKind.Producer, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", SpanKind.Consumer, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "aws.s3.request", SpanKind.Client, new Dictionary<string, object>() { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
+                new object[] { "aws.client.request", SpanKind.Client, new Dictionary<string, object>() { { "rpc.system", "aws-api" } } },
+                new object[] { "grpc.client.request", SpanKind.Client, new Dictionary<string, object>() { { "rpc.system", "GRPC" } } },
+                new object[] { "grpc.server.request", SpanKind.Server, new Dictionary<string, object>() { { "rpc.system", "GRPC" } } },
+                new object[] { "aws.my-function.invoke", SpanKind.Client, new Dictionary<string, object>() { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
+                new object[] { "datasource.invoke", SpanKind.Server, new Dictionary<string, object>() { { "faas.trigger", "Datasource" } } },
+                new object[] { "graphql.server.request", SpanKind.Server, new Dictionary<string, object>() { { "graphql.operation.type", "query" } } },
+                new object[] { "amqp.server.request", SpanKind.Server, new Dictionary<string, object>() { { "network.protocol.name", "Amqp" } } },
+                new object[] { "server.request", SpanKind.Server, new Dictionary<string, object>() },
+                new object[] { "amqp.client.request", SpanKind.Client, new Dictionary<string, object>() { { "network.protocol.name", "Amqp" } } },
+                new object[] { "client.request", SpanKind.Client, new Dictionary<string, object>() },
+                new object[] { "internal", SpanKind.Internal, new Dictionary<string, object>() },
+                new object[] { "consumer", SpanKind.Consumer, new Dictionary<string, object>() },
+                new object[] { "producer", SpanKind.Producer, new Dictionary<string, object>() },
+                // new object[] { "otel_unknown", null, new Dictionary<string, object>() }, // always should have a span kind due to Activity5+
+        };
+
+    private static void RunSpanOperationName()
+    {
+        foreach(var data in OperationNameData)
+        {
+            SpanAttributes attributes = new SpanAttributes((Dictionary<string, object>)data[2]);
+            using var span = _tracer.StartActiveSpan("ResourceName", kind: (SpanKind)data[1], initialAttributes: attributes);
+        }
+    }
+
+    private static void RunSpanReservedAttributes()
+    {
+        var tags = new Dictionary<string, object>();
+        tags.Add("http.request.method", "GET"); // operation name would be "http.server.request" (without the override)
+        tags.Add("resource.name", "ResourceNameOverride");
+        tags.Add("operation.name", "OperationNameOverride");
+        tags.Add("service.name", "ServiceNameOverride");
+        tags.Add("span.type", "SpanTypeOverride");
+        tags.Add("analytics.event", "true"); // metric->  _dd1.sr.eausr: 1.0
+        SpanAttributes attributes = new SpanAttributes(tags);
+
+        using var activity = _tracer.StartActiveSpan(name: "This name should not be in the snapshot", kind: SpanKind.Server, initialAttributes: attributes);
     }
 
     private static void PrintSpanStartedInformation(TelemetrySpan span)
