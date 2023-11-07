@@ -157,6 +157,7 @@ namespace Datadog.Trace.Debugger.Expressions
                             case CaptureBehaviour.Delay:
                                 if (info.IsAsyncCapture())
                                 {
+                                    AddAsyncMethodArguments(snapshotCreator, ref info);
                                     AddAsyncMethodLocals(snapshotCreator, ref info);
                                 }
 
@@ -191,7 +192,6 @@ namespace Datadog.Trace.Debugger.Expressions
                                     {
                                         if (info.IsAsyncCapture())
                                         {
-                                            AddAsyncMethodArguments(snapshotCreator, ref info);
                                             AddAsyncMethodLocals(snapshotCreator, ref info);
                                         }
 
