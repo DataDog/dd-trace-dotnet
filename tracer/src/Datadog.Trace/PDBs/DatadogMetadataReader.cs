@@ -281,7 +281,7 @@ namespace Datadog.Trace.Pdb
 
                         // Check if the line and column match
                         if (sequencePoint.StartLine <= line && sequencePoint.EndLine >= line &&
-                            column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column))
+                            (column.HasValue == false || (sequencePoint.StartColumn <= column && sequencePoint.EndColumn >= column)))
                         {
                             byteCodeOffset = sequencePoint.Offset;
                             return methodDefinitionHandle.RowId;
