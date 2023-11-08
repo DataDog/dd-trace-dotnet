@@ -53,172 +53,174 @@ namespace Datadog.InstrumentedAssemblyGenerator
                 switch (tokensAndName.Key.Table)
                 {
                     case MetadataTable.TypeDef:
-                    {
-                        // todo: add type flags
-                        var newTypeDef = new TypeDefUser(tokensAndName.Value.Type);
-                        OriginalModule.AddAsNonNestedType(newTypeDef);
-                        break;
-                    }
+                        {
+                            // todo: add type flags
+                            var newTypeDef = new TypeDefUser(tokensAndName.Value.Type);
+                            OriginalModule.AddAsNonNestedType(newTypeDef);
+                            break;
+                        }
 
                     case MetadataTable.TypeRef:
-                    {
-                        AddTypeToCache(ImportTypeRef(tokensAndName.Value.Type), tokensAndName);
-                        break;
-                    }
+                        {
+                            AddTypeToCache(ImportTypeRef(tokensAndName.Value.Type), tokensAndName);
+                            break;
+                        }
 
                     case MetadataTable.AssemblyRef:
-                    {
-                        _assembliesToAddReference.Add(tokensAndName.Value.FullName);
-                        break;
-                    }
+                        {
+                            _assembliesToAddReference.Add(tokensAndName.Value.FullName);
+                            break;
+                        }
 
                     case MetadataTable.ModuleRef:
-                    {
-                        try
                         {
-                            var modulePath = tokensAndName.Value.FullName;
-                            if (!File.Exists(modulePath))
+                            try
                             {
-                                modulePath = Path.Combine(_assemblyGeneratorArgs.OriginalModulesFolder, Path.GetFileName(modulePath));
-                            }
+                                var modulePath = tokensAndName.Value.FullName;
+                                if (!File.Exists(modulePath))
+                                {
+                                    modulePath = Path.Combine(_assemblyGeneratorArgs.OriginalModulesFolder, Path.GetFileName(modulePath));
+                                }
 
-                            if (File.Exists(modulePath))
+                                if (File.Exists(modulePath))
+                                {
+                                    var moduleDefMd = ModuleDefMD.Load(modulePath);
+                                    OriginalModule.Assembly.Modules.Add(moduleDefMd);
+                                }
+
+                                Logger.Debug($"{Path.GetFileName(modulePath)} doesn't exist in {modulePath} nor in {tokensAndName.Value.FullName}");
+                            }
+                            catch (BadImageFormatException e)
                             {
-                                var moduleDefMd = ModuleDefMD.Load(modulePath);
-                                OriginalModule.Assembly.Modules.Add(moduleDefMd);
+                                Logger.Debug($"{tokensAndName.Value.FullName}:{Environment.NewLine}{e}");
                             }
-
-                            Logger.Debug($"{Path.GetFileName(modulePath)} doesn't exist in {modulePath} nor in {tokensAndName.Value.FullName}");
+                            break;
                         }
-                        catch (BadImageFormatException e)
-                        {
-                            Logger.Debug($"{tokensAndName.Value.FullName}:{Environment.NewLine}{e}");
-                        }
-                        break;
-                    }
 
                     case MetadataTable.Field:
-                    {
-                        // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also MetadataNameParser.Parse
-                        // For now we choose the first one just to make it work.
-                        var typeToAddField = OriginalModule.GetTypes().FirstOrDefault(t =>
-                                                        t.Name.String.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase));
-                        typeToAddField?.Fields.Add(
-                            new FieldDefUser(tokensAndName.Value.MethodOrField,
-                                             new FieldSig(tokensAndName.Value.ReturnTypeSig.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)),
-                                             (FieldAttributes) tokensAndName.Value.MethodOrFieldAttr));
+                        {
+                            // TODO: Add parent type (declaring type) to be able to identify two nested types with the same name (internal ticket id 1029) -- see also MetadataNameParser.Parse
+                            // For now we choose the first one just to make it work.
+                            var typeToAddField = OriginalModule.GetTypes().FirstOrDefault(t =>
+                                                            t.Name.String.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase));
+                            typeToAddField?.Fields.Add(
+                                new FieldDefUser(tokensAndName.Value.MethodOrField,
+                                                 new FieldSig(tokensAndName.Value.ReturnTypeSig.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)),
+                                                 (FieldAttributes)tokensAndName.Value.MethodOrFieldAttr));
 
-                        break;
-                    }
+                            break;
+                        }
 
                     case MetadataTable.UserString:
-                    {
-                        _allImportedStrings.Add(tokensAndName.Value.FullName);
-                        break;
-                    }
+                        {
+                            _allImportedStrings.Add(tokensAndName.Value.FullName);
+                            break;
+                        }
 
                     case MetadataTable.TypeSpec:
-                    {
-                        Logger.Error("ImportTypes: TypeSpec token");
-                        break;
-                    }
+                        {
+                            Logger.Error("ImportTypes: TypeSpec token");
+                            break;
+                        }
 
                     case MetadataTable.Method:
-                    {
-                        // todo: add method flags
-                        var instrumentedMethods =
-                            _instrumentedAssemblyGeneratorContext.InstrumentedMethodsByModule[(OriginalModule.Name, OriginalModule.Mvid)];
-
-                        InstrumentedMethod instrumentedMethodInfo =
-                            instrumentedMethods.SingleOrDefault(rm =>
-                                                rm.ModuleName.Equals(OriginalModule.Name, StringComparison.InvariantCultureIgnoreCase) &&
-                                                rm.MethodToken == tokensAndName.Key.Raw &&
-                                                rm.MethodName.Equals(tokensAndName.Value.MethodOrField, StringComparison.InvariantCultureIgnoreCase));
-
-                        MethodDefUser method;
-                        var parameters = tokensAndName.Value.Parameters.Select(p => p.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)).ToArray();
-                        if (instrumentedMethodInfo != null)
                         {
-                            method = new MethodDefUser(tokensAndName.Value.MethodOrField,
-                                                           instrumentedMethodInfo.IsStatic
-                                                               ? MethodSig.CreateStatic(
-                                                                   instrumentedMethodInfo.ReturnType.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes), parameters)
-                                                               : MethodSig.CreateInstance(
-                                                                   instrumentedMethodInfo.ReturnType.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes), parameters));
-                        }
-                        else
-                        {
-                            Logger.Debug($" {tokensAndName.Value.FullName} has no IL (extern) or we failed to write his IL in the native side");
-                            method = new MethodDefUser(tokensAndName.Value.MethodOrField,
-                                                       MethodSig.CreateStatic(
-                                                           tokensAndName.Value.ReturnTypeSig?.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes) ?? OriginalModule.CorLibTypes.Void, parameters),
-                                                       MethodAttributes.PinvokeImpl);
-                        }
+                            // todo: add method flags
+                            var instrumentedMethods =
+                                _instrumentedAssemblyGeneratorContext.InstrumentedMethodsByModule[(OriginalModule.Name, OriginalModule.Mvid)];
 
-                        OriginalModule.Types.SingleOrDefault(t =>
-                                                                 t.Name.String.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase))?.Methods.Add(method);
-                        _allImportedMembers.Add(method);
-                        break;
-                    }
+                            InstrumentedMethod instrumentedMethodInfo =
+                                instrumentedMethods.SingleOrDefault(rm =>
+                                                    rm.ModuleName.Equals(OriginalModule.Name, StringComparison.InvariantCultureIgnoreCase) &&
+                                                    rm.MethodToken == tokensAndName.Key.Raw &&
+                                                    rm.MethodName.Equals(tokensAndName.Value.MethodOrField, StringComparison.InvariantCultureIgnoreCase));
+
+                            MethodDefUser method;
+                            var parameters = tokensAndName.Value.Parameters.Select(p => p.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)).ToArray();
+                            if (instrumentedMethodInfo != null)
+                            {
+                                method = new MethodDefUser(tokensAndName.Value.MethodOrField,
+                                                               instrumentedMethodInfo.IsStatic
+                                                                   ? MethodSig.CreateStatic(
+                                                                       instrumentedMethodInfo.ReturnType.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes), parameters)
+                                                                   : MethodSig.CreateInstance(
+                                                                       instrumentedMethodInfo.ReturnType.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes), parameters));
+                            }
+                            else
+                            {
+                                Logger.Debug($" {tokensAndName.Value.FullName} has no IL (extern) or we failed to write his IL in the native side");
+                                method = new MethodDefUser(tokensAndName.Value.MethodOrField,
+                                                           MethodSig.CreateStatic(
+                                                               tokensAndName.Value.ReturnTypeSig?.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes) ?? OriginalModule.CorLibTypes.Void, parameters),
+                                                           MethodAttributes.PinvokeImpl);
+                            }
+
+                            OriginalModule.Types.SingleOrDefault(t =>
+                                                                     t.FullName.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase) ||
+                                                                     t.Name.String.Equals(tokensAndName.Value.Type, StringComparison.InvariantCultureIgnoreCase))?.Methods.Add(method);
+
+                            _allImportedMembers.Add(method);
+                            break;
+                        }
 
                     case MetadataTable.MemberRef:
-                    {
-                        if (!_importedTypes.TryGetValue(tokensAndName.Value.Type, out var imported) &&
-                            !AddTypeToCache(imported = ImportTypeRef(tokensAndName.Value.Type), tokensAndName))
                         {
+                            if (!_importedTypes.TryGetValue(tokensAndName.Value.Type, out var imported) &&
+                                !AddTypeToCache(imported = ImportTypeRef(tokensAndName.Value.Type), tokensAndName))
+                            {
+                                break;
+                            }
+
+                            TypeSpec newTypeSpec = null;
+                            if (tokensAndName.Value.IsGenericType)
+                            {
+                                AddTypeToCache(newTypeSpec = ImportTypeSpec(tokensAndName), tokensAndName);
+                            }
+
+                            MethodDef existingMethod = FindExistingMatchedMethod(tokensAndName, imported);
+
+                            if (existingMethod != null)
+                            {
+                                MemberRef memberRef = CreateMemberRef(tokensAndName, existingMethod, newTypeSpec, imported);
+                                var newMemberRef = OriginalModule.Import(memberRef);
+                                _allImportedMembers.Add(newMemberRef);
+                            }
+                            else
+                            {
+                                Logger.Error($"{tokensAndName.Key.Table}: Can't find {tokensAndName.Value.FullName}");
+                            }
                             break;
                         }
-
-                        TypeSpec newTypeSpec = null;
-                        if (tokensAndName.Value.IsGenericType)
-                        {
-                            AddTypeToCache(newTypeSpec = ImportTypeSpec(tokensAndName), tokensAndName);
-                        }
-
-                        MethodDef existingMethod = FindExistingMatchedMethod(tokensAndName, imported);
-
-                        if (existingMethod != null)
-                        {
-                            MemberRef memberRef = CreateMemberRef(tokensAndName, existingMethod, newTypeSpec, imported);
-                            var newMemberRef = OriginalModule.Import(memberRef);
-                            _allImportedMembers.Add(newMemberRef);
-                        }
-                        else
-                        {
-                            Logger.Error($"{tokensAndName.Key.Table}: Can't find {tokensAndName.Value.FullName}");
-                        }
-                        break;
-                    }
 
                     case MetadataTable.MethodSpec:
-                    {
-                        if (!_importedTypes.TryGetValue(tokensAndName.Value.Type, out var imported) &&
-                            !AddTypeToCache(imported = ImportTypeRef(tokensAndName.Value.Type), tokensAndName))
                         {
+                            if (!_importedTypes.TryGetValue(tokensAndName.Value.Type, out var imported) &&
+                                !AddTypeToCache(imported = ImportTypeRef(tokensAndName.Value.Type), tokensAndName))
+                            {
+                                break;
+                            }
+
+                            if (tokensAndName.Value.IsGenericType)
+                            {
+                                AddTypeToCache(ImportTypeSpec(tokensAndName), tokensAndName);
+                            }
+
+                            MethodDef existingMethod = FindExistingMatchedMethod(tokensAndName, imported);
+
+                            if (existingMethod != null)
+                            {
+                                var genericInstMethodSig = tokensAndName.Value.MethodGenericParameters.Select(p => p.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)).ToList();
+                                var methodSpec = new MethodSpecUser(existingMethod, new GenericInstMethodSig(genericInstMethodSig));
+                                var newMethodSpec = OriginalModule.Import(methodSpec);
+                                _allImportedMembers.Add(newMethodSpec.Method);
+                                _allImportedMethodsSpec.Add(newMethodSpec);
+                            }
+                            else
+                            {
+                                Logger.Error($"{tokensAndName.Key.Table}: Can't find {tokensAndName.Value.FullName}");
+                            }
                             break;
                         }
-
-                        if (tokensAndName.Value.IsGenericType)
-                        {
-                            AddTypeToCache(ImportTypeSpec(tokensAndName), tokensAndName);
-                        }
-
-                        MethodDef existingMethod = FindExistingMatchedMethod(tokensAndName, imported);
-
-                        if (existingMethod != null)
-                        {
-                            var genericInstMethodSig = tokensAndName.Value.MethodGenericParameters.Select(p => p.GetTypeSig(OriginalModule, _instrumentedAssemblyGeneratorContext, _importedTypes)).ToList();
-                            var methodSpec = new MethodSpecUser(existingMethod, new GenericInstMethodSig(genericInstMethodSig));
-                            var newMethodSpec = OriginalModule.Import(methodSpec);
-                            _allImportedMembers.Add(newMethodSpec.Method);
-                            _allImportedMethodsSpec.Add(newMethodSpec);
-                        }
-                        else
-                        {
-                            Logger.Error($"{tokensAndName.Key.Table}: Can't find {tokensAndName.Value.FullName}");
-                        }
-                        break;
-                    }
 
                     default:
                         Logger.Error($"{nameof(ImportInstrumentedAssemblyMetadata)}: Token is unhandled - " + tokensAndName.Key);
@@ -249,12 +251,20 @@ namespace Datadog.InstrumentedAssemblyGenerator
 
             MethodDef existingMethod = null;
             var existingMethods = GetTypeRefMethodsByName(imported, tokensAndName.Value.MethodOrField);
-
+            // List<Parameter> existingMethodParameters = new List<Parameter>();
             foreach (MethodDef method in existingMethods)
             {
-                var existingMethodParameters = method.Parameters.Where(p => p.HasParamDef).ToList();
-                if (existingMethodParameters.Count != parametersTypes.Count ||
-                    method.GenericParameters.Count != tokensAndName.Value.MethodGenericParameters.Length)
+                var existingMethodParameters = method.Parameters.Where(p => !p.IsHiddenThisParameter).ToList();
+
+                if (existingMethodParameters.Count != parametersTypes.Count)
+                {
+                    continue;
+                }
+
+                var genericFounded = _instrumentedAssemblyGeneratorContext.ValidateGenericParams(
+                    OriginalModule, tokensAndName.Value, method, _importedTypes);
+
+                if (!genericFounded)
                 {
                     continue;
                 }
@@ -375,24 +385,26 @@ namespace Datadog.InstrumentedAssemblyGenerator
         {
             var moduleToImportFrom = _instrumentedAssemblyGeneratorContext.AllLoadedModules.Where(loadedModule =>
             {
-                if (loadedModule.FullName.Length > typeName.Length)
-                { return false; }
-
                 string[] moduleToFindNameParts = typeName.Split('.');
                 string[] loadedModuleNameParts = loadedModule.FullName.Split('.');
 
-                if (loadedModuleNameParts.Length > moduleToFindNameParts.Length)
+                // iterate over the full type name except the last part which is for sure the type name itself
+                for (int index = 0; index < moduleToFindNameParts.Length - 1; index++)
                 {
-                    return false;
-                }
+                    if (index == loadedModuleNameParts.Length)
+                    {
+                        break;
+                    }
 
-                for (int index = 0; index < loadedModuleNameParts.Length; index++)
-                {
                     if (loadedModuleNameParts[index].ToLower().Equals("dll") || loadedModuleNameParts[index].ToLower().Equals("exe"))
-                    { break; }
+                    {
+                        break;
+                    }
 
                     if (!loadedModuleNameParts[index].Equals(moduleToFindNameParts[index], StringComparison.OrdinalIgnoreCase))
-                    { return false; }
+                    {
+                        return false;
+                    }
                 }
 
                 return true;

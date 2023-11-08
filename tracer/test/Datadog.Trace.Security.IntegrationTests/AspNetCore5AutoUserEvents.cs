@@ -22,9 +22,9 @@ namespace Datadog.Trace.Security.IntegrationTests
         protected AspNetCore5AutoUserEvents(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool enableSecurity = false, string userTrackingMode = null)
             : base("AspNetCore5", outputHelper, "/shutdown", testName: $"{nameof(AspNetCore5AutoUserEvents)}.{(enableSecurity ? "SecurityOn" : "SecurityOff")}.{userTrackingMode ?? "default"}mode")
         {
-            this._fixture = fixture;
+            _fixture = fixture;
             _enableSecurity = enableSecurity;
-            this._fixture.SetOutput(outputHelper);
+            _fixture.SetOutput(outputHelper);
             if (userTrackingMode != null)
             {
                 EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_AUTOMATED_USER_EVENTS_TRACKING", userTrackingMode);

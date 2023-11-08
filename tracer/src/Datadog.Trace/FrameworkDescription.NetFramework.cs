@@ -25,9 +25,11 @@ namespace Datadog.Trace
             var osArchitecture = "unknown";
             var processArchitecture = "unknown";
             var frameworkVersion = "unknown";
+            var osDescription = "unknown";
 
             try
             {
+                osDescription = Environment.OSVersion.VersionString;
                 osArchitecture = Environment.Is64BitOperatingSystem ? "x64" : "x86";
                 processArchitecture = Environment.Is64BitProcess ? "x64" : "x86";
                 frameworkVersion = GetNetFrameworkVersion();
@@ -42,7 +44,8 @@ namespace Datadog.Trace
                 productVersion: frameworkVersion,
                 osPlatform: "Windows",
                 osArchitecture: osArchitecture,
-                processArchitecture: processArchitecture);
+                processArchitecture: processArchitecture,
+                osDescription: osDescription);
         }
 
         public bool IsCoreClr()

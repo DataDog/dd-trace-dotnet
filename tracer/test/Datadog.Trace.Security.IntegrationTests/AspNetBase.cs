@@ -7,6 +7,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
@@ -16,6 +18,7 @@ using System.Threading.Tasks;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.TestHelpers;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
+using Datadog.Trace.Vendors.Newtonsoft.Json.Linq;
 using FluentAssertions;
 using VerifyTests;
 using VerifyXunit;
@@ -49,7 +52,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             : base(Prefix + sampleName, samplesDir ?? "test/test-applications/security", outputHelper)
         {
             _testName = Prefix + (testName ?? sampleName);
-
             _cookieContainer = new CookieContainer();
             var handler = new HttpClientHandler();
             handler.CookieContainer = _cookieContainer;
@@ -64,7 +66,6 @@ namespace Datadog.Trace.Security.IntegrationTests
             // Keep-alive is causing some weird failures on aspnetcore 2.1
             _httpClient.DefaultRequestHeaders.ConnectionClose = true;
 #endif
-
             _jsonSerializerSettingsOrderProperty = new JsonSerializerSettings { ContractResolver = new OrderedContractResolver() };
             EnvironmentHelper.CustomEnvironmentVariables.Add("DD_APPSEC_WAF_TIMEOUT", 10_000_000.ToString());
         }
@@ -75,6 +76,14 @@ namespace Datadog.Trace.Security.IntegrationTests
         {
             base.Dispose();
             _httpClient?.Dispose();
+        }
+
+        public void AddHeaders(Dictionary<string, string> headersValues)
+        {
+            foreach (var header in headersValues)
+            {
+                _httpClient.DefaultRequestHeaders.Add(header.Key, header.Value);
+            }
         }
 
         public void AddCookies(Dictionary<string, string> cookiesValues)
@@ -100,6 +109,26 @@ namespace Datadog.Trace.Security.IntegrationTests
                         sp => sp.Tags,
                         (target, value) =>
                         {
+                            if (target.Tags.Any(t => t.Key.StartsWith("_dd.appsec.s.re")))
+                            {
+                                var apisecurityTags = target.Tags.Where(t => t.Key.StartsWith("_dd.appsec.s.re")).ToList();
+
+                                foreach (var tag in apisecurityTags)
+                                {
+                                    var bytes = System.Convert.FromBase64String(tag.Value);
+                                    using var memoryStream = new MemoryStream(bytes);
+                                    using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                                    gZipStream.Flush();
+                                    var t = JsonSerializer.Create(_jsonSerializerSettingsOrderProperty);
+                                    using var textReader = new JsonTextReader(new StreamReader(gZipStream));
+                                    // this will work until children have more complex properties with more order
+                                    var result = t.Deserialize<JArray>(textReader);
+
+                                    SortJToken(result);
+                                    target.Tags[tag.Key] = JsonConvert.SerializeObject(result);
+                                }
+                            }
+
                             if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
                             {
                                 var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
@@ -235,7 +264,7 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         protected void SetHttpPort(int httpPort) => _httpPort = httpPort;
 
-        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent)
+        protected async Task<(HttpStatusCode StatusCode, string ResponseText)> SubmitRequest(string path, string body, string contentType, string userAgent = null)
         {
             var values = _httpClient.DefaultRequestHeaders.GetValues("user-agent");
 
@@ -309,6 +338,56 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             return spans;
+        }
+
+        private void SortJToken(JToken result)
+        {
+            IEnumerable<JToken> res;
+            switch (result)
+            {
+                case JArray jarray:
+                    var children = jarray.Children().ToList();
+                    res = children.OrderBy(r => r.Path).ToList();
+                    if (children.Count > 1)
+                    {
+                        for (var i = 0; i < children.Count; i++)
+                        {
+                            children[i].Remove();
+                        }
+
+                        foreach (var item in res)
+                        {
+                            SortJToken(item);
+                            jarray.Add(item);
+                        }
+                    }
+                    else
+                    {
+                        var firstChild = children.First();
+                        if (firstChild is not null)
+                        {
+                            firstChild.Remove();
+                            SortJToken(firstChild);
+                            jarray.Add(firstChild);
+                        }
+                    }
+
+                    break;
+                case JObject o:
+                    res = o.Properties().OrderBy(p => p.Path).ToList();
+                    o.RemoveAll();
+                    foreach (var item in res)
+                    {
+                        if (item.First is not null)
+                        {
+                            SortJToken(item.First);
+                        }
+
+                        o.Add(item);
+                    }
+
+                    break;
+            }
         }
 
         internal class AppSecJson

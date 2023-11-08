@@ -196,6 +196,12 @@ namespace Samples.Security.AspNetCore5.Controllers
             return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
         }
 
+        [Route("ExecuteCommandFromHeader")]
+        public ActionResult ExecuteCommandFromHeader()
+        {
+            return ExecuteCommandInternal(Request.Headers["file"], Request.Headers["argumentLine"]);
+        }
+
         [Route("GetDirectoryContent")]
         public ActionResult GetDirectoryContent(string directory)
         {

@@ -18,7 +18,7 @@
 
     <!-- Integration: AerospikeClient -->
     <!-- Assembly: AerospikeClient -->
-    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.1.0 -->
+    <!-- Latest package https://www.nuget.org/packages/Aerospike.Client/6.2.0 -->
     <PackageReference Include="Aerospike.Client" Version="6.1.0" />
 
     <!-- Integration: System.Web.Mvc -->
@@ -28,27 +28,27 @@
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!-- Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.11 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.13 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.11" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!-- Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.63 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.65 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.63" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.11 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.204.11" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.13 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.204.13" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.201.1 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.201.3 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.201.1" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.64 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.66 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.200.64" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -163,8 +163,8 @@
 
     <!-- Integration: nunit.framework -->
     <!-- Assembly: nunit.framework -->
-    <!-- Latest package https://www.nuget.org/packages/NUnit/3.13.3 -->
-    <PackageReference Include="NUnit" Version="3.13.3" />
+    <!-- Latest package https://www.nuget.org/packages/NUnit/3.14.0 -->
+    <PackageReference Include="NUnit" Version="3.14.0" />
 
     <!-- Integration: OpenTelemetry -->
     <!-- Assembly: OpenTelemetry -->
@@ -238,13 +238,13 @@
 
     <!-- Integration: xunit.execution.desktop -->
     <!-- Assembly: xunit.execution.desktop -->
-    <!-- Latest package https://www.nuget.org/packages/xunit/2.6.0 -->
+    <!-- Latest package https://www.nuget.org/packages/xunit/2.6.1 -->
     <PackageReference Include="xunit" Version="2.5.3" />
 
     <!-- Integration: xunit.execution.dotnet -->
     <!-- Assembly: xunit.execution.dotnet -->
-    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.6.0 -->
-    <PackageReference Include="xunit.extensibility.execution" Version="2.5.3" />
+    <!-- Latest package https://www.nuget.org/packages/xunit.extensibility.execution/2.6.1 -->
+    <PackageReference Include="xunit.extensibility.execution" Version="2.6.1" />
 
     <!-- Integration: Microsoft.AspNetCore.Authentication.Abstractions -->
     <!-- Assembly: Microsoft.AspNetCore.Authentication.Abstractions -->

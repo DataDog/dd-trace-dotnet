@@ -53,7 +53,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AspNetCore
         public static CallTargetState OnMethodBegin<TTarget>(TTarget instance)
             where TTarget : IApplicationBuilder
         {
-            instance.Components.Insert(0, rd => new BlockingMiddleware(rd).Invoke);
+            instance.Components.Insert(0, rd => new BlockingMiddleware(rd, startPipeline: true).Invoke);
             instance.Components.Add(rd => new BlockingMiddleware(rd, endPipeline: true).Invoke);
 
             return default;

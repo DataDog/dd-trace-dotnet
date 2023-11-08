@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
@@ -55,9 +56,9 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         public bool BoolValue => ByteValue == 1;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal object Decode()
+        internal object? Decode()
         {
-            object res = Type switch
+            object? res = Type switch
             {
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_STRING => Marshal.PtrToStringAnsi(Array, (int)NbEntries),
                 DDWAF_OBJ_TYPE.DDWAF_OBJ_SIGNED => IntValue,
@@ -85,10 +86,10 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Dictionary<string, object> DecodeMap()
+        internal Dictionary<string, object?> DecodeMap()
         {
             var nbEntriesStart = (int)NbEntries;
-            var res = new Dictionary<string, object>(nbEntriesStart);
+            var res = new Dictionary<string, object?>(nbEntriesStart);
             if (nbEntriesStart > 0)
             {
                 if (Type != DDWAF_OBJ_TYPE.DDWAF_OBJ_MAP)
@@ -135,8 +136,11 @@ namespace Datadog.Trace.AppSec.Waf.NativeBindings
                         {
                             var arrayPtr = new IntPtr(Array.ToInt64() + (structSize * i));
                             var array = (DdwafObjectStruct*)arrayPtr;
-                            var value = (T)array->Decode();
-                            res.Add(value);
+                            var value = (T?)array->Decode();
+                            if (value != null)
+                            {
+                                res.Add(value);
+                            }
                         }
                     }
                 }

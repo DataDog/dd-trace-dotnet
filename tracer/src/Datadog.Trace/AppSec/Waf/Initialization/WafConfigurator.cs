@@ -87,7 +87,13 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
         private static Stream? GetRulesManifestStream()
         {
             var assembly = typeof(Waf).Assembly;
-            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.rule-set.json");
+            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.rule-set.json");
+        }
+
+        private static Stream? GetSchemaExtractionConfigStream()
+        {
+            var assembly = typeof(Waf).Assembly;
+            return assembly.GetManifestResourceStream("Datadog.Trace.AppSec.Waf.ConfigFiles.apisecurity-config.json");
         }
 
         private static Stream? GetRulesFileStream(string rulesFile)
@@ -101,7 +107,21 @@ namespace Datadog.Trace.AppSec.Waf.Initialization
             return File.OpenRead(rulesFile);
         }
 
-        internal static JToken? DeserializeEmbeddedRules(string? rulesFilePath)
+        internal static JToken? DeserializeSchemaExtractionConfig()
+        {
+            using var stream = GetSchemaExtractionConfigStream();
+            if (stream == null)
+            {
+                return null;
+            }
+
+            using var reader = new StreamReader(stream);
+            using var jsonReader = new JsonTextReader(reader);
+            var root = JToken.ReadFrom(jsonReader);
+            return root;
+        }
+
+        internal static JToken? DeserializeEmbeddedOrStaticRules(string? rulesFilePath)
         {
             JToken root;
             try
