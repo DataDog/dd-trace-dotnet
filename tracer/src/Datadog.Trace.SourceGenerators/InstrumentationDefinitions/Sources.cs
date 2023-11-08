@@ -17,7 +17,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 
         public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
-            void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
+            static void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
             {
                 string? integrationName = null;
 
@@ -35,6 +35,48 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
             }};");
             }
 
+            static void BuildInstrumentedAssemblies(StringBuilder sb, IReadOnlyCollection<CallTargetDefinitionSource> orderedDefinitions)
+            {
+                var hashSet = new HashSet<string>();
+                foreach (var orderedDefinition in orderedDefinitions)
+                {
+                    if (!IsKnownAssemblyPrefix(orderedDefinition.AssemblyName))
+                    {
+                        hashSet.Add(orderedDefinition.AssemblyName);
+                    }
+                }
+
+                sb.Append(
+                    $$"""
+                    #if NETCOREAPP
+                                    new HashSet<string>({{hashSet.Count}}, StringComparer.Ordinal)
+                    #else
+                                    new HashSet<string>(StringComparer.Ordinal)
+                    #endif
+                                    { 
+                    """);
+
+                foreach (var assembly in hashSet.OrderBy(x => x))
+                {
+                    sb.Append('"')
+                      .Append(assembly)
+                      .Append("\", ");
+                }
+
+                sb.AppendLine("};");
+                return;
+
+                // NOTE: Keep this in sync with ExceptionRedactor.IsKnownAssemblyPrefix()
+                static bool IsKnownAssemblyPrefix(string assemblyName)
+                {
+                    return assemblyName.StartsWith("Datadog.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("mscorlib,", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("Microsoft.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("System.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("Azure.", StringComparison.Ordinal);
+                }
+            }
+
             var sb = new StringBuilder();
             sb.Append(Datadog.Trace.SourceGenerators.Constants.FileHeader);
             sb.Append(
@@ -48,16 +90,20 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {{
         internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName};
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
-        {{");
+        {{
+            InstrumentedAssemblies =
+");
+
+            BuildInstrumentedAssemblies(sb, definitions);
             var orderedDefinitions = definitions
                                     .OrderBy(static x => x.IntegrationName)
                                     .ThenBy(static x => x.AssemblyName)
                                     .ThenBy(static x => x.TargetTypeName)
                                     .ThenBy(static x => x.TargetMethodName)
                                     .ToList();
-
             BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
             sb.Append(@$"
         }}

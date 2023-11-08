@@ -61,9 +61,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -155,9 +164,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -251,9 +269,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -348,9 +375,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -445,9 +481,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -541,9 +586,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "Confluent.Kafka", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -631,9 +685,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "MySql.Data", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -739,9 +802,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(1, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { "MySql.Data", };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -851,9 +923,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(0, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
@@ -951,9 +1032,18 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {
         internal static NativeCallTargetDefinition2[] Instrumentations;
+        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
         {
+            InstrumentedAssemblies =
+#if NETCOREAPP
+                new HashSet<string>(0, StringComparer.Ordinal)
+#else
+                new HashSet<string>(StringComparer.Ordinal)
+#endif
+                { };
+
             // CallTarget types
             Instrumentations = new NativeCallTargetDefinition2[]
             {
