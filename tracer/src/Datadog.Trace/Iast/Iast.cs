@@ -43,7 +43,7 @@ internal class Iast
         {
             HardcodedSecretsAnalyzer.Initialize();
         }
-      
+
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
