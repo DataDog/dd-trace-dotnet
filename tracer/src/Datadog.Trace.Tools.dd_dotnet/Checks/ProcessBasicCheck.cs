@@ -602,8 +602,7 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
             }
 
             Utils.WriteError(TraceProgramNotFound);
-
-            return tracerVersion;
+            return null;
         }
 
         private static bool GetLocalMachineSubKeyVersion(string uninstallKey, string datadogProgramName, out string? tracerVersion, IRegistryService? registryService = null)
