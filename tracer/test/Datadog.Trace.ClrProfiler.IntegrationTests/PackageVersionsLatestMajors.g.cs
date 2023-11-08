@@ -682,7 +682,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 #endif
 #if NETCOREAPP3_0
                 new object[] { "1.2.6" },
-                new object[] { "2.7.4" },
+                new object[] { "2.6.122" },
 #endif
 #if NETCOREAPP3_1
                 new object[] { "1.2.6" },
