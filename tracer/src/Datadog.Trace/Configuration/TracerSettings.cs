@@ -353,7 +353,7 @@ namespace Datadog.Trace.Configuration
 
             TraceId128BitGenerationEnabled = config
                                             .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitGenerationEnabled)
-                                            .AsBool(false);
+                                            .AsBool(true);
             TraceId128BitLoggingEnabled = config
                                          .WithKeys(ConfigurationKeys.FeatureFlags.TraceId128BitLoggingEnabled)
                                          .AsBool(false);

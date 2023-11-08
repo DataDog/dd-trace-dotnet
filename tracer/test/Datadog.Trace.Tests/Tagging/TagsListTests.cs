@@ -90,10 +90,11 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task Serialization_RootSpan()
         {
             const int customTagCount = 15;
-
+            string hexStringTraceId;
             using (var scope = _tracer.StartActiveInternal("root"))
             {
                 SetupForSerializationTest(scope.Span, customTagCount);
+                hexStringTraceId = scope.Span.TraceId128.ToUpperHexString();
             }
 
             await _tracer.FlushAsync();
@@ -104,7 +105,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, $"-{SamplingMechanism.Default.ToString()}");
-            deserializedSpan.Tags.Should().HaveCount(customTagCount + 4);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
+            deserializedSpan.Tags.Should().HaveCount(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingPriority, 1);
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);

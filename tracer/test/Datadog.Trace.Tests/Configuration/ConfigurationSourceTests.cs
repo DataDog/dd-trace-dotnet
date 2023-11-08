@@ -84,7 +84,7 @@ namespace Datadog.Trace.Tests.Configuration
             yield return (CreateFunc(s => s.PropagationStyleExtract), new[] { "tracecontext", "Datadog" });
             yield return (CreateFunc(s => s.ServiceNameMappings), null);
 
-            yield return (CreateFunc(s => s.TraceId128BitGenerationEnabled), false);
+            yield return (CreateFunc(s => s.TraceId128BitGenerationEnabled), true);
             yield return (CreateFunc(s => s.TraceId128BitLoggingEnabled), false);
         }
 
