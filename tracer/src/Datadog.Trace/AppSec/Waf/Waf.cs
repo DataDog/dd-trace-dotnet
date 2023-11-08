@@ -50,8 +50,9 @@ namespace Datadog.Trace.AppSec.Waf
         /// empty string means use default embedded in the WAF</param>
         /// <param name="embeddedRulesetPath">can be null, means use rules embedded in the manifest </param>
         /// <param name="rulesFromRcm">can be null. RemoteConfig rules json. Takes precedence over rulesFile </param>
+        /// <param name="setupWafSchemaExtraction">should we read the config file for schema extraction</param>
         /// <returns>the waf wrapper around waf native</returns>
-        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null)
+        internal static InitResult Create(WafLibraryInvoker wafLibraryInvoker, string obfuscationParameterKeyRegex, string obfuscationParameterValueRegex, string? embeddedRulesetPath = null, JToken? rulesFromRcm = null, bool setupWafSchemaExtraction = false)
         {
             var wafConfigurator = new WafConfigurator(wafLibraryInvoker);
             var isCompatible = wafConfigurator.CheckVersionCompatibility();
@@ -63,21 +64,17 @@ namespace Datadog.Trace.AppSec.Waf
             // set the log level and setup the logger
             wafLibraryInvoker.SetupLogging(GlobalSettings.Instance.DebugEnabledInternal);
 
-            InitResult initResult;
-
-            if (rulesFromRcm != null)
+            var jtokenRoot = rulesFromRcm ?? WafConfigurator.DeserializeEmbeddedOrStaticRules(embeddedRulesetPath)!;
+            if (setupWafSchemaExtraction)
             {
-                using var configObj = Encoder.Encode(rulesFromRcm, applySafetyLimits: false);
-                initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, "RemoteConfig", obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-            }
-            else
-            {
-                var jtokenRoot = WafConfigurator.DeserializeEmbeddedRules(embeddedRulesetPath);
-                using var configObj = Encoder.Encode(jtokenRoot!, applySafetyLimits: false);
-                initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, embeddedRulesetPath, obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
-                initResult.EmbeddedRules = jtokenRoot;
+                var schemaConfig = WafConfigurator.DeserializeSchemaExtractionConfig();
+                jtokenRoot.Children().Last().AddAfterSelf(schemaConfig!.Children());
             }
 
+            var configObj = Encoder.Encode(jtokenRoot, applySafetyLimits: false);
+
+            var initResult = wafConfigurator.ConfigureAndDispose(configObj.Result, rulesFromRcm != null ? embeddedRulesetPath : "RemoteConfig", obfuscationParameterKeyRegex, obfuscationParameterValueRegex);
+            initResult.EmbeddedRules = jtokenRoot;
             return initResult;
         }
 

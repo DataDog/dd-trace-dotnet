@@ -12,6 +12,7 @@ namespace Samples.Security.AspNetCore5.Models
         public Address Address { get; set; } 
         public Address Address2 { get; set; } 
         public string Gender { get; set; } 
+        public double[] Windows { get; set; }
     }
     public class Dog
     {

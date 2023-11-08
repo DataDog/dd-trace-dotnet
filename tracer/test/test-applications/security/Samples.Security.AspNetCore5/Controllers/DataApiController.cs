@@ -15,9 +15,15 @@ namespace Samples.Security.AspNetCore5
         }
 
         [Route("model")]
-        public IActionResult Model(MyModel model)
+        public ActionResult<MyResponseModel> Model(MyModel model)
         {
-            return Content($"Received model with properties: {model}");
+            return new ActionResult<MyResponseModel>(new MyResponseModel
+            {
+                PropertyResponse = "toto",
+                PropertyResponse2 = (long)30.5,
+                PropertyResponse3 = model.Property4 + 2.5,
+                PropertyResponse4 = model.Property4 + 2
+            });
         }
 
         [Route("array")]

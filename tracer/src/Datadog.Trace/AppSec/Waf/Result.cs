@@ -3,7 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
 using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.AppSec.Waf.NativeBindings;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 
@@ -15,10 +17,11 @@ namespace Datadog.Trace.AppSec.Waf
         {
             ReturnCode = returnCode;
             Actions = returnStruct.Actions.DecodeStringArray();
+            ShouldReportSecurityResult = returnCode >= WafReturnCode.Match;
             Derivatives = returnStruct.Derivatives.DecodeMap();
-            ShouldBeReported = returnCode >= WafReturnCode.Match;
+            ShouldReportSchema = Derivatives is { Count: > 0 };
             var events = returnStruct.Events.DecodeObjectArray();
-            if (events.Count == 0 || !ShouldBeReported) { Data = string.Empty; }
+            if (events.Count == 0 || !ShouldReportSecurityResult) { Data = string.Empty; }
             else
             {
                 // Serialize all the events
@@ -33,13 +36,13 @@ namespace Datadog.Trace.AppSec.Waf
 
         public WafReturnCode ReturnCode { get; }
 
+        public bool ShouldReportSchema { get; }
+
         public string Data { get; }
 
         public List<string> Actions { get; }
 
-        public List<object> Events { get; }
-
-        public Dictionary<string, object> Derivatives { get; }
+        public Dictionary<string, object?> Derivatives { get; }
 
         /// <summary>
         /// Gets the total runtime in microseconds
@@ -53,7 +56,7 @@ namespace Datadog.Trace.AppSec.Waf
 
         public bool ShouldBlock { get; }
 
-        public bool ShouldBeReported { get; }
+        public bool ShouldReportSecurityResult { get; }
 
         public bool Timeout { get; }
     }

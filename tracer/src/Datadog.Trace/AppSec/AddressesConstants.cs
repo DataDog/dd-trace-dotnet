@@ -21,12 +21,12 @@ namespace Datadog.Trace.AppSec
         public const string RequestPathParams = "server.request.path_params";
         public const string RequestBodyCombinedFileSize = "server.request.body.combined_file_size";
         public const string RequestClientIp = "http.client_ip";
-        public const string ResponseStatus = "server.response.status";
 
-        public const string ResponseBodyRaw = "server.response.body.raw";
+        public const string ResponseStatus = "server.response.status";
+        public const string ResponseBody = "server.response.body";
         public const string ResponseHeaderNoCookies = "server.response.headers.no_cookies";
 
         public const string UserId = "usr.id";
-        public const string WafContextSettings = "waf.context.settings";
+        public const string WafContextProcessor = "waf.context.processor";
     }
 }

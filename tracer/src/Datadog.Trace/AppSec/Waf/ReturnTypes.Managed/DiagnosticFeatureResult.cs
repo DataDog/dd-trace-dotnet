@@ -26,7 +26,7 @@ internal class DiagnosticFeatureResult
 
     public IReadOnlyDictionary<string, object> Errors { get; }
 
-    public static DiagnosticFeatureResult? From(string key, Dictionary<string, object> diagObject)
+    public static DiagnosticFeatureResult? From(string key, Dictionary<string, object?> diagObject)
     {
         if (diagObject.TryGetValue(key, out var subKeysObj) && subKeysObj is Dictionary<string, object> subKeys)
         {

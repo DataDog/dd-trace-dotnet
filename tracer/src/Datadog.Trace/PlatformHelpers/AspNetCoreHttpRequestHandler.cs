@@ -131,7 +131,8 @@ namespace Datadog.Trace.PlatformHelpers
                 Headers.Ip.RequestIpExtractor.AddIpToTags(peerIp, request.IsHttps, getRequestHeaderFromKey, tracer.Settings.IpHeader, tags);
             }
 
-            if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+            var iastInstance = Iast.Iast.Instance;
+            if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
             {
                 // If the overheadController disables the vulnerability detection for this request, we do not initialize the iast context of TraceContext
                 scope.Span.Context?.TraceContext?.EnableIastInRequest();

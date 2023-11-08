@@ -10,6 +10,8 @@ namespace Datadog.Trace.AppSec.Coordinator;
 
 internal abstract class HttpTransportBase
 {
+    internal const string AsmApiSecurity = "asm.apisecurity";
+
     internal abstract bool IsBlocked { get; }
 
     internal abstract IContext GetAdditiveContext();
