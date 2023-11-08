@@ -51,7 +51,7 @@ namespace Datadog.Trace.Configuration
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
-            public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASED_UPLOAD_ENABLED";
+            public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
             /// Configuration key for forcing the client library to upload symbol data, regardless of whether it is requested by our backend. For internal use and testing.
