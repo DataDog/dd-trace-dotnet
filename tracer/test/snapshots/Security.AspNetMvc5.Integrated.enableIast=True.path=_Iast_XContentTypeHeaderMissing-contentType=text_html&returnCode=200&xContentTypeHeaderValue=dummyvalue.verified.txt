@@ -23,6 +23,7 @@
   "vulnerabilities": [
     {
       "type": "XCONTENTTYPE_HEADER_MISSING",
+      "hash": -721858374,
       "evidence": {
         "value": "dummyvalue"
       }
