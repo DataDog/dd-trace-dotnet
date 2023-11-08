@@ -458,7 +458,11 @@ namespace Datadog.Trace.AppSec.Waf
                 }
 
                 default:
-                    Log.Warning("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    if (Log.IsEnabled(Vendors.Serilog.Events.LogEventLevel.Debug))
+                    {
+                        Log.Debug("Couldn't encode object of unknown type {Type}, falling back to ToString", o.GetType());
+                    }
+
                     ddwafObjectStruct = GetStringObject(string.Empty);
                     break;
             }
