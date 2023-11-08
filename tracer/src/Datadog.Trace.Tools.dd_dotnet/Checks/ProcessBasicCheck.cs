@@ -619,8 +619,14 @@ namespace Datadog.Trace.Tools.dd_dotnet.Checks
 
                 if (subKeyDisplayName == datadogProgramName)
                 {
-                    tracerVersion = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMajor") + "." + registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMinor");
-                    versionFound = true;
+                    var versionMajor = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMajor");
+                    var versionMinor = registryService.GetLocalMachineKeyNameValue(uninstallKey, subKeyName, "VersionMinor");
+
+                    if (!string.IsNullOrEmpty(versionMajor) && !string.IsNullOrEmpty(versionMinor))
+                    {
+                        tracerVersion = $"{versionMajor}.{versionMinor}";
+                        versionFound = true;
+                    }
                 }
             }
 
