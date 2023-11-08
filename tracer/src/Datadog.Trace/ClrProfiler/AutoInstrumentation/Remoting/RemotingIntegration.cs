@@ -68,35 +68,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
                 return null;
             }
 
-            if (GetActiveRemotingClientScope(tracer) != null)
-            {
-                // There is already a parent MongoDb span (nested calls)
-                return null;
-            }
-
-            /*
-            string host = null;
-            string port = null;
-
-            if (connection.EndPoint is IPEndPoint ipEndPoint)
-            {
-                host = ipEndPoint.Address.ToString();
-                port = ipEndPoint.Port.ToString();
-            }
-            else if (connection.EndPoint is DnsEndPoint dnsEndPoint)
-            {
-                host = dnsEndPoint.Host;
-                port = dnsEndPoint.Port.ToString();
-            }
-            */
-
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
 
             Scope scope = null;
 
             try
             {
-                var tags = new RemotingClientTags();
+                var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
+                var tags = clientSchema.CreateRemotingClientTags();
                 scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
 
@@ -104,8 +83,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
                 tags.MethodName = methodMessage?.MethodName;
                 // tags.MethodService = methodMessage?.MethodMes
                 span.ResourceName = methodMessage?.MethodName;
-                // tags.Host = host;
-                // tags.Port = port;
 
                 tags.SetAnalyticsSampleRate(IntegrationId, tracer.Settings, enabledWithGlobalSetting: false);
                 tracer.TracerManager.Telemetry.IntegrationGeneratedSpan(IntegrationId);
@@ -116,24 +93,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             }
 
             return scope;
-        }
-
-        private static Scope GetActiveRemotingClientScope(Tracer tracer)
-        {
-            /*
-            var scope = tracer.InternalActiveScope;
-
-            var parent = scope?.Span;
-
-            if (parent != null &&
-                parent.Type == SpanTypes.MongoDb &&
-                parent.GetTag(Tags.InstrumentationName) != null)
-            {
-                return scope;
-            }
-            */
-
-            return null;
         }
     }
 }

@@ -214,6 +214,7 @@ internal static class MetricTags
         [Description("integration_name:systemrandom")] SystemRandom,
         [Description("integration_name:awsdynamodb")]AwsDynamoDb,
         [Description("integration_name:ibmmq")]IbmMq,
+        [Description("integration_name:remoting")]Remoting,
     }
 
     public enum InstrumentationError

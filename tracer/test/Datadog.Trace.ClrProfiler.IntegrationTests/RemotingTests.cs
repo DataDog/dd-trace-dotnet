@@ -4,6 +4,8 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.TestHelpers;
@@ -24,18 +26,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetServiceVersion("1.0.0");
         }
 
-        public override Result ValidateIntegrationSpan(MockSpan span) => span.Name switch
+        public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Name switch
+        {
+            "http.request" => span.IsWebRequest(metadataSchemaVersion),
+            "remoting.request" => span.Tags["span.kind"] switch
             {
-                "http.request" => span.IsWebRequest(),
-                "remoting.request" => span.IsRemoting(),
-                _ => Result.DefaultSuccess,
-            };
+                SpanKinds.Client => span.IsRemotingClient(metadataSchemaVersion),
+                SpanKinds.Server => span.IsRemotingServer(metadataSchemaVersion),
+                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the Remoting integration: {span.Tags["span.kind"]}", nameof(span)),
+            },
+            _ => Result.DefaultSuccess,
+        };
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [SkippableFact]
-        public async Task SubmitTracesOverHttp()
+        [SkippableTheory]
+        [InlineData("v0")]
+        [InlineData("v1")]
+        public async Task SubmitTracesOverHttp(string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             int remotingPort = TcpPortProvider.GetOpenPort();
 
             using var telemetry = this.ConfigureTelemetry();
@@ -47,11 +58,22 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Remoting");
+
+                var rpcClientSpans = spans.Where(IsRpcClientSpan);
+                var rpcServerSpans = spans.Where(IsRpcServerSpan);
+                var httpRequestSpans = spans.Where(IsHttpRequestSpan);
+
+                var isExternalSpan = metadataSchemaVersion == "v0";
+                var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-remoting" : EnvironmentHelper.FullSampleName;
+                var httpClientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-http-client" : EnvironmentHelper.FullSampleName;
+
+                ValidateIntegrationSpans(rpcServerSpans, metadataSchemaVersion, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+                ValidateIntegrationSpans(rpcClientSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: isExternalSpan);
+                ValidateIntegrationSpans(httpRequestSpans, metadataSchemaVersion, expectedServiceName: httpClientSpanServiceName, isExternalSpan: isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(RemotingTests) + ".http");
+                                  .UseFileName(nameof(RemotingTests) + ".http" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
             }
@@ -59,9 +81,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [SkippableFact]
-        public async Task SubmitTracesOverTcp()
+        [SkippableTheory]
+        [InlineData("v0")]
+        [InlineData("v1")]
+        public async Task SubmitTracesOverTcp(string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             int remotingPort = TcpPortProvider.GetOpenPort();
 
             using var telemetry = this.ConfigureTelemetry();
@@ -73,11 +99,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                // ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Remoting");
+
+                var rpcClientSpans = spans.Where(IsRpcClientSpan);
+                var rpcServerSpans = spans.Where(IsRpcServerSpan);
+
+                var isExternalSpan = metadataSchemaVersion == "v0";
+                var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-remoting" : EnvironmentHelper.FullSampleName;
+
+                ValidateIntegrationSpans(rpcServerSpans, metadataSchemaVersion, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+                ValidateIntegrationSpans(rpcClientSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(RemotingTests) + ".tcp");
+                                  .UseFileName(nameof(RemotingTests) + ".tcp" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
             }
@@ -85,9 +119,13 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         [Trait("Category", "EndToEnd")]
         [Trait("RunOnWindows", "True")]
-        [SkippableFact]
-        public async Task SubmitTracesOverIpc()
+        [SkippableTheory]
+        [InlineData("v0")]
+        [InlineData("v1")]
+        public async Task SubmitTracesOverIpc(string metadataSchemaVersion)
         {
+            SetEnvironmentVariable("DD_TRACE_SPAN_ATTRIBUTE_SCHEMA", metadataSchemaVersion);
+
             int remotingPort = TcpPortProvider.GetOpenPort();
 
             using var telemetry = this.ConfigureTelemetry();
@@ -99,14 +137,39 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
                 using var s = new AssertionScope();
                 spans.Count.Should().Be(expectedSpanCount);
-                // ValidateIntegrationSpans(spans, expectedServiceName: "Samples.Remoting");
+
+                var rpcClientSpans = spans.Where(IsRpcClientSpan);
+                var rpcServerSpans = spans.Where(IsRpcServerSpan);
+
+                var isExternalSpan = metadataSchemaVersion == "v0";
+                var clientSpanServiceName = isExternalSpan ? $"{EnvironmentHelper.FullSampleName}-remoting" : EnvironmentHelper.FullSampleName;
+
+                ValidateIntegrationSpans(rpcServerSpans, metadataSchemaVersion, expectedServiceName: EnvironmentHelper.FullSampleName, isExternalSpan: false);
+                ValidateIntegrationSpans(rpcClientSpans, metadataSchemaVersion, expectedServiceName: clientSpanServiceName, isExternalSpan: isExternalSpan);
 
                 var settings = VerifyHelper.GetSpanVerifierSettings();
                 await VerifyHelper.VerifySpans(spans, settings)
-                                  .UseFileName(nameof(RemotingTests) + ".ipc");
+                                  .UseFileName(nameof(RemotingTests) + ".ipc" + $".Schema{metadataSchemaVersion.ToUpper()}");
 
                 telemetry.AssertIntegrationEnabled(IntegrationId.Remoting);
             }
+        }
+
+        private static bool IsRpcClientSpan(MockSpan span)
+        {
+            return string.Equals(span.GetTag("component"), "Remoting", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(span.GetTag("span.kind"), "client", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsRpcServerSpan(MockSpan span)
+        {
+            return string.Equals(span.GetTag("component"), "Remoting", StringComparison.OrdinalIgnoreCase)
+                && string.Equals(span.GetTag("span.kind"), "server", StringComparison.OrdinalIgnoreCase);
+        }
+
+        private static bool IsHttpRequestSpan(MockSpan span)
+        {
+            return string.Equals(span.Name, "http.request", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

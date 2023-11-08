@@ -4,7 +4,7 @@
     SpanId: Id_2,
     Name: remoting.message,
     Resource: SetString,
-    Service: Samples.Remoting-remoting,
+    Service: Samples.Remoting,
     Tags: {
       component: Remoting,
       env: integration_tests,
@@ -12,7 +12,11 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -27,7 +31,7 @@
     SpanId: Id_4,
     Name: remoting.message,
     Resource: SetString,
-    Service: Samples.Remoting-remoting,
+    Service: Samples.Remoting,
     Tags: {
       component: Remoting,
       env: integration_tests,
@@ -35,7 +39,11 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.peer.service.source: out.host
     },
     Metrics: {
       process_id: 0,
@@ -48,9 +56,9 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/RemoteServer,
-    Service: Samples.Remoting-http-client,
+    Service: Samples.Remoting,
     Type: http,
     ParentId: Id_2,
     Tags: {
@@ -59,19 +67,21 @@
       http.method: POST,
       http.status_code: 200,
       http.url: http://localhost:00000/RemoteServer,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.peer.service.source: out.host
     }
   },
   {
     TraceId: Id_3,
     SpanId: Id_6,
-    Name: http.request,
+    Name: http.client.request,
     Resource: POST localhost:00000/RemoteServer,
-    Service: Samples.Remoting-http-client,
+    Service: Samples.Remoting,
     Type: http,
     ParentId: Id_4,
     Error: 1,
@@ -86,11 +96,13 @@ at System.Net.HttpWebRequest.GetResponse(),
       http.method: POST,
       http.status_code: 500,
       http.url: http://localhost:00000/RemoteServer,
-      runtime-id: Guid_1,
-      span.kind: client
-    },
-    Metrics: {
-      _dd.top_level: 1.0
+      out.host: localhost,
+      peer.service: localhost,
+      span.kind: client,
+      version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.peer.service.source: out.host
     }
   },
   {
@@ -109,6 +121,8 @@ at System.Net.HttpWebRequest.GetResponse(),
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -143,6 +157,8 @@ at Samples.Remoting.RemoteClass.SetString(String input),
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

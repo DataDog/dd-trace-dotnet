@@ -12,11 +12,6 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 {
     public abstract class TracingIntegrationTest : TestHelper
     {
-        private readonly Dictionary<string, string> _componentToServiceNameMapping = new()
-        {
-            { "webrequest", "http-client" }
-        };
-
         public TracingIntegrationTest(string sampleAppName, ITestOutputHelper output)
             : base(sampleAppName, output)
         {
@@ -36,21 +31,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var result = ValidateIntegrationSpan(span, metadataSchemaVersion);
                 Assert.True(result.Success, result.ToString());
 
-                List<string> serviceNameList = new();
-                serviceNameList.Add(expectedServiceName);
-                var componentName = span.GetTag("component").ToLower();
-                if (_componentToServiceNameMapping.TryGetValue(componentName, out var value))
-                {
-                    serviceNameList.Add(expectedServiceName + "-" + value);
-                }
-                else
-                {
-                    serviceNameList.Add(expectedServiceName + "-" + componentName);
-                }
-
-                Assert.Contains(span.Service, serviceNameList);
-
-                if (!(span.GetTag("span.kind") == "server" || span.GetTag("span.kind") == "consumer"))
+                Assert.Equal(expectedServiceName, span.Service);
+                if (isExternalSpan == true)
                 {
                     Assert.False(span.Tags?.ContainsKey(Tags.Version), "External service span should not have service version tag.");
                 }

@@ -12,6 +12,8 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -35,6 +37,8 @@
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
       span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -61,6 +65,8 @@
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {
@@ -95,6 +101,8 @@ at Samples.Remoting.RemoteClass.SetString(String input),
       runtime-id: Guid_1,
       span.kind: server,
       version: 1.0.0,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.p.dm: -0
     },
     Metrics: {

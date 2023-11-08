@@ -13,6 +13,7 @@ using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
+using Datadog.Trace.Util.Http;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
 {
@@ -74,6 +75,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
                 span.ResourceName = $"{request.Method} {resourceUrl}";
                 httpTags.HttpMethod = request.Method.ToUpperInvariant();
                 httpTags.HttpUrl = httpUrl;
+                httpTags.Host = HttpRequestUtils.GetNormalizedHost(requestUri?.Host);
             }
 
             return new CallTargetReturn<TReturn>(returnValue);
