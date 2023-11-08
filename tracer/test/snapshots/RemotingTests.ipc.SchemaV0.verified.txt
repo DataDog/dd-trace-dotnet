@@ -31,6 +31,7 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
@@ -52,6 +53,7 @@
     Tags: {
       component: Remoting,
       env: integration_tests,
+      language: dotnet,
       rpc.method: SetString,
       rpc.system: dotnet_remoting,
       runtime-id: Guid_1,
