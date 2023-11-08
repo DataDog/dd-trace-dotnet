@@ -3,7 +3,7 @@
     TraceId: Id_1,
     SpanId: Id_2,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_3,
@@ -25,7 +25,7 @@
     TraceId: Id_1,
     SpanId: Id_4,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_5,
@@ -47,7 +47,7 @@
     TraceId: Id_1,
     SpanId: Id_6,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_7,
@@ -69,7 +69,7 @@
     TraceId: Id_1,
     SpanId: Id_8,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_9,
@@ -91,7 +91,7 @@
     TraceId: Id_1,
     SpanId: Id_10,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_11,
@@ -113,7 +113,7 @@
     TraceId: Id_1,
     SpanId: Id_12,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_13,
@@ -135,7 +135,7 @@
     TraceId: Id_1,
     SpanId: Id_14,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_15,
@@ -154,13 +154,13 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_17,
+    TraceId: Id_1,
+    SpanId: Id_16,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_18,
+    ParentId: Id_17,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -176,10 +176,32 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
+    SpanId: Id_18,
+    Name: sql-server.query,
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_20,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_21,
@@ -198,10 +220,10 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_22,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_23,
@@ -220,10 +242,10 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_24,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_25,
@@ -242,10 +264,10 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_26,
     Name: sql-server.query,
-    Resource: /*dddbs='business-central-temp-sql-server',dde='dev',ddps='business-central-temp',ddpv='1.0'*/ SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
+    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_27,
@@ -264,29 +286,7 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_28,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_3,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_29,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -308,7 +308,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_31,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -330,13 +330,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_33,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_34,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -352,29 +352,7 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_34,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_35,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_36,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -396,13 +374,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_38,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_39,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -418,35 +396,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_39,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_40,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_41,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -462,13 +418,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_41,
+    TraceId: Id_35,
+    SpanId: Id_42,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_43,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -484,13 +440,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_43,
+    TraceId: Id_35,
+    SpanId: Id_44,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_45,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -506,35 +462,13 @@
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_45,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_46,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_15,
+    ParentId: Id_47,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -550,29 +484,7 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_47,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
+    TraceId: Id_35,
     SpanId: Id_48,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -594,7 +506,7 @@
     }
   },
   {
-    TraceId: Id_16,
+    TraceId: Id_35,
     SpanId: Id_50,
     Name: sql-server.query,
     Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -616,10 +528,208 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_52,
     Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_53,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_54,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_55,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_9,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_56,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_57,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_58,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_59,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_60,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_61,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_21,
@@ -638,54 +748,10 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_53,
+    TraceId: Id_1,
+    SpanId: Id_62,
     Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_55,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_57,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_23,
@@ -704,79 +770,13 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_58,
+    TraceId: Id_1,
+    SpanId: Id_63,
     Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_59,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_61,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_63,
-    Name: sql-server.query,
-    Resource: DELETE FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -798,7 +798,7 @@
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -814,7 +814,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_65,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
@@ -836,7 +836,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_66,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
@@ -858,13 +858,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_67,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_34,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -880,30 +880,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_68,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_35,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_69,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
@@ -924,13 +902,35 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
+    SpanId: Id_69,
+    Name: sql-server.query,
+    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
     SpanId: Id_70,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_41,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -946,13 +946,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_71,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_43,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -968,13 +968,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_72,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_45,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -990,13 +990,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_73,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_47,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1012,96 +1012,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_74,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_44,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_75,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_76,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_77,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_78,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
@@ -1122,8 +1034,8 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_79,
+    TraceId: Id_35,
+    SpanId: Id_75,
     Name: sql-server.query,
     Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
     Service: Samples.SqlServer-sql-server,
@@ -1144,10 +1056,208 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
+    SpanId: Id_76,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_77,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_78,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_79,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_9,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_80,
     Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_81,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_82,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_83,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_84,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_85,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_21,
@@ -1166,54 +1276,10 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_81,
+    TraceId: Id_1,
+    SpanId: Id_86,
     Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_82,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_83,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_23,
@@ -1232,79 +1298,13 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_84,
+    TraceId: Id_1,
+    SpanId: Id_87,
     Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_85,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_86,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_87,
-    Name: sql-server.query,
-    Resource: DROP TABLE IF EXISTS [System-Data-SqlClient-Test-GUID]; CREATE TABLE [System-Data-SqlClient-Test-GUID] (Id int PRIMARY KEY, Name varchar(100));,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1326,7 +1326,7 @@
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1342,7 +1342,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_89,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
@@ -1364,7 +1364,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_90,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
@@ -1386,13 +1386,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_91,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_34,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1408,30 +1408,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_92,
-    Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_35,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_93,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
@@ -1452,13 +1430,35 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
+    SpanId: Id_93,
+    Name: sql-server.query,
+    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
     SpanId: Id_94,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_41,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1474,13 +1474,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_95,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_43,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1496,13 +1496,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_96,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_45,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1518,13 +1518,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_97,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_47,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1540,96 +1540,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_98,
-    Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_44,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_99,
-    Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_100,
-    Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_101,
-    Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_102,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
@@ -1650,8 +1562,8 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_103,
+    TraceId: Id_35,
+    SpanId: Id_99,
     Name: sql-server.query,
     Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
     Service: Samples.SqlServer-sql-server,
@@ -1672,13 +1584,101 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
+    SpanId: Id_100,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_101,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_102,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_103,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
     SpanId: Id_104,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_21,
+    ParentId: Id_7,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1694,13 +1694,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_105,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_54,
+    ParentId: Id_7,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1716,13 +1716,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_106,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_56,
+    ParentId: Id_9,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1738,13 +1738,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_107,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_23,
+    ParentId: Id_9,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1760,13 +1760,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_108,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_25,
+    ParentId: Id_11,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1782,13 +1782,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_109,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_60,
+    ParentId: Id_11,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1804,13 +1804,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_110,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_62,
+    ParentId: Id_13,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1826,13 +1826,13 @@
     }
   },
   {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_111,
     Name: sql-server.query,
-    Resource: INSERT INTO [System-Data-SqlClient-Test-GUID] (Id, Name) VALUES (@Id, @Name);,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_13,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1854,7 +1854,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_15,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1876,7 +1876,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_15,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1898,7 +1898,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_17,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1920,7 +1920,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_30,
+    ParentId: Id_17,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1942,7 +1942,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_19,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1964,7 +1964,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_32,
+    ParentId: Id_19,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -1986,7 +1986,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_21,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2008,7 +2008,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_21,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2030,7 +2030,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_35,
+    ParentId: Id_23,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2052,7 +2052,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_35,
+    ParentId: Id_23,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2074,7 +2074,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_37,
+    ParentId: Id_25,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2096,7 +2096,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_37,
+    ParentId: Id_25,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2118,7 +2118,7 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2140,6 +2140,556 @@
     Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_126,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_30,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_127,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_30,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_128,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_32,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_129,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_32,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_130,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_34,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_131,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_34,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_132,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_133,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_37,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_134,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_135,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_136,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_137,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_41,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_138,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_139,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_43,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_140,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_141,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_45,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_142,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_47,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_143,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_47,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_144,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_49,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_145,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_49,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_146,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_51,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
+    SpanId: Id_147,
+    Name: sql-server.query,
+    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_51,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_148,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_3,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_149,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_150,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
     ParentId: Id_7,
     Tags: {
       component: SqlClient,
@@ -2157,559 +2707,163 @@
   },
   {
     TraceId: Id_1,
-    SpanId: Id_126,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_127,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_128,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_11,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_129,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_11,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_130,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_42,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_131,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_42,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_132,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_44,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_133,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_44,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_134,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_135,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_136,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_137,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_138,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_139,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_140,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_49,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_141,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_49,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_142,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_51,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_143,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_51,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_144,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_145,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_146,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_147,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_148,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_149,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_150,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
     SpanId: Id_151,
     Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_9,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_152,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_153,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_154,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_155,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_156,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_157,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_158,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_23,
@@ -2728,167 +2882,13 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_152,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_153,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_154,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_155,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_156,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_157,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_158,
-    Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
+    TraceId: Id_1,
     SpanId: Id_159,
     Name: sql-server.query,
-    Resource: SELECT * FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_27,
+    ParentId: Id_25,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2910,7 +2910,7 @@
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_3,
+    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2926,7 +2926,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_161,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -2948,7 +2948,7 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_162,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
@@ -2970,13 +2970,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_28,
     SpanId: Id_163,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_34,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -2992,30 +2992,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_164,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_35,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_165,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -3036,13 +3014,35 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
+    SpanId: Id_165,
+    Name: sql-server.query,
+    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_39,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_35,
     SpanId: Id_166,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_41,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -3058,13 +3058,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_167,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_43,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -3080,13 +3080,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_168,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_45,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -3102,13 +3102,13 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_169,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_47,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -3124,96 +3124,8 @@
     }
   },
   {
-    TraceId: Id_1,
+    TraceId: Id_35,
     SpanId: Id_170,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_44,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_171,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_172,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_173,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_174,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -3234,8 +3146,8 @@
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_175,
+    TraceId: Id_35,
+    SpanId: Id_171,
     Name: sql-server.query,
     Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -3256,820 +3168,8 @@
     }
   },
   {
-    TraceId: Id_19,
-    SpanId: Id_176,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_177,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_178,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_179,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_180,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_181,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_182,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_183,
-    Name: sql-server.query,
-    Resource: SELECT Name FROM [System-Data-SqlClient-Test-GUID] WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
     TraceId: Id_1,
-    SpanId: Id_184,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_3,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_185,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_5,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_186,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_7,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_187,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_188,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_11,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_189,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_190,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_191,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_192,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_193,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_194,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_195,
-    Name: sql-server.query,
-    Resource: SELECT OBJECTPROPERTY(OBJECT_ID(@0), N'IsTable'),
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_196,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_3,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_197,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_5,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_198,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_7,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_199,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_9,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_200,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_11,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_201,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_202,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_203,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_204,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_205,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_206,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_207,
-    Name: sql-server.query,
-    Resource:
-SET ANSI_NULLS ON 
-SET ANSI_PADDING ON
-SET ANSI_WARNINGS ON
-SET ARITHABORT ON
-SET CONCAT_NULL_YIELDS_NULL ON
-SET QUOTED_IDENTIFIER ON
-SET NUMERIC_ROUNDABORT OFF
-SET XACT_ABORT OFF
-SELECT @@SPID,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_208,
+    SpanId: Id_172,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -4091,7 +3191,271 @@ SELECT @@SPID,
   },
   {
     TraceId: Id_1,
-    SpanId: Id_209,
+    SpanId: Id_173,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_5,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_174,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_7,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_175,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_9,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_176,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_11,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_177,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_13,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_178,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_15,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_179,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_17,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_180,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_19,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_181,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_21,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_182,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_23,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_183,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_25,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_1,
+    SpanId: Id_184,
+    Name: sql-server.query,
+    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
+    Service: Samples.SqlServer-sql-server,
+    Type: sql,
+    ParentId: Id_27,
+    Tags: {
+      component: SqlClient,
+      db.type: sql-server,
+      env: integration_tests,
+      out.host: sqlserver,
+      runtime-id: Guid_1,
+      span.kind: client,
+      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+    },
+    Metrics: {
+      _dd.top_level: 1.0
+    }
+  },
+  {
+    TraceId: Id_28,
+    SpanId: Id_185,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -4112,8 +3476,8 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_210,
+    TraceId: Id_28,
+    SpanId: Id_186,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -4134,13 +3498,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_211,
+    TraceId: Id_28,
+    SpanId: Id_187,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_5,
+    ParentId: Id_34,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4156,30 +3520,8 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_212,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_35,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_213,
+    TraceId: Id_35,
+    SpanId: Id_188,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -4200,13 +3542,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_214,
+    TraceId: Id_35,
+    SpanId: Id_189,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_7,
+    ParentId: Id_39,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4222,13 +3564,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_215,
+    TraceId: Id_35,
+    SpanId: Id_190,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_9,
+    ParentId: Id_41,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4244,13 +3586,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_216,
+    TraceId: Id_35,
+    SpanId: Id_191,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_11,
+    ParentId: Id_43,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4266,13 +3608,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_217,
+    TraceId: Id_35,
+    SpanId: Id_192,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_42,
+    ParentId: Id_45,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4288,13 +3630,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_218,
+    TraceId: Id_35,
+    SpanId: Id_193,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
-    ParentId: Id_44,
+    ParentId: Id_47,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
@@ -4310,74 +3652,8 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_1,
-    SpanId: Id_219,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_13,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_1,
-    SpanId: Id_220,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_15,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_221,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_18,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_16,
-    SpanId: Id_222,
+    TraceId: Id_35,
+    SpanId: Id_194,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
@@ -4398,189 +3674,13 @@ SELECT @@SPID,
     }
   },
   {
-    TraceId: Id_16,
-    SpanId: Id_223,
+    TraceId: Id_35,
+    SpanId: Id_195,
     Name: sql-server.query,
     Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
     Service: Samples.SqlServer-sql-server,
     Type: sql,
     ParentId: Id_51,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_224,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_21,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_225,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_54,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_226,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_56,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_227,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_23,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_228,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_25,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_229,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_60,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_230,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_62,
-    Tags: {
-      component: SqlClient,
-      db.type: sql-server,
-      env: integration_tests,
-      out.host: sqlserver,
-      runtime-id: Guid_1,
-      span.kind: client,
-      _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
-    },
-    Metrics: {
-      _dd.top_level: 1.0
-    }
-  },
-  {
-    TraceId: Id_19,
-    SpanId: Id_231,
-    Name: sql-server.query,
-    Resource: UPDATE [System-Data-SqlClient-Test-GUID] SET Name=@Name WHERE Id=@Id;,
-    Service: Samples.SqlServer-sql-server,
-    Type: sql,
-    ParentId: Id_27,
     Tags: {
       component: SqlClient,
       db.type: sql-server,
