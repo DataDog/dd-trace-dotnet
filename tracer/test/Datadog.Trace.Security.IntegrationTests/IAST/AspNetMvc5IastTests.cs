@@ -393,5 +393,7 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     }
 
     protected override string GetTestName() => _testName;
+
+    protected IisFixture GetFixture() => _iisFixture;
 }
 #endif
