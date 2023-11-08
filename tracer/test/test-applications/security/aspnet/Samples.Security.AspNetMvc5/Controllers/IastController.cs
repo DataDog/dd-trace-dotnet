@@ -57,7 +57,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("WeakHashing/{delay1}")]
         public ActionResult WeakHashing(int delay1 = 0, int delay2 = 0)
         {
-            AddSecurityHeaders();
             System.Threading.Thread.Sleep(delay1 + delay2);
 #pragma warning disable SYSLIB0021 // Type or member is obsolete
             var byteArg = new byte[] { 3, 5, 6 };
@@ -67,17 +66,11 @@ namespace Samples.Security.AspNetCore5.Controllers
 #pragma warning restore SYSLIB0021 // Type or member is obsolete
         }
 
-        private void AddSecurityHeaders()
-        {
-            // Response.AddHeader("X-Content-Type-Options", "nosniff");
-        }
-
         [Route("SqlQuery")]
         public ActionResult SqlQuery(string username, string query)
         {
             try
             {
-                AddSecurityHeaders();
                 if (dbConnection is null)
                 {
                     dbConnection = IastControllerHelper.CreateDatabase();
@@ -122,7 +115,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommand")]
         public ActionResult ExecuteCommand(string file, string argumentLine)
         {
-            AddSecurityHeaders();
             return ExecuteCommandInternal(file, argumentLine);
         }
 
@@ -156,7 +148,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                AddSecurityHeaders();
                 if (dbConnection is null)
                 {
                     dbConnection = IastControllerHelper.CreateDatabase();
@@ -231,7 +222,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("ExecuteCommandFromCookie")]
         public ActionResult ExecuteCommandFromCookie()
         {
-            AddSecurityHeaders();
             // we test two different ways of obtaining a cookie
             var argumentValue = Request.Cookies["argumentLine"].Values[0];
             return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
@@ -248,7 +238,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                AddSecurityHeaders();
                 if (!string.IsNullOrEmpty(directory))
                 {
                     var result = System.IO.Directory.GetFiles(directory);
@@ -272,7 +261,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                AddSecurityHeaders();
                 if (!string.IsNullOrEmpty(file))
                 {
                     var result = System.IO.File.ReadAllText(file);
@@ -292,7 +280,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("InsecureCookie")]
         public ActionResult InsecureCookie()
         {
-            AddSecurityHeaders();
             var cookie = GetDefaultCookie("insecureKey", "insecureValue");
             cookie.Secure = false;
             Response.Cookies.Add(cookie);
@@ -302,7 +289,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("NoHttpOnlyCookie")]
         public ActionResult NoHttpOnlyCookie()
         {
-            AddSecurityHeaders();
             var cookie = GetDefaultCookie("NoHttpOnlyKey", "NoHttpOnlyValue");
             cookie.HttpOnly = false;
             Response.Cookies.Add(cookie);
@@ -312,7 +298,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("NoSameSiteCookie")]
         public ActionResult NoSameSiteCookie()
         {
-            AddSecurityHeaders();
             var cookieDefault = new HttpCookie("NoSameSiteKeyDefault", "NoSameSiteValueDefault");
             cookieDefault.HttpOnly = true;
             cookieDefault.Secure = true;
@@ -329,7 +314,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SafeCookie")]
         public ActionResult SafeCookie()
         {
-            AddSecurityHeaders();
             var cookie = GetDefaultCookie("SafeCookieKey", "SafeCookieValue");
             Response.Cookies.Add(cookie);
             var cookie2 = GetDefaultCookie("UnsafeEmptyCookie", string.Empty);
@@ -343,7 +327,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("AllVulnerabilitiesCookie")]
         public ActionResult AllVulnerabilitiesCookie()
         {
-            AddSecurityHeaders();
             HttpCookie cookie = new HttpCookie("AllVulnerabilitiesCookieKey", "AllVulnerabilitiesCookieValue");
             cookie.Values["SameSite"] = "None";
             cookie.HttpOnly = false;
@@ -422,7 +405,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("SSRF")]
         public ActionResult Ssrf(string url, string host)
         {
-            AddSecurityHeaders();
             string result = string.Empty;
             try
             {
@@ -448,7 +430,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             try
             {
-                AddSecurityHeaders();
                 DirectoryEntry entry = null;
                 try
                 {
@@ -484,7 +465,6 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("WeakRandomness")]
         public ActionResult WeakRandomness()
         {
-            AddSecurityHeaders();
             return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
         }
 
