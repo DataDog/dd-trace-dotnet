@@ -157,6 +157,29 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         [Fact]
+        public void Inject_IHeadersCollection_128Bit_TraceId()
+        {
+            var traceId = new TraceId(0x1234567890abcdef, 0x1122334455667788);
+            var spanId = 1UL;
+
+            var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
+            {
+                Origin = "origin",
+                AdditionalW3CTraceState = "key1=value1"
+            };
+
+            traceContext.SetSamplingPriority(SamplingPriorityValues.UserKeep, mechanism: null, notifyDistributedTracer: false);
+            var spanContext = new SpanContext(parent: SpanContext.None, traceContext, serviceName: null, traceId, spanId, rawTraceId: traceId.ToString(), rawSpanId: spanId.ToString("x16"));
+            var headers = new Mock<IHeadersCollection>();
+
+            W3CPropagator.Inject(spanContext, headers.Object);
+
+            headers.Verify(h => h.Set("traceparent", "00-1234567890abcdef1122334455667788-0000000000000001-01"), Times.Once());
+            headers.Verify(h => h.Set("tracestate", "dd=s:2;o:origin,key1=value1"), Times.Once());
+            headers.VerifyNoOtherCalls();
+        }
+
+        [Fact]
         public void Inject_CarrierAndDelegate()
         {
             var traceContext = new TraceContext(Mock.Of<IDatadogTracer>(), tags: null)
