@@ -449,13 +449,31 @@ partial class Build
 
         using (var client = new HttpClient())
         {
-            var response = await client.GetAsync(libDdwafUri);
+            var keepTrying = true;
+            var nbTries = 0;
 
-            response.EnsureSuccessStatusCode();
+            while (keepTrying)
+            {
+                nbTries++;
+                try
+                {
+                    var response = await client.GetAsync(libDdwafUri);
 
-            await using var file = File.Create(libDdwafZip);
-            await using var stream = await response.Content.ReadAsStreamAsync();
-            await stream.CopyToAsync(file);
+                    response.EnsureSuccessStatusCode();
+
+                    await using var file = File.Create(libDdwafZip);
+                    await using var stream = await response.Content.ReadAsStreamAsync();
+                    await stream.CopyToAsync(file);
+                    keepTrying = false;
+                }
+                catch (HttpRequestException)
+                {
+                    if (nbTries > 3)
+                    {
+                        throw;
+                    }
+                }
+            }
         }
 
         uncompressFolderTarget ??= LibDdwafDirectory(libddwafVersion);
@@ -509,8 +527,8 @@ partial class Build
                 {
                     var project = Solution.GetProject(Projects.AppSecUnitTests);
                     var testDir = project.Directory;
-                    
-                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's 
+
+                    // FIXME: This is a hack for the .NET 8 RC2 on macos, where it's
                     // failing to load MSBuild, so can't get the target frameworks here
                     // so hardcoding to use the default test frameworks for now
                     var frameworks = IsOsx
@@ -789,7 +807,7 @@ partial class Build
             CompressZip(SymbolsDirectory, WindowsSymbolsZip, fileMode: FileMode.Create);
         });
 
-    Target ZipMonitoringHome => _ => _       
+    Target ZipMonitoringHome => _ => _
        .DependsOn(ZipMonitoringHomeWindows)
        .DependsOn(ZipMonitoringHomeLinux)
        .DependsOn(ZipMonitoringHomeOsx);
@@ -1585,7 +1603,7 @@ partial class Build
        .Unlisted()
        .Executes(() =>
         {
-            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug: 
+            // This shouldn't be necessary, but without it we get msbuild location errors on Linux/macOs :shrug:
             ProjectModelTasks.Initialize();
         });
 
@@ -2202,7 +2220,7 @@ partial class Build
 
                 // Get target assemblies from Calltarget integrations.
                 // We need to play safe and select the complete assembly and not the type due to the impossibility
-                // to extract the target types from DuckTyping proxies. 
+                // to extract the target types from DuckTyping proxies.
                 lst.AddRange(GetTargetAssembliesFromAttributes(asmDefinition));
                 return lst;
             }
@@ -2216,7 +2234,7 @@ partial class Build
                         foreach (var attr in type.CustomAttributes)
                         {
                             // Extract InstrumentMethodAttribute (CallTarget integrations)
-                            // We need to check both properties `AssemblyName` and `AssemblyNames` 
+                            // We need to check both properties `AssemblyName` and `AssemblyNames`
                             // because the actual data is embedded to the argument parameter in the assembly
                             // (doesn't work as a normally property works at runtime)
                             if (attr.AttributeType.FullName == "Datadog.Trace.ClrProfiler.InstrumentMethodAttribute")
