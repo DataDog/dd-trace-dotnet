@@ -24,7 +24,9 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -89,7 +91,9 @@
       http.url: http://localhost:00000/api/trigger,
       language: dotnet,
       runtime-id: Guid_2,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -124,7 +128,9 @@
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -287,7 +293,9 @@
       http.url: http://localhost:00000/api/simple,
       language: dotnet,
       runtime-id: Guid_2,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -332,7 +340,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       http.url: http://localhost:00000/api/exception,
       language: dotnet,
       runtime-id: Guid_2,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -371,7 +381,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       http.url: http://localhost:00000/api/error,
       language: dotnet,
       runtime-id: Guid_2,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -408,7 +420,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       http.url: http://localhost:00000/api/badrequest,
       language: dotnet,
       runtime-id: Guid_2,
-      span.kind: server
+      span.kind: server,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -443,7 +457,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -484,7 +500,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -519,7 +537,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,
@@ -554,7 +574,9 @@ at Samples.AzureFunctions.AllTriggers.AllTriggers.Exception(HttpRequestData req,
       runtime-id: Guid_1,
       span.kind: server,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

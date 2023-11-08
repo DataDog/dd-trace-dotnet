@@ -18,6 +18,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -53,6 +55,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -82,6 +86,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -111,6 +117,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -140,6 +148,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -169,6 +179,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -198,6 +210,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -227,6 +241,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -256,6 +272,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {
@@ -286,6 +304,8 @@ at Couchbase.Core.ClusterNode.ExecuteOp(Func`4 sender, IOperation op, Object sta
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: db.couchbase.seed.nodes
     },
     Metrics: {

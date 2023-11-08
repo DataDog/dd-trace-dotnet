@@ -17,6 +17,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -45,6 +47,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -73,6 +77,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -101,6 +107,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -131,6 +139,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -161,6 +171,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -191,6 +203,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -221,6 +235,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -250,6 +266,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -280,6 +298,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -310,6 +330,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -340,6 +362,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -370,6 +394,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -400,6 +426,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -430,6 +458,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -460,6 +490,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -490,6 +522,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -520,6 +554,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
@@ -550,6 +586,8 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.peer.service.source: aerospike.namespace
     },
     Metrics: {
