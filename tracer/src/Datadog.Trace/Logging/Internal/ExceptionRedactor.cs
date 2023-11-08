@@ -12,6 +12,7 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Text;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Util;
 
 namespace Datadog.Trace.Logging.Internal;
@@ -76,14 +77,14 @@ internal static class ExceptionRedactor
         => mb.DeclaringType switch
         {
             null => true, // "global" function
-            // TODO: grab the list of assemblies we instrument from the trimming file (etc)
             // NOTE: Keep this in sync with InstrumentationDefinitions SourceGenerator implementation in Sources.BuildInstrumentedAssemblies.IsKnownAssemblyPrefix()
             { Assembly.FullName: { } name } => !(name.StartsWith("Datadog.", StringComparison.Ordinal)
                                               || name.StartsWith("mscorlib,", StringComparison.Ordinal) // note that this uses ',' not '.' as it's the full assembly name
                                               || name.StartsWith("Microsoft.", StringComparison.Ordinal)
                                               || name.StartsWith("System.", StringComparison.Ordinal)
                                               || name.StartsWith("Azure.", StringComparison.Ordinal)
-                                              || name.StartsWith("AWSSDK.", StringComparison.Ordinal)),
+                                              || name.StartsWith("AWSSDK.", StringComparison.Ordinal)
+                                              || InstrumentationDefinitions.IsInstrumentedAssembly(name)),
             _ => true, // no assembly
         };
 

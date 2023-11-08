@@ -131,7 +131,7 @@ public class ExceptionRedactorTests
         var redactedFrames = redacted.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
         // assumes that all methods in the call stack include one of these in the namespace
         // We actually filter based on assembly name so this isn't guaranteed, but works in tests
-        var allowedPrefixes = new[] { "Datadog", "Microsoft", "System", "REDACTED" };
+        var allowedPrefixes = new[] { "Datadog", "Microsoft", "System", "Xunit", "REDACTED" };
         redactedFrames.Should().OnlyContain(x => allowedPrefixes.Any(x.Contains));
 
         var originalFrames = stackTrace.ToString().Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries);
@@ -173,10 +173,6 @@ public class ExceptionRedactorTests
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.GetMethod,
             typeof(VerifyTests.VerifierSettings).GetProperty(nameof(VerifyTests.VerifierSettings.StrictJson))?.SetMethod,
             typeof(VerifyTests.SerializationSettings).GetConstructor(Array.Empty<Type>()),
-            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
-            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
-            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),
-            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.Error), types: new[] { typeof(string) }),
         };
 
         public static TheoryData<object> MethodsToNotRedact() => new()
@@ -190,6 +186,10 @@ public class ExceptionRedactorTests
             typeof(Datadog.Trace.Vendors.Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),
             typeof(StringBuilder).GetMethod(nameof(StringBuilder.Clear)),
             typeof(string).GetMethod(nameof(string.IndexOf),  types: new[] { typeof(char) }),
+            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.GetMethod,
+            typeof(Serilog.Log).GetProperty(nameof(Serilog.Log.Logger))?.SetMethod,
+            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.CloseAndFlush)),
+            typeof(Serilog.Log).GetMethod(nameof(Serilog.Log.Error), types: new[] { typeof(string) }),
             typeof(System.Threading.Tasks.Task).GetMethod(nameof(System.Threading.Tasks.Task.Wait), types: Array.Empty<Type>()),
             typeof(System.Data.SqlClient.SqlCommand).GetMethod(nameof(System.Data.SqlClient.SqlCommand.Clone)),
             typeof(System.Data.SQLite.SQLiteCommand).GetProperty(nameof(System.Data.SQLite.SQLiteCommand.CommandType))?.GetMethod,
