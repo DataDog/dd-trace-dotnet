@@ -279,7 +279,7 @@ namespace Datadog.Trace.AspNet
 
                         if (Iast.Iast.Instance.Settings.Enabled && IastModule.AddRequestVulnerabilitiesAllowed())
                         {
-                            if (rootSpan is not null)
+                            if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
                             {
                                 ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId.AspNetCore, rootSpan.ServiceName);
                             }
