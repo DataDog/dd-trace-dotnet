@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -34,7 +34,9 @@
       }
     }
   ]
-}
+},
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

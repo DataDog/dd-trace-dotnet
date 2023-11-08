@@ -1,4 +1,4 @@
-﻿[
+[
   {
     TraceId: Id_1,
     SpanId: Id_2,
@@ -31,6 +31,8 @@
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -76,6 +78,8 @@
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -121,6 +125,8 @@
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -166,6 +172,8 @@
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -211,6 +219,8 @@
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.origin: appsec,
+      _dd.p.dm: -0,
+      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
