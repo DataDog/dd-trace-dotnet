@@ -77,6 +77,9 @@
     <ClCompile Include="fault_tolerant_cor_profiler_function_control.cpp">
       <Filter>FaultTolerant\Hooks</Filter>
     </ClCompile>
+    <ClCompile Include="iast\method_analyzers.cpp" />
+    <ClCompile Include="iast\hardcoded_secrets_method_analyzer.cpp" />
+    <ClCompile Include="iast\method_analyzer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="calltarget_tokens.h" />
@@ -163,6 +166,9 @@
     <ClInclude Include="iast\string_optimization_aspect_filter.h" />
     <ClInclude Include="iast\dataflow_il_rewriter.h" />
     <ClInclude Include="iast\dataflow_il_analysis.h" />
+    <ClInclude Include="iast\method_analyzers.h" />
+    <ClInclude Include="iast\method_analyzer.h" />
+    <ClInclude Include="iast\hardcoded_secrets_method_analyzer.h" />
     <ClInclude Include="Synchronized.hpp" />
     <ClInclude Include="fault_tolerant_tracker.h">
       <Filter>FaultTolerant</Filter>

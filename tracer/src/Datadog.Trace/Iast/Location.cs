@@ -5,10 +5,29 @@
 
 #nullable enable
 
+using System;
+
 namespace Datadog.Trace.Iast;
 
 internal readonly struct Location
 {
+    public Location(string method)
+    {
+        var index = method.LastIndexOf("::", StringComparison.Ordinal);
+        if (index >= 0)
+        {
+            Path = method.Substring(0, length: index);
+            var bracketIndex = method.IndexOf("(", startIndex: index + 2, StringComparison.Ordinal);
+            Method = bracketIndex > 0
+                         ? method.Substring(index + 2, length: bracketIndex - index - 2)
+                         : method.Substring(index + 2);
+        }
+        else
+        {
+            Method = method;
+        }
+    }
+
     public Location(string? stackFile, string? methodName, int? line, ulong? spanId, string? methodTypeName)
     {
         if (!string.IsNullOrEmpty(stackFile))

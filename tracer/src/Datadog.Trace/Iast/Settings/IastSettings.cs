@@ -61,8 +61,8 @@ internal class IastSettings
         RedactionValuesRegex = config
                                .WithKeys(ConfigurationKeys.Iast.RedactionValuesRegex)
                                .AsString(DefaultRedactionValuesRegex);
-        RedactionRegexTimeout = config
-                                .WithKeys(ConfigurationKeys.Iast.RedactionRegexTimeout)
+        RegexTimeout = config
+                                .WithKeys(ConfigurationKeys.Iast.RegexTimeout)
                                 .AsDouble(200, val1 => val1 is > 0).Value;
 
         IastTelemetryVerbosity = config
@@ -104,7 +104,7 @@ internal class IastSettings
 
     public string RedactionValuesRegex { get; }
 
-    public double RedactionRegexTimeout { get; }
+    public double RegexTimeout { get; }
 
     public IastMetricsVerbosityLevel IastTelemetryVerbosity { get; }
 

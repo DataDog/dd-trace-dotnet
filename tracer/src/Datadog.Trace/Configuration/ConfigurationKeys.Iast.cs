@@ -74,11 +74,11 @@ namespace Datadog.Trace.Configuration
             public const string RedactionValuesRegex = "DD_IAST_REDACTION_VALUES_REGEXP";
 
             /// <summary>
-            /// Configuration key for specifying a timeout in milliseconds to the execution of the obfuscation regexes
+            /// Configuration key for specifying a timeout in milliseconds to the execution of regexes in IAST
             /// Default value is 200ms
             /// </summary>
-            /// <seealso cref="IastSettings.RedactionRegexTimeout"/>
-            public const string RedactionRegexTimeout = "DD_IAST_REDACTION_REGEXP_TIMEOUT";
+            /// <seealso cref="IastSettings.RegexTimeout"/>
+            public const string RegexTimeout = "DD_IAST_REGEXP_TIMEOUT";
 
             /// <summary>
             /// Configuration key for IAST verbosity.

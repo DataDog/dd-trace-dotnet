@@ -17,7 +17,7 @@ internal static partial class IastInstrumentedSinksExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 13;
+    public const int Length = 14;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks"/> value.
@@ -43,6 +43,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie => "vulnerability_type:no_httponly_cookie",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie => "vulnerability_type:no_samesite_cookie",
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness => "vulnerability_type:weak_randomness",
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret => "vulnerability_type:hardcoded_secret",
             _ => value.ToString(),
         };
 
@@ -69,6 +70,7 @@ internal static partial class IastInstrumentedSinksExtensions
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie,
             Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness,
+            Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret,
         };
 
     /// <summary>
@@ -95,6 +97,7 @@ internal static partial class IastInstrumentedSinksExtensions
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoHttpOnlyCookie),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.NoSameSiteCookie),
             nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.WeakRandomness),
+            nameof(Datadog.Trace.Telemetry.Metrics.MetricTags.IastInstrumentedSinks.HardcodedSecret),
         };
 
     /// <summary>
@@ -121,5 +124,6 @@ internal static partial class IastInstrumentedSinksExtensions
             "vulnerability_type:no_httponly_cookie",
             "vulnerability_type:no_samesite_cookie",
             "vulnerability_type:weak_randomness",
+            "vulnerability_type:hardcoded_secret",
         };
 }

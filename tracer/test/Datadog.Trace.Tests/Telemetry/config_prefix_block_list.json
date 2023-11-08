@@ -120,6 +120,8 @@
   "DD_Ssrf_",
   "DD_TRACE_Ldap_",
   "DD_Ldap_",
+  "DD_TRACE_HardcodedSecret_",
+  "DD_HardcodedSecret_",
   "DD_TRACE_AwsKinesis_",
   "DD_AwsKinesis_",
   "DD_TRACE_AzureServiceBus_",

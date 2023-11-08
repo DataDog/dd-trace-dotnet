@@ -4,6 +4,8 @@
 // </copyright>
 
 using System.Threading;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Analyzers;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -37,6 +39,11 @@ internal class Iast
     private Iast(IastSettings settings = null)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
+        if (_settings.Enabled)
+        {
+            HardcodedSecretsAnalyzer.Initialize();
+        }
+
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
