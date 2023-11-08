@@ -8,6 +8,7 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Analyzers;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
+using Datadog.Trace.Sampling;
 
 namespace Datadog.Trace.Iast;
 
@@ -21,6 +22,7 @@ internal class Iast
     private static bool _globalInstanceInitialized;
     private static object _globalInstanceLock = new();
     private readonly IastSettings _settings;
+    private readonly OverheadController _overheadController;
 
     static Iast()
     {
@@ -37,14 +39,17 @@ internal class Iast
     private Iast(IastSettings settings = null)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
-
         if (_settings.Enabled)
         {
             HardcodedSecretsAnalyzer.Initialize();
         }
+      
+        _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 
     internal IastSettings Settings => _settings;
+
+    internal OverheadController OverheadController => _overheadController;
 
     /// <summary>
     /// Gets or sets the global <see cref="Iast"/> instance.

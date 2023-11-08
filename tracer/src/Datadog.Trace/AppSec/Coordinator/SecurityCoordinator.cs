@@ -7,11 +7,15 @@
 #pragma warning disable CS0282
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.IO.Compression;
+using System.Text;
 using Datadog.Trace.AppSec.Waf;
 using Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Metrics;
+using Datadog.Trace.Vendors.MessagePack;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -51,9 +55,18 @@ internal readonly partial struct SecurityCoordinator
         }
     }
 
-    public IResult? Scan()
+    public IResult? Scan(bool firstTime = false)
     {
         var args = GetBasicRequestArgsForWaf();
+        if (firstTime)
+        {
+            var isApiSecurityProcessed = _security.ApiSecurity.TryTellWafToAnalyzeSchema(args);
+            if (isApiSecurityProcessed)
+            {
+                _localRootSpan.Context.TraceContext.MarkApiSecurity();
+            }
+        }
+
         return RunWaf(args);
     }
 
@@ -111,7 +124,7 @@ internal readonly partial struct SecurityCoordinator
         {
             TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggeredAndBlocked);
         }
-        else if (result.ShouldBeReported)
+        else if (result.ShouldReportSecurityResult)
         {
             TelemetryFactory.Metrics.RecordCountWafRequests(MetricTags.WafAnalysis.RuleTriggered);
         }

@@ -12,7 +12,7 @@ namespace Datadog.Trace.AppSec.Waf.ReturnTypes.Managed;
 
 internal class DiagnosticResult
 {
-    private readonly Dictionary<string, object> _diagnosticsData;
+    private readonly Dictionary<string, object?> _diagnosticsData;
     private readonly Lazy<DiagnosticFeatureResult?> _customRules;
     private readonly Lazy<DiagnosticFeatureResult?> _exclusions;
     private readonly Lazy<DiagnosticFeatureResult?> _rules;

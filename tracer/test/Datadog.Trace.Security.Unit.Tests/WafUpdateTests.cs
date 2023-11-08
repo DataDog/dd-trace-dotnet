@@ -35,7 +35,7 @@ namespace Datadog.Trace.Security.Unit.Tests
             waf.Should().NotBeNull();
             Execute(waf, new[] { "testrule", "testrule", "none" }, false);
 
-            var result = WafConfigurator.DeserializeEmbeddedRules("remote-rules.json");
+            var result = WafConfigurator.DeserializeEmbeddedOrStaticRules("remote-rules.json");
             result.Should().NotBeNull();
             var ruleSet = RuleSet.From(result!);
             ruleSet.Should().NotBeNull();
