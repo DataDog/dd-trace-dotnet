@@ -47,7 +47,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
         var spans = await SendRequestsAsync(GetFixture().Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(true);
+        settings.AddIastScrubbing(scrubHash: false);
         var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{GetTestName()}.path={sanitisedPath}")

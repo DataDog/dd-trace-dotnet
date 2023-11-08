@@ -172,7 +172,7 @@ public class AspNetCore5IastTestsFullSamplingIastEnabled : AspNetCore5IastTestsF
         var spans = await SendRequestsAsync(agent, new string[] { url });
 
         var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing();
+        settings.AddIastScrubbing(scrubHash: false);
         await VerifyHelper.VerifySpans(spans, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
