@@ -60,7 +60,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _isSymbolUploaderEnabled = configuration.SymbolDbEndpoint;
             if (string.IsNullOrEmpty(Volatile.Read(ref _isSymbolUploaderEnabled)))
             {
-                Log.Information("Dynamic Instrumentation failed to upload symbols for auto-complete suggestions. This can happen if your datadog-agent version is less than 7.45");
+                Log.Debug("`SymbolDb endpoint` is null. This can happen if your datadog-agent version is less than 7.45");
                 return;
             }
 
@@ -258,7 +258,7 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             if (await WaitForDiscoveryServiceAsync().ConfigureAwait(false) == false)
             {
-                Log.Information("Dynamic Instrumentation failed to upload symbols for auto-complete suggestions. This can happen if your datadog-agent version is less than 7.45");
+                Log.Information("Dynamic Instrumentation won't upload symbols for auto-complete suggestions. This can happen if your datadog-agent version is less than 7.45");
                 return;
             }
 
