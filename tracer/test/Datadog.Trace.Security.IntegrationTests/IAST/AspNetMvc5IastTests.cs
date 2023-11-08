@@ -89,6 +89,24 @@ public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixtu
                           .UseFileName($"{_testName}.path={sanitisedPath}")
                           .DisableRequireUniquePrefix();
     }
+
+    [Trait("Category", "EndToEnd")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [SkippableTheory]
+    [InlineData(AddressesConstants.RequestQuery, "/Iast/QueryOwnUrl")]
+    public async Task TestIastFullUrlTaint(string test, string url)
+    {
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(true);
+        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{_testName}.path={sanitisedPath}")
+                          .DisableRequireUniquePrefix();
+    }
 }
 
 [Collection("IisTests")]
