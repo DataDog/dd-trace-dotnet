@@ -56,6 +56,9 @@
     <ClInclude Include="EtwEventsManager.h">
       <Filter>ETW</Filter>
     </ClInclude>
+    <ClInclude Include="SecurityDescriptorHelpers.h">
+      <Filter>ETW</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Windows32BitStackFramesCollector.cpp">
@@ -89,6 +92,9 @@
       <Filter>ETW</Filter>
     </ClCompile>
     <ClCompile Include="EtwEventsManager.cpp">
+      <Filter>ETW</Filter>
+    </ClCompile>
+    <ClCompile Include="SecurityDescriptorHelpers.cpp">
       <Filter>ETW</Filter>
     </ClCompile>
   </ItemGroup>

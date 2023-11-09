@@ -127,18 +127,18 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\shared\EtwEventsHandler.cpp" />
-    <ClCompile Include="..\shared\IpcClient.cpp" />
-    <ClCompile Include="..\shared\IpcServer.cpp" />
-    <ClCompile Include="..\shared\Protocol.cpp" />
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp" />
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp" />
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp" />
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp" />
     <ClCompile Include="dd-prof-etw-client.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\shared\EtwEventsHandler.h" />
-    <ClInclude Include="..\shared\INamedPipeHandler.h" />
-    <ClInclude Include="..\shared\IpcClient.h" />
-    <ClInclude Include="..\shared\IpcServer.h" />
-    <ClInclude Include="..\shared\Protocol.h" />
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h" />
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\INamedPipeHandler.h" />
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h" />
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h" />
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

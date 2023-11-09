@@ -18,18 +18,33 @@
     <ClCompile Include="dd-prof-etw-collector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\IpcClient.cpp">
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\shared\IpcServer.cpp">
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\shared\IpcClient.h">
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\shared\IpcServer.h">
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\INamedPipeHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

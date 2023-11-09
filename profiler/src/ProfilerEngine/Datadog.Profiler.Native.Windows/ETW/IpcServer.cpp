@@ -3,8 +3,10 @@
 
 #include "IpcClient.h"  // TODO: return codes should be defined in another shared header file
 #include "IpcServer.h"
+#include "..\SecurityDescriptorHelpers.h"
 #include <iostream>
 #include <memory>
+
 
 IpcServer::IpcServer()
 {
@@ -73,8 +75,12 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
 
     // TODO: there is no timeout on ConnectNamedPipe
     // so we would need to use the overlapped version to support _stopRequested :^(
+    std::string errorMessage;
+    auto emptySA = MakeNoSecurityAttributes(errorMessage);
+
     while (!pThis->_stopRequested.load())
     {
+
         HANDLE hNamedPipe =
             ::CreateNamedPipeA(
                 pThis->_portName.c_str(),
@@ -84,7 +90,7 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
                 pThis->_outBufferSize,
                 pThis->_inBufferSize,
                 0,
-                nullptr
+                emptySA.get()
                 );
 
         pThis->_serverCount++;

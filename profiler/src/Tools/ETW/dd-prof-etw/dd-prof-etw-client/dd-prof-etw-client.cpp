@@ -10,10 +10,10 @@
 #include <sstream>
 #include <string>
 
-#include "..\shared\Protocol.h"
-#include "..\shared\IpcClient.h"
-#include "..\shared\IpcServer.h"
-#include "..\shared\EtwEventsHandler.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h"
 
 
 void ShowHelp()

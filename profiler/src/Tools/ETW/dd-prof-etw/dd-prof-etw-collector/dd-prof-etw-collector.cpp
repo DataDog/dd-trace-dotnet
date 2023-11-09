@@ -9,8 +9,8 @@
 #include <sstream>
 #include <string>
 
-#include "..\shared\Protocol.h"
-#include "..\shared\IpcClient.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
 
 
 bool ParseCommandLine(int argc, char* argv[], char*& pipe)
