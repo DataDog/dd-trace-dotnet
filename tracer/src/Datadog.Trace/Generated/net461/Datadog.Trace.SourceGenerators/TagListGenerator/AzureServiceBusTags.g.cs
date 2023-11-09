@@ -38,12 +38,6 @@ namespace Datadog.Trace.Tagging
 #else
         private static readonly byte[] MessagingDestinationNameBytes = new byte[] { 186, 109, 101, 115, 115, 97, 103, 105, 110, 103, 46, 100, 101, 115, 116, 105, 110, 97, 116, 105, 111, 110, 46, 110, 97, 109, 101 };
 #endif
-        // SpanKindBytes = MessagePack.Serialize("span.kind");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> SpanKindBytes => new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#else
-        private static readonly byte[] SpanKindBytes = new byte[] { 169, 115, 112, 97, 110, 46, 107, 105, 110, 100 };
-#endif
 
         public override string? GetTag(string key)
         {
@@ -51,7 +45,6 @@ namespace Datadog.Trace.Tagging
             {
                 "messaging.source.name" => MessagingSourceName,
                 "messaging.destination.name" => MessagingDestinationName,
-                "span.kind" => SpanKind,
                 _ => base.GetTag(key),
             };
         }
@@ -65,9 +58,6 @@ namespace Datadog.Trace.Tagging
                     break;
                 case "messaging.destination.name": 
                     MessagingDestinationName = value;
-                    break;
-                case "span.kind": 
-                    SpanKind = value;
                     break;
                 default: 
                     base.SetTag(key, value);
@@ -87,11 +77,6 @@ namespace Datadog.Trace.Tagging
                 processor.Process(new TagItem<string>("messaging.destination.name", MessagingDestinationName, MessagingDestinationNameBytes));
             }
 
-            if (SpanKind is not null)
-            {
-                processor.Process(new TagItem<string>("span.kind", SpanKind, SpanKindBytes));
-            }
-
             base.EnumerateTags(ref processor);
         }
 
@@ -108,13 +93,6 @@ namespace Datadog.Trace.Tagging
             {
                 sb.Append("messaging.destination.name (tag):")
                   .Append(MessagingDestinationName)
-                  .Append(',');
-            }
-
-            if (SpanKind is not null)
-            {
-                sb.Append("span.kind (tag):")
-                  .Append(SpanKind)
                   .Append(',');
             }
 

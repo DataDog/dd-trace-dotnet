@@ -26,7 +26,6 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
-        [Tag(Trace.Tags.SpanKind)]
         public override string SpanKind
         {
             get => MessagingOperation switch
