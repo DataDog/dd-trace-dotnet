@@ -17,7 +17,7 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
-internal class HardcodedSecretsAnalyzer
+internal class HardcodedSecretsAnalyzer : IDisposable
 {
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
@@ -113,7 +113,7 @@ internal class HardcodedSecretsAnalyzer
             if (_instance == null)
             {
                 _instance = new HardcodedSecretsAnalyzer(TimeSpan.FromMilliseconds(Iast.Instance.Settings.RegexTimeout));
-                LifetimeManager.Instance.AddShutdownTask(_instance.RunShutdown);
+                LifetimeManager.Instance.AddShutdownTask(_instance.Dispose);
             }
         }
     }
@@ -213,7 +213,7 @@ internal class HardcodedSecretsAnalyzer
         return res;
     }
 
-    private void RunShutdown()
+    public void Dispose()
     {
         try
         {
