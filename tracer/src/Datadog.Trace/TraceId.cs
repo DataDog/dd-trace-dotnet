@@ -85,14 +85,6 @@ internal readonly record struct TraceId(ulong Upper, ulong Lower) : IComparable<
     public override int GetHashCode() => HashCode.Combine(Lower, Upper);
 
     [Pure]
-    public string ToUpperHexString()
-    {
-        return this == Zero ?
-                   "0000000000000000" :
-                   HexString.ToHexString(Upper);
-    }
-
-    [Pure]
     public override string ToString()
     {
         return this == Zero ?

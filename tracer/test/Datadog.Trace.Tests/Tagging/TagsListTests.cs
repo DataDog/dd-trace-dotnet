@@ -94,7 +94,7 @@ namespace Datadog.Trace.Tests.Tagging
             using (var scope = _tracer.StartActiveInternal("root"))
             {
                 SetupForSerializationTest(scope.Span, customTagCount);
-                hexStringTraceId = scope.Span.TraceId128.ToUpperHexString();
+                hexStringTraceId = HexString.ToHexString(scope.Span.TraceId128.Upper);
             }
 
             await _tracer.FlushAsync();

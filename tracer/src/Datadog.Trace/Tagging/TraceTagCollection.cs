@@ -262,7 +262,7 @@ namespace Datadog.Trace.Tagging
                 // (parse the hex string and compare ulongs to avoid allocating another string)
                 if (tagValue == null || !HexString.TryParseUInt64(tagValue, out var currentValue) || currentValue != traceId.Upper)
                 {
-                    SetTag(Trace.Tags.Propagated.TraceIdUpper, traceId.ToUpperHexString());
+                    SetTag(Trace.Tags.Propagated.TraceIdUpper, HexString.ToHexString(traceId.Upper));
                 }
             }
             else if (traceId.Upper == 0 && tagValue != null)
