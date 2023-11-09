@@ -28,27 +28,27 @@
 
     <!-- Integration: AWSSDK.DynamoDBv2 -->
     <!-- Assembly: AWSSDK.DynamoDBv2 -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.14 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.DynamoDBv2/3.7.203.15 -->
     <PackageReference Include="AWSSDK.DynamoDBv2" Version="3.7.203.14" />
 
     <!-- Integration: AWSSDK.Kinesis -->
     <!-- Assembly: AWSSDK.Kinesis -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.66 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Kinesis/3.7.200.67 -->
     <PackageReference Include="AWSSDK.Kinesis" Version="3.7.200.66" />
 
     <!-- Integration: AWSSDK.Core -->
     <!-- Assembly: AWSSDK.Core -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.14 -->
-    <PackageReference Include="AWSSDK.Core" Version="3.7.204.14" />
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.Core/3.7.204.15 -->
+    <PackageReference Include="AWSSDK.Core" Version="3.7.204.15" />
 
     <!-- Integration: AWSSDK.SimpleNotificationService -->
     <!-- Assembly: AWSSDK.SimpleNotificationService -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.201.4 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SimpleNotificationService/3.7.201.5 -->
     <PackageReference Include="AWSSDK.SimpleNotificationService" Version="3.7.201.4" />
 
     <!-- Integration: AWSSDK.SQS -->
     <!-- Assembly: AWSSDK.SQS -->
-    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.200.67 -->
+    <!-- Latest package https://www.nuget.org/packages/AWSSDK.SQS/3.7.202 -->
     <PackageReference Include="AWSSDK.SQS" Version="3.7.200.67" />
 
     <!-- Integration: Azure.Messaging.ServiceBus -->
@@ -100,6 +100,11 @@
     <!-- Assembly: System.Net.Http.WinHttpHandler -->
     <!-- Latest package https://www.nuget.org/packages/System.Net.Http.WinHttpHandler/7.0.0 -->
     <PackageReference Include="System.Net.Http.WinHttpHandler" Version="7.0.0" />
+
+    <!-- Integration: amqmdnetstd -->
+    <!-- Assembly: amqmdnetstd -->
+    <!-- Latest package https://www.nuget.org/packages/IBMMQDotnetClient/9.3.4 -->
+    <PackageReference Include="IBMMQDotnetClient" Version="9.3.4" />
 
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!-- Assembly: Microsoft.Extensions.Logging -->
@@ -188,7 +193,7 @@
 
     <!-- Integration: Serilog -->
     <!-- Assembly: Serilog -->
-    <!-- Latest package https://www.nuget.org/packages/Serilog/3.0.1 -->
+    <!-- Latest package https://www.nuget.org/packages/Serilog/3.1.0 -->
     <PackageReference Include="Serilog" Version="3.0.1" />
 
     <!-- Integration: ServiceStack.Redis -->
@@ -228,7 +233,7 @@
 
     <!-- Integration: System.ServiceModel -->
     <!-- Assembly: System.ServiceModel -->
-    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.1.0 -->
+    <!-- Latest package https://www.nuget.org/packages/System.ServiceModel.Http/6.2.0 -->
     <PackageReference Include="System.ServiceModel.Http" Version="4.10.3" />
 
     <!-- Integration: System.Net.Requests -->
