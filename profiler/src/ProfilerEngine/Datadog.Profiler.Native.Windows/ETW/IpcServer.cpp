@@ -77,6 +77,12 @@ void CALLBACK IpcServer::StartCallback(PTP_CALLBACK_INSTANCE instance, PVOID con
     // so we would need to use the overlapped version to support _stopRequested :^(
     std::string errorMessage;
     auto emptySA = MakeNoSecurityAttributes(errorMessage);
+    if (emptySA == nullptr)
+    {
+        pThis->ShowLastError("Failed to create the empty Dacl...");
+        pThis->_pHandler->OnStartError();
+        return;
+    }
 
     while (!pThis->_stopRequested.load())
     {
