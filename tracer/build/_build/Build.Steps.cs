@@ -2123,21 +2123,28 @@ partial class Build
        .After(CopyDdDotnet)
        .Executes(async () =>
        {
-           var isDebugRun = await IsDebugRun();
-           var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
+           try
+           {
+               var isDebugRun = await IsDebugRun();
+               var project = Solution.GetProject(Projects.DdDotnetArtifactsTests);
 
-           DotNetTest(config => config
-                   .SetProjectFile(project)
-                   .SetConfiguration(BuildConfiguration)
-                   .SetFramework(Framework)
-                   .SetTestTargetPlatform(TargetPlatform)
-                   .EnableNoRestore()
-                   .EnableNoBuild()
-                   .SetIsDebugRun(isDebugRun)
-                   .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
-                   .SetLogsDirectory(TestLogsDirectory)
-                   .EnableTrxLogOutput(GetResultsDirectory(project))
-                   .WithDatadogLogger());
+               DotNetTest(config => config
+                       .SetProjectFile(project)
+                       .SetConfiguration(BuildConfiguration)
+                       .SetFramework(Framework)
+                       .SetTestTargetPlatform(TargetPlatform)
+                       .EnableNoRestore()
+                       .EnableNoBuild()
+                       .SetIsDebugRun(isDebugRun)
+                       .SetProcessEnvironmentVariable("MonitoringHomeDirectory", MonitoringHomeDirectory)
+                       .SetLogsDirectory(TestLogsDirectory)
+                       .EnableTrxLogOutput(GetResultsDirectory(project))
+                       .WithDatadogLogger());
+           }
+           finally
+           {
+               CopyDumpsToBuildData();
+           }
        });
 
     Target CopyServerlessArtifacts => _ => _
