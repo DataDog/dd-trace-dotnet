@@ -309,24 +309,32 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             for (var i = 0; i < nestedTypes.Length; i++)
             {
-                var typeHandle = nestedTypes[i];
-                if (typeHandle.IsNil)
+                Model.Scope? nestedClassScope = null;
+                try
                 {
-                    continue;
-                }
+                    var typeHandle = nestedTypes[i];
+                    if (typeHandle.IsNil)
+                    {
+                        continue;
+                    }
 
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(typeHandle.RowId))
+                    {
+                        continue;
+                    }
+
+                    if (!TryGetClassSymbols(typeHandle, out nestedClassScope) || nestedClassScope == null)
+                    {
+                        continue;
+                    }
+
+                    nestedClassScopes[index] = nestedClassScope.Value;
+                    index++;
+                }
+                catch (Exception e)
                 {
-                    continue;
+                    Log.Warning(e, "Symbol extractor fail to get information for nested class {NestedClass}", nestedClassScope?.Name ?? "Unknown");
                 }
-
-                if (!TryGetClassSymbols(typeHandle, out var nestedClassScope) || nestedClassScope == null)
-                {
-                    continue;
-                }
-
-                nestedClassScopes[index] = nestedClassScope.Value;
-                index++;
             }
         }
 
@@ -387,47 +395,60 @@ namespace Datadog.Trace.Debugger.Symbols
         {
             foreach (var methodDefHandle in methods)
             {
-                if (methodDefHandle.IsNil)
+                Model.Scope methodScope = default;
+                try
                 {
-                    continue;
-                }
-
-                if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodDefHandle.RowId))
-                {
-                    continue;
-                }
-
-                if (!DatadogMetadataReader.HasMethodBody(methodDefHandle.RowId))
-                {
-                    continue;
-                }
-
-                var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
-                var methodScope = CreateMethodScope(type, methodDef);
-                if (methodScope.Scopes != null &&
-                    methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
-                {
-                    var sourcePdbInfo = GetMethodSourcePdbInfo(methodScope);
-                    methodScope.StartLine = sourcePdbInfo.StartLine;
-                    methodScope.EndLine = sourcePdbInfo.EndLine;
-                    methodScope.SourceFile = sourcePdbInfo.Path;
-                    if (sourcePdbInfo.EndColumn > 0)
+                    if (methodDefHandle.IsNil)
                     {
-                        var ls = new LanguageSpecifics
-                        {
-                            Annotations = methodScope.LanguageSpecifics?.Annotations,
-                            AccessModifiers = methodScope.LanguageSpecifics?.AccessModifiers,
-                            ReturnType = methodScope.LanguageSpecifics?.ReturnType,
-                            StartColumn = sourcePdbInfo.StartColumn,
-                            EndColumn = sourcePdbInfo.EndColumn,
-                        };
-
-                        methodScope.LanguageSpecifics = ls;
+                        continue;
                     }
-                }
 
-                classMethods[index] = methodScope;
-                index++;
+                    if (DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnMethod(methodDefHandle.RowId))
+                    {
+                        continue;
+                    }
+
+                    if (!DatadogMetadataReader.HasMethodBody(methodDefHandle.RowId))
+                    {
+                        continue;
+                    }
+
+                    var methodDef = MetadataReader.GetMethodDefinition(methodDefHandle);
+                    methodScope = CreateMethodScope(type, methodDef);
+                    if (methodScope == default)
+                    {
+                        continue;
+                    }
+
+                    if (methodScope.Scopes != null &&
+                        methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
+                    {
+                        var sourcePdbInfo = GetMethodSourcePdbInfo(methodScope);
+                        methodScope.StartLine = sourcePdbInfo.StartLine;
+                        methodScope.EndLine = sourcePdbInfo.EndLine;
+                        methodScope.SourceFile = sourcePdbInfo.Path;
+                        if (sourcePdbInfo.EndColumn > 0)
+                        {
+                            var ls = new LanguageSpecifics
+                            {
+                                Annotations = methodScope.LanguageSpecifics?.Annotations,
+                                AccessModifiers = methodScope.LanguageSpecifics?.AccessModifiers,
+                                ReturnType = methodScope.LanguageSpecifics?.ReturnType,
+                                StartColumn = sourcePdbInfo.StartColumn,
+                                EndColumn = sourcePdbInfo.EndColumn,
+                            };
+
+                            methodScope.LanguageSpecifics = ls;
+                        }
+                    }
+
+                    classMethods[index] = methodScope;
+                    index++;
+                }
+                catch (Exception e)
+                {
+                    Log.Warning(e, "Symbol extractor fail to get information for method {Method}", methodScope.Name ?? "Unknown");
+                }
             }
         }
 
@@ -484,6 +505,17 @@ namespace Datadog.Trace.Debugger.Symbols
 
         protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
         {
+            if (method.Name.IsNil)
+            {
+                return default;
+            }
+
+            var methodName = MetadataReader.GetString(method.Name);
+            if (string.IsNullOrEmpty(methodName))
+            {
+                return default;
+            }
+
             // arguments
             var argsSymbol = GetArgsSymbol(method);
 
@@ -500,7 +532,7 @@ namespace Datadog.Trace.Debugger.Symbols
             var methodScope = new Model.Scope
             {
                 ScopeType = SymbolType.Method,
-                Name = MetadataReader.GetString(method.Name),
+                Name = methodName,
                 LanguageSpecifics = methodLanguageSpecifics,
                 Symbols = argsSymbol,
                 Scopes = closureScopes,

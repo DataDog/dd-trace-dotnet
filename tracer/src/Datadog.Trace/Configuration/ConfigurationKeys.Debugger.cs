@@ -23,55 +23,55 @@ namespace Datadog.Trace.Configuration
             /// Default value is 1.
             /// </summary>
             /// <seealso cref="DebuggerSettings.MaximumDepthOfMembersToCopy"/>
-            public const string MaxDepthToSerialize = "DD_DEBUGGER_MAX_DEPTH_TO_SERIALIZE";
+            public const string MaxDepthToSerialize = "DD_DYNAMIC_INSTRUMENTATION_MAX_DEPTH_TO_SERIALIZE";
 
             /// <summary>
             /// Configuration key for the maximum duration (in milliseconds) to run serialization for probe snapshots.
             /// Default value is 150 ms.
             /// </summary>
             /// <seealso cref="DebuggerSettings.MaxSerializationTimeInMilliseconds"/>
-            public const string MaxTimeToSerialize = "DD_DEBUGGER_MAX_TIME_TO_SERIALIZE";
+            public const string MaxTimeToSerialize = "DD_DYNAMIC_INSTRUMENTATION_MAX_TIME_TO_SERIALIZE";
 
             /// <summary>
             /// Configuration key for the maximum upload batch size.
             /// Default value is 100.
             /// </summary>
             /// <seealso cref="DebuggerSettings.UploadBatchSize"/>
-            public const string UploadBatchSize = "DD_DEBUGGER_UPLOAD_BATCH_SIZE";
+            public const string UploadBatchSize = "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_BATCH_SIZE";
 
             /// <summary>
             /// Configuration key for the maximum symbol size to upload (in bytes).
             /// Default value is 1 mb.
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolBatchSizeInBytes"/>
-            public const string SymbolBatchSizeInBytes = "DD_DEBUGGER_SYMBOL_BATCH_SIZE_BYTES";
+            public const string SymbolBatchSizeInBytes = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_BATCH_SIZE_BYTES";
 
             /// <summary>
             /// Configuration key for allowing upload of symbol data (such as method names, parameter names, etc) to Datadog.
             /// Default value is false (disabled).
             /// </summary>
             /// <seealso cref="DebuggerSettings.SymbolDatabaseUploadEnabled"/>
-            public const string SymbolDatabaseUploadEnabled = "DD_SYMBOL_DATABASE_UPLOAD_ENABLED";
+            public const string SymbolDatabaseUploadEnabled = "DD_DYNAMIC_INSTRUMENTATION_SYMBOL_DATABASE_UPLOAD_ENABLED";
 
             /// <summary>
             /// Configuration key for forcing the client library to upload symbol data, regardless of whether it is requested by our backend. For internal use and testing.
             /// Default value is false (disabled).
             /// </summary>
-            public const string SymbolDatabaseUploadEnabledInternal = "DD_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
+            public const string SymbolDatabaseUploadEnabledInternal = "DD_DYNAMIC_INSTRUMENTATION_INTERAL_FORCE_SYMBOL_DATABASE_UPLOAD";
 
             /// <summary>
             /// Configuration key for the interval (in seconds) between sending probe statuses.
             /// Default value is 3600.
             /// </summary>
             /// <seealso cref="DebuggerSettings.DiagnosticsIntervalSeconds"/>
-            public const string DiagnosticsInterval = "DD_DEBUGGER_DIAGNOSTICS_INTERVAL";
+            public const string DiagnosticsInterval = "DD_DYNAMIC_INSTRUMENTATION_DIAGNOSTICS_INTERVAL";
 
             /// <summary>
             /// Configuration key for the interval (in milliseconds) between flushing statuses.
             /// Default value is 0 (dynamic).
             /// </summary>
             /// <seealso cref="DebuggerSettings.UploadFlushIntervalMilliseconds"/>
-            public const string UploadFlushInterval = "DD_DEBUGGER_UPLOAD_FLUSH_INTERVAL";
+            public const string UploadFlushInterval = "DD_DYNAMIC_INSTRUMENTATION_UPLOAD_FLUSH_INTERVAL";
 
             /// <summary>
             /// Configuration key for set of identifiers that are used in redaction decisions.
