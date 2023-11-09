@@ -1,7 +1,7 @@
 ﻿// See https://aka.ms/new-console-template for more information
 
-using System.Diagnostics;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using Datadog.Trace;
 using Datadog.Trace.Configuration;
 using PipelineMonitor;
@@ -23,10 +23,15 @@ Console.WriteLine("Processing pipeline: " + buildId);
 Build? buildData;
 TimelineData? timeline;
 
+var jsonOpts = new JsonSerializerOptions(JsonSerializerDefaults.Web)
+{
+    UnmappedMemberHandling = JsonUnmappedMemberHandling.Skip,
+};
+
 try
 {
     var json = await _cli.GetStringAsync(azDoApi + buildId);
-    buildData = JsonSerializer.Deserialize<Build>(json, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    buildData = JsonSerializer.Deserialize<Build>(json, jsonOpts);
 
     if (buildData is null || string.IsNullOrEmpty(buildData._Links.Timeline.Href))
     {
@@ -44,7 +49,7 @@ catch (Exception ex)
 try
 {
     var jsonTimeline = await _cli.GetStringAsync(buildData._Links.Timeline.Href);
-    timeline = JsonSerializer.Deserialize<TimelineData>(jsonTimeline, new JsonSerializerOptions(JsonSerializerDefaults.Web));
+    timeline = JsonSerializer.Deserialize<TimelineData>(jsonTimeline, jsonOpts);
 
     if (timeline is null)
     {
