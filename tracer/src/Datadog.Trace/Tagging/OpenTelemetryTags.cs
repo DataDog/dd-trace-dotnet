@@ -10,7 +10,7 @@ namespace Datadog.Trace.Tagging
     internal partial class OpenTelemetryTags : CommonTags
     {
         [Tag(Tags.SpanKind)]
-        public string SpanKind { get; set; } // not using override here as this updates on Activity close
+        public virtual string SpanKind { get; set; }
 
         [Tag("http.request.method")]
         public string HttpRequestMethod { get; set; }
@@ -21,7 +21,7 @@ namespace Datadog.Trace.Tagging
         [Tag("messaging.system")]
         public string MessagingSystem { get; set; }
 
-        [Tag("messaging.operation")]
+        [Tag(Trace.Tags.MessagingOperation)]
         public string MessagingOperation { get; set; }
 
         [Tag("rpc.system")]

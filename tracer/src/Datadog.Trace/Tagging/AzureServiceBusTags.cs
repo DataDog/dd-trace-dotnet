@@ -13,7 +13,7 @@ namespace Datadog.Trace.Tagging
 {
     // Re-implement InstrumentationTags so the built-in Activity can copy over SpanKind
     // without being limited by our tags infrastructure
-    internal partial class AzureServiceBusTags : CommonTags
+    internal partial class AzureServiceBusTags : OpenTelemetryTags
     {
         private string _spanKind;
 
@@ -26,11 +26,8 @@ namespace Datadog.Trace.Tagging
         [Tag(Trace.Tags.MessagingDestinationName)]
         public string MessagingDestinationName { get; set; }
 
-        [Tag(Trace.Tags.MessagingOperation)]
-        public string MessagingOperation { get; set; }
-
         [Tag(Trace.Tags.SpanKind)]
-        public string SpanKind
+        public override string SpanKind
         {
             get => MessagingOperation switch
                 {
