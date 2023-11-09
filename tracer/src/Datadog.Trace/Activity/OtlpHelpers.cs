@@ -88,6 +88,7 @@ namespace Datadog.Trace.Activity
             // Additional Datadog policy: Set tag "span.kind"
             // Since the ActivityKind can only be one of a fixed set of values, always set the tag as prescribed by Datadog practices
             // even though the tag is not present on normal OTLP spans
+            // Note that the "span.kind" is used to help craft an OperationName for the span (if present)
             if (activity5 is not null)
             {
                 span.SetTag(Tags.SpanKind, GetSpanKind(activity5.Kind));
