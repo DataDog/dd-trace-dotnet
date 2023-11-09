@@ -60,7 +60,7 @@ namespace Datadog.Trace.Tests
                 }
             }
 
-            ActivityOperationNameMapper.MapToOperationName(span);
+            OperationNameMapper.MapToOperationName(span);
 
             Assert.Equal(expectedOperationName, span.OperationName);
         }

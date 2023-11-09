@@ -106,7 +106,7 @@ namespace Datadog.Trace.Activity
             }
             else
             {
-                ActivityOperationNameMapper.MapToOperationName(span);
+                OperationNameMapper.MapToOperationName(span);
             }
 
             // TODO: Add container tags from attributes if the tag isn't already in the span

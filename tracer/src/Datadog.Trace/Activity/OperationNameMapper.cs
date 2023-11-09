@@ -1,4 +1,4 @@
-// <copyright file="ActivityOperationNameMapper.cs" company="Datadog">
+// <copyright file="OperationNameMapper.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -10,9 +10,9 @@ using Datadog.Trace.Tagging;
 namespace Datadog.Trace.Activity
 {
     /// <summary>
-    /// Helper class to map <see cref="SpanKinds"/> and various tags on an Activity to a <see cref="Span.OperationName"/>.
+    /// Helper class to map <see cref="SpanKinds"/> and various tags on an <c>Activity</c> or OpenTelemetry Span to a <see cref="Span.OperationName"/>.
     /// </summary>
-    internal static class ActivityOperationNameMapper
+    internal static class OperationNameMapper
     {
         internal static void MapToOperationName(Span span)
         {
@@ -25,7 +25,11 @@ namespace Datadog.Trace.Activity
 
             if (span.Tags is not OpenTelemetryTags tags)
             {
-                return; // TODO handle this if it is possible
+                // while span.Tags can be something other than OpenTelemetryTags the
+                // ActivityHandlerCommon.StartActivity requires its "Tags" type to be
+                // OpenTelemetryTags to ensure that for all Activity objects that we
+                // process will be able to be mapped correctly.
+                return;
             }
 
             if (tags.IsHttpServer())
@@ -101,8 +105,12 @@ namespace Datadog.Trace.Activity
 
         private static bool IsMessaging(this OpenTelemetryTags tags)
         {
-            return (tags.SpanKind == SpanKinds.Client || tags.SpanKind == SpanKinds.Server || tags.SpanKind == SpanKinds.Producer || tags.SpanKind == SpanKinds.Consumer)
-                && !string.IsNullOrEmpty(tags.MessagingSystem) && !string.IsNullOrEmpty(tags.MessagingOperation);
+            return (tags.SpanKind == SpanKinds.Client ||
+                    tags.SpanKind == SpanKinds.Server ||
+                    tags.SpanKind == SpanKinds.Producer ||
+                    tags.SpanKind == SpanKinds.Consumer)
+                && !string.IsNullOrEmpty(tags.MessagingSystem) &&
+                   !string.IsNullOrEmpty(tags.MessagingOperation);
         }
 
         private static bool IsAwsClient(this OpenTelemetryTags tags)
