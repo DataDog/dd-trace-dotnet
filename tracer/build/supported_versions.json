@@ -882,6 +882,13 @@
     ]
   },
   {
+    "integrationName": "Remoting",
+    "assemblyName": "System.Runtime.Remoting",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },,
+  {
     "integrationName": "Serilog",
     "assemblyName": "Serilog",
     "minAssemblyVersionInclusive": "1.0.0",
