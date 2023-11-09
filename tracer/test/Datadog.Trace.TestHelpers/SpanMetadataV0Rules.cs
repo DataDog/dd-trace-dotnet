@@ -259,7 +259,7 @@ namespace Datadog.Trace.TestHelpers
                 .Matches("az.namespace", "Microsoft.ServiceBus")
                 .IsPresent("az.schema_url")
                 .IsOptional("messaging.destination.name")
-                .IfPresentMatchesOneOf("messaging.operation", "publish", "receive", "settle")
+                .IfPresentMatchesOneOf("messaging.operation", "publish", "settle")
                 .IsOptional("messaging.source.name")
                 .Matches("messaging.system", "servicebus")
                 .IsPresent("net.peer.name")
