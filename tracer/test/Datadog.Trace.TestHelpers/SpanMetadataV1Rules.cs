@@ -326,7 +326,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusInboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "Message", "ServiceBusReceiver.Peek", "ServiceBusReceiver.Receive", "ServiceBusReceiver.ReceiveDeferred", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionProcessor.ProcessSessionMessage")
+                .MatchesOneOf(Name, "servicebus.receive", "servicebus.process")
                 .MatchesOneOf(Type, "http", "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
@@ -344,7 +344,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusOutboundV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "Message")
+                .Matches(Name, "producer")
                 .Matches(Type, "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
@@ -364,7 +364,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusRequestV1(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "ServiceBusSender.Send", "ServiceBusReceiver.Complete", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSender.Schedule", "ServiceBusSender.Cancel", "ServiceBusReceiver.RenewMessageLock", "ServiceBusReceiver.Abandon", "ServiceBusReceiver.Defer", "ServiceBusReceiver.DeadLetter")
+                .MatchesOneOf(Name, "servicebus.publish", "servicebus.settle", "client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
