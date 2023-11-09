@@ -68,6 +68,7 @@ internal static class IntegrationIdExtensions
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
             IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
+            IntegrationId.IbmMq => MetricTags.IntegrationName.IbmMq,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

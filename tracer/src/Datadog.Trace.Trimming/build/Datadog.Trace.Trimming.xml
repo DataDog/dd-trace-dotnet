@@ -1,6 +1,7 @@
 <linker>
    <assembly fullname="AerospikeClient" />
    <assembly fullname="Amazon.Lambda.RuntimeSupport" />
+   <assembly fullname="amqmdnetstd" />
    <assembly fullname="AWSSDK.Core" />
    <assembly fullname="AWSSDK.DynamoDBv2" />
    <assembly fullname="AWSSDK.Kinesis" />
