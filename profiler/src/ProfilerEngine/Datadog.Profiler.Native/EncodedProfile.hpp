@@ -3,6 +3,9 @@
 
 #pragma once
 
+#include "OpSysTools.h"
+
+#include <fstream>
 #include <memory>
 
 extern "C"
@@ -28,11 +31,32 @@ struct EncodedProfile
 
     using encoded_profile_ptr = std::unique_ptr<ddog_prof_EncodedProfile, EncodedProfileDeleter>;
 
-
-    operator ddog_prof_EncodedProfile*()
+    operator ddog_prof_EncodedProfile*() const
     {
         return _profile.get();
     }
 
+    // The id is used only when saving file on disk, so make its computation lazy
+    std::string const& GetId()
+    {
+        if (_id.empty())
+        {
+            auto time = std::time(nullptr);
+            struct tm buf = {};
+
+#ifdef _WINDOWS
+            localtime_s(&buf, &time);
+#else
+            localtime_r(&time, &buf);
+#endif
+            std::stringstream oss;
+            oss << std::put_time(&buf, "%F_%H-%M-%S") << "_" << (OpSysTools::GetHighPrecisionNanoseconds() % 10000);
+            _id = oss.str();
+        }
+        return _id;
+    }
+
+private:
     encoded_profile_ptr _profile;
+    std::string _id;
 };

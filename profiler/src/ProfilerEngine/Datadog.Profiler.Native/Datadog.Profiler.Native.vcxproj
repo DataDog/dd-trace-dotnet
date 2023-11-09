@@ -239,6 +239,7 @@
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="ExporterBuilder.h" />
+    <ClInclude Include="FileHelper.h" />
     <ClInclude Include="Success.h" />
     <ClInclude Include="Exception.h" />
     <ClInclude Include="Exporter.h" />
@@ -371,6 +372,7 @@
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="ExporterBuilder.cpp" />
+    <ClCompile Include="FileHelper.cpp" />
     <ClCompile Include="Success.cpp" />
     <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />

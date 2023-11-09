@@ -6,7 +6,9 @@
 #include <fstream>
 #include <string>
 
+#include "EncodedProfile.hpp"
 #include "FfiHelper.h"
+#include "FileHelper.h"
 #include "OpSysTools.h"
 #include "Success.h"
 
@@ -18,71 +20,135 @@ extern "C"
 #include "datadog/profiling.h"
 }
 
-#define BUFFER_MAX_SIZE 512
-
 namespace libdatadog {
 
 class FileSaver
 {
 public:
     FileSaver(fs::path outputDirectory) :
-        _outputDirectory{outputDirectory},
-        _pid{std::to_string(OpSysTools::GetProcId())}
+        _outputDirectory{outputDirectory}
     {
     }
 
     ~FileSaver() = default;
 
-    Success WriteToDisk(ddog_prof_EncodedProfile* profile, std::string const& serviceName)
+    Success WriteToDisk(EncodedProfile& profile, std::string const& serviceName, std::vector<std::pair<std::string, std::string>> const& files, std::string const& metadata)
     {
-        // TODO move to extension to static field ?
-        auto pprofFilePath = GenerateFilePath(serviceName, ".pprof");
-        std::ofstream file{pprofFilePath, std::ios::out | std::ios::binary};
+        auto const& profileId = profile.GetId();
+        auto success = WriteProfileToDisk(profile, serviceName, profileId);
 
-        auto buffer = profile->buffer;
+        bool hasError = false;
 
-        file.write((char const*)buffer.ptr, buffer.len);
+        std::stringstream errorMessage;
+        if (!success)
+        {
+            hasError = true;
+            errorMessage << success.message();
+        }
+
+        for (auto const& [filename, content] : files)
+        {
+            success = WriteTextFileToDisk(filename, content, serviceName, profileId);
+
+            if (!success)
+            {
+                if (hasError)
+                {
+                    errorMessage << "\n";
+                }
+                errorMessage << success.message();
+
+                hasError = true;
+            }
+        }
+
+        if (!metadata.empty())
+        {
+            static const std::string MetadataFilename = "metadata.json";
+            success = WriteTextFileToDisk(MetadataFilename, metadata, serviceName, profileId);
+
+            if (!success)
+            {
+                if (hasError)
+                {
+                    errorMessage << "\n";
+                }
+                errorMessage << success.message();
+
+                hasError = true;
+            }
+        }
+
+        if (hasError)
+        {
+            return make_error(errorMessage.str());
+        }
+        return make_success();
+    }
+
+private:
+    Success WriteProfileToDisk(ddog_prof_EncodedProfile const* profile, std::string const& serviceName, std::string const& uid)
+    {
+        // no specific filename for the pprof file
+        auto filepath = GenerateFilePath("", ".pprof", serviceName, uid);
+
+        auto bufferPtr = profile->buffer.ptr;
+        auto bufferSize = static_cast<std::size_t>(profile->buffer.len);
+
+        return WriteFileToDisk(filepath, (char const*)bufferPtr, bufferSize);
+    }
+
+    Success WriteTextFileToDisk(const std::string& filenameWithExt, const std::string& content, std::string const& serviceName, std::string const& uid)
+    {
+        assert(fs::path(filenameWithExt).has_extension());
+
+        auto [filename, extension] = SplitFilenameAndExtension(filenameWithExt);
+        auto filepath = GenerateFilePath(filename, extension, serviceName, uid);
+
+        return WriteFileToDisk(filepath, content.c_str(), content.size());
+    }
+
+    Success WriteFileToDisk(fs::path const& filePath, char const* ptr, std::size_t size)
+    {
+        std::ofstream file{filePath, std::ios::out | std::ios::binary};
+
+        file.write(ptr, size);
         file.close();
 
         if (file.fail())
         {
-            char message[BUFFER_MAX_SIZE];
+            char message[BufferMaxSize];
             auto errorCode = errno;
 #ifdef _WINDOWS
-            strerror_s(message, BUFFER_MAX_SIZE, errorCode);
+            strerror_s(message, BufferMaxSize, errorCode);
 #else
-            strerror_r(errorCode, message, BUFFER_MAX_SIZE);
+            strerror_r(errorCode, message, BufferMaxSize);
 #endif
-            return make_error(std::string("Unable to write profiles on disk: ") + pprofFilePath + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
+            return make_error(std::string("Unable to write file on disk: ") + filePath.string() + ". Message (code): " + message + " (" + std::to_string(errorCode) + ")");
         }
-        // do we want to pass a string ?"Profile serialized in ", pprofFilePath
+
         return make_success();
     }
 
-    std::string GenerateFilePath(const std::string& applicationName, const std::string& extension) const
+    static std::pair<std::string, std::string> SplitFilenameAndExtension(std::string const& filename)
     {
-        auto time = std::time(nullptr);
-        struct tm buf = {};
+        fs::path file(filename);
+        auto extension = file.extension();
+        file.replace_extension();
+        return {file.filename().string(), extension.string()};
+    }
 
-#ifdef _WINDOWS
-        localtime_s(&buf, &time);
-#else
-        localtime_r(&time, &buf);
-#endif
+    fs::path GenerateFilePath(std::string const& filename, std::string const& extension, std::string const& serviceName, std::string const& uid) const
+    {
+        auto generatedFilename = FileHelper::GenerateFilename(filename, extension, serviceName, uid);
 
-        std::stringstream oss;
-        // TODO: review the way we compute the differentiator number: OpSysTools::GetHighPrecisionNanoseconds() % 10000
-        oss << applicationName + "_" << _pid << "_" << std::put_time(&buf, "%F_%H-%M-%S") << "_" << (OpSysTools::GetHighPrecisionNanoseconds() % 10000)
-            << extension;
-        auto pprofFilename = oss.str();
-
-        auto pprofFilePath = _outputDirectory / pprofFilename;
-
-        return pprofFilePath.string();
+        return _outputDirectory / generatedFilename;
     }
 
 private:
+    static constexpr std::size_t BufferMaxSize = 512;
+
     fs::path _outputDirectory;
-    std::string _pid;
 };
+
 } // namespace libdatadog

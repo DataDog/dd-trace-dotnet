@@ -57,8 +57,6 @@ std::unique_ptr<libdatadog::AgentProxy> ExporterBuilder::CreateAgentProxy()
 {
     auto endpoint = CreateEndpoint();
 
-    auto& foo = *_tags._impl;
-
     auto result = ddog_prof_Exporter_new(
         FfiHelper::StringToCharSlice(_libraryName),
         FfiHelper::StringToCharSlice(_libraryVersion),

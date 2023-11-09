@@ -101,7 +101,7 @@ TEST(ExporterTest, CheckFileCreatedWithFileExporter)
     auto profile = CreateEmptyProfile();
 
     auto tags = Tags();
-    ASSERT_NO_FATAL_FAILURE(exporter->Send(&profile, std::move(tags), {{}}, std::string())) << "sending the profile crashed";
+    ASSERT_NO_FATAL_FAILURE(exporter->Send(&profile, std::move(tags), {}, std::string())) << "sending the profile crashed";
 
     ASSERT_FALSE(fs::is_empty(outputFolder));
 }

@@ -89,12 +89,9 @@ private:
     std::string BuildAgentEndpoint(IConfiguration* configuration);
     ProfileInfoScope GetOrCreateInfo(std::string_view runtimeId);
 
-    void SaveJsonToDisk(const std::string prefix, const std::string& content) const;
-
     static void AddUpscalingRules(libdatadog::Profile* profile, std::vector<UpscalingInfo> const& upscalingInfos);
     static fs::path CreatePprofOutputPath(IConfiguration* configuration);
 
-    std::string GenerateFilePath(const std::string& applicationName, int idx, const std::string& extension) const;
     std::string CreateMetricsFileContent() const;
     std::vector<UpscalingInfo> GetUpscalingInfos();
     std::list<std::shared_ptr<Sample>> GetProcessSamples();
@@ -108,7 +105,6 @@ private:
     static std::string const LibraryVersion;
     static std::string const LanguageFamily;
     static std::string const MetricsFilename;
-    static std::string const ProfileExtension;
     static std::string const AllocationsExtension;
 
     // TODO: this should be passed in the constructor to avoid overwriting
@@ -118,7 +114,7 @@ private:
     static std::string const ProfilePeriodUnit;
 
     std::vector<SampleValueType> _sampleTypeDefinitions;
-    fs::path _pprofOutputPath;
+    fs::path _outputPath;
 
     // for each application, keep track of a profile, a samples count since the last export and an export count
     std::unordered_map<std::string_view, ProfileInfo> _perAppInfo;

@@ -7,6 +7,7 @@
 #include "Exporter.h"
 #include "ExporterBuilder.h"
 #include "FfiHelper.h"
+#include "FileHelper.h"
 #include "IAllocationsRecorder.h"
 #include "IApplicationStore.h"
 #include "IEnabledProfilers.h"
@@ -64,7 +65,6 @@ std::string const ProfileExporter::ProfilePeriodUnit = "Nanoseconds";
 
 std::string const ProfileExporter::MetricsFilename = "metrics.json";
 
-std::string const ProfileExporter::ProfileExtension = ".pprof";
 std::string const ProfileExporter::AllocationsExtension = ".balloc";
 
 ProfileExporter::ProfileExporter(
@@ -83,7 +83,7 @@ ProfileExporter::ProfileExporter(
     _allocationsRecorder{allocationsRecorder}
 {
     _exporter = CreateExporter(configuration, CreateTags(configuration, runtimeInfo, enabledProfilers));
-    _pprofOutputPath = CreatePprofOutputPath(configuration);
+    _outputPath = CreatePprofOutputPath(configuration);
     _metricsFileFolder = configuration->GetProfilesOutputDirectory();
 }
 
@@ -443,14 +443,14 @@ bool ProfileExporter::Export()
 {
     bool exported = false;
 
-    int32_t idx = 0;
-
     if (_allocationsRecorder != nullptr)
     {
-        const auto& applicationInfo = _applicationStore->GetApplicationInfo(std::string(""));
-        auto filePath = GenerateFilePath(applicationInfo.ServiceName, idx, AllocationsExtension);
+        auto const& applicationInfo = _applicationStore->GetApplicationInfo("");
+        auto filename = FileHelper::GenerateFilename("", AllocationsExtension, applicationInfo.ServiceName);
+        auto filePath = fs::path(_outputPath) / filename;
+
         static bool firstFailure = true;
-        if (!_allocationsRecorder->Serialize(filePath))
+        if (!_allocationsRecorder->Serialize(filePath.string()))
         {
             if (firstFailure)
             {
@@ -547,7 +547,14 @@ bool ProfileExporter::Export()
             additionalTags.Add("git.commit.sha", applicationInfo.CommitSha);
         }
 
-        auto filesToSend = std::vector<std::pair<std::string, std::string>>{{MetricsFilename, CreateMetricsFileContent()}};
+        auto filesToSend = std::vector<std::pair<std::string, std::string>>{};
+
+        auto metricsFileContent = CreateMetricsFileContent();
+        if (!metricsFileContent.empty())
+        {
+            filesToSend.emplace_back(MetricsFilename, std::move(metricsFileContent));
+        }
+
         std::string json = GetMetadata();
 
         auto error_code = _exporter->Send(profile.get(), std::move(additionalTags), std::move(filesToSend), std::move(json));
@@ -559,38 +566,6 @@ bool ProfileExporter::Export()
     }
 
     return exported;
-}
-
-void ProfileExporter::SaveJsonToDisk(const std::string prefix, const std::string& content) const
-{
-    std::stringstream filename;
-    filename << prefix << "-" << std::to_string(OpSysTools::GetProcId()) << ".json";
-    auto filepath = fs::path(_metricsFileFolder) / filename.str();
-    std::ofstream file{filepath.string(), std::ios::out | std::ios::binary};
-
-    file.write(content.c_str(), content.size());
-    file.close();
-}
-
-std::string ProfileExporter::GenerateFilePath(const std::string& applicationName, int32_t idx, const std::string& extension) const
-{
-    auto time = std::time(nullptr);
-    struct tm buf = {};
-
-#ifdef _WINDOWS
-    localtime_s(&buf, &time);
-#else
-    localtime_r(&time, &buf);
-#endif
-
-    std::stringstream oss;
-    oss << applicationName + "_" << ProcessId << "_" << std::put_time(&buf, "%F_%H-%M-%S") << "_" << idx
-        << extension;
-    auto pprofFilename = oss.str();
-
-    auto pprofFilePath = fs::path(_pprofOutputPath) / pprofFilename;
-
-    return pprofFilePath.string();
 }
 
 std::string ProfileExporter::CreateMetricsFileContent() const

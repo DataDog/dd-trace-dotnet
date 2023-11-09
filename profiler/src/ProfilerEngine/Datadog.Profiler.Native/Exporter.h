@@ -10,7 +10,6 @@
 #include "Success.h"
 #include "Tags.h"
 
-
 namespace libdatadog {
 
 class AgentProxy;
@@ -33,6 +32,5 @@ private:
 
 public:
     Success Send(Profile* r, Tags tags, std::vector<std::pair<std::string, std::string>> files, std::string metadata);
-
 };
 } // namespace libdatadog

@@ -38,7 +38,7 @@ libdatadog::Success Exporter::Send(Profile* profile, Tags tags, std::vector<std:
 
     if (_fileSaver != nullptr)
     {
-        auto success = _fileSaver->WriteToDisk(ep, profile->GetApplicationName());
+        auto success = _fileSaver->WriteToDisk(ep, profile->GetApplicationName(), files, metadata);
         if (!success)
         {
             Log::Error(success.message());
