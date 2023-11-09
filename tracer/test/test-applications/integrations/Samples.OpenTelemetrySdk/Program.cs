@@ -188,11 +188,13 @@ public static class Program
         }
     }
 
+    /// <summary>
+    /// Note: These test cases were copy/pasted from parametric tests (with some find/replace to make it work here)
+    /// </summary>
     private static IEnumerable<object[]> OperationNameData =>
         new List<object[]>
         {
-                // expected operation name, SpanKind, OperationName-related attributes
-                // Copied from Unit Tests - OpenTelemetryOperationNameMapperTests.cs
+                // expected_operation_name, span_kind, tags_related_to_operation_name
                 new object[] { "http.server.request", SpanKind.Server, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
                 new object[] { "http.client.request", SpanKind.Client, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
                 new object[] { "redis.query", SpanKind.Client, new Dictionary<string, object>() { { "db.system", "Redis" } } },

@@ -14,9 +14,11 @@ namespace Datadog.Trace.Tests
     [Collection(nameof(OpenTelemetryOperationNameMapperTests))]
     public class OpenTelemetryOperationNameMapperTests
     {
+        // Note: These test cases were copy/pasted from parametric tests (with some find/replace to make it work here)
         public static IEnumerable<object[]> NameData =>
             new List<object[]>
             {
+                // expected_operation_name, span_kind, tags_related_to_operation_name
                 new object[] { "http.server.request", SpanKinds.Server, new Dictionary<string, string>() { { "http.request.method", "GET" } } },
                 new object[] { "http.client.request", SpanKinds.Client, new Dictionary<string, string>() { { "http.request.method", "GET" } } },
                 new object[] { "redis.query", SpanKinds.Client, new Dictionary<string, string>() { { "db.system", "Redis" } } },

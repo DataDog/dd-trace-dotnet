@@ -222,9 +222,13 @@ public static class Program
         ctor4.DisplayName = "Ctor4DisplayName";
     }
 
+    /// <summary>
+    /// Note: These test cases were copy/pasted from parametric tests (with some find/replace to make it work here)
+    /// </summary>
     private static IEnumerable<object[]> OperationNameData =>
     new List<object[]>
     {
+                // expected_operation_name, span_kind, tags_related_to_operation_name
                 new object[] { "http.server.request", ActivityKind.Server, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
                 new object[] { "http.client.request", ActivityKind.Client, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
                 new object[] { "redis.query", ActivityKind.Client, new Dictionary<string, object>() { { "db.system", "Redis" } } },
@@ -246,7 +250,7 @@ public static class Program
                 new object[] { "internal", ActivityKind.Internal, new Dictionary<string, object>() },
                 new object[] { "consumer", ActivityKind.Consumer, new Dictionary<string, object>() },
                 new object[] { "producer", ActivityKind.Producer, new Dictionary<string, object>() },
-        // new object[] { "otel_unknown", null, new Dictionary<string, object>() }, // always should have a span kind for Activity5+
+                // new object[] { "otel_unknown", null, new Dictionary<string, object>() }, // always should have a span kind for Activity5+
     };
 
     private static void RunActivityOperationName()
