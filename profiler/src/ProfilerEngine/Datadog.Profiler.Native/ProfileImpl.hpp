@@ -14,31 +14,35 @@ extern "C"
 
 namespace libdatadog {
 
-using profile_type = ddog_prof_Profile;
-
-struct ProfileDeleter;
-using profile_unique_ptr = std::unique_ptr<profile_type, ProfileDeleter>;
-
-struct ProfileDeleter
-{
-    void operator()(ddog_prof_Profile* o)
-    {
-        ddog_prof_Profile_drop(o);
-    }
-};
-
 struct ProfileImpl
 {
-    using profile_raw_ptr = profile_type*;
-    operator profile_raw_ptr()
+    ProfileImpl(ddog_prof_Profile prof) :
+        _inner(prof)
     {
-        return _inner.get();
+        _locations.resize(_locationsSize);
     }
 
-    std::vector<ddog_prof_Line> _lines;
-    std::vector<ddog_prof_Location> _locations;
-    std::size_t _locationsAndLinesSize = 512;
+    ~ProfileImpl()
+    {
+        ddog_prof_Profile_drop(&_inner);
+    }
 
-    profile_unique_ptr _inner;
+    operator ddog_prof_Profile*()
+    {
+        return &_inner;
+    }
+
+    operator std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile*>()
+    {
+        return {_locations, _locationsSize, &_inner};
+    }
+
+private:
+    std::vector<ddog_prof_Location> _locations;
+    std::size_t _locationsSize = 512;
+
+    ddog_prof_Profile _inner;
 };
+
+using profile_unique_ptr = std::unique_ptr<ProfileImpl>;
 } // namespace libdatadog

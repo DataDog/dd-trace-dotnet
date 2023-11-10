@@ -116,18 +116,22 @@ private:
 
         ddog_prof_Exporter_File profile{FfiHelper::StringToCharSlice(profile_filename), ddog_Vec_U8_as_slice(&profileBuffer)};
 
-        std::vector<ddog_prof_Exporter_File> files_to_send;
-        files_to_send.reserve(files.size() + 1);
+        std::vector<ddog_prof_Exporter_File> uncompressed_files;
+        uncompressed_files.reserve(1);
         // profile
-        files_to_send.push_back(profile);
+        uncompressed_files.push_back(profile);
+
+        std::vector<ddog_prof_Exporter_File> to_compress_files;
+        to_compress_files.reserve(files.size());
 
         for (auto& [filename, content] : files)
         {
             ddog_Slice_U8 fileSlice{reinterpret_cast<const uint8_t*>(content.c_str()), content.size()};
-            files_to_send.push_back({FfiHelper::StringToCharSlice(filename), fileSlice});
+            to_compress_files.push_back({FfiHelper::StringToCharSlice(filename), fileSlice});
         }
 
-        ddog_prof_Exporter_Slice_File files_view = {files_to_send.data(), files_to_send.size()};
+        ddog_prof_Exporter_Slice_File files_uncompressed_files_view = {uncompressed_files.data(), uncompressed_files.size()};
+        ddog_prof_Exporter_Slice_File files_to_compress_view = {to_compress_files.data(), to_compress_files.size()};
 
         ddog_CharSlice* pMetadata = nullptr;
         ddog_CharSlice ffi_metadata{};
@@ -139,7 +143,7 @@ private:
         }
 
         auto endpoints_stats = encodedProfile->endpoints_stats;
-        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, files_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
+        auto requestResult = ddog_prof_Exporter_Request_build(_exporter.get(), start, end, files_uncompressed_files_view, files_to_compress_view, static_cast<ddog_Vec_Tag const*>(*tags._impl), endpoints_stats, pMetadata, 10000);
 
         if (requestResult.tag == DDOG_PROF_EXPORTER_REQUEST_BUILD_RESULT_ERR)
         {

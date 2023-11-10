@@ -4,6 +4,7 @@
 #include "Profile.h"
 
 #include "FfiHelper.h"
+#include "Log.h"
 #include "Sample.h"
 #include "ProfileImpl.hpp"
 
@@ -12,12 +13,9 @@ namespace libdatadog {
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
 Profile::Profile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
-    _impl{std::make_unique<ProfileImpl>()},
     _applicationName{std::move(applicationName)}
 {
-    _impl->_lines.resize(_impl->_locationsAndLinesSize);
-    _impl->_locations.resize(_impl->_locationsAndLinesSize);
-    _impl->_inner = CreateProfile(valueTypes, periodType, periodUnit);
+    _impl = CreateProfile(valueTypes, periodType, periodUnit);
 }
 
 Profile::~Profile() = default;
@@ -27,32 +25,30 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
-    auto& [lines, locations, locationsAndLinesSize, profile] = *_impl;
+    // cannot write auto& [locations, locationsSize, profile] = *_impl;
+    // the compiler is unable to deduce reference type and binds private member
+    // to variable.
+    // This is the only we can do.
+    std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile *> xx = *_impl;
+    auto& [locations, locationsSize, profile] = xx;
 
-    if (nbFrames > locationsAndLinesSize)
+    if (nbFrames > locationsSize)
     {
-        locationsAndLinesSize = nbFrames;
-        locations.resize(locationsAndLinesSize);
-        lines.resize(locationsAndLinesSize);
+        locationsSize = nbFrames;
+        locations.resize(locationsSize);
     }
 
     std::size_t idx = 0UL;
     for (auto const& frame : callstack)
     {
-        auto& line = lines[idx];
         auto& location = locations[idx];
 
-        line = {};
-        line.function.filename = FfiHelper::StringToCharSlice(frame.Filename);
-        line.function.start_line = frame.StartLine;
-        line.function.name = FfiHelper::StringToCharSlice(frame.Frame);
-
-        // add filename mapping
         location.mapping = {};
         location.mapping.filename = FfiHelper::StringToCharSlice(frame.ModuleName);
+        location.function.filename = FfiHelper::StringToCharSlice(frame.Filename);
+        location.function.start_line = frame.StartLine;
+        location.function.name = FfiHelper::StringToCharSlice(frame.Frame);
         location.address = 0; // TODO check if we can get that information in the provider
-        location.lines = {&line, 1};
-        location.is_folded = false;
 
         ++idx;
     }
@@ -82,8 +78,8 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
-    auto add_res = ddog_prof_Profile_add(profile.get(), ffiSample);
-    if (add_res.tag == DDOG_PROF_PROFILE_ADD_RESULT_ERR)
+    auto add_res = ddog_prof_Profile_add(profile, ffiSample, 0);
+    if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
         return make_error(add_res.err);
     }
@@ -94,14 +90,32 @@ void Profile::SetEndpoint(int64_t traceId, std::string const& endpoint)
 {
     auto endpointName = FfiHelper::StringToCharSlice(endpoint);
 
-    ddog_prof_Profile_set_endpoint(_impl->_inner.get(), traceId, endpointName);
+    auto res = ddog_prof_Profile_set_endpoint(*_impl, traceId, endpointName);
+    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    {
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            Log::Info("Unable to associate endpoint '", endpoint, "' to traced id '", traceId, "'");
+        }
+    }
 }
 
 void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 {
     auto endpointName = FfiHelper::StringToCharSlice(endpoint);
 
-    ddog_prof_Profile_add_endpoint_count(_impl->_inner.get(), endpointName, 1);
+    auto res = ddog_prof_Profile_add_endpoint_count(*_impl, endpointName, 1);
+    if (res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
+    {
+        static bool alreadyLogged = false;
+        if (!alreadyLogged)
+        {
+            alreadyLogged = true;
+            Log::Info("Unable to add count for endpoint '", endpoint, "'");
+        }
+    }
 }
 
 libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
@@ -112,7 +126,7 @@ libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintp
     ddog_CharSlice groupName_slice = FfiHelper::StringToCharSlice(groupName);
 
     auto upscalingRuleAdd = ddog_prof_Profile_add_upscaling_rule_proportional(*_impl, offsets_slice, labelName_slice, groupName_slice, sampled, real);
-    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_UPSCALING_RULE_ADD_RESULT_ERR)
+    if (upscalingRuleAdd.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
         // not great, we create 2 Success
         // - the first one is to wrap the libdatadog error and ensure lifecycle is correctly handled
@@ -146,7 +160,12 @@ libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const&
     period.type_ = period_value_type;
     period.value = 1;
 
-    return profile_unique_ptr(ddog_prof_Profile_new(sample_types, &period, nullptr));
+    auto res = ddog_prof_Profile_new(sample_types, &period, nullptr);
+    if (res.tag == DDOG_PROF_PROFILE_NEW_RESULT_ERR)
+    {
+        return nullptr;
+    }
+    return std::make_unique<ProfileImpl>(res.ok);
 }
 
 std::string const& Profile::GetApplicationName() const
