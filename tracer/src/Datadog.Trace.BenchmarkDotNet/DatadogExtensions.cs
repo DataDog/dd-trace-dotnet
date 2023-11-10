@@ -33,7 +33,7 @@ public static class DatadogExtensions
     {
         var cfg = config.AddLogger(DatadogSessionLogger.Default);
 
-        enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled) ?? string.Empty).ToBoolean();
+        enableProfiler ??= (EnvironmentHelpers.GetEnvironmentVariable(ConfigurationKeys.ProfilingEnabled) ?? string.Empty).ToBoolean() ?? false;
         switch (enableProfiler)
         {
             case true:
