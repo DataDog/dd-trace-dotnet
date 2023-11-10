@@ -31,7 +31,7 @@ internal class TelemetryController : ITelemetryController
     private readonly IntegrationTelemetryCollector _integrations = new();
     private readonly ProductsTelemetryCollector _products = new();
     private readonly IMetricsTelemetryCollector _metrics;
-    private readonly RedactedErrorLogCollector _redactedErrorLogs;
+    private readonly RedactedErrorLogCollector? _redactedErrorLogs;
     private readonly TaskCompletionSource<bool> _processExit = new();
     private readonly Task _flushTask;
     private readonly Scheduler _scheduler;
@@ -44,7 +44,7 @@ internal class TelemetryController : ITelemetryController
         IConfigurationTelemetry configuration,
         IDependencyTelemetryCollector dependencies,
         IMetricsTelemetryCollector metrics,
-        RedactedErrorLogCollector redactedErrorLogs,
+        RedactedErrorLogCollector? redactedErrorLogs,
         TelemetryTransportManager transportManager,
         TimeSpan flushInterval)
     {
@@ -52,8 +52,9 @@ internal class TelemetryController : ITelemetryController
         _dependencies = dependencies ?? throw new ArgumentNullException(nameof(dependencies));
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
-        _redactedErrorLogs = redactedErrorLogs ?? throw new ArgumentNullException(nameof(redactedErrorLogs));
-        _scheduler = new(flushInterval, _redactedErrorLogs.WaitForLogsAsync, _processExit);
+        _redactedErrorLogs = redactedErrorLogs;
+        var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
+        _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
 
         try
         {
@@ -235,7 +236,7 @@ internal class TelemetryController : ITelemetryController
                 return;
             }
 
-            if (includeLogs && _redactedErrorLogs.GetLogs() is { } batches)
+            if (includeLogs && _redactedErrorLogs?.GetLogs() is { } batches)
             {
                 foreach (var batch in batches)
                 {

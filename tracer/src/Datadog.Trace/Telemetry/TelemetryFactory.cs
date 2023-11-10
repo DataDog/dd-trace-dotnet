@@ -17,6 +17,7 @@ namespace Datadog.Trace.Telemetry
     internal class TelemetryFactory
     {
         // need to start collecting these immediately
+        private static readonly Lazy<RedactedErrorLogCollector> _logs = new();
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
         private static IConfigurationTelemetry _configuration = new ConfigurationTelemetry();
         private readonly object _sync = new();
@@ -45,7 +46,7 @@ namespace Datadog.Trace.Telemetry
         /// <summary>
         /// Gets the static log collector used to record redacted error logs
         /// </summary>
-        internal static RedactedErrorLogCollector RedactedErrorLogs { get; } = new();
+        internal static RedactedErrorLogCollector RedactedErrorLogs => _logs.Value;
 
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
@@ -168,7 +169,7 @@ namespace Datadog.Trace.Telemetry
                         Config,
                         _dependencies!,
                         Metrics,
-                        RedactedErrorLogs,
+                        _logs.IsValueCreated ? _logs.Value : null, // if we haven't created it by now, we don't need it
                         transportManager,
                         settings.HeartbeatInterval);
                 }
