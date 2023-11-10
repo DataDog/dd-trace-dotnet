@@ -4,16 +4,18 @@
 #include "Profile.h"
 
 #include "FfiHelper.h"
+#include "IConfiguration.h"
 #include "Log.h"
-#include "Sample.h"
 #include "ProfileImpl.hpp"
+#include "Sample.h"
 
 namespace libdatadog {
 
 libdatadog::profile_unique_ptr CreateProfile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit);
 
-Profile::Profile(std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
-    _applicationName{std::move(applicationName)}
+Profile::Profile(IConfiguration* configuration, std::vector<SampleValueType> const& valueTypes, std::string const& periodType, std::string const& periodUnit, std::string applicationName) :
+    _applicationName{std::move(applicationName)},
+    _addTimestampOnSample{configuration->IsTimestampsAsLabelEnabled()}
 {
     _impl = CreateProfile(valueTypes, periodType, periodUnit);
 }
@@ -29,8 +31,8 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     // the compiler is unable to deduce reference type and binds private member
     // to variable.
     // This is the only we can do.
-    std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile *> xx = *_impl;
-    auto& [locations, locationsSize, profile] = xx;
+    std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile*> internalInfos = *_impl;
+    auto& [locations, locationsSize, profile] = internalInfos;
 
     if (nbFrames > locationsSize)
     {
@@ -78,6 +80,15 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     auto const& values = sample->GetValues();
     ffiSample.values = {values.data(), values.size()};
 
+    // add timestamp
+    std::int64_t timestamp = 0;
+    if (_addTimestampOnSample)
+    {
+        // All timestamps give the time when "something" ends and the associated duration
+        // happened in the past
+        timestamp = sample->GetTimeStamp();
+    }
+
     auto add_res = ddog_prof_Profile_add(profile, ffiSample, 0);
     if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
@@ -119,7 +130,7 @@ void Profile::AddEndpointCount(std::string const& endpoint, int64_t count)
 }
 
 libdatadog::Success Profile::AddUpscalingRuleProportional(std::vector<std::uintptr_t> const& offsets, std::string_view labelName, std::string_view groupName,
-                                                             uint64_t sampled, uint64_t real)
+                                                          uint64_t sampled, uint64_t real)
 {
     ddog_prof_Slice_Usize offsets_slice = {offsets.data(), offsets.size()};
     ddog_CharSlice labelName_slice = FfiHelper::StringToCharSlice(labelName);
