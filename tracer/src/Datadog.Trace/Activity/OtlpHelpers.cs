@@ -276,7 +276,7 @@ namespace Datadog.Trace.Activity
             switch (key)
             {
                 case "operation.name":
-                    span.OperationName = value;
+                    span.OperationName = value?.ToLowerInvariant();
                     break;
                 case "service.name":
                     span.ServiceName = value;

@@ -345,7 +345,7 @@
   {
     TraceId: Id_21,
     SpanId: Id_22,
-    Name: OperationNameOverride,
+    Name: operationnameoverride,
     Resource: ResourceNameOverride,
     Service: ServiceNameOverride,
     Type: SpanTypeOverride,
@@ -405,7 +405,7 @@
   {
     TraceId: Id_23,
     SpanId: Id_25,
-    Name: Saying hello!,
+    Name: saying hello!,
     Resource: AddTagsActivity,
     Service: Samples.NetActivitySdk,
     Type: custom,

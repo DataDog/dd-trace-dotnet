@@ -605,7 +605,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_24,
-    Name: OperationNameOverride,
+    Name: operationnameoverride,
     Resource: ResourceNameOverride,
     Service: ServiceNameOverride,
     Type: SpanTypeOverride,
@@ -637,7 +637,7 @@
   {
     TraceId: Id_25,
     SpanId: Id_26,
-    Name: Saying hello!,
+    Name: saying hello!,
     Resource: SayHello,
     Service: MyServiceName,
     Type: custom,

@@ -19,6 +19,7 @@ namespace Datadog.Trace.Tests
         public void OperationName_Tag_Should_Override_OperationName()
         {
             var expected = "overridden.name";
+            var inputValue = expected.ToUpperInvariant(); // we are required to lowercase OperationName
             var activityMock = new Mock<IActivity5>();
             activityMock.Setup(x => x.Kind).Returns(ActivityKind.Server);
             var tagObjects = new Dictionary<string, object>
