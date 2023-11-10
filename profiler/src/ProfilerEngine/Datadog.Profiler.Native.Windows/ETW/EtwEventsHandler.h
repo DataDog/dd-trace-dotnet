@@ -9,6 +9,7 @@
 #include <windows.h>
 
 #include "INamedPipeHandler.h"
+#include "Protocol.h"
 
 
 class EtwEventsHandler : public INamedPipeHandler
@@ -27,6 +28,7 @@ public:
 
 private:
     bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize);
+    bool GetClrEvent(const ClrEventsMessage* pMessage, std::string& name, uint16_t& id, uint64_t& keyword, uint8_t& level);
 
 private:
     std::atomic<bool> _stopRequested = false;

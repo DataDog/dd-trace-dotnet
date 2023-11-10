@@ -8,6 +8,7 @@
 #include <memory>
 #include <string>
 #include <Windows.h>
+#include "evntcons.h"
 
 
 enum Commands : uint8_t
@@ -55,14 +56,42 @@ struct IpcHeader
 };  // size of header = 17 bytes
 
 
+struct ClrEventsMessage : public IpcHeader
+{
+    // the IpcHeader comes first
+
+    // copy of the original ETW header so its Size field should be ignored
+    EVENT_HEADER EtwHeader; // 80 bytes
+    uint16_t EtwUserDataLength; //  2 bytes
+
+    // the size of this payload is given by EtwUserDataLength
+    uint8_t EtwPayload[1];
+};
+
 // Messages for commands
 //
 //
-#pragma pack(1)
 struct RegistrationProcessMessage : public IpcHeader
 {
     uint64_t Pid;
 };
+
+// predefined headers for responses
+//
+//
+const IpcHeader SuccessResponse =
+    {
+        {DD_Ipc_Magic_V1},
+        (uint16_t)sizeof(IpcHeader),
+        (uint8_t)ResponseId::OK};
+
+const IpcHeader ErrorResponse =
+    {
+        {DD_Ipc_Magic_V1},
+        (uint16_t)sizeof(IpcHeader),
+        (uint8_t)ResponseId::Error};
+#pragma pack()
+
 
 inline void SetupRegistrationCommand(RegistrationProcessMessage& message, uint64_t pid)
 {
@@ -83,13 +112,6 @@ inline void SetupUnregisterCommand(RegistrationProcessMessage& message, uint64_t
     message.CommandId = Commands::Unregister;
 }
 
-#pragma pack(1)
-struct ClrEventsMessage : public IpcHeader
-{
-    // the size of this payload is given by (message.size - sizeof(IpcHeader))
-    uint8_t payload[1];
-};
-
 // the given message will probably be dynamically allocated
 // Also, the given size is the size of the payload only
 inline void SetupSendEventsCommand(ClrEventsMessage* pMessage, uint16_t size)
@@ -98,24 +120,6 @@ inline void SetupSendEventsCommand(ClrEventsMessage* pMessage, uint16_t size)
     pMessage->Size = size + sizeof(IpcHeader);
     pMessage->CommandId = Commands::ClrEvents;
 }
-
-
-// predefined headers for responses
-//
-//
-const IpcHeader SuccessResponse =
-{
-    { DD_Ipc_Magic_V1 },
-    (uint16_t)sizeof(IpcHeader),
-    (uint8_t)ResponseId::OK
-};
-
-const IpcHeader ErrorResponse =
-{
-    { DD_Ipc_Magic_V1 },
-    (uint16_t)sizeof(IpcHeader),
-    (uint8_t)ResponseId::Error
-};
 
 
 // Helpers
