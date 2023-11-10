@@ -46,34 +46,43 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
                     }
                 }
 
-                sb.Append(
-                    $$"""
-                    #if NETCOREAPP
-                                    new HashSet<string>({{hashSet.Count}}, StringComparer.Ordinal)
-                    #else
-                                    new HashSet<string>(StringComparer.Ordinal)
-                    #endif
-                                    { 
-                    """);
+                var doneFirst = false;
 
                 foreach (var assembly in hashSet.OrderBy(x => x))
                 {
-                    sb.Append('"')
-                      .Append(assembly)
-                      .Append("\", ");
+                    if (doneFirst)
+                    {
+                        sb
+                           .Append(
+                                """
+                                
+                                            || 
+                                """);
+                    }
+
+                    sb
+                       .Append("assemblyName.StartsWith(\"")
+                       .Append(assembly)
+                      .Append(",\", StringComparison.Ordinal)");
+                    doneFirst = true;
                 }
 
-                sb.AppendLine("};");
+                if (!doneFirst)
+                {
+                    sb.Append("false");
+                }
+
                 return;
 
                 // NOTE: Keep this in sync with ExceptionRedactor.IsKnownAssemblyPrefix()
                 static bool IsKnownAssemblyPrefix(string assemblyName)
                 {
                     return assemblyName.StartsWith("Datadog.", StringComparison.Ordinal)
-                        || assemblyName.StartsWith("mscorlib,", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("mscorlib,", StringComparison.Ordinal) // note that this uses ',' not '.' as it's the full assembly name
                         || assemblyName.StartsWith("Microsoft.", StringComparison.Ordinal)
                         || assemblyName.StartsWith("System.", StringComparison.Ordinal)
-                        || assemblyName.StartsWith("Azure.", StringComparison.Ordinal);
+                        || assemblyName.StartsWith("Azure.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("AWSSDK.", StringComparison.Ordinal);
                 }
             }
 
@@ -90,23 +99,31 @@ namespace Datadog.Trace.ClrProfiler
     internal static partial class InstrumentationDefinitions
     {{
         internal static NativeCallTargetDefinition2[] {InstrumentationsCollectionName};
-        internal static HashSet<string> InstrumentedAssemblies;
 
         static InstrumentationDefinitions()
-        {{
-            InstrumentedAssemblies =
-");
-
-            BuildInstrumentedAssemblies(sb, definitions);
+        {{");
             var orderedDefinitions = definitions
                                     .OrderBy(static x => x.IntegrationName)
                                     .ThenBy(static x => x.AssemblyName)
                                     .ThenBy(static x => x.TargetTypeName)
                                     .ThenBy(static x => x.TargetMethodName)
                                     .ToList();
+
             BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
             sb.Append(@$"
         }}
+
+        /// <summary>
+        /// Checks if the provided <see cref=""System.Reflection.Assembly.FullName""/> assembly
+        /// is one we instrument. Assumes you have already checked for ""well-known"" prefixes
+        /// like ""System"" and ""Microsoft"".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => ");
+
+            BuildInstrumentedAssemblies(sb, definitions);
+
+            sb.Append($@";
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {{
