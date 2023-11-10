@@ -44,6 +44,6 @@ public static class DatadogExtensions
                 break;
         }
 
-        return cfg.AddDiagnoser(new DatadogDiagnoser(enableProfiler!.Value));
+        return cfg.AddDiagnoser(new DatadogDiagnoser(enableProfiler.Value));
     }
 }
