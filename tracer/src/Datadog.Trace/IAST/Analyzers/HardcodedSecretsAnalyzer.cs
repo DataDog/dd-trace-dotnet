@@ -21,11 +21,11 @@ internal class HardcodedSecretsAnalyzer : IDisposable
 {
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
-    private static readonly ManualResetEventSlim WaitEvent = new(false);
     private static HardcodedSecretsAnalyzer? _instance = null;
-    private static bool _started = false;
 
+    private readonly ManualResetEventSlim _waitEvent = new(false);
     private readonly TimeSpan _regexTimeout;
+    private bool _started = false;
     private List<SecretRegex>? _secretRules = null;
 
     // Internal for testing
@@ -94,7 +94,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
                     }
                 }
 
-                WaitEvent.Wait(2_000);
+                _waitEvent.Wait(2_000);
             }
         }
         catch (Exception err)
@@ -106,13 +106,13 @@ internal class HardcodedSecretsAnalyzer : IDisposable
         Log.Debug("HardcodedSecretsAnalyzer polling thread -> Exit");
     }
 
-    internal static void Initialize()
+    internal static void Initialize(TimeSpan regexTimeout)
     {
         lock (Log)
         {
             if (_instance == null)
             {
-                _instance = new HardcodedSecretsAnalyzer(TimeSpan.FromMilliseconds(Iast.Instance.Settings.RegexTimeout));
+                _instance = new HardcodedSecretsAnalyzer(regexTimeout);
                 LifetimeManager.Instance.AddShutdownTask(_instance.Dispose);
             }
         }
@@ -218,7 +218,7 @@ internal class HardcodedSecretsAnalyzer : IDisposable
         try
         {
             _started = false;
-            WaitEvent.Set();
+            _waitEvent.Set();
         }
         catch { }
     }
