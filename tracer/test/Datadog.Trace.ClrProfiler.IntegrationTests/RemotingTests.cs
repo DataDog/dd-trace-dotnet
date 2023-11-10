@@ -28,13 +28,9 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
         public override Result ValidateIntegrationSpan(MockSpan span, string metadataSchemaVersion) => span.Name switch
         {
-            "http.request" => span.IsWebRequest(metadataSchemaVersion),
-            "remoting.request" => span.Tags["span.kind"] switch
-            {
-                SpanKinds.Client => span.IsRemotingClient(metadataSchemaVersion),
-                SpanKinds.Server => span.IsRemotingServer(metadataSchemaVersion),
-                _ => throw new ArgumentException($"span.Tags[\"span.kind\"] is not a supported value for the Remoting integration: {span.Tags["span.kind"]}", nameof(span)),
-            },
+            "http.request" or "http.client.request" => span.IsWebRequest(metadataSchemaVersion),
+            "dotnet_remoting.client.request" => span.IsRemotingClient(metadataSchemaVersion),
+            "dotnet_remoting.server.request" => span.IsRemotingServer(metadataSchemaVersion),
             _ => Result.DefaultSuccess,
         };
 

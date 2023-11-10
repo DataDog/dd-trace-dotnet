@@ -19,7 +19,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         internal const string Major4 = "4";
 
-        private const string OperationName = "remoting.message";
+        private const string ClientOperationName = "dotnet_remoting.client.request";
+        private const string ServerOperationName = "dotnet_remoting.server.request";
         private const string ServiceName = "remoting";
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
@@ -39,7 +40,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             try
             {
                 var tags = new RemotingServerTags();
-                scope = tracer.StartActiveInternal(OperationName, parent: spanContext, tags: tags);
+                scope = tracer.StartActiveInternal(ServerOperationName, parent: spanContext, tags: tags);
                 var span = scope.Span;
 
                 var methodMessage = msg as IMethodMessage;
@@ -76,7 +77,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             {
                 var clientSchema = tracer.CurrentTraceSettings.Schema.Client;
                 var tags = clientSchema.CreateRemotingClientTags();
-                scope = tracer.StartActiveInternal(OperationName, serviceName: serviceName, tags: tags);
+                scope = tracer.StartActiveInternal(ClientOperationName, serviceName: serviceName, tags: tags);
                 var span = scope.Span;
 
                 var methodMessage = msg as IMethodMessage;

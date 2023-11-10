@@ -528,7 +528,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
              .Properties(s => s
-                .Matches(Name, "remoting.message"))
+                .Matches(Name, "dotnet_remoting.client.request"))
              .Tags(s => s
                .IsPresent("rpc.method")
                .Matches("rpc.system", "dotnet_remoting")
@@ -537,7 +537,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
              .Properties(s => s
-                .Matches(Name, "remoting.message"))
+                .Matches(Name, "dotnet_remoting.server.request"))
              .Tags(s => s
                .IsPresent("rpc.method")
                .Matches("rpc.system", "dotnet_remoting")

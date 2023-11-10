@@ -2,7 +2,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_2,
-    Name: remoting.message,
+    Name: dotnet_remoting.client.request,
     Resource: SetString,
     Service: Samples.Remoting,
     Tags: {
@@ -15,8 +15,7 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.peer.service.source: out.host
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -29,7 +28,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_4,
-    Name: remoting.message,
+    Name: dotnet_remoting.client.request,
     Resource: SetString,
     Service: Samples.Remoting,
     Tags: {
@@ -42,8 +41,7 @@
       version: 1.0.0,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.p.dm: -0,
-      _dd.peer.service.source: out.host
+      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
@@ -56,7 +54,7 @@
   {
     TraceId: Id_1,
     SpanId: Id_5,
-    Name: remoting.message,
+    Name: dotnet_remoting.server.request,
     Resource: SetString,
     Service: Samples.Remoting,
     ParentId: Id_2,
@@ -83,7 +81,7 @@
   {
     TraceId: Id_3,
     SpanId: Id_6,
-    Name: remoting.message,
+    Name: dotnet_remoting.server.request,
     Resource: SetString,
     Service: Samples.Remoting,
     ParentId: Id_4,
