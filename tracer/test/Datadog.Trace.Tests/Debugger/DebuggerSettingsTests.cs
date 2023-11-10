@@ -93,10 +93,10 @@ namespace Datadog.Trace.Tests.Debugger
         public void InvalidMaxSymbolSizeToUpload_DefaultUsed(string value)
         {
             var settings = new DebuggerSettings(
-                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, value }, }),
+                new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, value }, }),
                 NullConfigurationTelemetry.Instance);
 
-            settings.SymbolBatchSizeInBytes.Should().Be(1);
+            settings.SymbolDatabaseBatchSizeInBytes.Should().Be(1);
         }
 
         [Theory]

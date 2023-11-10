@@ -50,8 +50,8 @@ namespace Datadog.Trace.Debugger
                              .AsInt32(DefaultUploadBatchSize, batchSize => batchSize > 0)
                              .Value;
 
-            SymbolBatchSizeInBytes = config
-                                         .WithKeys(ConfigurationKeys.Debugger.SymbolBatchSizeInBytes)
+            SymbolDatabaseBatchSizeInBytes = config
+                                         .WithKeys(ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes)
                                          .AsInt32(DefaultSymbolBatchSizeInBytes, batchSize => batchSize > 0)
                                          .Value;
 
@@ -92,7 +92,7 @@ namespace Datadog.Trace.Debugger
 
         public int UploadBatchSize { get; }
 
-        public int SymbolBatchSizeInBytes { get; }
+        public int SymbolDatabaseBatchSizeInBytes { get; }
 
         public bool SymbolDatabaseUploadEnabled { get; }
 

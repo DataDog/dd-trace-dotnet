@@ -49,7 +49,7 @@ namespace Datadog.Trace.Debugger.Symbols
             _api = api;
             _assemblySemaphore = new SemaphoreSlim(1);
             _discoveryServiceSemaphore = new SemaphoreSlim(0);
-            _thresholdInBytes = settings.SymbolBatchSizeInBytes;
+            _thresholdInBytes = settings.SymbolDatabaseBatchSizeInBytes;
             _cancellationToken = new CancellationTokenSource();
             _jsonSerializerSettings = new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore };
             _discoveryService.SubscribeToChanges(ConfigurationChanged);

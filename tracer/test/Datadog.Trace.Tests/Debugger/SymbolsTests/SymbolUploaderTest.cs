@@ -33,7 +33,7 @@ public class SymbolUploaderTest
         var discoveryService = new DiscoveryServiceMock();
         _api = new MockBatchUploadApi();
         var settings = new DebuggerSettings(
-            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true" }, { ConfigurationKeys.Debugger.SymbolBatchSizeInBytes, "10000" } }),
+            new NameValueConfigurationSource(new() { { ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true" }, { ConfigurationKeys.Debugger.SymbolDatabaseBatchSizeInBytes, "10000" } }),
             NullConfigurationTelemetry.Instance);
         EnvironmentHelpers.SetEnvironmentVariable(ConfigurationKeys.Debugger.SymbolDatabaseUploadEnabledInternal, "true");
         _upload = SymbolsUploader.Create(_api, discoveryService, settings, ImmutableTracerSettings.FromDefaultSources(), "test");
