@@ -35,7 +35,7 @@
 #include "GCThreadsCpuProvider.h"
 #include "IMetricsSender.h"
 #include "IMetricsSenderFactory.h"
-#include "LibddprofExporter.h"
+#include "ProfileExporter.h"
 #include "Log.h"
 #include "ManagedThreadList.h"
 #include "OpSysTools.h"
@@ -323,7 +323,7 @@ bool CorProfilerCallback::InitializeServices()
 
     // The different elements of the libddprof pipeline are created and linked together
     // i.e. the exporter is passed to the aggregator and each provider is added to the aggregator.
-    _pExporter = std::make_unique<LibddprofExporter>(
+    _pExporter = std::make_unique<ProfileExporter>(
         sampleTypeDefinitions,
         _pConfiguration.get(),
         _pApplicationStore,

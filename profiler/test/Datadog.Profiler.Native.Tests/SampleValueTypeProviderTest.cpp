@@ -20,12 +20,12 @@ testing::AssertionResult AreSampleValueTypeEqual(SampleValueType const& v1, Samp
 
 #define ASSERT_DEFINITIONS(expectedDefinitions, definitions)   \
     ASSERT_EQ(expectedDefinitions.size(), definitions.size()); \
-    for (auto i = 0; i < expectedDefinitions.size(); i++)      \
+    for (std::size_t i = 0; i < expectedDefinitions.size(); i++)      \
         ASSERT_PRED2(AreSampleValueTypeEqual, expectedDefinitions[i], definitions[i]);
 
 #define ASSERT_OFFSETS(expectedOffsets, offsets)       \
     ASSERT_EQ(expectedOffsets.size(), offsets.size()); \
-    for (auto i = 0; i < expectedOffsets.size(); i++)  \
+    for (std::size_t i = 0; i < expectedOffsets.size(); i++)  \
         ASSERT_EQ(expectedOffsets[i], offsets[i]);
 
 using ValueOffsets = std::vector<SampleValueTypeProvider::Offset>;
