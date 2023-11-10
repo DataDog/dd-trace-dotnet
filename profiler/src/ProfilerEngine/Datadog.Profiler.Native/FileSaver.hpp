@@ -43,7 +43,7 @@ public:
         if (!success)
         {
             hasError = true;
-            errorMessage << success.message();
+            errorMessage << success.message() << "\n";
         }
 
         for (auto const& [filename, content] : files)
@@ -52,12 +52,7 @@ public:
 
             if (!success)
             {
-                if (hasError)
-                {
-                    errorMessage << "\n";
-                }
-                errorMessage << success.message();
-
+                errorMessage << success.message() << "\n";
                 hasError = true;
             }
         }
@@ -69,12 +64,7 @@ public:
 
             if (!success)
             {
-                if (hasError)
-                {
-                    errorMessage << "\n";
-                }
-                errorMessage << success.message();
-
+                errorMessage << success.message() << "\n";
                 hasError = true;
             }
         }
