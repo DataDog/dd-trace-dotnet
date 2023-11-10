@@ -85,7 +85,7 @@ namespace Datadog.Trace.Activity
                 operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : "otel_unknown";
             }
 
-            span.OperationName = operationName.ToLower();
+            span.OperationName = operationName.ToLowerInvariant();
         }
 
         private static bool IsHttpServer(this OpenTelemetryTags tags)
