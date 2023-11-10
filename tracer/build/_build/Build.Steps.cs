@@ -373,6 +373,13 @@ partial class Build
         .After(CompileManagedLoader)
         .Executes(() =>
         {
+            // Removes previously generated files
+            // This is mostly to avoid forgetting to remove deprecated files (class name change or path change)
+            if (IsWin)
+            {
+                EnsureCleanDirectory(DatadogTraceDirectory / "Generated");
+            }
+
             var include = TracerDirectory.GlobFiles(
                 "src/**/*.csproj"
             );
