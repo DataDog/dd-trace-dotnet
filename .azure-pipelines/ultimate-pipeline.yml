@@ -5928,7 +5928,9 @@ stages:
 
     steps:
     - template: steps/install-latest-dotnet-sdk.yml
-    - bash: dotnet run $(Build.BuildId)
+    - bash: |
+        dotnet run $(Build.BuildId)
+        exit $?
       displayName: "Run"
       workingDirectory: "$(Build.SourcesDirectory)/tracer/tools/PipelineMonitor"
 
