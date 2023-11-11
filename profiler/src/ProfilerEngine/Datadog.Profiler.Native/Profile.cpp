@@ -89,7 +89,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(profile, ffiSample, 0);
+    auto add_res = ddog_prof_Profile_add(profile, ffiSample, timestamp);
     if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
         return make_error(add_res.err);
