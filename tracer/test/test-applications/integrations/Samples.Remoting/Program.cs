@@ -69,23 +69,26 @@ namespace Samples.Remoting
 
         private static void RunClient(string url)
         {
-            RemoteClass remoteObj = (RemoteClass)Activator.GetObject(typeof(RemoteClass), url);
-
-            Console.WriteLine();
-            Console.WriteLine("Calling remoteObj.SetString(\"someString\");");
-            bool result = remoteObj.SetString("someString");
-            Console.WriteLine("result = " + result);
-
-            Console.WriteLine();
-            Console.WriteLine("Calling remoteObj.SetString(null);");
-            try
+            using (SampleHelpers.CreateScope("custom-client-span"))
             {
-                result = remoteObj.SetString(null);
+                RemoteClass remoteObj = (RemoteClass)Activator.GetObject(typeof(RemoteClass), url);
+
+                Console.WriteLine();
+                Console.WriteLine("Calling remoteObj.SetString(\"someString\");");
+                bool result = remoteObj.SetString("someString");
                 Console.WriteLine("result = " + result);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Exception Message: {e.Message}");
+
+                Console.WriteLine();
+                Console.WriteLine("Calling remoteObj.SetString(null);");
+                try
+                {
+                    result = remoteObj.SetString(null);
+                    Console.WriteLine("result = " + result);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine($"Exception Message: {e.Message}");
+                }
             }
         }
     }

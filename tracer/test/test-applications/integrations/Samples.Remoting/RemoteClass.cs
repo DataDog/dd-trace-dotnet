@@ -12,6 +12,8 @@ namespace Samples.Remoting
                 throw new ArgumentNullException(nameof(input));
             }
 
+            using (SampleHelpers.CreateScope("custom-server-span"));
+
             Console.WriteLine("This string '{0}' has a length of {1}", input, input.Length);
             return input != "";
         }

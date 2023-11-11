@@ -49,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=http"))
             {
-                const int expectedSpanCount = 6;
+                const int expectedSpanCount = 8;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -90,7 +90,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=tcp"))
             {
-                const int expectedSpanCount = 4;
+                const int expectedSpanCount = 6;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -128,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, arguments: $"Port={remotingPort} Protocol=ipc"))
             {
-                const int expectedSpanCount = 4;
+                const int expectedSpanCount = 6;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
