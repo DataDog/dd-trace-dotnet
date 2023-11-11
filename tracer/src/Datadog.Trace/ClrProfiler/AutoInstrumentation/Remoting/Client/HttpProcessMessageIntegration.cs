@@ -34,8 +34,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
     // ReSharper disable once InconsistentNaming
     public class HttpProcessMessageIntegration
     {
-        internal const IntegrationId WebRequestIntegrationId = Configuration.IntegrationId.WebRequest;
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>

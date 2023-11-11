@@ -32,8 +32,6 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
     // ReSharper disable once InconsistentNaming
     public class BinarySerializeResponseIntegration
     {
-        internal const IntegrationId WebRequestIntegrationId = Configuration.IntegrationId.WebRequest;
-
         /// <summary>
         /// OnMethodBegin callback
         /// </summary>

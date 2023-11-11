@@ -71,14 +71,9 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Server
                 propagatedContext = SpanContextPropagator.Instance.Extract(requestHeaders, (headers, key) =>
                 {
                     var value = headers[key];
-                    if (value is null)
-                    {
-                        return new string[] { };
-                    }
-                    else
-                    {
-                        return new string[] { value.ToString() };
-                    }
+                    return value is null ?
+                        Array.Empty<string>() :
+                        new string[] { value.ToString() };
                 });
             }
             catch (Exception ex)
