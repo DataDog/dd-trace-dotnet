@@ -4,8 +4,3 @@
 *:*/_deps/*
 // This error is an issue with cppcheck. So do not report this one specifically
 preprocessorErrorDirective:*/logging.h
-// This error comes from the templated get function which is used to
-// deconstruct ProfileImpl object (structured binding)
-// This is a false positive, because it would not compile
-missingReturn:*/ProfileImpl.hpp:45
-

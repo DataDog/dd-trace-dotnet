@@ -42,7 +42,7 @@ struct ProfileImpl
         else if constexpr (Index == 1)
             return _locationsSize;
         else if constexpr (Index == 2)
-            return _inner;
+            return _inner; // cppcheck-suppress missingReturn
     }
 
 private:
