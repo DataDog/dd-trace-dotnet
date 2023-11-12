@@ -237,7 +237,8 @@ namespace Datadog.Trace.Debugger
                 using var disposableSpanProbes = new DisposableEnumerable<NativeSpanProbeDefinition>(spanProbes);
                 DebuggerNativeMethods.InstrumentProbes(methodProbes.ToArray(), lineProbes.ToArray(), spanProbes.ToArray(), Array.Empty<NativeRemoveProbeRequest>());
 
-                _probeStatusPoller.AddProbes(fetchProbeStatus.ToArray());
+                var probeIds = fetchProbeStatus.Select(fp => fp.ProbeId).ToArray();
+                _probeStatusPoller.UpdateProbes(probeIds, fetchProbeStatus.ToArray());
 
                 foreach (var probe in addedProbes.Where(probe => probe is not SpanProbe))
                 {
