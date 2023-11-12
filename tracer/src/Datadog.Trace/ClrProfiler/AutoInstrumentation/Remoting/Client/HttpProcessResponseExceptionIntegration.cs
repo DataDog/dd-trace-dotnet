@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
+#nullable enable
+
 using System.ComponentModel;
 using System.Net;
 using Datadog.Trace.ClrProfiler.CallTarget;

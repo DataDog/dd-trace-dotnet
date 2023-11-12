@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -69,12 +72,21 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
             if (state.Scope?.Span is Span span && span.Tags is HttpTags httpTags && returnValue is HttpWebRequest request)
             {
                 var requestUri = request.RequestUri;
-                string resourceUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true) : null;
-                string httpUrl = requestUri != null ? UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false) : null;
+                var requestMethod = request.Method.ToUpperInvariant();
 
-                span.ResourceName = $"{request.Method} {resourceUrl}";
-                httpTags.HttpMethod = request.Method.ToUpperInvariant();
-                httpTags.HttpUrl = httpUrl;
+                if (requestUri != null)
+                {
+                    httpTags.HttpUrl = UriHelpers.CleanUri(requestUri, removeScheme: false, tryRemoveIds: false);
+
+                    string resourceUrl = UriHelpers.CleanUri(requestUri, removeScheme: true, tryRemoveIds: true);
+                    span.ResourceName = $"{requestMethod} {resourceUrl}";
+                }
+                else
+                {
+                    span.ResourceName = requestMethod;
+                }
+
+                httpTags.HttpMethod = requestMethod;
                 httpTags.Host = HttpRequestUtils.GetNormalizedHost(requestUri?.Host);
             }
 

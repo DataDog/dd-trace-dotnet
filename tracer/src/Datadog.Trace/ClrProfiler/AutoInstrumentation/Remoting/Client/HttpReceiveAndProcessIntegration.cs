@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using System.IO;
@@ -61,7 +64,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting.Client
         /// <returns>A response value</returns>
         internal static CallTargetReturn OnMethodEnd<TTarget>(TTarget instance, Exception exception, in CallTargetState state)
         {
-            if (state.Scope != null && state.State is HttpWebResponse response)
+            if (state.Scope is not null && state.State is HttpWebResponse response)
             {
                 state.Scope.Span.SetHttpStatusCode((int)response.StatusCode, false, Tracer.Instance.Settings);
             }

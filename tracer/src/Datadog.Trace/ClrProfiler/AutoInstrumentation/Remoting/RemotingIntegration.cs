@@ -4,6 +4,9 @@
 // </copyright>
 
 #if NETFRAMEWORK
+
+#nullable enable
+
 using System;
 using System.Runtime.Remoting.Messaging;
 using Datadog.Trace.Configuration;
@@ -25,7 +28,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(RemotingIntegration));
 
-        internal static Scope CreateServerScope(IMessage msg, SpanContext spanContext)
+        internal static Scope? CreateServerScope(IMessage msg, SpanContext? spanContext)
         {
             var tracer = Tracer.Instance;
 
@@ -35,7 +38,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -59,7 +62,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
             return scope;
         }
 
-        internal static Scope CreateClientScope(IMessage msg)
+        internal static Scope? CreateClientScope(IMessage msg)
         {
             var tracer = Tracer.Instance;
 
@@ -71,7 +74,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.Remoting
 
             var serviceName = tracer.CurrentTraceSettings.GetServiceName(tracer, ServiceName);
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
