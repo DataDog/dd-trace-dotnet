@@ -12,14 +12,16 @@ using Datadog.Trace.Debugger.PInvoke;
 
 namespace Datadog.Trace.Debugger.ProbeStatuses
 {
-    internal record FetchProbeStatus(string ProbeId, ProbeStatus ProbeStatus)
+    internal record FetchProbeStatus(string ProbeId, int ProbeVersion, ProbeStatus ProbeStatus)
     {
-        public FetchProbeStatus(string probeId)
-         : this(probeId, ProbeStatus.Default)
+        public FetchProbeStatus(string probeId, int probeVersion)
+         : this(probeId, probeVersion, ProbeStatus.Default)
         {
         }
 
         public string ProbeId { get; } = ProbeId;
+
+        public int ProbeVersion { get; } = ProbeVersion;
 
         public ProbeStatus ProbeStatus { get; } = ProbeStatus;
 

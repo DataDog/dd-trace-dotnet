@@ -1,4 +1,4 @@
-// <copyright file="ProbeStatusPoller.cs" company="Datadog">
+  // <copyright file="ProbeStatusPoller.cs" company="Datadog">
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
@@ -132,7 +132,8 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
             foreach (var probeStatus in probeStatuses)
             {
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, errorMessage: probeStatus.ErrorMessage);
+                var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
+                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 
