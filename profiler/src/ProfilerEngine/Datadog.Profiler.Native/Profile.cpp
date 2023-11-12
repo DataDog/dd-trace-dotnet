@@ -27,12 +27,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
     auto const& callstack = sample->GetCallstack();
     auto nbFrames = callstack.size();
 
-    // cannot write auto& [locations, locationsSize, profile] = *_impl;
-    // the compiler is unable to deduce reference type and binds private member
-    // to variable.
-    // This is the only we can do.
-    std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile*> internalInfos = *_impl;
-    auto& [locations, locationsSize, profile] = internalInfos;
+    auto& [locations, locationsSize, profile] = *_impl;
 
     if (nbFrames > locationsSize)
     {
@@ -89,7 +84,7 @@ libdatadog::Success Profile::Add(std::shared_ptr<Sample> const& sample)
         timestamp = sample->GetTimeStamp();
     }
 
-    auto add_res = ddog_prof_Profile_add(profile, ffiSample, timestamp);
+    auto add_res = ddog_prof_Profile_add(&profile, ffiSample, timestamp);
     if (add_res.tag == DDOG_PROF_PROFILE_RESULT_ERR)
     {
         return make_error(add_res.err);

@@ -4,6 +4,7 @@
 #pragma once
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 extern "C"
@@ -32,9 +33,16 @@ struct ProfileImpl
         return &_inner;
     }
 
-    operator std::tuple<std::vector<ddog_prof_Location>&, std::size_t&, ddog_prof_Profile*>()
+    template <size_t Index>
+    auto& get() &
     {
-        return {_locations, _locationsSize, &_inner};
+        static_assert(Index < 3, "Index out of bounds for ProfileImpl");
+        if constexpr (Index == 0)
+            return _locations;
+        else if constexpr (Index == 1)
+            return _locationsSize;
+        else if constexpr (Index == 2)
+            return _inner;
     }
 
 private:
@@ -46,3 +54,30 @@ private:
 
 using profile_unique_ptr = std::unique_ptr<ProfileImpl>;
 } // namespace libdatadog
+
+// --------------------------------------------------------------------------
+// boilerplate code to allow structured binding for a ProfileImpl instance
+// auto& [x, t, z] = obj;
+
+namespace std {
+template <>
+struct tuple_size<libdatadog::ProfileImpl> : std::integral_constant<size_t, 3>
+{
+};
+
+template <>
+struct tuple_element<0, libdatadog::ProfileImpl>
+{
+    using type = std::vector<ddog_prof_Location>;
+};
+template <>
+struct tuple_element<1, libdatadog::ProfileImpl>
+{
+    using type = std::size_t;
+};
+template <>
+struct tuple_element<2, libdatadog::ProfileImpl>
+{
+    using type = ddog_prof_Profile;
+};
+} // namespace std
