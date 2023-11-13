@@ -92,6 +92,8 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing(scrubHash: false);
+        var filename = "Iast.XContentTypeHeaderMissing.AspNetMvc5." + contentType.Replace("/", string.Empty) +
+            returnCode.ToString() + xContentTypeHeaderValue;
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedUrl}")
                           .DisableRequireUniquePrefix();
