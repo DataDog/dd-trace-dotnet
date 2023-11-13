@@ -3,18 +3,19 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net;
+
+/// <summary>
+/// GraphQL.Execution.ExecutionContext interface for ducktyping
+/// </summary>
+internal interface IExecutionContextVariable
 {
     /// <summary>
-    /// GraphQL.Execution.ExecutionContext interface for ducktyping
+    /// Gets the variables
     /// </summary>
-    internal interface IExecutionContextVariable
-    {
-        /// <summary>
-        /// Gets the variables
-        /// </summary>
-        IEnumerable<object> Variables { get; }
-    }
+    IEnumerable<object>? Variables { get; }
 }

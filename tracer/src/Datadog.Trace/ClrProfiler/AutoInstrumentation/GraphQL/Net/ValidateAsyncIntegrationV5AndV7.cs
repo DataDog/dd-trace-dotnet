@@ -2,6 +2,9 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
+
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -27,10 +30,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal static CallTargetState OnMethodBegin<TTarget, TValidationContext, TRules>(TTarget instance, TValidationContext validationContext, TRules rules)
             where TValidationContext : IValidationContext
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, validationContext.Document.Source?.ToString()));
+            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, validationContext?.Document.Source?.ToString() ?? string.Empty));
         }
 
-        internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
+        internal static TValidationResult? OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
             where TValidationResult : IValidationResultTuple
         {
             var scope = state.Scope;
@@ -48,7 +51,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Item1.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult?.Item1?.Errors);
                 }
             }
             finally

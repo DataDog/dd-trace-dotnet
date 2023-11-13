@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net;
 using Datadog.Trace.DuckTyping;
 

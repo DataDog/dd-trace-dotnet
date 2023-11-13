@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
@@ -15,16 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// <summary>
         /// Gets the document associated with the execution context
         /// </summary>
-        IDocument Document { get; }
+        IDocument? Document { get; }
 
         /// <summary>
         /// Gets the operation associated with the execution context
         /// </summary>
-        IOperation Operation { get; }
+        IOperation? Operation { get; }
 
         /// <summary>
         /// Gets the execution errors
         /// </summary>
-        IExecutionErrors Errors { get; }
+        IExecutionErrors? Errors { get; }
     }
 }

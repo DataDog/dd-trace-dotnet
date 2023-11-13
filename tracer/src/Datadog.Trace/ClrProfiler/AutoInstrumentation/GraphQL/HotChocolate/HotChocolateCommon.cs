@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using Datadog.Trace.Configuration;
@@ -20,7 +22,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
 
         private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(HotChocolateCommon));
 
-        internal static Scope CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
+        internal static Scope? CreateScopeFromExecuteAsync<T>(Tracer tracer, in T request)
             where T : IQueryRequest
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
@@ -29,7 +31,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
             try
             {
                 var queryOperationName = request.OperationName;
@@ -93,7 +95,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             }
         }
 
-        private static string ConstructErrorMessage(List<IError> executionErrors)
+        private static string ConstructErrorMessage(List<IError>? executionErrors)
         {
             if (executionErrors == null)
             {
@@ -135,10 +137,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return Util.StringBuilderCache.GetStringAndRelease(builder);
         }
 
-        internal static List<IError> GetList(System.Collections.IEnumerable errors)
+        internal static List<IError>? GetList(System.Collections.IEnumerable? errors)
         {
             if (errors == null) { return null; }
-            List<IError> res = new List<IError>();
+            var res = new List<IError>();
             foreach (var error in errors)
             {
                 if (error.TryDuckCast<IError>(out var err))

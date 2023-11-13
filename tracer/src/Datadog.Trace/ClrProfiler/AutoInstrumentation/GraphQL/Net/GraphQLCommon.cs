@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Text;
 using Datadog.Trace.Configuration;
@@ -39,7 +41,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             nameof(OperationTypeProxy.Subscription)
         };
 
-        internal static Scope CreateScopeFromValidate(Tracer tracer, string documentSource)
+        internal static Scope? CreateScopeFromValidate(Tracer tracer, string? documentSource)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -47,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -70,7 +72,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext executionContext)
+        internal static Scope? CreateScopeFromExecuteAsync(Tracer tracer, IExecutionContext? executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -78,13 +80,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
-                string source = executionContext.Document.OriginalQuery;
-                string operationName = executionContext.Operation.Name;
-                var operationType = OperationTypeProxyString[(int)executionContext.Operation.OperationType];
+                string? source = executionContext?.Document?.OriginalQuery;
+                string? operationName = executionContext?.Operation?.Name;
+                var operationType =
+                    executionContext?.Operation == null
+                        ? "unknown"
+                        : OperationTypeProxyString[(int)executionContext.Operation.OperationType];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
@@ -95,7 +100,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static Scope CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7 executionContext)
+        internal static Scope? CreateScopeFromExecuteAsyncV5AndV7(Tracer tracer, IExecutionContextV5AndV7? executionContext)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
@@ -103,13 +108,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
-                string source = executionContext.Document.Source.ToString();
-                string operationName = executionContext.Operation.Name.StringValue;
-                string operationType = OperationTypeProxyString[(int)executionContext.Operation.Operation];
+                string? source = executionContext?.Document.Source?.ToString();
+                string? operationName = executionContext?.Operation.Name.StringValue;
+                var operationType =
+                    executionContext?.Operation == null
+                        ? "unknown"
+                        : OperationTypeProxyString[(int)executionContext.Operation.Operation];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
             catch (Exception ex)
@@ -120,7 +128,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             return scope;
         }
 
-        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors executionErrors)
+        internal static void RecordExecutionErrorsIfPresent(Span span, string errorType, IExecutionErrors? executionErrors)
         {
             var errorCount = executionErrors?.Count ?? 0;
 
@@ -130,7 +138,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
             }
         }
 
-        private static string ConstructErrorMessage(IExecutionErrors executionErrors)
+        private static string ConstructErrorMessage(IExecutionErrors? executionErrors)
         {
             if (executionErrors == null)
             {
@@ -150,25 +158,25 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 
                     builder.AppendLine($"{tab}{{");
 
-                    var message = executionError.Message;
+                    var message = executionError?.Message;
                     if (message != null)
                     {
                         builder.AppendLine($"{tab + tab}\"message\": \"{message.Replace("\r", "\\r").Replace("\n", "\\n")}\",");
                     }
 
-                    var path = executionError.Path;
+                    var path = executionError?.Path;
                     if (path != null)
                     {
                         builder.AppendLine($"{tab + tab}\"path\": \"{string.Join(".", path)}\",");
                     }
 
-                    var code = executionError.Code;
+                    var code = executionError?.Code;
                     if (code != null)
                     {
                         builder.AppendLine($"{tab + tab}\"code\": \"{code}\",");
                     }
 
-                    ConstructErrorLocationsMessage(builder, tab, executionError.Locations);
+                    ConstructErrorLocationsMessage(builder, tab, executionError?.Locations);
                     builder.AppendLine($"{tab}}},");
                 }
 

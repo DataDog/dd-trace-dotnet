@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
@@ -14,5 +16,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 [DuckCopy]
 internal struct NameNodeProxy
 {
-    public string Name;
+    public string? Name;
 }

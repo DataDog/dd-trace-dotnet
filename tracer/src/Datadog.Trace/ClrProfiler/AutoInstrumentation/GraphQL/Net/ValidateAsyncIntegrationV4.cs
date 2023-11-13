@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -59,7 +61,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
         /// <returns>A response value, in an async scenario will be T of Task of T</returns>
-        internal static TValidationResult OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception exception, in CallTargetState state)
+        internal static TValidationResult? OnAsyncMethodEnd<TTarget, TValidationResult>(TTarget instance, TValidationResult validationResult, Exception? exception, in CallTargetState state)
             where TValidationResult : IValidationResultTuple
         {
             var scope = state.Scope;
@@ -77,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 }
                 else
                 {
-                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult.Item1.Errors);
+                    GraphQLCommon.RecordExecutionErrorsIfPresent(scope.Span, GraphQLCommon.ValidationErrorType, validationResult?.Item1?.Errors);
                 }
             }
             finally

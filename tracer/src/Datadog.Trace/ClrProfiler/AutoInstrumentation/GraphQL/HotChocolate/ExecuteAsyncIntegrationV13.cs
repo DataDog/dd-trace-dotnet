@@ -3,10 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
+using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM;
 using Datadog.Trace.ClrProfiler.CallTarget;
 using Datadog.Trace.DuckTyping;
@@ -43,9 +45,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             var scope = HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request);
 
+            if (scope == null)
+            {
+                return new CallTargetState();
+            }
+
             // ASM
             HotChocolateSecurity.ScanQuery(request);
-            GraphQLSecurityCommon.RunSecurity(scope);
+            GraphQLSecurityCommon.Instance.RunSecurity(scope);
 
             return new CallTargetState(scope: scope);
         }

@@ -3,10 +3,11 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM.Parser;
 
 /// <summary>
 /// GraphQLValueProxy interface for ducktyping
@@ -14,5 +15,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 [DuckCopy]
 internal struct GraphQLValueProxy
 {
-    public object Value;
+    public object? Value;
 }

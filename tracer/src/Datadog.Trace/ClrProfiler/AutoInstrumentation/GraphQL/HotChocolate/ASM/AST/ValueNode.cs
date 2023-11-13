@@ -3,16 +3,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
+
+/// <summary>
+/// ValueNodeProxy struct that contains the value attribute for ducktyping
+/// </summary>
+[DuckCopy]
+internal struct ValueNode
 {
-    /// <summary>
-    /// ValueNodeProxy struct that contains the value attribute for ducktyping
-    /// </summary>
-    [DuckCopy]
-    internal struct ValueNode
-    {
-        public object Value;
-    }
+    public object? Value;
 }

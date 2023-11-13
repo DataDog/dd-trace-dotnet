@@ -3,17 +3,18 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 using Datadog.Trace.DuckTyping;
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
+
+/// <summary>
+/// ItemsNodeProxy that contains Items list struct for ducktyping
+/// </summary>
+[DuckCopy]
+internal struct ItemsNode
 {
-    /// <summary>
-    /// ItemsNodeProxy that contains Items list struct for ducktyping
-    /// </summary>
-    [DuckCopy]
-    internal struct ItemsNode
-    {
-        public IEnumerable<object> Items;
-    }
+    public IEnumerable<object>? Items;
 }

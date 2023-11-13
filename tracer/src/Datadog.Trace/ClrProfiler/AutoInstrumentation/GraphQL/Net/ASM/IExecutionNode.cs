@@ -3,6 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM.Parser;
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
 
 /// <summary>
@@ -12,5 +16,5 @@ internal interface IExecutionNode
 {
     public GraphQLFieldProxy Field { get; }
 
-    public string Name { get; }
+    public string? Name { get; }
 }

@@ -3,18 +3,23 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System;
+#nullable enable
+
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Web;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Coordinator;
 
+#if NETCOREAPP || NETSTANDARD
+using Microsoft.AspNetCore.Http;
+#endif
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL;
 
 internal sealed class GraphQLSecurityCommon
 {
-    private static readonly Lazy<GraphQLSecurityCommon> LazyInstance = new(() => new GraphQLSecurityCommon());
+    public static readonly GraphQLSecurityCommon Instance = new();
 
     private readonly ConcurrentDictionary<IScope, Dictionary<string, object>> _scopeResolvers;
 
@@ -23,13 +28,10 @@ internal sealed class GraphQLSecurityCommon
         _scopeResolvers = new ConcurrentDictionary<IScope, Dictionary<string, object>>();
     }
 
-    private static GraphQLSecurityCommon Instance
-        => LazyInstance.Value;
-
-    private static Dictionary<string, object> PopScope(IScope scope)
+    private Dictionary<string, object> PopScope(IScope scope)
     {
         var resolvers = Instance.GetScopeResolvers(scope);
-        Instance.RemoveScopeResolvers(scope);
+        RemoveScopeResolvers(scope);
         return resolvers;
     }
 
@@ -52,9 +54,9 @@ internal sealed class GraphQLSecurityCommon
     /// <summary>
     /// Register a called resolver with its arguments for a given scope into the <see cref="_scopeResolvers"/> dictionary.
     /// </summary>
-    internal static void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object> arguments)
+    internal void RegisterResolverCall(IScope scope, string resolverName, Dictionary<string, object?> arguments)
     {
-        var resolvers = Instance.GetScopeResolvers(scope);
+        var resolvers = GetScopeResolvers(scope);
 
         if (!resolvers.TryGetValue(resolverName, out var resolverCalls))
         {
@@ -71,22 +73,30 @@ internal sealed class GraphQLSecurityCommon
     /// <summary>
     /// Run the WAF for the given scope of the GraphQL request.
     /// </summary>
-    public static void RunSecurity(Scope scope)
+    public void RunSecurity(Scope scope)
+    {
+        var security = Security.Instance;
+#if NETFRAMEWORK
+        var httpContext = HttpContext.Current;
+#else
+        var httpContext = CoreHttpContextStore.Instance.Get();
+#endif
+        RunSecurity(security, httpContext, scope);
+    }
+
+    /// <summary>
+    /// Run the WAF for the given scope of the GraphQL request.
+    /// </summary>
+    public void RunSecurity(Security security, HttpContext httpContext, Scope scope)
     {
         if (!IsEnabled())
         {
             return;
         }
 
-        var security = Security.Instance;
         var allResolvers = PopScope(scope);
 
         var args = new Dictionary<string, object> { { "graphql.server.all_resolvers", allResolvers } };
-#if NETFRAMEWORK
-        var httpContext = HttpContext.Current;
-#else
-        var httpContext = CoreHttpContextStore.Instance.Get();
-#endif
         var securityCoordinator = new SecurityCoordinator(security, httpContext, scope.Span);
         securityCoordinator.Check(args);
     }
@@ -95,7 +105,7 @@ internal sealed class GraphQLSecurityCommon
     /// Check if we need to perform an analysis for the GraphQL request.
     /// </summary>
     /// <returns>True if ASM is enabled and the current request is not a WebSocket connection.</returns>
-    public static bool IsEnabled()
+    public bool IsEnabled()
     {
         // Check if ASM is Enabled
         if (!Security.Instance.Enabled)
@@ -112,6 +122,7 @@ internal sealed class GraphQLSecurityCommon
         var httpContext = CoreHttpContextStore.Instance.Get();
         var isWebsocket = httpContext is not null && httpContext.WebSockets.IsWebSocketRequest;
 #endif
+
         return !isWebsocket;
     }
 }

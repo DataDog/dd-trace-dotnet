@@ -3,9 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
-using System.Linq;
 using System.Threading;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -42,9 +43,14 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             var scope = HotChocolateCommon.CreateScopeFromExecuteAsync(Tracer.Instance, request);
 
+            if (scope == null)
+            {
+                return new CallTargetState();
+            }
+
             // ASM
             HotChocolateSecurity.ScanQuery(request);
-            GraphQLSecurityCommon.RunSecurity(scope);
+            GraphQLSecurityCommon.Instance.RunSecurity(scope);
 
             return new CallTargetState(scope: scope);
         }
@@ -58,10 +64,10 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <param name="executionResult">ExecutionResult instance</param>
         /// <param name="exception">Exception instance in case the original code threw an exception.</param>
         /// <param name="state">Calltarget state value</param>
-        internal static TExecutionResult OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult executionResult, Exception exception, in CallTargetState state)
+        internal static TExecutionResult? OnAsyncMethodEnd<TTarget, TExecutionResult>(TTarget instance, TExecutionResult? executionResult, Exception? exception, in CallTargetState state)
             where TExecutionResult : IExecutionResult
         {
-            Scope scope = state.Scope;
+            var scope = state.Scope;
             if (scope is null)
             {
                 return executionResult;
@@ -73,7 +79,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
                 {
                     scope.Span?.SetException(exception);
                 }
-                else if (executionResult != null && executionResult.Errors != null)
+                else if (executionResult is { Errors: { } })
                 {
                     HotChocolateCommon.RecordExecutionErrorsIfPresent(scope.Span, HotChocolateCommon.ErrorType, executionResult.Errors);
                 }

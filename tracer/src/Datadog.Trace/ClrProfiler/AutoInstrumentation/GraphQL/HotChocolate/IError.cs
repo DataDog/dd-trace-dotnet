@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
@@ -15,11 +17,11 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <summary>
         /// Gets the error message
         /// </summary>
-        string Message { get; }
+        string? Message { get; }
 
         /// <summary>
         /// Gets a list of locations in the document where the error applies
         /// </summary>
-        IEnumerable Locations { get; }
+        IEnumerable? Locations { get; }
     }
 }

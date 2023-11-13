@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System.Collections.Generic;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
@@ -15,16 +17,16 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         /// <summary>
         /// Gets the query
         /// </summary>
-        object Query { get; }
+        object? Query { get; }
 
         /// <summary>
         /// Gets the operation name
         /// </summary>
-        public string OperationName { get; }
+        public string? OperationName { get; }
 
         /// <summary>
         /// Gets Variables of the request
         /// </summary>
-        public IDictionary<string, object> VariableValues { get; }
+        public IDictionary<string, object>? VariableValues { get; }
     }
 }

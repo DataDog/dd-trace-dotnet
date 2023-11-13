@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -47,7 +49,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         internal static CallTargetState OnMethodBegin<TTarget, TSchema, TDocument, TRules, TUserContext, TInputs>(TTarget instance, string originalQuery, TSchema schema, TDocument document, TRules rules, TUserContext userContext, TInputs inputs)
             where TDocument : IDocument
         {
-            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document.OriginalQuery));
+            return new CallTargetState(GraphQLCommon.CreateScopeFromValidate(Tracer.Instance, document?.OriginalQuery));
         }
 
         /// <summary>

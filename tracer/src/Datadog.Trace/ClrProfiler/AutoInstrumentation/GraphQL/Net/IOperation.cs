@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
 {
     /// <summary>
@@ -13,7 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
         /// <summary>
         /// Gets the name of the operation
         /// </summary>
-        string Name { get; }
+        string? Name { get; }
 
         /// <summary>
         /// Gets the type of the operation

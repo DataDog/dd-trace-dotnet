@@ -3,11 +3,12 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using Datadog.Trace.AppSec;
 using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
 using Datadog.Trace.DuckTyping;
 using Datadog.Trace.Logging;
@@ -26,7 +27,7 @@ internal abstract class HotChocolateSecurity
         }
 
         // Don't run if ASM isn't enabled or a WebSocket
-        if (!GraphQLSecurityCommon.IsEnabled())
+        if (!GraphQLSecurityCommon.Instance.IsEnabled())
         {
             return;
         }
@@ -38,11 +39,11 @@ internal abstract class HotChocolateSecurity
         }
 
         // Get root node of the document and do a depth search of resolvers
-        foreach (var node in document.Document.Definitions)
+        foreach (var node in document.Document.Definitions ?? Enumerable.Empty<object>())
         {
             try
             {
-                DepthSearchOperationNode(node, request.VariableValues);
+                DepthSearchOperationNode(node, request?.VariableValues);
             }
             catch (Exception ex)
             {
@@ -51,9 +52,9 @@ internal abstract class HotChocolateSecurity
         }
     }
 
-    private static void DepthSearchOperationNode(object obj, IDictionary<string, object> variables)
+    private static void DepthSearchOperationNode(object? obj, IDictionary<string, object>? variables)
     {
-        if (!obj.TryDuckCast<SyntaxNode>(out var node))
+        if (obj == null || !obj.TryDuckCast<SyntaxNode>(out var node))
         {
             return;
         }
@@ -62,7 +63,7 @@ internal abstract class HotChocolateSecurity
         {
             case SyntaxKindProxy.OperationDefinition when obj.TryDuckCast<SelectionsNode>(out var opNode):
             {
-                foreach (var selectionSetSelection in opNode.SelectionSet.Selections)
+                foreach (var selectionSetSelection in opNode.SelectionSet.Selections ?? Enumerable.Empty<object>())
                 {
                     DepthSearchOperationNode(selectionSetSelection, variables);
                 }
@@ -74,19 +75,30 @@ internal abstract class HotChocolateSecurity
             {
                 try
                 {
-                    if (fieldNode.Arguments.Any())
+                    if (fieldNode.Arguments != null && fieldNode.Arguments.GetEnumerator().MoveNext())
                     {
                         var resolverName = GetFieldNodeName(fieldNode, obj);
-                        var resolverArguments = new Dictionary<string, object>();
+                        var resolverArguments = new Dictionary<string, object?>();
 
-                        foreach (var argument in fieldNode.Arguments)
+                        foreach (var argument in fieldNode.Arguments ?? Enumerable.Empty<object>())
                         {
+                            if (argument == null)
+                            {
+                                continue;
+                            }
+
                             var name = GetName(argument);
                             var value = GetArgumentValue(argument, variables);
-                            resolverArguments.Add(name, value);
+                            if (name != null)
+                            {
+                                resolverArguments.Add(name, value);
+                            }
                         }
 
-                        GraphQLSecurityCommon.RegisterResolverCall(Tracer.Instance.ActiveScope, resolverName, resolverArguments);
+                        if (resolverName != null)
+                        {
+                            GraphQLSecurityCommon.Instance.RegisterResolverCall(Tracer.Instance.ActiveScope, resolverName, resolverArguments);
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -103,7 +115,7 @@ internal abstract class HotChocolateSecurity
             {
                 if (obj.TryDuckCast<SelectionSetNode>(out var unknownSelectionSetNode))
                 {
-                    foreach (var n in unknownSelectionSetNode.Selections)
+                    foreach (var n in unknownSelectionSetNode.Selections ?? Enumerable.Empty<object>())
                     {
                         DepthSearchOperationNode(n, variables);
                     }
@@ -118,17 +130,17 @@ internal abstract class HotChocolateSecurity
         }
     }
 
-    private static string GetName(object node)
+    private static string? GetName(object node)
     {
         if (node.TryDuckCast<NamedNode>(out var namedNode))
         {
-            return namedNode.Name.Value;
+            return namedNode.Name?.Value;
         }
 
         return string.Empty;
     }
 
-    private static string GetFieldNodeName(FieldNode fieldNode, object node)
+    private static string? GetFieldNodeName(FieldNode fieldNode, object node)
     {
         if (!string.IsNullOrEmpty(fieldNode.Alias.Value))
         {
@@ -138,7 +150,7 @@ internal abstract class HotChocolateSecurity
         return GetName(node);
     }
 
-    private static object GetArgumentValue(object obj, IDictionary<string, object> variables)
+    private static object? GetArgumentValue(object? obj, IDictionary<string, object>? variables)
     {
         if (obj is null || !obj.TryDuckCast<SyntaxNode>(out var node))
         {
@@ -149,12 +161,12 @@ internal abstract class HotChocolateSecurity
         {
             SyntaxKindProxy.Argument => GetArgumentValue(obj.DuckCast<ValueNode>().Value, variables),
             SyntaxKindProxy.Variable => GetVariableValue(GetName(obj), variables),
-            SyntaxKindProxy.StringValue or SyntaxKindProxy.EnumValue => obj.DuckCast<ValueNode>().Value.ToString(),
-            SyntaxKindProxy.IntValue => int.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty),
-            SyntaxKindProxy.BooleanValue => bool.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty),
-            SyntaxKindProxy.FloatValue => float.Parse(obj.DuckCast<ValueNode>().Value.ToString() ?? string.Empty, CultureInfo.InvariantCulture.NumberFormat),
+            SyntaxKindProxy.StringValue or SyntaxKindProxy.EnumValue => obj.DuckCast<ValueNode>().Value?.ToString(),
+            SyntaxKindProxy.IntValue => int.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty),
+            SyntaxKindProxy.BooleanValue => bool.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty),
+            SyntaxKindProxy.FloatValue => float.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty, CultureInfo.InvariantCulture.NumberFormat),
             SyntaxKindProxy.ListValue => (obj.DuckCast<ItemsNode>().Items ?? Array.Empty<object>()).Select(x => GetArgumentValue(x, variables)).ToList(),
-            SyntaxKindProxy.ObjectValue => obj.DuckCast<ObjectValueNode>().Fields.ToDictionary(GetName, x => GetArgumentValue(x, variables)),
+            SyntaxKindProxy.ObjectValue => GetValue(obj, variables),
             SyntaxKindProxy.ObjectField => GetArgumentValue(obj.DuckCast<ValueNode>().Value, variables),
 
             _ => null
@@ -163,8 +175,19 @@ internal abstract class HotChocolateSecurity
         return value;
     }
 
-    private static object GetVariableValue(string name, IDictionary<string, object> variables)
+    private static object? GetValue(object obj, IDictionary<string, object>? variables)
     {
+        var fields = obj.DuckCast<ObjectValueNode>().Fields;
+        return fields?.ToDictionary(x => GetName(x) ?? string.Empty, x => GetArgumentValue(x, variables));
+    }
+
+    private static object? GetVariableValue(string? name, IDictionary<string, object>? variables)
+    {
+        if (variables == null)
+        {
+            return null;
+        }
+
         foreach (var variable in variables)
         {
             if (variable.Key == name)

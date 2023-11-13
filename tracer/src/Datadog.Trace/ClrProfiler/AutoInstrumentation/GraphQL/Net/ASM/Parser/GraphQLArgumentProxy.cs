@@ -3,12 +3,13 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate;
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 #pragma warning disable SA1302 // Interface names should begin with I
 
-namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM;
+namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net.ASM.Parser;
 
 /// <summary>
 /// GraphQLParser.AST.GraphQLArgument interface for ducktyping
@@ -22,5 +23,5 @@ internal struct GraphQLArgumentProxy
     public GraphQLNameProxy Name;
 
     // Can be: GraphQLVariableProxy, GraphQLStringValueProxy, GraphQLIntValueProxy, GraphQLBooleanValue, GraphQLFloatValue, GraphQLEnumValue, GraphQLObjectValue, GraphQLListValue, GraphQLNullValue
-    public object Value;
+    public object? Value;
 }

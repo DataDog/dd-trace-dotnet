@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net;
@@ -13,8 +15,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net;
 [DuckCopy]
 internal struct Variable
 {
-    public string Name;
+    public string? Name;
 
-    #nullable enable
     public object? Value;
 }

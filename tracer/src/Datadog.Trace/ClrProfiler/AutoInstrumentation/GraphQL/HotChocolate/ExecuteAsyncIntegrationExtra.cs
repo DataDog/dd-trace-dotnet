@@ -3,6 +3,8 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
 using System.ComponentModel;
 using Datadog.Trace.ClrProfiler.CallTarget;
@@ -48,13 +50,13 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
         {
             var operation = operationContext.Operation;
             var operationType = HotChocolateCommon.GetOperation(operation.OperationType);
-            var operationName = GetNameStringValue(operation.Name.Value);
+            var operationName = GetNameStringValue(operation.Name.Value) ?? "unknown";
 
             HotChocolateCommon.UpdateScopeFromExecuteAsync(Tracer.Instance, operationType, operationName);
             return CallTargetState.GetDefault();
         }
 
-        private static string GetNameStringValue(object nameValue)
+        private static string? GetNameStringValue(object? nameValue)
         {
             // Get the string value of the NameString
             // The NameString value can be either another NameString or a string
