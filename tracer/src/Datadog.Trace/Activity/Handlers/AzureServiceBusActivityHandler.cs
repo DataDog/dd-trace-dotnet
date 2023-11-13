@@ -83,20 +83,6 @@ namespace Datadog.Trace.Activity.Handlers
 
                     dataStreamsManager.InjectPathwayContextAsBase64String(span.Context.PathwayContext, new ServiceBusHeadersCollectionAdapter(applicationProperties));
 
-                    if (span.Tags is OpenTelemetryTags { AnalyticsSampleRate: null } openTelemetryTags)
-                    {
-                        switch (openTelemetryTags.SpanKind)
-                        {
-                            case SpanKinds.Server:
-                            case SpanKinds.Consumer:
-                                openTelemetryTags.SetAnalyticsSampleRate(IntegrationId.AzureServiceBus, Tracer.Instance.Settings, true);
-                                break;
-                            default:
-                                openTelemetryTags.SetAnalyticsSampleRate(IntegrationId.AzureServiceBus, Tracer.Instance.Settings, false);
-                                break;
-                        }
-                    }
-
                     // Close the scope and return so we bypass the common code path
                     span.Finish(activity.StartTimeUtc.Add(activity.Duration));
                     activityMapping.Scope.Close();
