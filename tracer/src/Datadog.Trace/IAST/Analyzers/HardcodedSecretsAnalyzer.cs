@@ -17,28 +17,28 @@ using Datadog.Trace.Logging;
 
 namespace Datadog.Trace.Iast.Analyzers;
 
-internal class HardcodedSecretsAnalyzer
+internal class HardcodedSecretsAnalyzer : IDisposable
 {
     private const int UserStringsArraySize = 100;
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor<HardcodedSecretsAnalyzer>();
     private static HardcodedSecretsAnalyzer? _instance = null;
 
-    private static bool _started = false;
+    private readonly ManualResetEventSlim _waitEvent = new(false);
+    private readonly TimeSpan _regexTimeout;
+    private bool _started = false;
+    private List<SecretRegex>? _secretRules = null;
 
-    private static List<SecretRegex>? _secretRules = null;
-
-    private static ManualResetEventSlim _waitEvent = new ManualResetEventSlim(false);
-
-    public HardcodedSecretsAnalyzer()
+    // Internal for testing
+    internal HardcodedSecretsAnalyzer(TimeSpan regexTimeout)
     {
         Log.Debug("HardcodedSecretsAnalyzer -> Init");
-        LifetimeManager.Instance.AddShutdownTask(RunShutdown);
+        _regexTimeout = regexTimeout;
         _started = true;
         Task.Run(() => PoolingThread())
                     .ContinueWith(t => Log.Error(t.Exception, "Error in Hardcoded secret analyzer"), TaskContinuationOptions.OnlyOnFaulted);
     }
 
-    private static void PoolingThread()
+    private void PoolingThread()
     {
         try
         {
@@ -106,11 +106,23 @@ internal class HardcodedSecretsAnalyzer
         Log.Debug("HardcodedSecretsAnalyzer polling thread -> Exit");
     }
 
-    internal static string? CheckSecret(string secret)
+    internal static void Initialize(TimeSpan regexTimeout)
+    {
+        lock (Log)
+        {
+            if (_instance == null)
+            {
+                _instance = new HardcodedSecretsAnalyzer(regexTimeout);
+                LifetimeManager.Instance.AddShutdownTask(_instance.Dispose);
+            }
+        }
+    }
+
+    internal string? CheckSecret(string secret)
     {
         if (_secretRules == null)
         {
-            _secretRules = GenerateSecretRules();
+            _secretRules = GenerateSecretRules(_regexTimeout);
         }
 
         foreach (var rule in _secretRules)
@@ -124,22 +136,9 @@ internal class HardcodedSecretsAnalyzer
         return null;
     }
 
-    internal static void Initialize()
-    {
-        lock (Log)
-        {
-            if (_instance == null)
-            {
-                _instance = new HardcodedSecretsAnalyzer();
-            }
-        }
-    }
-
     // Rules imported from https://github.com/gitleaks/gitleaks/blob/master/cmd/generate/config/rules
-    private static List<SecretRegex> GenerateSecretRules()
+    private static List<SecretRegex> GenerateSecretRules(TimeSpan timeout)
     {
-        var timeout = TimeSpan.FromMilliseconds(Iast.Instance.Settings.RegexTimeout);
-
         var res = new List<SecretRegex>(68); // Note: Update this with the new rules count, if modified
 
         res.Add(new SecretRegex("aws-access-token", @"\b((A3T[A-Z0-9]|AKIA|AGPA|AIDA|AROA|AIPA|ANPA|ANVA|ASIA)[A-Z0-9]{16})(?:['|""|\n|\r|\s|\x60|;]|$)", timeout));
@@ -214,7 +213,7 @@ internal class HardcodedSecretsAnalyzer
         return res;
     }
 
-    private void RunShutdown()
+    public void Dispose()
     {
         try
         {
