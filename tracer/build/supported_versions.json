@@ -1064,7 +1064,7 @@
         "minVersionTestedInclusive": "2.2.0",
         "maxVersionSupportedInclusive": "2.6.1",
         "maxVersionAvailableInclusive": "2.6.1",
-        "maxVersionTestedInclusive": "2.5.3"
+        "maxVersionTestedInclusive": "2.6.1"
       }
     ]
   },
