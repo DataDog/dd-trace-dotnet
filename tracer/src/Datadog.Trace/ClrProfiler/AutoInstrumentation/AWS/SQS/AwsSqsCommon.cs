@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+#nullable enable
+
 using System;
+using System.Diagnostics.CodeAnalysis;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Tagging;
@@ -21,7 +24,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         internal const string IntegrationName = nameof(Configuration.IntegrationId.AwsSqs);
         internal const IntegrationId IntegrationId = Configuration.IntegrationId.AwsSqs;
 
-        public static Scope CreateScope(Tracer tracer, string operation, out AwsSqsTags tags, ISpanContext parentContext = null, string spanKind = SpanKinds.Client)
+        public static Scope? CreateScope(Tracer tracer, string operation, out AwsSqsTags? tags, ISpanContext? parentContext = null, string spanKind = SpanKinds.Client)
         {
             tags = null;
 
@@ -31,7 +34,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
                 return null;
             }
 
-            Scope scope = null;
+            Scope? scope = null;
 
             try
             {
@@ -59,7 +62,8 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             return scope;
         }
 
-        public static string GetQueueName(string queueUrl)
+        [return: NotNullIfNotNull(nameof(queueUrl))]
+        public static string? GetQueueName(string? queueUrl)
         {
             if (queueUrl is null)
             {
