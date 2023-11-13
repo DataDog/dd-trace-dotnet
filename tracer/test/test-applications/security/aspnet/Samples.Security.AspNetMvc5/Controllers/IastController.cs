@@ -337,6 +337,8 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("XContentTypeHeaderMissing")]
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
+            return Content("WWW");
+            /*
             try
             {
                 if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
@@ -361,7 +363,7 @@ namespace Samples.Security.AspNetCore5.Controllers
             catch(Exception ex)
             {
                 return Content(IastControllerHelper.ToFormattedString(ex));
-            }
+            }*/
         }
 
         private HttpCookie GetDefaultCookie(string key, string value)
