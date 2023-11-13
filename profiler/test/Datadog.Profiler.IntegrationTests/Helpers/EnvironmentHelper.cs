@@ -74,6 +74,10 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
             return Environment.Is64BitProcess ? "x64" : "x86";
         }
 
+        public static bool IsRunningInCi() =>
+            // This environment variable is set in the CI (Github / AzDo)
+            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MonitoringHomeDirectory"));
+
         internal static string GetConfiguration()
         {
 #if DEBUG
@@ -247,10 +251,6 @@ namespace Datadog.Profiler.IntegrationTests.Helpers
         {
             return Path.Combine(GetSolutionDirectory(), "profiler", "_build");
         }
-
-        private static bool IsRunningInCi() =>
-            // This environment variable is set in the CI (Github / AzDo)
-            !string.IsNullOrEmpty(Environment.GetEnvironmentVariable("MonitoringHomeDirectory"));
 
         /// <summary>
         /// Find the solution directory from anywhere in the hierarchy.
