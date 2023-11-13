@@ -3,6 +3,9 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.SourceGenerators;
 
 #pragma warning disable SA1402 // File must contain single type
@@ -13,6 +16,9 @@ namespace Datadog.Trace.Tagging
     internal partial class AzureServiceBusTags : OpenTelemetryTags
     {
         private string _spanKind;
+
+        [Metric(Trace.Tags.Analytics)]
+        public double? AnalyticsSampleRate { get; set; }
 
         [Tag(Trace.Tags.MessagingSourceName)]
         public string MessagingSourceName { get; set; }
@@ -32,6 +38,16 @@ namespace Datadog.Trace.Tagging
 
         [Metric(Trace.Metrics.MessageQueueTimeMs)]
         public double? MessageQueueTimeMs { get; set; }
+
+        public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
+        {
+            if (settings != null)
+            {
+#pragma warning disable 618 // App analytics is deprecated, but still used
+                AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
+#pragma warning restore 618
+            }
+        }
     }
 
     internal partial class AzureServiceBusV1Tags : AzureServiceBusTags
