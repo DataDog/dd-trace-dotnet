@@ -334,6 +334,29 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content("Sending NoHttpOnlyCookie");
         }
 
+        [HttpGet("TestCookieName")]
+        public IActionResult TestCookieName()
+        {
+            var cookieName = Request.Cookies.Keys.First(x => x == "cookiename");
+
+            try
+            {
+                if (!string.IsNullOrEmpty(cookieName))
+                {
+                    var result = System.IO.File.ReadAllText(cookieName);
+                    return Content($"file content: " + result);
+                }
+                else
+                {
+                    return BadRequest($"No file was provided");
+                }
+            }
+            catch
+            {
+                return Content("The provided file " + cookieName + " could not be opened");
+            }
+        }
+
         [HttpGet("NoSameSiteCookie")]
         [Route("NoSameSiteCookie")]
         public IActionResult NoSameSiteCookie()
