@@ -61,7 +61,11 @@ namespace Datadog.Trace.Debugger.Sink
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
-                !ShouldOverwrite(current.Message.DebuggerDiagnostics.Diagnostics.Status, status, current.Message.DebuggerDiagnostics.Diagnostics.ProbeVersion, probeVersion);
+                !ShouldOverwrite(
+                    oldStatus: current.Message.DebuggerDiagnostics.Diagnostics.Status,
+                    newStatus: status,
+                    oldVersion: current.Message.DebuggerDiagnostics.Diagnostics.ProbeVersion,
+                    newVersion: probeVersion);
 
             if (shouldSkip)
             {
@@ -78,9 +82,9 @@ namespace Datadog.Trace.Debugger.Sink
             _diagnostics.AddOrUpdate(probeId, timedMessage, (_, _) => (timedMessage));
             Enqueue(next);
 
-            bool ShouldOverwrite(Status currentStatus, Status nextStatus, int currentProbeVersion, int nextProbeVersion)
+            bool ShouldOverwrite(Status oldStatus, Status newStatus, int oldVersion, int newVersion)
             {
-                return nextStatus == Status.ERROR || currentStatus != nextStatus || currentProbeVersion < nextProbeVersion;
+                return newStatus == Status.ERROR || oldStatus != newStatus || oldVersion < newVersion;
             }
         }
 
