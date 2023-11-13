@@ -73,6 +73,14 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
@@ -167,6 +175,14 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 0, 1),
             };
         }
+
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
@@ -263,6 +279,14 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 0, 1),
             };
         }
+
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
@@ -361,6 +385,14 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
@@ -457,6 +489,14 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Confluent.Kafka.Producer`2"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ProduceAsync"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Threading.Tasks.Task`1[Confluent.Kafka.DeliveryReport`2[!0,!1]]", "Confluent.Kafka.TopicPartition", "Confluent.Kafka.Message`2[!0,!1]", "System.Threading.CancellationToken"), 4, 1, 4, 0, 1, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.Kafka.KafkaProduceAsyncIntegration"), 2, 1),
             };
         }
+
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
@@ -556,6 +596,14 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal);
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
@@ -643,6 +691,14 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("MySql.Data.MySqlClient.MySqlCommand"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("ExecuteReader"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("MySql.Data.MySqlClient.MySqlDataReader"), 1, 6, 7, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AutoInstrumentation.AdoNet.CommandExecuteReaderIntegration"), 0, 1),
             };
         }
+
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("MySql.Data,", StringComparison.Ordinal);
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
@@ -755,6 +811,14 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("MySql.Data,", StringComparison.Ordinal);
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
@@ -864,6 +928,14 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => false;
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
@@ -963,6 +1035,14 @@ namespace Datadog.Trace.ClrProfiler
                 new (NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.Core"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Microsoft.AspNetCore.Mvc.ModelBinding.DefaultModelBindingContext"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("set_Result"), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16StringArray("System.Void", "Microsoft.AspNetCore.Mvc.ModelBinding.ModelBindingResult"), 2, 2, 0, 0, 6, 65535, 65535, NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String(assemblyFullName), NativeCallTargetUnmanagedMemoryHelper.AllocateAndWriteUtf16String("Datadog.Trace.ClrProfiler.AspNetCore.DefaultModelBindingContext_SetResult_Integration"), 1, 3),
             };
         }
+
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => false;
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {

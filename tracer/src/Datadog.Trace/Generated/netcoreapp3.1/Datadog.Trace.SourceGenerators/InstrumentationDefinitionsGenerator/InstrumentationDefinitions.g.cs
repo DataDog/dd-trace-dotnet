@@ -502,6 +502,44 @@ namespace Datadog.Trace.ClrProfiler
             };
         }
 
+        /// <summary>
+        /// Checks if the provided <see cref="System.Reflection.Assembly.FullName"/> assembly
+        /// is one we instrument. Assumes you have already checked for "well-known" prefixes
+        /// like "System" and "Microsoft".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => assemblyName.StartsWith("AerospikeClient,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("amqmdnetstd,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Confluent.Kafka,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Couchbase.NetClient,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Elasticsearch.Net,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("GraphQL,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("GraphQL.SystemReactive,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Grpc.AspNetCore.Server,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Grpc.Core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Grpc.Net.Client,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("HotChocolate.Execution,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("log4net,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MongoDB.Driver.Core,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MySql.Data,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("MySqlConnector,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("netstandard,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("NLog,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Npgsql,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("nunit.framework,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("OpenTelemetry,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("OpenTelemetry.Api,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Oracle.DataAccess,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Oracle.ManagedDataAccess,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("RabbitMQ.Client,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("Serilog,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("ServiceStack.Redis,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("StackExchange.Redis,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("StackExchange.Redis.StrongName,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("System,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("xunit.execution.desktop,", StringComparison.Ordinal)
+            || assemblyName.StartsWith("xunit.execution.dotnet,", StringComparison.Ordinal);
+
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {
             return integrationTypeName switch
