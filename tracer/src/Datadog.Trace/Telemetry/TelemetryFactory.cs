@@ -70,7 +70,7 @@ namespace Datadog.Trace.Telemetry
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
 
-            // we assume telemetry can't switch between enabled/disabled
+            // we assume telemetry can't switch between enabled/disabled because it can only be set via static config
             if (!settings.TelemetryEnabled)
             {
                 log.Debug("Telemetry collection disabled");
@@ -124,6 +124,11 @@ namespace Datadog.Trace.Telemetry
         {
             DisableMetricsCollector();
             DisableConfigCollector();
+            if (_logs.IsValueCreated)
+            {
+                // Logs were enabled, even though telemetry isn't
+                _logs.Value.DisableCollector();
+            }
         }
 
         private static void DisableMetricsCollector()

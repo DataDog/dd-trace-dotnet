@@ -24,6 +24,7 @@ internal class RedactedErrorLogCollector
     internal const int QueueSizeTrigger = 100;
     private readonly BoundedConcurrentQueue<LogMessageData> _queue = new(MaximumQueueSize);
     private TaskCompletionSource<bool> _tcs = new(TaskOptions);
+    private bool _isEnabled = true;
 
     public List<List<LogMessageData>>? GetLogs()
     {
@@ -66,11 +67,14 @@ internal class RedactedErrorLogCollector
 
     public void EnqueueLog(LogMessageData log)
     {
-        _queue.TryEnqueue(log);
-
-        if (_queue.Count > QueueSizeTrigger)
+        if (Volatile.Read(ref _isEnabled))
         {
-            _tcs.TrySetResult(true);
+            _queue.TryEnqueue(log);
+
+            if (_queue.Count > QueueSizeTrigger)
+            {
+                _tcs.TrySetResult(true);
+            }
         }
     }
 
@@ -97,5 +101,15 @@ internal class RedactedErrorLogCollector
         }
 
         return tcs.Task;
+    }
+
+    public void DisableCollector()
+    {
+        Volatile.Write(ref _isEnabled, false);
+
+        // clear any pending logs
+        while (_queue.TryDequeue(out _))
+        {
+        }
     }
 }
