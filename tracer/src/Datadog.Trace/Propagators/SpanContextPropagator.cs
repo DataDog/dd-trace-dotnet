@@ -9,7 +9,6 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
@@ -59,7 +58,7 @@ namespace Datadog.Trace.Propagators
                             DistributedContextExtractor.Instance,
                             DatadogContextPropagator.Instance
                         },
-                        Tracer.Instance.Settings.PropagationExtractFirst);
+                        false);
 
                     return _instance;
                 }

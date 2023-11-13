@@ -47,7 +47,7 @@ namespace Datadog.Trace.Tests.Propagators
 
             Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, true);
 
-            // W3CTraceContext-Datadog
+            // W3CTraceContext-Datadog Extracts first header only
             W3CDatadogPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
     new[]
                     {
@@ -61,7 +61,7 @@ namespace Datadog.Trace.Tests.Propagators
                     },
     true);
 
-            // Datadog-W3CTraceContext
+            // Datadog-W3CTraceContext Extracts first header only
             DatadogW3CPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 new[]
                 {
