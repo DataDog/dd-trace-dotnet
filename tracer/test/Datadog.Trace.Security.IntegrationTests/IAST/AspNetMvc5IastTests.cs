@@ -64,6 +64,7 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
         _iisFixture = iisFixture;
         _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
