@@ -54,7 +54,8 @@ public class DistributedPropagatorTests
     {
         Propagator = new SpanContextPropagator(
             injectors: null,
-            extractors: new IContextExtractor[] { DistributedContextExtractor.Instance });
+            extractors: new IContextExtractor[] { DistributedContextExtractor.Instance },
+            Tracer.Instance.Settings.PropagationExtractFirst);
     }
 
     public static TheoryData<string> GetInvalidIds() => new()

@@ -30,8 +30,10 @@ namespace Datadog.Trace.Tests.Propagators
 
         private static readonly SpanContextPropagator Propagator;
 
-        private static readonly SpanContextPropagator W3CDatadogPropagator;
-        private static readonly SpanContextPropagator DatadogW3CPropagator;
+        private static readonly SpanContextPropagator W3CDatadogPropagatorExtractFirstTrue;
+        private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstTrue;
+        private static readonly SpanContextPropagator W3CDatadogPropagatorExtractFirstFalse;
+        private static readonly SpanContextPropagator DatadogW3CPropagatorExtractFirstFalse;
 
         static MultiSpanContextPropagatorTests()
         {
@@ -43,23 +45,24 @@ namespace Datadog.Trace.Tests.Propagators
                             ContextPropagationHeaderStyle.B3SingleHeader,
                         };
 
-            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names);
+            Propagator = SpanContextPropagatorFactory.GetSpanContextPropagator(names, names, true);
 
             // W3CTraceContext-Datadog
-            W3CDatadogPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+            W3CDatadogPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
     new[]
-            {
-                ContextPropagationHeaderStyle.W3CTraceContext,
-                ContextPropagationHeaderStyle.Datadog,
-            },
+                    {
+                        ContextPropagationHeaderStyle.W3CTraceContext,
+                        ContextPropagationHeaderStyle.Datadog,
+                    },
     new[]
-            {
-                ContextPropagationHeaderStyle.W3CTraceContext,
-                ContextPropagationHeaderStyle.Datadog,
-            });
+                    {
+                        ContextPropagationHeaderStyle.W3CTraceContext,
+                        ContextPropagationHeaderStyle.Datadog,
+                    },
+    true);
 
             // Datadog-W3CTraceContext
-            DatadogW3CPropagator = SpanContextPropagatorFactory.GetSpanContextPropagator(
+            DatadogW3CPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
                 new[]
                 {
                     ContextPropagationHeaderStyle.Datadog,
@@ -69,7 +72,36 @@ namespace Datadog.Trace.Tests.Propagators
                 {
                     ContextPropagationHeaderStyle.Datadog,
                     ContextPropagationHeaderStyle.W3CTraceContext,
-                });
+                },
+                true);
+
+            // W3CTraceContext-Datadog
+            W3CDatadogPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                false);
+
+            // Datadog-W3CTraceContext
+            DatadogW3CPropagatorExtractFirstFalse = SpanContextPropagatorFactory.GetSpanContextPropagator(
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.Datadog,
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                },
+                false);
         }
 
         [Fact]
@@ -403,14 +435,12 @@ namespace Datadog.Trace.Tests.Propagators
 
         // Tests for making sure the behaviour of either copying the valid tracecontext or not is accurate
         [Theory]
-        [InlineData("true", false)]
-        [InlineData("false", true)]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
-        public void Test_headers_precedence_propagationstyle_matching_ids(string extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void Test_headers_precedence_propagationstyle_matching_ids(bool extractFirst, bool w3CHeaderFirst)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_PROPAGATION_EXTRACT_FIRST", extractFirst);
-
             // headers1 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
@@ -427,7 +457,16 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = w3CHeaderFirst ? W3CDatadogPropagator.Extract(headers.Object) : DatadogW3CPropagator.Extract(headers.Object);
+            SpanContext result;
+
+            if (w3CHeaderFirst)
+            {
+                result = extractFirst ? W3CDatadogPropagatorExtractFirstTrue.Extract(headers.Object) : W3CDatadogPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
+            else
+            {
+                result = extractFirst ? DatadogW3CPropagatorExtractFirstTrue.Extract(headers.Object) : DatadogW3CPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>
@@ -450,21 +489,19 @@ namespace Datadog.Trace.Tests.Propagators
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            PropagatedTags = propagatedTags,
                            Origin = w3CHeaderFirst ? "rum" : null,
-                           AdditionalW3CTraceState = extractFirst == "false" || w3CHeaderFirst ? "foo=1" : null,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
                        });
         }
 
         [Theory]
-        [InlineData("true", false)]
-        [InlineData("false", true)]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
-        public void Test_headers_precedence_propagationstyle_datadog_not_matching_tracestate(string extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void Test_headers_precedence_propagationstyle_datadog_not_matching_tracestate(bool extractFirst, bool w3CHeaderFirst)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_PROPAGATION_EXTRACT_FIRST", extractFirst);
-
             // headers2 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
@@ -481,7 +518,16 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = w3CHeaderFirst ? W3CDatadogPropagator.Extract(headers.Object) : DatadogW3CPropagator.Extract(headers.Object);
+            SpanContext result;
+
+            if (w3CHeaderFirst)
+            {
+                result = extractFirst ? W3CDatadogPropagatorExtractFirstTrue.Extract(headers.Object) : W3CDatadogPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
+            else
+            {
+                result = extractFirst ? DatadogW3CPropagatorExtractFirstTrue.Extract(headers.Object) : DatadogW3CPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>
@@ -503,21 +549,19 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = w3CHeaderFirst ? 1 : 2,
                            PropagatedTags = propagatedTags,
-                           AdditionalW3CTraceState = extractFirst == "false" || w3CHeaderFirst ? "foo=1" : null,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
                        });
         }
 
         [Theory]
-        [InlineData("true", false)]
-        [InlineData("false", true)]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
-        public void Test_headers_precedence_propagationstyle_no_dd_details_on_tracestate(string extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void Test_headers_precedence_propagationstyle_no_dd_details_on_tracestate(bool extractFirst, bool w3CHeaderFirst)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_PROPAGATION_EXTRACT_FIRST", extractFirst);
-
             // headers3 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
@@ -534,7 +578,16 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = w3CHeaderFirst ? W3CDatadogPropagator.Extract(headers.Object) : DatadogW3CPropagator.Extract(headers.Object);
+            SpanContext result;
+
+            if (w3CHeaderFirst)
+            {
+                result = extractFirst ? W3CDatadogPropagatorExtractFirstTrue.Extract(headers.Object) : W3CDatadogPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
+            else
+            {
+                result = extractFirst ? DatadogW3CPropagatorExtractFirstTrue.Extract(headers.Object) : DatadogW3CPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>
@@ -556,21 +609,19 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = w3CHeaderFirst ? 1 : 2,
                            PropagatedTags = !w3CHeaderFirst ? propagatedTags : new TraceTagCollection(),
-                           AdditionalW3CTraceState = extractFirst == "false" || w3CHeaderFirst ? "foo=1" : null,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
                        });
         }
 
         [Theory]
-        [InlineData("true", false)]
-        [InlineData("false", true)]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
-        public void Test_headers_precedence_propagationstyle_different_parentId_correctly_propagates_tracestate(string extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void Test_headers_precedence_propagationstyle_different_parentId_correctly_propagates_tracestate(bool extractFirst, bool w3CHeaderFirst)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_PROPAGATION_EXTRACT_FIRST", extractFirst);
-
             // headers4 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
@@ -587,7 +638,16 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = w3CHeaderFirst ? W3CDatadogPropagator.Extract(headers.Object) : DatadogW3CPropagator.Extract(headers.Object);
+            SpanContext result;
+
+            if (w3CHeaderFirst)
+            {
+                result = extractFirst ? W3CDatadogPropagatorExtractFirstTrue.Extract(headers.Object) : W3CDatadogPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
+            else
+            {
+                result = extractFirst ? DatadogW3CPropagatorExtractFirstTrue.Extract(headers.Object) : DatadogW3CPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>
@@ -609,21 +669,19 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = w3CHeaderFirst ? "000000003ade68b1" : "0000000000000dd4",
                            SamplingPriority = 2,
                            PropagatedTags = propagatedTags,
-                           AdditionalW3CTraceState = extractFirst == "false" || w3CHeaderFirst ? "foo=1" : null,
+                           AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
                        });
         }
 
         [Theory]
-        [InlineData("true", false)]
-        [InlineData("false", true)]
-        [InlineData("true", true)]
-        [InlineData("false", false)]
-        public void Test_headers_precedence_propagationstyle_different_traceId_and_present_tracestate(string extractFirst, bool w3CHeaderFirst)
+        [InlineData(false, false)]
+        [InlineData(false, true)]
+        [InlineData(true, false)]
+        [InlineData(true, true)]
+        public void Test_headers_precedence_propagationstyle_different_traceId_and_present_tracestate(bool extractFirst, bool w3CHeaderFirst)
         {
-            Environment.SetEnvironmentVariable("DD_TRACE_PROPAGATION_EXTRACT_FIRST", extractFirst);
-
             // headers5 equivalent from system-tests
             var headers = new Mock<IHeadersCollection>();
 
@@ -640,7 +698,16 @@ namespace Datadog.Trace.Tests.Propagators
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
-            var result = w3CHeaderFirst ? W3CDatadogPropagator.Extract(headers.Object) : DatadogW3CPropagator.Extract(headers.Object);
+            SpanContext result;
+
+            if (w3CHeaderFirst)
+            {
+                result = extractFirst ? W3CDatadogPropagatorExtractFirstTrue.Extract(headers.Object) : W3CDatadogPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
+            else
+            {
+                result = extractFirst ? DatadogW3CPropagatorExtractFirstTrue.Extract(headers.Object) : DatadogW3CPropagatorExtractFirstFalse.Extract(headers.Object);
+            }
 
             TraceTagCollection propagatedTags = new(
                 new List<KeyValuePair<string, string>>

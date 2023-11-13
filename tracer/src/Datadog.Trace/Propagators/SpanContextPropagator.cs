@@ -9,6 +9,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using Datadog.Trace.Configuration;
 using Datadog.Trace.ExtensionMethods;
 using Datadog.Trace.Headers;
 using Datadog.Trace.Util;
@@ -26,9 +27,11 @@ namespace Datadog.Trace.Propagators
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
+        private readonly bool _propagationExtractFirst;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirst)
         {
+            _propagationExtractFirst = propagationExtractFirst;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -55,7 +58,8 @@ namespace Datadog.Trace.Propagators
                         {
                             DistributedContextExtractor.Instance,
                             DatadogContextPropagator.Instance
-                        });
+                        },
+                        Tracer.Instance.Settings.PropagationExtractFirst);
 
                     return _instance;
                 }
@@ -155,7 +159,7 @@ namespace Datadog.Trace.Propagators
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
-                    if (Tracer.Instance.Settings.PropagationExtractFirst)
+                    if (_propagationExtractFirst)
                     {
                         return spanContext;
                     }
