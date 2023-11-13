@@ -68,9 +68,9 @@ internal class RedactedErrorLogCollector
     {
         _queue.TryEnqueue(log);
 
-        if (_queue.Count > QueueSizeTrigger && _tcs is { Task.IsCompleted: false } tcs)
+        if (_queue.Count > QueueSizeTrigger)
         {
-            tcs.TrySetResult(true);
+            _tcs.TrySetResult(true);
         }
     }
 
