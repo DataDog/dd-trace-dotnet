@@ -82,7 +82,9 @@ namespace Datadog.Trace.Activity
             }
             else
             {
-                operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : "otel_unknown";
+                // when there is no SpanKind defined (possible on Activity objects without "Kind")
+                // fallback to using "internal" for the name.
+                operationName = !string.IsNullOrEmpty(tags.SpanKind) ? tags.SpanKind : SpanKinds.Internal;
             }
 
             span.OperationName = operationName.ToLowerInvariant();

@@ -40,7 +40,7 @@ namespace Datadog.Trace.Tests
                 new object[] { "internal", SpanKinds.Internal, new Dictionary<string, string>() },
                 new object[] { "consumer", SpanKinds.Consumer, new Dictionary<string, string>() },
                 new object[] { "producer", SpanKinds.Producer, new Dictionary<string, string>() },
-                new object[] { "otel_unknown", null, new Dictionary<string, string>() },
+                new object[] { "internal", null, new Dictionary<string, string>() },
             };
 
         [Theory]
