@@ -334,25 +334,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
-    [InlineData("text/html", 200, "nosniff")]
-    [InlineData("text/html", 200, "")]
-    [InlineData("application/xhtml%2Bxml", 200, "")]
-    [InlineData("text/plain", 200, "")]
-    [InlineData("text/html", 200, "dummyvalue")]
-    [InlineData("text/html", 500, "")]
-    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "nosniff")]
+    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "")]
+    [InlineData(AddressesConstants.RequestQuery, "application/xhtml%2Bxml", 200, "")]
+    [InlineData(AddressesConstants.RequestQuery, "text/plain", 200, "")]
+    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "dummyvalue")]
+    [InlineData(AddressesConstants.RequestQuery, "text/html", 500, "")]
+    public async Task TestIastXContentTypeHeaderMissing(string test, string contentType, int returnCode, string xContentTypeHeaderValue)
     {
         var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
             (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
         var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
         var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
+        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing(scrubHash: false);
-        var sanitisedPath = VerifyHelper.SanitisePathsForVerify(url);
         await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName($"{_testName}.path={sanitisedPath}")
+                          .UseFileName($"{_testName}.path={sanitisedUrl}")
                           .DisableRequireUniquePrefix();
     }
 
