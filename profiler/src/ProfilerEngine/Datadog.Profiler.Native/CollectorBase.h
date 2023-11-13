@@ -56,8 +56,7 @@ public:
         IThreadsCpuManager* pThreadsCpuManager,
         IFrameStore* pFrameStore,
         IAppDomainStore* pAppDomainStore,
-        IRuntimeIdStore* pRuntimeIdStore,
-        IConfiguration* pConfiguration
+        IRuntimeIdStore* pRuntimeIdStore
         ) :
         ProviderBase(name),
         _pFrameStore{pFrameStore},
