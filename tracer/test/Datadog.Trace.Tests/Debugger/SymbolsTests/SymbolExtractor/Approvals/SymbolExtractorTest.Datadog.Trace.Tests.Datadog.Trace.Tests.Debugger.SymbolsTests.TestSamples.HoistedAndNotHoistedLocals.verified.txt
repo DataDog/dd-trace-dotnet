@@ -103,19 +103,19 @@
                       "name": "person",
                       "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "count",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "address",
                       "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     }
                   ]
                 }

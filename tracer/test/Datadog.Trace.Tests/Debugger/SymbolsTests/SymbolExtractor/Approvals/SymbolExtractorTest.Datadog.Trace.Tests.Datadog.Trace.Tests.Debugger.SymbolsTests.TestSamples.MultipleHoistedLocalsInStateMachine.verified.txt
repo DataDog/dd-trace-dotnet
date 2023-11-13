@@ -55,25 +55,25 @@
                       "name": "a",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "b",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "s",
                       "type": "System.String",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "e",
                       "type": "System.Exception",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     }
                   ]
                 }

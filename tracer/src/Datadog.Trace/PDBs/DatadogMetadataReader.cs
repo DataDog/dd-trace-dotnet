@@ -626,6 +626,11 @@ namespace Datadog.Trace.Pdb
             return methodBody.Size > 1;
         }
 
+        internal bool HasSequencePoints(int methodRid)
+        {
+            return GetMethodSequencePoints(methodRid)?.Count > 0;
+        }
+
         public void Dispose()
         {
             if (_disposed)

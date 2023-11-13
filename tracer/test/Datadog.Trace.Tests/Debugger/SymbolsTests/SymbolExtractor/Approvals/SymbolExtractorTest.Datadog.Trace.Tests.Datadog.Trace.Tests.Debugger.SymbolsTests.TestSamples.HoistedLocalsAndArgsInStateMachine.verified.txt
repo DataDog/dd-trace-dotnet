@@ -69,7 +69,7 @@
                       "name": "person",
                       "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     }
                   ]
                 }
@@ -123,13 +123,13 @@
                       "name": "localPerson",
                       "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     },
                     {
                       "name": "e",
                       "type": "System.Exception",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     }
                   ]
                 }

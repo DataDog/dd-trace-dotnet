@@ -78,7 +78,7 @@
                       "name": "result",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 2147483647
+                      "line": 0
                     }
                   ]
                 }

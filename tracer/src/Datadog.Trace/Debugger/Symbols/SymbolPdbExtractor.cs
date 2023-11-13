@@ -18,7 +18,6 @@ namespace Datadog.Trace.Debugger.Symbols;
 internal class SymbolPdbExtractor : SymbolExtractor
 {
     private const string GeneratedClassPrefix = "<>";
-    private const int UnknownLocalLine = int.MaxValue;
 
     internal SymbolPdbExtractor(DatadogMetadataReader pdbReader, string assemblyName)
         : base(pdbReader, assemblyName)
@@ -43,7 +42,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         var endColumn = lastSq.EndColumn == 0 ? UnknownMethodEndLine : lastSq.EndColumn;
 
         // locals
-        var localsSymbol = GetLocalSymbols(method.Handle.RowId, sequencePoints);
+        var localsSymbol = GetLocalSymbols(method.Handle.RowId, sequencePoints, methodScope.Symbols);
 
         methodScope.Symbols = ConcatMethodSymbols(methodScope.Symbols?.ToArray() ?? null, localsSymbol);
         methodScope.StartLine = startLine;
@@ -73,14 +72,19 @@ internal class SymbolPdbExtractor : SymbolExtractor
             return null;
         }
 
-        var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(generatedMethod.Handle.RowId);
-        if (cdi.IsNil)
+        if (!DatadogMetadataReader.HasSequencePoints(generatedMethod.Handle.RowId))
         {
             return null;
         }
 
+        var cdi = DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(generatedMethod.Handle.RowId);
         string? methodName;
-        if (!cdi.StateMachineHoistedLocal)
+        if (cdi.StateMachineHoistedLocal && method.Handle.RowId == cdi.StateMachineKickoffMethodRid)
+        {
+            var kickoffDef = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(cdi.StateMachineKickoffMethodRid));
+            methodName = MetadataReader.GetString(kickoffDef.Name);
+        }
+        else
         {
             var generatedMethodName = MetadataReader.GetString(generatedMethod.Name);
             if (generatedMethodName[0] != '<')
@@ -95,15 +99,6 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 return null;
             }
         }
-        else if (method.Handle.RowId == cdi.StateMachineKickoffMethodRid)
-        {
-            var kickoffDef = MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(cdi.StateMachineKickoffMethodRid));
-            methodName = MetadataReader.GetString(kickoffDef.Name);
-        }
-        else
-        {
-            return null;
-        }
 
         var closureMethodScope = CreateMethodScope(nestedType, generatedMethod);
         closureMethodScope.Name = methodName;
@@ -111,7 +106,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return closureMethodScope;
     }
 
-    private Symbol[]? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints)
+    private Symbol[]? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, IReadOnlyList<Symbol> args)
     {
         List<Symbol>? localsSymbol = null;
         var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);
@@ -143,12 +138,20 @@ internal class SymbolPdbExtractor : SymbolExtractor
                     localName = localName.Slice(1, endNameIndex - 1);
                 }
 
+                var type = field.DecodeSignature(new TypeProvider(false), 0);
+                var name = localName.ToString();
+
+                if (IsArgument(args, name, type))
+                {
+                    continue;
+                }
+
                 localsSymbol.Add(new Symbol
                 {
-                    Name = localName.ToString(),
-                    Type = field.DecodeSignature(new TypeProvider(false), 0),
+                    Name = name,
+                    Type = type,
                     SymbolType = SymbolType.Local,
-                    Line = UnknownLocalLine // todo: get the correct line
+                    Line = 0 // they are actually fields
                 });
             }
         }
@@ -184,10 +187,10 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             var nestedType = MetadataReader.GetTypeDefinition(nestedHandle);
                             var fields = nestedType.GetFields();
                             int index = 0;
-                            string[]? added = null;
+                            string?[]? added = null;
                             try
                             {
-                                added = ArrayPool<string>.Shared.Rent(fields.Count);
+                                added = ArrayPool<string?>.Shared.Rent(fields.Count);
                                 foreach (var fieldHandle in fields)
                                 {
                                     if (fieldHandle.IsNil)
@@ -208,9 +211,21 @@ internal class SymbolPdbExtractor : SymbolExtractor
                                         continue;
                                     }
 
+                                    var type = field.DecodeSignature(new TypeProvider(false), 0);
+
+                                    if (IsArgument(args, fieldName, type))
+                                    {
+                                        continue;
+                                    }
+
                                     bool contains = false;
                                     for (int j = 0; j < added.Length; j++)
                                     {
+                                        if (added[j] == null)
+                                        {
+                                            break;
+                                        }
+
                                         if (added[j] == fieldName)
                                         {
                                             contains = true;
@@ -227,7 +242,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                                     localsSymbol.Add(new Symbol
                                     {
                                         Name = fieldName,
-                                        Type = field.DecodeSignature(new TypeProvider(false), 0),
+                                        Type = type,
                                         SymbolType = SymbolType.Local,
                                         Line = local.Line
                                     });
@@ -238,7 +253,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
                             {
                                 if (added != null)
                                 {
-                                    ArrayPool<string>.Shared.Return(added, true);
+                                    ArrayPool<string?>.Shared.Return(added, true);
                                 }
                             }
                         }
@@ -258,5 +273,24 @@ internal class SymbolPdbExtractor : SymbolExtractor
         }
 
         return localsSymbol?.ToArray();
+    }
+
+    private bool IsArgument(IReadOnlyList<Symbol>? args, string name, string type)
+    {
+        if (args == null)
+        {
+            return false;
+        }
+
+        for (int i = 0; i < args.Count; i++)
+        {
+            var arg = args[i];
+            if (arg.Name == name && arg.Type == type)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }

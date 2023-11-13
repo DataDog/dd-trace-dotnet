@@ -12,7 +12,15 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples
     {
         private void Foo()
         {
-            var enumerable = Enumerable.Range(0, 10).Where(i => i % 2 == 0).Select(i => i + 1).Join(Enumerable.Range(0, 10).Where(i => i % 2 == 0), i => i, i => i, (i, i1) => i + i1);
+            var enumerable = Enumerable.Range(0, 10).
+                                        Where(a => a % 2 == 0).
+                                        Select(b => b + 1).
+                                        Join(
+                                            Enumerable.Range(0, 10).
+                                                       Where(c => c % 2 == 0),
+                                            d => d,
+                                            e => e,
+                                            (f, g) => f + g);
             Console.WriteLine(enumerable.ToList());
         }
     }

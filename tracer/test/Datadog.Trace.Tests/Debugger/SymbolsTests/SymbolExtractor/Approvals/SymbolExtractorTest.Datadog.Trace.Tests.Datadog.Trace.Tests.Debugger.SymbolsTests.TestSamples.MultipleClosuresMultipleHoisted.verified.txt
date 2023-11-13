@@ -12,9 +12,9 @@
       "scopes": [
         {
           "scope_type": "class",
-          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.NestedFluentLinq",
+          "name": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.MultipleClosuresMultipleHoisted",
           "start_line": 14,
-          "end_line": 25,
+          "end_line": 30,
           "language_specifics": {
             "super_classes": [
               "System.Object"
@@ -24,9 +24,9 @@
             {
               "scope_type": "method",
               "name": "Foo",
-              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+              "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
               "start_line": 14,
-              "end_line": 25,
+              "end_line": 30,
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
@@ -34,8 +34,20 @@
               },
               "symbols": [
                 {
-                  "name": "enumerable",
-                  "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
+                  "name": "argument1",
+                  "type": "System.Int32",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
+                  "name": "argument2",
+                  "type": "System.Int32",
+                  "symbol_type": "arg",
+                  "line": 0
+                },
+                {
+                  "name": "res",
+                  "type": "System.Int32",
                   "symbol_type": "local",
                   "line": 14
                 }
@@ -44,7 +56,7 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 16,
                   "end_line": 16,
                   "language_specifics": {
@@ -52,12 +64,12 @@
                       "Assembly"
                     ],
                     "return_type": "System.Bool",
-                    "start_column": 52,
-                    "end_column": 62
+                    "start_column": 46,
+                    "end_column": 57
                   },
                   "symbols": [
                     {
-                      "name": "a",
+                      "name": "t1",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
@@ -67,7 +79,7 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 17,
                   "end_line": 17,
                   "language_specifics": {
@@ -75,12 +87,12 @@
                       "Assembly"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 53,
-                    "end_column": 58
+                    "start_column": 47,
+                    "end_column": 53
                   },
                   "symbols": [
                     {
-                      "name": "b",
+                      "name": "t2",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
@@ -90,20 +102,20 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 20,
                   "end_line": 20,
                   "language_specifics": {
                     "access_modifiers": [
                       "Assembly"
                     ],
-                    "return_type": "System.Bool",
-                    "start_column": 67,
-                    "end_column": 77
+                    "return_type": "System.Int32",
+                    "start_column": 44,
+                    "end_column": 50
                   },
                   "symbols": [
                     {
-                      "name": "c",
+                      "name": "i1",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
@@ -113,7 +125,7 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 21,
                   "end_line": 21,
                   "language_specifics": {
@@ -121,12 +133,12 @@
                       "Assembly"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 50,
-                    "end_column": 51
+                    "start_column": 44,
+                    "end_column": 46
                   },
                   "symbols": [
                     {
-                      "name": "d",
+                      "name": "i2",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
@@ -136,7 +148,7 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 22,
                   "end_line": 22,
                   "language_specifics": {
@@ -144,12 +156,18 @@
                       "Assembly"
                     ],
                     "return_type": "System.Int32",
-                    "start_column": 50,
-                    "end_column": 51
+                    "start_column": 63,
+                    "end_column": 82
                   },
                   "symbols": [
                     {
-                      "name": "e",
+                      "name": "i3",
+                      "type": "System.Int32",
+                      "symbol_type": "arg",
+                      "line": 0
+                    },
+                    {
+                      "name": "i4",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
@@ -159,26 +177,20 @@
                 {
                   "scope_type": "closure",
                   "name": "Foo",
-                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\NestedFluentLinq.cs",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleClosuresMultipleHoisted.cs",
                   "start_line": 23,
                   "end_line": 23,
                   "language_specifics": {
                     "access_modifiers": [
                       "Assembly"
                     ],
-                    "return_type": "System.Int32",
-                    "start_column": 55,
+                    "return_type": "System.Bool",
+                    "start_column": 46,
                     "end_column": 60
                   },
                   "symbols": [
                     {
-                      "name": "f",
-                      "type": "System.Int32",
-                      "symbol_type": "arg",
-                      "line": 0
-                    },
-                    {
-                      "name": "g",
+                      "name": "i5",
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0

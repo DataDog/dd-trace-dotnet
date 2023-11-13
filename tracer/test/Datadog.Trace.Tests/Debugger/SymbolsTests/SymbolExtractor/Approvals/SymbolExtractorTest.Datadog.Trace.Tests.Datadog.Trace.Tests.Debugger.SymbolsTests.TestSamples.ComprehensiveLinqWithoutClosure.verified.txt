@@ -45,6 +45,31 @@
                   "symbol_type": "local",
                   "line": 14
                 }
+              ],
+              "scopes": [
+                {
+                  "scope_type": "closure",
+                  "name": "Foo",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithoutClosure.cs",
+                  "start_line": 19,
+                  "end_line": 19,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Assembly"
+                    ],
+                    "return_type": "System.Bool",
+                    "start_column": 33,
+                    "end_column": 43
+                  },
+                  "symbols": [
+                    {
+                      "name": "i",
+                      "type": "System.Int32",
+                      "symbol_type": "arg",
+                      "line": 0
+                    }
+                  ]
+                }
               ]
             },
             {
