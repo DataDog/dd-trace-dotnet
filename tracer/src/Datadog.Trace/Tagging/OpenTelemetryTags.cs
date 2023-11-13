@@ -3,6 +3,7 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using Datadog.Trace.Configuration;
 using Datadog.Trace.SourceGenerators;
 
 namespace Datadog.Trace.Tagging
@@ -44,5 +45,18 @@ namespace Datadog.Trace.Tagging
 
         [Tag("network.protocol.name")]
         public string NetworkProtocolName { get; set; }
+
+        [Metric(Trace.Tags.Analytics)]
+        public double? AnalyticsSampleRate { get; set; }
+
+        public void SetAnalyticsSampleRate(IntegrationId integration, ImmutableTracerSettings settings, bool enabledWithGlobalSetting)
+        {
+            if (settings != null)
+            {
+#pragma warning disable 618 // App analytics is deprecated, but still used
+                    AnalyticsSampleRate = settings.GetIntegrationAnalyticsSampleRate(integration, enabledWithGlobalSetting);
+#pragma warning restore 618
+            }
+        }
     }
 }

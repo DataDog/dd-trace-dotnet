@@ -14,12 +14,6 @@ namespace Datadog.Trace.Tagging
 {
     partial class AzureServiceBusTags
     {
-        // AnalyticsSampleRateBytes = MessagePack.Serialize("_dd1.sr.eausr");
-#if NETCOREAPP
-        private static ReadOnlySpan<byte> AnalyticsSampleRateBytes => new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
-#else
-        private static readonly byte[] AnalyticsSampleRateBytes = new byte[] { 173, 95, 100, 100, 49, 46, 115, 114, 46, 101, 97, 117, 115, 114 };
-#endif
         // MessageQueueTimeMsBytes = MessagePack.Serialize("message.queue_time_ms");
 #if NETCOREAPP
         private static ReadOnlySpan<byte> MessageQueueTimeMsBytes => new byte[] { 181, 109, 101, 115, 115, 97, 103, 101, 46, 113, 117, 101, 117, 101, 95, 116, 105, 109, 101, 95, 109, 115 };
@@ -102,7 +96,6 @@ namespace Datadog.Trace.Tagging
         {
             return key switch
             {
-                "_dd1.sr.eausr" => AnalyticsSampleRate,
                 "message.queue_time_ms" => MessageQueueTimeMs,
                 _ => base.GetMetric(key),
             };
@@ -112,9 +105,6 @@ namespace Datadog.Trace.Tagging
         {
             switch(key)
             {
-                case "_dd1.sr.eausr": 
-                    AnalyticsSampleRate = value;
-                    break;
                 case "message.queue_time_ms": 
                     MessageQueueTimeMs = value;
                     break;
@@ -126,11 +116,6 @@ namespace Datadog.Trace.Tagging
 
         public override void EnumerateMetrics<TProcessor>(ref TProcessor processor)
         {
-            if (AnalyticsSampleRate is not null)
-            {
-                processor.Process(new TagItem<double>("_dd1.sr.eausr", AnalyticsSampleRate.Value, AnalyticsSampleRateBytes));
-            }
-
             if (MessageQueueTimeMs is not null)
             {
                 processor.Process(new TagItem<double>("message.queue_time_ms", MessageQueueTimeMs.Value, MessageQueueTimeMsBytes));
@@ -141,13 +126,6 @@ namespace Datadog.Trace.Tagging
 
         protected override void WriteAdditionalMetrics(System.Text.StringBuilder sb)
         {
-            if (AnalyticsSampleRate is not null)
-            {
-                sb.Append("_dd1.sr.eausr (metric):")
-                  .Append(AnalyticsSampleRate.Value)
-                  .Append(',');
-            }
-
             if (MessageQueueTimeMs is not null)
             {
                 sb.Append("message.queue_time_ms (metric):")
