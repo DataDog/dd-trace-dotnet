@@ -82,6 +82,10 @@ uint32_t IpcClient::Read(PVOID pBuffer, uint32_t bufferSize)
     {
         return NamedPipesCode::NotConnected;
     }
+    else if (lastError == ERROR_BROKEN_PIPE)
+    {
+        return NamedPipesCode::Broken;
+    }
     else
     {
         ShowLastError("Failed to read result", lastError);

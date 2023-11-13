@@ -4,6 +4,14 @@
 
 #include "EtwEventsManager.h"
 
+#include "Windows.h"
+
+#include <string>
+
+const std::string NamedPipePrefix = "\\\\.\\pipe\\DD_ETW_CLIENT_";
+const std::string NamedPipeAgent = "\\\\.\\pipe\\DD_ETW_DISPATCHER";
+
+
 EtwEventsManager::EtwEventsManager(
     IAllocationsListener* pAllocationListener,
     IContentionListener* pContentionListener,
@@ -15,13 +23,38 @@ EtwEventsManager::EtwEventsManager(
         pGCSuspensionsListener);
 }
 
+void EtwEventsManager::OnEvent(
+    uint32_t tid,
+    uint32_t version,
+    uint64_t keyword,
+    uint8_t level,
+    uint32_t id,
+    uint32_t cbEventData,
+    const uint8_t* pEventData)
+{
+    _parser.get()->ParseEvent(version, keyword, id, cbEventData, pEventData);
+}
+
+void EtwEventsManager::OnStop()
+{
+    // TODO: add some logs
+}
+
+
 void EtwEventsManager::Register(IGarbageCollectionsListener* pGarbageCollectionsListener)
 {
     _parser->Register(pGarbageCollectionsListener);
 }
 
+
 bool EtwEventsManager::Start()
 {
+    DWORD pid = ::GetCurrentProcessId();
+
+    // TODO: start the server named pipe
+
+    // TODO: contact the Agent named pipe
+
     return true;
 }
 

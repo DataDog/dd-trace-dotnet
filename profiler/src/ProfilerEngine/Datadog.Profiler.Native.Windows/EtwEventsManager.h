@@ -3,12 +3,19 @@
 
 #pragma once
 
+#include "IEtwEventsManager.h"
+#include "..\Datadog.Profiler.Native\IClrEventsReceiver.h"
+#include "ClrEventsParser.h"
+#include "ETW/IpcClient.h"
+#include "ETW/IpcServer.h"
+#include "ETW/EtwEventsHandler.h"
+
 #include <memory>
 
-#include "IEtwEventsManager.h"
-#include "ClrEventsParser.h"
 
-class EtwEventsManager : public IEtwEventsManager
+class EtwEventsManager :
+    public IEtwEventsManager,
+    public IClrEventsReceiver
 {
 public:
     EtwEventsManager(
@@ -17,10 +24,24 @@ public:
         IGCSuspensionsListener* pGCSuspensionsListener
         );
 
+// Inherited via IEtwEventsManager
     virtual void Register(IGarbageCollectionsListener* pGarbageCollectionsListener) override;
     virtual bool Start() override;
     virtual void Stop() override;
 
+// Inherited via IClrEventsReceiver
+    virtual void OnEvent(
+        uint32_t tid,
+        uint32_t version,
+        uint64_t keyword,
+        uint8_t level,
+        uint32_t id,
+        uint32_t cbEventData,
+        const uint8_t* pEventData) override;
+    virtual void OnStop() override;
+
 private:
     std::unique_ptr<ClrEventsParser> _parser;
+    std::unique_ptr<IpcClient> _ipcClient;
+    std::unique_ptr<IpcServer> _ipcServer;
 };

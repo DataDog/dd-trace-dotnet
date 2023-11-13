@@ -14,7 +14,7 @@
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h"
-
+#include "ClrEventDumper.h"
 
 void ShowHelp()
 {
@@ -114,23 +114,26 @@ void SendRegistrationCommand(IpcClient* pClient, int pid, bool add)
         if (code == NamedPipesCode::NotConnected)
         {
             // expected after unregistration (i.e. !add) because the pipe will be closed by the Agent
-            if (add)
-            {
-                std::cout << "Pipe no more connected: registration failed...\n";
-            }
+            std::cout << "Pipe is no more connected\n";
+        }
+        else
+        if (code == NamedPipesCode::Broken)
+        {
+            // expected when the Agent crashes
+            std::cout << "Pipe is broken\n";
         }
         else
         {
             ShowLastError("Failed to read result", code);
+        }
 
-            if (add)
-            {
-                std::cout << "Registration failed...\n";
-            }
-            else
-            {
-                std::cout << "Unregistration failed...\n";
-            }
+        if (add)
+        {
+            std::cout << "Registration failed...\n";
+        }
+        else
+        {
+            std::cout << "Unregistration failed...\n";
         }
     }
 }
@@ -170,8 +173,9 @@ int main(int argc, char* argv[])
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
+    ClrEventDumper eventDumper;
     bool showMessages = true;
-    auto handler = std::make_unique<EtwEventsHandler>(showMessages);
+    auto handler = std::make_unique<EtwEventsHandler>(showMessages, &eventDumper);
     auto server = IpcServer::StartAsync(
         showMessages,
         pipeName,

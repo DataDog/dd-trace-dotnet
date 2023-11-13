@@ -366,6 +366,7 @@
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
     <ClCompile Include="GCThreadsCpuProvider.cpp" />
+    <ClCompile Include="IClrEventsReceiver.h" />
     <ClCompile Include="MetadataProvider.cpp" />
     <ClCompile Include="LiveObjectInfo.cpp" />
     <ClCompile Include="LiveObjectsProvider.cpp" />
