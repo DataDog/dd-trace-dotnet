@@ -335,23 +335,30 @@ namespace Samples.Security.AspNetCore5.Controllers
         [Route("XContentTypeHeaderMissing")]
         public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
         {
-            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            try
             {
-                Response.AddHeader("X-Content-Type-Options", xContentTypeHeaderValue);
-            }
+                if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+                {
+                    Response.AddHeader("X-Content-Type-Options", xContentTypeHeaderValue);
+                }
 
-            if (returnCode != (int)HttpStatusCode.OK)
-            {
-                return new HttpStatusCodeResult(returnCode);
-            }
+                if (returnCode != (int)HttpStatusCode.OK)
+                {
+                    return new HttpStatusCodeResult(returnCode);
+                }
 
-            if (!string.IsNullOrEmpty(contentType))
-            {
-                return Content("XContentTypeHeaderMissing", contentType);
+                if (!string.IsNullOrEmpty(contentType))
+                {
+                    return Content("XContentTypeHeaderMissing", contentType);
+                }
+                else
+                {
+                    return Content("XContentTypeHeaderMissing");
+                }
             }
-            else
+            catch(Exception ex)
             {
-                return Content("XContentTypeHeaderMissing");
+                return Content(IastControllerHelper.ToFormattedString(ex));
             }
         }
 

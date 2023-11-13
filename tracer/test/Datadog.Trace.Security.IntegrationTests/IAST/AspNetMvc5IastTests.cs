@@ -49,6 +49,55 @@ public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
 }
 
 [Collection("IisTests")]
+public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
+{
+    private readonly IisFixture _iisFixture;
+    private readonly string _testName;
+
+    public AspNetMvc5IntegratedWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
+        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
+    {
+        EnableIast(true);
+        EnableEvidenceRedaction(false);
+        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Debug);
+        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
+        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
+        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
+        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
+
+        _iisFixture = iisFixture;
+        _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
+        _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
+                 ".Integrated" + ".enableIast=true";
+        SetHttpPort(iisFixture.HttpPort);
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [InlineData("text/html", 200, "nosniff")]
+    [InlineData("text/html", 200, "")]
+    [InlineData("application/xhtml%2Bxml", 200, "")]
+    [InlineData("text/plain", 200, "")]
+    [InlineData("text/html", 200, "dummyvalue")]
+    [InlineData("text/html", 500, "")]
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{_testName}.path={sanitisedUrl}")
+                          .DisableRequireUniquePrefix();
+    }
+}
+
+[Collection("IisTests")]
 public class AspNetMvc5ClassicWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
 {
     private readonly IisFixture _iisFixture;
@@ -329,30 +378,6 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                             .UseFileName(filename)
                             .DisableRequireUniquePrefix();
-    }
-
-    [SkippableTheory]
-    [Trait("Category", "ArmUnsupported")]
-    [Trait("RunOnWindows", "True")]
-    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "nosniff")]
-    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "")]
-    [InlineData(AddressesConstants.RequestQuery, "application/xhtml%2Bxml", 200, "")]
-    [InlineData(AddressesConstants.RequestQuery, "text/plain", 200, "")]
-    [InlineData(AddressesConstants.RequestQuery, "text/html", 200, "dummyvalue")]
-    [InlineData(AddressesConstants.RequestQuery, "text/html", 500, "")]
-    public async Task TestIastXContentTypeHeaderMissing(string test, string contentType, int returnCode, string xContentTypeHeaderValue)
-    {
-        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
-            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
-        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(test, sanitisedUrl, null);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName($"{_testName}.path={sanitisedUrl}")
-                          .DisableRequireUniquePrefix();
     }
 
     protected override string GetTestName() => _testName;
