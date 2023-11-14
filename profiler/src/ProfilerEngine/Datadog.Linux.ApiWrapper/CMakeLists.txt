@@ -16,6 +16,10 @@ if (DEFINED ENV{IsAlpine} AND "$ENV{IsAlpine}" MATCHES "true")
     add_compile_options(-DDD_ALPINE)
 endif()
 
+if (UNIVERSAL_BINARY)
+    add_compile_options(-DDD_UNIVERSAL_BINARY)
+endif()
+
 # ******************************************************
 # Environment detection
 # ******************************************************
@@ -39,10 +43,17 @@ add_library(${API_WRAPPER_SHARED_LIB_NAME} SHARED
 
 # Define linker libraries
 target_link_libraries(${API_WRAPPER_SHARED_LIB_NAME}
-    -pthread
-    -ldl
     -Wl,--build-id
 )
+
+if (NOT UNIVERSAL_BINARY)
+    target_link_libraries(${API_WRAPPER_SHARED_LIB_NAME}
+        -pthread
+        -ldl
+    )
+else()
+    target_link_options(${API_WRAPPER_SHARED_LIB_NAME} PRIVATE "-nolibc")
+endif()
 
 set_target_properties(${API_WRAPPER_SHARED_LIB_NAME} PROPERTIES PREFIX "")
 
