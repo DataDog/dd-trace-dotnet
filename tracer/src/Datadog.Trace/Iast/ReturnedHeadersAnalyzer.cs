@@ -24,11 +24,11 @@ internal static class ReturnedHeadersAnalyzer
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
 #if NETFRAMEWORK
-    internal static void Analyze(NameValueCollection headers, IntegrationId integrationId, string serviceName)
+    internal static void Analyze(NameValueCollection headers, IntegrationId integrationId, string serviceName, int responseCode)
     {
         try
         {
-            if (string.IsNullOrEmpty(serviceName))
+            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
                 return;
             }
@@ -44,15 +44,25 @@ internal static class ReturnedHeadersAnalyzer
                 if (headerKey.ToLowerInvariant() == ContentTypeLow)
                 {
                     contentTypeValue = headers[headerKey];
+
+                    if (!IsHtmlResponse(contentTypeValue))
+                    {
+                        return;
+                    }
                 }
 
                 if (headerKey.ToLowerInvariant() == XContentTypeOptionsLow)
                 {
                     contentOptionValue = headers[headerKey];
+
+                    if (IsNoSniffContentOptions(contentOptionValue))
+                    {
+                        return;
+                    }
                 }
             }
 
-            LaunchVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
         }
         catch (Exception error)
         {
@@ -62,12 +72,12 @@ internal static class ReturnedHeadersAnalyzer
 #else
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
-    // int account that can be case insensitive.
-    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName)
+    // int account that can be case insensitive. Exclude vulnerability when return code is one of the ignorable.
+    internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
     {
         try
         {
-            if (string.IsNullOrEmpty(serviceName))
+            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
             {
                 return;
             }
@@ -83,15 +93,25 @@ internal static class ReturnedHeadersAnalyzer
                 if (header.Key.ToLowerInvariant() == ContentTypeLow)
                 {
                     contentTypeValue = header.Value;
+
+                    if (!IsHtmlResponse(contentTypeValue))
+                    {
+                        return;
+                    }
                 }
 
                 if (header.Key.ToLowerInvariant() == XContentTypeOptionsLow)
                 {
                     contentOptionValue = header.Value;
+
+                    if (IsNoSniffContentOptions(contentOptionValue))
+                    {
+                        return;
+                    }
                 }
             }
 
-            LaunchVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
         }
         catch (Exception error)
         {
@@ -100,9 +120,9 @@ internal static class ReturnedHeadersAnalyzer
     }
 #endif
 
-    private static void LaunchVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
+    private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
     {
-        if (IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
+        if (!string.IsNullOrEmpty(contentTypeValue))
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }

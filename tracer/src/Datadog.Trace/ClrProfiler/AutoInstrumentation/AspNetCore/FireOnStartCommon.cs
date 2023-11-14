@@ -81,7 +81,8 @@ public static class FireOnStartCommon
                 {
                     if (span is not null)
                     {
-                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName);
+                        var statusCode = instance.DuckCast<HttpProtocolStruct>().StatusCode;
+                        ReturnedHeadersAnalyzer.Analyze(responseHeaders, IntegrationId.AspNetCore, span.ServiceName, statusCode);
                     }
 
                     CookieAnalyzer.AnalyzeCookies(responseHeaders, IntegrationId.AspNetCore);
@@ -97,6 +98,8 @@ public static class FireOnStartCommon
     {
         [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
         public IHeaderDictionary ResponseHeaders;
+        [Duck(BindingFlags = DuckAttribute.DefaultFlags | BindingFlags.IgnoreCase)]
+        public int StatusCode;
     }
 }
 

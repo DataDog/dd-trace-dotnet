@@ -281,7 +281,7 @@ namespace Datadog.Trace.AspNet
                         {
                             if (rootSpan is not null && HttpRuntime.UsingIntegratedPipeline && _canReadHttpResponseHeaders)
                             {
-                                ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId.AspNetCore, rootSpan.ServiceName);
+                                ReturnedHeadersAnalyzer.Analyze(app.Context.Response.Headers, IntegrationId, rootSpan.ServiceName, app.Context.Response.StatusCode);
                             }
 
                             CookieAnalyzer.AnalyzeCookies(app.Context.Response.Cookies, IntegrationId);
