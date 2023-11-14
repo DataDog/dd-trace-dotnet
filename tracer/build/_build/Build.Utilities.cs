@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
-using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -471,7 +469,7 @@ partial class Build
             Logger.Warning(ex, "Error calling Azdo API to check for debug run");
             return false;
         }
-    } 
+    }
 
     private static MSBuildTargetPlatform GetDefaultTargetPlatform()
     {
@@ -486,6 +484,22 @@ partial class Build
         }
 
         return MSBuildTargetPlatform.x64;
+    }
+
+    private static string GetDefaultRuntimeIdentifier()
+    {
+        // https://learn.microsoft.com/en-us/dotnet/core/rid-catalog
+        return (Platform, (string)GetDefaultTargetPlatform()) switch
+               {
+                   (PlatformFamily.Windows, "x86") => "win-x86",
+                   (PlatformFamily.Windows, "x64") => "win-x64",
+
+                   (PlatformFamily.Linux, "x64") => "linux-x64",
+                   (PlatformFamily.Linux, "ARM64" or "ARM64EC") => "linux-arm64",
+
+                   (PlatformFamily.OSX, "ARM64" or "ARM64EC") => "osx-arm64",
+                   _ => null
+               };
     }
 
     private static MSBuildTargetPlatform ARM64TargetPlatform = (MSBuildTargetPlatform)"ARM64";

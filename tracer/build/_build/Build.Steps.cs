@@ -45,6 +45,8 @@ partial class Build
     AbsolutePath WindowsTracerHomeZip => ArtifactsDirectory / "windows-tracer-home.zip";
     AbsolutePath WindowsSymbolsZip => ArtifactsDirectory / "windows-native-symbols.zip";
     AbsolutePath OsxTracerHomeZip => ArtifactsDirectory / "macOS-tracer-home.zip";
+    AbsolutePath AwsLambdaTracerHomeDirectory => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}" / "datadog";
+    AbsolutePath AwsLambdaTracerHomeZip => ArtifactsDirectory / $"aws-lambda-{RuntimeIdentifier}.zip";
     AbsolutePath BuildDataDirectory => TracerDirectory / "build_data";
     AbsolutePath TestLogsDirectory => BuildDataDirectory / "logs";
     AbsolutePath ToolSourceDirectory => ToolSource ?? (OutputDirectory / "runnerTool");
@@ -397,7 +399,6 @@ partial class Build
             DotnetBuild(toBuild, noDependencies: false);
         });
 
-
     Target CompileTracerNativeTestsWindows => _ => _
         .Unlisted()
         .After(CompileNativeSrc)
@@ -618,6 +619,31 @@ partial class Build
                     .SetOutput(MonitoringHomeDirectory / framework)));
         });
 
+    Target PublishManagedTracerForAwsLambda => _ => _
+        .Unlisted()
+        .Requires(() => RuntimeIdentifier != null)
+        .After(Clean, Restore)
+        .Executes(() =>
+        {
+            // always target .NET 6 on AWS Lambda
+            var framework = TargetFramework.NET6_0;
+
+            // allow restore/build because we're targeting different runtime identifiers than when we initially restored
+            DotNetPublish(s => s
+                .SetProject(Solution.GetProject(Projects.DatadogTrace))
+                .SetConfiguration(BuildConfiguration)
+                .SetTargetPlatformAnyCPU()
+                .SetOutput(AwsLambdaTracerHomeDirectory / framework)
+                .SetFramework(framework)
+                .SetProperty("GenerateDocumentationFile", "false")
+                .SetProperty("DebugSymbols", "false")
+                .SetProperty("DebugType", "none")
+                .SetPublishReadyToRun(PublishReadyToRun)
+                .When(PublishReadyToRun, settings => settings
+                    .SetRuntime(RuntimeIdentifier) // required for ReadyToRun
+                    .SetSelfContained(false)));    // required when setting RuntimeIdentifier
+        });
+
     Target PublishNativeSymbolsWindows => _ => _
       .Unlisted()
       .OnlyWhenStatic(() => IsWin)
@@ -672,6 +698,21 @@ partial class Build
             CopyFileToDirectory(
                 NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
                 MonitoringHomeDirectory / arch,
+                FileExistsPolicy.Overwrite);
+        });
+
+    Target PublishNativeTracerAwsLambda => _ => _
+        .Unlisted()
+        .OnlyWhenStatic(() => IsLinux)
+        .After(CompileNativeSrc, PublishManagedTracerForAwsLambda)
+        .Executes(() =>
+        {
+            var (arch, extension) = GetUnixArchitectureAndExtension();
+
+            // Copy Native file
+            CopyFileToDirectory(
+                NativeTracerProject.Directory / "build" / "bin" / $"{NativeTracerProject.Name}.{extension}",
+                AwsLambdaTracerHomeDirectory / arch,
                 FileExistsPolicy.Overwrite);
         });
 
@@ -789,6 +830,30 @@ partial class Build
                 ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
             }
         });
+
+    Target RemoveDebugInfoAwsLambda => _ => _
+        .Unlisted()
+        .After(PublishNativeTracerAwsLambda, PublishNativeLoaderAwsLambda)
+        .Executes(() =>
+        {
+            // remove debug info from everything in AWS Lambda home
+            var files = AwsLambdaTracerHomeDirectory.GlobFiles("linux-*/*.so");
+
+            foreach (var file in files)
+            {
+                // var outputDir = SymbolsDirectory / new FileInfo(file).Directory!.Name;
+                // EnsureExistingDirectory(outputDir);
+                // var outputFile = outputDir / Path.GetFileNameWithoutExtension(file);
+                // var debugOutputFile = outputFile + ".debug";
+
+                // Logger.Information($"Extracting debug symbol for {file} to {outputFile}.debug");
+                // ExtractDebugInfo.Value(arguments: $"--only-keep-debug {file} {debugOutputFile}");
+
+                Logger.Information($"Stripping out unneeded information from {file}");
+                StripBinary.Value(arguments: $"--strip-unneeded {file}");
+
+                // Logger.Information($"Add .gnu_debuglink for {file} targeting {debugOutputFile}");
+                // ExtractDebugInfo.Value(arguments: $"--add-gnu-debuglink={debugOutputFile} {file}");
 
     Target CopyDdDotnet => _ => _
         .After(BuildDdDotnet)
@@ -946,6 +1011,16 @@ partial class Build
             RenameFile(
                 workingDirectory / $"{packageName}.tar.gz",
                 workingDirectory / versionedName);
+        });
+
+    Target ZipMonitoringHomeForAwsLambda => _ => _
+        .Unlisted()
+        .After(PublishTracerHomeForAwsLambda)
+        .Requires(() => IsLinux)
+        .Executes(() =>
+        {
+            // create the zip file
+            CompressZip(AwsLambdaTracerHomeDirectory.Parent, AwsLambdaTracerHomeZip, fileMode: FileMode.Create);
         });
 
     Target ZipMonitoringHomeOsx => _ => _

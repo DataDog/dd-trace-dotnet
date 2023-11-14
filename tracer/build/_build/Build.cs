@@ -30,7 +30,7 @@ partial class Build : NukeBuild
     ///   - Microsoft VisualStudio     https://nuke.build/visualstudio
     ///   - Microsoft VSCode           https://nuke.build/vscode
 
-    [Parameter("Configuration to build - Default is 'Release'")]
+    [Parameter("Configuration to build. Default is 'Release'")]
     readonly Configuration BuildConfiguration = Configuration.Release;
 
     [Parameter("Platform to build - x86, x64, ARM64. Defaults to the current platform.")]
@@ -38,6 +38,15 @@ partial class Build : NukeBuild
 
     [Parameter("The TargetFramework to execute when running or building a sample app, or linux integration tests")]
     readonly TargetFramework Framework;
+
+    [Parameter("Publish ReadyToRun assemblies in 'PublishManagedTracerForAwsLambda'. Default is 'true'." +
+               "If enabled, requires RuntimeIdentifier to be set. See https://learn.microsoft.com/en-us/dotnet/core/deploying/ready-to-run")]
+    readonly bool PublishReadyToRun = true;
+
+    // using string instead of DotNetRuntimeIdentifier type because parameter values must match field names, e.g. "win-x64" vs "win_x64"
+    [Parameter("RuntimeIdentifier identifies the target platform for ReadyToRun assemblies in 'PublishManagedTracerForAwsLambda'." +
+               "Required if 'PublishReadyToRun' is enabled. See https://learn.microsoft.com/en-us/dotnet/core/rid-catalog")]
+    readonly string RuntimeIdentifier = GetDefaultRuntimeIdentifier();
 
     [Parameter("Should all versions of integration NuGet packages be tested")]
     readonly bool TestAllPackageVersions;
@@ -47,6 +56,7 @@ partial class Build : NukeBuild
 
     [Parameter("The location to create the monitoring home directory. Default is ./shared/bin/monitoring-home ")]
     readonly AbsolutePath MonitoringHome;
+
     [Parameter("The location to place NuGet packages and other packages. Default is ./bin/artifacts ")]
     readonly AbsolutePath Artifacts;
 
@@ -59,13 +69,13 @@ partial class Build : NukeBuild
     [Parameter("The current version of the source and build")]
     readonly string Version = "2.42.0";
 
-    [Parameter("Whether the current build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the current build version is a prerelease (for packaging purposes)")]
     readonly bool IsPrerelease = false;
 
     [Parameter("The new build version to set")]
     readonly string NewVersion;
 
-    [Parameter("Whether the new build version is a prerelease(for packaging purposes)")]
+    [Parameter("Whether the new build version is a prerelease (for packaging purposes)")]
     readonly bool? NewIsPrerelease;
 
     [Parameter("Prints the available drive space before executing each target. Defaults to false")]
@@ -97,6 +107,8 @@ partial class Build : NukeBuild
                             Logger.Information($"Configuration: {BuildConfiguration}");
                             Logger.Information($"TargetPlatform: {TargetPlatform}");
                             Logger.Information($"Framework: {Framework}");
+                            Logger.Information($"PublishReadyToRun: {PublishReadyToRun}");
+                            Logger.Information($"RuntimeIdentifier: {RuntimeIdentifier}");
                             Logger.Information($"TestAllPackageVersions: {TestAllPackageVersions}");
                             Logger.Information($"MonitoringHomeDirectory: {MonitoringHomeDirectory}");
                             Logger.Information($"ArtifactsDirectory: {ArtifactsDirectory}");
@@ -175,6 +187,34 @@ partial class Build : NukeBuild
         .Description("Builds the native and managed src, and publishes the tracer home directory")
         .After(Clean)
         .DependsOn(CompileManagedLoader, BuildNativeTracerHome, BuildManagedTracerHome);
+
+    // This target is used to build the tracer home directory for the AWS Lambda layer.
+    // The same as BuildTracerHome, but requires Linux,
+    // uses custom version of some tasks ("*AwsLambda"), and skips LibDdwaf.
+    Target BuildTracerHomeForAwsLambda => _ => _
+        .Description("Builds the native and managed src, and publishes the tracer home directory for AWS Lambda.")
+        .Requires(() => IsLinux)
+        .After(Clean)
+        .DependsOn(CreateRequiredDirectories)
+        .DependsOn(Restore)
+        //.DependsOn(CompileManagedSrc)              // PublishManagedTracerForAwsLambda below restores and compiles
+        .DependsOn(PublishManagedTracerForAwsLambda) // instead of PublishManagedTracer (restores, builds, and publishes)
+        .DependsOn(CompileNativeSrc)
+        .DependsOn(PublishNativeTracerAwsLambda)     // instead of PublishNativeTracer
+        //.DependsOn(DownloadLibDdwaf)
+        //.DependsOn(CopyLibDdwaf)
+        .DependsOn(CompileNativeLoader)              // instead of BuildNativeLoader -> CompileNativeLoader
+        .DependsOn(PublishNativeLoaderAwsLambda)     // instead of BuildNativeLoader -> PublishNativeLoader
+        .DependsOn(ExtractDebugInfoAwsLambda);
+
+    Target PublishTracerHomeForAwsLambda => _ => _
+        .Description("Publishes the tracer home directory for AWS Lambda. Can be used after BuildTracerHome instead of BuildTracerHomeForAwsLambda.")
+        .Requires(() => IsLinux)
+        .After(BuildTracerHome /*, BuildTracerHomeForAwsLambda*/)
+        .DependsOn(PublishManagedTracerForAwsLambda) // instead of PublishManagedTracer (restores, builds, and publishes)
+        .DependsOn(PublishNativeTracerAwsLambda)     // instead of PublishNativeTracer
+        .DependsOn(PublishNativeLoaderAwsLambda)     // instead of BuildNativeLoader -> PublishNativeLoader
+        .DependsOn(RemoveDebugInfoAwsLambda);
 
     Target BuildProfilerHome => _ => _
         .Description("Builds the Profiler native and managed src, and publishes the profiler home directory")
