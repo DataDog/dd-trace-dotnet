@@ -17,6 +17,7 @@ namespace Datadog.Trace.Telemetry
     internal class TelemetryFactory
     {
         // need to start collecting these immediately
+        private static readonly Lazy<RedactedErrorLogCollector> _logs = new();
         private static IMetricsTelemetryCollector _metrics = new MetricsTelemetryCollector();
         private static IConfigurationTelemetry _configuration = new ConfigurationTelemetry();
         private readonly object _sync = new();
@@ -42,6 +43,11 @@ namespace Datadog.Trace.Telemetry
         /// </summary>
         internal static IConfigurationTelemetry Config => Volatile.Read(ref _configuration);
 
+        /// <summary>
+        /// Gets the static log collector used to record redacted error logs
+        /// </summary>
+        internal static RedactedErrorLogCollector RedactedErrorLogs => _logs.Value;
+
         internal static IMetricsTelemetryCollector SetMetricsForTesting(IMetricsTelemetryCollector telemetry)
             => Interlocked.Exchange(ref _metrics, telemetry);
 
@@ -64,7 +70,7 @@ namespace Datadog.Trace.Telemetry
             // Deliberately not a static field, because otherwise creates a circular dependency during startup
             var log = DatadogLogging.GetLoggerFor<TelemetryFactory>();
 
-            // we assume telemetry can't switch between enabled/disabled
+            // we assume telemetry can't switch between enabled/disabled because it can only be set via static config
             if (!settings.TelemetryEnabled)
             {
                 log.Debug("Telemetry collection disabled");
@@ -118,6 +124,11 @@ namespace Datadog.Trace.Telemetry
         {
             DisableMetricsCollector();
             DisableConfigCollector();
+            if (_logs.IsValueCreated)
+            {
+                // Logs were enabled, even though telemetry isn't
+                _logs.Value.DisableCollector();
+            }
         }
 
         private static void DisableMetricsCollector()
@@ -163,6 +174,7 @@ namespace Datadog.Trace.Telemetry
                         Config,
                         _dependencies!,
                         Metrics,
+                        _logs.IsValueCreated ? _logs.Value : null, // if we haven't created it by now, we don't need it
                         transportManager,
                         settings.HeartbeatInterval);
                 }
