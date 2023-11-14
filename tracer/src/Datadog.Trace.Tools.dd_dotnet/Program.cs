@@ -45,7 +45,8 @@ internal class Program
         var builder = new CommandLineBuilder(rootCommand)
             .UseLocalizationResources(localizationResources)
             .UseHelp()
-            .UseParseErrorReporting();
+            .UseParseErrorReporting()
+            .CancelOnProcessTermination();
 
         builder.UseHelpBuilder(
             _ =>
