@@ -454,6 +454,8 @@ namespace Datadog.Trace.Tests.Propagators
                    .Returns(new[] { "987654321" });
             headers.Setup(h => h.GetValues("x-datadog-sampling-priority"))
                    .Returns(new[] { "2" });
+            headers.Setup(h => h.GetValues("x-datadog-origin"))
+                   .Returns(new[] { "rum" });
             headers.Setup(h => h.GetValues("x-datadog-tags"))
                    .Returns(new[] { "_dd.p.tid=1111111111111111" });
 
@@ -479,7 +481,7 @@ namespace Datadog.Trace.Tests.Propagators
                            RawSpanId = "000000003ade68b1",
                            SamplingPriority = SamplingPriorityValues.UserKeep,
                            PropagatedTags = propagatedTags,
-                           Origin = w3CHeaderFirst ? "rum" : null,
+                           Origin = "rum",
                            AdditionalW3CTraceState = !extractFirst || w3CHeaderFirst ? "foo=1" : null,
                            Parent = null,
                            ParentId = null,
