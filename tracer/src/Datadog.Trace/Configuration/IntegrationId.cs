@@ -67,6 +67,7 @@ namespace Datadog.Trace.Configuration
         SystemRandom,
         AwsDynamoDb,
         HardcodedSecret,
+        TrustBoundaryViolation,
         IbmMq,
         Remoting,
     }

@@ -131,6 +131,8 @@
   "DD_AwsDynamoDb_",
   "DD_TRACE_HardcodedSecret_",
   "DD_HarcodedSecret_",
+  "DD_TRACE_TrustBoundaryViolation_",
+  "DD_TrustBoundaryViolation_",
   "DD_TRACE_IbmMq_",
   "DD_IbmMq_",
   "DD_TRACE_Remoting_",
