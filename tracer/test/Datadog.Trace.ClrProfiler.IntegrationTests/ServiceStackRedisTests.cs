@@ -84,7 +84,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                         routineSpans,
                         settings,
                         o => o
-                            .OrderBy(x => VerifyHelper.GetRootSpanName(x, o))
+                            .OrderBy(x => VerifyHelper.GetRootSpanResourceName(x, o))
                             .ThenBy(x => VerifyHelper.GetSpanDepth(x, o))
                             .ThenBy(x => x.Tags.TryGetValue("redis.raw_command", out var value) ? value.Replace(TestPrefix, string.Empty) : null)
                             .ThenBy(x => x.Start)

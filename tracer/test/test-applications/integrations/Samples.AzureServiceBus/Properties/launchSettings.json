@@ -17,7 +17,7 @@
         "DD_DOTNET_TRACER_HOME": "$(SolutionDir)shared\\bin\\monitoring-home",
         "DD_TRACE_OTEL_ENABLED": "true",
         "DD_DATA_STREAMS_ENABLED": "true",
-        "DD_RUNTIME_METRICS_ENABLED": "true",
+        "DD_RUNTIME_METRICS_ENABLED": "true"
       },
       "nativeDebugging": false
     },

@@ -54,4 +54,12 @@ public class LocationTests
         location.Path.Should().BeNull();
         location.Method.Should().BeNull();
     }
+
+    [Fact]
+    public void GivenALocation_WhenCreatedFromFile_FileIsStored3()
+    {
+        var file = "C:\\Repositories\\code\\specifications\\stock-api\\target\\generated-sources\\openapi\\src\\gen\\csharp\\Stock\\Client\\ApiClient.cs";
+        var location = new Location(file, null, 432, 4, null);
+        location.Path.Should().Be("ApiClient.cs");
+    }
 }

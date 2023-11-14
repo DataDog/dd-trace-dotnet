@@ -18,6 +18,7 @@ using Datadog.Trace.Headers;
 using Datadog.Trace.Iast;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Propagators;
+using Datadog.Trace.Sampling;
 using Datadog.Trace.Tagging;
 using Datadog.Trace.Util;
 using Datadog.Trace.Util.Http;
@@ -197,9 +198,10 @@ namespace Datadog.Trace.AspNet
                     securityCoordinator.CheckAndBlock(args);
                 }
 
-                if (Iast.Iast.Instance.Settings.Enabled && OverheadController.Instance.AcquireRequest())
+                var iastInstance = Iast.Iast.Instance;
+                if (iastInstance.Settings.Enabled && iastInstance.OverheadController.AcquireRequest())
                 {
-                    var traceContext = scope?.Span?.Context?.TraceContext;
+                    var traceContext = scope.Span?.Context?.TraceContext;
                     traceContext?.EnableIastInRequest();
                     traceContext?.IastRequestContext?.AddRequestData(httpRequest);
                 }
@@ -268,7 +270,7 @@ namespace Datadog.Trace.AspNet
                                     }
                                 }
 
-                                securityCoordinator.CheckAndBlock(args);
+                                securityCoordinator.CheckAndBlock(args, true);
                             }
 
                             securityCoordinator.AddResponseHeadersToSpanAndCleanup();

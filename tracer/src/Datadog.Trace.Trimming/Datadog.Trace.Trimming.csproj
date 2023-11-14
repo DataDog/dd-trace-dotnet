@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <Version>2.41.0</Version>
+    <Version>2.42.0</Version>
     <!-- Unconditionally add a prerelease suffix to the package, but keep the rest of the name so we can associate it with the rest of the release -->
     <Version>$(Version)-prerelease</Version>
   </PropertyGroup>

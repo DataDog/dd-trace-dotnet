@@ -1,10 +1,12 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
         "exception": null,
         "probeId": "b16773f7-ded8-a522-43ce-b51d18f9205e",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },

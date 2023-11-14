@@ -84,7 +84,20 @@ namespace Samples.GraphQL4
             // We do this roundabout mechanism to keep using the GraphQL.StarWars NuGet package
             starWarsSchema.Subscription = starWarsSubscription;
             app.UseDeveloperExceptionPage();
+#if NETFRAMEWORK
+// we run tests under net462 but this is still aspnet core, so neither aspnetcore diagnostic observer will work neither the TracingHttpModule will kick off. so no span will be created under http
+            app.UseWhen(
+                ctx => ctx.Request.Path == "/alive-check",
+                x => x.Run(
+                    next =>
+                    {
+                        using var scope = SampleHelpers.CreateScope("alive-check");
+                        next.Response.StatusCode = 200;
+                        return Task.CompletedTask;
+                    }));
+#else
             app.UseWelcomePage("/alive-check");
+#endif
 
             app.Map("/shutdown", builder =>
             {

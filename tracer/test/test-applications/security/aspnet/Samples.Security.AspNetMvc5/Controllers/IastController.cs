@@ -81,6 +81,21 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content($"No query or username was provided");
         }
 
+        [Route("QueryOwnUrl")]
+        public ActionResult QueryOwnUrl()
+        {
+            string result = string.Empty;
+            try
+            {
+                var url = Request.Url.ToString();
+                return SqlQuery(url, null);
+            }
+            catch
+            {
+                return Content("Error in query.", "text/html");
+            }            
+        }
+
         [Route("ExecuteCommand")]
         public ActionResult ExecuteCommand(string file, string argumentLine)
         {
@@ -194,6 +209,12 @@ namespace Samples.Security.AspNetCore5.Controllers
             // we test two different ways of obtaining a cookie
             var argumentValue = Request.Cookies["argumentLine"].Values[0];
             return ExecuteCommandInternal(Request.Cookies["file"].Value, argumentValue);
+        }
+
+        [Route("ExecuteCommandFromHeader")]
+        public ActionResult ExecuteCommandFromHeader()
+        {
+            return ExecuteCommandInternal(Request.Headers["file"], Request.Headers["argumentLine"]);
         }
 
         [Route("GetDirectoryContent")]

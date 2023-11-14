@@ -29,12 +29,14 @@ public static class Program
             RunActivitySetTags(); // 1 span (total 3)
             RunActivityAddEvent(); // 5 spans (total 8)
             RunActivityAddBaggage(); // 2 spans (total 10)
+            RunActivityOperationName(); // 21 spans (total 31)
         }
 
         // needs to be outside of the above root span as we don't want a parent here
-        RunActivityConstructors(); // 4 spans (total 14)
-        RunActivityUpdate(); //  9 spans (total 23)
-        RunNonW3CId(); // 2 spans (total 25)
+        RunActivityConstructors(); // 4 spans (total 35)
+        RunActivityUpdate(); //  9 spans (total 44)
+        RunNonW3CId(); // 2 spans (total 46)
+        RunActivityReservedAttributes(); // 1 span (47 total)
         await Task.Delay(1000);
     }
 
@@ -218,6 +220,57 @@ public static class Program
 
         using var ctor4 = _source.StartActivity("Ctor4", ActivityKind.Server, default(ActivityContext), tags, links);
         ctor4.DisplayName = "Ctor4DisplayName";
+    }
+
+    /// <summary>
+    /// Note: These test cases were copy/pasted from parametric tests (with some find/replace to make it work here)
+    /// </summary>
+    private static IEnumerable<object[]> OperationNameData =>
+    new List<object[]>
+    {
+                // expected_operation_name, span_kind, tags_related_to_operation_name
+                new object[] { "http.server.request", ActivityKind.Server, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
+                new object[] { "http.client.request", ActivityKind.Client, new Dictionary<string, object>() { { "http.request.method", "GET" } } },
+                new object[] { "redis.query", ActivityKind.Client, new Dictionary<string, object>() { { "db.system", "Redis" } } },
+                new object[] { "kafka.receive", ActivityKind.Client, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", ActivityKind.Server, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", ActivityKind.Producer, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "kafka.receive", ActivityKind.Consumer, new Dictionary<string, object>() { { "messaging.system", "Kafka" }, { "messaging.operation", "Receive" } } },
+                new object[] { "aws.s3.request", ActivityKind.Client, new Dictionary<string, object>() { { "rpc.system", "aws-api" }, { "rpc.service", "S3" } } },
+                new object[] { "aws.client.request", ActivityKind.Client, new Dictionary<string, object>() { { "rpc.system", "aws-api" } } },
+                new object[] { "grpc.client.request", ActivityKind.Client, new Dictionary<string, object>() { { "rpc.system", "GRPC" } } },
+                new object[] { "grpc.server.request", ActivityKind.Server, new Dictionary<string, object>() { { "rpc.system", "GRPC" } } },
+                new object[] { "aws.my-function.invoke", ActivityKind.Client, new Dictionary<string, object>() { { "faas.invoked_provider", "aws" }, { "faas.invoked_name", "My-Function" } } },
+                new object[] { "datasource.invoke", ActivityKind.Server, new Dictionary<string, object>() { { "faas.trigger", "Datasource" } } },
+                new object[] { "graphql.server.request", ActivityKind.Server, new Dictionary<string, object>() { { "graphql.operation.type", "query" } } },
+                new object[] { "amqp.server.request", ActivityKind.Server, new Dictionary<string, object>() { { "network.protocol.name", "Amqp" } } },
+                new object[] { "server.request", ActivityKind.Server, new Dictionary<string, object>() },
+                new object[] { "amqp.client.request", ActivityKind.Client, new Dictionary<string, object>() { { "network.protocol.name", "Amqp" } } },
+                new object[] { "client.request", ActivityKind.Client, new Dictionary<string, object>() },
+                new object[] { "internal", ActivityKind.Internal, new Dictionary<string, object>() },
+                new object[] { "consumer", ActivityKind.Consumer, new Dictionary<string, object>() },
+                new object[] { "producer", ActivityKind.Producer, new Dictionary<string, object>() },
+                // new object[] { "otel_unknown", null, new Dictionary<string, object>() }, // always should have a span kind for Activity5+
+    };
+
+    private static void RunActivityOperationName()
+    {
+        foreach(var data in OperationNameData)
+        {
+            using var activity = _source.StartActivity(name: $"operation name should be-> {data[0]}", kind: (ActivityKind)data[1], tags: (Dictionary<string, object>)data[2]);
+        }
+    }
+
+    private static void RunActivityReservedAttributes()
+    {
+        var tags = new Dictionary<string, object>();
+        tags.Add("http.request.method", "GET"); // operation name would be "http.server.request" (without the override)
+        tags.Add("resource.name", "ResourceNameOverride");
+        tags.Add("operation.name", "OperationNameOverride");
+        tags.Add("service.name", "ServiceNameOverride");
+        tags.Add("span.type", "SpanTypeOverride");
+        tags.Add("analytics.event", "true"); // metric->  _dd1.sr.eausr: 1.0
+        using var activity = _source.StartActivity(name: "This name should not be in the snapshot", kind: ActivityKind.Server, tags: tags);
     }
 
     private static IEnumerable<KeyValuePair<string, object>> GenerateKeyValuePairs()

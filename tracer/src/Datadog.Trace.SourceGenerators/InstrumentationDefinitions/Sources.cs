@@ -17,7 +17,7 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 
         public static string CreateCallTargetDefinitions(IReadOnlyCollection<CallTargetDefinitionSource> definitions)
         {
-            void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
+            static void BuildInstrumentationDefinitions(StringBuilder sb, List<CallTargetDefinitionSource> orderedDefinitions, string instrumentationsCollectionName)
             {
                 string? integrationName = null;
 
@@ -33,6 +33,57 @@ namespace Datadog.Trace.SourceGenerators.InstrumentationDefinitions
 
                 sb.Append($@"
             }};");
+            }
+
+            static void BuildInstrumentedAssemblies(StringBuilder sb, IReadOnlyCollection<CallTargetDefinitionSource> orderedDefinitions)
+            {
+                var hashSet = new HashSet<string>();
+                foreach (var orderedDefinition in orderedDefinitions)
+                {
+                    if (!IsKnownAssemblyPrefix(orderedDefinition.AssemblyName))
+                    {
+                        hashSet.Add(orderedDefinition.AssemblyName);
+                    }
+                }
+
+                var doneFirst = false;
+
+                foreach (var assembly in hashSet.OrderBy(x => x))
+                {
+                    if (doneFirst)
+                    {
+                        sb
+                           .Append(
+                                """
+                                
+                                            || 
+                                """);
+                    }
+
+                    sb
+                       .Append("assemblyName.StartsWith(\"")
+                       .Append(assembly)
+                      .Append(",\", StringComparison.Ordinal)");
+                    doneFirst = true;
+                }
+
+                if (!doneFirst)
+                {
+                    sb.Append("false");
+                }
+
+                return;
+
+                // NOTE: Keep this in sync with ExceptionRedactor.IsKnownAssemblyPrefix()
+                static bool IsKnownAssemblyPrefix(string assemblyName)
+                {
+                    return assemblyName.StartsWith("Datadog.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("mscorlib,", StringComparison.Ordinal) // note that this uses ',' not '.' as it's the full assembly name
+                        || assemblyName.StartsWith("Microsoft.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("System.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("Azure.", StringComparison.Ordinal)
+                        || assemblyName.StartsWith("AWSSDK.", StringComparison.Ordinal);
+                }
             }
 
             var sb = new StringBuilder();
@@ -61,6 +112,18 @@ namespace Datadog.Trace.ClrProfiler
             BuildInstrumentationDefinitions(sb, orderedDefinitions, InstrumentationsCollectionName);
             sb.Append(@$"
         }}
+
+        /// <summary>
+        /// Checks if the provided <see cref=""System.Reflection.Assembly.FullName""/> assembly
+        /// is one we instrument. Assumes you have already checked for ""well-known"" prefixes
+        /// like ""System"" and ""Microsoft"".
+        /// </summary>
+        internal static bool IsInstrumentedAssembly(string assemblyName)
+            => ");
+
+            BuildInstrumentedAssemblies(sb, definitions);
+
+            sb.Append($@";
 
         internal static Datadog.Trace.Configuration.IntegrationId? GetIntegrationId(string? integrationTypeName, System.Type targetType)
         {{

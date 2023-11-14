@@ -59,6 +59,7 @@
       _dd.iast.telemetry.executed.source.http_request_path: 1.0,
       _dd.iast.telemetry.executed.source.http_request_path_parameter: 1.0,
       _dd.iast.telemetry.executed.source.http_request_query: 1.0,
+      _dd.iast.telemetry.executed.source.http_request_uri: 1.0,
       _dd.iast.telemetry.request.tainted:,
       _dd.top_level: 1.0,
       _dd.tracer_kr: 1.0,

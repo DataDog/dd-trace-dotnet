@@ -52,6 +52,12 @@ namespace Datadog.Trace.Configuration
             /// </summary>
             /// <seealso cref="DebuggerSettings.UploadFlushIntervalMilliseconds"/>
             public const string UploadFlushInterval = "DD_DEBUGGER_UPLOAD_FLUSH_INTERVAL";
+
+            /// <summary>
+            /// Configuration key for set of identifiers that are used in redaction decisions.
+            /// </summary>
+            /// <seealso cref="DebuggerSettings.RedactedIdentifiers"/>
+            public const string RedactedIdentifiers = "DD_DYNAMIC_INSTRUMENTATION_REDACTED_IDENTIFIERS";
         }
     }
 }

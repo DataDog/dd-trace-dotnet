@@ -11,6 +11,8 @@ using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Logging.Internal.Configuration;
+using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Util;
 using Datadog.Trace.Vendors.Serilog;
 using Datadog.Trace.Vendors.Serilog.Core;
@@ -294,6 +296,73 @@ namespace Datadog.Trace.Tests.Logging
                     return false;
                 }
             }
+        }
+
+        [Fact]
+        public void RedactedErrorLogs_WritesErrorLogs()
+        {
+            var collector = new RedactedErrorLogCollector();
+
+            var config = new DatadogLoggingConfiguration(
+                rateLimit: 0,
+                file: null,
+                errorLogging: new RedactedErrorLoggingConfiguration(collector));
+
+            var logger = DatadogLoggingFactory.CreateFromConfiguration(in config, DomainMetadata.Instance);
+
+            logger.Should().NotBeNull();
+            const string errorMessage = "This is some error";
+            logger.Error(errorMessage);
+            var errorLog = collector.GetLogs()
+                                    .Should()
+                                    .ContainSingle()
+                                    .Which.Should()
+                                    .ContainSingle()
+                                    .Subject;
+            errorLog.Level.Should().Be(TelemetryLogLevel.ERROR);
+            errorLog.Message.Should().Be(errorMessage);
+            errorLog.StackTrace.Should().BeNull();
+
+            // No more logs, so should still be null
+            collector.GetLogs().Should().BeNull();
+
+            // These shouldn't be written
+            logger.Debug("Just a debug");
+            logger.Information("Just an info");
+            logger.Warning("Just a warning");
+            collector.GetLogs().Should().BeNull();
+
+            Exception ex;
+            try
+            {
+                throw new Exception("Some Exception");
+            }
+            catch (Exception e)
+            {
+                ex = e;
+            }
+
+            // Should write error logs that have an exception
+            logger.Error(ex, errorMessage);
+            errorLog = collector.GetLogs()
+                                    .Should()
+                                    .ContainSingle()
+                                    .Which.Should()
+                                    .ContainSingle()
+                                    .Subject;
+
+            errorLog.Level.Should().Be(TelemetryLogLevel.ERROR);
+            errorLog.Message.Should().StartWith(errorMessage);
+            errorLog.StackTrace.Should().NotBeNull();
+
+            // No more logs, so should still be null
+            collector.GetLogs().Should().BeNull();
+
+            // These shouldn't be written
+            logger.Debug(ex, "Just a debug");
+            logger.Information(ex, "Just an info");
+            logger.Warning(ex, "Just a warning");
+            collector.GetLogs().Should().BeNull();
         }
 
         private void WriteRateLimitedLogMessage(IDatadogLogger logger, string message)

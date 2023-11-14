@@ -77,14 +77,23 @@ public class DataStreamsMonitoringTransportTests
 
         var result = agent.WaitForDataStreams(1);
 
-        var payload = result.Should().ContainSingle().Subject;
-        payload.Env.Should().Be("env");
-        payload.Service.Should().Be("service");
-        var headers = agent.DataStreamsRequestHeaders.Should().ContainSingle().Subject;
-        headers.AllKeys.ToDictionary(x => x, x => headers[x])
-               .Should()
-               .ContainKey("Content-Encoding", "gzip");
-        payload.Stats.Should().ContainSingle(s => s.Backlogs != null);
+        // we can't guarantee only having a single payload due to race conditions in the flushing code
+        result.Should().OnlyContain(payload => payload.Env == "env");
+        result.Should().OnlyContain(payload => payload.Service == "service");
+        agent.DataStreamsRequestHeaders
+             .Should()
+             .OnlyContain(
+                  headers => headers.AllKeys.Contains("Content-Encoding")
+                          && headers["Content-Encoding"] == "gzip");
+
+        // should only have a single backlog across all payloads, but we don't know which payload it will be in
+        result
+           .SelectMany(x => x.Stats)
+           .Where(x => x.Backlogs is not null)
+           .Should()
+           .ContainSingle()
+           .Which.Backlogs.Should()
+           .ContainSingle();
     }
 
     private StatsPoint CreateStatsPoint(long timestamp = 0)

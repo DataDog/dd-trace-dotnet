@@ -5,7 +5,7 @@ cmake_policy(SET CMP0015 NEW)
 # Project definition
 # ******************************************************
 
-project("Datadog.Tracer.Native" VERSION 2.41.0)
+project("Datadog.Tracer.Native" VERSION 2.42.0)
 
 # ******************************************************
 # Environment detection
@@ -178,7 +178,10 @@ add_library("Datadog.Tracer.Native.static" STATIC
         iast/dataflow_aspects.cpp
         iast/dataflow_il_analysis.cpp
         iast/dataflow_il_rewriter.cpp
+        iast/hardcoded_secrets_method_analyzer.cpp
         iast/iast_util.cpp
+        iast/method_analyzer.cpp
+        iast/method_analyzers.cpp
         iast/method_info.cpp
         iast/module_info.cpp
         iast/signature_info.cpp

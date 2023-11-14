@@ -4,6 +4,9 @@
 // </copyright>
 
 #nullable enable
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Configuration.Telemetry;
 using Datadog.Trace.Telemetry;
@@ -55,6 +58,14 @@ namespace Datadog.Trace.Debugger
                                              .WithKeys(ConfigurationKeys.Debugger.UploadFlushInterval)
                                              .AsInt32(DefaultUploadFlushIntervalMilliseconds, flushInterval => flushInterval >= 0)
                                              .Value;
+
+            var redactedIdentifiers = config
+                                 .WithKeys(ConfigurationKeys.Debugger.RedactedIdentifiers)
+                                 .AsString()?
+                                 .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries) ??
+                                  Enumerable.Empty<string>();
+
+            RedactedIdentifiers = new HashSet<string>(redactedIdentifiers, StringComparer.OrdinalIgnoreCase);
         }
 
         public bool Enabled { get; }
@@ -68,6 +79,8 @@ namespace Datadog.Trace.Debugger
         public int DiagnosticsIntervalSeconds { get; }
 
         public int UploadFlushIntervalMilliseconds { get; }
+
+        public HashSet<string> RedactedIdentifiers { get; }
 
         public static DebuggerSettings FromSource(IConfigurationSource source, IConfigurationTelemetry telemetry)
         {

@@ -315,7 +315,7 @@ partial class Build
             {
                 var project = ProfilerSolution.GetProject(projectName);
                 var cppCheckResultFile = ProfilerBuildDataDirectory / $"{project.Name}-cppcheck-{platform}";
-                CppCheck.Value($"--enable=all  --project={project.Path} --xml --output-file={cppCheckResultFile}.xml");
+                CppCheck.Value($"--inline-suppr  --enable=all  --project={project.Path} --xml --output-file={cppCheckResultFile}.xml  --suppressions-list={ProfilerDirectory}/cppcheck-suppressions.txt ");
             }
 
             foreach (var platform in new[] { MSBuildTargetPlatform.x64, MSBuildTargetPlatform.x86 })
@@ -650,7 +650,6 @@ partial class Build
 
             foreach (var platform in platforms)
             {
-                
                 DotNetBuild(s => s
                                 .SetFramework(Framework)
                                 .SetProjectFile(sampleApp)
@@ -670,7 +669,6 @@ partial class Build
         .Triggers(CheckTestResultForProfilerWithSanitizer)
         .Executes(() =>
         {
-            
             RunSampleWithSanitizer(MSBuildTargetPlatform.x64, SanitizerKind.Ubsan);
         });
 

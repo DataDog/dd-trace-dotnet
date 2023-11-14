@@ -71,7 +71,7 @@ namespace Benchmarks.Trace.Asm
         {
             var span = new Span(new SpanContext(1, 1), DateTimeOffset.UtcNow);
 #if !NETFRAMEWORK
-            _security.CheckBody(_httpContext, span, body);
+            _security.CheckBody(_httpContext, span, body, false);
             var context = _httpContext.Features.Get<IContext>();
             context?.Dispose();
             _httpContext.Features.Set<IContext>(null);

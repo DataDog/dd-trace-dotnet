@@ -76,7 +76,17 @@ namespace Datadog.Trace.AppSec
                                                || val.Equals(UserTrackingSafeMode, StringComparison.OrdinalIgnoreCase)
                                                || val.Equals(UserTrackingExtendedMode, StringComparison.OrdinalIgnoreCase))
                                          .ToLowerInvariant();
+
+            ApiSecuritySampling = config
+                                 .WithKeys(ConfigurationKeys.AppSec.ApiSecurityRequestSampleRate)
+                                 .AsDouble(val => val is <= 1 and >= 0)
+                                 .GetValueOrDefault(0.1);
+
+            ApiSecurityEnabled = config.WithKeys(ConfigurationKeys.AppSec.ApiExperimentalSecurityEnabled)
+                                       .AsBool(false);
         }
+
+        public double ApiSecuritySampling { get; }
 
         public bool Enabled { get; }
 
@@ -135,6 +145,11 @@ namespace Datadog.Trace.AppSec
         /// Gets the response template for Json content. This template is used in combination with the status code to craft and send a response upon blocking the request.
         /// </summary>
         public string BlockedJsonTemplate { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether or not api security is enabled, defaults to false.
+        /// </summary>
+        public bool ApiSecurityEnabled { get; }
 
         public static SecuritySettings FromDefaultSources()
         {

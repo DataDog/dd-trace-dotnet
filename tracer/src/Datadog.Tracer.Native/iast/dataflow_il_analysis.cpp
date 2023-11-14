@@ -634,7 +634,7 @@ namespace iast
     WSTRING GetMemberName(ILRewriter* body, mdToken token)
     {
         auto memberRef = body->GetMethodInfo()->GetModuleInfo()->GetMemberRefInfo(token);
-        WSTRING memberName = memberRef != nullptr ? memberRef->GetFullName(true) : WStr("Unknown");
+        WSTRING memberName = memberRef != nullptr ? memberRef->GetFullNameWithReturnType() : WStr("Unknown");
         return memberName;
     }
     std::string GetString(ILRewriter* body, mdString token)

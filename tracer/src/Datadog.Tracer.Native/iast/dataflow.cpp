@@ -2,6 +2,7 @@
 #include "iast_util.h"
 #include "module_info.h"
 #include "method_info.h"
+#include "method_analyzers.h"
 #include "dataflow_aspects.h"
 #include "dataflow_il_rewriter.h"
 #include "aspect_filter_factory.h"
@@ -609,9 +610,9 @@ MethodInfo* Dataflow::JITProcessMethod(ModuleID moduleId, mdToken methodId, bool
     return method;
 }
 
-    bool IsCandidate(unsigned m_opcode)
+bool IsCandidate(unsigned opcode)
 {
-    return (m_opcode == CEE_CALL || m_opcode == CEE_CALLI || m_opcode == CEE_CALLVIRT || m_opcode == CEE_NEWOBJ);
+    return (opcode == CEE_CALL || opcode == CEE_CALLI || opcode == CEE_CALLVIRT || opcode == CEE_NEWOBJ);
 }
 
 
@@ -631,6 +632,8 @@ HRESULT Dataflow::RewriteMethod(MethodInfo* method, ICorProfilerFunctionControl*
         }
 
         CSGUARD(_cs);
+
+        MethodAnalyzers::ProcessMethod(method);
 
         auto module = method->GetModuleInfo();
         auto moduleAspectRefs = GetAspects(module);

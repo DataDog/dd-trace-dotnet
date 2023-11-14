@@ -19,8 +19,6 @@ namespace Datadog.Trace.Security.IntegrationTests.Rcm;
 
 public class RcmBase : AspNetBase, IClassFixture<AspNetCoreTestFixture>
 {
-    protected const string LogFileNamePrefix = "dotnet-tracer-managed-";
-
     protected RcmBase(AspNetCoreTestFixture fixture, ITestOutputHelper outputHelper, bool? enableSecurity, string testName)
         : base("AspNetCore5", outputHelper, "/shutdown", testName: testName)
     {

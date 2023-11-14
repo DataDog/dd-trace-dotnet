@@ -17,16 +17,23 @@ extern char** environ;
 
 namespace iast
 {
+#ifndef _WIN32
+static thread_local std::unordered_map<void *, bool> locked;
+#endif
     CS::CS()
     {
 #ifdef _WIN32
         InitializeCriticalSection(&cs);
+#else
+        locked[this] = false;
 #endif
     }
     CS::~CS()
     {
 #ifdef _WIN32
         DeleteCriticalSection(&cs);
+#else
+        locked.erase(this); // To avoid uncontrolled map growth
 #endif
     }
     bool CS::Lock()
@@ -34,9 +41,12 @@ namespace iast
 #ifdef _WIN32
         EnterCriticalSection(&cs);
 #else
-        if (locked) { return false; }
+        if (locked[this])
+        {
+            return false;
+        }
         cs.lock();
-        locked = true;
+        locked[this] = true;
 #endif
         return true;
     }
@@ -45,10 +55,10 @@ namespace iast
 #ifdef _WIN32
         LeaveCriticalSection(&cs);
 #else
-        if (locked)
+        if (locked[this])
         {
             cs.unlock();
-            locked = false;
+            locked[this] = false;
         }
 #endif
     }

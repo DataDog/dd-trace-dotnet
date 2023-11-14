@@ -45,7 +45,19 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             "attribute-doubleArrayEmpty",
             "telemetry.sdk.name",
             "telemetry.sdk.language",
-            "telemetry.sdk.version"
+            "telemetry.sdk.version",
+            // excluding all OperationName mapping tags
+            "http.request.method",
+            "db.system",
+            "messaging.system",
+            "messaging.operation",
+            "rpc.system",
+            "rpc.service",
+            "faas.invoked_provider",
+            "faas.invoked_name",
+            "faas.trigger",
+            "graphql.operation.type",
+            "network.protocol.name"
         };
 
         private readonly Regex _versionRegex = new(@"telemetry.sdk.version: (0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)");
@@ -85,7 +97,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 12;
+                const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
@@ -94,7 +106,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 var otelSpans = spans.Where(s => s.Service == "MyServiceName");
                 var activitySourceSpans = spans.Where(s => s.Service == CustomServiceName);
 
-                otelSpans.Count().Should().Be(expectedSpanCount - 1);
+                otelSpans.Count().Should().Be(expectedSpanCount - 2); // there is another span w/ service == ServiceNameOverride
                 activitySourceSpans.Count().Should().Be(1);
 
                 ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
@@ -127,12 +139,14 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             using (var agent = EnvironmentHelper.GetMockAgent())
             using (RunSampleAndWaitForExit(agent, packageVersion: packageVersion))
             {
-                const int expectedSpanCount = 12;
+                const int expectedSpanCount = 35;
                 var spans = agent.WaitForSpans(expectedSpanCount);
 
                 using var s = new AssertionScope();
-                spans.Count.Should().Be(expectedSpanCount);
-                ValidateIntegrationSpans(spans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
+                var otelSpans = spans.Where(s => s.Service == "MyServiceName");
+
+                otelSpans.Count().Should().Be(expectedSpanCount - 1); // overrode MyServiceName in one
+                ValidateIntegrationSpans(otelSpans, metadataSchemaVersion: "v0", expectedServiceName: "MyServiceName", isExternalSpan: false);
 
                 // there's a bug in < 1.2.0 where they get the span parenting wrong
                 // so use a separate snapshot

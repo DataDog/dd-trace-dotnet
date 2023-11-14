@@ -17,8 +17,6 @@ namespace Datadog.Trace.AppSec.Waf
         /// </summary>
         public bool ShouldBlock { get; }
 
-        public bool ShouldBeReported { get; }
-
         string Data { get; }
 
         List<string> Actions { get; }
@@ -30,5 +28,9 @@ namespace Datadog.Trace.AppSec.Waf
         bool Timeout { get; }
 
         Dictionary<string, object> Derivatives { get; }
+
+        bool ShouldReportSchema { get; }
+
+        bool ShouldReportSecurityResult { get; }
     }
 }

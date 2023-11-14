@@ -85,7 +85,8 @@ namespace Datadog.Trace.Tests
                 };
                 Tracer.Configure(oldSettings);
 
-                var span = Tracer.Instance.StartActive("Test span");
+                var scope = Tracer.Instance.StartActive("Test span");
+                (scope.Span as Span).IsRootSpan.Should().BeTrue();
 
                 var newSettings = new TracerSettings
                 {
@@ -100,7 +101,7 @@ namespace Datadog.Trace.Tests
 
                 Tracer.Configure(newSettings);
 
-                span.Dispose();
+                scope.Dispose();
 
                 var spans = agent.WaitForSpans(count: 1);
                 var received = spans.Should().ContainSingle().Subject;
