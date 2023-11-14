@@ -1,10 +1,14 @@
-name: "Create System Test docker base images"
+name: "Create Rel Env docker base images"
 on:
   # This GitHub Action is invoked automatically from the main Azure DevOps
   # build when building the main branch (a snapshot). It is launched from
   # Azure DevOps instead of using a GitHub event, as it requires the assets
   # that are created by the Azure DevOps build. The build only produces
   # snapshots, not releases.
+  #
+  # The `auto_create_rel_env_release_images` workflow also invokes the
+  # `create-rel-env-docker-base-images` GitHub Action, which creates
+  # the release/latest (not snapshot) version of the images.
   workflow_dispatch:
     inputs:
       azdo_build_id:
@@ -41,9 +45,10 @@ jobs:
       env:
         AzureDevopsBuildId: "${{ github.event.inputs.azdo_build_id }}"
 
-    - uses: ./.github/actions/create-system-test-docker-base-images
+    - uses: ./.github/actions/create-rel-env-docker-base-images
       name: 'Create rel-env docker images'
       with:
         artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
+        is_release_version: "${{ github.event.inputs.is_release_version}}"
         package_version: "${{steps.versions.outputs.version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
