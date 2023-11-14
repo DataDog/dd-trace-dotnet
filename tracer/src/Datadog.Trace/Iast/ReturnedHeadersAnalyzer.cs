@@ -41,7 +41,8 @@ internal static class ReturnedHeadersAnalyzer
             // We iterate instead of trying to get the key directly because keys are case insensitive
             foreach (var headerKey in headers.AllKeys)
             {
-                if (headerKey.ToLowerInvariant() == ContentTypeLow)
+                var headerKeyLow = headerKey.ToLowerInvariant();
+                if (headerKeyLow == ContentTypeLow)
                 {
                     contentTypeValue = headers[headerKey];
 
@@ -51,7 +52,7 @@ internal static class ReturnedHeadersAnalyzer
                     }
                 }
 
-                if (headerKey.ToLowerInvariant() == XContentTypeOptionsLow)
+                if (headerKeyLow == XContentTypeOptionsLow)
                 {
                     contentOptionValue = headers[headerKey];
 
@@ -90,7 +91,8 @@ internal static class ReturnedHeadersAnalyzer
             // We iterate instead of trying to get the key directly because keys are case insensitive
             foreach (var header in responseHeaders)
             {
-                if (header.Key.ToLowerInvariant() == ContentTypeLow)
+                var headerKeyLow = header.Key.ToLowerInvariant();
+                if (headerKeyLow == ContentTypeLow)
                 {
                     contentTypeValue = header.Value;
 
@@ -100,7 +102,7 @@ internal static class ReturnedHeadersAnalyzer
                     }
                 }
 
-                if (header.Key.ToLowerInvariant() == XContentTypeOptionsLow)
+                if (headerKeyLow == XContentTypeOptionsLow)
                 {
                     contentOptionValue = header.Value;
 
