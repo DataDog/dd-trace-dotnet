@@ -109,7 +109,7 @@
     <!-- Integration: Microsoft.Extensions.Logging -->
     <!-- Assembly: Microsoft.Extensions.Logging -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Extensions.Logging/7.0.0 -->
-    <PackageReference Include="Microsoft.Extensions.Logging" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="8.0.0" />
 
     <!-- Integration: Microsoft.Extensions.Logging.Abstractions -->
     <!-- Assembly: Microsoft.Extensions.Logging.Abstractions -->
