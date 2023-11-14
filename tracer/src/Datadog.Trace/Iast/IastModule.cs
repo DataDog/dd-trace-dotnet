@@ -31,6 +31,7 @@ internal static class IastModule
     private const string OperationNameSsrf = "ssrf";
     private const string OperationNameWeakRandomness = "weak_randomness";
     private const string OperationNameHardcodedSecret = "hardcoded_secret";
+    private const string OperationNameTrustBoundaryViolation = "trust_boundary_violation";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(IastModule));
     private static readonly Lazy<EvidenceRedactor?> EvidenceRedactorLazy;
     private static IastSettings iastSettings = Iast.Instance.Settings;
@@ -38,6 +39,20 @@ internal static class IastModule
     static IastModule()
     {
         EvidenceRedactorLazy = new(() => CreateRedactor(iastSettings));
+    }
+
+    internal static Scope? OnTrustBoundaryViolation(string name)
+    {
+        try
+        {
+            OnExecutedSinkTelemetry(IastInstrumentedSinks.TrustBoundaryViolation);
+            return GetScope(name, IntegrationId.TrustBoundaryViolation, VulnerabilityTypeName.TrustBoundaryViolation, OperationNameTrustBoundaryViolation, true);
+        }
+        catch (Exception ex)
+        {
+            Log.Error(ex, "Error while checking for SSRF.");
+            return null;
+        }
     }
 
     internal static Scope? OnLdapInjection(string evidence)

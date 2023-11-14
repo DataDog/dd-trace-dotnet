@@ -443,10 +443,29 @@ public abstract class AspNetCore5IastTestsFullSampling : AspNetCore5IastTests
         if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
         var url = "/Iast/HardcodedSecrets";
         IncludeAllHttpSpans = true;
-        AddCookies(new Dictionary<string, string>() { { "file", "file.txt" }, { "argumentLine", "arg1" } });
         await TryStartApp();
         var agent = Fixture.Agent;
         var spans = await SendRequestsAsync(agent, IastEnabled ? 6 : 2, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
+
+        var settings = VerifyHelper.GetSpanVerifierSettings();
+        settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                            .UseFileName(filename)
+                            .DisableRequireUniquePrefix();
+    }
+
+    [SkippableFact]
+    [Trait("RunOnWindows", "True")]
+    public async Task TestIastTrustBoundaryViolationRequest()
+    {
+        var filename = "Iast.TrustBoundaryViolation.AspNetCore5." + (IastEnabled ? "IastEnabled" : "IastDisabled");
+        if (RedactionEnabled is true) { filename += ".RedactionEnabled"; }
+        var url = "/Iast/Tbv?name=name&value=value";
+        IncludeAllHttpSpans = true;
+        await TryStartApp();
+        var agent = Fixture.Agent;
+        var spans = await SendRequestsAsync(agent, 1, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web || x.Type == SpanTypes.IastVulnerability).ToList();
 
         var settings = VerifyHelper.GetSpanVerifierSettings();

@@ -67,6 +67,7 @@ namespace Datadog.Trace.Configuration
         SystemRandom,
         AwsDynamoDb,
         HardcodedSecret,
+        TrustBoundaryViolation,
         IbmMq,
         Remoting,
         // If you add an integration here, please don't forget to impact the allow / block list of telemetry config

@@ -36,6 +36,7 @@ namespace Samples.Security.AspNetCore5
                 DatabaseHelper.CreateAndFeedDatabase(Configuration.GetConnectionString("DefaultConnection"));
             }
 
+            services.AddSession();
             services.AddRazorPages();
             var identityBuilder = services.AddIdentity<IdentityUser, IdentityRole>(
                 o =>
@@ -86,7 +87,8 @@ namespace Samples.Security.AspNetCore5
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
-
+            
+            app.UseSession();
             app.UseRouting();
 
             app.UseAuthorization();

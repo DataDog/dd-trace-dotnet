@@ -393,5 +393,33 @@ namespace Samples.Security.AspNetCore5.Controllers
         {
             return Content("Random number: " + (new Random()).Next().ToString() , "text/html");
         }
+
+        [Route("TBV")]
+        public ActionResult Tbv(string name, string value)
+        {
+            string result = string.Empty;
+            try
+            {
+                if (HttpContext.Session == null)
+                {
+                    result = "No session";
+                }
+                else
+                {
+                    HttpContext.Session.Add("String", "Value");
+                    HttpContext.Session.Add("Object", this);
+                    HttpContext.Session.Add(name, value);
+                    HttpContext.Session["nameKey"] = name;
+                    HttpContext.Session["valueKey"] = value;
+                    result = "Request parameters added to session";
+                }
+            }
+            catch (Exception err)
+            {
+                result = "Error in request. " + err.ToString();
+            }
+
+            return Content(result, "text/html");
+        }
     }
 }
