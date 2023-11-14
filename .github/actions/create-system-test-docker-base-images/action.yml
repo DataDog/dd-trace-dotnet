@@ -39,7 +39,7 @@ runs:
       uses: docker/build-push-action@v3
       with:
         push: true
-        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest
+        tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
         platforms: 'linux/amd64' 
         context: ${{inputs.artifacts_path}}
         build-args: |
