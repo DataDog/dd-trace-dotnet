@@ -561,7 +561,7 @@ public class ProbesTests : TestHelper
         Assert.Equal(expectedSpanCount, spans.Count);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
         SanitizeSpanTags(spans);
 
@@ -613,7 +613,7 @@ public class ProbesTests : TestHelper
             }
 
             VerifierSettings.DerivePathInfo(
-                (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "..", "Approvals", "snapshots")));
+                (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", "snapshots")));
 
             await VerifyHelper.VerifySpans(spans, settings).DisableRequireUniquePrefix();
         }
@@ -778,7 +778,7 @@ public class ProbesTests : TestHelper
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(
-            (sourceFile, _, _, _) => new PathInfo(directory: Path.Combine(sourceFile, "..", "Approvals", path)));
+            (_, projectDirectory, _, _) => new(directory: Path.Combine(projectDirectory, "Approvals", path)));
 
         var toVerify =
             "["

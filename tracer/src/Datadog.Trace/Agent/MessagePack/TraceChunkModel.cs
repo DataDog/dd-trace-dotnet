@@ -37,6 +37,7 @@ internal readonly struct TraceChunkModel
     public readonly string? Environment = null;
 
     public readonly string? ServiceVersion = null;
+
     public readonly string? GitRepositoryUrl = null;
 
     public readonly string? GitCommitSha = null;

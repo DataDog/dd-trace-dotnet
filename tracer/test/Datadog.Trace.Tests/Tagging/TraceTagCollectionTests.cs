@@ -5,15 +5,8 @@
 
 using System;
 using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Threading.Tasks;
-using Datadog.Trace.Agent;
-using Datadog.Trace.Agent.DiscoveryService;
-using Datadog.Trace.Configuration;
 using Datadog.Trace.Tagging;
-using Datadog.Trace.Telemetry;
 using Datadog.Trace.TestHelpers;
-using Datadog.Trace.Util;
 using FluentAssertions;
 using Xunit;
 
