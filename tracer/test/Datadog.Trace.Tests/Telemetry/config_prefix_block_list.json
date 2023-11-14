@@ -133,6 +133,8 @@
   "DD_HarcodedSecret_",
   "DD_TRACE_IbmMq_",
   "DD_IbmMq_",
+  "DD_TRACE_Remoting_",
+  "DD_Remoting_",
   "trace.amqp_enabled",
   "trace.amqp_analytics_enabled",
   "trace.amqp_analytics_sample_rate",

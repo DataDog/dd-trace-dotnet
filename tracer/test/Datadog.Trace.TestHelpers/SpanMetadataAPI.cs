@@ -291,6 +291,20 @@ namespace Datadog.Trace.TestHelpers
                 _ => span.IsRabbitMQV0(),
             };
 
+        public static Result IsRemotingClient(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsRemotingClientV1(),
+                _ => span.IsRemotingClientV0(),
+            };
+
+        public static Result IsRemotingServer(this MockSpan span, string metadataSchemaVersion) =>
+            metadataSchemaVersion switch
+            {
+                "v1" => span.IsRemotingServerV1(),
+                _ => span.IsRemotingServerV0(),
+            };
+
         public static Result IsServiceRemotingClient(this MockSpan span, string metadataSchemaVersion) =>
             metadataSchemaVersion switch
             {
