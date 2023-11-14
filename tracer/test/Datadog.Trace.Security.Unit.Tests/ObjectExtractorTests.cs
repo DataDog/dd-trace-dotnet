@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.AppSec;
 using Datadog.Trace.AppSec.Waf;
+using FluentAssertions;
 using Xunit;
 
 namespace Datadog.Trace.Security.Unit.Tests
@@ -112,13 +113,28 @@ namespace Datadog.Trace.Security.Unit.Tests
         [Fact]
         public void TestStruct()
         {
-            var target = new TestStructPoco() { StringValue = "hello", };
+            var target = new TestStructPoco { StringValue = "hello", };
 
             var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
 
             Assert.NotNull(result);
 
             Assert.Equal(target.StringValue, result[nameof(target.StringValue)]?.ToString());
+        }
+
+        [Fact]
+        public void TestAnonymousType()
+        {
+            var target = new { Dog1 = "test", Dog2 = "test2", Id = 1 };
+
+            var result = ObjectExtractor.Extract(target) as Dictionary<string, object>;
+
+            Assert.NotNull(result);
+
+            Assert.Equal(target.Dog1, result[nameof(target.Dog1)]?.ToString());
+            Assert.Equal(target.Dog2, result[nameof(target.Dog2)]?.ToString());
+            result[nameof(target.Id)].Should().BeOfType<int>();
+            target.Id.Should().Be((int)result[nameof(target.Id)]);
         }
 
         [Fact]
