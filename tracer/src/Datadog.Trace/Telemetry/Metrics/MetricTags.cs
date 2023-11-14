@@ -274,6 +274,7 @@ internal static class MetricTags
         [Description("vulnerability_type:hardcoded_secret")] HardcodedSecret = 13,
         [Description("vulnerability_type:xcontenttype_header_missing")] XContentTypeHeaderMissing = 14,
         [Description("vulnerability_type:trust_boundary_violation")] TrustBoundaryViolation = 15,
+        [Description("vulnerability_type:Hsts_header_missing")] HstsHeaderMissing = 16,
     }
 
     public enum CIVisibilityTestFramework

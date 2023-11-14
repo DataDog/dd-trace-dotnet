@@ -10,7 +10,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
-using System.IO;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Iast.Propagation;
 using Datadog.Trace.Iast.SensitiveData;
@@ -475,5 +474,10 @@ internal static class IastModule
     {
         string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
         return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
+    }
+
+    internal static Scope? OnStrictTransportSecurityHeaderMissing(IntegrationId integrationId, string serviceName)
+    {
+        return AddWebVulnerability(null, integrationId, VulnerabilityTypeName.HstsHeaderMissing, (VulnerabilityTypeName.HstsHeaderMissing.ToString() + ":" + serviceName).GetStaticHashCode());
     }
 }

@@ -70,6 +70,35 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
+    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue)
+    {
+        if (IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
+        {
+            IastModule.OnStrictTransportSecurityHeaderMissing(integrationId, serviceName);
+        }
+    }
+
+    // Strict-Transport-Security has a valid value, when it starts with max-age followed by a positive number (>0),
+    // it can finish there or continue with a semicolon ; and more content.
+    private static bool IsValidStrictTransportSecurityValue(string strictTransportSecurityValue)
+    {
+        if (string.IsNullOrEmpty(strictTransportSecurityValue))
+        {
+            return false;
+        }
+
+        var strictTransportSecurityValueLow = strictTransportSecurityValue.ToLowerInvariant().Trim();
+        if (!strictTransportSecurityValueLow.StartsWith("max-age="))
+        {
+            return false;
+        }
+
+        var maxAge = strictTransportSecurityValueLow.Substring("max-age=".Length);
+        var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
+
+        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt > 0);
+    }
+
     private static bool IsHtmlResponse(string contentTypeValue)
     {
         if (string.IsNullOrEmpty(contentTypeValue))
