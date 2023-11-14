@@ -116,7 +116,6 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
         SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
         SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
         SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-        SetEnvironmentVariable("DD_TRACE_DEBUG", "1");
 
         _iisFixture = iisFixture;
         _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
@@ -128,6 +127,7 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
     [InlineData("text/html", 200, "nosniff")]
     [InlineData("text/html", 200, "")]
     [InlineData("application/xhtml%2Bxml", 200, "")]
@@ -144,8 +144,6 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
         var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing(scrubHash: false);
-        var filename = "Iast.XContentTypeHeaderMissing.AspNetMvc5." + contentType.Replace("/", string.Empty) +
-            returnCode.ToString() + xContentTypeHeaderValue;
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName($"{_testName}.path={sanitisedUrl}")
                           .DisableRequireUniquePrefix();
