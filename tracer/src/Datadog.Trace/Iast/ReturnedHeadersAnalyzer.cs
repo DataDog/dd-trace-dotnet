@@ -21,6 +21,7 @@ internal static class ReturnedHeadersAnalyzer
 {
     private const string ContentType = "content-type";
     private const string XContentTypeOptions = "x-content-type-options";
+    private const string StrictTransportSecurity = "strict-transport-security";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
@@ -40,6 +41,7 @@ internal static class ReturnedHeadersAnalyzer
         IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
         string contentTypeValue = responseHeaders[ContentType];
         string contentOptionValue = responseHeaders[XContentTypeOptions];
+        string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
 
         if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
         {
@@ -47,11 +49,12 @@ internal static class ReturnedHeadersAnalyzer
         }
 
         LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
     {
-        if (!string.IsNullOrEmpty(contentTypeValue))
+        if (!string.IsNullOrEmpty(contentTypeValue) && IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
