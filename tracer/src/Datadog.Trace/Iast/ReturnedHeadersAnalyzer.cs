@@ -130,22 +130,12 @@ internal static class ReturnedHeadersAnalyzer
 
     private static bool IsHtmlResponse(string contentTypeValue)
     {
-        if (string.IsNullOrEmpty(contentTypeValue))
-        {
-            return false;
-        }
-
         var contentType = contentTypeValue.ToLowerInvariant();
         return contentType.Contains("text/html") || contentType.Contains("application/xhtml+xml");
     }
 
     private static bool IsNoSniffContentOptions(string contentOptionValue)
     {
-        if (contentOptionValue == null)
-        {
-            return false;
-        }
-
         return contentOptionValue.ToLowerInvariant() == "nosniff";
     }
 

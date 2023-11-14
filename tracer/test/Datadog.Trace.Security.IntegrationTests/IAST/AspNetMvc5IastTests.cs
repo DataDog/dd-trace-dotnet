@@ -28,49 +28,6 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
         : base(iisFixture, output, classicMode: false, enableIast: true)
     {
     }
-}
-
-[Collection("IisTests")]
-public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
-{
-    public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: false, enableIast: false)
-    {
-    }
-}
-
-[Collection("IisTests")]
-public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
-{
-    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
-        : base(iisFixture, output, classicMode: true, enableIast: true)
-    {
-    }
-}
-
-[Collection("IisTests")]
-public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFixture<IisFixture>
-{
-    private readonly IisFixture _iisFixture;
-    private readonly string _testName;
-
-    public AspNetMvc5IntegratedWithIastTelemetryEnabled(IisFixture iisFixture, ITestOutputHelper output)
-        : base(nameof(AspNetMvc5), output, "/home/shutdown", @"test\test-applications\security\aspnet")
-    {
-        EnableIast(true);
-        EnableEvidenceRedaction(false);
-        EnableIastTelemetry((int)IastMetricsVerbosityLevel.Debug);
-        SetEnvironmentVariable("DD_IAST_DEDUPLICATION_ENABLED", "false");
-        SetEnvironmentVariable("DD_IAST_REQUEST_SAMPLING", "100");
-        SetEnvironmentVariable("DD_IAST_MAX_CONCURRENT_REQUESTS", "100");
-        SetEnvironmentVariable("DD_IAST_VULNERABILITIES_PER_REQUEST", "100");
-
-        _iisFixture = iisFixture;
-        _iisFixture.TryStartIis(this, IisAppType.AspNetIntegrated);
-        _testName = "Security." + nameof(AspNetMvc5) + ".TelemetryEnabled" +
-                 ".Integrated" + ".enableIast=true";
-        SetHttpPort(iisFixture.HttpPort);
-    }
 
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
@@ -84,17 +41,38 @@ public class AspNetMvc5IntegratedWithIastTelemetryEnabled : AspNetBase, IClassFi
     [InlineData("text/html", 500, "")]
     public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
     {
-        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
-            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
-        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
-        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
-        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
-        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
-        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
-        settings.AddIastScrubbing(scrubHash: false);
-        await VerifyHelper.VerifySpans(spansFiltered, settings)
-                          .UseFileName($"{_testName}.path={sanitisedUrl}")
-                          .DisableRequireUniquePrefix();
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.enableIast=true";
+        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
+{
+    public AspNetMvc5IntegratedWithoutIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: false, enableIast: false)
+    {
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("text/html", 200, "dummyvalue")]
+
+    public async Task TestIastXContentTypeHeaderMissing(string contentType, int returnCode, string xContentTypeHeaderValue)
+    {
+        var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
+        await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
+    }
+}
+
+[Collection("IisTests")]
+public class AspNetMvc5ClassicWithIast : AspNetMvc5IastTests
+{
+    public AspNetMvc5ClassicWithIast(IisFixture iisFixture, ITestOutputHelper output)
+        : base(iisFixture, output, classicMode: true, enableIast: true)
+    {
     }
 }
 
@@ -381,8 +359,21 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
                             .DisableRequireUniquePrefix();
     }
 
-    protected override string GetTestName() => _testName;
+    protected async Task TestXContentVulnerability(string contentType, int returnCode, string xContentTypeHeaderValue, string testName)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+            (string.IsNullOrEmpty(xContentTypeHeaderValue) ? string.Empty : "&xContentTypeHeaderValue=" + xContentTypeHeaderValue);
+        var url = "/Iast/XContentTypeHeaderMissing" + queryParams;
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(scrubHash: false);
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName($"{testName}.path={sanitisedUrl}")
+                          .DisableRequireUniquePrefix();
+    }
 
-    protected IisFixture GetFixture() => _iisFixture;
+    protected override string GetTestName() => _testName;
 }
 #endif
