@@ -73,26 +73,6 @@ internal unsafe class UnmanagedMemoryPool : IDisposable
         return Marshal.AllocCoTaskMem(_blockSize);
     }
 
-    public void Return(IntPtr block)
-    {
-        if (IsDisposed)
-        {
-            ThrowObjectDisposedException();
-        }
-
-        for (var i = 0; i < _length; i++)
-        {
-            if (_items[i] == IntPtr.Zero)
-            {
-                _items[i] = block;
-                _initialSearchIndex = 0;
-                return;
-            }
-        }
-
-        ReturnSlow(block);
-    }
-
     public void Return(IList<IntPtr> blocks)
     {
         if (IsDisposed)
