@@ -773,6 +773,8 @@ public class ProbesTests : TestHelper
             settings.AddRegexScrubber(regexPattern, replacement);
         }
 
+        AddRuntimeIdScrubber(settings);
+
         settings.AddScrubber(ScrubSnapshotJson);
 
         VerifierSettings.DerivePathInfo(
@@ -910,6 +912,12 @@ public class ProbesTests : TestHelper
                .Replace(@"\n\r", @"\n")
                .Replace(@"\r", @"\n")
                .Replace(@"\n", @"\r\n");
+    }
+
+    private void AddRuntimeIdScrubber(VerifySettings settings)
+    {
+        var runtimeIdPattern = new Regex(@"(""runtimeId"": "")[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}", RegexOptions.Compiled);
+        settings.AddRegexScrubber(runtimeIdPattern, "$1scrubbed");
     }
 
     private (ProbeAttributeBase ProbeTestData, ProbeDefinition Probe)[] GetProbeConfiguration(Type testType, bool unlisted, DeterministicGuidGenerator guidGenerator)
