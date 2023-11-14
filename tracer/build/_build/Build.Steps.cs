@@ -917,6 +917,8 @@ partial class Build
                     $"-v {Version}",
                     packageType == "tar" ? "" : "--prefix /opt/datadog",
                     $"--chdir {assetsDirectory}",
+                    $"--after-install {BuildDirectory / "artifacts" / FileNames.AfterInstallScript}",
+                    $"--after-remove {BuildDirectory / "artifacts" / FileNames.AfterRemoveScript}",
                     "createLogPath.sh",
                     "dd-dotnet.sh",
                     "netstandard2.0/",

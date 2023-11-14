@@ -235,7 +235,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{A0C5FBBB
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "artifacts", "artifacts", "{CC53E5C5-9D3E-4AD9-A9CA-D2190463EB5B}"
 	ProjectSection(SolutionItems) = preProject
+		tracer\build\artifacts\after-remove.sh = tracer\build\artifacts\after-remove.sh
 		tracer\build\artifacts\createLogPath.sh = tracer\build\artifacts\createLogPath.sh
+		tracer\build\artifacts\after-install.sh = tracer\build\artifacts\after-install.sh
 		tracer\build\artifacts\dd-dotnet.cmd = tracer\build\artifacts\dd-dotnet.cmd
 		tracer\build\artifacts\dd-dotnet.sh = tracer\build\artifacts\dd-dotnet.sh
 	EndProjectSection
@@ -1327,7 +1329,6 @@ Global
 		{23EA38E3-0BF1-40DF-A52D-C34EA2FB3F26}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{23EA38E3-0BF1-40DF-A52D-C34EA2FB3F26}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{23EA38E3-0BF1-40DF-A52D-C34EA2FB3F26}.Release|Any CPU.Build.0 = Release|Any CPU
-
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
