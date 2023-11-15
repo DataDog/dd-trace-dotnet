@@ -27,9 +27,6 @@ RUN apt-get update \
         curl \
         cmake \
         make \
-        llvm \
-        clang \
-        clang-tidy \
         gcc \
         build-essential \
         rpm \
@@ -47,6 +44,14 @@ RUN apt-get update \
     && gem install --version 2.7.6 dotenv \
     && gem install --version 1.14.2 --minimal-deps --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
+
+# Install Clang
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y lsb-release wget software-properties-common gnupg && \
+    wget https://apt.llvm.org/llvm.sh && \
+    chmod u+x llvm.sh && \
+    ./llvm.sh 16 all && \
+    ln -s `which clang-16` /usr/bin/clang && \
+    ln -s `which clang++-16` /usr/bin/clang++
 
 # Install the .NET SDK
 RUN curl -sSL https://dot.net/v1/dotnet-install.sh --output dotnet-install.sh  \
