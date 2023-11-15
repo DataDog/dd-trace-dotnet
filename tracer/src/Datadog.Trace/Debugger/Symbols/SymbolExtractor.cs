@@ -200,7 +200,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 }
 
                 var classLanguageSpecifics = GetClassLanguageSpecifics(type);
-                var linesAndSource = GetClassSourcePdbInfo(allScopes);
+                var linesAndSource = GetClassSourceLocationInfo(allScopes);
                 classScope = new Model.Scope
                 {
                     Name = typeDefinitionHandle.FullName(MetadataReader),
@@ -239,14 +239,14 @@ namespace Datadog.Trace.Debugger.Symbols
             return true;
         }
 
-        private SourcePdbInfo GetClassSourcePdbInfo(Model.Scope[]? allScopes)
+        private SourceLocationInfo GetClassSourceLocationInfo(Model.Scope[]? allScopes)
         {
             int classStartLine = int.MaxValue;
             int classEndLine = 0;
             string? classSourceFile = null;
             if (allScopes == null)
             {
-                return new SourcePdbInfo { StartLine = UnknownMethodStartLine, EndLine = UnknownMethodEndLine, Path = classSourceFile };
+                return new SourceLocationInfo { StartLine = UnknownMethodStartLine, EndLine = UnknownMethodEndLine, Path = classSourceFile };
             }
 
             for (int i = 0; i < allScopes.Length; i++)
@@ -303,7 +303,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 classEndLine = UnknownMethodEndLine;
             }
 
-            return new SourcePdbInfo { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
+            return new SourceLocationInfo { StartLine = classStartLine, EndLine = classEndLine, Path = classSourceFile };
         }
 
         private void PopulateNestedNotCompileGeneratedClassScope(ImmutableArray<TypeDefinitionHandle> nestedTypes, Model.Scope[] nestedClassScopes, ref int index)
@@ -350,7 +350,8 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 AccessModifiers = accessModifiers > 0 ? new[] { accessModifiers.ToString() } : null,
                 Interfaces = interfaceNames,
-                SuperClasses = baseClassNames
+                SuperClasses = baseClassNames,
+                IsPdbExist = DatadogMetadataReader.IsPdbExist
             };
             return classLanguageSpecifics;
         }
@@ -430,7 +431,7 @@ namespace Datadog.Trace.Debugger.Symbols
                     if (methodScope.Scopes != null &&
                         methodScope is { StartLine: UnknownMethodStartLine, EndLine: UnknownMethodEndLine, SourceFile: null })
                     {
-                        var sourcePdbInfo = GetMethodSourcePdbInfo(methodScope);
+                        var sourcePdbInfo = GetMethodSourceLocationInfo(methodScope);
                         methodScope.StartLine = sourcePdbInfo.StartLine;
                         methodScope.EndLine = sourcePdbInfo.EndLine;
                         methodScope.SourceFile = sourcePdbInfo.Path;
@@ -459,7 +460,7 @@ namespace Datadog.Trace.Debugger.Symbols
             }
         }
 
-        private SourcePdbInfo GetMethodSourcePdbInfo(Model.Scope methodScope)
+        private SourceLocationInfo GetMethodSourceLocationInfo(Model.Scope methodScope)
         {
             var startLine = int.MaxValue;
             var endLine = 0;
@@ -507,7 +508,7 @@ namespace Datadog.Trace.Debugger.Symbols
                 endLine = UnknownMethodEndLine;
             }
 
-            return new SourcePdbInfo { StartLine = startLine, EndLine = endLine, Path = sourceFile, StartColumn = startColumn, EndColumn = endColumn };
+            return new SourceLocationInfo { StartLine = startLine, EndLine = endLine, Path = sourceFile, StartColumn = startColumn, EndColumn = endColumn };
         }
 
         protected virtual Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
@@ -768,7 +769,7 @@ namespace Datadog.Trace.Debugger.Symbols
             GC.SuppressFinalize(this);
         }
 
-        internal record struct SourcePdbInfo
+        internal record struct SourceLocationInfo
         {
             internal int StartLine;
             internal int EndLine;

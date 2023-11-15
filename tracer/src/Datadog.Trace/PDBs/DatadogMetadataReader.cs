@@ -15,7 +15,6 @@ using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
-using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 
 namespace Datadog.Trace.Pdb
 {
@@ -197,14 +196,26 @@ namespace Datadog.Trace.Pdb
             return null;
         }
 
-        internal List<DatadogSequencePoint>? GetMethodSequencePoints(int rowId)
+        internal DatadogSequencePoint[]? GetMethodSequencePoints(int rowId)
         {
-            if (_isDnlibPdbReader)
+            using var memory = GetMethodSequencePointsAsMemoryOwner(rowId, out var count);
+            if (count == 0 || memory == null)
             {
-                return GetMethodSequencePointsDnlib(rowId);
+                return null;
             }
 
-            List<DatadogSequencePoint>? sequencePoints = null;
+            var asSpan = memory.Memory.Span;
+            return asSpan.Slice(0, count).ToArray();
+        }
+
+        internal IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsAsMemoryOwner(int rowId, out int count)
+        {
+            count = 0;
+            if (_isDnlibPdbReader)
+            {
+                return GetMethodSequencePointsDnlib(rowId, out count);
+            }
+
             if (PdbReader != null)
             {
                 var methodDef = GetMethodDef(rowId);
@@ -216,7 +227,8 @@ namespace Datadog.Trace.Pdb
                         return null;
                     }
 
-                    sequencePoints = new List<DatadogSequencePoint>();
+                    var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent();
+                    var sequencePoints = memory.Memory.Span;
                     foreach (var sp in methodDebugInformation.GetSequencePoints())
                     {
                         if (sp.IsHidden)
@@ -224,7 +236,13 @@ namespace Datadog.Trace.Pdb
                             continue;
                         }
 
-                        sequencePoints.Add(new DatadogSequencePoint()
+                        if (count >= sequencePoints.Length)
+                        {
+                            memory = EnlargeBuffer(memory, count);
+                            sequencePoints = memory.Memory.Span;
+                        }
+
+                        sequencePoints[count] = new DatadogSequencePoint
                         {
                             StartLine = sp.StartLine,
                             EndLine = sp.EndLine,
@@ -233,12 +251,26 @@ namespace Datadog.Trace.Pdb
                             Offset = sp.Offset,
                             IsHidden = sp.IsHidden,
                             URL = GetDocumentName(sp.Document)
-                        });
+                        };
+                        count++;
                     }
+
+                    return memory;
                 }
             }
 
-            return sequencePoints;
+            return null;
+        }
+
+        /// <summary>
+        /// Return a new IMemoryOwner of size 'currentSize * 2' and dispose the old one
+        /// </summary>
+        protected IMemoryOwner<T> EnlargeBuffer<T>(IMemoryOwner<T> memoryOwner, int currentSize)
+        {
+            var newMemory = ArrayMemoryPool<T>.Shared.Rent(currentSize * 2);
+            memoryOwner.Memory.Span.CopyTo(newMemory.Memory.Span);
+            memoryOwner.Dispose();
+            return newMemory;
         }
 
         private string? GetDocumentName(DocumentHandle doc)
@@ -270,10 +302,8 @@ namespace Datadog.Trace.Pdb
             {
                 foreach (MethodDefinitionHandle methodDefinitionHandle in MetadataReader.MethodDefinitions)
                 {
-                    // Get the method debug information
                     MethodDebugInformation methodDebugInformation = PdbReader.GetMethodDebugInformation(methodDefinitionHandle);
 
-                    // Get the sequence points for the method
                     foreach (VendoredMicrosoftCode.System.Reflection.Metadata.SequencePoint sequencePoint in methodDebugInformation.GetSequencePoints())
                     {
                         if (sequencePoint.IsHidden || GetDocumentName(sequencePoint.Document) != filePath)
@@ -541,7 +571,7 @@ namespace Datadog.Trace.Pdb
             return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
         }
 
-        internal List<LocalScope>? GetLocalSymbols(int rowId, List<DatadogSequencePoint> sequencePoints)
+        internal List<LocalScope>? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints)
         {
             if (_isDnlibPdbReader)
             {
@@ -693,7 +723,7 @@ namespace Datadog.Trace.Pdb
 
         internal bool HasSequencePoints(int methodRid)
         {
-            return GetMethodSequencePoints(methodRid)?.Count > 0;
+            return GetMethodSequencePoints(methodRid)?.Length > 0;
         }
 
         public void Dispose()

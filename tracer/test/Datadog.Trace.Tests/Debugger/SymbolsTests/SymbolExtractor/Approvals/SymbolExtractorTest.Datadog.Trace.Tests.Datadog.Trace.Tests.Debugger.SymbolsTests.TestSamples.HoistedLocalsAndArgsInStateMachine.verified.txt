@@ -54,7 +54,7 @@
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 72
               },
               "scopes": [
                 {
@@ -72,7 +72,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 72
                   },
                   "scopes": [
                     {
@@ -82,7 +82,7 @@
                       "end_line": 22,
                       "language_specifics": {
                         "start_column": 9,
-                        "end_column": 10
+                        "end_column": 72
                       },
                       "symbols": [
                         {
@@ -106,7 +106,7 @@
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 115
               },
               "symbols": [
                 {
@@ -138,7 +138,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 115
                   },
                   "scopes": [
                     {
@@ -148,7 +148,7 @@
                       "end_line": 43,
                       "language_specifics": {
                         "start_column": 9,
-                        "end_column": 10
+                        "end_column": 115
                       },
                       "symbols": [
                         {
@@ -240,7 +240,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 32,
-                    "end_column": 10
+                    "end_column": 69
                   },
                   "symbols": [
                     {
@@ -278,7 +278,7 @@
                     ],
                     "return_type": "System.String",
                     "start_column": 13,
-                    "end_column": 14
+                    "end_column": 52
                   }
                 }
               ]
@@ -334,7 +334,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 33,
-                    "end_column": 10
+                    "end_column": 56
                   },
                   "symbols": [
                     {
@@ -366,7 +366,7 @@
                     ],
                     "return_type": "System.String",
                     "start_column": 13,
-                    "end_column": 14
+                    "end_column": 44
                   }
                 }
               ]

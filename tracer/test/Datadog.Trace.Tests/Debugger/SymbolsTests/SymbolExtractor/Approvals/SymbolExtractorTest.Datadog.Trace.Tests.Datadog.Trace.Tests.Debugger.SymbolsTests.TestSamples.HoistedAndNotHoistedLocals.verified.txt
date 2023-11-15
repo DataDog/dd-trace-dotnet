@@ -43,7 +43,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 60
               },
               "symbols": [
                 {
@@ -63,7 +63,7 @@
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task`1<Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person>",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 83
               },
               "symbols": [
                 {
@@ -101,7 +101,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 83
                   },
                   "scopes": [
                     {
@@ -111,7 +111,7 @@
                       "end_line": 61,
                       "language_specifics": {
                         "start_column": 9,
-                        "end_column": 10
+                        "end_column": 83
                       },
                       "symbols": [
                         {
@@ -170,7 +170,7 @@
               "language_specifics": {
                 "return_type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 81
               },
               "symbols": [
                 {

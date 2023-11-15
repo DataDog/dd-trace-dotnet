@@ -30,7 +30,7 @@
               "language_specifics": {
                 "return_type": "System.Threading.Tasks.Task`1<System.Int32>",
                 "start_column": 9,
-                "end_column": 18
+                "end_column": 52
               },
               "scopes": [
                 {
@@ -45,7 +45,7 @@
                     ],
                     "return_type": "System.Int32",
                     "start_column": 17,
-                    "end_column": 18
+                    "end_column": 52
                   },
                   "scopes": [
                     {
@@ -55,7 +55,7 @@
                       "end_line": 22,
                       "language_specifics": {
                         "start_column": 17,
-                        "end_column": 18
+                        "end_column": 52
                       },
                       "symbols": [
                         {
@@ -83,7 +83,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 42
                   },
                   "scopes": [
                     {
@@ -93,7 +93,7 @@
                       "end_line": 25,
                       "language_specifics": {
                         "start_column": 9,
-                        "end_column": 10
+                        "end_column": 42
                       },
                       "symbols": [
                         {

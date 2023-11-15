@@ -30,7 +30,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 47
               },
               "symbols": [
                 {
@@ -48,7 +48,7 @@
                   "end_line": 27,
                   "language_specifics": {
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 47
                   },
                   "symbols": [
                     {
@@ -66,7 +66,7 @@
                   "end_line": 27,
                   "language_specifics": {
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 47
                   },
                   "symbols": [
                     {
@@ -90,7 +90,7 @@
                   "end_line": 27,
                   "language_specifics": {
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 47
                   },
                   "symbols": [
                     {
@@ -112,7 +112,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 61
               },
               "symbols": [
                 {

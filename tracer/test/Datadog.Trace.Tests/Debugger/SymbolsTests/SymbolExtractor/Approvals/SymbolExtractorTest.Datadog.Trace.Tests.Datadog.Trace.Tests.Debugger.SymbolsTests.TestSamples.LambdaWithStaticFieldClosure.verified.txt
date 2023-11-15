@@ -46,7 +46,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 46
               }
             },
             {
@@ -58,7 +58,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 44
               },
               "scopes": [
                 {
@@ -73,7 +73,7 @@
                     ],
                     "return_type": "System.Void",
                     "start_column": 13,
-                    "end_column": 14
+                    "end_column": 45
                   },
                   "scopes": [
                     {
@@ -83,7 +83,7 @@
                       "end_line": 27,
                       "language_specifics": {
                         "start_column": 13,
-                        "end_column": 14
+                        "end_column": 45
                       },
                       "symbols": [
                         {
@@ -103,7 +103,7 @@
                   "end_line": 30,
                   "language_specifics": {
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 44
                   },
                   "symbols": [
                     {

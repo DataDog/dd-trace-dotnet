@@ -30,7 +30,7 @@
               "language_specifics": {
                 "return_type": "System.Void",
                 "start_column": 9,
-                "end_column": 10
+                "end_column": 62
               },
               "symbols": [
                 {
@@ -198,7 +198,7 @@
                   "end_line": 30,
                   "language_specifics": {
                     "start_column": 9,
-                    "end_column": 10
+                    "end_column": 62
                   },
                   "symbols": [
                     {

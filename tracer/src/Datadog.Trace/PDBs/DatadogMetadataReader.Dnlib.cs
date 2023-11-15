@@ -9,6 +9,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using Datadog.Trace.Debugger.Symbols;
+using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.Vendors.dnlib.DotNet;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb;
 using Datadog.Trace.Vendors.dnlib.DotNet.Pdb.Dss;
@@ -119,7 +120,7 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private List<LocalScope>? GetLocalSymbolsDnlib(int rowId, List<DatadogSequencePoint> sequencePoints)
+        private List<LocalScope>? GetLocalSymbolsDnlib(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogSequencePoint> sequencePoints)
         {
             List<LocalScope>? localScopes = null;
             var method = GetMethodDefDnlib((uint)rowId);
@@ -153,7 +154,7 @@ namespace Datadog.Trace.Pdb
 
                     if (sequencePointForScope == default)
                     {
-                        for (var m = 0; m < sequencePoints.Count; m++)
+                        for (var m = 0; m < sequencePoints.Length; m++)
                         {
                             if (sequencePoints[m].Offset >= currentScope.StartOffset)
                             {
@@ -243,8 +244,9 @@ namespace Datadog.Trace.Pdb
             return sourceLink == null ? null : Encoding.UTF8.GetString(sourceLink.FileBlob);
         }
 
-        private List<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId)
+        private IMemoryOwner<DatadogSequencePoint>? GetMethodSequencePointsDnlib(int rowId, out int count)
         {
+            count = 0;
             var mdMethod = GetMethodDefDnlib((uint)rowId);
             var symbolMethod = GetSymbolMethodOfAsyncMethodDnlib(mdMethod) ?? DnlibPdbReader?.GetMethod(mdMethod, version: 1);
             if (symbolMethod == null)
@@ -252,7 +254,9 @@ namespace Datadog.Trace.Pdb
                 return null;
             }
 
-            var sequencePoints = new List<DatadogSequencePoint>(symbolMethod.SequencePoints.Count);
+            var memory = ArrayMemoryPool<DatadogSequencePoint>.Shared.Rent(symbolMethod.SequencePoints.Count);
+            var sequencePoints = memory.Memory.Span;
+
             for (int i = 0; i < symbolMethod.SequencePoints.Count; i++)
             {
                 var sp = symbolMethod.SequencePoints[i];
@@ -261,7 +265,7 @@ namespace Datadog.Trace.Pdb
                     continue;
                 }
 
-                sequencePoints.Add(
+                sequencePoints[count] =
                     new DatadogSequencePoint
                     {
                         StartLine = sp.Line,
@@ -271,10 +275,11 @@ namespace Datadog.Trace.Pdb
                         Offset = sp.Offset,
                         IsHidden = sp.IsHidden(),
                         URL = sp.Document.URL
-                    });
+                    };
+                count++;
             }
 
-            return sequencePoints;
+            return memory;
         }
     }
 }

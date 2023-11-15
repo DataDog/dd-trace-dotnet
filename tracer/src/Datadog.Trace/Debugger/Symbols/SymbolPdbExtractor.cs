@@ -6,12 +6,13 @@
 #nullable enable
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using Datadog.Trace.Debugger.Symbols.Model;
 using Datadog.Trace.Pdb;
 using Datadog.Trace.VendoredMicrosoftCode.System;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.CompilerServices.Unsafe;
+using Datadog.Trace.VendoredMicrosoftCode.System.Runtime.InteropServices;
 
 namespace Datadog.Trace.Debugger.Symbols;
 
@@ -27,40 +28,69 @@ internal class SymbolPdbExtractor : SymbolExtractor
     protected override Model.Scope CreateMethodScope(TypeDefinition type, MethodDefinition method)
     {
         var methodScope = base.CreateMethodScope(type, method);
-        var sequencePoints = DatadogMetadataReader.GetMethodSequencePoints(method.Handle.RowId);
-        if (sequencePoints == null || sequencePoints.Count == 0)
+        using var memory = DatadogMetadataReader.GetMethodSequencePointsAsMemoryOwner(method.Handle.RowId, out var count);
+        if (memory == null || count == 0)
         {
             return methodScope;
         }
 
-        var firstSq = sequencePoints.FirstOrDefault(sq => sq is { IsHidden: false, StartLine: > 0 });
-        var startLine = firstSq.StartLine == 0 ? UnknownMethodStartLine : firstSq.StartLine;
-        var typeSourceFile = firstSq.URL;
-        var lastSq = sequencePoints.LastOrDefault(sq => sq is { IsHidden: false, EndLine: > 0 });
-        var endLine = lastSq.EndLine == 0 ? UnknownMethodEndLine : lastSq.EndLine;
-        var startColumn = firstSq.StartColumn == 0 ? UnknownMethodStartLine : firstSq.StartColumn;
-        var endColumn = lastSq.EndColumn == 0 ? UnknownMethodEndLine : lastSq.EndColumn;
-
-        methodScope.StartLine = startLine;
-        methodScope.EndLine = endLine;
-        methodScope.SourceFile = typeSourceFile;
-        if (endColumn > 0)
+        VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints = memory.Memory.Span.Slice(0, count);
+        var sourcePdbInfo = GetSourceLocationInfo(sequencePoints);
+        methodScope.StartLine = sourcePdbInfo.StartLine;
+        methodScope.EndLine = sourcePdbInfo.EndLine;
+        methodScope.SourceFile = sourcePdbInfo.Path;
+        if (sourcePdbInfo.EndColumn > 0)
         {
             var ls = new LanguageSpecifics
             {
                 Annotations = methodScope.LanguageSpecifics?.Annotations,
                 AccessModifiers = methodScope.LanguageSpecifics?.AccessModifiers,
                 ReturnType = methodScope.LanguageSpecifics?.ReturnType,
-                StartColumn = startColumn,
-                EndColumn = endColumn,
+                StartColumn = sourcePdbInfo.StartColumn,
+                EndColumn = sourcePdbInfo.EndColumn,
             };
 
             methodScope.LanguageSpecifics = ls;
         }
 
         var localScopes = GetLocalSymbols(method.Handle.RowId, sequencePoints, methodScope);
-        methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes?.ToArray() ?? null, localScopes);
+        methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes ?? null, localScopes);
         return methodScope;
+    }
+
+    private SourceLocationInfo GetSourceLocationInfo(VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> span)
+    {
+        ref var firstSq = ref MemoryMarshal.GetReference(span);
+        var startLine = firstSq.StartLine == 0 ? UnknownMethodStartLine : firstSq.StartLine;
+        var lastSq = Unsafe.Add(ref firstSq, span.Length - 1);
+        var endLine = lastSq.EndLine == 0 ? UnknownMethodEndLine : lastSq.EndLine;
+        var typeSourceFile = firstSq.URL;
+        int startColumn = firstSq.StartColumn;
+        int endColumn = 0;
+
+        for (int i = 0; i < span.Length; i++)
+        {
+            var current = Unsafe.Add(ref firstSq, i);
+
+            if (endColumn < current.EndColumn)
+            {
+                endColumn = current.EndColumn;
+            }
+        }
+
+        if (endColumn == 0)
+        {
+            endColumn = int.MaxValue;
+        }
+
+        return new SourceLocationInfo
+        {
+            StartLine = startLine,
+            EndLine = endLine,
+            StartColumn = startColumn,
+            EndColumn = endColumn,
+            Path = typeSourceFile
+        };
     }
 
     protected override Model.Scope? CreateMethodScopeForGeneratedMethod(MethodDefinition method, MethodDefinition generatedMethod, TypeDefinition nestedType)
@@ -104,7 +134,7 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return closureMethodScope;
     }
 
-    private Model.Scope[]? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
+    private Model.Scope[]? GetLocalSymbols(int rowId, VendoredMicrosoftCode.System.ReadOnlySpan<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
         List<Model.Scope>? scopes = null;
         var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);

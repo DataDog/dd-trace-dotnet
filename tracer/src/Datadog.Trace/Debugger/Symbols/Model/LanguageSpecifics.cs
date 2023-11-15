@@ -30,4 +30,7 @@ internal record struct LanguageSpecifics
 
     [JsonProperty("end_column")]
     internal int? EndColumn { get; set; }
+
+    [JsonProperty("pdb_exist")]
+    internal bool? IsPdbExist { get; set; }
 }

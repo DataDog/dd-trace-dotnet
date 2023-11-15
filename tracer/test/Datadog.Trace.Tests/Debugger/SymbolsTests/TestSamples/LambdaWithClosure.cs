@@ -20,6 +20,7 @@ namespace Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples
             };
 
             action();
+            Console.WriteLine(rand);
         }
     }
 }
