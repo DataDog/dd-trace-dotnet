@@ -22,6 +22,7 @@ internal static class ReturnedHeadersAnalyzer
     private const string ContentType = "content-type";
     private const string XContentTypeOptions = "x-content-type-options";
     private const string StrictTransportSecurity = "strict-transport-security";
+    private const string XForwardedProto = "x-forwarded-proto";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
@@ -54,7 +55,7 @@ internal static class ReturnedHeadersAnalyzer
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
     {
-        if (!string.IsNullOrEmpty(contentTypeValue) && IsHtmlResponse(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
+        if (!string.IsNullOrEmpty(contentTypeValue) && !IsNoSniffContentOptions(contentOptionValue))
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
@@ -70,9 +71,14 @@ internal static class ReturnedHeadersAnalyzer
         }
     }
 
-    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue)
+    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
     {
-        if (IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
+        if (protocol.ToLowerInvariant() != "https" && xForwardedProtoValue.ToLowerInvariant() != "https")
+        {
+            return;
+        }
+
+        if (!IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
         {
             IastModule.OnStrictTransportSecurityHeaderMissing(integrationId, serviceName);
         }
@@ -96,7 +102,7 @@ internal static class ReturnedHeadersAnalyzer
         var maxAge = strictTransportSecurityValueLow.Substring("max-age=".Length);
         var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
 
-        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt > 0);
+        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt >= 0);
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)
