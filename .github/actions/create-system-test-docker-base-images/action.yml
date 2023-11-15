@@ -10,6 +10,14 @@ inputs:
     description: 'The package version of the assets being used'
     required: true
 
+  lib_waf_version:
+    description: 'The version of the WAF being used'
+    required: true
+
+  waf_rules_version:
+    description: 'The version of the rules being used'
+    required: true
+
   github_token:
     description: 'Github token for pushing images to ghcr.io Docker repository'
     required: true
@@ -22,7 +30,7 @@ runs:
       shell: bash
       run: |
         echo "OUTPUT ARTIFACT PATH: ${{inputs.artifacts_path}}"
-        cp ./tracer/build/_build/docker/reliability-env/* ${{inputs.artifacts_path}}
+        cp ./tracer/build/_build/docker/system-tests.dockerfile ${{inputs.artifacts_path}}
 
     - name: Set up QEMU
       uses: docker/setup-qemu-action@v2
@@ -44,3 +52,6 @@ runs:
         context: ${{inputs.artifacts_path}}
         build-args: |
           LINUX_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.tar.gz
+          LIBRARY_VERSION=${{inputs.package_version}}
+          LIBDDWAF_VERSION=${{inputs.lib_waf_version}}
+          APPSEC_EVENT_RULES_VERSION=${{inputs.waf_rules_version}}

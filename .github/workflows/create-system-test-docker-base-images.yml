@@ -46,4 +46,6 @@ jobs:
       with:
         artifacts_path: "${{steps.assets.outputs.artifacts_path}}"
         package_version: "${{steps.versions.outputs.version}}"
+        lib_waf_version: "${{steps.versions.outputs.lib_waf_version}}"
+        waf_rules_version: "${{steps.versions.outputs.waf_rules_version}}"
         github_token: ${{ secrets.GITHUB_TOKEN }}
