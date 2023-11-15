@@ -5,7 +5,7 @@
 
 #nullable enable
 
-using System.Collections.Generic;
+using System.Collections;
 using Datadog.Trace.DuckTyping;
 
 namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM.AST;
@@ -16,5 +16,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM
 [DuckCopy]
 internal struct ItemsNode
 {
-    public IEnumerable<object>? Items;
+    public IEnumerable? Items;
 }

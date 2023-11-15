@@ -88,7 +88,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string? operationName = executionContext?.Operation?.Name;
                 var operationType =
                     executionContext?.Operation == null
-                        ? "unknown"
+                        ? null
                         : OperationTypeProxyString[(int)executionContext.Operation.OperationType];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }
@@ -116,7 +116,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.Net
                 string? operationName = executionContext?.Operation.Name.StringValue;
                 var operationType =
                     executionContext?.Operation == null
-                        ? "unknown"
+                        ? null
                         : OperationTypeProxyString[(int)executionContext.Operation.Operation];
                 scope = CreateScopeFromExecuteAsync(tracer, IntegrationId, new GraphQLTags(GraphQLCommon.IntegrationName), ServiceName, operationName, source, operationType);
             }

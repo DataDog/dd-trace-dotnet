@@ -165,7 +165,7 @@ internal abstract class HotChocolateSecurity
             SyntaxKindProxy.IntValue => int.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty),
             SyntaxKindProxy.BooleanValue => bool.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty),
             SyntaxKindProxy.FloatValue => float.Parse(obj.DuckCast<ValueNode>().Value?.ToString() ?? string.Empty, CultureInfo.InvariantCulture.NumberFormat),
-            SyntaxKindProxy.ListValue => (obj.DuckCast<ItemsNode>().Items ?? Array.Empty<object>()).Select(x => GetArgumentValue(x, variables)).ToList(),
+            SyntaxKindProxy.ListValue => GetListValue(obj, variables),
             SyntaxKindProxy.ObjectValue => GetValue(obj, variables),
             SyntaxKindProxy.ObjectField => GetArgumentValue(obj.DuckCast<ValueNode>().Value, variables),
 
@@ -173,6 +173,20 @@ internal abstract class HotChocolateSecurity
         };
 
         return value;
+    }
+
+    private static object? GetListValue(object obj, IDictionary<string, object>? variables)
+    {
+        var result = new List<object?>();
+        if (obj.TryDuckCast<ItemsNode>(out var node) && node.Items != null)
+        {
+            foreach (var field in node.Items)
+            {
+                result.Add(GetArgumentValue(field, variables));
+            }
+        }
+
+        return result;
     }
 
     private static object? GetValue(object obj, IDictionary<string, object>? variables)

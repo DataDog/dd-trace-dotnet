@@ -16,5 +16,5 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate.ASM
 [DuckCopy]
 internal struct SyntaxNode
 {
-    public SyntaxKindProxy? Kind;
+    public SyntaxKindProxy Kind;
 }
