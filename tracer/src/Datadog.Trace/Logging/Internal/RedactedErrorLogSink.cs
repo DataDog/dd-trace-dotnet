@@ -4,6 +4,9 @@
 // </copyright>
 
 #nullable enable
+
+using System.Collections.Generic;
+using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
 using Datadog.Trace.Telemetry.DTOs;
@@ -29,12 +32,11 @@ internal class RedactedErrorLogSink : ILogEventSink
             return;
         }
 
-        var message = logEvent.Exception is { } ex
-                          ? $"{logEvent.MessageTemplate.Render(logEvent.Properties)}. Ex: {ex.Message}"
-                          : logEvent.MessageTemplate.Render(logEvent.Properties);
-
-        var logLevel = ToLogLevel(logEvent.Level);
-        var telemetryLog = new LogMessageData(message, logLevel, logEvent.Timestamp) { StackTrace = logEvent.Exception?.StackTrace };
+        // Note: we're using the raw message template here to remove any chance of including customer information
+        var telemetryLog = new LogMessageData(logEvent.MessageTemplate.Text, ToLogLevel(logEvent.Level), logEvent.Timestamp)
+        {
+            StackTrace = logEvent.Exception is { } ex ? ExceptionRedactor.Redact(ex) : null
+        };
 
         _collector.EnqueueLog(telemetryLog);
     }

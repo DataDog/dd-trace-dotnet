@@ -53,6 +53,8 @@ internal class TelemetryController : ITelemetryController
         _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
         _transportManager = transportManager ?? throw new ArgumentNullException(nameof(transportManager));
         _redactedErrorLogs = redactedErrorLogs;
+        // We use Task.Delay(Timeout.Infinite) here as "a Task that never completes".
+        // It simplifies some of the logic we need to do in the scheduler
         var redactedErrorLogsTask = () => _redactedErrorLogs?.WaitForLogsAsync() ?? Task.Delay(Timeout.Infinite);
         _scheduler = new(flushInterval, redactedErrorLogsTask, _processExit);
 
