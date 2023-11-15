@@ -26,11 +26,11 @@ namespace Datadog.Trace.Propagators
         private readonly ConcurrentDictionary<Key, string?> _defaultTagMappingCache = new();
         private readonly IContextInjector[] _injectors;
         private readonly IContextExtractor[] _extractors;
-        private readonly bool _propagationExtractFirst;
+        private readonly bool _propagationExtractFirstOnly;
 
-        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirst)
+        internal SpanContextPropagator(IEnumerable<IContextInjector>? injectors, IEnumerable<IContextExtractor>? extractors, bool propagationExtractFirsValue)
         {
-            _propagationExtractFirst = propagationExtractFirst;
+            _propagationExtractFirstOnly = propagationExtractFirsValue;
             _injectors = injectors?.ToArray() ?? Array.Empty<IContextInjector>();
             _extractors = extractors?.ToArray() ?? Array.Empty<IContextExtractor>();
         }
@@ -158,7 +158,7 @@ namespace Datadog.Trace.Propagators
             {
                 if (_extractors[i].TryExtract(carrier, carrierGetter, out var spanContext))
                 {
-                    if (_propagationExtractFirst)
+                    if (_propagationExtractFirstOnly)
                     {
                         return spanContext;
                     }

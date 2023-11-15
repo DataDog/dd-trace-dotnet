@@ -51,17 +51,17 @@ namespace Datadog.Trace.Tests.Propagators
 
             // W3CTraceContext-Datadog Extracts first header only
             W3CDatadogPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
-    new[]
-                    {
-                        ContextPropagationHeaderStyle.W3CTraceContext,
-                        ContextPropagationHeaderStyle.Datadog,
-                    },
-    new[]
-                    {
-                        ContextPropagationHeaderStyle.W3CTraceContext,
-                        ContextPropagationHeaderStyle.Datadog,
-                    },
-    true);
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                new[]
+                {
+                    ContextPropagationHeaderStyle.W3CTraceContext,
+                    ContextPropagationHeaderStyle.Datadog,
+                },
+                true);
 
             // Datadog-W3CTraceContext Extracts first header only
             DatadogW3CPropagatorExtractFirstTrue = SpanContextPropagatorFactory.GetSpanContextPropagator(
@@ -781,14 +781,12 @@ namespace Datadog.Trace.Tests.Propagators
         }
 
         private SpanContextPropagator GetPropagatorToTest(bool extractFirst, bool w3CHeaderFirst)
+            => (w3CHeaderFirst, extractFirst) switch
         {
-            return (w3CHeaderFirst, extractFirst) switch
-            {
-                (true, true) => W3CDatadogPropagatorExtractFirstTrue,
-                (true, false) => W3CDatadogPropagatorExtractFirstFalse,
-                (false, true) => DatadogW3CPropagatorExtractFirstTrue,
-                (false, false) => DatadogW3CPropagatorExtractFirstFalse
-            };
-        }
+            (true, true) => W3CDatadogPropagatorExtractFirstTrue,
+            (true, false) => W3CDatadogPropagatorExtractFirstFalse,
+            (false, true) => DatadogW3CPropagatorExtractFirstTrue,
+            (false, false) => DatadogW3CPropagatorExtractFirstFalse
+        };
     }
 }
