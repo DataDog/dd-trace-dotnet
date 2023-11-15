@@ -5,9 +5,12 @@
 
 #nullable enable
 
+using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Datadog.Trace.Logging.DirectSubmission.Formatting;
 using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Util;
 
@@ -26,15 +29,28 @@ internal class RedactedErrorLogCollector
     private TaskCompletionSource<bool> _tcs = new(TaskOptions);
     private bool _isEnabled = true;
 
+    private ConcurrentDictionary<uint, int> _logCounts = new();
+    private ConcurrentDictionary<uint, int> _logCountsReserve = new();
+
     public List<List<LogMessageData>>? GetLogs()
     {
         // This method should only be called in a single-threaded loop
         List<List<LogMessageData>>? batches = null;
         var batchSize = 0;
         List<LogMessageData>? logs = null;
+        var logCounts = Interlocked.Exchange(ref _logCounts, _logCountsReserve)!;
+
         while (_queue.TryDequeue(out var log))
         {
             var logSize = log.GetApproximateSerializationSize();
+            // modify the message to add the final log count
+            var eventId = EventIdHash.Compute(log.Message, log.StackTrace);
+            if (logCounts.TryGetValue(eventId, out var count) && count > 1)
+            {
+                // TODO: Add the count to the message (not yet supported in Telemetry)
+                // log.InstanceCount = count - 1;
+            }
+
             if (batchSize + logSize < MaximumBatchSizeBytes)
             {
                 batchSize += log.GetApproximateSerializationSize();
@@ -62,14 +78,30 @@ internal class RedactedErrorLogCollector
             batches.Add(logs);
         }
 
+        logCounts.Clear();
+        _logCountsReserve = logCounts;
+
         return batches;
     }
 
-    public void EnqueueLog(LogMessageData log)
+    // For testing
+    internal void EnqueueLog(LogMessageData log)
+        => EnqueueLog(log.Message, log.Level, DateTimeOffset.FromUnixTimeSeconds(log.TracerTime), log.StackTrace);
+
+    public void EnqueueLog(string message, TelemetryLogLevel logLevel, DateTimeOffset timestamp, string? stackTrace)
     {
         if (Volatile.Read(ref _isEnabled))
         {
-            _queue.TryEnqueue(log);
+            var eventId = EventIdHash.Compute(message, stackTrace);
+            var logCounts = _logCounts;
+            var newCount = logCounts.AddOrUpdate(eventId, addValue: 1, updateValueFactory: static (_, prev) => prev + 1);
+            if (newCount != 1)
+            {
+                // already have this log, so don't enqueue it again
+                return;
+            }
+
+            _queue.TryEnqueue(new(message, logLevel, timestamp) { StackTrace = stackTrace });
 
             if (_queue.Count > QueueSizeTrigger)
             {

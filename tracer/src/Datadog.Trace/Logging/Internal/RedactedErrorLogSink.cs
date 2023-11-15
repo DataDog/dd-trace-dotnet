@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using Datadog.Trace.ClrProfiler;
 using Datadog.Trace.Telemetry;
 using Datadog.Trace.Telemetry.Collectors;
-using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Vendors.Serilog.Core;
 using Datadog.Trace.Vendors.Serilog.Events;
 
@@ -33,12 +32,8 @@ internal class RedactedErrorLogSink : ILogEventSink
         }
 
         // Note: we're using the raw message template here to remove any chance of including customer information
-        var telemetryLog = new LogMessageData(logEvent.MessageTemplate.Text, ToLogLevel(logEvent.Level), logEvent.Timestamp)
-        {
-            StackTrace = logEvent.Exception is { } ex ? ExceptionRedactor.Redact(ex) : null
-        };
-
-        _collector.EnqueueLog(telemetryLog);
+        var stackTrace = logEvent.Exception is { } ex ? ExceptionRedactor.Redact(ex) : null;
+        _collector.EnqueueLog(logEvent.MessageTemplate.Text, ToLogLevel(logEvent.Level), logEvent.Timestamp, stackTrace);
     }
 
     private static TelemetryLogLevel ToLogLevel(LogEventLevel logEventLevel)
