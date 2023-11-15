@@ -72,6 +72,11 @@ std::string ContentionProvider::GetBucket(double contentionDurationNs)
     return "+500 ms";
 }
 
+void ContentionProvider::OnContention(double contentionDurationNs, std::vector<uintptr_t> stack)
+{
+    // TODO: .NET framework implementation
+}
+
 void ContentionProvider::OnContention(double contentionDurationNs)
 {
     _lockContentionsCountMetric->Incr();

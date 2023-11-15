@@ -6,10 +6,11 @@
 #include <cstdint>
 
 
-class IClrEventsReceiver
+class IEtwEventsReceiver
 {
 public:
     virtual void OnEvent(
+        uint64_t timestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,
@@ -19,5 +20,5 @@ public:
         const uint8_t* pEventData) = 0;
     virtual void OnStop() = 0;
 
-    virtual ~IClrEventsReceiver() = default;
+    virtual ~IEtwEventsReceiver() = default;
 };

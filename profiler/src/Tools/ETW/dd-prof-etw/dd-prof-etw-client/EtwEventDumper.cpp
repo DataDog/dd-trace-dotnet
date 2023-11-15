@@ -1,40 +1,17 @@
 // Unless explicitly stated otherwise all files in this repository are licensed under the Apache 2 License.
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 
-#include "ClrEventDumper.h"
+#include "EtwEventDumper.h"
+
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native\ClrEventsParser.h"
+
 
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 
 
-// keywords
-const int KEYWORD_CONTENTION = 0x00004000;
-const int KEYWORD_GC = 0x00000001;
-const int KEYWORD_STACKWALK = 0x40000000;
-
-// events id
-const int EVENT_CONTENTION_STOP = 91; // version 1 contains the duration in nanoseconds
-const int EVENT_CONTENTION_START = 81;
-
-const int EVENT_ALLOCATION_TICK = 10; // version 4 contains the size + reference
-const int EVENT_GC_TRIGGERED = 35;
-const int EVENT_GC_START = 1;                 // V2
-const int EVENT_GC_END = 2;                   // V1
-const int EVENT_GC_HEAP_STAT = 4;             // V1
-const int EVENT_GC_GLOBAL_HEAP_HISTORY = 205; // V2
-const int EVENT_GC_SUSPEND_EE_BEGIN = 9;      // V1
-const int EVENT_GC_RESTART_EE_END = 3;        // V2
-
-const int EVENT_GC_JOIN = 203;
-const int EVENT_GC_PER_HEAP_HISTORY = 204;
-const int EVENT_GC_MARKWITHTYPE = 202;
-const int EVENT_GC_PINOBJECTATGCTIME = 33;
-
-const int EVENT_SW_STACK = 82;
-
-
-bool ClrEventDumper::BuildClrEvent(
+bool EtwEventDumper::BuildClrEvent(
     std::string& name,
     uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level)
 {
@@ -135,7 +112,34 @@ bool ClrEventDumper::BuildClrEvent(
     return true;
 }
 
-void ClrEventDumper::OnEvent(
+void EtwEventDumper::DumpCallstack(uint32_t cbEventData, const uint8_t* pEventData)
+{
+    if (cbEventData == 0)
+    {
+        return;
+    }
+
+    if (cbEventData < sizeof(StackWalkPayload))
+    {
+        return;
+    }
+
+    StackWalkPayload* pPayload = (StackWalkPayload*)pEventData;
+
+    if (cbEventData < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload))
+    {
+        //std::cout << "   Invalid payload size: " << cbEventData << " bytes for " << pPayload->FrameCount << " frames\n";
+        return;
+    }
+
+    for (uint32_t i = 0; i < pPayload->FrameCount; ++i)
+    {
+        std::cout << "      0x" << std::setw(16) << std::setfill('0') << std::hex << pPayload->Stack[i] << std::dec << "\n";
+    }
+}
+
+void EtwEventDumper::OnEvent(
+    uint64_t timestamp,
     uint32_t tid,
     uint32_t version,
     uint64_t keyword,
@@ -152,6 +156,14 @@ void ClrEventDumper::OnEvent(
             << " " << std::setw(4) << std::setfill(' ') << id << " | "
             << std::setw(6) << std::setfill(' ') << tid << " | " << name
             << "\n";
+
+        if (keyword == KEYWORD_STACKWALK)
+        {
+            if (id == EVENT_SW_STACK)
+            {
+                DumpCallstack(cbEventData, pEventData);
+            }
+        }
     }
     else
     {
@@ -159,6 +171,6 @@ void ClrEventDumper::OnEvent(
     }
 }
 
-void ClrEventDumper::OnStop()
+void EtwEventDumper::OnStop()
 {
 }

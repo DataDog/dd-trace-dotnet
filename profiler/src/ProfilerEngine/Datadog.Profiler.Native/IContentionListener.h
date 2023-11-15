@@ -3,10 +3,13 @@
 
 #pragma once
 
+#include <vector>
+
 class IContentionListener
 {
 public:
     virtual ~IContentionListener() = default;
 
-    virtual void OnContention(double contentionDuration) = 0;
+    virtual void OnContention(double contentionDurationNs) = 0;
+    virtual void OnContention(double contentionDurationNs, std::vector<uintptr_t> stack) = 0;
 };

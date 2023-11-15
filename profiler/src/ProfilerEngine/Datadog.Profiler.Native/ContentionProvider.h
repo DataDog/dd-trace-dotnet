@@ -41,8 +41,11 @@ public:
         IConfiguration* pConfiguration,
         MetricsRegistry& metricsRegistry);
 
+    // IContentionListener implementation
     void OnContention(double contentionDurationNs) override;
+    void OnContention(double contentionDurationNs, std::vector<uintptr_t> stack) override;
 
+    // IUpscaleProvider implementation
     UpscalingInfo GetInfo() override;
 
 private:

@@ -14,7 +14,7 @@
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcClient.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IpcServer.h"
 #include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\EtwEventsHandler.h"
-#include "ClrEventDumper.h"
+#include "EtwEventDumper.h"
 
 void ShowHelp()
 {
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
     std::string pipeName = buffer.str();
     std::cout << "Exposing " << pipeName << "\n";
 
-    ClrEventDumper eventDumper;
+    EtwEventDumper eventDumper;
     bool showMessages = true;
     auto handler = std::make_unique<EtwEventsHandler>(showMessages, &eventDumper);
     auto server = IpcServer::StartAsync(

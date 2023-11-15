@@ -4,18 +4,21 @@
 #include "EtwEventsHandler.h"
 #include "Protocol.h"
 #include "IpcClient.h"
-
+#include "../../Datadog.Profiler.Native/ClrEventsParser.h"
 #include <sstream>
 #include <iomanip>
 #include <iostream>
 
 
 EtwEventsHandler::EtwEventsHandler()
+    :
+    _showMessages {false},
+    _pReceiver {nullptr}
 {
-    _showMessages = false;
 }
 
-EtwEventsHandler::EtwEventsHandler(bool showMessages, IClrEventsReceiver* pClrEventsReceiver) :
+EtwEventsHandler::EtwEventsHandler(bool showMessages, IEtwEventsReceiver* pClrEventsReceiver)
+    :
     _showMessages {showMessages},
     _pReceiver {pClrEventsReceiver}
 {
@@ -39,6 +42,84 @@ void EtwEventsHandler::OnStartError()
 void EtwEventsHandler::OnConnectError()
 {
     Stop();
+}
+
+void EtwEventsHandler::OnConnect(HANDLE hPipe)
+{
+    const DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
+    auto buffer = std::make_unique<uint8_t[]>(bufferSize);
+    auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
+
+    DWORD readSize;
+    while (!_stopRequested.load())
+    {
+        readSize = 0;
+        if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
+        {
+            if (_showMessages)
+            {
+                std::cout << "Stop reading events\n";
+            }
+            break;
+        }
+
+        // check the message based on the expected command
+        if (message->CommandId == Commands::ClrEvents)
+        {
+            //if (_showMessages)
+            //{
+            //    std::cout << "Event received: " << message->Size << " == " << readSize << " bytes\n";
+            //}
+
+            if (message->Size > readSize)
+            {
+                if (_showMessages)
+                {
+                    std::cout << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader) << "\n";
+                }
+
+                // TODO: maybe we should stop the communication???
+                continue;
+            }
+
+            //-TODO: remove the offset when the alignment issue is fixed
+            const EVENT_HEADER* pHeader = (EVENT_HEADER*)((byte*)(&(message->EtwHeader)) + 7);
+            // const EVENT_HEADER* pHeader = &(pMessage->EtwHeader);
+            //-----------------------
+            uint32_t tid = pHeader->ThreadId;
+            uint8_t version = pHeader->EventDescriptor.Version;
+            uint64_t keyword = pHeader->EventDescriptor.Keyword;
+            uint8_t level = pHeader->EventDescriptor.Level;
+            uint16_t id = pHeader->EventDescriptor.Id;
+            uint64_t timestamp = pHeader->TimeStamp.QuadPart;
+
+            //-TODO: remove the offset when the alignment issue is fixed
+            ClrEventPayload* pPayload = (ClrEventPayload*)(((byte*)(&(message->EtwHeader)) + 7 + sizeof(EVENT_HEADER)));
+            // ClrEventPayload* pPayload = (ClrEventPayload*)(&(pMessage->Payload));
+            //-----------------------
+            uint16_t userDataLength = pPayload->EtwUserDataLength;
+            uint8_t* pUserData = (uint8_t*)((byte*)&(pPayload->EtwPayload));
+
+            if (_pReceiver != nullptr)
+            {
+                _pReceiver->OnEvent(timestamp, tid, version, keyword, level, id, userDataLength, pUserData);
+            }
+
+            // fire and forget so no need to answer
+            //WriteSuccessResponse(hPipe);
+        }
+        else
+        {
+            if (_showMessages)
+            {
+                std::cout << "Invalid command (" << message->CommandId << ")...\n";
+            }
+
+            // fire and forget so no need to answer
+            //WriteErrorResponse(hPipe);
+            break;
+        }
+    }
 }
 
 bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize)
@@ -99,7 +180,7 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
                 }
 
                 // fire and forget
-                //WriteErrorResponse(hPipe);
+                // WriteErrorResponse(hPipe);
                 return false;
             }
 
@@ -110,94 +191,3 @@ bool EtwEventsHandler::ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSi
     // too big for the buffer
     return false;
 }
-
-
-
-void EtwEventsHandler::OnConnect(HANDLE hPipe)
-{
-    const DWORD bufferSize = (1 << 16) + sizeof(IpcHeader);
-    auto buffer = std::make_unique<uint8_t[]>(bufferSize);
-    auto message = reinterpret_cast<ClrEventsMessage*>(buffer.get());
-
-    DWORD readSize;
-    while (!_stopRequested.load())
-    {
-        readSize = 0;
-        if (!ReadEvents(hPipe, buffer.get(), bufferSize, readSize))
-        {
-            if (_showMessages)
-            {
-                std::cout << "Stop reading events\n";
-            }
-            break;
-        }
-
-        // check the message based on the expected command
-        if (message->CommandId == Commands::ClrEvents)
-        {
-            //if (_showMessages)
-            //{
-            //    std::cout << "Event received: " << message->Size << " == " << readSize << " bytes\n";
-            //}
-
-            if (message->Size > readSize)
-            {
-                if (_showMessages)
-                {
-                    std::cout << "Invalid format: read size " << readSize << " bytes is smaller than supposed message size " << message->Size + sizeof(IpcHeader) << "\n";
-                }
-
-                // TODO: maybe we should stop the communication???
-                continue;
-            }
-
-            if (_pReceiver != nullptr)
-            {
-                //-TODO: remove the offset when the alignment issue is fixed
-                const EVENT_HEADER* pHeader = (EVENT_HEADER*)((byte*)(&(message->EtwHeader)) + 7);
-                // const EVENT_HEADER* pHeader = &(pMessage->EtwHeader);
-                //-----------------------
-
-                uint32_t tid = pHeader->ThreadId;
-                uint8_t version = pHeader->EventDescriptor.Version;
-                uint64_t keyword = pHeader->EventDescriptor.Keyword;
-                uint16_t id = pHeader->EventDescriptor.Id;
-                uint8_t level = pHeader->EventDescriptor.Level;
-
-                _pReceiver->OnEvent(tid, version, keyword, level, id, message->EtwUserDataLength, message->EtwPayload);
-            }
-
-            //if (_showMessages)
-            //{
-            //    std::string name;
-            //    uint32_t tid;
-            //    uint16_t id;
-            //    uint64_t keywords;
-            //    uint8_t level;
-            //    if (GetClrEvent(message, name, tid, id, keywords, level))
-            //    {
-            //        std::cout << "   " << std::setw(4) << std::setfill(' ') << id << " | " << std::setw(6) << std::setfill(' ') << tid << " | " << name << "      (0x" << std::hex << keywords << std::dec << ", " << (uint16_t)level << ")\n";
-            //    }
-            //    else
-            //    {
-            //        std::cout << "   Impossible to get CLR event details...\n";
-            //    }
-            //}
-
-            // fire and forget so no need to answer
-            //WriteSuccessResponse(hPipe);
-        }
-        else
-        {
-            if (_showMessages)
-            {
-                std::cout << "Invalid command (" << message->CommandId << ")...\n";
-            }
-
-            // fire and forget so no need to answer
-            //WriteErrorResponse(hPipe);
-            break;
-        }
-    }
-}
-

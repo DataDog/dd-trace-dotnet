@@ -56,17 +56,30 @@ struct IpcHeader
 };  // size of header = 17 bytes
 
 
+struct ClrEventPayload
+{
+    uint16_t EtwUserDataLength; //  2 bytes
+
+    // TODO: remove this padding once the Go agent is updated
+    // need to add padding to make sure the payload is aligned on 8 bytes
+    uint16_t Padding1; // 2 bytes
+    uint32_t Padding2; // 4 bytes
+    //---------------------------------------------
+
+    // the size of this payload is given by EtwUserDataLength
+    uint8_t EtwPayload[1];
+};
+
 struct ClrEventsMessage : public IpcHeader
 {
     // the IpcHeader comes first
 
     // copy of the original ETW header so its Size field should be ignored
     EVENT_HEADER EtwHeader; // 80 bytes
-    uint16_t EtwUserDataLength; //  2 bytes
 
-    // the size of this payload is given by EtwUserDataLength
-    uint8_t EtwPayload[1];
+    ClrEventPayload Payload;
 };
+
 
 // Messages for commands
 //

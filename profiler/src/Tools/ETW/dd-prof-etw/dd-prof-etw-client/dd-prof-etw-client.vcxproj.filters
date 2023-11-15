@@ -30,7 +30,7 @@
     <ClCompile Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\SecurityDescriptorHelpers.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="ClrEventDumper.cpp">
+    <ClCompile Include="EtwEventDumper.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -50,7 +50,7 @@
     <ClInclude Include="..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="ClrEventDumper.h">
+    <ClInclude Include="EtwEventDumper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

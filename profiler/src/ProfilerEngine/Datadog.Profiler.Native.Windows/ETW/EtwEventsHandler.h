@@ -6,18 +6,19 @@
 #include <atomic>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <vector>
 #include <windows.h>
 
 #include "Protocol.h"
 #include "INamedPipeHandler.h"
-#include "..\..\Datadog.Profiler.Native\IClrEventsReceiver.h"
-
+#include "IEtwEventsReceiver.h"
 
 class EtwEventsHandler : public INamedPipeHandler
 {
 public:
     EtwEventsHandler();
-    EtwEventsHandler(bool showMessages, IClrEventsReceiver* pClrEventsReceiver);
+    EtwEventsHandler(bool showMessages, IEtwEventsReceiver* pClrEventsReceiver);
     ~EtwEventsHandler();
     void Stop();
 
@@ -29,10 +30,9 @@ public:
 
 private:
     bool ReadEvents(HANDLE hPipe, uint8_t* pBuffer, DWORD bufferSize, DWORD& readSize);
-    bool GetClrEvent(const ClrEventsMessage* pMessage, std::string& name, uint32_t& tid, uint16_t& id, uint64_t& keyword, uint8_t& level);
 
 private:
     std::atomic<bool> _stopRequested = false;
     bool _showMessages;
-    IClrEventsReceiver* _pReceiver;
+    IEtwEventsReceiver* _pReceiver;
 };

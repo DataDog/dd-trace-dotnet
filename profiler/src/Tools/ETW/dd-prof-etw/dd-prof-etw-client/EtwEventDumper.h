@@ -2,16 +2,17 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2022 Datadog, Inc.
 #pragma once
 
-#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native\IClrEventsReceiver.h"
-#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
+#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\IEtwEventsReceiver.h"
+//#include "..\..\..\..\ProfilerEngine\Datadog.Profiler.Native.Windows\ETW\Protocol.h"
 
 #include <string>
 
-class ClrEventDumper : public IClrEventsReceiver
+class EtwEventDumper : public IEtwEventsReceiver
 {
 public:
-    // Inherited via IClrEventsReceiver
+    // Inherited via IEtwEventsReceiver
     void OnEvent(
+        uint64_t timestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,
@@ -25,4 +26,5 @@ private:
     bool BuildClrEvent(
         std::string& name,
         uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level);
+    void DumpCallstack(uint32_t cbEventData, const uint8_t* pEventData);
 };

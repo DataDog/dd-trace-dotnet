@@ -4,7 +4,7 @@
 #pragma once
 
 #include "IEtwEventsManager.h"
-#include "..\Datadog.Profiler.Native\IClrEventsReceiver.h"
+#include "ETW/IEtwEventsReceiver.h"
 #include "ClrEventsParser.h"
 #include "ETW/IpcClient.h"
 #include "ETW/IpcServer.h"
@@ -13,9 +13,30 @@
 #include <memory>
 
 
+struct ThreadInfo
+{
+    // same as key in the map
+    uint32_t ThreadId = 0;
+
+    // callstacks
+    // we need to know if the last event was a ContentionStart
+    // so the next ClrStackWalk will be attached to it
+    bool LastEventWasContentionStart = false;
+
+    // Lock contention
+    std::vector<uintptr_t> ContentionCallStack;
+    uint64_t ContentionStartTimestamp = 0;
+
+    // Allocations
+    uint64_t AllocationTickTimestamp = 0;
+    std::string AllocatedType;
+    uintptr_t ClassId = 0;
+};
+
+
 class EtwEventsManager :
     public IEtwEventsManager,
-    public IClrEventsReceiver
+    public IEtwEventsReceiver
 {
 public:
     EtwEventsManager(
@@ -29,8 +50,9 @@ public:
     virtual bool Start() override;
     virtual void Stop() override;
 
-// Inherited via IClrEventsReceiver
+// Inherited via IEtwEventsReceiver
     virtual void OnEvent(
+        uint64_t timestamp,
         uint32_t tid,
         uint32_t version,
         uint64_t keyword,
@@ -41,7 +63,35 @@ public:
     virtual void OnStop() override;
 
 private:
+    ThreadInfo* GetOrCreate(uint32_t tid);
+    ThreadInfo* Find(uint32_t tid);
+    void AttachContentionCallstack(ThreadInfo* pThreadInfo, uint16_t userDataLength, const uint8_t* pUserData);
+
+private:
+    IAllocationsListener* _pAllocationListener;
+    IContentionListener* _pContentionListener;
+    IGCSuspensionsListener* _pGCSuspensionsListener;
+
+    // when no call stacks are needed and same payload format between Framework and Core (such as GC events)
     std::unique_ptr<ClrEventsParser> _parser;
-    std::unique_ptr<IpcClient> _ipcClient;
-    std::unique_ptr<IpcServer> _ipcServer;
+
+    // responsible for receiving ETW events from the Windows Agent
+    std::unique_ptr<EtwEventsHandler>_eventsHandler;
+
+private:
+    // Each ClrStackWalk event is received at some point AFTER its sibling CLR event.
+    // The key to match the two events is the thread id.
+    // So, it is needed to keep a map of the last received CLR events per thread.
+    // With that in place, when a ClrStackWalk event is received, it can be matched
+    // with the last received CLR event on the same thread.
+    //
+    // For thread contention, the ClrStackWalk event is received AFTER the ContentionStart event
+    // but not after the ContentionStop event. So, it is also needed to keep a map of the last
+    // received ContentionStart events per thread. Finally, we have to to wait for the ContentionStop
+    // event to get the contention duration by comparing the 2 timestamps.
+
+    // For each thread id, keep track of the last ContentionStart event timestamp
+    // and the last ContentionStart callstack. Also keep track of the AllocationTick payload.
+    std::unordered_map<uint32_t, ThreadInfo> _threadsInfo;
+    // No need to make it thread safe because the events are received sequentially by the same thread
 };
