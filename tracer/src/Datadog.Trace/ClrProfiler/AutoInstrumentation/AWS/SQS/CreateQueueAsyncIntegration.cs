@@ -50,7 +50,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
             }
 
             var scope = AwsSqsCommon.CreateScope(Tracer.Instance, Operation, out var tags);
-            if (tags is not null)
+            if (tags is not null && request.QueueName is not null)
             {
                 tags.QueueName = request.QueueName;
             }

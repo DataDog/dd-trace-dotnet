@@ -65,12 +65,12 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SQS
         [return: NotNullIfNotNull(nameof(queueUrl))]
         public static string? GetQueueName(string? queueUrl)
         {
-            if (queueUrl is null)
+            if (string.IsNullOrEmpty(queueUrl))
             {
                 return queueUrl;
             }
 
-            var lastSeparationIndex = queueUrl.LastIndexOf('/') + 1;
+            var lastSeparationIndex = queueUrl!.LastIndexOf('/') + 1;
             return queueUrl.Substring(lastSeparationIndex);
         }
 
