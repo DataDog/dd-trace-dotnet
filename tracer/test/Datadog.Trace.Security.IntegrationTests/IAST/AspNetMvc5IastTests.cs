@@ -89,6 +89,17 @@ public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
         var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
         await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
     }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("text/html", 200, "invalid", "https")]
+    public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
+    {
+        var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
+        await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
+    }
 }
 
 [Collection("IisTests")]
