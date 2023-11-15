@@ -4,6 +4,7 @@
 // </copyright>
 
 #if NETFRAMEWORK
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -49,7 +50,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     // The connection protocol is https or the request header X-Forwarded-Proto is https
     // The Content-Type header of the response looks like html(text/html, application/xhtml+xml)
     // Header has a valid value when it starts with max-age followed by a positive number (>0), it can finish there or continue with a semicolon ; and more content.
-    /*
+
     [SkippableTheory]
     [Trait("Category", "ArmUnsupported")]
     [Trait("RunOnWindows", "True")]
@@ -64,24 +65,9 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [InlineData("text/html", 200, "invalid", "https")]
     public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
     {
-        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
-            (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
-            (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
-        var filename = "Iast.StrictTransportSecurity.AspNetCore5." + contentType.Replace("/", string.Empty) +
-            "." + returnCode.ToString() + "." + (string.IsNullOrEmpty(hstsHeaderValue) ? "empty" : hstsHeaderValue)
-            + (string.IsNullOrEmpty(xForwardedProto) ? "empty" : xForwardedProto);
-        var url = "/Iast/StrictTransportSecurity" + queryParams;
-        IncludeAllHttpSpans = true;
-        await TryStartApp();
-        var agent = Fixture.Agent;
-        var spans = await SendRequestsAsync(agent, new string[] { url });
-
-        var settings = VerifyHelper.GetSpanVerifierSettings();
-        settings.AddIastScrubbing(scrubHash: false);
-        await VerifyHelper.VerifySpans(spans, settings)
-                          .UseFileName(filename)
-                          .DisableRequireUniquePrefix();
-    }*/
+        var testName = "Security." + nameof(AspNetMvc5) + ".Integrated.enableIast=true";
+        await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
+    }
 }
 
 [Collection("IisTests")]
@@ -102,6 +88,17 @@ public class AspNetMvc5IntegratedWithoutIast : AspNetMvc5IastTests
     {
         var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
         await TestXContentVulnerability(contentType, returnCode, xContentTypeHeaderValue, testName);
+    }
+
+    [SkippableTheory]
+    [Trait("Category", "ArmUnsupported")]
+    [Trait("RunOnWindows", "True")]
+    [Trait("LoadFromGAC", "True")]
+    [InlineData("text/html", 200, "invalid", "https")]
+    public async Task TestStrictTransportSecurityHeaderMissing(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto)
+    {
+        var testName = "Security." + nameof(AspNetMvc5) + ".Classic.enableIast=true";
+        await TestStrictTransportSecurityHeaderMissingVulnerability(contentType, returnCode, hstsHeaderValue, xForwardedProto, testName);
     }
 }
 
@@ -481,6 +478,24 @@ public abstract class AspNetMvc5IastTests : AspNetBase, IClassFixture<IisFixture
         var filename = _enableIast ? "Iast.TrustBoundaryViolation.AspNetMvc5.IastEnabled" : "Iast.TrustBoundaryViolation.AspNetMvc5.IastDisabled";
         var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
         settings.AddIastScrubbing();
+        await VerifyHelper.VerifySpans(spansFiltered, settings)
+                          .UseFileName(filename)
+                          .DisableRequireUniquePrefix();
+    }
+
+    protected async Task TestStrictTransportSecurityHeaderMissingVulnerability(string contentType, int returnCode, string hstsHeaderValue, string xForwardedProto, string testName)
+    {
+        var queryParams = "?contentType=" + contentType + "&returnCode=" + returnCode +
+                    (string.IsNullOrEmpty(hstsHeaderValue) ? string.Empty : "&hstsHeaderValue=" + hstsHeaderValue) +
+                    (string.IsNullOrEmpty(xForwardedProto) ? string.Empty : "&xForwardedProto=" + xForwardedProto);
+        var url = "/Iast/StrictTransportSecurity" + queryParams;
+        var sanitisedUrl = VerifyHelper.SanitisePathsForVerify(url);
+        var settings = VerifyHelper.GetSpanVerifierSettings(AddressesConstants.RequestQuery, sanitisedUrl);
+        var spans = await SendRequestsAsync(_iisFixture.Agent, new string[] { url });
+        var spansFiltered = spans.Where(x => x.Type == SpanTypes.Web).ToList();
+        settings.AddIastScrubbing(scrubHash: false);
+        var filename = $"{testName}.path={sanitisedUrl}";
+        filename = filename.Substring(0, Math.Min(180, filename.Length));
         await VerifyHelper.VerifySpans(spansFiltered, settings)
                           .UseFileName(filename)
                           .DisableRequireUniquePrefix();
