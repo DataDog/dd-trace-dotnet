@@ -63,10 +63,13 @@ internal static class IntegrationIdExtensions
             IntegrationId.PathTraversal => MetricTags.IntegrationName.PathTraversal,
             IntegrationId.Ssrf => MetricTags.IntegrationName.Ssrf,
             IntegrationId.Ldap => MetricTags.IntegrationName.Ldap,
+            IntegrationId.HardcodedSecret => MetricTags.IntegrationName.HardcodedSecret,
             IntegrationId.AwsKinesis => MetricTags.IntegrationName.AwsKinesis,
             IntegrationId.AzureServiceBus => MetricTags.IntegrationName.AzureServiceBus,
             IntegrationId.SystemRandom => MetricTags.IntegrationName.SystemRandom,
             IntegrationId.AwsDynamoDb => MetricTags.IntegrationName.AwsDynamoDb,
+            IntegrationId.IbmMq => MetricTags.IntegrationName.IbmMq,
+            IntegrationId.Remoting => MetricTags.IntegrationName.Remoting,
             _ => throw new InvalidOperationException($"Unknown IntegrationID {integrationId}"), // dangerous, but we test it will never be called
         };
 }

@@ -69,6 +69,8 @@ namespace Datadog.Trace.Configuration.Schema
                 _ => new KafkaV1Tags(spanKind),
             };
 
+        public IbmMqTags CreateIbmMqTags(string spanKind) => new(spanKind);
+
         public MsmqTags CreateMsmqTags(string spanKind)
             => _version switch
             {

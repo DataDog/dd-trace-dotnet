@@ -12,6 +12,7 @@ using System.Web;
 using Microsoft.AspNetCore.Http;
 #endif
 using Datadog.Trace.AppSec;
+using Datadog.Trace.ClrProfiler.AutoInstrumentation.AWS.SDK;
 using Datadog.Trace.Iast.Telemetry;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Telemetry.Metrics;
@@ -143,6 +144,11 @@ internal class IastRequestContext
         _taintedObjects.TaintInputString(queryString, new Source(SourceType.GetByte(SourceTypeName.RequestQuery), null, queryString));
     }
 
+    private void AddQueryUrl(string url)
+    {
+        _taintedObjects.TaintInputString(url, new Source(SourceType.GetByte(SourceTypeName.RequestUri), null, url));
+    }
+
     private void AddQueryPath(string path)
     {
         _taintedObjects.TaintInputString(path, new Source(SourceType.GetByte(SourceTypeName.RequestPath), null, path));
@@ -194,6 +200,7 @@ internal class IastRequestContext
                 helper.AddExecutedSource(IastInstrumentedSources.CookieValue);
                 helper.AddExecutedSource(IastInstrumentedSources.RequestPath);
                 helper.AddExecutedSource(IastInstrumentedSources.RequestQuery);
+                helper.AddExecutedSource(IastInstrumentedSources.RequestUri);
             }
 
             if (request.QueryString != null)
@@ -208,6 +215,7 @@ internal class IastRequestContext
 
             AddRequestHeaders(request.Headers);
             AddQueryPath(request.Path);
+            AddQueryUrl(request.Url.ToString());
             AddRequestCookies(request.Cookies);
             _querySourcesAdded = true;
         }

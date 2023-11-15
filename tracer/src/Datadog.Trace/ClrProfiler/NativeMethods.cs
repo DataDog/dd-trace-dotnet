@@ -5,6 +5,8 @@
 
 using System;
 using System.Runtime.InteropServices;
+using Datadog.Trace.Debugger.PInvoke;
+using Datadog.Trace.Iast.Analyzers;
 
 // ReSharper disable MemberHidesStaticFromOuterClass
 namespace Datadog.Trace.ClrProfiler
@@ -249,6 +251,18 @@ namespace Datadog.Trace.ClrProfiler
             }
         }
 
+        public static int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr)
+        {
+            if (IsWindows)
+            {
+                return Windows.GetUserStrings(arrSize, arr);
+            }
+            else
+            {
+                return NonWindows.GetUserStrings(arrSize, arr);
+            }
+        }
+
         // the "dll" extension is required on .NET Framework
         // and optional on .NET Core
         // The DllImport methods are re-written by cor_profiler to have the correct vales
@@ -301,6 +315,9 @@ namespace Datadog.Trace.ClrProfiler
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
                 int length);
+
+            [DllImport("Datadog.Tracer.Native.dll", CharSet = CharSet.Unicode)]
+            public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
         }
 
         // assume .NET Core if not running on Windows
@@ -354,6 +371,9 @@ namespace Datadog.Trace.ClrProfiler
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] keys,
                 [In, MarshalAs(UnmanagedType.LPArray, ArraySubType = UnmanagedType.LPWStr)] string[] values,
                 int length);
+
+            [DllImport("Datadog.Tracer.Native", CharSet = CharSet.Unicode)]
+            public static extern int GetUserStrings(int arrSize, [In, Out] UserStringInterop[] arr);
         }
     }
 }

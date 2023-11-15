@@ -25,6 +25,7 @@ namespace Honeypot
             NugetPackages.Add("System.Messaging", new string[] { });
             NugetPackages.Add("System", new string[] { });
             NugetPackages.Add("System.Diagnostics.Process", new string[] { });
+            NugetPackages.Add("System.Runtime.Remoting", new string[] {  });
             NugetPackages.Add("System.Security.Cryptography", new string[] { });
             NugetPackages.Add("System.Security.Cryptography.Primitives", new string[] { });
 
@@ -93,6 +94,7 @@ namespace Honeypot
             NugetPackages.Add("Microsoft.AspNetCore.Server.IIS", new[] { "Microsoft.AspNetCore.Server.IIS" });
             NugetPackages.Add("Microsoft.AspNetCore.Server.Kestrel.Core", new string[] { "Microsoft.AspNetCore.Server.Kestrel.Core" });
             NugetPackages.Add("Azure.Messaging.ServiceBus", new string[] { "Azure.Messaging.ServiceBus" });
+            NugetPackages.Add("amqmdnetstd", new [] { "IBMMQDotnetClient" });
         }
 
         private IntegrationMap()

@@ -6,10 +6,12 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using Datadog.Trace.Configuration;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Metrics;
 using Datadog.Trace.TestHelpers;
 using FluentAssertions;
@@ -71,6 +73,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             AssertService(telemetry, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(telemetry, enableDependencies);
+            AssertNoRedactedErrorLogs(telemetry);
             agent.Telemetry.Should().BeEmpty();
         }
 
@@ -102,6 +105,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
 
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
+            AssertNoRedactedErrorLogs(agent);
         }
 
         [SkippableFact]
@@ -128,6 +132,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // Shouldn't have any, but wait for 5s
             agent.WaitForLatestTelemetry(x => true);
             agent.Telemetry.Should().BeEmpty();
+            AssertNoRedactedErrorLogs(agent);
         }
 
         [SkippableTheory]
@@ -179,6 +184,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                 agent.AssertConfiguration(ConfigTelemetryData.NativeTracerVersion, TracerConstants.ThreePartVersion);
                 AssertService(agent, "Samples.Telemetry", ServiceVersion);
                 AssertDependencies(agent, enableDependencies);
+                AssertNoRedactedErrorLogs(agent);
             }
         }
 
@@ -208,6 +214,7 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             agent.AssertIntegrationEnabled(IntegrationId.HttpMessageHandler);
             AssertService(agent, "Samples.Telemetry", ServiceVersion);
             AssertDependencies(agent, enableDependencies);
+            AssertNoRedactedErrorLogs(agent);
         }
 #endif
 
@@ -280,6 +287,56 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             telemetry.GetMetricDataPoints(Count.TraceApiErrors.GetName()).Should().BeEmpty();
         }
 
+        [SkippableFact]
+        [Trait("Category", "EndToEnd")]
+        [Trait("RunOnWindows", "True")]
+        public async Task Telemetry_SendsRedactedErrorLogs()
+        {
+            // we don't want to record the logs for this test, otherwise they'll cause the CheckLogsForErrors
+            // stage to fail in CI. So instead, we write the logs to a temp directory which we won't check
+            SetEnvironmentVariable(ConfigurationKeys.LogDirectory, Path.GetTempPath());
+
+            using var agent = MockTracerAgent.Create(Output, useTelemetry: true);
+            Output.WriteLine($"Assigned port {agent.Port} for the agentPort.");
+
+            using var telemetry = new MockTelemetryAgent();
+            Output.WriteLine($"Assigned port {telemetry.Port} for the telemetry port.");
+
+            EnableAgentlessTelemetry(telemetry.Port, enableDependencies: true);
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.TelemetryLogsEnabled, "1");
+            // Create invalid sampling rules (invalid JSON) to trigger parsing error
+            SetEnvironmentVariable(ConfigurationKeys.CustomSamplingRules, "[{\"sample_rate\":0.1");
+
+            int httpPort = TcpPortProvider.GetOpenPort();
+            Output.WriteLine($"Assigning port {httpPort} for the httpPort.");
+            using (ProcessResult processResult = RunSampleAndWaitForExit(agent, arguments: $"Port={httpPort}"))
+            {
+                ExitCodeException.ThrowIfNonZero(processResult.ExitCode, processResult.StandardError);
+
+                var spans = agent.WaitForSpans(ExpectedSpans);
+                await AssertExpectedSpans(spans);
+            }
+
+            WaitForAllTelemetry(telemetry);
+            telemetry.Telemetry
+                     .Where(x => x.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs))
+                     .Should()
+                     .NotBeEmpty();
+
+            var allLogs = telemetry.Telemetry
+                                   .OrderBy(x => x.SeqId)
+                                   .Select(x => x.TryGetPayload<LogsPayload>(TelemetryRequestTypes.RedactedErrorLogs))
+                                   .Where(x => x is not null)
+                                   .SelectMany(x => x.Logs)
+                                   .ToList();
+
+            // a debug log created in Instrumentation.cs
+            allLogs.Should()
+                   .ContainSingle()
+                   .Which.Message.Should()
+                   .Be("Unable to parse custom sampling rules");
+        }
+
         private static void AssertService(MockTracerAgent mockAgent, string expectedServiceName, string expectedServiceVersion)
         {
             mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppStarted));
@@ -337,6 +394,27 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
                               .UseFileName("TelemetryTests");
         }
 
+        private static void WaitForAllTelemetry(MockTracerAgent mockAgent)
+            => mockAgent.WaitForLatestTelemetry(x => ((TelemetryData)x).IsRequestType(TelemetryRequestTypes.AppClosing));
+
+        private static void WaitForAllTelemetry(MockTelemetryAgent telemetry)
+            => telemetry.WaitForLatestTelemetry(x => x.IsRequestType(TelemetryRequestTypes.AppClosing));
+
+        private static void AssertNoRedactedErrorLogs(MockTracerAgent mockAgent)
+        {
+            WaitForAllTelemetry(mockAgent);
+            AssertNoRedactedErrorLogs(mockAgent.Telemetry.Cast<TelemetryData>());
+        }
+
+        private static void AssertNoRedactedErrorLogs(MockTelemetryAgent telemetry)
+        {
+            WaitForAllTelemetry(telemetry);
+            AssertNoRedactedErrorLogs(telemetry.Telemetry);
+        }
+
+        private static void AssertNoRedactedErrorLogs(IEnumerable<TelemetryData> allData)
+            => allData.Where(x => x.IsRequestType(TelemetryRequestTypes.RedactedErrorLogs)).Should().BeEmpty();
+
         private void EnableAgentlessTelemetry(int standaloneAgentPort, bool? enableDependencies)
         {
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
@@ -346,6 +424,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             // API key is required for agentless
             SetEnvironmentVariable("DD_API_KEY", "INVALID_KEY_FOR_TESTS");
             EnableDependencies(enableDependencies);
+            // Disable by default
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.TelemetryLogsEnabled, "0");
         }
 
         private void EnableAgentProxyTelemetry(bool? enableDependencies)
@@ -353,6 +433,8 @@ namespace Datadog.Trace.ClrProfiler.IntegrationTests
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_ENABLED", "true");
             SetEnvironmentVariable("DD_INSTRUMENTATION_TELEMETRY_AGENTLESS_ENABLED", "false");
             EnableDependencies(enableDependencies);
+            // Disable by default for tests
+            SetEnvironmentVariable(ConfigurationKeys.Telemetry.TelemetryLogsEnabled, "0");
         }
 
         private void EnableDependencies(bool? enableDependencies)

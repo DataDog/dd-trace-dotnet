@@ -3,7 +3,10 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
+using System;
 using System.Threading;
+using Datadog.Trace.Configuration;
+using Datadog.Trace.Iast.Analyzers;
 using Datadog.Trace.Iast.Settings;
 using Datadog.Trace.Logging;
 using Datadog.Trace.Sampling;
@@ -37,6 +40,11 @@ internal class Iast
     private Iast(IastSettings settings = null)
     {
         _settings = settings ?? IastSettings.FromDefaultSources();
+        if (_settings.Enabled)
+        {
+            HardcodedSecretsAnalyzer.Initialize(TimeSpan.FromMilliseconds(_settings.RegexTimeout));
+        }
+
         _overheadController = new OverheadController(_settings.MaxConcurrentRequests, _settings.RequestSampling);
     }
 

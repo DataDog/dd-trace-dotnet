@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props" Condition="Exists('..\..\..\..\packages\libdatadog.3.0.0\build\native\libdatadog.props')" />
   <ItemGroup Label="ProjectConfigurations">
@@ -234,15 +234,26 @@
     <ClInclude Include="CounterMetric.h" />
     <ClInclude Include="DebugInfoStore.h" />
     <ClInclude Include="EnabledProfilers.h" />
+    <ClInclude Include="EncodedProfile.hpp" />
     <ClInclude Include="EnumHelpers.h" />
     <ClInclude Include="COMHelpers.h" />
     <ClInclude Include="ContentionProvider.h" />
     <ClInclude Include="EventPipeEventsManager.h" />
+    <ClInclude Include="ExporterBuilder.h" />
+    <ClInclude Include="FileHelper.h" />
+    <ClInclude Include="Success.h" />
+    <ClInclude Include="Exception.h" />
+    <ClInclude Include="Exporter.h" />
     <ClInclude Include="GarbageCollection.h" />
     <ClInclude Include="GCBaseRawSample.h" />
     <ClInclude Include="GarbageCollectionProvider.h" />
     <ClInclude Include="GCThreadsCpuProvider.h" />
     <ClInclude Include="IEtwEventsManager.h" />
+    <ClInclude Include="AgentProxy.hpp" />
+    <ClInclude Include="SuccessImpl.hpp" />
+    <ClInclude Include="FileSaver.hpp" />
+    <ClInclude Include="ProfileImpl.hpp" />
+    <ClInclude Include="TagsImpl.hpp" />
     <ClInclude Include="MetadataProvider.h" />
     <ClInclude Include="IAllocationsRecorder.h" />
     <ClInclude Include="IBatchedSamplesProvider.h" />
@@ -259,6 +270,7 @@
     <ClInclude Include="MetricBase.h" />
     <ClInclude Include="MetricsRegistry.h" />
     <ClInclude Include="NativeThreadsCpuProviderBase.h" />
+    <ClInclude Include="Profile.h" />
     <ClInclude Include="ProxyMetric.h" />
     <ClInclude Include="RawGarbageCollectionSample.h" />
     <ClInclude Include="RawThreadLifetimeSample.h" />
@@ -311,7 +323,7 @@
     <ClInclude Include="OpSysTools.h" />
     <ClInclude Include="OsSpecificApi.h" />
     <ClInclude Include="PInvoke.h" />
-    <ClInclude Include="LibddprofExporter.h" />
+    <ClInclude Include="ProfileExporter.h" />
     <ClInclude Include="ProfilerEngineStatus.h" />
     <ClInclude Include="RawAllocationSample.h" />
     <ClInclude Include="RawContentionSample.h" />
@@ -331,6 +343,7 @@
     <ClInclude Include="StackSamplerLoopManager.h" />
     <ClInclude Include="StackSnapshotResultBuffer.h" />
     <ClInclude Include="SumMetric.h" />
+    <ClInclude Include="Tags.h" />
     <ClInclude Include="TagsHelper.h" />
     <ClInclude Include="ThreadCpuInfo.h" />
     <ClInclude Include="ThreadLifetimeProvider.h" />
@@ -361,7 +374,12 @@
     <ClCompile Include="DogstatsdService.cpp" />
     <ClCompile Include="EnabledProfilers.cpp" />
     <ClCompile Include="EventPipeEventsManager.cpp" />
+    <ClCompile Include="ExporterBuilder.cpp" />
+    <ClCompile Include="FileHelper.cpp" />
+    <ClCompile Include="Success.cpp" />
+    <ClCompile Include="Exception.cpp" />
     <ClCompile Include="ExceptionsProvider.cpp" />
+    <ClCompile Include="Exporter.cpp" />
     <ClCompile Include="FfiHelper.cpp" />
     <ClCompile Include="FrameStore.cpp" />
     <ClCompile Include="GarbageCollectionProvider.cpp" />
@@ -372,6 +390,7 @@
     <ClCompile Include="MeanMaxMetric.cpp" />
     <ClCompile Include="MetricsRegistry.cpp" />
     <ClCompile Include="NativeThreadsCpuProviderBase.cpp" />
+    <ClCompile Include="Profile.cpp" />
     <ClCompile Include="ProxyMetric.cpp" />
     <ClCompile Include="RawGarbageCollectionSample.cpp" />
     <ClCompile Include="RawThreadLifetimeSample.cpp" />
@@ -384,7 +403,7 @@
     <ClCompile Include="ManagedThreadList.cpp" />
     <ClCompile Include="OpSysTools.cpp" />
     <ClCompile Include="PInvoke.cpp" />
-    <ClCompile Include="LibddprofExporter.cpp" />
+    <ClCompile Include="ProfileExporter.cpp" />
     <ClCompile Include="ProfilerEngineStatus.cpp" />
     <ClCompile Include="RawExceptionSample.cpp" />
     <ClCompile Include="RawSample.cpp" />
@@ -398,6 +417,7 @@
     <ClCompile Include="StackSamplerLoopManager.cpp" />
     <ClCompile Include="StackSnapshotResultBuffer.cpp" />
     <ClCompile Include="SumMetric.cpp" />
+    <ClCompile Include="Tags.cpp" />
     <ClCompile Include="TagsHelper.cpp" />
     <ClCompile Include="ThreadCpuInfo.cpp" />
     <ClCompile Include="ThreadLifetimeProvider.cpp" />

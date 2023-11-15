@@ -183,7 +183,7 @@ public class LiveDebuggerTests
             throw new NotImplementedException();
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
             throw new NotImplementedException();
         }

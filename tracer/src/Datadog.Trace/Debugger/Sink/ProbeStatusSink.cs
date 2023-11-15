@@ -54,21 +54,25 @@ namespace Datadog.Trace.Debugger.Sink
 
         internal void AddError(string probeId, Exception e)
         {
-            AddProbeStatus(probeId, Status.ERROR, e);
+            AddProbeStatus(probeId, Status.ERROR, exception: e);
         }
 
-        public void AddProbeStatus(string probeId, Status status, Exception exception = null, string errorMessage = null)
+        public void AddProbeStatus(string probeId, Status status, int probeVersion = 0, Exception exception = null, string errorMessage = null)
         {
             var shouldSkip =
                 _diagnostics.TryGetValue(probeId, out var current) &&
-                !ShouldOverwrite(current.Message.DebuggerDiagnostics.Diagnostics.Status, status);
+                !ShouldOverwrite(
+                    oldStatus: current.Message.DebuggerDiagnostics.Diagnostics.Status,
+                    newStatus: status,
+                    oldVersion: current.Message.DebuggerDiagnostics.Diagnostics.ProbeVersion,
+                    newVersion: probeVersion);
 
             if (shouldSkip)
             {
                 return;
             }
 
-            var next = new ProbeStatus(_serviceName, probeId, status, exception, errorMessage);
+            var next = new ProbeStatus(_serviceName, probeId, status, probeVersion, exception, errorMessage);
             var timedMessage = new TimedMessage
             {
                 LastEmit = Clock.UtcNow,
@@ -78,9 +82,9 @@ namespace Datadog.Trace.Debugger.Sink
             _diagnostics.AddOrUpdate(probeId, timedMessage, (_, _) => (timedMessage));
             Enqueue(next);
 
-            bool ShouldOverwrite(Status currentStatus, Status nextStatus)
+            bool ShouldOverwrite(Status oldStatus, Status newStatus, int oldVersion, int newVersion)
             {
-                return nextStatus == Status.ERROR || currentStatus != nextStatus;
+                return newStatus == Status.ERROR || oldStatus != newStatus || oldVersion < newVersion;
             }
         }
 

@@ -81,6 +81,21 @@ namespace Samples.Security.AspNetCore5.Controllers
             return Content($"No query or username was provided");
         }
 
+        [Route("QueryOwnUrl")]
+        public ActionResult QueryOwnUrl()
+        {
+            string result = string.Empty;
+            try
+            {
+                var url = Request.Url.ToString();
+                return SqlQuery(url, null);
+            }
+            catch
+            {
+                return Content("Error in query.", "text/html");
+            }            
+        }
+
         [Route("ExecuteCommand")]
         public ActionResult ExecuteCommand(string file, string argumentLine)
         {

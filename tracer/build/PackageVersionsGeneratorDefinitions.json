@@ -38,7 +38,7 @@
     "MinVersion": "1.4.0",
     "MaxVersionExclusive": "2.0.0",
     "SpecificVersions": [
-      "1.8.*"
+      "1.10.*"
     ],
     "VersionConditions": [{
       "MinVersion": "1.4.0",
@@ -271,6 +271,9 @@
     },{
       "MinVersion": "2.2.0",
       "ExcludeTargetFrameworks": ["netcoreapp2.1"]
+    },{
+      "MinVersion": "2.7.4",
+      "ExcludeTargetFrameworks": ["netcoreapp2.1", "netcoreapp3.0"]
     }],
     "SpecificVersions": [
       "1.0.*",

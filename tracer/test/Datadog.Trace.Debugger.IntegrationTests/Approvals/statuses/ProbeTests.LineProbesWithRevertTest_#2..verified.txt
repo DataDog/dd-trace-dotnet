@@ -1,10 +1,12 @@
-﻿[
+[
   {
     "ddsource": "dd_debugger",
     "debugger": {
       "diagnostics": {
         "exception": null,
         "probeId": "1828a3f0-e94b-eb91-81e3-12bcf19ac41a",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -17,6 +19,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "3c5a4d30-f652-b355-51d6-9589d1d290b4",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -29,6 +33,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "86a95ec1-5bda-bd57-3f8e-e610398f9334",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -41,6 +47,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "a48bde4f-873f-cac7-08f6-3404c6ceec6d",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },
@@ -53,6 +61,8 @@
       "diagnostics": {
         "exception": null,
         "probeId": "b1fd073e-cd92-947d-4b6b-d9bd0380b1f2",
+        "probeVersion": 0,
+        "runtimeId": "scrubbed",
         "status": "INSTALLED"
       }
     },

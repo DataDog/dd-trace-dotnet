@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Datadog.Trace.PlatformHelpers;
 using Datadog.Trace.Telemetry;
+using Datadog.Trace.Telemetry.DTOs;
 using Datadog.Trace.Telemetry.Metrics;
 using FluentAssertions;
 using FluentAssertions.Execution;
@@ -90,6 +91,29 @@ public class TelemetryDataBuilderTests
         var heartbeatData = builder.BuildHeartbeatData(_application, _host, _namingSchemaVersion);
         heartbeatData.Should().NotBeNull();
         heartbeatData.SeqId.Should().Be(3);
+    }
+
+    [Fact]
+    public void WhenHasApplicationAndHostData_GeneratesLogTelemetry()
+    {
+        var builder = new TelemetryDataBuilder();
+        var logs = new List<LogMessageData>
+            {
+                new("This is my debug log", TelemetryLogLevel.DEBUG, DateTimeOffset.UtcNow),
+                new("This is my warn log", TelemetryLogLevel.WARN, DateTimeOffset.UtcNow),
+                new("This is my error log", TelemetryLogLevel.ERROR, DateTimeOffset.UtcNow),
+            };
+
+        var result = builder.BuildLogsTelemetryData(_application, _host, logs, _namingSchemaVersion);
+
+        result.Should().NotBeNull();
+        result.Application.Should().Be(_application);
+        result.SeqId.Should().Be(1);
+        result.Payload.Should()
+              .NotBeNull()
+              .And.BeOfType<LogsPayload>()
+              .Which.Logs.Should()
+              .BeSameAs(logs);
     }
 
     [Theory]

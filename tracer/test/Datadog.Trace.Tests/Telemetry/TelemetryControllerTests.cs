@@ -37,6 +37,7 @@ public class TelemetryControllerTests
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
             transportManager,
             _flushInterval);
 
@@ -58,6 +59,7 @@ public class TelemetryControllerTests
             collector,
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
             transportManager,
             _flushInterval);
 
@@ -88,6 +90,7 @@ public class TelemetryControllerTests
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
             transportManager,
             _flushInterval);
 
@@ -105,6 +108,7 @@ public class TelemetryControllerTests
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
             transportManager,
             _flushInterval);
 
@@ -149,6 +153,7 @@ public class TelemetryControllerTests
             new ConfigurationTelemetry(),
             new DependencyTelemetryCollector(),
             new NullMetricsTelemetryCollector(),
+            new RedactedErrorLogCollector(),
             transportManager,
             _flushInterval);
 

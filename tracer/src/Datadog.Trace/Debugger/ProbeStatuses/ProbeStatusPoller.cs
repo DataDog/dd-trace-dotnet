@@ -132,7 +132,8 @@ namespace Datadog.Trace.Debugger.ProbeStatuses
 
             foreach (var probeStatus in probeStatuses)
             {
-                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, errorMessage: probeStatus.ErrorMessage);
+                var probeVersion = _probes.SingleOrDefault(p => p.ProbeId == probeStatus.ProbeId)?.ProbeVersion ?? 0;
+                _probeStatusSink.AddProbeStatus(probeStatus.ProbeId, probeStatus.Status, probeVersion, errorMessage: probeStatus.ErrorMessage);
             }
         }
 

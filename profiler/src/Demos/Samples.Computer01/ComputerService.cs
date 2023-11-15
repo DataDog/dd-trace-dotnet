@@ -176,12 +176,6 @@ namespace Samples.Computer01
             }
         }
 
-        private void StartForceSigSegvHandler()
-        {
-            _sigsegvHandler = new SigSegvHandlerExecution();
-            _sigsegvHandler.Start();
-        }
-
         public void StopService()
         {
             switch (_scenario)
@@ -300,11 +294,6 @@ namespace Samples.Computer01
                     StopForceSigSegvHandler();
                     break;
             }
-        }
-
-        private void StopForceSigSegvHandler()
-        {
-            _sigsegvHandler.Stop();
         }
 
         public void Run(Scenario scenario, int iterations, int nbThreads, int parameter)
@@ -441,6 +430,12 @@ namespace Samples.Computer01
             Console.WriteLine($"End of {iterations} iterations of {scenario.ToString()} in {sw.Elapsed}");
         }
 
+        public void RunAsService(TimeSpan timeout, Scenario scenario, int parameter)
+        {
+            var windowsService = new WindowsService(this, timeout, scenario, parameter);
+            ServiceBase.Run(windowsService);
+        }
+
         private void RunForceSigSegvHandler()
         {
             var test = new SigSegvHandlerExecution();
@@ -451,12 +446,6 @@ namespace Samples.Computer01
         {
             var test = new Obfuscation();
             test.Run();
-        }
-
-        public void RunAsService(TimeSpan timeout, Scenario scenario, int parameter)
-        {
-            var windowsService = new WindowsService(this, timeout, scenario, parameter);
-            ServiceBase.Run(windowsService);
         }
 
         private void StartComputer()
@@ -620,6 +609,17 @@ namespace Samples.Computer01
         {
             _obfuscation = new Obfuscation();
             _obfuscation.Start();
+        }
+
+        private void StopForceSigSegvHandler()
+        {
+            _sigsegvHandler.Stop();
+        }
+
+        private void StartForceSigSegvHandler()
+        {
+            _sigsegvHandler = new SigSegvHandlerExecution();
+            _sigsegvHandler.Start();
         }
 
         private void StopComputer()

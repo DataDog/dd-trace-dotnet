@@ -599,12 +599,15 @@ namespace Datadog.Trace.Configuration
             public const string OpenTelemetryEnabled = "DD_TRACE_OTEL_ENABLED";
 
             /// <summary>
-            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value.
-            /// This flag defaults to <see langword="false"/> and is intended to allow beta users of OpenTelemetry support
-            /// to toggle on to give them time to upgrade to the new format. This additionally requires that
-            /// the <c>ActivitySource</c> has a <c>Name</c> property which was introduced in .NET 5 and/or v5 of
-            /// <c>System.Diagnostics</c> library.
-            /// Note: This feature flag may be dropped when our OpenTelemetry support becomes generally available.
+            /// Enables the use of the <see cref="ISpan.OperationName"/> being set to the legacy value of:
+            /// <c>$"{Activity.Source.Name}.{Activity.Kind}"</c> when instrumenting OpenTelemetry Spans and Activities.
+            /// This will override the default mapping that is used to create an operation name based on
+            /// <c>Activity.Kind</c> and various tags on the <c>Activity</c>.
+            /// <para>
+            /// This flag defaults to <see langword="false"/> and is intended to allow previous beta customers
+            /// of the .NET Tracer's OpenTelemetry instrumentation (and System.Diagnostics)
+            /// to have an easier migration path.
+            /// </para>
             /// </summary>
             public const string OpenTelemetryLegacyOperationNameEnabled = "DD_TRACE_OTEL_LEGACY_OPERATION_NAME_ENABLED";
 
@@ -686,6 +689,11 @@ namespace Datadog.Trace.Configuration
             /// <see cref="TelemetrySettings.DebugEnabled"/>
             /// </summary>
             public const string DebugEnabled = "DD_INTERNAL_TELEMETRY_DEBUG_ENABLED";
+
+            /// <summary>
+            /// Configuration key for whether to enable redacted error log collection.
+            /// </summary>
+            public const string TelemetryLogsEnabled = "DD_TELEMETRY_LOG_COLLECTION_ENABLED";
         }
 
         internal static class TagPropagation

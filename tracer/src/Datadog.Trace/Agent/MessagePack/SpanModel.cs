@@ -24,7 +24,7 @@ internal readonly struct SpanModel
     public readonly bool IsLocalRoot;
 
     /// <remarks>
-    /// By "chunk orphan" we meed that this span's parent is not found in the same chunk.
+    /// By "chunk orphan" we mean that this span's parent is not found in the same chunk.
     /// The trace agent chooses one of these are the "chunk root", but the choice is not deterministic.
     /// </remarks>
     public readonly bool IsChunkOrphan;

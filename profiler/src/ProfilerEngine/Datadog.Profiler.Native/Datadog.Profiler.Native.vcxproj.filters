@@ -24,9 +24,6 @@
     <Filter Include="Profiler-Driver">
       <UniqueIdentifier>{e228b858-2b52-4ead-871b-b56a96dc652a}</UniqueIdentifier>
     </Filter>
-    <Filter Include="libddprof">
-      <UniqueIdentifier>{db3783ac-ee3e-49d0-95c1-9e9db6df8422}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Walltime">
       <UniqueIdentifier>{f92ac331-c76b-482a-87a6-1ca45c27ed41}</UniqueIdentifier>
     </Filter>
@@ -50,6 +47,9 @@
     </Filter>
     <Filter Include="ETW">
       <UniqueIdentifier>{6543675b-3ddb-42a5-8285-c63e2a93ff6a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="libdatadog">
+      <UniqueIdentifier>{5152df0e-33a6-4ea0-8ece-19a6d38ca88e}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -131,12 +131,6 @@
       <Filter>Profiler-Driver</Filter>
     </ClInclude>
     <ClInclude Include="IService.h" />
-    <ClInclude Include="LibddprofExporter.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
-    <ClInclude Include="FfiHelper.h">
-      <Filter>libddprof</Filter>
-    </ClInclude>
     <ClInclude Include="Configuration.h">
       <Filter>Utils</Filter>
     </ClInclude>
@@ -389,6 +383,51 @@
     <ClInclude Include="EventPipeEventsManager.h">
       <Filter>CorProfiler-Infrastructure</Filter>
     </ClInclude>
+    <ClInclude Include="Profile.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Exporter.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Tags.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Exception.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FfiHelper.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="AgentProxy.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="EncodedProfile.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ExporterBuilder.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfileExporter.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="ProfileImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="Success.h">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="SuccessImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="TagsImpl.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
+    <ClInclude Include="FileHelper.h">
+      <Filter>Utils</Filter>
+    </ClInclude>
+    <ClInclude Include="FileSaver.hpp">
+      <Filter>libdatadog</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="OpSysTools.cpp">
@@ -438,12 +477,6 @@
     </ClCompile>
     <ClCompile Include="Configuration.cpp">
       <Filter>Utils</Filter>
-    </ClCompile>
-    <ClCompile Include="LibddprofExporter.cpp">
-      <Filter>libddprof</Filter>
-    </ClCompile>
-    <ClCompile Include="FfiHelper.cpp">
-      <Filter>libddprof</Filter>
     </ClCompile>
     <ClCompile Include="TagsHelper.cpp">
       <Filter>Utils</Filter>
@@ -579,6 +612,33 @@
     </ClCompile>
     <ClCompile Include="EventPipeEventsManager.cpp">
       <Filter>CorProfiler-Infrastructure</Filter>
+    </ClCompile>
+    <ClCompile Include="Profile.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Exporter.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Tags.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Exception.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="FfiHelper.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="ExporterBuilder.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="FileHelper.cpp">
+      <Filter>Utils</Filter>
+    </ClCompile>
+    <ClCompile Include="ProfileExporter.cpp">
+      <Filter>libdatadog</Filter>
+    </ClCompile>
+    <ClCompile Include="Success.cpp">
+      <Filter>libdatadog</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

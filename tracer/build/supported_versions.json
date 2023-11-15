@@ -53,7 +53,7 @@
         "minVersionTestedInclusive": "4.0.3",
         "maxVersionSupportedInclusive": "6.2.0",
         "maxVersionAvailableInclusive": "6.2.0",
-        "maxVersionTestedInclusive": "6.1.0"
+        "maxVersionTestedInclusive": "6.2.0"
       }
     ]
   },
@@ -208,9 +208,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.5.3",
-        "maxVersionSupportedInclusive": "3.7.203.13",
-        "maxVersionAvailableInclusive": "3.7.203.13",
-        "maxVersionTestedInclusive": "3.7.203.11"
+        "maxVersionSupportedInclusive": "3.7.203.15",
+        "maxVersionAvailableInclusive": "3.7.203.15",
+        "maxVersionTestedInclusive": "3.7.203.14"
       }
     ]
   },
@@ -225,9 +225,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.3.5",
-        "maxVersionSupportedInclusive": "3.7.200.65",
-        "maxVersionAvailableInclusive": "3.7.200.65",
-        "maxVersionTestedInclusive": "3.7.200.63"
+        "maxVersionSupportedInclusive": "3.7.200.67",
+        "maxVersionAvailableInclusive": "3.7.200.67",
+        "maxVersionTestedInclusive": "3.7.200.66"
       }
     ]
   },
@@ -241,10 +241,10 @@
         "name": "Amazon.Lambda.RuntimeSupport",
         "minVersionAvailableInclusive": "1.0.0",
         "minVersionSupportedInclusive": "1.4.0",
-        "minVersionTestedInclusive": "1.8.8",
+        "minVersionTestedInclusive": "1.10.0",
         "maxVersionSupportedInclusive": "1.10.0",
         "maxVersionAvailableInclusive": "1.10.0",
-        "maxVersionTestedInclusive": "1.8.8"
+        "maxVersionTestedInclusive": "1.10.0"
       }
     ]
   },
@@ -259,8 +259,8 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": null,
-        "maxVersionSupportedInclusive": "3.7.204.13",
-        "maxVersionAvailableInclusive": "3.7.204.13",
+        "maxVersionSupportedInclusive": "3.7.204.15",
+        "maxVersionAvailableInclusive": "3.7.204.15",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -276,9 +276,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.2.1",
-        "maxVersionSupportedInclusive": "3.7.201.3",
-        "maxVersionAvailableInclusive": "3.7.201.3",
-        "maxVersionTestedInclusive": "3.7.201.1"
+        "maxVersionSupportedInclusive": "3.7.201.5",
+        "maxVersionAvailableInclusive": "3.7.201.5",
+        "maxVersionTestedInclusive": "3.7.201.4"
       }
     ]
   },
@@ -293,9 +293,9 @@
         "minVersionAvailableInclusive": "3.1.0",
         "minVersionSupportedInclusive": "3.1.0",
         "minVersionTestedInclusive": "3.1.0.13",
-        "maxVersionSupportedInclusive": "3.7.200.66",
-        "maxVersionAvailableInclusive": "3.7.200.66",
-        "maxVersionTestedInclusive": "3.7.200.64"
+        "maxVersionSupportedInclusive": "3.7.202",
+        "maxVersionAvailableInclusive": "3.7.202",
+        "maxVersionTestedInclusive": "3.7.200.67"
       }
     ]
   },
@@ -450,9 +450,9 @@
         "minVersionAvailableInclusive": "2.23.0",
         "minVersionSupportedInclusive": "2.23.0",
         "minVersionTestedInclusive": "2.29.0",
-        "maxVersionSupportedInclusive": "2.58.0",
-        "maxVersionAvailableInclusive": "2.58.0",
-        "maxVersionTestedInclusive": "2.58.0"
+        "maxVersionSupportedInclusive": "2.59.0",
+        "maxVersionAvailableInclusive": "2.59.0",
+        "maxVersionTestedInclusive": "2.59.0"
       }
     ]
   },
@@ -484,9 +484,9 @@
         "minVersionAvailableInclusive": "2.23.0",
         "minVersionSupportedInclusive": "2.23.0",
         "minVersionTestedInclusive": "2.29.0",
-        "maxVersionSupportedInclusive": "2.58.0",
-        "maxVersionAvailableInclusive": "2.58.0",
-        "maxVersionTestedInclusive": "2.58.0"
+        "maxVersionSupportedInclusive": "2.59.0",
+        "maxVersionAvailableInclusive": "2.59.0",
+        "maxVersionTestedInclusive": "2.59.0"
       }
     ]
   },
@@ -551,6 +551,23 @@
         "minVersionTestedInclusive": null,
         "maxVersionSupportedInclusive": "7.0.0",
         "maxVersionAvailableInclusive": "7.0.0",
+        "maxVersionTestedInclusive": null
+      }
+    ]
+  },
+  {
+    "integrationName": "IbmMq",
+    "assemblyName": "amqmdnetstd",
+    "minAssemblyVersionInclusive": "9.0.0",
+    "maxAssemblyVersionInclusive": "9.65535.65535",
+    "packages": [
+      {
+        "name": "IBMMQDotnetClient",
+        "minVersionAvailableInclusive": "9.1.4",
+        "minVersionSupportedInclusive": "9.1.4",
+        "minVersionTestedInclusive": null,
+        "maxVersionSupportedInclusive": "9.3.4",
+        "maxVersionAvailableInclusive": "9.3.4",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -865,6 +882,13 @@
     ]
   },
   {
+    "integrationName": "Remoting",
+    "assemblyName": "System.Runtime.Remoting",
+    "minAssemblyVersionInclusive": "4.0.0",
+    "maxAssemblyVersionInclusive": "4.65535.65535",
+    "packages": []
+  },,
+  {
     "integrationName": "Serilog",
     "assemblyName": "Serilog",
     "minAssemblyVersionInclusive": "1.0.0",
@@ -876,7 +900,7 @@
         "minVersionSupportedInclusive": "1.0.1",
         "minVersionTestedInclusive": "1.4.214",
         "maxVersionSupportedInclusive": "2.12.0",
-        "maxVersionAvailableInclusive": "3.0.1",
+        "maxVersionAvailableInclusive": "3.1.0",
         "maxVersionTestedInclusive": "3.0.1"
       }
     ]
@@ -1012,7 +1036,7 @@
         "minVersionSupportedInclusive": "4.0.0",
         "minVersionTestedInclusive": null,
         "maxVersionSupportedInclusive": "4.10.3",
-        "maxVersionAvailableInclusive": "6.1.0",
+        "maxVersionAvailableInclusive": "6.2.0",
         "maxVersionTestedInclusive": null
       }
     ]
@@ -1047,7 +1071,7 @@
         "minVersionTestedInclusive": "2.2.0",
         "maxVersionSupportedInclusive": "2.6.1",
         "maxVersionAvailableInclusive": "2.6.1",
-        "maxVersionTestedInclusive": "2.5.3"
+        "maxVersionTestedInclusive": "2.6.1"
       }
     ]
   },

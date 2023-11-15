@@ -94,6 +94,16 @@ public abstract class ConsoleTestHelper : ToolTestHelper
             throw new Exception("The target process unexpectedly exited");
         }
 
+        // Try to capture a memory dump before giving up
+        if (MemoryDumpHelper.CaptureMemoryDump(helper.Process))
+        {
+            Output.WriteLine("Successfully captured a memory dump");
+        }
+        else
+        {
+            Output.WriteLine("Failed to capture a memory dump");
+        }
+
         throw new TimeoutException("Timeout when waiting for the target process to start");
     }
 

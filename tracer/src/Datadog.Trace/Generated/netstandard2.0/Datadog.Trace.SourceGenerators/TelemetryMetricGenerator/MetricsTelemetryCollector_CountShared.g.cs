@@ -11,7 +11,7 @@ using System.Threading;
 namespace Datadog.Trace.Telemetry;
 internal partial class MetricsTelemetryCollector
 {
-    private const int CountSharedLength = 177;
+    private const int CountSharedLength = 186;
 
     /// <summary>
     /// Creates the buffer for the <see cref="Datadog.Trace.Telemetry.Metrics.CountShared" /> values.
@@ -185,6 +185,9 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:ldap", "error_type:duck_typing" }),
             new(new[] { "integration_name:ldap", "error_type:invoker" }),
             new(new[] { "integration_name:ldap", "error_type:execution" }),
+            new(new[] { "integration_name:hardcodedsecret", "error_type:duck_typing" }),
+            new(new[] { "integration_name:hardcodedsecret", "error_type:invoker" }),
+            new(new[] { "integration_name:hardcodedsecret", "error_type:execution" }),
             new(new[] { "integration_name:awskinesis", "error_type:duck_typing" }),
             new(new[] { "integration_name:awskinesis", "error_type:invoker" }),
             new(new[] { "integration_name:awskinesis", "error_type:execution" }),
@@ -197,6 +200,12 @@ internal partial class MetricsTelemetryCollector
             new(new[] { "integration_name:awsdynamodb", "error_type:duck_typing" }),
             new(new[] { "integration_name:awsdynamodb", "error_type:invoker" }),
             new(new[] { "integration_name:awsdynamodb", "error_type:execution" }),
+            new(new[] { "integration_name:ibmmq", "error_type:duck_typing" }),
+            new(new[] { "integration_name:ibmmq", "error_type:invoker" }),
+            new(new[] { "integration_name:ibmmq", "error_type:execution" }),
+            new(new[] { "integration_name:remoting", "error_type:duck_typing" }),
+            new(new[] { "integration_name:remoting", "error_type:invoker" }),
+            new(new[] { "integration_name:remoting", "error_type:execution" }),
         };
 
     /// <summary>
@@ -205,7 +214,7 @@ internal partial class MetricsTelemetryCollector
     /// It is equal to the cardinality of the tag combinations (or 1 if there are no tags)
     /// </summary>
     private static int[] CountSharedEntryCounts { get; }
-        = new int[]{ 177, };
+        = new int[]{ 186, };
 
     public void RecordCountSharedIntegrationsError(Datadog.Trace.Telemetry.Metrics.MetricTags.IntegrationName tag1, Datadog.Trace.Telemetry.Metrics.MetricTags.InstrumentationError tag2, int increment = 1)
     {

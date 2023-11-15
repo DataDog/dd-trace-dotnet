@@ -218,7 +218,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusInboundV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "Message", "ServiceBusReceiver.Peek", "ServiceBusReceiver.Receive", "ServiceBusReceiver.ReceiveDeferred", "ServiceBusProcessor.ProcessMessage", "ServiceBusSessionProcessor.ProcessSessionMessage")
+                .MatchesOneOf(Name, "servicebus.receive", "servicebus.process")
                 .MatchesOneOf(Type, "http", "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
@@ -236,7 +236,7 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusOutboundV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .Matches(Name, "Message")
+                .Matches(Name, "producer")
                 .Matches(Type, "custom"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
@@ -253,13 +253,13 @@ namespace Datadog.Trace.TestHelpers
 
         public static Result IsAzureServiceBusRequestV0(this MockSpan span) => Result.FromSpan(span)
             .Properties(s => s
-                .MatchesOneOf(Name, "ServiceBusSender.Send", "ServiceBusReceiver.Complete", "ServiceBusSessionReceiver.RenewSessionLock", "ServiceBusSessionReceiver.SetSessionState", "ServiceBusSessionReceiver.GetSessionState", "ServiceBusSender.Schedule", "ServiceBusSender.Cancel", "ServiceBusReceiver.RenewMessageLock", "ServiceBusReceiver.Abandon", "ServiceBusReceiver.Defer", "ServiceBusReceiver.DeadLetter")
+                .MatchesOneOf(Name, "servicebus.publish", "servicebus.settle", "client.request")
                 .Matches(Type, "http"))
             .Tags(s => s
                 .Matches("az.namespace", "Microsoft.ServiceBus")
                 .IsPresent("az.schema_url")
                 .IsOptional("messaging.destination.name")
-                .IfPresentMatchesOneOf("messaging.operation", "publish", "receive", "settle")
+                .IfPresentMatchesOneOf("messaging.operation", "publish", "settle")
                 .IsOptional("messaging.source.name")
                 .Matches("messaging.system", "servicebus")
                 .IsPresent("net.peer.name")
@@ -525,6 +525,24 @@ namespace Datadog.Trace.TestHelpers
                 .IsOptional("_dd.base_service")
                 .Matches("component", "RabbitMQ")
                 .IsPresent("span.kind"));
+
+        public static Result IsRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
+             .Properties(s => s
+                .Matches(Name, "dotnet_remoting.client.request"))
+             .Tags(s => s
+               .IsPresent("rpc.method")
+               .Matches("rpc.system", "dotnet_remoting")
+               .Matches("component", "Remoting")
+               .Matches("span.kind", "client"));
+
+        public static Result IsRemotingServerV0(this MockSpan span) => Result.FromSpan(span)
+             .Properties(s => s
+                .Matches(Name, "dotnet_remoting.server.request"))
+             .Tags(s => s
+               .IsPresent("rpc.method")
+               .Matches("rpc.system", "dotnet_remoting")
+               .Matches("component", "Remoting")
+               .Matches("span.kind", "server"));
 
         public static Result IsServiceRemotingClientV0(this MockSpan span) => Result.FromSpan(span)
             .WithMarkdownSection("Service Remoting - Client")
