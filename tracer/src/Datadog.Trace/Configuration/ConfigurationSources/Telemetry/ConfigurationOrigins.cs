@@ -51,6 +51,12 @@ internal enum ConfigurationOrigins
     Default,
 
     /// <summary>
+    /// Set when the value is calculated from multiple sources
+    /// </summary>
+    [Description("calculated")]
+    Calculated,
+
+    /// <summary>
     /// Set where it is difficult/not possible to determine the source of a config
     /// </summary>
     [Description("unknown")]
