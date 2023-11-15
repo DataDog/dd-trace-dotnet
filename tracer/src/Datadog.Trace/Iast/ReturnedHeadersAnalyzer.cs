@@ -145,9 +145,14 @@ internal static class ReturnedHeadersAnalyzer
         return ulong.TryParse(maxAge, out var maxAgeInt) && maxAgeInt > 0;
     }
 
-    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue)
+    private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
     {
-        if (IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
+        if (protocol.ToLowerInvariant() != "https" && xForwardedProtoValue.ToLowerInvariant() != "https")
+        {
+            return;
+        }
+
+        if (!IsValidStrictTransportSecurityValue(strictTransportSecurityValue))
         {
             IastModule.OnStrictTransportSecurityHeaderMissing(integrationId, serviceName);
         }
@@ -171,7 +176,7 @@ internal static class ReturnedHeadersAnalyzer
         var maxAge = strictTransportSecurityValueLow.Substring("max-age=".Length);
         var maxAgeValue = maxAge.Contains(";") ? maxAge.Split(';')[0] : maxAge;
 
-        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt > 0);
+        return (int.TryParse(maxAgeValue, out var maxAgeInt) && maxAgeInt >= 0);
     }
 
     private static bool IsHtmlResponse(string contentTypeValue)
