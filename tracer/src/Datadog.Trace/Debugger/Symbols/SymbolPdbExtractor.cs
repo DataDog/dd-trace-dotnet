@@ -41,10 +41,6 @@ internal class SymbolPdbExtractor : SymbolExtractor
         var startColumn = firstSq.StartColumn == 0 ? UnknownMethodStartLine : firstSq.StartColumn;
         var endColumn = lastSq.EndColumn == 0 ? UnknownMethodEndLine : lastSq.EndColumn;
 
-        // locals
-        var localsSymbol = GetLocalSymbols(method.Handle.RowId, sequencePoints, methodScope.Symbols);
-
-        methodScope.Symbols = ConcatMethodSymbols(methodScope.Symbols?.ToArray() ?? null, localsSymbol);
         methodScope.StartLine = startLine;
         methodScope.EndLine = endLine;
         methodScope.SourceFile = typeSourceFile;
@@ -62,6 +58,8 @@ internal class SymbolPdbExtractor : SymbolExtractor
             methodScope.LanguageSpecifics = ls;
         }
 
+        var localScopes = GetLocalSymbols(method.Handle.RowId, sequencePoints, methodScope);
+        methodScope.Scopes = ConcatMethodScopes(methodScope.Scopes?.ToArray() ?? null, localScopes);
         return methodScope;
     }
 
@@ -106,14 +104,18 @@ internal class SymbolPdbExtractor : SymbolExtractor
         return closureMethodScope;
     }
 
-    private Symbol[]? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, IReadOnlyList<Symbol> args)
+    private Model.Scope[]? GetLocalSymbols(int rowId, List<DatadogMetadataReader.DatadogSequencePoint> sequencePoints, Model.Scope methodScope)
     {
-        List<Symbol>? localsSymbol = null;
+        List<Model.Scope>? scopes = null;
         var generatedClassPrefix = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(GeneratedClassPrefix);
 
         if (DatadogMetadataReader.GetAsyncAndClosureCustomDebugInfo(rowId).StateMachineHoistedLocal && DatadogMetadataReader.IsCompilerGeneratedAttributeDefinedOnType(MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId)).GetDeclaringType().RowId))
         {
-            localsSymbol = new List<Symbol>();
+            scopes = new List<Model.Scope>();
+            var scope = new Model.Scope();
+            using var localsMemory = ArrayMemoryPool<Model.Symbol>.Shared.Rent();
+            var localIndex = 0;
+            var localSymbols = localsMemory.Memory.Span;
             var fields = MetadataReader.GetTypeDefinition(MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(rowId)).GetDeclaringType()).GetFields();
             foreach (var fieldHandle in fields)
             {
@@ -128,7 +130,6 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 var localName = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(MetadataReader.GetString(field.Name));
                 if (localName[0] != '<')
                 {
-                    // probably a field for hoisted argument which already has been added to the closure's parent
                     continue;
                 }
 
@@ -141,26 +142,49 @@ internal class SymbolPdbExtractor : SymbolExtractor
                 var type = field.DecodeSignature(new TypeProvider(false), 0);
                 var name = localName.ToString();
 
-                if (IsArgument(args, name, type))
+                if (IsArgument(methodScope.Symbols, name, type))
                 {
                     continue;
                 }
 
-                localsSymbol.Add(new Symbol
+                localSymbols[localIndex] = new Symbol
                 {
                     Name = name,
                     Type = type,
                     SymbolType = SymbolType.Local,
-                    Line = 0 // they are actually fields
-                });
+                    Line = 0, // they are actually fields
+                };
+                localIndex++;
             }
+
+            scope.Symbols = localSymbols.Slice(0, localIndex).ToArray();
+            scope.ScopeType = SymbolType.Local;
+            scope.StartLine = methodScope.StartLine;
+            scope.EndLine = methodScope.EndLine;
+            scope.SourceFile = methodScope.SourceFile;
+            if (methodScope.LanguageSpecifics.HasValue)
+            {
+                var ls = new LanguageSpecifics { StartColumn = methodScope.LanguageSpecifics.Value.StartColumn, EndColumn = methodScope.LanguageSpecifics.Value.EndColumn };
+                scope.LanguageSpecifics = ls;
+            }
+
+            scopes.Add(scope);
         }
 
-        var locals = DatadogMetadataReader.GetLocalSymbols(rowId, sequencePoints);
-        if (locals is { Count: > 0 })
+        var localScopes = DatadogMetadataReader.GetLocalSymbols(rowId, sequencePoints);
+        if (localScopes is not { Count: > 0 })
         {
-            localsSymbol ??= new List<Symbol>();
-            foreach (var local in locals)
+            return scopes?.ToArray();
+        }
+
+        scopes ??= new List<Model.Scope>(localScopes.Count);
+        foreach (var localScope in localScopes)
+        {
+            var scope = new Model.Scope();
+            using var localsMemory = ArrayMemoryPool<Model.Symbol>.Shared.Rent();
+            var localSymbols = localsMemory.Memory.Span;
+            int localIndex = 0;
+            foreach (var local in localScope.Locals)
             {
                 var nameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Name);
                 if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(nameAsSpan, generatedClassPrefix, StringComparison.Ordinal) > 0)
@@ -179,100 +203,129 @@ internal class SymbolPdbExtractor : SymbolExtractor
 
                             var name = nestedHandle.FullName(MetadataReader);
                             if (!Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(local.Type).SequenceEqual(
-                                Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(name)))
+                                    Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(name)))
                             {
                                 continue;
                             }
 
                             var nestedType = MetadataReader.GetTypeDefinition(nestedHandle);
                             var fields = nestedType.GetFields();
-                            int index = 0;
-                            string?[]? added = null;
-                            try
+                            int addedIndex = 0;
+                            using var addedMemory = ArrayMemoryPool<string?>.Shared.Rent(fields.Count);
+                            var added = addedMemory.Memory.Span;
+
+                            foreach (var fieldHandle in fields)
                             {
-                                added = ArrayPool<string?>.Shared.Rent(fields.Count);
-                                foreach (var fieldHandle in fields)
+                                if (fieldHandle.IsNil)
                                 {
-                                    if (fieldHandle.IsNil)
-                                    {
-                                        continue;
-                                    }
-
-                                    var field = MetadataReader.GetFieldDefinition(fieldHandle);
-                                    if (field.Name.IsNil)
-                                    {
-                                        continue;
-                                    }
-
-                                    var fieldName = MetadataReader.GetString(field.Name);
-                                    var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
-                                    if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
-                                    {
-                                        continue;
-                                    }
-
-                                    var type = field.DecodeSignature(new TypeProvider(false), 0);
-
-                                    if (IsArgument(args, fieldName, type))
-                                    {
-                                        continue;
-                                    }
-
-                                    bool contains = false;
-                                    for (int j = 0; j < added.Length; j++)
-                                    {
-                                        if (added[j] == null)
-                                        {
-                                            break;
-                                        }
-
-                                        if (added[j] == fieldName)
-                                        {
-                                            contains = true;
-                                            break;
-                                        }
-                                    }
-
-                                    if (contains)
-                                    {
-                                        continue;
-                                    }
-
-                                    added[index] = fieldName;
-                                    localsSymbol.Add(new Symbol
-                                    {
-                                        Name = fieldName,
-                                        Type = type,
-                                        SymbolType = SymbolType.Local,
-                                        Line = local.Line
-                                    });
-                                    index++;
+                                    continue;
                                 }
-                            }
-                            finally
-                            {
-                                if (added != null)
+
+                                var field = MetadataReader.GetFieldDefinition(fieldHandle);
+                                if (field.Name.IsNil)
                                 {
-                                    ArrayPool<string?>.Shared.Return(added, true);
+                                    continue;
                                 }
+
+                                var fieldName = MetadataReader.GetString(field.Name);
+                                var fieldNameAsSpan = Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.AsSpan(fieldName);
+                                if (Datadog.Trace.VendoredMicrosoftCode.System.MemoryExtensions.IndexOf(fieldNameAsSpan, generatedClassPrefix, StringComparison.Ordinal) == 0)
+                                {
+                                    continue;
+                                }
+
+                                var type = field.DecodeSignature(new TypeProvider(false), 0);
+
+                                if (IsArgument(methodScope.Symbols, fieldName, type))
+                                {
+                                    continue;
+                                }
+
+                                bool contains = false;
+                                for (int j = 0; j < added.Length; j++)
+                                {
+                                    if (added[j] == null)
+                                    {
+                                        break;
+                                    }
+
+                                    if (added[j] == fieldName)
+                                    {
+                                        contains = true;
+                                        break;
+                                    }
+                                }
+
+                                if (contains)
+                                {
+                                    continue;
+                                }
+
+                                added[addedIndex] = fieldName;
+                                localSymbols[localIndex] = new Symbol
+                                {
+                                    Name = fieldName,
+                                    Type = type,
+                                    SymbolType = SymbolType.Local,
+                                    Line = local.Line
+                                };
+                                addedIndex++;
+                                localIndex++;
                             }
                         }
                     }
                 }
                 else
                 {
-                    localsSymbol.Add(new Symbol
+                    localSymbols[localIndex] = new Symbol
                     {
                         Name = local.Name,
                         Type = local.Type,
                         SymbolType = SymbolType.Local,
                         Line = local.Line
-                    });
+                    };
+                    localIndex++;
                 }
             }
+
+            scope.Symbols = localSymbols.Slice(0, localIndex).ToArray();
+            scope.ScopeType = SymbolType.Local;
+            scope.StartLine = methodScope.StartLine;
+            scope.EndLine = methodScope.EndLine;
+            scope.SourceFile = methodScope.SourceFile;
+            if (methodScope.LanguageSpecifics.HasValue)
+            {
+                var ls = new LanguageSpecifics { StartColumn = methodScope.LanguageSpecifics.Value.StartColumn, EndColumn = methodScope.LanguageSpecifics.Value.EndColumn };
+                scope.LanguageSpecifics = ls;
+            }
+
+            scopes.Add(scope);
         }
 
-        return localsSymbol?.ToArray();
+        return scopes?.ToArray();
+    }
+
+    private Model.Scope[]? ConcatMethodScopes(Model.Scope[]? oldScopes, Model.Scope[]? localScopes)
+    {
+        var localScopesLength = localScopes?.Length ?? 0;
+        var oldScopesLength = oldScopes?.Length ?? 0;
+        if (oldScopesLength == 0)
+        {
+            return localScopes;
+        }
+
+        var scopesLength = oldScopesLength + localScopesLength;
+        if (scopesLength == 0)
+        {
+            return null;
+        }
+
+        using var memory = ArrayMemoryPool<Model.Scope>.Shared.Rent(scopesLength);
+        var scopes = memory.Memory.Span;
+        oldScopes!.CopyTo(scopes);
+        var localScopesSlice = scopes.Slice(oldScopesLength);
+        localScopes!.CopyTo(localScopesSlice);
+        return scopes.Slice(0, scopesLength).ToArray();
     }
 
     private bool IsArgument(IReadOnlyList<Symbol>? args, string name, string type)

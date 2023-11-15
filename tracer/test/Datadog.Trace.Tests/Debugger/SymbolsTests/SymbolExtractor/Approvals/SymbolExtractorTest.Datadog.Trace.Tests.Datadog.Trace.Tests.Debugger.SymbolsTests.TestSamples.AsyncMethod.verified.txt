@@ -47,12 +47,24 @@
                     "start_column": 17,
                     "end_column": 18
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "rand",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 19
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                      "start_line": 19,
+                      "end_line": 22,
+                      "language_specifics": {
+                        "start_column": 17,
+                        "end_column": 18
+                      },
+                      "symbols": [
+                        {
+                          "name": "rand",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 19
+                        }
+                      ]
                     }
                   ]
                 },
@@ -73,12 +85,24 @@
                     "start_column": 9,
                     "end_column": 10
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "result",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\AsyncMethod.cs",
+                      "start_line": 14,
+                      "end_line": 25,
+                      "language_specifics": {
+                        "start_column": 9,
+                        "end_column": 10
+                      },
+                      "symbols": [
+                        {
+                          "name": "result",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 0
+                        }
+                      ]
                     }
                   ]
                 }

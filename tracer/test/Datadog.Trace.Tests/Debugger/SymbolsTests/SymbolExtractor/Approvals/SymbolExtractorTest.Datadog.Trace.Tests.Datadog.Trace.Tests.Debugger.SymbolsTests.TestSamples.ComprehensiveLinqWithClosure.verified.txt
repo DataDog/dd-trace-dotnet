@@ -32,20 +32,6 @@
                 "start_column": 9,
                 "end_column": 10
               },
-              "symbols": [
-                {
-                  "name": "rand",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 14
-                },
-                {
-                  "name": "numbers",
-                  "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
-                  "symbol_type": "local",
-                  "line": 14
-                }
-              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -67,6 +53,30 @@
                       "type": "System.Int32",
                       "symbol_type": "arg",
                       "line": 0
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\ComprehensiveLinqWithClosure.cs",
+                  "start_line": 14,
+                  "end_line": 23,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "rand",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 14
+                    },
+                    {
+                      "name": "numbers",
+                      "type": "System.Collections.Generic.IEnumerable`1<System.Int32>",
+                      "symbol_type": "local",
+                      "line": 14
                     }
                   ]
                 }

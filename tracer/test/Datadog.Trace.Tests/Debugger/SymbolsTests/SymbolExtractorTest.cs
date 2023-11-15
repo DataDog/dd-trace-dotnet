@@ -35,7 +35,7 @@ public class SymbolExtractorTest
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
         Assert.True(root.Scopes.Count == 1);
-        Assert.True(root.Scopes.First().Scopes.Count == 1);
+        Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
         var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
         var toVerify = GetStringToVerify(root);
@@ -50,7 +50,7 @@ public class SymbolExtractorTest
         Assert.NotNull(assembly);
         var root = GetSymbols(assembly, type.FullName);
         Assert.True(root.Scopes.Count == 1);
-        Assert.True(root.Scopes.First().Scopes.Count == 1);
+        Assert.True(root.Scopes.First().Scopes.Length == 1);
         Assert.True(root.Scopes.First().Scopes.First().Name == type.FullName);
         var settings = ConfigureVerifySettings(assembly.GetName().Name, type.FullName);
         var toVerify = GetStringToVerify(root);
@@ -85,7 +85,7 @@ public class SymbolExtractorTest
         assembly.LanguageSpecifics = null;
         var classes = assembly.Scopes;
         var classesScope = new List<Trace.Debugger.Symbols.Model.Scope>();
-        for (int i = 0; i < classes.Count; i++)
+        for (int i = 0; i < classes.Length; i++)
         {
             var @class = classes[0];
             @class.SourceFile = null;
@@ -98,7 +98,7 @@ public class SymbolExtractorTest
 
             var methods = @class.Scopes;
             List<Trace.Debugger.Symbols.Model.Scope> methodsScope = new EditableList<Trace.Debugger.Symbols.Model.Scope>();
-            for (int j = 0; j < methods.Count; j++)
+            for (int j = 0; j < methods.Length; j++)
             {
                 var method = methods[j];
                 if (method.LanguageSpecifics.HasValue)
@@ -111,11 +111,11 @@ public class SymbolExtractorTest
                 methodsScope.Add(method);
             }
 
-            @class.Scopes = methodsScope;
+            @class.Scopes = methodsScope.ToArray();
             classesScope.Add(@class);
         }
 
-        assembly.Scopes = classesScope;
+        assembly.Scopes = classesScope.ToArray();
         root.Scopes = new[] { assembly };
 
         return JsonConvert.SerializeObject(root, Formatting.Indented, new JsonSerializerSettings { NullValueHandling = NullValueHandling.Ignore });

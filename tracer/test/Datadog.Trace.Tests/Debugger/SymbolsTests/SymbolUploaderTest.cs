@@ -50,7 +50,7 @@ public class SymbolUploaderTest
         var assembly = result.Scopes[0];
         var classesScope = assembly.Scopes;
         Assert.True(result.Scopes.Count == root.Scopes.Count);
-        Assert.True(classesScope.Count == 1);
+        Assert.True(classesScope.Length == 1);
         Assert.True(!string.IsNullOrEmpty(classesScope[0].Name));
         Assert.True(classesScope[0].ScopeType == SymbolType.Class);
     }

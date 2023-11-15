@@ -3,7 +3,6 @@
 // This product includes software developed at Datadog (https://www.datadoghq.com/). Copyright 2017 Datadog, Inc.
 // </copyright>
 
-using System.Collections.Generic;
 using Datadog.Trace.Vendors.Newtonsoft.Json;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Converters;
 using Datadog.Trace.Vendors.Newtonsoft.Json.Serialization;
@@ -32,8 +31,8 @@ internal record struct Scope
     internal LanguageSpecifics? LanguageSpecifics { get; set; }
 
     [JsonProperty("symbols")]
-    internal IReadOnlyList<Symbol> Symbols { get; set; }
+    internal Symbol[] Symbols { get; set; }
 
     [JsonProperty("scopes")]
-    internal IReadOnlyList<Scope> Scopes { get; set; }
+    internal Scope[] Scopes { get; set; }
 }

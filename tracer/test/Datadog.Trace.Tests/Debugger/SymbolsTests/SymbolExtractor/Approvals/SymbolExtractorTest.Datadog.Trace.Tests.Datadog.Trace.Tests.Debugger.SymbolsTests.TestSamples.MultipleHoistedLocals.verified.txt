@@ -32,32 +32,6 @@
                 "start_column": 9,
                 "end_column": 10
               },
-              "symbols": [
-                {
-                  "name": "a",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 13
-                },
-                {
-                  "name": "b",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 13
-                },
-                {
-                  "name": "s",
-                  "type": "System.String",
-                  "symbol_type": "local",
-                  "line": 13
-                },
-                {
-                  "name": "action",
-                  "type": "System.Action",
-                  "symbol_type": "local",
-                  "line": 13
-                }
-              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -73,12 +47,60 @@
                     "start_column": 13,
                     "end_column": 14
                   },
+                  "scopes": [
+                    {
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                      "start_line": 19,
+                      "end_line": 23,
+                      "language_specifics": {
+                        "start_column": 13,
+                        "end_column": 14
+                      },
+                      "symbols": [
+                        {
+                          "name": "c",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 19
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocals.cs",
+                  "start_line": 13,
+                  "end_line": 26,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
                   "symbols": [
                     {
-                      "name": "c",
+                      "name": "a",
                       "type": "System.Int32",
                       "symbol_type": "local",
-                      "line": 19
+                      "line": 13
+                    },
+                    {
+                      "name": "b",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 13
+                    },
+                    {
+                      "name": "s",
+                      "type": "System.String",
+                      "symbol_type": "local",
+                      "line": 13
+                    },
+                    {
+                      "name": "action",
+                      "type": "System.Action",
+                      "symbol_type": "local",
+                      "line": 13
                     }
                   ]
                 }

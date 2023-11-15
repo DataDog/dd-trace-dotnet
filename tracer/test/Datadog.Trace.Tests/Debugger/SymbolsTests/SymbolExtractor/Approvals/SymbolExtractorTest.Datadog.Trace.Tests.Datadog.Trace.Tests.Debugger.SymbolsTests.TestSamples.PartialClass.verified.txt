@@ -25,13 +25,23 @@
               "name": "_s",
               "type": "System.String",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             },
             {
               "name": "_s2",
               "type": "System.String",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             }
           ],
           "scopes": [
@@ -64,18 +74,32 @@
                   "type": "System.Int32",
                   "symbol_type": "arg",
                   "line": 0
-                },
+                }
+              ],
+              "scopes": [
                 {
-                  "name": "rand",
-                  "type": "System.Random",
-                  "symbol_type": "local",
-                  "line": 21
-                },
-                {
-                  "name": "next",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 21
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClass.cs",
+                  "start_line": 21,
+                  "end_line": 25,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "rand",
+                      "type": "System.Random",
+                      "symbol_type": "local",
+                      "line": 21
+                    },
+                    {
+                      "name": "next",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 21
+                    }
+                  ]
                 }
               ]
             },
@@ -96,18 +120,32 @@
                   "type": "System.Int32",
                   "symbol_type": "arg",
                   "line": 0
-                },
+                }
+              ],
+              "scopes": [
                 {
-                  "name": "rand",
-                  "type": "System.Random",
-                  "symbol_type": "local",
-                  "line": 15
-                },
-                {
-                  "name": "next",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 15
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\PartialClassPartTwo.cs",
+                  "start_line": 15,
+                  "end_line": 19,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "rand",
+                      "type": "System.Random",
+                      "symbol_type": "local",
+                      "line": 15
+                    },
+                    {
+                      "name": "next",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 15
+                    }
+                  ]
                 }
               ]
             }

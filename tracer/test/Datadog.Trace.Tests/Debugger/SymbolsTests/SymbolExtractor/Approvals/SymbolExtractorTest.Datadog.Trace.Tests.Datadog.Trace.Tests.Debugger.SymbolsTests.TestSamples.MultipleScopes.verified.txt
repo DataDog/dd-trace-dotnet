@@ -32,72 +32,120 @@
                 "start_column": 9,
                 "end_column": 10
               },
-              "symbols": [
+              "scopes": [
                 {
-                  "name": "a",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 15
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
+                  "start_line": 13,
+                  "end_line": 68,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "a",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 15
+                    },
+                    {
+                      "name": "b",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 15
+                    },
+                    {
+                      "name": "c",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 15
+                    }
+                  ]
                 },
                 {
-                  "name": "b",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 15
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
+                  "start_line": 13,
+                  "end_line": 68,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "d",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 30
+                    },
+                    {
+                      "name": "e",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 30
+                    },
+                    {
+                      "name": "f",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 30
+                    }
+                  ]
                 },
                 {
-                  "name": "c",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 15
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
+                  "start_line": 13,
+                  "end_line": 68,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "g",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 45
+                    },
+                    {
+                      "name": "h",
+                      "type": "System.Int32",
+                      "symbol_type": "local",
+                      "line": 45
+                    }
+                  ]
                 },
                 {
-                  "name": "d",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 30
-                },
-                {
-                  "name": "e",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 30
-                },
-                {
-                  "name": "f",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 30
-                },
-                {
-                  "name": "g",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 45
-                },
-                {
-                  "name": "h",
-                  "type": "System.Int32",
-                  "symbol_type": "local",
-                  "line": 45
-                },
-                {
-                  "name": "i",
-                  "type": "System.String",
-                  "symbol_type": "local",
-                  "line": 55
-                },
-                {
-                  "name": "j",
-                  "type": "System.String",
-                  "symbol_type": "local",
-                  "line": 55
-                },
-                {
-                  "name": "k",
-                  "type": "System.String",
-                  "symbol_type": "local",
-                  "line": 55
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleScopes.cs",
+                  "start_line": 13,
+                  "end_line": 68,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
+                  "symbols": [
+                    {
+                      "name": "i",
+                      "type": "System.String",
+                      "symbol_type": "local",
+                      "line": 55
+                    },
+                    {
+                      "name": "j",
+                      "type": "System.String",
+                      "symbol_type": "local",
+                      "line": 55
+                    },
+                    {
+                      "name": "k",
+                      "type": "System.String",
+                      "symbol_type": "local",
+                      "line": 55
+                    }
+                  ]
                 }
               ]
             },

@@ -25,7 +25,12 @@
               "name": "i",
               "type": "System.Int32",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             }
           ],
           "scopes": [
@@ -52,14 +57,6 @@
                 "start_column": 9,
                 "end_column": 10
               },
-              "symbols": [
-                {
-                  "name": "action",
-                  "type": "System.Action",
-                  "symbol_type": "local",
-                  "line": 20
-                }
-              ],
               "scopes": [
                 {
                   "scope_type": "closure",
@@ -75,12 +72,42 @@
                     "start_column": 13,
                     "end_column": 14
                   },
+                  "scopes": [
+                    {
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                      "start_line": 22,
+                      "end_line": 25,
+                      "language_specifics": {
+                        "start_column": 13,
+                        "end_column": 14
+                      },
+                      "symbols": [
+                        {
+                          "name": "s",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 22
+                        }
+                      ]
+                    }
+                  ]
+                },
+                {
+                  "scope_type": "local",
+                  "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\LambdaWithFieldClosure.cs",
+                  "start_line": 20,
+                  "end_line": 28,
+                  "language_specifics": {
+                    "start_column": 9,
+                    "end_column": 10
+                  },
                   "symbols": [
                     {
-                      "name": "s",
-                      "type": "System.Int32",
+                      "name": "action",
+                      "type": "System.Action",
                       "symbol_type": "local",
-                      "line": 22
+                      "line": 20
                     }
                   ]
                 }

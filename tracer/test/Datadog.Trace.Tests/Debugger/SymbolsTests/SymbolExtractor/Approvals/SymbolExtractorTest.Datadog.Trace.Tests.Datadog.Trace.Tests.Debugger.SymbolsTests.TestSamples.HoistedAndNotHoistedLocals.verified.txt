@@ -25,7 +25,12 @@
               "name": "_service",
               "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedAndNotHoistedLocals/IService",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             }
           ],
           "scopes": [
@@ -98,24 +103,36 @@
                     "start_column": 9,
                     "end_column": 10
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "person",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "count",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "address",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
-                      "symbol_type": "local",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedAndNotHoistedLocals.cs",
+                      "start_line": 26,
+                      "end_line": 61,
+                      "language_specifics": {
+                        "start_column": 9,
+                        "end_column": 10
+                      },
+                      "symbols": [
+                        {
+                          "name": "person",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "count",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "address",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
+                          "symbol_type": "local",
+                          "line": 0
+                        }
+                      ]
                     }
                   ]
                 }

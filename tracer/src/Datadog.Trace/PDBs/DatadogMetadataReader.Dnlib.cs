@@ -119,26 +119,30 @@ namespace Datadog.Trace.Pdb
             return DnlibPdbReader?.GetMethod(breakpointMethod.Value.BreakpointMethod, version: 1);
         }
 
-        private List<DatadogLocal>? GetLocalSymbolsDnlib(int rowId, List<DatadogSequencePoint> sequencePoints)
+        private List<LocalScope>? GetLocalSymbolsDnlib(int rowId, List<DatadogSequencePoint> sequencePoints)
         {
-            List<DatadogLocal>? localSymbols = null;
+            List<LocalScope>? localScopes = null;
             var method = GetMethodDefDnlib((uint)rowId);
             if (method!.Body is not { Variables.Count: > 0 })
             {
-                return localSymbols;
+                return localScopes;
             }
 
             var methodLocals = method.Body.Variables;
             var allMethodScopes = GetAllScopes(method.MDToken.Rid);
             if (allMethodScopes == null)
             {
-                return localSymbols;
+                return localScopes;
             }
 
-            localSymbols = new List<DatadogLocal>();
+            localScopes = new List<LocalScope>();
+
             for (var k = 0; k < allMethodScopes.Count; k++)
             {
+                var datadogScop = new LocalScope();
+                datadogScop.Locals = new List<DatadogLocal>();
                 var currentScope = allMethodScopes[k];
+                DatadogSequencePoint sequencePointForScope = default;
                 for (var l = 0; l < currentScope.Locals.Count; l++)
                 {
                     var localSymbol = currentScope.Locals[l];
@@ -147,13 +151,15 @@ namespace Datadog.Trace.Pdb
                         continue;
                     }
 
-                    var line = UnknownLocalLine;
-                    for (var m = 0; m < sequencePoints.Count; m++)
+                    if (sequencePointForScope == default)
                     {
-                        if (sequencePoints[m].Offset >= currentScope.StartOffset)
+                        for (var m = 0; m < sequencePoints.Count; m++)
                         {
-                            line = sequencePoints[m].StartLine;
-                            break;
+                            if (sequencePoints[m].Offset >= currentScope.StartOffset)
+                            {
+                                sequencePointForScope = sequencePoints[m];
+                                break;
+                            }
                         }
                     }
 
@@ -179,17 +185,20 @@ namespace Datadog.Trace.Pdb
                         continue;
                     }
 
-                    localSymbols.Add(
+                    datadogScop.SequencePoint = sequencePointForScope;
+                    datadogScop.Locals.Add(
                         new DatadogLocal
                         {
                             Name = localSymbol.Name,
                             Type = local.Type?.FullName ?? Unknown,
-                            Line = line
+                            Line = sequencePointForScope.StartLine
                         });
                 }
+
+                localScopes.Add(datadogScop);
             }
 
-            return localSymbols;
+            return localScopes;
         }
 
         private CustomDebugInfoAsyncAndClosure GetAsyncAndClosureCustomDebugInfoDnlib(int methodRid)

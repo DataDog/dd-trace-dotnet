@@ -13,7 +13,9 @@ using Datadog.Trace.Debugger.Symbols;
 using Datadog.Trace.Logging;
 using Datadog.Trace.VendoredMicrosoftCode.System.Buffers;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata;
+using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.Metadata.Ecma335;
 using Datadog.Trace.VendoredMicrosoftCode.System.Reflection.PortableExecutable;
+using Datadog.Trace.Vendors.dnlib.DotNet.Emit;
 
 namespace Datadog.Trace.Pdb
 {
@@ -539,14 +541,14 @@ namespace Datadog.Trace.Pdb
             return MetadataReader.GetMethodDefinition(MethodDefinitionHandle.FromRowId(methodRid));
         }
 
-        internal List<DatadogLocal>? GetLocalSymbols(int rowId, List<DatadogSequencePoint> sequencePoints)
+        internal List<LocalScope>? GetLocalSymbols(int rowId, List<DatadogSequencePoint> sequencePoints)
         {
             if (_isDnlibPdbReader)
             {
                 return GetLocalSymbolsDnlib(rowId, sequencePoints);
             }
 
-            List<DatadogLocal>? localSymbols = null;
+            List<LocalScope>? localScopes = null;
             if (PdbReader != null)
             {
                 MethodDefinition method = GetMethodDef(rowId);
@@ -563,12 +565,22 @@ namespace Datadog.Trace.Pdb
                 }
 
                 var localTypes = signature.Value.DecodeLocalSignature(new TypeProvider(false), 0);
-                localSymbols = new List<DatadogLocal>();
+                localScopes = new List<LocalScope>();
 
                 foreach (var scopeHandle in PdbReader.GetLocalScopes(method.Handle.ToDebugInformationHandle()))
                 {
                     var localScope = PdbReader.GetLocalScope(scopeHandle);
-                    foreach (var localVarHandle in localScope.GetLocalVariables())
+                    var locals = localScope.GetLocalVariables();
+                    var constants = localScope.GetLocalConstants();
+                    if (locals.Count == 0 && constants.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    var datadogScop = new LocalScope();
+                    datadogScop.Locals = new List<DatadogLocal>();
+                    DatadogSequencePoint sequencePointForScope = default;
+                    foreach (var localVarHandle in locals)
                     {
                         if (localVarHandle.IsNil)
                         {
@@ -588,29 +600,82 @@ namespace Datadog.Trace.Pdb
                             continue;
                         }
 
-                        var line = UnknownLocalLine;
-                        foreach (var sequencePoint in sequencePoints)
+                        if (sequencePointForScope == default)
                         {
-                            if (sequencePoint.Offset >= localScope.StartOffset &&
-                                sequencePoint.Offset <= localScope.EndOffset)
+                            foreach (var sequencePoint in sequencePoints)
                             {
-                                line = sequencePoint.StartLine;
-                                break;
+                                if (sequencePoint.Offset >= localScope.StartOffset &&
+                                    sequencePoint.Offset <= localScope.EndOffset)
+                                {
+                                    sequencePointForScope = sequencePoint;
+                                    break;
+                                }
                             }
                         }
 
-                        localSymbols.Add(new DatadogLocal
+                        datadogScop.SequencePoint = sequencePointForScope;
+                        datadogScop.Locals.Add(new DatadogLocal
                         {
                             Name = localName,
                             Type = localTypes[local.Index],
                             Index = local.Index,
-                            Line = line
+                            Line = sequencePointForScope.StartLine
                         });
                     }
+
+                    foreach (var constantHandle in constants)
+                    {
+                        if (constantHandle.IsNil)
+                        {
+                            continue;
+                        }
+
+                        var constant = PdbReader.GetLocalConstant(constantHandle);
+
+                        if (constant.Name.IsNil)
+                        {
+                            continue;
+                        }
+
+                        var constantName = PdbReader.GetString(constant.Name);
+                        if (string.IsNullOrEmpty(constantName))
+                        {
+                            continue;
+                        }
+
+                        var signatureDecoder = new SignatureDecoder<string, int>(new TypeProvider(false), PdbReader, 0);
+                        var blobReader = PdbReader.GetBlobReader(constant.Signature);
+                        var constantType = signatureDecoder.DecodeType(ref blobReader);
+
+                        if (sequencePointForScope == default)
+                        {
+                            foreach (var sequencePoint in sequencePoints)
+                            {
+                                if (sequencePoint.Offset >= localScope.StartOffset &&
+                                    sequencePoint.Offset <= localScope.EndOffset)
+                                {
+                                    sequencePointForScope = sequencePoint;
+                                    break;
+                                }
+                            }
+                        }
+
+                        var datadogLocal = new DatadogLocal
+                        {
+                            Name = constantName,
+                            Type = constantType,
+                            Index = -1,
+                            Line = sequencePointForScope == default ? UnknownLocalLine : sequencePointForScope.StartLine
+                        };
+
+                        datadogScop.Locals.Add(datadogLocal);
+                    }
+
+                    localScopes.Add(datadogScop);
                 }
             }
 
-            return localSymbols;
+            return localScopes;
         }
 
         internal bool HasMethodBody(int methodRid)
@@ -672,6 +737,12 @@ namespace Datadog.Trace.Pdb
             internal string Type;
             internal int Index;
             internal int Line;
+        }
+
+        internal struct LocalScope
+        {
+            internal DatadogSequencePoint SequencePoint;
+            internal List<DatadogLocal> Locals;
         }
     }
 }

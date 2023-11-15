@@ -23,4 +23,7 @@ internal record struct Symbol
 
     [JsonProperty("line")]
     internal int Line { get; set; }
+
+    [JsonProperty("language_specifics")]
+    internal LanguageSpecifics? LanguageSpecifics { get; set; }
 }

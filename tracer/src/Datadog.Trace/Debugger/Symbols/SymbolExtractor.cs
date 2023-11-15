@@ -20,31 +20,14 @@ namespace Datadog.Trace.Debugger.Symbols
 {
     internal class SymbolExtractor : IDisposable
     {
+        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
         private readonly string _assemblyPath;
+        private bool _disposed;
+
         protected const int UnknownMethodStartLine = 0;
         protected const int UnknownMethodEndLine = 0;
         protected const int UnknownFieldAndArgLine = 0;
-        private const MethodAttributes StaticFinalVirtual = MethodAttributes.Static | MethodAttributes.Final | MethodAttributes.Virtual;
-        private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(SymbolExtractor));
-        private readonly Dictionary<int, string> _methodAccess = new()
-        {
-            { 0x0001, "Private" },
-            { 0x0002, "FamANDAssem" },
-            { 0x0003, "Assembly" },
-            { 0x0004, "Family" },
-            { 0x0005, "FamORAssem" },
-            { 0x0006, "Public" }
-        };
-
-        private readonly Dictionary<int, string> _methodAttributes = new()
-        {
-            { 0x0010, "Static" },
-            { 0x0020, "Final" },
-            { 0x0040, "Virtual" },
-            { 0x0060, "Final Virtual" },
-        };
-
-        private bool _disposed;
+        protected const MethodAttributes StaticFinalVirtualMethod = System.Reflection.MethodAttributes.Static | System.Reflection.MethodAttributes.Final | System.Reflection.MethodAttributes.Virtual;
 
         protected SymbolExtractor(DatadogMetadataReader metadataReader, string assemblyPath)
         {
@@ -56,6 +39,24 @@ namespace Datadog.Trace.Debugger.Symbols
         protected DatadogMetadataReader DatadogMetadataReader { get; }
 
         protected MetadataReader MetadataReader { get; }
+
+        protected Dictionary<int, string> MethodAccess { get; } = new()
+        {
+            { 0x0001, "Private" },
+            { 0x0002, "FamANDAssem" },
+            { 0x0003, "Assembly" },
+            { 0x0004, "Family" },
+            { 0x0005, "FamORAssem" },
+            { 0x0006, "Public" }
+        };
+
+        protected Dictionary<int, string> MethodAttributes { get; } = new()
+        {
+            { 0x0010, "Static" },
+            { 0x0020, "Final" },
+            { 0x0040, "Virtual" },
+            { 0x0060, "Final Virtual" },
+        };
 
         public static SymbolExtractor? Create(Assembly assembly)
         {
@@ -231,7 +232,7 @@ namespace Datadog.Trace.Debugger.Symbols
             {
                 if (scopes != null)
                 {
-                    ArrayPool<Model.Scope>.Shared.Return(scopes);
+                    ArrayPool<Model.Scope>.Shared.Return(scopes, true);
                 }
             }
 
@@ -274,7 +275,7 @@ namespace Datadog.Trace.Debugger.Symbols
                         continue;
                     }
 
-                    for (int j = 0; j < scope.Scopes.Count; j++)
+                    for (int j = 0; j < scope.Scopes.Length; j++)
                     {
                         var innerScope = scope.Scopes[j];
                         if (classStartLine > innerScope.StartLine)
@@ -378,12 +379,18 @@ namespace Datadog.Trace.Debugger.Symbols
                     }
                 }
 
+                var accessModifiers = (fieldDef.Attributes & FieldAttributes.FieldAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(fieldDef.Attributes & FieldAttributes.FieldAccessMask)] } : null;
+                var fieldAttributes = fieldDef.Attributes & FieldAttributes.Static;
+                var annotations = fieldAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(fieldAttributes)] } : null;
+                var ls = new LanguageSpecifics() { AccessModifiers = accessModifiers, Annotations = annotations };
+
                 fieldSymbols[index] = new Symbol
                 {
                     Name = fieldName.ToString(),
                     Type = fieldTypeName,
                     SymbolType = ((fieldDef.Attributes & FieldAttributes.Static) != 0) ? SymbolType.StaticField : SymbolType.Field,
-                    Line = UnknownFieldAndArgLine
+                    Line = UnknownFieldAndArgLine,
+                    LanguageSpecifics = ls
                 };
                 index++;
             }
@@ -459,7 +466,7 @@ namespace Datadog.Trace.Debugger.Symbols
             int? startColumn = null;
             int? endColumn = null;
             string? sourceFile = null;
-            for (int i = 0; i < methodScope.Scopes.Count; i++)
+            for (int i = 0; i < methodScope.Scopes.Length; i++)
             {
                 var scope = methodScope.Scopes[i];
                 if (startLine > scope.StartLine && scope.StartLine > 0)
@@ -521,12 +528,12 @@ namespace Datadog.Trace.Debugger.Symbols
 
             // closures
             var closureScopes = GetClosureScopes(type, method);
-            var methodAttributes = method.Attributes & StaticFinalVirtual;
+            var methodAttributes = method.Attributes & StaticFinalVirtualMethod;
             var methodLanguageSpecifics = new LanguageSpecifics
             {
                 ReturnType = method.DecodeSignature(new TypeProvider(false), 0).ReturnType,
-                AccessModifiers = (method.Attributes & MethodAttributes.MemberAccessMask) > 0 ? new[] { _methodAccess[Convert.ToUInt16(method.Attributes & MethodAttributes.MemberAccessMask)] } : null,
-                Annotations = methodAttributes > 0 ? new[] { _methodAttributes[Convert.ToUInt16(methodAttributes)] } : null
+                AccessModifiers = (method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask) > 0 ? new[] { MethodAccess[Convert.ToUInt16(method.Attributes & System.Reflection.MethodAttributes.MemberAccessMask)] } : null,
+                Annotations = methodAttributes > 0 ? new[] { MethodAttributes[Convert.ToUInt16(methodAttributes)] } : null
             };
 
             var methodScope = new Model.Scope
@@ -678,31 +685,6 @@ namespace Datadog.Trace.Debugger.Symbols
             }
 
             return argsSymbol;
-        }
-
-        protected Symbol[]? ConcatMethodSymbols(Symbol[]? argSymbols, Symbol[]? localSymbols)
-        {
-            var localSymbolsCount = localSymbols?.Length ?? 0;
-            var argsCount = argSymbols?.Length ?? 0;
-            var symbolsCount = argsCount + localSymbolsCount;
-            if (symbolsCount <= 0)
-            {
-                return null;
-            }
-
-            var methodSymbols = new Symbol[symbolsCount];
-
-            if (argsCount > 0)
-            {
-                Array.Copy(argSymbols!, 0, methodSymbols, 0, argsCount);
-            }
-
-            if (localSymbolsCount > 0)
-            {
-                Array.Copy(localSymbols!, 0, methodSymbols, argsCount, localSymbolsCount);
-            }
-
-            return methodSymbols;
         }
 
         private string[]? GetClassBaseClassNames(TypeDefinition type)

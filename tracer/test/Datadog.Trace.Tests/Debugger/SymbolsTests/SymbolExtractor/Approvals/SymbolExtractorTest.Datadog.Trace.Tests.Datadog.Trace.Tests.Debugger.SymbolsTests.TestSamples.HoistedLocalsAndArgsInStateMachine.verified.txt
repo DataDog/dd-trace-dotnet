@@ -25,13 +25,23 @@
               "name": "intField",
               "type": "System.Int32",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             },
             {
               "name": "personField",
               "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
               "symbol_type": "field",
-              "line": 0
+              "line": 0,
+              "language_specifics": {
+                "access_modifiers": [
+                  "Private"
+                ]
+              }
             }
           ],
           "scopes": [
@@ -64,12 +74,24 @@
                     "start_column": 9,
                     "end_column": 10
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "person",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
-                      "symbol_type": "local",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                      "start_line": 17,
+                      "end_line": 22,
+                      "language_specifics": {
+                        "start_column": 9,
+                        "end_column": 10
+                      },
+                      "symbols": [
+                        {
+                          "name": "person",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                          "symbol_type": "local",
+                          "line": 0
+                        }
+                      ]
                     }
                   ]
                 }
@@ -118,18 +140,30 @@
                     "start_column": 9,
                     "end_column": 10
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "localPerson",
-                      "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "e",
-                      "type": "System.Exception",
-                      "symbol_type": "local",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\HoistedLocalsAndArgsInStateMachine.cs",
+                      "start_line": 25,
+                      "end_line": 43,
+                      "language_specifics": {
+                        "start_column": 9,
+                        "end_column": 10
+                      },
+                      "symbols": [
+                        {
+                          "name": "localPerson",
+                          "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Person",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "e",
+                          "type": "System.Exception",
+                          "symbol_type": "local",
+                          "line": 0
+                        }
+                      ]
                     }
                   ]
                 }
@@ -163,19 +197,34 @@
                   "name": "Name",
                   "type": "System.String",
                   "symbol_type": "field",
-                  "line": 0
+                  "line": 0,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ]
+                  }
                 },
                 {
                   "name": "Age",
                   "type": "System.Int32",
                   "symbol_type": "field",
-                  "line": 0
+                  "line": 0,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ]
+                  }
                 },
                 {
                   "name": "Address",
                   "type": "Datadog.Trace.Tests.Debugger.SymbolsTests.TestSamples.HoistedLocalsAndArgsInStateMachine/Address",
                   "symbol_type": "field",
-                  "line": 0
+                  "line": 0,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ]
+                  }
                 }
               ],
               "scopes": [
@@ -253,13 +302,23 @@
                   "name": "Name",
                   "type": "System.String",
                   "symbol_type": "field",
-                  "line": 0
+                  "line": 0,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ]
+                  }
                 },
                 {
                   "name": "Number",
                   "type": "System.Int32",
                   "symbol_type": "field",
-                  "line": 0
+                  "line": 0,
+                  "language_specifics": {
+                    "access_modifiers": [
+                      "Private"
+                    ]
+                  }
                 }
               ],
               "scopes": [

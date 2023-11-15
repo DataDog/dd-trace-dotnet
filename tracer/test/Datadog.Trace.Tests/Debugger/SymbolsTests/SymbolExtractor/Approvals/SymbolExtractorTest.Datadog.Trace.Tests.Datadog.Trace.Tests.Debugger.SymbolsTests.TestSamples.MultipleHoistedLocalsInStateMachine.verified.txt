@@ -50,30 +50,42 @@
                     "start_column": 9,
                     "end_column": 10
                   },
-                  "symbols": [
+                  "scopes": [
                     {
-                      "name": "a",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "b",
-                      "type": "System.Int32",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "s",
-                      "type": "System.String",
-                      "symbol_type": "local",
-                      "line": 0
-                    },
-                    {
-                      "name": "e",
-                      "type": "System.Exception",
-                      "symbol_type": "local",
-                      "line": 0
+                      "scope_type": "local",
+                      "source_file": "C:\\dev\\Datadog\\dd-trace-dotnet\\tracer\\test\\Datadog.Trace.Tests\\Debugger\\SymbolsTests\\TestSamples\\MultipleHoistedLocalsInStateMachine.cs",
+                      "start_line": 14,
+                      "end_line": 36,
+                      "language_specifics": {
+                        "start_column": 9,
+                        "end_column": 10
+                      },
+                      "symbols": [
+                        {
+                          "name": "a",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "b",
+                          "type": "System.Int32",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "s",
+                          "type": "System.String",
+                          "symbol_type": "local",
+                          "line": 0
+                        },
+                        {
+                          "name": "e",
+                          "type": "System.Exception",
+                          "symbol_type": "local",
+                          "line": 0
+                        }
+                      ]
                     }
                   ]
                 }
