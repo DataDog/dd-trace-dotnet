@@ -258,7 +258,7 @@ internal static class DatadogLoggingFactory
         var telemetryEnabled = config.WithKeys(ConfigurationKeys.Telemetry.Enabled).AsBool(true);
         if (telemetryEnabled)
         {
-            return config.WithKeys(ConfigurationKeys.Telemetry.TelemetryLogsEnabled).AsBool(true)
+            return config.WithKeys(ConfigurationKeys.Telemetry.TelemetryLogsEnabled).AsBool(false)
                        ? new RedactedErrorLoggingConfiguration(TelemetryFactory.RedactedErrorLogs) // use the global collector
                        : null;
         }
