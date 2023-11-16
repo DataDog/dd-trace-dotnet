@@ -72,22 +72,24 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
             return;
         }
 
+        var evidenceValue = evidence.Value;
+
         writer.WriteStartObject();
-        if (evidence?.Ranges == null || evidence?.Ranges.Length == 0)
+        if (evidenceValue.Ranges == null || evidenceValue.Ranges.Length == 0)
         {
             writer.WritePropertyName("value");
-            writer.WriteValue(evidence?.Value);
+            writer.WriteValue(evidenceValue.Value);
         }
         else
         {
             writer.WritePropertyName("valueParts");
             if (_redactionEnabled)
             {
-                ToRedactedJson(writer, evidence?.Value!, evidence?.Ranges, evidence?.Sensitive);
+                ToRedactedJson(writer, evidenceValue.Value!, evidenceValue.Ranges, evidenceValue.Sensitive);
             }
             else
             {
-                ToJsonTaintedValue(writer, evidence?.Value!, evidence?.Ranges!);
+                ToJsonTaintedValue(writer, evidenceValue.Value!, evidenceValue.Ranges);
             }
         }
 
