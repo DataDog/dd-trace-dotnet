@@ -83,31 +83,12 @@ internal static class ReturnedHeadersAnalyzer
             }
 
             IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+            string contentTypeValue = responseHeaders[ContentTypeLow];
+            string contentOptionValue = responseHeaders[XContentTypeOptionsLow];
 
-            string contentTypeValue = string.Empty;
-            string contentOptionValue = string.Empty;
-
-            // We iterate instead of trying to get the value directly from the key because we need to take into account that
-            // keys are case insensitive
-            foreach (var header in responseHeaders)
+            if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
             {
-                if (ContentTypeLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    contentTypeValue = header.Value;
-                    if (!IsHtmlResponse(contentTypeValue))
-                    {
-                        return;
-                    }
-                }
-
-                if (XContentTypeOptionsLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
-                {
-                    contentOptionValue = header.Value;
-                    if (IsNoSniffContentOptions(contentOptionValue))
-                    {
-                        return;
-                    }
-                }
+                return;
             }
 
             LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
