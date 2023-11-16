@@ -128,7 +128,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             const int customTagCount = 15;
 
-            using (var rootScope = _tracer.StartActiveInternal("root", serviceName: "service1"))
+            using (_ = _tracer.StartActiveInternal("root", serviceName: "service1"))
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service2"))
                 {
@@ -143,7 +143,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
@@ -163,7 +164,7 @@ namespace Datadog.Trace.Tests.Tagging
         {
             const int customTagCount = 15;
 
-            using (var rootScope = _tracer.StartActiveInternal("root", serviceName: "service1"))
+            using (_ = _tracer.StartActiveInternal("root", serviceName: "service1"))
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service1"))
                 {
@@ -177,7 +178,8 @@ namespace Datadog.Trace.Tests.Tagging
 
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 2);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialize first in the trace chunk
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);

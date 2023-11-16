@@ -56,8 +56,7 @@
       "pattern": "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTU"
     }
   ]
-},
-      _dd.p.dm: -0
+}
     },
     Metrics: {
       process_id: 0,

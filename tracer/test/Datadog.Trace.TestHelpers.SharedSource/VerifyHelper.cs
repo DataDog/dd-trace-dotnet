@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
+using Datadog.Trace.Tagging;
 using Datadog.Trace.TestHelpers.DataStreamsMonitoring;
 using VerifyTests;
 using VerifyXunit;
@@ -151,6 +152,9 @@ namespace Datadog.Trace.TestHelpers
         public static Dictionary<string, string> ScrubTags(MockSpan span, Dictionary<string, string> tags)
         {
             return tags
+                  // remove propagated tags because their positions in the snapshots are not stable
+                  // with our span ordering. correct position (first span in every trace chunk) is covered by other tests.
+                  .Where(kvp => !kvp.Key.StartsWith(TagPropagation.PropagatedTagPrefix, StringComparison.Ordinal))
                   .Select(
                        kvp => kvp.Key switch
                        {
