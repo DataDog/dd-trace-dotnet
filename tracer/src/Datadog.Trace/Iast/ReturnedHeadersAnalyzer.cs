@@ -32,28 +32,21 @@ internal static class ReturnedHeadersAnalyzer
     internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
 #endif
     {
-        try
+        if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
         {
-            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
-            {
-                return;
-            }
-
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-            string contentTypeValue = responseHeaders[ContentType];
-            string contentOptionValue = responseHeaders[XContentTypeOptions];
-
-            if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
-            {
-                return;
-            }
-
-            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
+            return;
         }
-        catch (Exception error)
+
+        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+        string contentTypeValue = responseHeaders[ContentType];
+        string contentOptionValue = responseHeaders[XContentTypeOptions];
+
+        if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
         {
-            Log.Error(error, $"{nameof(ReturnedHeadersAnalyzer)}.{nameof(Analyze)} exception");
+            return;
         }
+
+        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
