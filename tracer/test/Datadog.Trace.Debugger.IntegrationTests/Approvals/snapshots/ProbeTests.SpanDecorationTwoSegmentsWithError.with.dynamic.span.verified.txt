@@ -16,7 +16,7 @@
       _dd.di.SpanDecorationTwoSegments.evaluation_error: EvaluationError { Expression = this.Arg =  },
       _dd.di.SpanDecorationTwoSegments.probe_id: Guid_3,
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet
     },
     Metrics: {
       process_id: 0,

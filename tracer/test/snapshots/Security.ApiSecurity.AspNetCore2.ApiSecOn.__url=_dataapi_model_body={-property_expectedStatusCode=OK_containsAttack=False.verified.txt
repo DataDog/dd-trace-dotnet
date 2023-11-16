@@ -46,7 +46,7 @@
       _dd.appsec.s.res.body: [{"PropertyResponse":[8],"PropertyResponse2":[4],"PropertyResponse3":[16],"PropertyResponse4":[4]}],
       _dd.appsec.s.res.headers: [{"content-type":[[[8]],{"len":1}]}],
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
-      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,,
+      _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
       _dd.runtime_family: dotnet
     },
     Metrics: {
