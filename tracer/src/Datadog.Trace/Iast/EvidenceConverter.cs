@@ -68,6 +68,7 @@ internal class EvidenceConverter : JsonConverter<Evidence?>
     {
         if (evidence is null)
         {
+            writer.WriteNull();
             return;
         }
 
