@@ -12,6 +12,7 @@ using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Filters;
 using Newtonsoft.Json;
 using Samples.Security.Data;
 
@@ -31,6 +32,19 @@ namespace Samples.Security.AspNetCore5.Controllers
         public QueryData InnerQuery { get; set; }
     }
 
+    public class XContentTypeOptionsAttribute : ActionFilterAttribute
+    {
+        public override void OnResultExecuting(ResultExecutingContext filterContext)
+        {
+            if (!filterContext.HttpContext.Request.Path.Value.Contains("XContentTypeHeaderMissing"))
+            {
+                filterContext.HttpContext.Response.Headers.Add("X-Content-Type-Options", "nosniff");
+                base.OnResultExecuting(filterContext);
+            }
+        }
+    }
+
+    [XContentTypeOptionsAttribute]
     [Route("[controller]")]
     [ApiController]
     public class IastController : ControllerBase
@@ -468,6 +482,30 @@ namespace Samples.Security.AspNetCore5.Controllers
         public ActionResult WeakRandomness()
         {
             return Content("Random number: " + (new Random()).Next().ToString(), "text/html");
+        }
+
+        [HttpGet("XContentTypeHeaderMissing")]
+        [Route("XContentTypeHeaderMissing")]
+        public ActionResult XContentTypeHeaderMissing(string contentType = "text/html", int returnCode = 200, string xContentTypeHeaderValue = "")
+        {
+            if (!string.IsNullOrEmpty(xContentTypeHeaderValue))
+            {
+                Response.Headers.Add("X-Content-Type-Options", xContentTypeHeaderValue);
+            }
+
+            if (returnCode != (int) HttpStatusCode.OK)
+            {
+                return StatusCode(returnCode);
+            }
+
+            if (!string.IsNullOrEmpty(contentType))
+            {
+                return Content("XContentTypeHeaderMissing", contentType);
+            }
+            else
+            {
+                return Content("XContentTypeHeaderMissing");
+            }
         }
     }
 }
