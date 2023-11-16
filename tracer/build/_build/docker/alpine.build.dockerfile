@@ -36,7 +36,7 @@ RUN git clone --depth 1 --branch llvmorg-16.0.6 https://github.com/llvm/llvm-pro
     cd build && \
     \
     # build llvm/clang
-    cmake  -DCOMPILER_RT_BUILD_GWP_ASAN=OFF -DLLVM_ENABLE_PROJECTS="clang;compiler-rt;lld" -DCMAKE_BUILD_TYPE=Release -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=1 -DENABLE_LINKER_BUILD_ID=ON -DCLANG_VENDOR=Alpine -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-alpine-linux-musl -DLLVM_HOST_TRIPLE=x86_64-alpine-linux-musl  -G "Unix Makefiles" ../llvm && \
+    cmake  -DCOMPILER_RT_BUILD_GWP_ASAN=OFF -DLLVM_ENABLE_PROJECTS="clang;clang-tools-extra;compiler-rt;lld" -DCMAKE_BUILD_TYPE=Release -DLLVM_TEMPORARILY_ALLOW_OLD_TOOLCHAIN=1 -DENABLE_LINKER_BUILD_ID=ON -DCLANG_VENDOR=Alpine -DLLVM_DEFAULT_TARGET_TRIPLE=x86_64-alpine-linux-musl -DLLVM_HOST_TRIPLE=x86_64-alpine-linux-musl  -G "Unix Makefiles" ../llvm && \
     make -j$(nproc)
 
 FROM base as final
