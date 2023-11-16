@@ -41,8 +41,7 @@ internal static class ReturnedHeadersAnalyzer
             // We iterate instead of trying to get the key directly because keys are case insensitive
             foreach (var headerKey in headers.AllKeys)
             {
-                var headerKeyLow = headerKey.ToLowerInvariant();
-                if (headerKeyLow == ContentTypeLow)
+                if (ContentTypeLow.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
                 {
                     contentTypeValue = headers[headerKey];
 
@@ -52,7 +51,7 @@ internal static class ReturnedHeadersAnalyzer
                     }
                 }
 
-                if (headerKeyLow == XContentTypeOptionsLow)
+                if (XContentTypeOptionsLow.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
                 {
                     contentOptionValue = headers[headerKey];
 
@@ -94,7 +93,8 @@ internal static class ReturnedHeadersAnalyzer
             {
                 if (ContentTypeLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (!IsHtmlResponse(header.Value))
+                    contentTypeValue = header.Value;
+                    if (!IsHtmlResponse(contentTypeValue))
                     {
                         return;
                     }
@@ -102,7 +102,8 @@ internal static class ReturnedHeadersAnalyzer
 
                 if (XContentTypeOptionsLow.Equals(header.Key, StringComparison.OrdinalIgnoreCase))
                 {
-                    if (IsNoSniffContentOptions(header.Value))
+                    contentOptionValue = header.Value;
+                    if (IsNoSniffContentOptions(contentOptionValue))
                     {
                         return;
                     }

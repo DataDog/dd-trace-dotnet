@@ -34,7 +34,7 @@ public class AspNetMvc5IntegratedWithIast : AspNetMvc5IastTests
     [Trait("RunOnWindows", "True")]
     [Trait("LoadFromGAC", "True")]
     [InlineData("text/html", 200, "nosniff")]
-    [InlineData("text/html", 200, "")]
+    [InlineData("text/html;charset=UTF-8", 200, "")]
     [InlineData("application/xhtml%2Bxml", 200, "")]
     [InlineData("text/plain", 200, "")]
     [InlineData("text/html", 200, "dummyvalue")]
