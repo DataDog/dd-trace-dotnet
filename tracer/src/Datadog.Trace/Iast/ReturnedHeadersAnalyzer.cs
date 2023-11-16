@@ -147,7 +147,8 @@ internal static class ReturnedHeadersAnalyzer
 
     private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
     {
-        if (protocol.ToLowerInvariant() != "https" && xForwardedProtoValue.ToLowerInvariant() != "https")
+        if (!string.Equals(protocol, "https", StringComparison.OrdinalIgnoreCase)
+            && !string.Equals(xForwardedProtoValue, "https", StringComparison.OrdinalIgnoreCase))
         {
             return;
         }
