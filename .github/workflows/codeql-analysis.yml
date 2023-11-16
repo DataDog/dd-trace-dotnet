@@ -42,6 +42,14 @@ jobs:
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
 
+    - name: Install Clang-16
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 16
+        sudo ln -s -f `which clang-16` `which clang`
+        sudo ln -s -f `which clang++-16` `which clang++`
+
     - name: Build dd-trace-dotnet
       run: |
         ./tracer/build.sh BuildProfilerHome BuildNativeLoader
@@ -110,6 +118,14 @@ jobs:
         # Prefix the list here with "+" to use these queries and those in the config file.
         # queries: ./path/to/local/query, your-org/your-repo/queries@main
         # Learn more about CodeQL language support at https://git.io/codeql-language-support
+
+    - name: Install Clang-16
+      run: |
+        wget https://apt.llvm.org/llvm.sh
+        chmod +x ./llvm.sh
+        sudo ./llvm.sh 16
+        sudo ln -s -f `which clang-16` `which clang`
+        sudo ln -s -f `which clang++-16` `which clang++`
 
     - name: Build dd-trace-dotnet
       run: |
