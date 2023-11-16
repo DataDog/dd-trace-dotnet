@@ -104,100 +104,18 @@ namespace Datadog.Trace.Security.IntegrationTests
 
         public async Task VerifySpans(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false, string methodNameOverride = null, string testName = null)
         {
-            settings.ModifySerialization(
-                serializationSettings =>
-                {
-                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
-                        sp => sp.Tags,
-                        (target, value) =>
-                        {
-                            if (target.Tags.Any(t => t.Key.StartsWith("_dd.appsec.s.re")))
-                            {
-                                var apisecurityTags = target.Tags.Where(t => t.Key.StartsWith("_dd.appsec.s.re")).ToList();
-
-                                foreach (var tag in apisecurityTags)
-                                {
-                                    var bytes = System.Convert.FromBase64String(tag.Value);
-                                    using var memoryStream = new MemoryStream(bytes);
-                                    using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
-                                    gZipStream.Flush();
-                                    var t = JsonSerializer.Create(_jsonSerializerSettingsOrderProperty);
-                                    using var textReader = new JsonTextReader(new StreamReader(gZipStream));
-                                    // this will work until children have more complex properties with more order
-                                    var result = t.Deserialize<JArray>(textReader);
-
-                                    SortJToken(result);
-                                    target.Tags[tag.Key] = JsonConvert.SerializeObject(result);
-                                }
-                            }
-
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                            {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                            }
-
-                            return VerifyHelper.ScrubTags(target, target.Tags);
-                        });
-                });
-            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
-            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
-            if (!testInit)
-            {
-                settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
-                settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
-            }
-
-            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
-            if (appsecSpans.Any())
-            {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
-            }
-
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
-            await  Verifier.Verify(spans, settings)
-                           .UseMethodName(methodNameOverride ?? "_")
-                           .UseTypeName(testName ?? GetTestName());
+            await VerifySpansNoMethodNameSettings(spans,  settings, testInit)
+              .UseMethodName(methodNameOverride ?? "_")
+              .UseTypeName(testName ?? GetTestName());
         }
 
         public SettingsTask VerifySpansNoMethodNameSettings(IImmutableList<MockSpan> spans, VerifySettings settings, bool testInit = false)
         {
-            settings.ModifySerialization(
-                serializationSettings =>
-                {
-                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
-                        sp => sp.Tags,
-                        (target, value) =>
-                        {
-                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
-                            {
-                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
-                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
-                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
-                            }
+            ModifySettings(settings, testInit);
 
-                            return VerifyHelper.ScrubStackTraceForErrors(target, target.Tags);
-                        });
-                });
-            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
-            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
-            if (!testInit)
-            {
-                settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
-                settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
-                settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
-            }
-
-            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
-            if (appsecSpans.Any())
-            {
-                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
-            }
+            CheckDuration(spans);
 
             // Overriding the type name here as we have multiple test classes in the file
             // Ensures that we get nice file nesting in Solution Explorer
@@ -354,6 +272,65 @@ namespace Datadog.Trace.Security.IntegrationTests
             }
 
             return spans.ToImmutableList();
+        }
+
+        private static void CheckDuration(IImmutableList<MockSpan> spans)
+        {
+            var appsecSpans = spans.Where(s => s.Tags.ContainsKey("_dd.appsec.json"));
+            if (appsecSpans.Any())
+            {
+                appsecSpans.Should().OnlyContain(s => s.Metrics["_dd.appsec.waf.duration"] < s.Metrics["_dd.appsec.waf.duration_ext"]);
+            }
+        }
+
+        private void ModifySettings(VerifySettings settings, bool testInit)
+        {
+            settings.ModifySerialization(
+                serializationSettings =>
+                {
+                    serializationSettings.MemberConverter<MockSpan, Dictionary<string, string>>(
+                        sp => sp.Tags,
+                        (target, value) =>
+                        {
+                            if (target.Tags.Any(t => t.Key.StartsWith("_dd.appsec.s.re")))
+                            {
+                                var apisecurityTags = target.Tags.Where(t => t.Key.StartsWith("_dd.appsec.s.re")).ToList();
+
+                                foreach (var tag in apisecurityTags)
+                                {
+                                    var bytes = System.Convert.FromBase64String(tag.Value);
+                                    using var memoryStream = new MemoryStream(bytes);
+                                    using var gZipStream = new GZipStream(memoryStream, CompressionMode.Decompress);
+                                    gZipStream.Flush();
+                                    var t = JsonSerializer.Create(_jsonSerializerSettingsOrderProperty);
+                                    using var textReader = new JsonTextReader(new StreamReader(gZipStream));
+                                    // this will work until children have more complex properties with more order
+                                    var result = t.Deserialize<JArray>(textReader);
+
+                                    SortJToken(result);
+                                    target.Tags[tag.Key] = JsonConvert.SerializeObject(result);
+                                }
+                            }
+
+                            if (target.Tags.TryGetValue(Tags.AppSecJson, out var appsecJson))
+                            {
+                                var appSecJsonObj = JsonConvert.DeserializeObject<AppSecJson>(appsecJson);
+                                var orderedAppSecJson = JsonConvert.SerializeObject(appSecJsonObj, _jsonSerializerSettingsOrderProperty);
+                                target.Tags[Tags.AppSecJson] = orderedAppSecJson;
+                            }
+
+                            return VerifyHelper.ScrubTags(target, target.Tags);
+                        });
+                });
+            settings.AddRegexScrubber(AppSecWafDuration, "_dd.appsec.waf.duration: 0.0");
+            settings.AddRegexScrubber(AppSecWafDurationWithBindings, "_dd.appsec.waf.duration_ext: 0.0");
+            if (!testInit)
+            {
+                settings.AddRegexScrubber(AppSecWafVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecWafRulesVersion, string.Empty);
+                settings.AddRegexScrubber(AppSecErrorCount, string.Empty);
+                settings.AddRegexScrubber(AppSecEventRulesLoaded, string.Empty);
+            }
         }
 
         private async Task SendRequestsAsyncNoWaitForSpans(string url, string body, int numberOfAttacks, string contentType = null, string userAgent = null)
