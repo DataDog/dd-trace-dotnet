@@ -167,10 +167,45 @@ void WriteToStream(std::ostringstream& oss, T const& x)
     }
 }
 #else
+
+// On Debian buster, we only have libstdc++ 8 which does not have a definition for the std::same_as concept
+// and std::remove_cvref_t struct.
+// In that case, when running on Windows or using a libstdc++ >= 10, we just alias the std::same_as and std::remove_cvref_t symbols,
+// Otherwise, we just implement them.
+#if defined(_WINDOWS) || (defined(_GLIBCXX_RELEASE) && _GLIBCXX_RELEASE >= 10 )
+
+template <class T, class U>
+concept same_as = std::same_as<T, U>;
+
 template <class T>
-concept IsWstring = std::same_as<T, ::shared::WSTRING> ||
+using remove_cvref_t = typename std::remove_cvref_t<T>;
+
+#else
+
+template<class T>
+struct remove_cvref
+{
+    typedef std::remove_cv_t<std::remove_reference_t<T>> type;
+};
+
+template< class T >
+using remove_cvref_t = typename remove_cvref<T>::type;
+
+namespace detail
+{
+    template< class T, class U >
+    concept SameHelper = std::is_same_v<T, U>;
+}
+
+template< class T, class U >
+concept same_as = detail::SameHelper<T, U> && detail::SameHelper<U, T>;
+
+#endif
+
+template <class T>
+concept IsWstring = same_as<T, ::shared::WSTRING> ||
                     // check if it's WCHAR[N] or WCHAR*
-                    std::same_as<std::remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>, WCHAR>;
+                    same_as<remove_cvref_t<std::remove_pointer_t<std::decay_t<T>>>, WCHAR>;
 
 template <IsWstring T>
 void  WriteToStream(std::ostringstream& oss, T const& x)
