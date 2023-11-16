@@ -47,7 +47,7 @@ namespace Datadog.Trace.ClrProfiler.AutoInstrumentation.GraphQL.HotChocolate
             return scope;
         }
 
-        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string operationName)
+        internal static void UpdateScopeFromExecuteAsync(Tracer tracer, string operationType, string? operationName)
         {
             if (!tracer.Settings.IsIntegrationEnabled(IntegrationId))
             {
