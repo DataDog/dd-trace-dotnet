@@ -39,19 +39,19 @@ internal static class ReturnedHeadersAnalyzer
             return;
         }
 
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-            string contentTypeValue = responseHeaders[ContentType];
-            string contentOptionValue = responseHeaders[XContentTypeOptions];
-            string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
-            string xForwardedProtoValue = responseHeaders[XForwardedProto];
+        IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
+        string contentTypeValue = responseHeaders[ContentType];
+        string contentOptionValue = responseHeaders[XContentTypeOptions];
+        string strictTransportSecurityValue = responseHeaders[StrictTransportSecurity];
+        string xForwardedProtoValue = responseHeaders[XForwardedProto];
 
-            if (!IsHtmlResponse(contentTypeValue))
-            {
-                return;
-            }
+        if (!IsHtmlResponse(contentTypeValue))
+        {
+            return;
+        }
 
         LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
-        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue);
+        LaunchStrictTransportSecurity(integrationId, serviceName, strictTransportSecurityValue, xForwardedProtoValue, protocol);
     }
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
