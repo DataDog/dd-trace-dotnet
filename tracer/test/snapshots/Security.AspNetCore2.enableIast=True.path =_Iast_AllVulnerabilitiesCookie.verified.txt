@@ -48,8 +48,6 @@
     }
   ]
 },
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef
     },
     Metrics: {
       process_id: 0,

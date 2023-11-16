@@ -47,8 +47,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -110,8 +108,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -173,8 +169,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -236,8 +230,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -299,8 +291,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["id"],"value":"appscan_fingerprint"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {

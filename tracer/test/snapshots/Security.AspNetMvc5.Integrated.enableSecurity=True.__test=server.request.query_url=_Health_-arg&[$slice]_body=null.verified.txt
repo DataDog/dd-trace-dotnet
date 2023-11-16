@@ -41,8 +41,6 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -96,8 +94,6 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -151,8 +147,6 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -206,8 +200,6 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -261,8 +253,6 @@
       network.client.ip: ::1,
       runtime-id: Guid_1,
       span.kind: server,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {

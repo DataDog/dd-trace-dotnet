@@ -26,8 +26,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent","0"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -68,8 +66,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent","0"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -110,8 +106,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent","0"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -152,8 +146,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent","0"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -194,8 +186,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"ublock","name":"Hello","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"match_regex","operator_value":"hello","parameters":[{"address":"server.request.headers.no_cookies","highlight":["hello"],"key_path":["user-agent","0"],"value":"mistake not... hello/v"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {

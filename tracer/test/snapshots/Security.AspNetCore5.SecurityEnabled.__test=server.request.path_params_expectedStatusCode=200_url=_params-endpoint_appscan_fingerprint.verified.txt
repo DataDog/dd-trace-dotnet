@@ -30,9 +30,7 @@
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.origin: appsec,,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -77,9 +75,7 @@
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.origin: appsec,,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -124,9 +120,7 @@
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.origin: appsec,,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -171,9 +165,7 @@
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.origin: appsec,,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -218,9 +210,7 @@
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-913-120","name":"Known security scanner filename/argument","tags":{"category":"attack_attempt","type":"security_scanner"}},"rule_matches":[{"operator":"phrase_match","operator_value":"","parameters":[{"address":"server.request.path_params","highlight":["appscan_fingerprint"],"key_path":["s"],"value":"appscan_fingerprint"}]}]}]},
       _dd.git.commit.sha: aaaaaaaaaaaaaaaaaaaaabbbbbbbbbbbbbbbbbbbbbbb,
       _dd.git.repository_url: https://github.com/DataDog/dd-trace-dotnet,
-      _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
+      _dd.origin: appsec,,
       _dd.runtime_family: dotnet
     },
     Metrics: {

@@ -51,8 +51,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["miscModel","Property1"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -118,8 +116,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["miscModel","Property1"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -185,8 +181,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["miscModel","Property1"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -252,8 +246,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["miscModel","Property1"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {
@@ -319,8 +311,6 @@
       span.kind: server,
       _dd.appsec.json: {"triggers":[{"rule":{"id":"crs-942-290","name":"Finds basic MongoDB SQL injection attempts","tags":{"category":"attack_attempt","type":"nosql_injection"}},"rule_matches":[{"operator":"match_regex","operator_value":"(?i:(?:\\[\\$(?:ne|eq|lte?|gte?|n?in|mod|all|size|exists|type|slice|x?or|div|like|between|and)\\]))","parameters":[{"address":"server.request.body","highlight":["[$slice]"],"key_path":["miscModel","Property1"],"value":"[$slice]"}]}]}]},
       _dd.origin: appsec,
-      _dd.p.dm: -0,
-      _dd.p.tid: 1234567890abcdef,
       _dd.runtime_family: dotnet
     },
     Metrics: {

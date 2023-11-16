@@ -16,7 +16,6 @@
       peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -44,7 +43,6 @@
       peer.service: aws_sns,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0,
       _dd.peer.service.source: out.host
     },
     Metrics: {
@@ -75,7 +73,6 @@
       http.url: http://localhost:00000/,
       runtime-id: Guid_1,
       span.kind: client,
-      _dd.p.dm: -0
     },
     Metrics: {
       process_id: 0,
