@@ -19,61 +19,18 @@ namespace Datadog.Trace.Iast;
 
 internal static class ReturnedHeadersAnalyzer
 {
-    private const string ContentTypeLow = "content-type";
-    private const string XContentTypeOptionsLow = "x-content-type-options";
+    private const string ContentType = "content-type";
+    private const string XContentTypeOptions = "x-content-type-options";
     private static readonly IDatadogLogger Log = DatadogLogging.GetLoggerFor(typeof(ReturnedHeadersAnalyzer));
 
-#if NETFRAMEWORK
-    internal static void Analyze(NameValueCollection headers, IntegrationId integrationId, string serviceName, int responseCode)
-    {
-        try
-        {
-            if (string.IsNullOrEmpty(serviceName) || IsIgnorableResponseCode((HttpStatusCode)responseCode))
-            {
-                return;
-            }
-
-            IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-
-            string contentTypeValue = string.Empty;
-            string contentOptionValue = string.Empty;
-
-            // We iterate instead of trying to get the key directly because keys are case insensitive
-            foreach (var headerKey in headers.AllKeys)
-            {
-                if (ContentTypeLow.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    contentTypeValue = headers[headerKey];
-
-                    if (!IsHtmlResponse(contentTypeValue))
-                    {
-                        return;
-                    }
-                }
-
-                if (XContentTypeOptionsLow.Equals(headerKey, StringComparison.OrdinalIgnoreCase))
-                {
-                    contentOptionValue = headers[headerKey];
-
-                    if (IsNoSniffContentOptions(contentOptionValue))
-                    {
-                        return;
-                    }
-                }
-            }
-
-            LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
-        }
-        catch (Exception error)
-        {
-            Log.Error(error, $"{nameof(ReturnedHeadersAnalyzer)}.{nameof(Analyze)} exception");
-        }
-    }
-#else
     // Analyze the headers. If the response is HTML, check for X-Content-Type-Options: nosniff. If it
     // is not present, report a vulnerability. When getting the headers, make sure that keys are searched taking
     // int account that can be case insensitive. Exclude vulnerability when return code is one of the ignorable.
+#if NETFRAMEWORK
+    internal static void Analyze(NameValueCollection responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+#else
     internal static void Analyze(IHeaderDictionary responseHeaders, IntegrationId integrationId, string serviceName, int responseCode)
+#endif
     {
         try
         {
@@ -83,8 +40,8 @@ internal static class ReturnedHeadersAnalyzer
             }
 
             IastModule.OnExecutedSinkTelemetry(IastInstrumentedSinks.XContentTypeHeaderMissing);
-            string contentTypeValue = responseHeaders[ContentTypeLow];
-            string contentOptionValue = responseHeaders[XContentTypeOptionsLow];
+            string contentTypeValue = responseHeaders[ContentType];
+            string contentOptionValue = responseHeaders[XContentTypeOptions];
 
             if (!IsHtmlResponse(contentTypeValue) || IsNoSniffContentOptions(contentOptionValue))
             {
@@ -98,7 +55,6 @@ internal static class ReturnedHeadersAnalyzer
             Log.Error(error, $"{nameof(ReturnedHeadersAnalyzer)}.{nameof(Analyze)} exception");
         }
     }
-#endif
 
     private static void LaunchXContentTypeOptionsVulnerability(IntegrationId integrationId, string serviceName, string contentTypeValue, string contentOptionValue)
     {
