@@ -50,6 +50,7 @@ runs:
         tags: ghcr.io/datadog/dd-trace-dotnet/dd-trace-dotnet:latest_snapshot
         platforms: 'linux/amd64' 
         context: ${{inputs.artifacts_path}}
+        file: ${{inputs.artifacts_path}}/system-tests.dockerfile
         build-args: |
           LINUX_PACKAGE=datadog-dotnet-apm-${{inputs.package_version}}.tar.gz
           LIBRARY_VERSION=${{inputs.package_version}}
