@@ -138,7 +138,7 @@ internal static class ReturnedHeadersAnalyzer
 
     private static bool IsNoSniffContentOptions(string contentOptionValue)
     {
-        return contentOptionValue.ToLowerInvariant() == "nosniff";
+        return string.Equals(contentOptionValue, "nosniff", StringComparison.OrdinalIgnoreCase);
     }
 
     public static bool IsIgnorableResponseCode(HttpStatusCode httpStatus)
