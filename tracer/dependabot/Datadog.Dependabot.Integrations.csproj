@@ -214,7 +214,7 @@
     <!-- Integration: Microsoft.Data.Sqlite -->
     <!-- Assembly: Microsoft.Data.Sqlite -->
     <!-- Latest package https://www.nuget.org/packages/Microsoft.Data.Sqlite/8.0.0 -->
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="7.0.14" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.0" />
 
     <!-- Integration: System.Data.SQLite -->
     <!-- Assembly: System.Data.SQLite -->
