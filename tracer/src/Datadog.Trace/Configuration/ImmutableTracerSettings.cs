@@ -184,6 +184,23 @@ namespace Datadog.Trace.Configuration
             // but we can't send it to the static collector, as this settings object may never be "activated"
             Telemetry = new ConfigurationTelemetry();
             settings.CollectTelemetry(Telemetry);
+
+            // Record the final disabled settings values in the telemetry, we can't quite get this information
+            // through the IntegrationTelemetryCollector currently so record it here instead
+            StringBuilder? sb = null;
+
+            foreach (var setting in IntegrationsInternal.Settings)
+            {
+                if (setting.EnabledInternal == false)
+                {
+                    sb ??= StringBuilderCache.Acquire(StringBuilderCache.MaxBuilderSize);
+                    sb.Append(setting.IntegrationNameInternal);
+                    sb.Append(';');
+                }
+            }
+
+            var value = sb is null ? null : StringBuilderCache.GetStringAndRelease(sb);
+            Telemetry.Record(ConfigurationKeys.DisabledIntegrations, value, recordValue: true, ConfigurationOrigins.Calculated);
         }
 
         /// <summary>

@@ -201,7 +201,7 @@ namespace Datadog.Trace
 
         protected virtual IGitMetadataTagsProvider GetGitMetadataTagsProvider(ImmutableTracerSettings settings, IScopeManager scopeManager)
         {
-            return new GitMetadataTagsProvider(settings, scopeManager);
+            return new GitMetadataTagsProvider(settings, scopeManager, TelemetryFactory.Config);
         }
 
         /// <summary>

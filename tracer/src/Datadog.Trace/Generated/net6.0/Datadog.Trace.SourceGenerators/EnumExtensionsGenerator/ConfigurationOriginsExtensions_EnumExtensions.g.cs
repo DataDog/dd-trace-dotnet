@@ -17,7 +17,7 @@ internal static partial class ConfigurationOriginsExtensions
     /// The number of members in the enum.
     /// This is a non-distinct count of defined names.
     /// </summary>
-    public const int Length = 7;
+    public const int Length = 8;
 
     /// <summary>
     /// Returns the string representation of the <see cref="Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins"/> value.
@@ -36,6 +36,7 @@ internal static partial class ConfigurationOriginsExtensions
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig => "remote_config",
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig => "app.config",
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default => "default",
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated => "calculated",
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown => "unknown",
             _ => value.ToString(),
         };
@@ -56,6 +57,7 @@ internal static partial class ConfigurationOriginsExtensions
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig,
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig,
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default,
+            Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated,
             Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown,
         };
 
@@ -76,6 +78,7 @@ internal static partial class ConfigurationOriginsExtensions
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.RemoteConfig),
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.AppConfig),
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Default),
+            nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Calculated),
             nameof(Datadog.Trace.Configuration.Telemetry.ConfigurationOrigins.Unknown),
         };
 
@@ -96,6 +99,7 @@ internal static partial class ConfigurationOriginsExtensions
             "remote_config",
             "app.config",
             "default",
+            "calculated",
             "unknown",
         };
 }
