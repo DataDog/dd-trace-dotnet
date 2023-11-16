@@ -129,12 +129,14 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task Serialization_ServiceEntrySpan()
         {
             const int customTagCount = 15;
+            string hexStringTraceId;
 
             using (_ = _tracer.StartActiveInternal("root", serviceName: "service1"))
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service2"))
                 {
                     SetupForSerializationTest(childScope.Span, customTagCount);
+                    hexStringTraceId = HexString.ToHexString(childScope.Span.TraceId128.Upper);
                 }
             }
 
@@ -146,7 +148,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.RuntimeId, Tracer.RuntimeId);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialized first in the trace chunk
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 5);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Should().Contain(Metrics.TopLevelSpan, 1);
@@ -165,12 +168,14 @@ namespace Datadog.Trace.Tests.Tagging
         public async Task Serialization_ChildSpan()
         {
             const int customTagCount = 15;
+            string hexStringTraceId;
 
             using (_ = _tracer.StartActiveInternal("root", serviceName: "service1"))
             {
                 using (var childScope = _tracer.StartActiveInternal("child", serviceName: "service1"))
                 {
                     SetupForSerializationTest(childScope.Span, customTagCount);
+                    hexStringTraceId = HexString.ToHexString(childScope.Span.TraceId128.Upper);
                 }
             }
 
@@ -181,7 +186,8 @@ namespace Datadog.Trace.Tests.Tagging
             deserializedSpan.Tags.Should().Contain(Tags.Env, "Overridden Environment");
             deserializedSpan.Tags.Should().Contain(Tags.Language, TracerConstants.Language);
             deserializedSpan.Tags.Should().Contain(Tags.Propagated.DecisionMaker, "-0"); // the child span is serialize first in the trace chunk
-            deserializedSpan.Tags.Count.Should().Be(customTagCount + 3);
+            deserializedSpan.Tags.Should().Contain(Tags.Propagated.TraceIdUpper, hexStringTraceId);
+            deserializedSpan.Tags.Count.Should().Be(customTagCount + 4);
 
             deserializedSpan.Metrics.Should().Contain(Metrics.SamplingLimitDecision, 0.75);
             deserializedSpan.Metrics.Count.Should().Be(customTagCount + 1);
