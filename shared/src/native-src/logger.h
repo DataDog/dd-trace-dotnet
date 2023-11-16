@@ -3,6 +3,7 @@
 #include <memory>
 #include <regex>
 #include <sstream>
+#include <type_traits>
 
 #include <spdlog/sinks/null_sink.h>
 #include <spdlog/sinks/rotating_file_sink.h>
