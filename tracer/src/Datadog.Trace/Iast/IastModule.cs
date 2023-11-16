@@ -458,6 +458,6 @@ internal static class IastModule
     internal static Scope? OnXContentTypeOptionsHeaderMissing(IntegrationId integrationId, string headerValue, string serviceName)
     {
         string? evidence = string.IsNullOrEmpty(headerValue) ? null : headerValue;
-        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing.ToString() + ":" + serviceName).GetStaticHashCode());
+        return AddWebVulnerability(evidence, integrationId, VulnerabilityTypeName.XContentTypeHeaderMissing, (VulnerabilityTypeName.XContentTypeHeaderMissing + ":" + serviceName).GetStaticHashCode());
     }
 }
