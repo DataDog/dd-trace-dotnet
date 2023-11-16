@@ -110,6 +110,8 @@ internal static class ReturnedHeadersAnalyzer
         {
             IastModule.OnXContentTypeOptionsHeaderMissing(integrationId, contentOptionValue, serviceName);
         }
+
+        LaunchXContentTypeOptionsVulnerability(integrationId, serviceName, contentTypeValue, contentOptionValue);
     }
 
     private static void LaunchStrictTransportSecurity(IntegrationId integrationId, string serviceName, string strictTransportSecurityValue, string xForwardedProtoValue, string protocol)
