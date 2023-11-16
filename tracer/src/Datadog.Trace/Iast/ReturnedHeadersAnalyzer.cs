@@ -59,6 +59,11 @@ internal static class ReturnedHeadersAnalyzer
 
     private static bool IsHtmlResponse(string contentTypeValue)
     {
+        if (string.IsNullOrEmpty(contentTypeValue))
+        {
+            return false;
+        }
+
 #if NETCOREAPP
         return contentTypeValue.Contains("text/html", StringComparison.OrdinalIgnoreCase) || contentTypeValue.Contains("application/xhtml+xml", StringComparison.OrdinalIgnoreCase);
 #else
