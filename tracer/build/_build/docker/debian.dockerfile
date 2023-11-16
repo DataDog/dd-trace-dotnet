@@ -40,14 +40,19 @@ RUN apt-get update \
         gdb \
         cppcheck \
 		zlib1g-dev \
+        \
+        # required to install clang
+        lsb-release \
+        software-properties-common \
+        gnupg \
+        \
     && gem install --version 1.6.0 --user-install git \
     && gem install --version 2.7.6 dotenv \
     && gem install --version 1.14.2 --minimal-deps --no-document fpm \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Clang
-RUN DEBIAN_FRONTEND=noninteractive apt-get install -y lsb-release wget software-properties-common gnupg && \
-    wget https://apt.llvm.org/llvm.sh && \
+RUN wget https://apt.llvm.org/llvm.sh && \
     chmod u+x llvm.sh && \
     ./llvm.sh 16 all && \
     ln -s `which clang-16` /usr/bin/clang && \
