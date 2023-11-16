@@ -126,7 +126,8 @@ void EtwEventDumper::DumpCallstack(uint32_t cbEventData, const uint8_t* pEventDa
 
     StackWalkPayload* pPayload = (StackWalkPayload*)pEventData;
 
-    if (cbEventData < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload))
+    //                 size of all frames                      + payload size             - size of the first frame not counted twice
+    if (cbEventData < pPayload->FrameCount * sizeof(uintptr_t) + sizeof(StackWalkPayload) - sizeof(uintptr_t))
     {
         //std::cout << "   Invalid payload size: " << cbEventData << " bytes for " << pPayload->FrameCount << " frames\n";
         return;
@@ -134,8 +135,32 @@ void EtwEventDumper::DumpCallstack(uint32_t cbEventData, const uint8_t* pEventDa
 
     for (uint32_t i = 0; i < pPayload->FrameCount; ++i)
     {
-        std::cout << "      0x" << std::setw(16) << std::setfill('0') << std::hex << pPayload->Stack[i] << std::dec << "\n";
+        std::cout << "   0x" << std::setw(16) << std::setfill('0') << std::hex << pPayload->Stack[i] << std::dec << "\n";
     }
+}
+
+void EtwEventDumper::DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEventData)
+{
+    if (cbEventData == 0)
+    {
+        return;
+    }
+
+    if (cbEventData < sizeof(AllocationTickV3Payload))
+    {
+        return;
+    }
+
+    AllocationTickV3Payload* pPayload = (AllocationTickV3Payload*)pEventData;
+    if (pPayload->AllocationKind == 0)
+    {
+        std::wcout << L"   small | ";
+    }
+    else
+    {
+        std::wcout << L"   large | ";
+    }
+    std::wcout << (wchar_t*)&(pPayload->TypeName) << L"\n";
 }
 
 void EtwEventDumper::OnEvent(
@@ -162,6 +187,14 @@ void EtwEventDumper::OnEvent(
             if (id == EVENT_SW_STACK)
             {
                 DumpCallstack(cbEventData, pEventData);
+            }
+        }
+        else
+        if (keyword == KEYWORD_GC)
+        {
+            if (id == EVENT_ALLOCATION_TICK)
+            {
+                DumpAllocationTick(cbEventData, pEventData);
             }
         }
     }

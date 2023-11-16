@@ -82,10 +82,7 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
                 continue;
             }
 
-            //-TODO: remove the offset when the alignment issue is fixed
-            const EVENT_HEADER* pHeader = (EVENT_HEADER*)((byte*)(&(message->EtwHeader)) + 7);
-            // const EVENT_HEADER* pHeader = &(pMessage->EtwHeader);
-            //-----------------------
+            const EVENT_HEADER* pHeader = &(message->EtwHeader);
             uint32_t tid = pHeader->ThreadId;
             uint8_t version = pHeader->EventDescriptor.Version;
             uint64_t keyword = pHeader->EventDescriptor.Keyword;
@@ -93,12 +90,15 @@ void EtwEventsHandler::OnConnect(HANDLE hPipe)
             uint16_t id = pHeader->EventDescriptor.Id;
             uint64_t timestamp = pHeader->TimeStamp.QuadPart;
 
-            //-TODO: remove the offset when the alignment issue is fixed
-            ClrEventPayload* pPayload = (ClrEventPayload*)(((byte*)(&(message->EtwHeader)) + 7 + sizeof(EVENT_HEADER)));
-            // ClrEventPayload* pPayload = (ClrEventPayload*)(&(pMessage->Payload));
-            //-----------------------
+            ClrEventPayload* pPayload = (ClrEventPayload*)(&(message->Payload));
             uint16_t userDataLength = pPayload->EtwUserDataLength;
             uint8_t* pUserData = (uint8_t*)((byte*)&(pPayload->EtwPayload));
+
+            if ((keyword == KEYWORD_GC) && (id == EVENT_ALLOCATION_TICK))
+            {
+                // TODO: set a breakpoint here to check the content of the payload where the type name should be visible
+                std::cout << "\n";
+            }
 
             if (_pReceiver != nullptr)
             {

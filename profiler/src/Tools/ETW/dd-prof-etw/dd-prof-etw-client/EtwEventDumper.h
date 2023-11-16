@@ -27,4 +27,5 @@ private:
         std::string& name,
         uint32_t tid, uint8_t version, uint16_t id, uint64_t keyword, uint8_t level);
     void DumpCallstack(uint32_t cbEventData, const uint8_t* pEventData);
+    void DumpAllocationTick(uint32_t cbEventData, const uint8_t* pEventData);
 };
